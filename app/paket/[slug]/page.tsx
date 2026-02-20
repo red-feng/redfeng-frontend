@@ -26,26 +26,34 @@ async function getData(slug: string) {
   return data;
 }
 
+
+
+//function//
 export default async function CheckoutPage({
   params,
   searchParams,
 }: {
   params: { slug?: string };
-  searchParams: { nxtPslug?: string };
+  searchParams?: { nxtPslug?: string };
 }) {
-  const slug = params.slug || searchParams.nxtPslug;
+  const slug = params?.slug ?? searchParams?.nxtPslug;
 
   console.log("FINAL SLUG:", slug);
 
-  if (!slug) return notFound();
-console.log("PARAMS OBJECT:", params);
-console.log("SLUG VALUE:", slug);
+  if (!slug) {
+    return <div>Slug tidak ditemukan</div>;
+  }
+
+  console.log("PARAMS OBJECT:", params);
+  console.log("SLUG VALUE:", slug);
+
   const data = await getData(slug);
 
-console.log("DATA SERVER:", data);
+  console.log("DATA SERVER:", data);
 
-
-  if (!data) return notFound();
+  if (!data) {
+    return <div>Data tidak ditemukan</div>;
+  }
 
   const publicPrice = data.pricing?.dewasa ?? 0;
   const adminFee = publicPrice * 0.03;
