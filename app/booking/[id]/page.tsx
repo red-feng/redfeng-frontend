@@ -1,14 +1,17 @@
-import { supabase } from "@/lib/supabase";
-
 async function getBooking(id: string) {
-  const { data, error } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`,
+    {
+      headers: {
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      cache: "no-store",
+    }
+  );
 
-  if (error) return null;
-  return data;
+  const data = await res.json();
+  return data[0] || null;
 }
 
 export default async function BookingPage({
@@ -31,7 +34,7 @@ export default async function BookingPage({
           <p><strong>Kode Booking:</strong> {booking.booking_code}</p>
           <p><strong>Nama:</strong> {booking.customer_name}</p>
           <p><strong>Email:</strong> {booking.customer_email}</p>
-          <p><strong>Total:</strong> Rp {booking.total.toLocaleString("id-ID")}</p>
+          <p><strong>Total:</strong> Rp {Number(booking.total).toLocaleString("id-ID")}</p>
           <p><strong>Status:</strong> {booking.status}</p>
         </div>
       </div>
