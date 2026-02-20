@@ -14,9 +14,9 @@ async function getDetail(slug: string) {
 export default async function CheckoutPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
+  const { slug } = params;
 
   const data = await getDetail(slug);
 
