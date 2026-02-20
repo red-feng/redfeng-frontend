@@ -28,11 +28,16 @@ async function getData(slug: string) {
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
-  params: { slug: string };
+  params: { slug?: string };
+  searchParams: { nxtPslug?: string };
 }) {
+  const slug = params.slug || searchParams.nxtPslug;
 
-  const slug = decodeURIComponent(params.slug);
+  console.log("FINAL SLUG:", slug);
+
+  if (!slug) return notFound();
 
   const data = await getData(slug);
 
