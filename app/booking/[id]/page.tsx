@@ -12,19 +12,20 @@ export default async function BookingPage({
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const { data: booking, error } = await supabase
+  const { data, error } = await supabase
     .from("bookings")
     .select("*")
-    .eq("id", params.id)
-    .single();
+    .eq("id", params.id);
 
-  if (error || !booking) {
-    return (
-      <div className="p-10">
-        Booking tidak ditemukan
-      </div>
-    );
+  console.log("ID:", params.id);
+  console.log("DATA:", data);
+  console.log("ERROR:", error);
+
+  if (!data || data.length === 0) {
+    return <div className="p-10">Booking tidak ditemukan</div>;
   }
+
+  const booking = data[0];
 
   return (
     <div>
