@@ -1,27 +1,24 @@
-async function getBooking(id: string) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/bookings?id=eq.${id}`,
-    {
-      headers: {
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
-      cache: "no-store",
-    }
-  );
+import { createClient } from "@supabase/supabase-js";
 
-  const data = await res.json();
-  return data[0] || null;
-}
+export const dynamic = "force-dynamic";
 
 export default async function BookingPage({
   params,
 }: {
   params: { id: string };
 }) {
-  const booking = await getBooking(params.id);
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  if (!booking) {
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("id", params.id)
+    .single();
+
+  if (error || !booking) {
     return <div className="p-10">Booking tidak ditemukan</div>;
   }
 
