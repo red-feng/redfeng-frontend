@@ -17,32 +17,7 @@ export default function CheckoutClient({ data, slug }: any) {
   const total = subtotal + ppn;
 
   const handleBooking = async () => {
-  const { data: booking, error } = await supabase
-    .from("booking")
-    .insert([
-      {
-        slug,
-        customer_name: nama,
-        customer_email: email,
-        customer_phone: phone,
-        public_price: publicPrice,
-        admin_fee: adminFee,
-        ppn,
-        total,
-        status: "pending",
-      },
-    ])
-    .select()
-    .single();
-
-  if (error) {
-    console.error(error);
-    alert("Gagal menyimpan booking");
-    return;
-  }
-
-  alert("Booking berhasil dibuat!");
-  console.log("Booking:", booking);
+  alert("Test klik OK");
 };
 
   return (
