@@ -5,9 +5,9 @@ export const dynamic = "force-dynamic";
 export default async function BookingPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }) {
-  const { id } = await params;
+  const { id } = params;
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,8 +33,18 @@ export default async function BookingPage({
           <p><strong>Kode Booking:</strong> {data.booking_code}</p>
           <p><strong>Nama:</strong> {data.customer_name}</p>
           <p><strong>Email:</strong> {data.customer_email}</p>
-          <p><strong>Total:</strong> Rp {Number(data.total).toLocaleString("id-ID")}</p>
-          <p><strong>Status:</strong> {data.status}</p>
+          <p>
+  <strong>Total:</strong>{" "}
+  Rp {Number(data.total_amount).toLocaleString("id-ID")}
+</p>
+
+<p>
+  <strong>Status Booking:</strong> {data.booking_status}
+</p>
+
+<p>
+  <strong>Status Pembayaran:</strong> {data.payment_status}
+</p>
         </div>
       </div>
     </main>

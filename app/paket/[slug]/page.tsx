@@ -18,9 +18,9 @@ async function getData(slug: string) {
 export default async function CheckoutPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
+  const { slug } = params;
 
   const data = await getData(slug);
 
@@ -30,7 +30,7 @@ export default async function CheckoutPage({
   const adminFee = publicPrice * 0.03;
   const subtotal = publicPrice + adminFee;
   const ppn = subtotal * 0.11;
-  const total = subtotal + ppn;
+  const total = Math.round(subtotal + ppn);
 
 
   return (

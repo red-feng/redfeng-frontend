@@ -4,6 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
+
+
 export default function CheckoutClient({ data, slug }: any) {
 
   const [nama, setNama] = useState("");
@@ -15,9 +22,11 @@ export default function CheckoutClient({ data, slug }: any) {
   const adminFee = publicPrice * 0.03;
   const subtotal = publicPrice + adminFee;
   const ppn = subtotal * 0.11;
-  const total = subtotal + ppn;
+  const total = Math.round(subtotal + ppn);
 
   const handleBooking = async () => {
+  console.log("STEP 1: mulai booking");
+
   const bookingCode = `RF-${Date.now()}`;
 
   const { data: booking, error } = await supabase
@@ -32,20 +41,48 @@ export default function CheckoutClient({ data, slug }: any) {
         public_price: publicPrice,
         admin_fee: adminFee,
         ppn,
-        total,
-        status: "pending",
+        total_amount: total,
+        booking_status: "pending",
+        payment_status: "pending",
       },
     ])
     .select()
     .single();
 
-  if (error) {
+  console.log("STEP 2: insert selesai", booking);
+
+  if (error || !booking) {
     console.error(error);
     alert("Gagal menyimpan booking");
     return;
   }
 
-  router.push(`/booking/${booking.id}`);
+  console.log("STEP 3: panggil payment create");
+
+  const res = await fetch("/api/payment/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ booking_id: booking.id }),
+  });
+
+  console.log("STEP 4: response create", res);
+
+  const snapData = await res.json();
+  console.log("STEP 5: snapData", snapData);
+
+  if (!snapData.token) {
+    alert("Gagal membuat transaksi");
+    return;
+  }
+
+  if (!window.snap) {
+    alert("Snap belum siap");
+    return;
+  }
+
+  console.log("STEP 6: buka snap");
+
+  window.snap.pay(snapData.token);
 };
 
   return (

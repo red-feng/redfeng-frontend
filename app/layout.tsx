@@ -32,10 +32,10 @@ export default function RootLayout({
 
         {/* ✅ MIDTRANS SNAP PRODUCTION */}
         <Script
-          src="https://app.midtrans.com/snap/snap.js"
-          data-client-key="Mid-client-uJ9l52mk30qh9_ts"
-          strategy="afterInteractive"
-        />
+  src="https://app.midtrans.com/snap/snap.js"
+  data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+  strategy="afterInteractive"
+/>
       </body>
     </html>
   );
