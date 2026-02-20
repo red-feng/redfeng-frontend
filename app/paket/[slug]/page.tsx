@@ -46,3 +46,8 @@ export default async function PaketPage({
     </main>
   );
 }
+
+
+<h1 className="text-5xl font-bold text-red-600">
+  Tailwind Active
+</h1>
