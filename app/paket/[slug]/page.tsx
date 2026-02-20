@@ -6,24 +6,14 @@ export const revalidate = 300;
 
 
 async function getData(slug: string) {
-  console.log("SLUG FROM PARAMS:", slug);
-
   const res = await fetch(
-    `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/paket/${slug}`,
     { cache: "no-store" }
   );
 
-  const text = await res.text();
+  if (!res.ok) return null;
 
-  console.log("STATUS:", res.status);
-  console.log("BODY:", text);
-
-  if (!res.ok) {
-    throw new Error("FETCH FAILED");
-  }
-
-  const data = JSON.parse(text);
-  return data;
+  return res.json();
 }
 
 
