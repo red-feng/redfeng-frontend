@@ -1,27 +1,49 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
-export const revalidate = 300; // cache 1 menit
+export const revalidate = 300;
+
+
 
 async function getData(slug: string) {
+  console.log("SLUG FROM PARAMS:", slug);
+
   const res = await fetch(
     `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
-    {
-      next: { revalidate: 300 },
-    }
+    { cache: "no-store" }
   );
 
-  if (!res.ok) return null;
+  const text = await res.text();
 
-  return res.json();
+  console.log("STATUS:", res.status);
+  console.log("BODY:", text);
+
+  if (!res.ok) {
+    throw new Error("FETCH FAILED");
+  }
+
+  const data = JSON.parse(text);
+  return data;
 }
-
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
-  params: { slug: string };
+  params: { slug?: string };
+  searchParams: { nxtPslug?: string };
 }) {
-  const data = await getData(params.slug);
+  const slug = params.slug || searchParams.nxtPslug;
+
+  console.log("FINAL SLUG:", slug);
+
+  if (!slug) return notFound();
+console.log("PARAMS OBJECT:", params);
+console.log("SLUG VALUE:", slug);
+  const data = await getData(slug);
+
+console.log("DATA SERVER:", data);
+
 
   if (!data) return notFound();
 
@@ -29,13 +51,14 @@ export default async function CheckoutPage({
   const adminFee = publicPrice * 0.03;
   const subtotal = publicPrice + adminFee;
   const ppn = subtotal * 0.11;
-  const total = subtotal + ppn;
+  const total = Math.round(subtotal + ppn);
+
 
   return (
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow">
         <h1 className="text-3xl font-bold mb-6">
-          Checkout
+        Detail Paket
         </h1>
 
         <div className="space-y-3 mb-8">
@@ -60,6 +83,12 @@ export default async function CheckoutPage({
             <span>Total</span>
             <span>Rp {total.toLocaleString("id-ID")}</span>
           </div>
+    <Link
+  href={`/checkout/${slug}`}
+  className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg mt-6"
+>
+  Lanjut ke Booking
+</Link>
         </div>
       </div>
     </main>
