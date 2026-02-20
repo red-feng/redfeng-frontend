@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function GET(
-  req: Request,
-  { params }: { params: { slug: string } }
+  req: NextRequest,
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const { slug } = await context.params;
+
     const res = await fetch(
-      `https://redfeng.co/wp-json/redfeng/v1/paket/${params.slug}`
+      `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`
     );
 
     if (!res.ok) {
