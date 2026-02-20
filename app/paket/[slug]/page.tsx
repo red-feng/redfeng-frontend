@@ -29,11 +29,9 @@ async function getData(slug: string) {
 export default async function PaketPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = params;
-
-  console.log("SLUG:", slug);
+  const { slug } = await params;
 
   const data = await getData(slug);
 
@@ -43,8 +41,8 @@ export default async function PaketPage({
 
   return (
     <main>
-      <h1>Detail Paket</h1>
-      <p>Slug: {slug}</p>
+      <h1>{data.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: data.content }} />
     </main>
   );
 }
