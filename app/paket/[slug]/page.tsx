@@ -33,6 +33,9 @@ export default async function CheckoutPage({
 
   const data = await getData(slug);
 
+console.log("DATA SERVER:", data);
+
+
   if (!data) return notFound();
 
   const publicPrice = data.pricing?.dewasa ?? 0;
