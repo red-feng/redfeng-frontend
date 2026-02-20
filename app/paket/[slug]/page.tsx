@@ -38,7 +38,8 @@ export default async function CheckoutPage({
   console.log("FINAL SLUG:", slug);
 
   if (!slug) return notFound();
-
+console.log("PARAMS OBJECT:", params);
+console.log("SLUG VALUE:", slug);
   const data = await getData(slug);
 
 console.log("DATA SERVER:", data);
