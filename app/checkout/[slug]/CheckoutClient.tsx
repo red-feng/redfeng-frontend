@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -9,15 +10,42 @@ export default function CheckoutClient({ data, slug }: any) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
+  const router = useRouter();
   const publicPrice = data.pricing?.dewasa ?? 0;
-
   const adminFee = publicPrice * 0.03;
   const subtotal = publicPrice + adminFee;
   const ppn = subtotal * 0.11;
   const total = subtotal + ppn;
 
   const handleBooking = async () => {
-  alert("Test klik OK");
+  const bookingCode = `RF-${Date.now()}`;
+
+  const { data: booking, error } = await supabase
+    .from("bookings")
+    .insert([
+      {
+        booking_code: bookingCode,
+        slug,
+        customer_name: nama,
+        customer_email: email,
+        customer_phone: phone,
+        public_price: publicPrice,
+        admin_fee: adminFee,
+        ppn,
+        total,
+        status: "pending",
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    alert("Gagal menyimpan booking");
+    return;
+  }
+
+  router.push(`/booking/${booking.id}`);
 };
 
   return (
