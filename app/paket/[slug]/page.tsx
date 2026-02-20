@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 
 export const revalidate = 300;
 
+
+
 async function getData(slug: string) {
+  console.log("SLUG FROM PARAMS:", slug);
+
   const res = await fetch(
     `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
-    {
-      next: { revalidate: 300 },
-    }
+    { cache: "no-store" }
   );
 
   console.log("FETCH STATUS:", res.status);
@@ -29,7 +31,8 @@ export default async function CheckoutPage({
 }: {
   params: { slug: string };
 }) {
-  const { slug } = params;
+
+  const slug = decodeURIComponent(params.slug);
 
   const data = await getData(slug);
 
