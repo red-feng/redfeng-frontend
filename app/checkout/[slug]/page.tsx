@@ -14,14 +14,15 @@ async function getDetail(slug: string) {
 export default async function CheckoutPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = await params;
 
-  const data = await getDetail(params.slug);
+  const data = await getDetail(slug);
 
   if (!data) {
     return <div className="p-10">Paket tidak ditemukan</div>;
   }
 
-  return <CheckoutClient data={data} slug={params.slug} />;
+  return <CheckoutClient data={data} slug={slug} />;
 }
