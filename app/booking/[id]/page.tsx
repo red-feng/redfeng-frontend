@@ -5,8 +5,10 @@ export const dynamic = "force-dynamic";
 export default async function BookingPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params; // ✅ WAJIB di Next terbaru
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -15,21 +17,16 @@ export default async function BookingPage({
   const { data, error } = await supabase
     .from("bookings")
     .select("*")
-    .eq("id", params.id);
+    .eq("id", id)
+    .single();
 
-  console.log("ID:", params.id);
-  console.log("DATA:", data);
-  console.log("ERROR:", error);
-
-  if (!data || data.length === 0) {
+  if (error || !data) {
     return <div className="p-10">Booking tidak ditemukan</div>;
   }
 
-  const booking = data[0];
-
   return (
-    <div>
-      Booking ditemukan: {booking.customer_name}
+    <div className="p-10">
+      Booking ditemukan: {data.customer_name}
     </div>
   );
 }
