@@ -7,7 +7,7 @@ export const revalidate = 300;
 
 async function getData(slug: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/paket/${slug}`,
+    `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
     { cache: "no-store" }
   );
 
