@@ -11,8 +11,17 @@ async function getData(slug: string) {
     }
   );
 
-  if (!res.ok) return null;
-  return res.json();
+  console.log("FETCH STATUS:", res.status);
+
+  if (!res.ok) {
+    console.log("FETCH FAILED");
+    return null;
+  }
+
+  const data = await res.json();
+  console.log("DATA EXISTS:", !!data);
+
+  return data;
 }
 
 export default async function CheckoutPage({
