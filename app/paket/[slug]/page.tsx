@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-export const revalidate = 300; // cache 1 menit
+export const revalidate = 300;
 
 async function getData(slug: string) {
   const res = await fetch(
@@ -11,17 +11,17 @@ async function getData(slug: string) {
   );
 
   if (!res.ok) return null;
-
   return res.json();
 }
-
 
 export default async function CheckoutPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const data = await getData(params.slug);
+  const { slug } = await params;
+
+  const data = await getData(slug);
 
   if (!data) return notFound();
 
