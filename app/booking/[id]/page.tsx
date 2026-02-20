@@ -7,8 +7,6 @@ export default async function BookingPage({
 }: {
   params: { id: string };
 }) {
-  console.log("PARAM ID:", params.id);
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -20,17 +18,17 @@ export default async function BookingPage({
     .eq("id", params.id)
     .single();
 
-  console.log("SUPABASE ERROR:", error);
-  console.log("SUPABASE DATA:", booking);
-
   if (error || !booking) {
     return (
       <div className="p-10">
-        <pre>{JSON.stringify({ id: params.id, error }, null, 2)}</pre>
         Booking tidak ditemukan
       </div>
     );
   }
 
-  return <div>Booking ditemukan</div>;
+  return (
+    <div>
+      Booking ditemukan: {booking.customer_name}
+    </div>
+  );
 }
