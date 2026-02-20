@@ -1,91 +1,39 @@
-"use client";
+import { notFound } from "next/navigation";
 
-"use client";
+export const revalidate = 300; // cache 1 menit
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+async function getData(slug: string) {
+  const res = await fetch(
+    `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
+    {
+      next: { revalidate: 300 },
+    }
+  );
 
-export default function CheckoutPage() {
+  if (!res.ok) return null;
 
-  const params = useParams();
-  const slug = params.slug as string;
-
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  return res.json();
+}
 
 
-  const [nama, setNama] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+export default async function CheckoutPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const data = await getData(params.slug);
 
-  useEffect(() => {
-    fetch(`https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`)
-      .then((res) => res.json())
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      });
-  }, [slug]);
-
-  if (loading) return <div className="p-10">Loading...</div>;
-  if (!data) return <div className="p-10">Paket tidak ditemukan</div>;
+  if (!data) return notFound();
 
   const publicPrice = data.pricing?.dewasa ?? 0;
-
   const adminFee = publicPrice * 0.03;
   const subtotal = publicPrice + adminFee;
   const ppn = subtotal * 0.11;
   const total = subtotal + ppn;
 
-  const handleBooking = async () => {
-    const res = await fetch(
-      "https://redfeng.co/wp-json/redfeng/v1/booking",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          slug,
-          nama,
-          email,
-          phone,
-          public_price: publicPrice,
-          admin_fee: adminFee,
-          ppn,
-          total,
-        }),
-      }
-    );
-
-    const result = await res.json();
-
-    if (result.booking_id) {
-      const payment = await fetch(
-        "https://redfeng.co/wp-json/redfeng/v1/payment/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            booking_id: result.booking_id,
-          }),
-        }
-      );
-
-      const paymentResult = await payment.json();
-
-      if (paymentResult.snap_token) {
-        window.snap.pay(paymentResult.snap_token);
-      }
-    }
-  };
-
   return (
     <main className="min-h-screen bg-gray-100 p-10">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow">
-
         <h1 className="text-3xl font-bold mb-6">
           Checkout
         </h1>
@@ -113,40 +61,6 @@ export default function CheckoutPage() {
             <span>Rp {total.toLocaleString("id-ID")}</span>
           </div>
         </div>
-
-        <div className="space-y-4">
-          <input
-            type="text"
-            placeholder="Nama"
-            value={nama}
-            onChange={(e) => setNama(e.target.value)}
-            className="w-full border p-3 rounded"
-          />
-
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full border p-3 rounded"
-          />
-
-          <input
-            type="text"
-            placeholder="No HP"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full border p-3 rounded"
-          />
-
-          <button
-            onClick={handleBooking}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg"
-          >
-            Buat Booking & Bayar
-          </button>
-        </div>
-
       </div>
     </main>
   );
