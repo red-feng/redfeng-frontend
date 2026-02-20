@@ -6,14 +6,21 @@ export const revalidate = 300;
 
 
 async function getData(slug: string) {
-  const res = await fetch(
-    `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`,
-    { cache: "no-store" }
-  );
+  const url = `https://redfeng.co/wp-json/redfeng/v1/paket/${slug}`;
+
+  const res = await fetch(url, {
+    cache: "no-store",
+  });
+
+  console.log("FETCH URL:", url);
+  console.log("STATUS:", res.status);
+
+  const text = await res.text();
+  console.log("RAW RESPONSE:", text);
 
   if (!res.ok) return null;
 
-  return res.json();
+  return JSON.parse(text);
 }
 
 
