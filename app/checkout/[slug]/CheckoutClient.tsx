@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createClient } from '@/lib/supabase/client'
 
 declare global {
   interface Window {
@@ -13,6 +13,9 @@ declare global {
 
 export default function CheckoutClient({ data, slug }: any) {
 
+  const supabase = createClient()  // 🔥 TAMBAHKAN INI
+
+  
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
