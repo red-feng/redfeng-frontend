@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
-export default async function AdminLayout({
+export default async function AdminDashboardLayout({
   children,
 }: {
   children: React.ReactNode
