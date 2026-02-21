@@ -1,13 +1,21 @@
-
-
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import { headers } from "next/headers"
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+
+  const headerList = await headers()
+  const pathname = headerList.get("x-invoke-path") || ""
+
+  // 🚫 Jangan proteksi halaman login
+  if (pathname.includes("/admin/login")) {
+    return <>{children}</>
+  }
+
   const supabase = await createClient()
 
   const {
@@ -17,7 +25,7 @@ export default async function AdminLayout({
   if (!user) {
     redirect("/admin/login")
   }
-                                                  console.log("USER ID:", user?.id)
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -30,4 +38,3 @@ export default async function AdminLayout({
 
   return <>{children}</>
 }
-
