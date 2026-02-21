@@ -1,3 +1,7 @@
-export default function MerchantLayout({ children }: any) {
+export default function MerchantLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return <>{children}</>
 }
