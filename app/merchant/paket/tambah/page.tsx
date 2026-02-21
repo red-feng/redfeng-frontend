@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '../../../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function TambahPaket() {
   const router = useRouter()
+  const supabase = createClient()
 
   const [title, setTitle] = useState('')
   const [priceAdult, setPriceAdult] = useState('')
@@ -14,20 +15,23 @@ export default function TambahPaket() {
   const handleSubmit = async (e: any) => {
     e.preventDefault()
 
-    const { data: userData } = await supabase.auth.getUser()
-    if (!userData.user) return
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
 
     const { data: merchant } = await supabase
       .from('merchants')
       .select('id')
-      .eq('user_id', userData.user.id)
+      .eq('user_id', user.id)
       .single()
 
     await supabase.from('tours').insert({
       merchant_id: merchant?.id,
       title,
-      price_adult: priceAdult,
-      price_child: priceChild,
+      price_adult: Number(priceAdult),
+      price_child: Number(priceChild),
       status: 'draft',
     })
 

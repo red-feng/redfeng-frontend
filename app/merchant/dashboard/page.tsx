@@ -2,35 +2,53 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '../../../lib/supabase/client'
 import Link from 'next/link'
 
 export default function Dashboard() {
   const router = useRouter()
+  const supabase = createClient()
+
   const [merchant, setMerchant] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser()
+    const checkAccess = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
 
-      if (!data.user) {
+      if (!user) {
         router.push('/login')
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || profile.role !== 'merchant') {
+        router.push('/')
         return
       }
 
       const { data: merchantData } = await supabase
         .from('merchants')
         .select('*')
-        .eq('user_id', data.user.id)
+        .eq('user_id', user.id)
         .single()
 
       setMerchant(merchantData)
+      setLoading(false)
     }
 
-    checkUser()
+    checkAccess()
   }, [router])
 
-  if (!merchant) return <div>Loading...</div>
+  if (loading) return <div>Checking access...</div>
+  if (!merchant) return null
 
   return (
     <div className="p-10">
