@@ -1,29 +1,34 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function Dashboard() {
+  const router = useRouter()
   const [merchant, setMerchant] = useState<any>(null)
 
   useEffect(() => {
-    const getMerchant = async () => {
-      const { data: userData } = await supabase.auth.getUser()
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser()
 
-      if (!userData.user) return
+      if (!data.user) {
+        router.push('/login')
+        return
+      }
 
-      const { data } = await supabase
+      const { data: merchantData } = await supabase
         .from('merchants')
         .select('*')
-        .eq('user_id', userData.user.id)
+        .eq('user_id', data.user.id)
         .single()
 
-      setMerchant(data)
+      setMerchant(merchantData)
     }
 
-    getMerchant()
-  }, [])
+    checkUser()
+  }, [router])
 
   if (!merchant) return <div>Loading...</div>
 
