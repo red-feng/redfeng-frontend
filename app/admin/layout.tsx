@@ -1,3 +1,5 @@
+
+
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 
@@ -15,7 +17,7 @@ export default async function AdminLayout({
   if (!user) {
     redirect("/admin/login")
   }
-
+                                                  console.log("USER ID:", user?.id)
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -28,3 +30,4 @@ export default async function AdminLayout({
 
   return <>{children}</>
 }
+
