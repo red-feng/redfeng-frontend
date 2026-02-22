@@ -5,6 +5,13 @@ import type { NextRequest } from "next/server"
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
 
+  const pathname = req.nextUrl.pathname
+
+  // Hanya protect /admin dan /merchant
+  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
+    return res
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -23,6 +30,7 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Kalau belum login dan mencoba akses protected route
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url))
   }
@@ -37,13 +45,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (req.nextUrl.pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin")) {
     if (!["admin", "superadmin"].includes(profile.role)) {
       return NextResponse.redirect(new URL("/", req.url))
     }
   }
 
-  if (req.nextUrl.pathname.startsWith("/merchant")) {
+  if (pathname.startsWith("/merchant")) {
     if (profile.role !== "merchant") {
       return NextResponse.redirect(new URL("/", req.url))
     }
