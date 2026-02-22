@@ -33,16 +33,16 @@ export default function Dashboard() {
         router.replace('/')
         return
       }
-const { data: merchantData, error } = await supabase
-  .from('merchants')
-  .select('*')
-  .eq('user_id', user.id)
-  .single()
 
-console.log("USER ID:", user.id)
-console.log("MERCHANT DATA:", merchantData)
-console.log("ERROR:", error)
-      
+      const { data: merchantData, error } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      console.log("USER ID:", user.id)
+      console.log("MERCHANT DATA:", merchantData)
+      console.log("ERROR:", error)
 
       if (!merchantData) {
         router.replace('/merchant/pending')
@@ -54,7 +54,7 @@ console.log("ERROR:", error)
     }
 
     checkAccess()
-  }, [router, supabase])
+  }, [router])
 
   if (loading) return <div>Checking access...</div>
 
