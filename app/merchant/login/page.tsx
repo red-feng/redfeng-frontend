@@ -54,7 +54,8 @@ export default function MerchantLogin() {
   } else {
     router.push("/")
   }
-
+console.log("USER ID:", data.user.id)
+console.log("PROFILE:", profile)
   setLoading(false)
 }
 
