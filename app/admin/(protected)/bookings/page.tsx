@@ -10,7 +10,7 @@ export default async function AdminBookingsPage() {
 
   return (
     <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">Booking Management</h1>
+      <h1 className="text-3xl font-bold mb-6">Booking Tour Management</h1>
 
       <table className="w-full border">
         <thead className="bg-gray-100">
