@@ -5,34 +5,64 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 export default function AdminLogin() {
-  const supabase = createClient()
   const router = useRouter()
+  const supabase = createClient()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleLogin = async () => {
     setLoading(true)
+    setError("")
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      alert(error.message)
+      setError(error.message)
       setLoading(false)
       return
     }
 
-    router.push("/admin/dashboard")
+    // ambil role
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single()
+
+    if (!profile) {
+      router.push("/")
+      return
+    }
+
+    switch (profile.role) {
+      case "superadmin":
+      case "admin":
+        router.push("/admin/dashboard")
+        break
+      case "merchant":
+        router.push("/merchant/dashboard")
+        break
+      default:
+        router.push("/")
+    }
+
+    setLoading(false)
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded shadow w-96">
         <h1 className="text-2xl font-bold mb-6 text-center">Admin Login</h1>
+
+        {error && (
+          <p className="text-red-500 mb-4 text-sm">{error}</p>
+        )}
 
         <input
           className="w-full border p-2 mb-4"

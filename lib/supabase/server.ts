@@ -14,12 +14,20 @@ export async function createClient() {
         },
         set(name: string, value: string, options: any) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookieStore.set({
+              name,
+              value,
+              ...options,
+            })
           } catch {}
         },
         remove(name: string, options: any) {
           try {
-            cookieStore.set({ name, value: "", ...options })
+            cookieStore.set({
+              name,
+              value: "",
+              ...options,
+            })
           } catch {}
         },
       },

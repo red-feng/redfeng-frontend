@@ -5,28 +5,55 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 export default function MerchantLogin() {
-  const supabase = createClient()
   const router = useRouter()
+  const supabase = createClient()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const handleLogin = async () => {
     setLoading(true)
+    setError("")
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (error) {
-      alert(error.message)
+      setError(error.message)
       setLoading(false)
       return
     }
 
-    router.push("/merchant/dashboard")
+    // ambil role user
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single()
+
+    if (!profile) {
+      router.push("/")
+      return
+    }
+
+    // redirect berdasarkan role
+    switch (profile.role) {
+      case "superadmin":
+      case "admin":
+        router.push("/admin/dashboard")
+        break
+      case "merchant":
+        router.push("/merchant/dashboard")
+        break
+      default:
+        router.push("/")
+    }
+
+    setLoading(false)
   }
 
   return (
@@ -35,6 +62,10 @@ export default function MerchantLogin() {
         <h1 className="text-2xl font-bold mb-6 text-center">
           Merchant Login
         </h1>
+
+        {error && (
+          <p className="text-red-500 mb-4 text-sm">{error}</p>
+        )}
 
         <input
           className="w-full border p-2 mb-4"
