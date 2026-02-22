@@ -19,7 +19,7 @@ export default function Dashboard() {
       } = await supabase.auth.getUser()
 
       if (!user) {
-        router.push('/login')
+        router.replace('/login')
         return
       }
 
@@ -30,7 +30,7 @@ export default function Dashboard() {
         .single()
 
       if (!profile || profile.role !== 'merchant') {
-        router.push('/')
+        router.replace('/')
         return
       }
 
@@ -40,18 +40,19 @@ export default function Dashboard() {
         .eq('user_id', user.id)
         .single()
 
+      if (!merchantData) {
+        router.replace('/merchant/pending')
+        return
+      }
+
       setMerchant(merchantData)
       setLoading(false)
     }
 
     checkAccess()
-  }, [router])
+  }, [router, supabase])
 
   if (loading) return <div>Checking access...</div>
-  if (!merchant) {
-  router.replace('/merchant/pending')
-  return null
-}
 
   return (
     <div className="p-10">
