@@ -33,12 +33,16 @@ export default function Dashboard() {
         router.replace('/')
         return
       }
+const { data: merchantData, error } = await supabase
+  .from('merchants')
+  .select('*')
+  .eq('user_id', user.id)
+  .single()
 
-      const { data: merchantData } = await supabase
-        .from('merchants')
-        .select('*')
-        .eq('user_id', user.id)
-        .single()
+console.log("USER ID:", user.id)
+console.log("MERCHANT DATA:", merchantData)
+console.log("ERROR:", error)
+      
 
       if (!merchantData) {
         router.replace('/merchant/pending')
