@@ -48,7 +48,10 @@ export default function Dashboard() {
   }, [router])
 
   if (loading) return <div>Checking access...</div>
-  if (!merchant) return null
+  if (!merchant) {
+  router.replace('/merchant/pending')
+  return null
+}
 
   return (
     <div className="p-10">
