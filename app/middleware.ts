@@ -3,14 +3,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-
-  const pathname = req.nextUrl.pathname
-
-  // Hanya protect /admin dan /merchant
-  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
-    return res
-  }
+  let res = NextResponse.next()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,17 +13,34 @@ export async function middleware(req: NextRequest) {
         get(name) {
           return req.cookies.get(name)?.value
         },
-        set() {},
-        remove() {},
+        set(name, value, options) {
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name, options) {
+          res.cookies.set({
+            name,
+            value: "",
+            ...options,
+          })
+        },
       },
     }
   )
+
+  const pathname = req.nextUrl.pathname
+
+  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
+    return res
+  }
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Kalau belum login dan mencoba akses protected route
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url))
   }
