@@ -39,6 +39,12 @@ export default function MerchantLogin() {
     .eq("id", data.user.id)
     .single()
 
+console.log("USER ID:", data.user.id)
+console.log("PROFILE:", profile)
+
+
+
+
   if (!profile) {
     router.push("/")
     return
@@ -54,8 +60,7 @@ export default function MerchantLogin() {
   } else {
     router.push("/")
   }
-console.log("USER ID:", data.user.id)
-console.log("PROFILE:", profile)
+
   setLoading(false)
 }
 
