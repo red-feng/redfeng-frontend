@@ -28,9 +28,10 @@ export default function MerchantRegister() {
 
     if (data.user) {
       await supabase.from("profiles").insert({
-        id: data.user.id,
-        role: "merchant",
-      })
+      id: data.user.id,
+      role: "merchant",
+      status: "pending",
+    })
     }
 
     router.push("/merchant/dashboard")

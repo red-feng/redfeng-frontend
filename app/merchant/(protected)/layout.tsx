@@ -16,14 +16,25 @@ export default async function MerchantLayout({
     redirect("/merchant/login")
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, status")
     .eq("id", user.id)
     .single()
 
-  if (!profile || profile.role !== "merchant") {
+  // kalau error atau profile tidak ada
+  if (error || !profile) {
     redirect("/")
+  }
+
+  // kalau bukan merchant
+  if (profile.role !== "merchant") {
+    redirect("/")
+  }
+
+  // kalau belum approved
+  if (profile.status !== "approved") {
+    redirect("/merchant/pending")
   }
 
   return <>{children}</>
