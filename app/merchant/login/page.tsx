@@ -17,7 +17,7 @@ export default function MerchantLogin() {
   setLoading(true)
   setError("")
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -28,22 +28,28 @@ export default function MerchantLogin() {
     return
   }
 
-  if (!data.user) {
+  // Tunggu session benar-benar ada
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session?.user) {
     router.push("/")
     return
   }
 
-  const { data: profile } = await supabase
+  const userId = session.user.id
+
+  console.log("USER FROM SESSION:", userId)
+
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", data.user.id)
-    .single()
+    .eq("id", userId)
+    .maybeSingle()
 
-console.log("USER ID:", data.user.id)
-console.log("PROFILE:", profile)
-
-
-
+  console.log("PROFILE:", profile)
+  console.log("PROFILE ERROR:", profileError)
 
   if (!profile) {
     router.push("/")
@@ -63,7 +69,6 @@ console.log("PROFILE:", profile)
 
   setLoading(false)
 }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded shadow w-96">

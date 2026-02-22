@@ -13,39 +13,82 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 🔥 Auto redirect jika sudah login
   useEffect(() => {
-    const checkSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+  const checkSession = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-      if (session) {
-        router.replace("/merchant/dashboard");
-      }
-    };
+    if (!session?.user) return;
 
-    checkSession();
-  }, [router, supabase]);
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .maybeSingle();
+
+    if (!profile) return;
+
+    if (profile.role === "merchant") {
+      router.replace("/merchant/dashboard");
+    } else if (
+      profile.role === "admin" ||
+      profile.role === "superadmin"
+    ) {
+      router.replace("/admin/dashboard");
+    }
+  };
+
+  checkSession();
+}, []);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMsg("");
+  e.preventDefault();
+  setLoading(true);
+  setErrorMsg("");
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (error) {
-      setErrorMsg(error.message);
-      setLoading(false);
-      return;
-    }
+  if (error) {
+    setErrorMsg(error.message);
+    setLoading(false);
+    return;
+  }
 
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.user) {
+    router.replace("/");
+    return;
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    router.replace("/");
+    return;
+  }
+
+  if (profile.role === "merchant") {
     router.replace("/merchant/dashboard");
-  };
+  } else if (
+    profile.role === "admin" ||
+    profile.role === "superadmin"
+  ) {
+    router.replace("/admin/dashboard");
+  } else {
+    router.replace("/");
+  }
+};
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-gray-100">
