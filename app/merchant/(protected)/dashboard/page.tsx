@@ -1,5 +1,8 @@
 'use client'
 
+console.log("DASHBOARD VERSION 2")
+
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase/client'
