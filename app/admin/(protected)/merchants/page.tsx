@@ -3,6 +3,10 @@ import { createClient } from "@/lib/supabase/server"
 export default async function MerchantsPage() {
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { data: merchants } = await supabase
     .from("profiles")
     .select("id, role, approval_status")
@@ -13,10 +17,23 @@ export default async function MerchantsPage() {
 
     const supabase = await createClient()
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    // ✅ Update approval
     await supabase
       .from("profiles")
       .update({ approval_status: "approved" })
       .eq("id", id)
+
+    // ✅ Audit log di sini
+    await supabase.from("audit_logs").insert({
+      user_id: user?.id,
+      action: "approve_merchant",
+      target_table: "profiles",
+      target_id: id,
+    })
   }
 
   return (

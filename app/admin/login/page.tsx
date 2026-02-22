@@ -14,46 +14,49 @@ export default function AdminLogin() {
   const [error, setError] = useState("")
 
   const handleLogin = async () => {
-    setLoading(true)
-    setError("")
+  setLoading(true)
+  setError("")
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    // ambil role
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single()
-
-    if (!profile) {
-      router.push("/")
-      return
-    }
-
-    switch (profile.role) {
-      case "superadmin":
-      case "admin":
-        router.push("/admin/dashboard")
-        break
-      case "merchant":
-        router.push("/merchant/dashboard")
-        break
-      default:
-        router.push("/")
-    }
-
+  if (error) {
+    setError(error.message)
     setLoading(false)
+    return
   }
+
+  if (!data.user) {
+    router.push("/")
+    return
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .single()
+
+  if (!profile) {
+    router.push("/")
+    return
+  }
+
+  if (profile.role === "merchant") {
+    router.push("/merchant/dashboard")
+  } else if (
+    profile.role === "admin" ||
+    profile.role === "superadmin"
+  ) {
+    router.push("/admin/dashboard")
+  } else {
+    router.push("/")
+  }
+
+  setLoading(false)
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
