@@ -8,29 +8,48 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
   const supabase = createClient()
   const router = useRouter()
 
-  const [form, setForm] = useState({
-    ktp_file_url: '',
-    npwp_file_url: '',
-    nib_file_url: '',
-    logo_url: ''
-  })
-
   const [saving, setSaving] = useState(false)
 
-  const handleChange = (e: any) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    })
+  const uploadFile = async (file: File, folder: string) => {
+    const filePath = `${folder}/${merchantId}-${Date.now()}-${file.name}`
+
+    const { error } = await supabase.storage
+      .from('merchant-documents')
+      .upload(filePath, file)
+
+    if (error) {
+      alert(error.message)
+      return null
+    }
+
+    const { data } = supabase.storage
+      .from('merchant-documents')
+      .getPublicUrl(filePath)
+
+    return data.publicUrl
   }
 
-  const handleFinish = async () => {
+  const handleSubmit = async (e: any) => {
+    e.preventDefault()
     setSaving(true)
+
+    const ktpFile = e.target.ktp.files[0]
+    const npwpFile = e.target.npwp.files[0]
+    const nibFile = e.target.nib.files[0]
+    const logoFile = e.target.logo.files[0]
+
+    const ktpUrl = ktpFile ? await uploadFile(ktpFile, 'ktp') : null
+    const npwpUrl = npwpFile ? await uploadFile(npwpFile, 'npwp') : null
+    const nibUrl = nibFile ? await uploadFile(nibFile, 'nib') : null
+    const logoUrl = logoFile ? await uploadFile(logoFile, 'logo') : null
 
     await supabase
       .from('merchants')
       .update({
-        ...form,
+        ktp_file_url: ktpUrl,
+        npwp_file_url: npwpUrl,
+        nib_file_url: nibUrl,
+        logo_url: logoUrl,
         onboarding_completed: true,
         verification_status: 'pending'
       })
@@ -42,44 +61,36 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
   }
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4">
 
-      <input
-        name="ktp_file_url"
-        placeholder="KTP File URL"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div>
+        <label>KTP</label>
+        <input type="file" name="ktp" required />
+      </div>
 
-      <input
-        name="npwp_file_url"
-        placeholder="NPWP File URL"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div>
+        <label>NPWP</label>
+        <input type="file" name="npwp" required />
+      </div>
 
-      <input
-        name="nib_file_url"
-        placeholder="NIB File URL"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div>
+        <label>NIB</label>
+        <input type="file" name="nib" required />
+      </div>
 
-      <input
-        name="logo_url"
-        placeholder="Logo URL"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div>
+        <label>Logo</label>
+        <input type="file" name="logo" />
+      </div>
 
       <button
-        onClick={handleFinish}
+        type="submit"
         disabled={saving}
         className="bg-black text-white px-6 py-2"
       >
-        {saving ? 'Submitting...' : 'Finish & Submit'}
+        {saving ? 'Uploading...' : 'Finish & Submit'}
       </button>
 
-    </div>
+    </form>
   )
 }
