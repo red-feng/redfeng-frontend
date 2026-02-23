@@ -55,22 +55,21 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
   })
   .eq('id', merchantId)
 
-setSaving(false)
-
-// ambil email user
+// 🔥 KIRIM EMAIL
 const {
   data: { user }
 } = await supabase.auth.getUser()
 
-await fetch('/api/send-merchant-pending', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    email: user?.email,
-    brandName: 'Merchant RedFeng'
+if (user?.email) {
+  await fetch('/api/send-merchant-pending', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: user.email,
+      brandName: user.email
+    })
   })
-})
-
+}
 
 router.replace('/merchant/pending')
   }
