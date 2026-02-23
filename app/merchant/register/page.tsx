@@ -15,7 +15,7 @@ export default function MerchantRegister() {
   const handleRegister = async () => {
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     })
@@ -26,22 +26,10 @@ export default function MerchantRegister() {
       return
     }
 
-    const handleRegister = async () => {
-  setLoading(true)
+    // setelah berhasil register → langsung ke pending
+    router.push("/merchant/pending")
 
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-  })
-
-  if (error) {
-    alert(error.message)
     setLoading(false)
-    return
-  }
-
-  router.push("/merchant/login")
-}
   }
 
   return (
