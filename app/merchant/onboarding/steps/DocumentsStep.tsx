@@ -57,6 +57,21 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
 
 setSaving(false)
 
+// ambil email user
+const {
+  data: { user }
+} = await supabase.auth.getUser()
+
+await fetch('/api/send-merchant-pending', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    email: user?.email,
+    brandName: 'Merchant RedFeng'
+  })
+})
+
+
 router.replace('/merchant/pending')
   }
 
