@@ -1,14 +1,22 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(req: Request) {
   try {
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY not found')
+      return NextResponse.json(
+        { error: 'Email service not configured' },
+        { status: 500 }
+      )
+    }
+
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
     const { email, brandName } = await req.json()
 
     await resend.emails.send({
-      from: 'RedFeng <noreply@redfeng.co>',
+      from: 'onboarding@resend.dev', // gunakan ini dulu untuk testing
       to: email,
       subject: 'Akun Anda Sedang Diverifikasi',
       html: `
@@ -21,8 +29,12 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ success: true })
+
   } catch (error) {
     console.error(error)
-    return NextResponse.json({ error: 'Email gagal dikirim' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Email gagal dikirim' },
+      { status: 500 }
+    )
   }
 }
