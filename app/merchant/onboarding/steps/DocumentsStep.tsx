@@ -44,20 +44,20 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
     const logoUrl = logoFile ? await uploadFile(logoFile, 'logo') : null
 
     await supabase
-      .from('merchants')
-      .update({
-        ktp_file_url: ktpUrl,
-        npwp_file_url: npwpUrl,
-        nib_file_url: nibUrl,
-        logo_url: logoUrl,
-        onboarding_completed: true,
-        verification_status: 'pending'
-      })
-      .eq('id', merchantId)
+  .from('merchants')
+  .update({
+    ktp_file_url: ktpUrl,
+    npwp_file_url: npwpUrl,
+    nib_file_url: nibUrl,
+    logo_url: logoUrl,
+    onboarding_completed: true,
+    verification_status: 'pending'
+  })
+  .eq('id', merchantId)
 
-    setSaving(false)
+setSaving(false)
 
-    router.replace('/merchant/dashboard')
+router.replace('/merchant/pending')
   }
 
   return (

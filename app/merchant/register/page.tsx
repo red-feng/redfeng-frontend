@@ -29,13 +29,22 @@ export default function MerchantRegister() {
   const user = data.user
 
   if (user) {
+    // insert profile
     await supabase.from("profiles").insert({
       id: user.id,
       role: "merchant",
     })
+
+    // create merchant draft
+    await supabase.from("merchants").insert({
+      user_id: user.id,
+      verification_status: "draft",
+      onboarding_step: 1,
+      onboarding_completed: false
+    })
   }
 
-  router.push("/merchant/pending")
+  router.push("/merchant/onboarding")
   setLoading(false)
 }
 
