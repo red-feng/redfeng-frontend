@@ -57,7 +57,7 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
 
     setSaving(false)
 
-    router.push('/merchant/dashboard')
+    router.replace('/merchant/dashboard')
   }
 
   return (

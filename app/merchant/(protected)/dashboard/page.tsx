@@ -48,9 +48,14 @@ export default function Dashboard() {
       console.log("ERROR:", error)
 
       if (!merchantData) {
-        router.replace('/merchant/pending')
-        return
-      }
+  router.replace('/merchant/pending')
+  return
+}
+
+if (!merchantData.onboarding_completed) {
+  router.replace('/merchant/onboarding')
+  return
+}
 
       setMerchant(merchantData)
       setLoading(false)

@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import CompanyStep from './steps/CompanyStep'
@@ -9,6 +10,7 @@ import DocumentsStep from './steps/DocumentsStep'
 
 export default function OnboardingPage() {
   const supabase = createClient()
+  const router = useRouter()
 
   const [merchantId, setMerchantId] = useState<string | null>(null)
   const [step, setStep] = useState<number>(1)
@@ -29,12 +31,20 @@ export default function OnboardingPage() {
         .single()
 
       if (existing) {
-        setMerchantId(existing.id)
-        setStep(existing.onboarding_step || 1)
-        setLoading(false)
-        return
-      }
 
+  // 🔒 kalau sudah selesai onboarding, langsung ke dashboard
+  if (existing.onboarding_completed) {
+    router.replace('/merchant/dashboard')
+    return
+  }
+
+  setMerchantId(existing.id)
+  setStep(existing.onboarding_step || 1)
+  setLoading(false)
+  return
+}
+
+      
       // create draft
       const { data: newMerchant } = await supabase
         .from('merchants')
