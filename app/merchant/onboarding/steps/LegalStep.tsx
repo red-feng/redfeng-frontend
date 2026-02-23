@@ -3,7 +3,14 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LegalStep({ merchantId }: { merchantId: string }) {
+export default function LegalStep({ 
+  merchantId,
+  setStep
+}: { 
+  merchantId: string
+  setStep: (step: number) => void
+}) {
+
   const supabase = createClient()
 
   const [form, setForm] = useState({
@@ -41,7 +48,7 @@ export default function LegalStep({ merchantId }: { merchantId: string }) {
 
     setSaving(false)
 
-    window.location.reload()
+    setStep(3) // 🔥 pindah ke Step 3 TANPA reload
   }
 
   return (

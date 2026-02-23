@@ -73,20 +73,20 @@ export default function OnboardingPage() {
       </h1>
 
       {merchantId && step === 1 && (
-        <CompanyStep merchantId={merchantId} />
-      )}
+  <CompanyStep merchantId={merchantId} setStep={setStep} />
+)}
 
-      {merchantId && step === 2 && (
-        <LegalStep merchantId={merchantId} />
-      )}
+{merchantId && step === 2 && (
+  <LegalStep merchantId={merchantId} setStep={setStep} />
+)}
 
-      {merchantId && step === 3 && (
-        <BankingStep merchantId={merchantId} />
-      )}
+{merchantId && step === 3 && (
+  <BankingStep merchantId={merchantId} setStep={setStep} />
+)}
 
-      {merchantId && step === 4 && (
-        <DocumentsStep merchantId={merchantId} />
-      )}
+{merchantId && step === 4 && (
+  <DocumentsStep merchantId={merchantId} />
+)}
     </div>
   )
 }

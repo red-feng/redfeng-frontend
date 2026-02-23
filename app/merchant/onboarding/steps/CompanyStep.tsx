@@ -4,7 +4,14 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-export default function CompanyStep({ merchantId }: { merchantId: string }) {
+export default function CompanyStep({ 
+  merchantId, 
+  setStep 
+}: { 
+  merchantId: string
+  setStep: (step: number) => void 
+}) {
+    
   const supabase = createClient()
   const router = useRouter()
 
@@ -44,8 +51,7 @@ export default function CompanyStep({ merchantId }: { merchantId: string }) {
 
     setSaving(false)
 
-    // nanti kita buat step 2
-    alert('Step 1 saved. Step 2 coming next.')
+setStep(2)
   }
 
   return (
