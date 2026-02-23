@@ -13,24 +13,31 @@ export default function MerchantRegister() {
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async () => {
-    setLoading(true)
+  setLoading(true)
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
 
-    if (error) {
-      alert(error.message)
-      setLoading(false)
-      return
-    }
-
-    // setelah berhasil register → langsung ke pending
-    router.push("/merchant/pending")
-
+  if (error) {
+    alert(error.message)
     setLoading(false)
+    return
   }
+
+  const user = data.user
+
+  if (user) {
+    await supabase.from("profiles").insert({
+      id: user.id,
+      role: "merchant",
+    })
+  }
+
+  router.push("/merchant/pending")
+  setLoading(false)
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

@@ -52,6 +52,13 @@ export default function Dashboard() {
   return
 }
 
+// BELUM DIAPPROVE ADMIN
+if (merchantData.verification_status !== 'approved') {
+  router.replace('/merchant/pending')
+  return
+}
+
+// SUDAH APPROVE TAPI BELUM SELESAI ONBOARDING
 if (!merchantData.onboarding_completed) {
   router.replace('/merchant/onboarding')
   return
