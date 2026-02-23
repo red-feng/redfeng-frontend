@@ -64,7 +64,7 @@ export default function Dashboard() {
   return (
     <div className="p-10">
       <h1 className="text-2xl font-bold">
-        Dashboard {merchant.brand_name}
+        Dashboard Marchant {merchant.brand_name}
       </h1>
 
       <Link
