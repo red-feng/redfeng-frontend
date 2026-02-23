@@ -51,12 +51,14 @@ export default function OnboardingPage() {
   if (loading) return <div className="p-10">Loading...</div>
 
   return (
-    <div className="max-w-2xl mx-auto p-10">
-      <h1 className="text-2xl font-bold mb-6">
-        Merchant Onboarding - Step 1
-      </h1>
+  <div className="max-w-2xl mx-auto p-10">
+    <h1 className="text-2xl font-bold mb-6">
+      Merchant Onboarding - Step 1
+    </h1>
 
-      {merchantId && <CompanyStep merchantId={merchantId} />}
-    </div>
-  )
+    <p>Merchant ID: {merchantId ?? "NULL"}</p>
+
+    {merchantId && <CompanyStep merchantId={merchantId} />}
+  </div>
+)
 }
