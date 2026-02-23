@@ -3,11 +3,15 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import CompanyStep from './steps/CompanyStep'
+import LegalStep from './steps/LegalStep'
+import BankingStep from './steps/BankingStep'
+import DocumentsStep from './steps/DocumentsStep'
 
 export default function OnboardingPage() {
   const supabase = createClient()
 
   const [merchantId, setMerchantId] = useState<string | null>(null)
+  const [step, setStep] = useState<number>(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -26,6 +30,7 @@ export default function OnboardingPage() {
 
       if (existing) {
         setMerchantId(existing.id)
+        setStep(existing.onboarding_step || 1)
         setLoading(false)
         return
       }
@@ -42,6 +47,7 @@ export default function OnboardingPage() {
         .single()
 
       setMerchantId(newMerchant?.id ?? null)
+      setStep(1)
       setLoading(false)
     }
 
@@ -51,14 +57,26 @@ export default function OnboardingPage() {
   if (loading) return <div className="p-10">Loading...</div>
 
   return (
-  <div className="max-w-2xl mx-auto p-10">
-    <h1 className="text-2xl font-bold mb-6">
-      Merchant Onboarding - Step 1
-    </h1>
+    <div className="max-w-2xl mx-auto p-10">
+      <h1 className="text-2xl font-bold mb-6">
+        Merchant Onboarding - Step {step}
+      </h1>
 
-    <p>Merchant ID: {merchantId ?? "NULL"}</p>
+      {merchantId && step === 1 && (
+        <CompanyStep merchantId={merchantId} />
+      )}
 
-    {merchantId && <CompanyStep merchantId={merchantId} />}
-  </div>
-)
+      {merchantId && step === 2 && (
+        <LegalStep merchantId={merchantId} />
+      )}
+
+      {merchantId && step === 3 && (
+        <BankingStep merchantId={merchantId} />
+      )}
+
+      {merchantId && step === 4 && (
+        <DocumentsStep merchantId={merchantId} />
+      )}
+    </div>
+  )
 }
