@@ -26,15 +26,22 @@ export default function MerchantRegister() {
       return
     }
 
-    if (data.user) {
-      await supabase.from("profiles").insert({
-      id: data.user.id,
-      role: "merchant",
-      status: "pending",
-    })
-    }
+    const handleRegister = async () => {
+  setLoading(true)
 
-    router.push("/merchant/dashboard")
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
+
+  if (error) {
+    alert(error.message)
+    setLoading(false)
+    return
+  }
+
+  router.push("/merchant/login")
+}
   }
 
   return (
