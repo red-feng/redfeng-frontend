@@ -12,6 +12,7 @@ export default async function MerchantLayout({
     data: { user },
   } = await supabase.auth.getUser()
 
+  // 1️⃣ Belum login
   if (!user) {
     redirect("/merchant/login")
   }
@@ -22,19 +23,32 @@ export default async function MerchantLayout({
     .eq("id", user.id)
     .single()
 
-  // kalau error atau profile tidak ada
+  // 2️⃣ Tidak ada profile
   if (error || !profile) {
     redirect("/")
   }
 
-  // kalau bukan merchant
+  // 3️⃣ Bukan merchant
   if (profile.role !== "merchant") {
     redirect("/")
   }
 
-  // kalau belum approved
-  if (profile.status !== "approved") {
+  // 4️⃣ Status flow handling
+  if (profile.status === "pending") {
+    redirect("/merchant/onboarding")
+  }
+
+  if (profile.status === "verification") {
     redirect("/merchant/pending")
+  }
+
+  if (profile.status === "rejected") {
+    redirect("/merchant/rejected")
+  }
+
+  // 5️⃣ Hanya approved boleh masuk dashboard
+  if (profile.status !== "approved") {
+    redirect("/")
   }
 
   return <>{children}</>
