@@ -1,64 +1,83 @@
-import { createClient } from "@/lib/supabase/server"
+'use client'
 
-export default async function MerchantsPage() {
-  const supabase = await createClient()
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+export default function AdminMerchantsPage() {
+  const supabase = createClient()
 
-  const { data: merchants } = await supabase
-    .from("profiles")
-    .select("id, role, approval_status")
-    .eq("role", "merchant")
+  const [merchants, setMerchants] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  async function approveMerchant(id: string) {
-    "use server"
+  useEffect(() => {
+    const fetchMerchants = async () => {
+      const { data } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('verification_status', 'pending')
+        .order('created_at', { ascending: false })
 
-    const supabase = await createClient()
+      setMerchants(data || [])
+      setLoading(false)
+    }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    fetchMerchants()
+  }, [])
 
-    // ✅ Update approval
+  if (loading) return <div className="p-10">Loading...</div>
+
+  return (
+    <div className="p-10">
+      <h1 className="text-2xl font-bold mb-6">
+        Pending Merchant Approvals
+      </h1>
+
+      {merchants.length === 0 && (
+        <p>Tidak ada merchant pending.</p>
+      )}
+
+      {merchants.map((merchant) => (
+        <MerchantCard key={merchant.id} merchant={merchant} />
+      ))}
+    </div>
+  )
+}
+
+function MerchantCard({ merchant }: { merchant: any }) {
+  const supabase = createClient()
+
+  const handleApprove = async () => {
     await supabase
-      .from("profiles")
-      .update({ approval_status: "approved" })
-      .eq("id", id)
+      .from('merchants')
+      .update({ verification_status: 'approved' })
+      .eq('id', merchant.id)
 
-    // ✅ Audit log di sini
-    await supabase.from("audit_logs").insert({
-      user_id: user?.id,
-      action: "approve_merchant",
-      target_table: "profiles",
-      target_id: id,
+    // kirim email approved
+    await fetch('/api/send-merchant-approved', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: merchant.email,
+        brandName: merchant.brand_name
+      })
     })
+
+    alert('Merchant approved!')
+    window.location.reload()
   }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Merchant Approval</h1>
+    <div className="border p-4 mb-4 rounded">
+      <h2 className="font-bold text-lg">{merchant.brand_name}</h2>
+      <p>Email: {merchant.email}</p>
+      <p>Company: {merchant.company_name}</p>
 
-      {merchants?.map((merchant) => (
-        <div
-          key={merchant.id}
-          className="border p-4 mb-4 flex justify-between items-center"
-        >
-          <div>
-            <p>ID: {merchant.id}</p>
-            <p>Status: {merchant.approval_status}</p>
-          </div>
-
-          {merchant.approval_status !== "approved" && (
-            <form action={approveMerchant.bind(null, merchant.id)}>
-              <button className="bg-green-600 text-white px-4 py-2 rounded">
-                Approve
-              </button>
-            </form>
-          )}
-        </div>
-      ))}
+      <button
+        onClick={handleApprove}
+        className="bg-green-600 text-white px-4 py-2 mt-3"
+      >
+        Approve
+      </button>
     </div>
   )
 }
