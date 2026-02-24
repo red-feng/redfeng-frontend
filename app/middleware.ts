@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
+  let res = NextResponse.next()
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -14,25 +14,32 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value
         },
         set(name, value, options) {
-          res.cookies.set({ name, value, ...options })
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          })
         },
         remove(name, options) {
-          res.cookies.set({ name, value: "", ...options })
+          res.cookies.set({
+            name,
+            value: "",
+            ...options,
+          })
         },
       },
     }
   )
-
-  // 🔥 WAJIB: Sinkronkan session dulu
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
   const pathname = req.nextUrl.pathname
 
   if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
     return res
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url))
