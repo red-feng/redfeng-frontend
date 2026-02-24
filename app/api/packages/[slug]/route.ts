@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 export async function GET(
-  req: Request,
+  request: Request,
   { params }: { params: { slug: string } }
 ) {
   try {
@@ -11,26 +11,21 @@ export async function GET(
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    const { data: paket, error } = await supabase
+    const { slug } = params
+
+    const { data, error } = await supabase
       .from("packages")
       .select("*")
-      .eq("slug", params.slug)
+      .eq("slug", slug)
       .eq("status", "published")
       .single()
 
-    if (error || !paket) {
-      return NextResponse.json(
-        { error: "Paket tidak ditemukan" },
-        { status: 404 }
-      )
+    if (error || !data) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 })
     }
 
-    return NextResponse.json(paket)
-
+    return NextResponse.json(data)
   } catch (error) {
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
