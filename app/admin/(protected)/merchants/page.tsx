@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { approveMerchant } from './actions'
+import { approveMerchant, rejectMerchant } from './actions'
 
 export default async function AdminMerchantsPage() {
   const supabase = await createClient()
 
   const { data: merchants } = await supabase
-  .from('merchants')
-  .select('*')
-  .eq('verification_status', 'pending')
-  .order('created_at', { ascending: false })
+    .from('merchants')
+    .select('*')
+    .eq('verification_status', 'pending')
+    .order('created_at', { ascending: false })
 
   return (
     <div className="p-10">
@@ -28,16 +28,38 @@ export default async function AdminMerchantsPage() {
           <p>Email: {merchant.email}</p>
           <p>Company: {merchant.company_name}</p>
 
-          <form action={approveMerchant}>
+          {/* APPROVE FORM */}
+          <form action={approveMerchant} className="mt-3">
             <input
               type="hidden"
               name="merchantId"
               value={merchant.id}
             />
-            <button className="bg-green-600 text-white px-4 py-2 mt-3">
+            <button className="bg-green-600 text-white px-4 py-2">
               Approve
             </button>
           </form>
+
+          {/* REJECT FORM */}
+          <form action={rejectMerchant} className="mt-3">
+            <input
+              type="hidden"
+              name="merchantId"
+              value={merchant.id}
+            />
+
+            <textarea
+              name="reason"
+              placeholder="Alasan penolakan..."
+              required
+              className="border p-2 w-full mt-2"
+            />
+
+            <button className="bg-red-600 text-white px-4 py-2 mt-2">
+              Reject
+            </button>
+          </form>
+
         </div>
       ))}
     </div>

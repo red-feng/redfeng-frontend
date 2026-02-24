@@ -63,3 +63,45 @@ export async function approveMerchant(formData: FormData) {
 
   revalidatePath('/admin/merchants')
 }
+
+export async function rejectMerchant(formData: FormData) {
+  const supabase = await createClient()
+
+  const merchantId = formData.get("merchantId") as string
+  const reason = formData.get("reason") as string
+
+  if (!merchantId || !reason) return
+
+  const { data: merchant } = await supabase
+    .from("merchants")
+    .select("*")
+    .eq("id", merchantId)
+    .single()
+
+  if (!merchant) return
+
+  await supabase
+    .from("merchants")
+    .update({
+      verification_status: "rejected",
+      rejection_reason: reason,
+      rejected_at: new Date(),
+    })
+    .eq("id", merchantId)
+
+  // kirim email reject
+  await fetch(
+    `${process.env.NEXT_PUBLIC_SITE_URL}/api/send-merchant-rejected`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: merchant.email,
+        brandName: merchant.brand_name,
+        reason,
+      }),
+    }
+  )
+
+  revalidatePath("/admin/merchants")
+}

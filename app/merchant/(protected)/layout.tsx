@@ -50,8 +50,8 @@ export default async function MerchantLayout({
   }
 
   if (merchant.verification_status === "rejected") {
-    redirect("/merchant/rejected")
-  }
+  redirect("/merchant/rejected")
+}
 
   if (!merchant.onboarding_completed) {
     redirect("/merchant/onboarding")
