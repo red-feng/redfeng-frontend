@@ -17,7 +17,6 @@ export async function GET(
       .from("packages")
       .select("*")
       .eq("slug", slug)
-      .eq("status", "published")
       .single()
 
     if (error || !data) {
