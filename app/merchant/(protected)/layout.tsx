@@ -17,38 +17,44 @@ export default async function MerchantLayout({
     redirect("/merchant/login")
   }
 
+  // 2️⃣ Ambil profile (role only)
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("role, status")
+    .select("role")
     .eq("id", user.id)
     .single()
 
-  // 2️⃣ Tidak ada profile
   if (error || !profile) {
     redirect("/")
   }
 
-  // 3️⃣ Bukan merchant
+  // 3️⃣ Pastikan merchant
   if (profile.role !== "merchant") {
     redirect("/")
   }
 
-  // 4️⃣ Status flow handling
-  if (profile.status === "pending") {
+  // 4️⃣ Ambil merchant data
+  const { data: merchant } = await supabase
+    .from("merchants")
+    .select("verification_status, onboarding_completed")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!merchant) {
     redirect("/merchant/onboarding")
   }
 
-  if (profile.status === "verification") {
+  // 5️⃣ Flow berdasarkan merchants table
+  if (merchant.verification_status === "pending") {
     redirect("/merchant/pending")
   }
 
-  if (profile.status === "rejected") {
+  if (merchant.verification_status === "rejected") {
     redirect("/merchant/rejected")
   }
 
-  // 5️⃣ Hanya approved boleh masuk dashboard
-  if (profile.status !== "approved") {
-    redirect("/")
+  if (!merchant.onboarding_completed) {
+    redirect("/merchant/onboarding")
   }
 
   return <>{children}</>
