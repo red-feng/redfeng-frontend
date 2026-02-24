@@ -22,9 +22,9 @@ export default async function AdminProtectedLayout({
     .eq("id", user.id)
     .single()
 
-  if (!profile || profile.role !== "admin") {
-    redirect("/")
-  }
+  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  redirect("/")
+}
 
   return <>{children}</>
 }
