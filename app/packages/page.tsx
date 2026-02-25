@@ -1,5 +1,6 @@
 import FilterClient from "./FilterClient"
 import { createClient } from "@supabase/supabase-js"
+import { Suspense } from "react"
 
 export const revalidate = 60
 
@@ -43,8 +44,10 @@ export default async function PackagesPage({
   return (
     <div className="grid grid-cols-4 gap-8 p-6">
       <div className="col-span-1">
-        <FilterClient />
-      </div>
+  <Suspense fallback={<div>Loading filter...</div>}>
+    <FilterClient />
+  </Suspense>
+</div>
 
       <div className="col-span-3 grid grid-cols-3 gap-6">
         {packages.length === 0 ? (
