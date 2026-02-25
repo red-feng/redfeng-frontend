@@ -63,10 +63,11 @@ export default async function PackagesPage({
   const facilities = facilitiesData ?? []
 
   return (
-    <div className="grid grid-cols-4 gap-8 p-6 items-start">
+    <div className="max-w-7xl mx-auto px-6 py-8">
+  <div className="grid grid-cols-4 gap-8 items-start">
 
       {/* SIDEBAR */}
-      <div className="col-span-1 max-h-[85vh] overflow-y-auto sticky top-6">
+      <div className="col-span-1 sticky top-6 self-start">
         <Suspense fallback={<div>Loading filter...</div>}>
           <FilterClient facilities={facilities} />
         </Suspense>
@@ -138,7 +139,7 @@ export default async function PackagesPage({
         )}
 
       </div>
-
+</div>
     </div>
   )
 }
