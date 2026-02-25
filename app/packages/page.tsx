@@ -62,12 +62,13 @@ const { data: facilitiesData } = await supabase
 const facilities = facilitiesData ?? []
 
   return (
-    <div className="grid grid-cols-4 gap-8 p-6">
-      <div className="col-span-1">
+    <div className="grid grid-cols-4 gap-8 p-6 items-start">
+      <div className="col-span-1 max-h-[85vh] overflow-y-auto sticky top-6">
   <Suspense fallback={<div>Loading filter...</div>}>
     <FilterClient facilities={facilities} />
   </Suspense>
 </div>
+<div className="col-span-3 grid grid-cols-3 gap-6 content-start"></div>
 
       <div className="col-span-3 grid grid-cols-3 gap-6">
   {packages.length === 0 ? (
