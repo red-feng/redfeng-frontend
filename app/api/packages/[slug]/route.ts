@@ -3,10 +3,10 @@ import { createClient } from "@supabase/supabase-js"
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }   // ✅ BENAR
 ) {
   try {
-    const { slug } = await context.params
+    const { slug } = params
 
     if (!slug) {
       return NextResponse.json(

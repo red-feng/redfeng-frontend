@@ -3,9 +3,9 @@ import type { Metadata } from "next"
 
 async function getPaket(slug: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/packages/${slug}`,
+    `/api/packages/${slug}`,   // ✅ RELATIVE PATH
     {
-      next: { revalidate: 60 }, // cache 60 detik
+      next: { revalidate: 60 },
     }
   )
 
