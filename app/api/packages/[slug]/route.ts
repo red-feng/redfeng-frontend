@@ -2,11 +2,11 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 export async function GET(
-  _request: Request,
-  context: { params: { slug: string } }
+  request: Request,
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = context.params
+    const { slug } = await context.params
 
     if (!slug) {
       return NextResponse.json(
@@ -17,7 +17,7 @@ export async function GET(
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // ✅ pakai anon (RLS aman)
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 
     const { data, error } = await supabase
