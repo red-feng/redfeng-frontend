@@ -24,22 +24,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+  <html lang="id">
+    <body
+      className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 min-h-screen`}
+    >
+      {children}
 
-        {/* ✅ MIDTRANS SNAP PRODUCTION */}
-        <Script
-  src="https://app.midtrans.com/snap/snap.js"
-  data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-  strategy="afterInteractive"
-/>
-<body className="bg-gray-100 min-h-screen">
-  {children}
-</body>
-      </body>
-    </html>
-  );
+      <Script
+        src="https://app.midtrans.com/snap/snap.js"
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
+      />
+    </body>
+  </html>
+);
 }

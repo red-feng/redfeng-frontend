@@ -74,7 +74,6 @@ export default async function PackagesPage({
       </div>
 
       {/* LIST */}
-      
       <div className="col-span-3 flex flex-col gap-6">
 
         {packages.length === 0 ? (
