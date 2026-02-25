@@ -15,16 +15,16 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
   let query = supabase
     .from("packages")
     .select(`
-      id,
-      title,
-      slug,
-      destination,
-      duration,
-      price_adult,
-      thumbnail_url,
-      description,
-      created_at
-    `)
+  id,
+  title,
+  slug,
+  destination,
+  duration,
+  price_adult,
+  thumbnail_url,
+  description,
+  created_at
+`)
     .eq("status", "published")
     .order("created_at", { ascending: false })
 
@@ -79,62 +79,62 @@ export default async function PackagesPage({
           <p>Tidak ada paket ditemukan</p>
         ) : (
           packages.map((pkg: any) => (
-            <div
-              key={pkg.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition flex overflow-hidden border border-gray-100"
-            >
+  <div
+    key={pkg.id}
+    className="bg-white rounded-xl shadow-md hover:shadow-lg transition flex overflow-hidden border border-gray-100"
+  >
 
-              {/* IMAGE */}
-              <div className="w-1/4 h-56">
-                <img
-                  src={
-                    pkg.thumbnail_url ||
-                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
-                  }
-                  alt={pkg.title}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+    {/* IMAGE */}
+    <div className="w-1/4 h-56">
+      <img
+        src={
+          pkg.thumbnail_url ||
+          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
+        }
+        alt={pkg.title}
+        className="w-full h-full object-cover"
+      />
+    </div>
 
-              {/* DETAIL */}
-              <div className="w-2/4 p-6 flex flex-col justify-center">
-                <h2 className="text-lg font-semibold mb-2">
-                  {pkg.title}
-                </h2>
+    {/* DETAIL */}
+    <div className="w-2/4 p-6 flex flex-col justify-center">
+      <h2 className="text-lg font-semibold mb-2">
+        {pkg.title}
+      </h2>
 
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  📍 {pkg.destination}
-                </div>
+      <div className="flex items-center text-sm text-gray-500 mb-2">
+        📍 {pkg.destination}
+      </div>
 
-                <div className="flex text-yellow-500 mb-2">
-                  ⭐⭐⭐⭐⭐
-                </div>
+      <div className="flex text-yellow-500 mb-2">
+        ⭐⭐⭐⭐⭐
+      </div>
 
-                <p className="text-gray-600 text-sm line-clamp-3">
-                  {pkg.description || "Deskripsi paket wisata menarik."}
-                </p>
-              </div>
+      <p className="text-gray-600 text-sm line-clamp-3">
+        {pkg.description || "Deskripsi paket wisata menarik."}
+      </p>
+    </div>
 
-              {/* PRICE BOX */}
-              <div className="w-1/4 border-l bg-gray-50 p-6 flex flex-col justify-center items-center">
-                <p className="text-xl font-bold text-gray-800 mb-1">
-                  IDR {pkg.price_adult?.toLocaleString()}
-                </p>
+    {/* PRICE BOX */}
+    <div className="w-1/4 border-l bg-gray-50 p-6 flex flex-col justify-center items-center">
+      <p className="text-xl font-bold text-gray-800 mb-1">
+        IDR {pkg.price_adult?.toLocaleString()}
+      </p>
 
-                <p className="text-xs text-gray-400 mb-4">
-                  Exclude taxes & fees
-                </p>
+      <p className="text-xs text-gray-400 mb-4">
+        Exclude taxes & fees
+      </p>
 
-                <Link
-                  href={`/packages/${pkg.slug}`}
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition"
-                >
-                  Choose
-                </Link>
-              </div>
+      <Link
+        href={`/packages/${pkg.slug}`}
+        className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition"
+      >
+        Choose
+      </Link>
+    </div>
 
-            </div>
-          ))
+  </div>
+))
         )}
 
       </div>
