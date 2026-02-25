@@ -131,11 +131,11 @@ export default function HomePage() {
                 </p>
 
                 <Link
-                  href={`/paket/${p.slug}`}
-                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
-                >
-                  Choose
-                </Link>
+  href={`/packages/${p.slug}`}
+  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition"
+>
+  Choose
+</Link>
               </div>
 
             </div>
