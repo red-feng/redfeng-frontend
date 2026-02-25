@@ -68,7 +68,7 @@ const facilities = facilitiesData ?? []
     <FilterClient facilities={facilities} />
   </Suspense>
 </div>
-<div className="col-span-3 grid grid-cols-3 gap-6 content-start"></div>
+
 
       <div className="col-span-3 grid grid-cols-3 gap-6">
   {packages.length === 0 ? (
