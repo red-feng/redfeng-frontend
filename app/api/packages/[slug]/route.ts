@@ -1,23 +1,31 @@
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 export async function GET(
-  request: NextRequest,
-  context: { params: Promise<{ slug: string }> }
+  request: Request,
+  { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = await context.params
+    const { slug } = params
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // ✅ ganti ini
     )
 
     const { data, error } = await supabase
       .from("packages")
-      .select("*")
+      .select(`
+        id,
+        title,
+        slug,
+        description,
+        price_adult,
+        price_child,
+        thumbnail_url
+      `)
       .eq("slug", slug)
+      .eq("status", "published") // ✅ penting!
       .single()
 
     if (error || !data) {

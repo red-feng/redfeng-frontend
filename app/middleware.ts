@@ -3,6 +3,19 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export async function middleware(req: NextRequest) {
+
+  const pathname = req.nextUrl.pathname
+
+  // 🔥 Redirect lama /paket → /packages
+  if (pathname === "/paket") {
+    return NextResponse.redirect(new URL("/packages", req.url), 301)
+  }
+
+  if (pathname.startsWith("/paket/")) {
+    const newPath = pathname.replace("/paket/", "/packages/")
+    return NextResponse.redirect(new URL(newPath, req.url), 301)
+  }
+
   let res = NextResponse.next()
 
   const supabase = createServerClient(
@@ -14,32 +27,20 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value
         },
         set(name, value, options) {
-          res.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          res.cookies.set({ name, value, ...options })
         },
         remove(name, options) {
-          res.cookies.set({
-            name,
-            value: "",
-            ...options,
-          })
+          res.cookies.set({ name, value: "", ...options })
         },
       },
     }
   )
 
-  const pathname = req.nextUrl.pathname
-
   if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
     return res
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url))
@@ -71,5 +72,9 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/merchant/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/merchant/:path*",
+    "/paket/:path*"
+  ],
 }
