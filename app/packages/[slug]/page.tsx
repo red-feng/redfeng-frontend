@@ -1,23 +1,34 @@
 import { notFound } from "next/navigation"
 import type { Metadata } from "next"
+import { createClient } from "@supabase/supabase-js"
 
 async function getPaket(slug: string) {
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ||
-    "https://app.redfeng.co"
-
-  const res = await fetch(
-    `${baseUrl}/api/packages/${slug}`,
-    { next: { revalidate: 60 } }
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  if (!res.ok) return null
+  const { data, error } = await supabase
+    .from("packages")
+    .select(`
+      id,
+      title,
+      slug,
+      description,
+      price_adult,
+      price_child,
+      thumbnail_url
+    `)
+    .eq("slug", slug)
+    .eq("status", "published")
+    .single()
 
-  return res.json()
+  if (error || !data) return null
+
+  return data
 }
 
-// 🔥 Dynamic SEO Metadata
 export async function generateMetadata({
   params,
 }: {
@@ -27,9 +38,7 @@ export async function generateMetadata({
   const paket = await getPaket(params.slug)
 
   if (!paket) {
-    return {
-      title: "Paket Tidak Ditemukan",
-    }
+    return { title: "Paket Tidak Ditemukan" }
   }
 
   return {
@@ -39,9 +48,7 @@ export async function generateMetadata({
       title: paket.title,
       description: paket.description?.slice(0, 150),
       images: [
-        {
-          url: paket.thumbnail_url,
-        },
+        { url: paket.thumbnail_url }
       ],
     },
   }
@@ -52,18 +59,26 @@ export default async function PaketPage({
 }: {
   params: { slug: string }
 }) {
+
   const paket = await getPaket(params.slug)
 
-  if (!paket) {
-    notFound()
-  }
+  if (!paket) notFound()
 
   return (
-    <main style={{ padding: 40 }}>
-      <h1>{paket.title}</h1>
-      <p>{paket.description}</p>
-      <h3>Harga Dewasa: Rp {paket.price_adult}</h3>
-      <h3>Harga Anak: Rp {paket.price_child}</h3>
+    <main className="max-w-5xl mx-auto p-8">
+      <h1 className="text-2xl font-bold mb-4">{paket.title}</h1>
+
+      <img
+        src={paket.thumbnail_url}
+        className="w-full h-80 object-cover rounded-lg mb-6"
+      />
+
+      <p className="mb-6">{paket.description}</p>
+
+      <div className="space-y-2 font-semibold">
+        <p>Harga Dewasa: Rp {paket.price_adult?.toLocaleString()}</p>
+        <p>Harga Anak: Rp {paket.price_child?.toLocaleString()}</p>
+      </div>
     </main>
   )
 }
