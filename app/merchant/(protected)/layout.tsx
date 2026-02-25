@@ -46,10 +46,10 @@ export default async function MerchantLayout({
 
   // 5️⃣ Flow berdasarkan merchants table
   if (merchant.verification_status === "pending") {
-    redirect("/merchant/pending")
-  }
+  redirect("/merchant/pending")
+}
 
-  if (merchant.verification_status === "rejected") {
+if (merchant.verification_status === "rejected") {
   redirect("/merchant/rejected")
 }
 
