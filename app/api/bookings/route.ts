@@ -63,19 +63,26 @@ export async function POST(req: Request) {
 
     const bookingCode = generateBookingCode()
 
-    // 🔹 Update booking dengan data customer
-    const { data: booking, error: updateError } = await supabase
-      .from("bookings")
-      .update({
-        booking_code: bookingCode,
-        pickup_date,
-        customer_name,
-        customer_email,
-        customer_phone
-      })
-      .eq("id", bookingData.id)
-      .select()
-      .single()
+// ==================================
+//  EXPIRY TIME (30 MENIT)
+// ==================================
+const expiry = new Date()
+expiry.setMinutes(expiry.getMinutes() + 30)
+
+// 🔹 Update booking dengan data customer + expiry
+const { data: booking, error: updateError } = await supabase
+  .from("bookings")
+  .update({
+    booking_code: bookingCode,
+    pickup_date,
+    customer_name,
+    customer_email,
+    customer_phone,
+    expiry_time: expiry.toISOString()
+  })
+  .eq("id", bookingData.id)
+  .select()
+  .single()
 
     if (updateError) {
       return NextResponse.json(
@@ -85,10 +92,10 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      booking_id: booking.id,
-      payment_type: booking.payment_type,
-      dp_amount: booking.dp_amount,
-      total_amount: booking.total_price
+    booking_id: booking.id,
+    payment_type: booking.payment_type,
+    dp_amount: booking.dp_amount,
+    total_amount: booking.total_amount
     })
 
   } catch (error) {
