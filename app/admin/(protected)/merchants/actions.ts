@@ -1,28 +1,20 @@
 "use server"
 
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { revalidatePath } from "next/cache"
 
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!  // 🔥 SERVICE ROLE
+)
+
 export async function approveMerchant(formData: FormData) {
-  const supabase = await createClient()
 
   const merchantId = formData.get("merchantId") as string
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (!merchantId) return
 
-  if (!merchantId || !user) return
-
-  const { data: merchant } = await supabase
-    .from("merchants")
-    .select("*")
-    .eq("id", merchantId)
-    .single()
-
-  if (!merchant) return
-
-  await supabase
+  const { error } = await supabaseAdmin
     .from("merchants")
     .update({
       verification_status: "approved",
@@ -30,11 +22,14 @@ export async function approveMerchant(formData: FormData) {
     })
     .eq("id", merchantId)
 
-  // 🔥 AUDIT LOG
-  await supabase.from("merchant_verification_logs").insert({
+  if (error) {
+    console.error("Approve error:", error)
+    throw new Error("Approve failed")
+  }
+
+  await supabaseAdmin.from("merchant_verification_logs").insert({
     merchant_id: merchantId,
     action: "approved",
-    performed_by: user.id,
   })
 
   revalidatePath("/admin/merchants")
@@ -50,18 +45,18 @@ export async function approveMerchant(formData: FormData) {
 //**khusus reject//
 
 export async function rejectMerchant(formData: FormData) {
-  const supabase = await createClient()
 
   const merchantId = formData.get("merchantId") as string
   const reason = formData.get("reason") as string
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  if (!merchantId || !reason) return
 
-  if (!merchantId || !reason || !user) return
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-  await supabase
+  const { error } = await supabaseAdmin
     .from("merchants")
     .update({
       verification_status: "rejected",
@@ -69,12 +64,15 @@ export async function rejectMerchant(formData: FormData) {
     })
     .eq("id", merchantId)
 
-  // 🔥 AUDIT LOG
-  await supabase.from("merchant_verification_logs").insert({
+  if (error) {
+    console.error("Reject error:", error)
+    throw new Error("Reject failed")
+  }
+
+  await supabaseAdmin.from("merchant_verification_logs").insert({
     merchant_id: merchantId,
     action: "rejected",
     reason,
-    performed_by: user.id,
   })
 
   revalidatePath("/admin/merchants")
