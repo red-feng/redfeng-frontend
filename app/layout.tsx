@@ -36,6 +36,9 @@ export default function RootLayout({
   data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
   strategy="afterInteractive"
 />
+<body className="bg-gray-100 min-h-screen">
+  {children}
+</body>
       </body>
     </html>
   );
