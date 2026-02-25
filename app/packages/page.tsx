@@ -26,6 +26,14 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
     `)
     .eq("status", "published")
     .order("created_at", { ascending: false })
+  // 🔥 FILTER PRICE
+  if (searchParams?.min_price) {
+    query = query.gte("price_adult", Number(searchParams.min_price))
+  }
+
+  if (searchParams?.max_price) {
+    query = query.lte("price_adult", Number(searchParams.max_price))
+  }
 
   const { data, error } = await query
 
