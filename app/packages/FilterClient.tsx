@@ -1,30 +1,40 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function FilterClient() {
+type Facility = {
+  id: string
+  name: string
+  category: string
+}
+
+export default function FilterClient({
+  facilities,
+}: {
+  facilities: Facility[]
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [minPrice, setMinPrice] = useState(0)
-  const [maxPrice, setMaxPrice] = useState(100000000)
+  const [maxPrice, setMaxPrice] = useState<number>(
+    Number(searchParams.get("max_price")) || 100000000
+  )
 
-  // 🔥 fasilitas sementara hardcoded dulu
-  const facilities = [
-    { id: "snorkeling", name: "Snorkeling" },
-    { id: "rafting", name: "Rafting" },
-    { id: "hotel3", name: "Hotel Bintang 3" },
-    { id: "airport", name: "Antar Jemput Bandara" },
-  ]
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
+    searchParams.get("facilities")?.split(",") || []
+  )
 
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([])
-
-  function applyFilter() {
+  // AUTO FILTER PRICE
+  useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
-
-    params.set("min_price", String(minPrice))
     params.set("max_price", String(maxPrice))
+    router.push(`/packages?${params.toString()}`)
+  }, [maxPrice])
+
+  // AUTO FILTER FACILITIES
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
 
     if (selectedFacilities.length > 0) {
       params.set("facilities", selectedFacilities.join(","))
@@ -33,12 +43,22 @@ export default function FilterClient() {
     }
 
     router.push(`/packages?${params.toString()}`)
-  }
+  }, [selectedFacilities])
+
+  const grouped = facilities.reduce<Record<string, Facility[]>>(
+    (acc, f) => {
+      if (!acc[f.category]) {
+        acc[f.category] = []
+      }
+      acc[f.category].push(f)
+      return acc
+    },
+    {}
+  )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 sticky top-6">
 
-      {/* PRICE RANGE */}
       <div>
         <label className="font-semibold">Price Range</label>
 
@@ -46,34 +66,34 @@ export default function FilterClient() {
           type="range"
           min="0"
           max="100000000"
-          step="500000"
+          step="100000"
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="w-full"
         />
 
-        <div className="flex justify-between text-sm mt-2">
-          <span>Rp {minPrice.toLocaleString()}</span>
+        <div className="flex justify-between text-sm">
+          <span>Rp 0</span>
           <span>Rp {maxPrice.toLocaleString()}</span>
         </div>
       </div>
 
-      {/* FACILITIES */}
-      <div>
-        <label className="font-semibold">Fasilitas</label>
+      {Object.entries(grouped).map(([category, items]) => (
+        <div key={category}>
+          <h4 className="font-semibold mb-2">{category}</h4>
 
-        <div className="space-y-2 mt-2">
-          {facilities.map((f) => (
-            <label key={f.id} className="flex items-center gap-2">
+          {items.map((f) => (
+            <label key={f.id} className="flex items-center gap-2 mb-1">
               <input
                 type="checkbox"
                 value={f.id}
+                checked={selectedFacilities.includes(f.id)}
                 onChange={(e) => {
                   if (e.target.checked) {
                     setSelectedFacilities([...selectedFacilities, f.id])
                   } else {
                     setSelectedFacilities(
-                      selectedFacilities.filter(id => id !== f.id)
+                      selectedFacilities.filter((id) => id !== f.id)
                     )
                   }
                 }}
@@ -82,15 +102,7 @@ export default function FilterClient() {
             </label>
           ))}
         </div>
-      </div>
-
-      {/* APPLY BUTTON */}
-      <button
-        onClick={applyFilter}
-        className="bg-black text-white px-4 py-2 rounded w-full"
-      >
-        Apply
-      </button>
+      ))}
 
     </div>
   )

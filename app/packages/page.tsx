@@ -45,16 +45,27 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
 export default async function PackagesPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?: { [key: string]: string | string[] | undefined }
 }) {
 
   const packages = await getPackages(searchParams || {})
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+const { data: facilitiesData } = await supabase
+  .from("facilities")
+  .select("id, name, category")
+
+const facilities = facilitiesData ?? []
 
   return (
     <div className="grid grid-cols-4 gap-8 p-6">
       <div className="col-span-1">
   <Suspense fallback={<div>Loading filter...</div>}>
-    <FilterClient />
+    <FilterClient facilities={facilities} />
   </Suspense>
 </div>
 
