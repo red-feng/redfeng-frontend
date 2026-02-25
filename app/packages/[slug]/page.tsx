@@ -2,11 +2,14 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 
 async function getPaket(slug: string) {
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    "https://app.redfeng.co"
+
   const res = await fetch(
-    `/api/packages/${slug}`,   // ✅ RELATIVE PATH
-    {
-      next: { revalidate: 60 },
-    }
+    `${baseUrl}/api/packages/${slug}`,
+    { next: { revalidate: 60 } }
   )
 
   if (!res.ok) return null
