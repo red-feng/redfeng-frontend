@@ -9,6 +9,9 @@ export const dynamic = "force-dynamic"
 async function getPackages() {
   const supabase = await createClient()
 
+  // 🔍 DEBUG – CEK SUPABASE URL YANG DIPAKAI VERCEL
+  console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+
   const { data, error } = await supabase
     .from("packages")
     .select("*")
