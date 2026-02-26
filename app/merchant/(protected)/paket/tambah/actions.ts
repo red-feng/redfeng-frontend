@@ -10,18 +10,19 @@ export async function createPackage(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return
+  if (!user) throw new Error("Unauthorized")
 
-  // 🔍 Ambil merchant id
   const { data: merchant } = await supabase
     .from("merchants")
     .select("id")
     .eq("user_id", user.id)
     .single()
 
-  if (!merchant) return
+  if (!merchant) throw new Error("Merchant not found")
 
   const title = formData.get("title") as string
+  const defaultLanguage =
+    (formData.get("default_language") as string) || "id"
 
   const slug =
     title.toLowerCase().replace(/\s+/g, "-") +
@@ -36,107 +37,116 @@ export async function createPackage(formData: FormData) {
       slug,
       country: formData.get("country"),
       city: formData.get("city"),
-      duration: Number(formData.get("duration")),
-      price_adult: Number(formData.get("price_adult")),
-      price_child: Number(formData.get("price_child")),
+      duration: Number(formData.get("duration") || 0),
+      price_adult: Number(formData.get("price_adult") || 0),
+      price_child: Number(formData.get("price_child") || 0),
       currency: formData.get("currency"),
+      default_language: defaultLanguage,
       status: "draft",
     })
     .select()
     .single()
 
-  if (error) {
-    console.error("Create package error:", error)
-    return
-  }
+  if (error) throw error
 
-  // 🔁 Redirect ke Step 2
   redirect(`/merchant/paket/tambah?step=2&id=${data.id}`)
 }
 
 
-
-//step2
 export async function savePackageDetails(formData: FormData) {
   const supabase = await createClient()
 
   const packageId = formData.get("package_id") as string
+  if (!packageId) throw new Error("Missing package ID")
 
-  if (!packageId) return
+  const aboutTour = formData.get("about_tour") as string
+  const itinerary = formData.get("itinerary") as string
+  const serviceStandard = formData.get("service_standard") as string
+  const preparation = formData.get("preparation") as string
+  const termsConditions = formData.get("terms_conditions") as string
+  const mapEmbed = formData.get("map_embed") as string
 
-  const { error } = await supabase
+  const { data: pkg } = await supabase
+    .from("packages")
+    .select("default_language, title, description")
+    .eq("id", packageId)
+    .single()
+
+  if (!pkg) throw new Error("Package not found")
+
+  const { error: translationError } = await supabase
+    .from("package_translations")
+    .upsert({
+      package_id: packageId,
+      language_code: pkg.default_language,
+      title: pkg.title,
+      description: pkg.description,
+      about_tour: aboutTour,
+      itinerary,
+      service_standard: serviceStandard,
+      preparation,
+      terms_conditions: termsConditions,
+    })
+
+  if (translationError) throw translationError
+
+  const { error: detailError } = await supabase
     .from("package_details")
     .upsert(
       {
         package_id: packageId,
-        tour_info: formData.get("tour_info"),
-        itinerary: formData.get("itinerary"),
-        service_standard: formData.get("service_standard"),
-        equipment_documents: formData.get("equipment_documents"),
-        terms_conditions: formData.get("terms_conditions"),
-        additional_facilities: formData.get("additional_facilities"),
-        map_embed: formData.get("map_embed"),
+        map_embed: mapEmbed,
       },
-      {
-        onConflict: "package_id",
-      }
+      { onConflict: "package_id" }
     )
 
-  if (error) {
-    console.error("Save details error:", error)
-    return
-  }
+  if (detailError) throw detailError
 
   redirect(`/merchant/paket/tambah?step=3&id=${packageId}`)
 }
 
-
-
+//step 3
 export async function saveFacilities(formData: FormData) {
   const supabase = await createClient()
 
   const packageId = formData.get("package_id") as string
+  if (!packageId) throw new Error("Missing package ID")
 
-  if (!packageId) return
+  const facilityIds = formData.getAll("facility_ids[]") as string[]
 
-  const facilityIds = formData.getAll("facility_ids") as string[]
-
-  // 🔥 Hapus dulu fasilitas lama
+  // Hapus dulu fasilitas lama
   await supabase
     .from("package_facilities")
     .delete()
     .eq("package_id", packageId)
 
-  // 🔥 Insert yang baru
   const insertData = facilityIds.map((facilityId) => ({
     package_id: packageId,
     facility_id: facilityId,
   }))
 
   if (insertData.length > 0) {
-    await supabase
+    const { error } = await supabase
       .from("package_facilities")
       .insert(insertData)
+
+    if (error) throw error
   }
 
   redirect(`/merchant/paket/tambah?step=4&id=${packageId}`)
 }
 
-
-
-
-
+//step 4
 export async function saveAddons(formData: FormData) {
   const supabase = await createClient()
 
   const packageId = formData.get("package_id") as string
+  if (!packageId) throw new Error("Missing package ID")
 
-  if (!packageId) return
+  const addonNames = formData.getAll("addon_name[]") as string[]
+  const addonPrices = formData.getAll("addon_price[]") as string[]
 
-  const addonNames = formData.getAll("addon_name") as string[]
-  const addonPrices = formData.getAll("addon_price") as string[]
-
-  // 🔥 Hapus add-ons lama
+  // Hapus add-ons lama
   await supabase
     .from("package_addons")
     .delete()
@@ -146,18 +156,35 @@ export async function saveAddons(formData: FormData) {
     .map((name, index) => ({
       package_id: packageId,
       name,
-      price: Number(addonPrices[index]),
-      currency: "IDR", // bisa nanti dinamis
+      price: Number(addonPrices[index] || 0),
+      currency: "IDR",
     }))
-    .filter((addon) => addon.name && addon.price)
+    .filter((addon) => addon.name && addon.price > 0)
 
   if (insertData.length > 0) {
-    await supabase
+    const { error } = await supabase
       .from("package_addons")
       .insert(insertData)
+
+    if (error) throw error
   }
 
   redirect(`/merchant/paket/tambah?step=5&id=${packageId}`)
 }
 
+//step 5
+export async function submitForReview(formData: FormData) {
+  const supabase = await createClient()
 
+  const packageId = formData.get("package_id") as string
+  if (!packageId) throw new Error("Missing package ID")
+
+  const { error } = await supabase
+    .from("packages")
+    .update({ status: "submitted" })
+    .eq("id", packageId)
+
+  if (error) throw error
+
+  redirect("/merchant/paket")
+}

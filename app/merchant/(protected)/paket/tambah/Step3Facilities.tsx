@@ -42,7 +42,7 @@ export default function Step3Facilities({
           <label key={facility.id} className="flex items-center gap-2">
             <input
               type="checkbox"
-              name="facility_ids"
+              name="facility_ids[]"
               value={facility.id}
             />
             {facility.name}
@@ -56,3 +56,4 @@ export default function Step3Facilities({
     </form>
   )
 }
+
