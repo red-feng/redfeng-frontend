@@ -13,8 +13,12 @@ async function getPackages() {
   console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
 
   const { data, error } = await supabase
-    .from("packages")
-    .select("*")
+  .from("packages")
+  .select(`
+    *,
+    package_translations!fk_package_translation(*)
+  `)
+  .eq("status", "approved")
 
   console.log("DATA RAW:", data)
   console.log("ERROR RAW:", error)
