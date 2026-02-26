@@ -24,10 +24,10 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
       currency,
       thumbnail_url,
       created_at,
-      package_translations (
-        title,
-        description
-      )
+      package_translations!left (
+      title,
+      description
+    )
     `)
     .eq("status", "approved")
     .order("created_at", { ascending: false })
