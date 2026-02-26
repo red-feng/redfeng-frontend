@@ -1,56 +1,109 @@
+import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
-import { createClient } from "@supabase/supabase-js"
 
-async function getPaket(slug: string) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+export const dynamic = "force-dynamic"
 
-  const { data, error } = await supabase
+export default async function PaketPage({
+  params,
+}: {
+  params: { slug: string }
+}) {
+  const supabase = await createClient()
+
+  const { data: pkg, error } = await supabase
     .from("packages")
     .select(`
       id,
-      title,
       slug,
-      description,
+      city,
+      country,
+      duration,
       price_adult,
       price_child,
-      thumbnail_url
+      currency,
+      thumbnail_url,
+      package_translations (
+        title,
+        description,
+        about_tour,
+        itinerary,
+        service_standard,
+        preparation,
+        terms_conditions
+      ),
+      package_details (
+        map_embed
+      )
     `)
-    .eq("slug", slug)
-    .eq("status", "published")
+    .eq("slug", params.slug)
+    .eq("status", "approved")
     .single()
 
-  if (error || !data) return null
+  if (error || !pkg) return notFound()
 
-  return data
-}
-
-export default async function PaketPage(
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  const { slug } = await params   // 🔥 WAJIB await
-
-  if (!slug) notFound()
-
-  const paket = await getPaket(slug)
-
-  if (!paket) notFound()
+  const translation = pkg.package_translations?.[0]
+  const detail = pkg.package_details?.[0]
 
   return (
-    <main className="max-w-5xl mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">{paket.title}</h1>
-      <img
-        src={paket.thumbnail_url}
-        className="w-full h-80 object-cover rounded-lg mb-6"
-      />
-      <p className="mb-6">{paket.description}</p>
+    <main className="max-w-5xl mx-auto p-8 space-y-6">
+
+      <h1 className="text-2xl font-bold">
+        {translation?.title}
+      </h1>
+
+      {pkg.thumbnail_url && (
+        <img
+          src={pkg.thumbnail_url}
+          className="w-full h-80 object-cover rounded-lg"
+          alt={translation?.title}
+        />
+      )}
+
+      <p className="text-gray-600">
+        📍 {pkg.city}, {pkg.country}
+      </p>
+
+      <p>
+        ⏳ {pkg.duration} days
+      </p>
 
       <div className="space-y-2 font-semibold">
-        <p>Harga Dewasa: Rp {paket.price_adult?.toLocaleString()}</p>
-        <p>Harga Anak: Rp {paket.price_child?.toLocaleString()}</p>
+        <p>
+          Harga Dewasa: {pkg.currency} {pkg.price_adult?.toLocaleString()}
+        </p>
+        <p>
+          Harga Anak: {pkg.currency} {pkg.price_child?.toLocaleString()}
+        </p>
       </div>
+
+      <hr />
+
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Tentang Tour</h2>
+        <p>{translation?.about_tour}</p>
+      </section>
+
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Itinerary</h2>
+        <div>{translation?.itinerary}</div>
+      </section>
+
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Syarat & Ketentuan</h2>
+        <p>{translation?.terms_conditions}</p>
+      </section>
+
+      {detail?.map_embed && (
+        <section>
+          <h2 className="font-semibold text-lg mb-2">Lokasi</h2>
+          <div
+            dangerouslySetInnerHTML={{
+              __html: detail.map_embed,
+            }}
+          />
+        </section>
+      )}
+
     </main>
   )
 }
