@@ -1,53 +1,22 @@
 import FilterClient from "./FilterClient"
-import { createClient } from "@supabase/supabase-js"
+import { createClient } from "@/lib/supabase/server"
 import { Suspense } from "react"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
-async function getPackages(searchParams: Record<string, string | string[] | undefined>) {
+async function getPackages() {
+  const supabase = await createClient()
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("packages")
-    .select(`
-      id,
-      slug,
-      city,
-      country,
-      duration,
-      price_adult,
-      currency,
-      thumbnail_url,
-      created_at,
-      package_translations!left (
-      title,
-      description
-    )
-    `)
-    .eq("status", "approved")
-    .order("created_at", { ascending: false })
+    .select("*")
 
-  if (searchParams?.min_price) {
-    query = query.gte("price_adult", Number(searchParams.min_price))
-  }
+  console.log("DATA RAW:", data)
+  console.log("ERROR RAW:", error)
 
-  if (searchParams?.max_price) {
-    query = query.lte("price_adult", Number(searchParams.max_price))
-  }
-
-  const { data, error } = await query
-
-  console.log("DATA:", data)
-  console.log("ERROR:", error)
-
-  if (error) return []
-
-  return data ?? []
+  return data || []
 }
 
 export default async function PackagesPage({
@@ -56,8 +25,8 @@ export default async function PackagesPage({
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
 
-  const packages = await getPackages(searchParams || {})
-
+  const packages = await getPackages()
+const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase
     .from("facilities")
