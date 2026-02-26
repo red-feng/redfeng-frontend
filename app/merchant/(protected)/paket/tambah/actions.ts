@@ -121,3 +121,43 @@ export async function saveFacilities(formData: FormData) {
 
   redirect(`/merchant/paket/tambah?step=4&id=${packageId}`)
 }
+
+
+
+
+
+export async function saveAddons(formData: FormData) {
+  const supabase = await createClient()
+
+  const packageId = formData.get("package_id") as string
+
+  if (!packageId) return
+
+  const addonNames = formData.getAll("addon_name") as string[]
+  const addonPrices = formData.getAll("addon_price") as string[]
+
+  // 🔥 Hapus add-ons lama
+  await supabase
+    .from("package_addons")
+    .delete()
+    .eq("package_id", packageId)
+
+  const insertData = addonNames
+    .map((name, index) => ({
+      package_id: packageId,
+      name,
+      price: Number(addonPrices[index]),
+      currency: "IDR", // bisa nanti dinamis
+    }))
+    .filter((addon) => addon.name && addon.price)
+
+  if (insertData.length > 0) {
+    await supabase
+      .from("package_addons")
+      .insert(insertData)
+  }
+
+  redirect(`/merchant/paket/tambah?step=5&id=${packageId}`)
+}
+
+
