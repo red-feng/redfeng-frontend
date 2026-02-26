@@ -5,6 +5,8 @@ import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
+
+
 async function getPackages(searchParams: Record<string, string | string[] | undefined>) {
   const supabase = await createClient()
 
@@ -38,12 +40,17 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
 
   const { data, error } = await query
 
-  if (error) {
-    console.error(error)
-    return []
-  }
+console.log("=== PACKAGES DEBUG START ===")
+console.log("DATA:", data)
+console.log("ERROR:", error)
+console.log("=== PACKAGES DEBUG END ===")
 
-  return data
+if (error) {
+  console.error("SUPABASE ERROR:", error)
+  return []
+}
+
+return data
 }
 
 export default async function PackagesPage({
@@ -137,3 +144,4 @@ export default async function PackagesPage({
     </div>
   )
 }
+
