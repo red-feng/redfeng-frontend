@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
+
+//step 1
 export async function createPackage(formData: FormData) {
   const supabase = await createClient()
 
@@ -52,7 +54,7 @@ export async function createPackage(formData: FormData) {
   redirect(`/merchant/paket/tambah?step=2&id=${data.id}`)
 }
 
-
+//step2
 export async function savePackageDetails(formData: FormData) {
   const supabase = await createClient()
 
