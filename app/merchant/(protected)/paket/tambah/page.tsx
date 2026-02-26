@@ -1,73 +1,26 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { createClient } from '../../../../../lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useSearchParams } from "next/navigation"
+import Step1Basic from "./Step1Basic"
+import Step2Details from "./Step2Details"
+import Step3Facilities from "./Step3Facilities"
+import Step4Addons from "./Step4Addons"
+import Step5Review from "./Step5Review"
 
-export default function TambahPaket() {
-  const router = useRouter()
-  const supabase = createClient()
-
-  const [title, setTitle] = useState('')
-  const [priceAdult, setPriceAdult] = useState('')
-  const [priceChild, setPriceChild] = useState('')
-
-  const handleSubmit = async (e: any) => {
-    e.preventDefault()
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) return
-
-    const { data: merchant } = await supabase
-      .from('merchants')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
-
-    await supabase.from('tours').insert({
-      merchant_id: merchant?.id,
-      title,
-      price_adult: Number(priceAdult),
-      price_child: Number(priceChild),
-      status: 'draft',
-    })
-
-    router.push('/merchant/paket')
-  }
+export default function WizardPage() {
+  const searchParams = useSearchParams()
+  const step = searchParams.get("step") || "1"
+  const packageId = searchParams.get("id")
 
   return (
     <div className="p-10">
-      <h1 className="text-xl font-bold mb-6">Tambah Paket</h1>
+      <h1 className="text-2xl font-bold mb-6">Buat Paket Baru</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          placeholder="Nama Paket"
-          className="border p-2 w-full"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-
-        <input
-          placeholder="Harga Dewasa"
-          className="border p-2 w-full"
-          value={priceAdult}
-          onChange={(e) => setPriceAdult(e.target.value)}
-        />
-
-        <input
-          placeholder="Harga Anak"
-          className="border p-2 w-full"
-          value={priceChild}
-          onChange={(e) => setPriceChild(e.target.value)}
-        />
-
-        <button className="bg-blue-600 text-white px-4 py-2 rounded">
-          Simpan
-        </button>
-      </form>
+      {step === "1" && <Step1Basic />}
+      {step === "2" && <Step2Details packageId={packageId} />}
+      {step === "3" && <Step3Facilities packageId={packageId} />}
+      {step === "4" && <Step4Addons packageId={packageId} />}
+      {step === "5" && <Step5Review packageId={packageId} />}
     </div>
   )
 }
