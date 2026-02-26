@@ -1,14 +1,16 @@
 import FilterClient from "./FilterClient"
-import { createClient } from "@/lib/supabase/server"
+import { createClient } from "@supabase/supabase-js"
 import { Suspense } from "react"
 import Link from "next/link"
 
 export const dynamic = "force-dynamic"
 
-
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
 async function getPackages(searchParams: Record<string, string | string[] | undefined>) {
-  const supabase = await createClient()
 
   let query = supabase
     .from("packages")
@@ -40,17 +42,12 @@ async function getPackages(searchParams: Record<string, string | string[] | unde
 
   const { data, error } = await query
 
-console.log("=== PACKAGES DEBUG START ===")
-console.log("DATA:", data)
-console.log("ERROR:", error)
-console.log("=== PACKAGES DEBUG END ===")
+  console.log("DATA:", data)
+  console.log("ERROR:", error)
 
-if (error) {
-  console.error("SUPABASE ERROR:", error)
-  return []
-}
+  if (error) return []
 
-return data
+  return data ?? []
 }
 
 export default async function PackagesPage({
@@ -61,7 +58,6 @@ export default async function PackagesPage({
 
   const packages = await getPackages(searchParams || {})
 
-  const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase
     .from("facilities")
