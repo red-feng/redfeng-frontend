@@ -14,20 +14,42 @@ export default function Step1Basic() {
         required
       />
 
-      <input
-        name="country"
-        placeholder="Country (Indonesia, Singapore, etc)"
-        className="border p-2 w-full"
-        required
-      />
+      
+      {/* Travel Style */}
+<select
+  name="travel_style"
+  className="border p-2 w-full"
+  required
+>
+  <option value="">Pilih Travel Style</option>
+  <option value="explore">Explore</option>
+  <option value="adventure">Adventure</option>
+  <option value="family">Family</option>
+  <option value="luxury">Luxury</option>
+  <option value="honeymoon">Honeymoon</option>
+  <option value="wellness">Wellness</option>
+  <option value="religious">Religious</option>
+  <option value="budget">Budget</option>
+  <option value="group">Group</option>
+  <option value="solo">Solo</option>
+</select>
 
-      <input
-        name="city"
-        placeholder="City (Bali, Kuala Lumpur, etc)"
-        className="border p-2 w-full"
-        required
-      />
+{/* Provinsi */}
+<input
+  name="province"
+  placeholder="Provinsi"
+  className="border p-2 w-full"
+  required
+/>
 
+{/* Minimal Peserta */}
+<input
+  name="minimal_peserta"
+  type="number"
+  placeholder="Minimal Peserta"
+  className="border p-2 w-full"
+  required
+/>
       <input
         name="duration"
         type="number"

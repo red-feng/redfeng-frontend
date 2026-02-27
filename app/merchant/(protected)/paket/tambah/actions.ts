@@ -8,20 +8,21 @@ import { redirect } from "next/navigation"
 export async function createPackage(formData: FormData) {
   const supabase = await createClient()
 
-  
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
 
-  const { data: merchant } = await supabase
+  const { data: merchant, error: merchantError } = await supabase
     .from("merchants")
     .select("id")
     .eq("user_id", user.id)
     .single()
 
-  if (!merchant) throw new Error("Merchant not found")
+  if (merchantError || !merchant) {
+    throw new Error("Merchant not found")
+  }
 
   const title = formData.get("title") as string
   const defaultLanguage =
@@ -66,11 +67,18 @@ export async function createPackage(formData: FormData) {
   merchant_id: merchant.id,
   title,
   slug,
-  country: formData.get("country"),
-  city: formData.get("city"),
+
+  country: formData.get("country"), // kalau masih dipakai
+  province: formData.get("province"),
+  city: formData.get("city"), // kalau masih dipakai
+
+  travel_style: formData.get("travel_style"),
+  minimal_peserta: Number(formData.get("minimal_peserta") || 1),
+
   duration: Number(formData.get("duration") || 0),
   price_adult: Number(formData.get("price_adult") || 0),
   price_child: Number(formData.get("price_child") || 0),
+
   currency: formData.get("currency"),
   default_language: defaultLanguage,
   cover_image: coverImageUrl,
