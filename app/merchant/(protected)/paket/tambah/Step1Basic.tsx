@@ -92,7 +92,10 @@ export default function Step1Basic() {
         required
       />
       </div>
-      <button className="bg-blue-600 text-white px-4 py-2 rounded">
+      <button
+      type="submit"
+      className="bg-blue-600 text-white px-4 py-2 rounded"
+>
         Simpan & Lanjut
       </button>
     </form>

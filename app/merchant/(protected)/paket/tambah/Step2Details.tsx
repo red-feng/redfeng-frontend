@@ -12,12 +12,12 @@ export default function Step2Details({
   }
 
   return (
-    <form
-      action={savePackageDetails}
-      className="space-y-6 max-w-3xl"
-    >
+ <form
+  action={savePackageDetails}
+  encType="multipart/form-data"
+  className="space-y-6 max-w-3xl"
+>
       <input type="hidden" name="package_id" value={packageId} />
-      <input type="file" name="cover_image" accept="image/*" />
       <h2 className="text-xl font-semibold">
         Step 2 – Detail Konten
       </h2>
@@ -81,26 +81,30 @@ export default function Step2Details({
         />
       </div>
 
-<div>
-  <form action={savePackageDetails} encType="multipart/form-data"></form>
+    <div className="mt-6">
+  <label className="block font-semibold mb-2">
+    Gallery Images
+  </label>
 
-  
-  <label className="font-medium">Gallery Foto</label>
   <input
     type="file"
     name="gallery_images"
-    accept="image/*"
     multiple
-    className="border p-2 w-full"
+    accept="image/*"
+    className="border p-2 rounded w-full"
   />
-  <p className="text-sm text-gray-500">
-    Bisa pilih lebih dari satu foto
+
+  <p className="text-sm text-gray-500 mt-1">
+    Anda bisa pilih beberapa gambar sekaligus
   </p>
 </div>
 
-      <button className="bg-blue-600 text-white px-6 py-2 rounded">
-        Simpan & Lanjut
-      </button>
+      <button
+  type="submit"
+  className="bg-blue-600 text-white px-6 py-2 rounded"
+>
+  Simpan & Lanjut
+</button>
     </form>
   )
 }

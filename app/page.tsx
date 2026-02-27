@@ -16,7 +16,7 @@ async function getPackages() {
   .from("packages")
   .select(`
     *,
-    package_translations!fk_package_translation(*)
+    package_translations(*)
   `)
   .eq("status", "approved")
 
