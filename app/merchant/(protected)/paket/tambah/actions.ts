@@ -121,8 +121,9 @@ export async function savePackageDetails(formData: FormData) {
   // Update Translation Content
   // ===============================
   const { error: translationError } = await supabase
-    .from("package_translations")
-    .upsert({
+  .from("package_translations")
+  .upsert(
+    {
       package_id: packageId,
       language_code: pkg.default_language,
       title: pkg.title,
@@ -132,7 +133,11 @@ export async function savePackageDetails(formData: FormData) {
       exclude,
       preparation,
       terms_conditions: termsConditions,
-    })
+    },
+    {
+      onConflict: "package_id,language_code",
+    }
+  )
 
   if (translationError) throw translationError
 
