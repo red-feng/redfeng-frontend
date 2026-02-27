@@ -1,4 +1,4 @@
-import FilterClient from "./FilterClient"
+import FilterClient from "@/app/packages/FilterClient"
 import { createClient } from "@/lib/supabase/server"
 import { Suspense } from "react"
 import Link from "next/link"
