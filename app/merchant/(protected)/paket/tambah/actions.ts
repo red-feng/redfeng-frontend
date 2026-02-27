@@ -31,29 +31,34 @@ export async function createPackage(formData: FormData) {
     "-" +
     crypto.randomUUID().slice(0, 6)
 
+  // ===============================
+  // Upload Cover Image
+  // ===============================
+  const coverFile = formData.get("cover_image") as File
+  let coverImageUrl: string | null = null
 
-const file = formData.get("cover_image") as File
+  if (coverFile && coverFile.size > 0) {
+    const fileExt = coverFile.name.split(".").pop()
+    const fileName = `${crypto.randomUUID()}.${fileExt}`
 
-let coverImageUrl = null
+    const { error: uploadError } = await supabase.storage
+      .from("package-images")
+      .upload(fileName, coverFile, {
+        contentType: coverFile.type,
+      })
 
-if (file && file.size > 0) {
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${crypto.randomUUID()}.${fileExt}`
+    if (uploadError) throw uploadError
 
-  const { error: uploadError } = await supabase.storage
-    .from("packages")
-    .upload(fileName, file)
+    const { data } = supabase.storage
+      .from("package-images")
+      .getPublicUrl(fileName)
 
-  if (uploadError) throw uploadError
+    coverImageUrl = data.publicUrl
+  }
 
-  const { data: publicUrl } = supabase.storage
-    .from("packages")
-    .getPublicUrl(fileName)
-
-  coverImageUrl = publicUrl.publicUrl
-}
-
-//insert
+  // ===============================
+  // Insert Package
+  // ===============================
   const { data, error } = await supabase
     .from("packages")
     .insert({
@@ -70,7 +75,6 @@ if (file && file.size > 0) {
       cover_image: coverImageUrl,
       status: "draft",
     })
-    
     .select()
     .single()
 
@@ -198,13 +202,15 @@ for (const file of files) {
   const fileName = `${crypto.randomUUID()}.${fileExt}`
 
   const { error: uploadError } = await supabase.storage
-    .from("packages")
-    .upload(fileName, file)
+    .from("package-images")
+    .upload(fileName, file, {
+      contentType: file.type,
+    })
 
   if (uploadError) throw uploadError
 
   const { data: publicUrl } = supabase.storage
-    .from("packages")
+    .from("package-images")
     .getPublicUrl(fileName)
 
   await supabase.from("package_images").insert({

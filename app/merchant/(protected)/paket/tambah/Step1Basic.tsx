@@ -4,7 +4,7 @@ import { createPackage } from "./actions"
 
 export default function Step1Basic() {
   return (
-    <form action={createPackage} className="space-y-4 max-w-xl">
+      <form action={createPackage}encType="multipart/form-data"className="space-y-4 max-w-xl">
       <h2 className="text-xl font-semibold">Step 1 – Basic Info</h2>
 
       <input
