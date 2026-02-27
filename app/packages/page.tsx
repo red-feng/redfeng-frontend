@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-
-export default function PackagesRedirect() {
-  redirect("/");
+export default function PackagesPage() {
+  return <div>Packages Page Temporary</div>;
 }
