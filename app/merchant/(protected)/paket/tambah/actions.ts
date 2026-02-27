@@ -92,7 +92,7 @@ export async function createPackage(formData: FormData) {
   redirect(`/merchant/paket/tambah?step=2&id=${data.id}`)
 }
 
-//step2
+// step 2
 export async function savePackageDetails(formData: FormData) {
   const supabase = await createClient()
 
@@ -100,41 +100,51 @@ export async function savePackageDetails(formData: FormData) {
   if (!packageId) throw new Error("Missing package ID")
 
   const aboutTour = formData.get("about_tour") as string
-  const itinerary = formData.get("itinerary") as string
   const serviceStandard = formData.get("service_standard") as string
+  const include = formData.get("include") as string
+  const exclude = formData.get("exclude") as string
   const preparation = formData.get("preparation") as string
   const termsConditions = formData.get("terms_conditions") as string
+  const meetingPoint = formData.get("meeting_point") as string
   const mapEmbed = formData.get("map_embed") as string
+  const tagsRaw = formData.get("tags") as string
 
   const { data: pkg } = await supabase
     .from("packages")
-    .select("default_language, title, description")
+    .select("default_language, title")
     .eq("id", packageId)
     .single()
 
   if (!pkg) throw new Error("Package not found")
 
+  // ===============================
+  // Update Translation Content
+  // ===============================
   const { error: translationError } = await supabase
     .from("package_translations")
     .upsert({
       package_id: packageId,
       language_code: pkg.default_language,
       title: pkg.title,
-      description: pkg.description,
       about_tour: aboutTour,
-      itinerary,
       service_standard: serviceStandard,
+      include,
+      exclude,
       preparation,
       terms_conditions: termsConditions,
     })
 
   if (translationError) throw translationError
 
+  // ===============================
+  // Update Technical Details
+  // ===============================
   const { error: detailError } = await supabase
     .from("package_details")
     .upsert(
       {
         package_id: packageId,
+        meeting_point: meetingPoint,
         map_embed: mapEmbed,
       },
       { onConflict: "package_id" }
@@ -142,9 +152,36 @@ export async function savePackageDetails(formData: FormData) {
 
   if (detailError) throw detailError
 
+  // ===============================
+  // Update Tags
+  // ===============================
+  await supabase
+    .from("package_tags")
+    .delete()
+    .eq("package_id", packageId)
+
+  if (tagsRaw) {
+    const tagList = tagsRaw
+      .split(",")
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0)
+
+    if (tagList.length > 0) {
+      const insertTags = tagList.map(tag => ({
+        package_id: packageId,
+        tag,
+      }))
+
+      const { error: tagError } = await supabase
+        .from("package_tags")
+        .insert(insertTags)
+
+      if (tagError) throw tagError
+    }
+  }
+
   redirect(`/merchant/paket/tambah?step=3&id=${packageId}`)
 }
-
 
 
 
