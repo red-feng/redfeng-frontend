@@ -32,8 +32,6 @@ export async function createPackage(formData: FormData) {
     "-" +
     crypto.randomUUID().slice(0, 6)
 
-
-    
   // ===============================
   // Upload Cover Image
   // ===============================
