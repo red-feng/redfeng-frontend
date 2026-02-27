@@ -1,16 +1,16 @@
+"use client"
+
+import { useSearchParams } from "next/navigation"
 import Step1Basic from "./Step1Basic"
 import Step2Details from "./Step2Details"
 import Step3Facilities from "./Step3Facilities"
 import Step4Addons from "./Step4Addons"
 import Step5Review from "./Step5Review"
 
-export default function WizardPage({
-  searchParams,
-}: {
-  searchParams: { step?: string; id?: string }
-}) {
-  const step = searchParams.step || "1"
-  const packageId = searchParams.id || null
+export default function WizardPage() {
+  const searchParams = useSearchParams()
+  const step = searchParams.get("step") || "1"
+  const packageId = searchParams.get("id")
 
   return (
     <div className="p-10">
