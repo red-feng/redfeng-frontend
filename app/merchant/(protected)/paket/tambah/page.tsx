@@ -1,5 +1,3 @@
-
-import { useSearchParams } from "next/navigation"
 import Step1Basic from "./Step1Basic"
 import Step2Details from "./Step2Details"
 import Step3Facilities from "./Step3Facilities"
