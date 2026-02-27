@@ -65,63 +65,59 @@ export default function Step4Itinerary({
       </h2>
 
       {days.map((day, dayIndex) => (
-        <div key={dayIndex} className="border p-4 rounded space-y-4">
+  <div key={dayIndex} className="border p-4 rounded space-y-4">
 
-          <div className="font-semibold">
-            Hari ke : {day.day}
-          </div>
+    <div className="font-semibold">
+      Hari ke : {day.day}
+    </div>
 
-          {day.routes.map((_, routeIndex) => (
-            <div
-              key={routeIndex}
-              className="grid grid-cols-12 gap-4 items-start"
-            >
+    <div className="grid grid-cols-12 gap-4 items-start">
 
-              <input
-                type="hidden"
-                name="day_number[]"
-                value={day.day}
-              />
+      {/* WAKTU PICKUP (1x per hari) */}
+      <div className="col-span-2">
+        <label>Waktu pick up</label>
+        <input
+          name="pickup_time[]"
+          className="border p-2 w-full"
+        />
+      </div>
 
-              <div className="col-span-2">
-                <label>Waktu pick up</label>
-                <input
-                  name="pickup_time[]"
-                  className="border p-2 w-full"
-                />
-              </div>
+      {/* RUTE SECTION */}
+      <div className="col-span-4 space-y-2">
+        <label>Rute</label>
 
-              <div className="col-span-4">
-                <label>Rute</label>
-                <input
-                  name="route[]"
-                  className="border p-2 w-full"
-                />
-              </div>
+        {day.routes.map((_, routeIndex) => (
+          <input
+            key={routeIndex}
+            type="text"
+            name="route[]"
+            className="border p-2 w-full"
+          />
+        ))}
 
-              <div className="col-span-5">
-                <label>Deskripsi perjalanan</label>
-                <textarea
-                  name="description[]"
-                  className="border p-2 w-full h-24"
-                />
-              </div>
+        {/* Tombol + khusus rute */}
+        <button
+          type="button"
+          onClick={() => addRoute(dayIndex)}
+          className="text-blue-600 text-sm font-semibold"
+        >
+          + Tambah Rute
+        </button>
+      </div>
 
-              <div className="col-span-1 flex items-end">
-                <button
-                  type="button"
-                  onClick={() => addRoute(dayIndex)}
-                  className="text-xl font-bold"
-                >
-                  +
-                </button>
-              </div>
+      {/* DESKRIPSI (1x per hari) */}
+      <div className="col-span-6">
+        <label>Deskripsi perjalanan</label>
+        <textarea
+          name="description[]"
+          className="border p-2 w-full h-24"
+        />
+      </div>
 
-            </div>
-          ))}
+    </div>
 
-        </div>
-      ))}
+  </div>
+))}
 
       <button
         type="button"
