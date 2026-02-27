@@ -221,70 +221,68 @@ export async function saveFacilities(formData: FormData) {
   redirect(`/merchant/paket/tambah?step=4&id=${packageId}`)
 }
 
-//step 4
-export async function saveAddons(formData: FormData) {
+// ==============================
+// STEP 4 – SAVE ITINERARY
+// ==============================
+export async function saveItinerary(formData: FormData) {
   const supabase = await createClient()
 
   const packageId = formData.get("package_id") as string
   if (!packageId) throw new Error("Missing package ID")
 
-  const addonNames = formData.getAll("addon_name[]") as string[]
-  const addonPrices = formData.getAll("addon_price[]") as string[]
+  const dayNumbers = formData.getAll("day_number[]") as string[]
+  const pickupTimes = formData.getAll("pickup_time[]") as string[]
+  const routes = formData.getAll("route[]") as string[]
+  const descriptions = formData.getAll("description[]") as string[]
 
-  // Hapus add-ons lama
+  // 1️⃣ Hapus itinerary lama dulu
   await supabase
-    .from("package_addons")
+    .from("package_itinerary_days")
     .delete()
     .eq("package_id", packageId)
 
-  const insertData = addonNames
-    .map((name, index) => ({
-      package_id: packageId,
-      name,
-      price: Number(addonPrices[index] || 0),
-      currency: "IDR",
-    }))
-    .filter((addon) => addon.name && addon.price > 0)
+  // 2️⃣ Group data berdasarkan day_number
+  const grouped: Record<string, any[]> = {}
 
+  dayNumbers.forEach((day, index) => {
+    if (!grouped[day]) grouped[day] = []
 
-const files = formData.getAll("gallery_images") as File[]
-
-for (const file of files) {
-  if (!file || file.size === 0) continue
-
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${crypto.randomUUID()}.${fileExt}`
-
-  const { error: uploadError } = await supabase.storage
-    .from("package-images")
-    .upload(fileName, file, {
-      contentType: file.type,
+    grouped[day].push({
+      pickup_time: pickupTimes[index] || "",
+      route: routes[index] || "",
+      description: descriptions[index] || "",
     })
-
-  if (uploadError) throw uploadError
-
-  const { data: publicUrl } = supabase.storage
-    .from("package-images")
-    .getPublicUrl(fileName)
-
-  await supabase.from("package_images").insert({
-    package_id: packageId,
-    image_url: publicUrl.publicUrl,
   })
-}
-    
-    
-  if (insertData.length > 0) {
-    const { error } = await supabase
-      .from("package_addons")
-      .insert(insertData)
 
-    if (error) throw error
+  // 3️⃣ Insert per Hari
+  for (const day in grouped) {
+    const { data: dayInsert, error: dayError } = await supabase
+      .from("package_itinerary_days")
+      .insert({
+        package_id: packageId,
+        day_number: Number(day),
+      })
+      .select()
+      .single()
+
+    if (dayError) throw dayError
+
+    const routesToInsert = grouped[day].map((r) => ({
+      itinerary_day_id: dayInsert.id,
+      pickup_time: r.pickup_time,
+      route: r.route,
+      description: r.description,
+    }))
+
+    const { error: routeError } = await supabase
+      .from("package_itinerary_routes")
+      .insert(routesToInsert)
+
+    if (routeError) throw routeError
   }
 
   redirect(`/merchant/paket/tambah?step=5&id=${packageId}`)
 }
-
 //step 5
 export async function submitForReview(formData: FormData) {
   const supabase = await createClient()
