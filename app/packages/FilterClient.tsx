@@ -29,7 +29,7 @@ export default function FilterClient({
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("max_price", String(maxPrice))
-    router.push(`/packages?${params.toString()}`)
+    router.push(`/?${params.toString()}`)
   }, [maxPrice])
 
   // AUTO FILTER FACILITIES
@@ -42,7 +42,7 @@ export default function FilterClient({
       params.delete("facilities")
     }
 
-    router.push(`/packages?${params.toString()}`)
+    router.push(`/?${params.toString()}`)
   }, [selectedFacilities])
 
   const grouped = facilities.reduce<Record<string, Facility[]>>(

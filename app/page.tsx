@@ -1,4 +1,4 @@
-import FilterClient from "./packages/FilterClient"
+import FilterClient from "./FilterClient"
 import { createClient } from "@/lib/supabase/server"
 import { Suspense } from "react"
 import Link from "next/link"
@@ -26,7 +26,7 @@ async function getPackages() {
   return data || []
 }
 
-export default async function PackagesPage({
+export default async function HomePage({
   searchParams,
 }: {
   searchParams?: { [key: string]: string | string[] | undefined }
