@@ -1,3 +1,4 @@
+"use client"
 
 import { createPackage } from "./actions"
 
