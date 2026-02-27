@@ -8,21 +8,20 @@ import { redirect } from "next/navigation"
 export async function createPackage(formData: FormData) {
   const supabase = await createClient()
 
+  
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) throw new Error("Unauthorized")
 
-  const { data: merchant, error: merchantError } = await supabase
+  const { data: merchant } = await supabase
     .from("merchants")
     .select("id")
     .eq("user_id", user.id)
     .single()
 
-  if (merchantError || !merchant) {
-    throw new Error("Merchant not found")
-  }
+  if (!merchant) throw new Error("Merchant not found")
 
   const title = formData.get("title") as string
   const defaultLanguage =
@@ -33,6 +32,8 @@ export async function createPackage(formData: FormData) {
     "-" +
     crypto.randomUUID().slice(0, 6)
 
+
+    
   // ===============================
   // Upload Cover Image
   // ===============================
@@ -64,19 +65,19 @@ export async function createPackage(formData: FormData) {
   const { data, error } = await supabase
     .from("packages")
     .insert({
-      merchant_id: merchant.id,
-      title,
-      slug,
-      country: formData.get("country"),
-      city: formData.get("city"),
-      duration: Number(formData.get("duration") || 0),
-      price_adult: Number(formData.get("price_adult") || 0),
-      price_child: Number(formData.get("price_child") || 0),
-      currency: formData.get("currency"),
-      default_language: defaultLanguage,
-      cover_image: coverImageUrl,
-      status: "draft",
-    })
+  merchant_id: merchant.id,
+  title,
+  slug,
+  country: formData.get("country"),
+  city: formData.get("city"),
+  duration: Number(formData.get("duration") || 0),
+  price_adult: Number(formData.get("price_adult") || 0),
+  price_child: Number(formData.get("price_child") || 0),
+  currency: formData.get("currency"),
+  default_language: defaultLanguage,
+  cover_image: coverImageUrl,
+  status: "draft",
+})
     .select()
     .single()
 
