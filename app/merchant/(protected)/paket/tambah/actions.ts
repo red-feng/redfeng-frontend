@@ -136,6 +136,9 @@ export async function savePackageDetails(formData: FormData) {
   redirect(`/merchant/paket/tambah?step=3&id=${packageId}`)
 }
 
+
+
+
 //step 3
 export async function saveFacilities(formData: FormData) {
   const supabase = await createClient()

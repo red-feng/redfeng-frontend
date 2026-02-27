@@ -81,6 +81,23 @@ export default function Step2Details({
         />
       </div>
 
+<div>
+  <form action={savePackageDetails} encType="multipart/form-data"></form>
+
+  
+  <label className="font-medium">Gallery Foto</label>
+  <input
+    type="file"
+    name="gallery_images"
+    accept="image/*"
+    multiple
+    className="border p-2 w-full"
+  />
+  <p className="text-sm text-gray-500">
+    Bisa pilih lebih dari satu foto
+  </p>
+</div>
+
       <button className="bg-blue-600 text-white px-6 py-2 rounded">
         Simpan & Lanjut
       </button>

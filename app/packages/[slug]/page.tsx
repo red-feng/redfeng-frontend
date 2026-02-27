@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound } from "next/navigation"
+import Gallery from "./Gallery"
 
 export const dynamic = "force-dynamic"
 
@@ -35,14 +36,19 @@ export default async function PaketPage({
         map_embed
       )
     `)
+    
+    
     .eq("slug", params.slug)
     .eq("status", "approved")
     .single()
+
+
 
   if (error || !pkg) return notFound()
 
   const translation = pkg.package_translations?.[0]
   const detail = pkg.package_details?.[0]
+  
   const { data: images } = await supabase
     .from("package_images")
     .select("*")
@@ -56,13 +62,20 @@ export default async function PaketPage({
         {translation?.title}
       </h1>
 
-      {pkg.thumbnail_url && (
-        <img
-          src={pkg.thumbnail_url}
-          className="w-full h-80 object-cover rounded-lg"
-          alt={translation?.title}
-        />
-      )}
+{/* 🔥 Gallery Section */}
+<Gallery images={images || []} />
+<div className="mt-6 space-y-4">
+
+  {/* Main Image */}
+  {images && images.length > 0 && (
+    <img
+      src={images[0].image_url}
+      className="w-full h-[450px] object-cover rounded-xl"
+      alt="Main image"
+    />
+  )}
+  </div>
+
 
       <p className="text-gray-600">
         📍 {pkg.city}, {pkg.country}
@@ -80,16 +93,6 @@ export default async function PaketPage({
           Harga Anak: {pkg.currency} {pkg.price_child?.toLocaleString()}
         </p>
       </div>
-      
-<div className="grid grid-cols-3 gap-4 mt-6">
-  {images?.map((img) => (
-    <img
-      key={img.id}
-      src={img.image_url}
-      className="rounded object-cover"
-    />
-  ))}
-</div>
 
 
 
