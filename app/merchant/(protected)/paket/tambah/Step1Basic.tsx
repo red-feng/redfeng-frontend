@@ -82,6 +82,16 @@ export default function Step1Basic() {
         <option value="ko">Korean (한국어)</option>
       </select>
 
+      <div>
+        <label className="font-medium">Foto Sampul</label>
+        <input
+        type="file"
+        name="cover_image"
+        accept="image/*"
+        className="border p-2 w-full"
+        required
+      />
+      </div>
       <button className="bg-blue-600 text-white px-4 py-2 rounded">
         Simpan & Lanjut
       </button>

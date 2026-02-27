@@ -43,8 +43,13 @@ export default async function PaketPage({
 
   const translation = pkg.package_translations?.[0]
   const detail = pkg.package_details?.[0]
-
-  return (
+  const { data: images } = await supabase
+    .from("package_images")
+    .select("*")
+   .eq("package_id", pkg.id)
+  
+  
+   return (
     <main className="max-w-5xl mx-auto p-8 space-y-6">
 
       <h1 className="text-2xl font-bold">
@@ -75,6 +80,18 @@ export default async function PaketPage({
           Harga Anak: {pkg.currency} {pkg.price_child?.toLocaleString()}
         </p>
       </div>
+      
+<div className="grid grid-cols-3 gap-4 mt-6">
+  {images?.map((img) => (
+    <img
+      key={img.id}
+      src={img.image_url}
+      className="rounded object-cover"
+    />
+  ))}
+</div>
+
+
 
       <hr />
 

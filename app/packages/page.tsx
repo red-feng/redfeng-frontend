@@ -69,12 +69,9 @@ const supabase = await createClient()
                   {/* IMAGE */}
                   <div className="w-1/4 h-56">
                     <img
-                      src={
-                        pkg.thumbnail_url ||
-                        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
-                      }
-                      alt={translation?.title}
-                      className="w-full h-full object-cover"
+                    src={pkg.cover_image}
+                    alt={pkg.title}
+                    className="w-full h-48 object-cover rounded"
                     />
                   </div>
 

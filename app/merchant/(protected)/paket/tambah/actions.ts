@@ -31,6 +31,29 @@ export async function createPackage(formData: FormData) {
     "-" +
     crypto.randomUUID().slice(0, 6)
 
+
+const file = formData.get("cover_image") as File
+
+let coverImageUrl = null
+
+if (file && file.size > 0) {
+  const fileExt = file.name.split(".").pop()
+  const fileName = `${crypto.randomUUID()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("packages")
+    .upload(fileName, file)
+
+  if (uploadError) throw uploadError
+
+  const { data: publicUrl } = supabase.storage
+    .from("packages")
+    .getPublicUrl(fileName)
+
+  coverImageUrl = publicUrl.publicUrl
+}
+
+//insert
   const { data, error } = await supabase
     .from("packages")
     .insert({
@@ -44,8 +67,10 @@ export async function createPackage(formData: FormData) {
       price_child: Number(formData.get("price_child") || 0),
       currency: formData.get("currency"),
       default_language: defaultLanguage,
+      cover_image: coverImageUrl,
       status: "draft",
     })
+    
     .select()
     .single()
 
@@ -163,6 +188,32 @@ export async function saveAddons(formData: FormData) {
     }))
     .filter((addon) => addon.name && addon.price > 0)
 
+
+const files = formData.getAll("gallery_images") as File[]
+
+for (const file of files) {
+  if (!file || file.size === 0) continue
+
+  const fileExt = file.name.split(".").pop()
+  const fileName = `${crypto.randomUUID()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("packages")
+    .upload(fileName, file)
+
+  if (uploadError) throw uploadError
+
+  const { data: publicUrl } = supabase.storage
+    .from("packages")
+    .getPublicUrl(fileName)
+
+  await supabase.from("package_images").insert({
+    package_id: packageId,
+    image_url: publicUrl.publicUrl,
+  })
+}
+    
+    
   if (insertData.length > 0) {
     const { error } = await supabase
       .from("package_addons")

@@ -17,7 +17,7 @@ export default function Step2Details({
       className="space-y-6 max-w-3xl"
     >
       <input type="hidden" name="package_id" value={packageId} />
-
+      <input type="file" name="cover_image" accept="image/*" />
       <h2 className="text-xl font-semibold">
         Step 2 – Detail Konten
       </h2>

@@ -45,6 +45,18 @@ export default function Step4Addons({
         </div>
       ))}
 
+<div>
+  <label className="font-medium">Foto Gallery</label>
+  <input
+    type="file"
+    name="gallery_images"
+    accept="image/*"
+    multiple
+    className="border p-2 w-full"
+  />
+</div>
+
+
       <button
         type="button"
         onClick={addAddonField}
@@ -52,6 +64,8 @@ export default function Step4Addons({
       >
         + Tambah Add-on
       </button>
+
+
 
       <div>
         <button className="bg-blue-600 text-white px-6 py-2 rounded">
