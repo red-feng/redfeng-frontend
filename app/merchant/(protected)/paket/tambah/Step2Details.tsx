@@ -101,7 +101,7 @@ export default function Step2Details({
       {/* Google Map */}
       <div>
         <label className="font-medium">
-          Google Maps Embed
+          Embedding tourist destinations on Google Maps
         </label>
         <textarea
           name="map_embed"
