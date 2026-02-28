@@ -20,8 +20,8 @@ export default function Step2Details({
         <Image
           src="/logo-redfeng.png"
           alt="Red Feng"
-          width={0}
-          height={0}
+          width={240}
+          height={80}
           sizes="100vw"
           className="h-24 w-auto"
           priority
