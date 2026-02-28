@@ -7,15 +7,16 @@ export default function Step1Basic() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400">
   
-      {/* HEADER AREA (GANTI TEKS JADI LOGO) */}
-      <div className="px-8 py-6">
-        <Image
-          src="/logo-redfeng.png"
-          alt="Red Feng"
-          width={170}
-          height={60}
-        />
-      </div>
+      {/* HEADER AREA */}
+<div className="px-8 py-6">
+  <Image
+    src="/logo-redfeng.png"
+    alt="Red Feng"
+    width={240}
+    height={80}
+    priority
+  />
+</div>
 
       {/* CONTENT WRAPPER */}
       <div className="flex justify-center px-6 pb-20">
