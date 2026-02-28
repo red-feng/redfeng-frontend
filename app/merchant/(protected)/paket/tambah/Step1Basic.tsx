@@ -148,14 +148,18 @@ export default function Step1Basic() {
               />
             </div>
 
-            <div className="flex justify-center pt-6">
-              <button
-                type="submit"
-                className="px-12 py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-blue-600 to-blue-400 shadow-md hover:opacity-90 transition"
-              >
-                Simpan & Lanjut
-              </button>
-            </div>
+           <div className="flex justify-center pt-6">
+  <button
+    type="submit"
+    className="px-12 py-3 rounded-xl font-semibold 
+               bg-gradient-to-r from-orange-500 via-orange-400 to-white 
+               text-gray-900
+               shadow-lg hover:scale-105 
+               transition-all duration-300"
+  >
+    Simpan & Lanjut
+  </button>
+</div>
 
           </form>
 
