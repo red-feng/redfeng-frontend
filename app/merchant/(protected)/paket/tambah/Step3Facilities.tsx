@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { saveFacilities } from "./actions"
+import Image from "next/image"
 
 export default function Step3Facilities({
   packageId,
@@ -30,30 +31,79 @@ export default function Step3Facilities({
   }
 
   return (
-    <form action={saveFacilities} className="space-y-4">
-      <input type="hidden" name="package_id" value={packageId} />
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
 
-      <h2 className="text-xl font-semibold">
-        Step 3 – Pilih Fasilitas
-      </h2>
-
-      <div className="grid grid-cols-2 gap-4">
-        {facilities.map((facility) => (
-          <label key={facility.id} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="facility_ids[]"
-              value={facility.id}
-            />
-            {facility.name}
-          </label>
-        ))}
+      {/* HEADER LOGO */}
+      <div className="px-10 py-8">
+        <Image
+          src="/logo-redfeng.png"
+          alt="Red Feng"
+          width={0}
+          height={0}
+          sizes="100vw"
+          className="h-32 w-auto"
+          priority
+        />
       </div>
 
-      <button className="bg-blue-600 text-white px-6 py-2 rounded">
-        Simpan & Lanjut
-      </button>
-    </form>
+      {/* CONTENT WRAPPER */}
+      <div className="flex justify-center px-8 pb-28">
+
+        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
+
+          <h1 className="text-2xl font-bold mb-1">
+            Buat Paket Baru
+          </h1>
+
+          <p className="text-gray-500 mb-10">
+            Step 3 – Pilih Fasilitas
+          </p>
+
+          <form action={saveFacilities} className="space-y-10">
+            <input type="hidden" name="package_id" value={packageId} />
+
+            {/* FACILITIES GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+
+              {facilities.map((facility) => (
+                <label
+                  key={facility.id}
+                  className="flex items-center gap-3 p-4 border rounded-xl hover:bg-orange-50 transition cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    name="facility_ids[]"
+                    value={facility.id}
+                    className="w-5 h-5 accent-orange-500"
+                  />
+                  <span className="text-gray-700">
+                    {facility.name}
+                  </span>
+                </label>
+              ))}
+
+            </div>
+
+            {/* BUTTON */}
+            <div className="flex justify-center pt-6">
+              <button
+                type="submit"
+                className="px-14 py-3 rounded-xl font-semibold 
+                           bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300
+                           text-white
+                           shadow-[0_8px_20px_rgba(249,115,22,0.4)]
+                           hover:scale-105
+                           transition-all duration-300"
+              >
+                Simpan & Lanjut
+              </button>
+            </div>
+
+          </form>
+
+        </div>
+
+      </div>
+    </div>
   )
 }
-
