@@ -5,7 +5,7 @@ import Image from "next/image"
 
 export default function Step1Basic() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
+    <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400">
   
       {/* HEADER AREA (GANTI TEKS JADI LOGO) */}
       <div className="px-8 py-6">
