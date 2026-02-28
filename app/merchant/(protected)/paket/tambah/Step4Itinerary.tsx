@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { saveItinerary } from "./actions"
+import Image from "next/image"
 
 type RouteType = {
   pickup: string
@@ -48,7 +49,7 @@ export default function Step4Itinerary({
     setDays(
       filtered.map((d, i) => ({
         ...d,
-        day: i + 1 // auto renumber
+        day: i + 1
       }))
     )
   }
@@ -71,143 +72,187 @@ export default function Step4Itinerary({
   }
 
   return (
-    <form action={saveItinerary} className="space-y-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
 
-      <input type="hidden" name="package_id" value={packageId} />
+      {/* HEADER */}
+      <div className="px-10 py-8">
+        <Image
+          src="/logo-redfeng.png"
+          alt="Red Feng"
+          width={0}
+          height={0}
+          sizes="100vw"
+          className="h-32 w-auto"
+          priority
+        />
+      </div>
 
-      <h2 className="text-2xl font-bold">
-        Step 4 – Itinerary
-      </h2>
+      <div className="flex justify-center px-8 pb-28">
 
-      {days.map((day, dayIndex) => (
-        <div
-          key={dayIndex}
-          className="bg-white shadow rounded-xl p-6 border space-y-6"
-        >
+        <div className="w-full max-w-6xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-semibold">
-              Hari ke {day.day}
-            </h3>
+          <h1 className="text-2xl font-bold mb-2">
+            Buat Paket Baru
+          </h1>
 
-            {days.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeDay(dayIndex)}
-                className="text-red-500 text-sm"
-              >
-                ❌ Hapus Hari
-              </button>
-            )}
-          </div>
+          <p className="text-gray-500 mb-10">
+            Step 4 – Itinerary
+          </p>
 
-          {/* ROUTES */}
-          <div className="space-y-4">
+          <form action={saveItinerary} className="space-y-12">
 
-            {day.routes.map((route, routeIndex) => (
+            <input type="hidden" name="package_id" value={packageId} />
+
+            {days.map((day, dayIndex) => (
               <div
-                key={routeIndex}
-                className="grid grid-cols-12 gap-4 items-end"
+                key={dayIndex}
+                className="border rounded-2xl p-8 space-y-8 bg-slate-50"
               >
 
-                <input
-                  type="hidden"
-                  name="day_number[]"
-                  value={day.day}
-                />
+                {/* HEADER HARI */}
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-semibold text-gray-800">
+                    Hari ke {day.day}
+                  </h3>
 
-                <div className="col-span-1 text-sm font-semibold text-gray-500">
-                  #{routeIndex + 1}
-                </div>
-
-                <div className="col-span-3">
-  {routeIndex === 0 && (
-    <label className="text-sm">Jam</label>
-  )}
-
-  <div className="flex gap-2">
-    <input
-      type="time"
-      name="pickup_time[]"
-      className="border rounded p-2 w-full"
-    />
-
-    <select
-      name="pickup_period[]"
-      className="border rounded p-2"
-    >
-      <option value="AM">AM</option>
-      <option value="PM">PM</option>
-    </select>
-  </div>
-</div>
-
-                <div className="col-span-6">
-                  <label className="text-sm">Rute</label>
-                  <input
-                    name="route[]"
-                    className="border rounded p-2 w-full"
-                  />
-                </div>
-
-                <div className="col-span-2 text-right">
-                  {day.routes.length > 1 && (
+                  {days.length > 1 && (
                     <button
                       type="button"
-                      onClick={() => removeRoute(dayIndex, routeIndex)}
-                      className="text-red-500 text-sm"
+                      onClick={() => removeDay(dayIndex)}
+                      className="text-red-500 text-sm font-medium hover:underline"
                     >
-                      ❌
+                      ❌ Hapus Hari
                     </button>
                   )}
+                </div>
+
+                {/* ROUTES */}
+                <div className="space-y-6">
+
+                  {day.routes.map((route, routeIndex) => (
+                    <div
+                      key={routeIndex}
+                      className="grid grid-cols-12 gap-6 items-end"
+                    >
+
+                      <input
+                        type="hidden"
+                        name="day_number[]"
+                        value={day.day}
+                      />
+
+                      <div className="col-span-1 text-sm font-semibold text-gray-400">
+                        #{routeIndex + 1}
+                      </div>
+
+                      {/* JAM */}
+                      <div className="col-span-3">
+                        {routeIndex === 0 && (
+                          <label className="text-sm font-medium text-gray-600">
+                            Jam
+                          </label>
+                        )}
+
+                        <div className="flex gap-2">
+                          <input
+                            type="time"
+                            name="pickup_time[]"
+                            className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
+                          />
+
+                          <select
+                            name="pickup_period[]"
+                            className="border rounded-lg p-3 focus:ring-2 focus:ring-orange-400 outline-none"
+                          >
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* RUTE */}
+                      <div className="col-span-6">
+                        {routeIndex === 0 && (
+                          <label className="text-sm font-medium text-gray-600">
+                            Rute
+                          </label>
+                        )}
+                        <input
+                          name="route[]"
+                          className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
+                        />
+                      </div>
+
+                      {/* DELETE ROUTE */}
+                      <div className="col-span-2 text-right">
+                        {day.routes.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeRoute(dayIndex, routeIndex)}
+                            className="text-red-500 hover:underline"
+                          >
+                            ❌
+                          </button>
+                        )}
+                      </div>
+
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => addRoute(dayIndex)}
+                    className="text-orange-500 font-semibold hover:underline"
+                  >
+                    + Tambah Rute
+                  </button>
+
+                </div>
+
+                {/* DESKRIPSI */}
+                <div>
+                  <label className="text-sm font-medium text-gray-600">
+                    Deskripsi Perjalanan Hari Ini
+                  </label>
+                  <textarea
+                    name="description[]"
+                    className="border rounded-lg p-4 w-full h-32 focus:ring-2 focus:ring-orange-400 outline-none"
+                  />
                 </div>
 
               </div>
             ))}
 
-            <button
-              type="button"
-              onClick={() => addRoute(dayIndex)}
-              className="text-blue-600 text-sm font-semibold"
-            >
-              + Tambah Rute
-            </button>
+            {/* BUTTON AREA */}
+            <div className="flex gap-6 pt-6">
 
-          </div>
+              <button
+                type="button"
+                onClick={addDay}
+                className="px-8 py-3 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition"
+              >
+                + Tambah Hari
+              </button>
 
-          {/* DESKRIPSI HARI */}
-          <div>
-            <label className="text-sm font-medium">
-              Deskripsi Perjalanan Hari Ini
-            </label>
-            <textarea
-              name="description[]"
-              className="border rounded p-3 w-full h-28"
-            />
-          </div>
+              <button
+                type="submit"
+                className="px-14 py-3 rounded-xl font-semibold 
+                           bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300
+                           text-white
+                           shadow-[0_8px_20px_rgba(249,115,22,0.4)]
+                           hover:scale-105
+                           transition-all duration-300"
+              >
+                Simpan & Lanjut
+              </button>
+
+            </div>
+
+          </form>
 
         </div>
-      ))}
-
-      <div className="flex gap-4">
-
-        <button
-          type="button"
-          onClick={addDay}
-          className="bg-gray-600 text-white px-5 py-2 rounded-lg"
-        >
-          + Tambah Hari
-        </button>
-
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg"
-        >
-          Simpan & Lanjut
-        </button>
 
       </div>
-
-    </form>
+    </div>
   )
 }
