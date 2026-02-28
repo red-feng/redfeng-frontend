@@ -6,25 +6,37 @@ import Image from "next/image"
 export default function Step1Basic() {
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-slate-300">
-  
+  <div className="relative min-h-screen">
+
+    {/* BACKGROUND IMAGE */}
+    <div
+      className="absolute inset-0 bg-cover bg-center"
+      style={{
+        backgroundImage: "url('/bg-wizard.png')"
+      }}
+    />
+
+   
+
+    {/* CONTENT */}
+    <div className="relative z-10">
+
       {/* HEADER AREA */}
-<div className="px-8 py-6">
-  <Image
-    src="/logo-redfeng.png"
-    alt="Red Feng"
-    width={240}
-    height={80}
-    priority
-  />
-</div>
+      <div className="px-8 py-6">
+        <Image
+          src="/logo-redfeng.png"
+          alt="Red Feng"
+          width={240}
+          height={80}
+          priority
+        />
+      </div>
 
       {/* CONTENT WRAPPER */}
       <div className="flex justify-center px-6 pb-20">
 
-        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-10">
+        <div className="w-full max-w-3xl bg-white/95 backdrop-blur rounded-2xl shadow-xl p-10">
 
-          {/* JUDUL DI DALAM CARD TETAP */}
           <h1 className="text-2xl font-bold mb-1">
             Buat Paket Baru
           </h1>
@@ -166,7 +178,7 @@ export default function Step1Basic() {
           </form>
 
         </div>
-
+      </div>
       </div>
     </div>
   )
