@@ -16,22 +16,22 @@ export default function Step2Details({
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
 
       {/* HEADER LOGO */}
-      <div className="px-8 py-6">
-        <Image
-          src="/logo-redfeng.png"
-          alt="Red Feng"
-          width={240}
-          height={80}
-          sizes="100vw"
-          className="h-24 w-auto"
-          priority
-        />
-      </div>
+      <div className="px-10 py-8">
+  <Image
+    src="/logo-redfeng.png"
+    alt="Red Feng"
+    width={0}
+    height={0}
+    sizes="100vw"
+    className="h-32 w-auto"
+    priority
+  />
+</div>
 
       {/* CONTENT WRAPPER */}
-      <div className="flex justify-center px-6 pb-20">
+      <div className="flex justify-center px-8 pb-28">
 
-        <div className="w-full max-w-3xl bg-white rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.15)] p-10">
+        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
           <h1 className="text-2xl font-bold mb-1">
             Buat Paket Baru
