@@ -7,21 +7,22 @@ export default function Step1Basic() {
   return (
     <div className="min-h-screen bg-gray-300">
 
-      {/* HEADER LOGO */}
-      <div className="p-6">
+      {/* HEADER AREA (GANTI TEKS JADI LOGO) */}
+      <div className="px-8 py-6">
         <Image
-          src="/logo-redfeng.png"  // pastikan file ada di /public
+          src="/logo-redfeng.png"
           alt="Red Feng"
-          width={160}
+          width={170}
           height={60}
         />
       </div>
 
       {/* CONTENT WRAPPER */}
-      <div className="flex justify-center items-center px-6 pb-20">
+      <div className="flex justify-center px-6 pb-20">
 
         <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-10">
 
+          {/* JUDUL DI DALAM CARD TETAP */}
           <h1 className="text-2xl font-bold mb-1">
             Buat Paket Baru
           </h1>
@@ -36,7 +37,6 @@ export default function Step1Basic() {
             className="space-y-6"
           >
 
-            {/* Nama Paket */}
             <input
               name="title"
               placeholder="Nama Paket"
@@ -44,7 +44,6 @@ export default function Step1Basic() {
               required
             />
 
-            {/* Travel Style */}
             <select
               name="travel_style"
               className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
@@ -63,7 +62,6 @@ export default function Step1Basic() {
               <option value="solo">Solo</option>
             </select>
 
-            {/* GRID 2 KOLOM */}
             <div className="grid grid-cols-2 gap-4">
 
               <input
@@ -136,7 +134,6 @@ export default function Step1Basic() {
 
             </div>
 
-            {/* FOTO */}
             <div>
               <label className="block font-medium mb-2">
                 Foto Sampul
@@ -150,7 +147,6 @@ export default function Step1Basic() {
               />
             </div>
 
-            {/* BUTTON */}
             <div className="flex justify-center pt-6">
               <button
                 type="submit"
