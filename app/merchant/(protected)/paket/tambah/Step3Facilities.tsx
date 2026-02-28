@@ -33,18 +33,16 @@ export default function Step3Facilities({
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
 
-      {/* HEADER LOGO */}
-      <div className="px-10 py-8">
-        <Image
-          src="/logo-redfeng.png"
-          alt="Red Feng"
-          width={0}
-          height={0}
-          sizes="100vw"
-          className="h-32 w-auto"
-          priority
-        />
-      </div>
+      {/* HEADER AREA */}
+            <div className="px-8 py-6">
+              <Image
+                src="/logo-redfeng.png"
+                alt="Red Feng"
+                width={240}
+                height={80}
+                priority
+              />
+            </div>
 
       {/* CONTENT WRAPPER */}
       <div className="flex justify-center px-8 pb-28">
