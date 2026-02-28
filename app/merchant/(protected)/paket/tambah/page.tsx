@@ -13,9 +13,7 @@ export default function WizardPage() {
   const packageId = searchParams.get("id")
 
   return (
-    <div className="p-10">
-      <h1 className="text-2xl font-bold mb-6">Buat Paket Baru</h1>
-
+    <div>
       {step === "1" && <Step1Basic />}
       {step === "2" && <Step2Details packageId={packageId} />}
       {step === "3" && <Step3Facilities packageId={packageId} />}
