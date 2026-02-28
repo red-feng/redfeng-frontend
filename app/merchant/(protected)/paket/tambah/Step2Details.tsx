@@ -23,7 +23,7 @@ export default function Step2Details({
     width={0}
     height={0}
     sizes="100vw"
-    className="h-35 w-auto"
+    className="h-25 w-auto"
     priority
   />
 </div>
