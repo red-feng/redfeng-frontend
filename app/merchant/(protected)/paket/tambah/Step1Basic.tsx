@@ -5,7 +5,7 @@ import Image from "next/image"
 
 export default function Step1Basic() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-200 via-slate-300 to-slate-400">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-50 to-slate-300">
   
       {/* HEADER AREA */}
 <div className="px-8 py-6">
@@ -152,10 +152,11 @@ export default function Step1Basic() {
   <button
     type="submit"
     className="px-12 py-3 rounded-xl font-semibold 
-               bg-gradient-to-r from-orange-500 via-orange-400 to-white 
-               text-gray-900
-               shadow-lg hover:scale-105 
-               transition-all duration-300"
+           bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300
+           text-white
+           shadow-[0_8px_20px_rgba(249,115,22,0.4)]
+           hover:scale-105
+           transition-all duration-300"
   >
     Simpan & Lanjut
   </button>
