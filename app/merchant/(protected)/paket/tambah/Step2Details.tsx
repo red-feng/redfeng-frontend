@@ -17,11 +17,11 @@ export default function Step2Details({
 
       {/* BACKGROUND IMAGE */}
       <div
-  className="absolute inset-0 bg-contain bg-no-repeat bg-top"
-  style={{
-    backgroundImage: "url('/bg-wizard.png')"
-  }}
-/>
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/bg-wizard.png')"
+        }}
+      />
 
      
       {/* CONTENT */}
