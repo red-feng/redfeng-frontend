@@ -121,12 +121,26 @@ export default function Step4Itinerary({
                 </div>
 
                 <div className="col-span-3">
-                  <label className="text-sm">Waktu Pick Up</label>
-                  <input
-                    name="pickup_time[]"
-                    className="border rounded p-2 w-full"
-                  />
-                </div>
+  {routeIndex === 0 && (
+    <label className="text-sm">Jam</label>
+  )}
+
+  <div className="flex gap-2">
+    <input
+      type="time"
+      name="pickup_time[]"
+      className="border rounded p-2 w-full"
+    />
+
+    <select
+      name="pickup_period[]"
+      className="border rounded p-2"
+    >
+      <option value="AM">AM</option>
+      <option value="PM">PM</option>
+    </select>
+  </div>
+</div>
 
                 <div className="col-span-6">
                   <label className="text-sm">Rute</label>
