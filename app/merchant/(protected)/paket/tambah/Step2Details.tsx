@@ -23,9 +23,7 @@ export default function Step2Details({
         }}
       />
 
-      {/* DARK OVERLAY */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-
+     
       {/* CONTENT */}
       <div className="relative z-10">
 
