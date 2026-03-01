@@ -32,21 +32,19 @@ export default function Step3Facilities({
 
  
   return (
-  <div className="relative min-h-screen">
+    <div className="relative min-h-screen">
 
-    {/* BACKGROUND IMAGE */}
-<div
-  className="absolute inset-0 bg-cover bg-center"
-  style={{
-    backgroundImage: "url('/bg-wizard.png')"
-  }}
-/>
+      {/* BACKGROUND IMAGE */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/bg-wizard.png')"
+        }}
+      />
 
-{/* SOFT OVERLAY */}
-<div className="absolute inset-0 bg-black/30" />
-
-    {/* CONTENT */}
-    <div className="relative z-10">
+     
+      {/* CONTENT */}
+      <div className="relative z-10">
 
       {/* HEADER AREA */}
             <div className="px-8 py-6">
