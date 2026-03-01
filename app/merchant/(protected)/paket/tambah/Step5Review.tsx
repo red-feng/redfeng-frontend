@@ -40,7 +40,7 @@ export default function Step5Review({
         />
       </div>
 
-      {/* CONTENT */}
+      {/* CONTENT WRAPPER */}
       <div className="flex justify-center px-8 pb-28">
 
          <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
