@@ -1,14 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
-import { approvePackage } from './actions'
+import { createClient } from "@/lib/supabase/server"
+import { approvePackage, rejectPackage } from "./actions"
 
 export default async function AdminPackagesPage() {
   const supabase = await createClient()
 
   const { data: packages } = await supabase
-    .from('merchant_packages')
-    .select('*')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: false })
+  .from("packages")   // ✅ BENAR
+  .select("*")
+  .eq("status", "pending")
+  .order("created_at", { ascending: false })
 
   return (
     <div className="p-10">
@@ -21,20 +21,52 @@ export default async function AdminPackagesPage() {
       )}
 
       {packages?.map((pkg) => (
-        <div key={pkg.id} className="border p-4 mb-4 rounded">
-          <h2 className="font-bold">{pkg.title}</h2>
-          <p>Harga: {pkg.price_adult}</p>
+        <div key={pkg.id} className="border p-6 mb-6 rounded-xl shadow-sm">
 
-          <form action={approvePackage}>
+          <h2 className="text-lg font-bold">
+            {pkg.title}
+          </h2>
+
+          <p className="text-gray-600">
+            Merchant ID: {pkg.merchant_id}
+          </p>
+
+          <p className="text-gray-600">
+            Harga Dewasa: {pkg.price_adult}
+          </p>
+
+          {/* APPROVE */}
+          <form action={approvePackage} className="mt-4">
             <input
               type="hidden"
               name="packageId"
               value={pkg.id}
             />
-            <button className="bg-green-600 text-white px-4 py-2 mt-2">
-              Approve Paket
+            <button className="bg-green-600 text-white px-5 py-2 rounded-lg">
+              Approve
             </button>
           </form>
+
+          {/* REJECT */}
+          <form action={rejectPackage} className="mt-3">
+            <input
+              type="hidden"
+              name="packageId"
+              value={pkg.id}
+            />
+
+            <textarea
+              name="reason"
+              placeholder="Alasan penolakan..."
+              required
+              className="border p-2 w-full mt-2 rounded"
+            />
+
+            <button className="bg-red-600 text-white px-5 py-2 rounded-lg mt-2">
+              Reject
+            </button>
+          </form>
+
         </div>
       ))}
     </div>
