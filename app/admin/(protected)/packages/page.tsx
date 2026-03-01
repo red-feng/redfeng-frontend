@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
 
 export default async function AdminPackagesPage() {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: packages } = await supabase
   .from("packages")   // ✅ BENAR
