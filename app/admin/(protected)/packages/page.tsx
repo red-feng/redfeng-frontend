@@ -23,6 +23,13 @@ export default async function AdminPackagesPage() {
       {packages?.map((pkg) => (
         <div key={pkg.id} className="border p-6 mb-6 rounded-xl shadow-sm">
 
+<a
+  href={`/admin/packages/${pkg.id}`}
+  className="text-blue-600 underline"
+>
+  Review Detail
+</a>
+
           <h2 className="text-lg font-bold">
             {pkg.title}
           </h2>
