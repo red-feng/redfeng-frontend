@@ -12,19 +12,6 @@ export default function Step5Review({
     return <p className="text-red-500">Package ID tidak ditemukan</p>
   }
 
-
-{/* BACKGROUND IMAGE */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('/bg-wizard.png')"
-        }}
-      />
-
-
-
-
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
 
