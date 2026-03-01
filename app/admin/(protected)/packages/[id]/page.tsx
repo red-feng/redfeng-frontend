@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { approvePackage, rejectPackage } from "./actions"
 
 export default async function Page({
   params,
@@ -177,41 +178,52 @@ export default async function Page({
       <hr style={{ margin: "40px 0" }} />
 
       {/* ================= APPROVAL SECTION ================= */}
-      <h2>Admin Decision</h2>
+<h2>Admin Decision</h2>
 
-      <form action={`/admin/packages/${id}/approve`} method="post">
-        <button
-          style={{
-            background: "green",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: 8,
-            marginRight: 10
-          }}
-        >
-          Approve
-        </button>
-      </form>
+<form
+  action={async () => {
+    "use server"
+    await approvePackage(id)
+  }}
+>
+  <button
+    style={{
+      background: "green",
+      color: "white",
+      padding: "10px 20px",
+      borderRadius: 8,
+      marginRight: 10,
+    }}
+  >
+    Approve
+  </button>
+</form>
 
-      <form action={`/admin/packages/${id}/reject`} method="post">
-        <textarea
-          name="reason"
-          placeholder="Alasan penolakan..."
-          required
-          style={{ width: "100%", marginTop: 20 }}
-        />
-        <button
-          style={{
-            background: "red",
-            color: "white",
-            padding: "10px 20px",
-            borderRadius: 8,
-            marginTop: 10
-          }}
-        >
-          Reject
-        </button>
-      </form>
+<form
+  action={async (formData) => {
+    "use server"
+    const reason = formData.get("reason") as string
+    await rejectPackage(id, reason)
+  }}
+>
+  <textarea
+    name="reason"
+    placeholder="Alasan penolakan..."
+    required
+    style={{ width: "100%", marginTop: 20 }}
+  />
+  <button
+    style={{
+      background: "red",
+      color: "white",
+      padding: "10px 20px",
+      borderRadius: 8,
+      marginTop: 10,
+    }}
+  >
+    Reject
+  </button>
+</form>
 
     </div>
   )
