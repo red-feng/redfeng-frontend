@@ -1,4 +1,3 @@
-"use client"
 
 import { submitForReview } from "./actions"
 import Image from "next/image"
@@ -73,7 +72,7 @@ export default function Step5Review({
                 Pastikan seluruh data sudah benar sebelum melakukan submit.
                 Setelah submit, status paket akan berubah menjadi
                 <span className="font-semibold text-orange-500">
-                  {" "}Submitted
+                  {" "}Pending
                 </span>.
               </p>
             </div>
