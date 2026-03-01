@@ -283,7 +283,6 @@ export async function saveItinerary(formData: FormData) {
 
   redirect(`/merchant/paket/tambah?step=5&id=${packageId}`)
 }
-//step 5
 export async function submitForReview(formData: FormData) {
   const supabase = await createClient()
 
@@ -292,7 +291,7 @@ export async function submitForReview(formData: FormData) {
 
   const { error } = await supabase
     .from("packages")
-    .update({ status: "submitted" })
+    .update({ status: "pending" })   // 🔥 GANTI DI SINI
     .eq("id", packageId)
 
   if (error) throw error
