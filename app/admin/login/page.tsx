@@ -48,11 +48,11 @@ export default function AdminLogin() {
     router.push("/merchant")
   } 
   else if (
-    profile.role === "admin" ||
-    profile.role === "superadmin"
-  ) {
-    router.push("/admin/merchants")
-  } 
+  profile.role === "admin" ||
+  profile.role === "superadmin"
+) {
+  router.push("/admin/dashboard")
+}
   else {
     router.push("/")
   }

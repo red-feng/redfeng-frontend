@@ -1,16 +1,19 @@
-import Link from "next/link"
-
 export default function AdminDashboard() {
   return (
     <div className="p-10">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Admin Dashboard
+      </h1>
 
-      <Link
-        href="/admin/bookings"
-        className="inline-block mt-4 bg-black text-white px-4 py-2 rounded"
-      >
-        Manage Tour Bookings
-      </Link>
+      <div className="space-y-4">
+        <a href="/admin/merchants" className="block text-blue-600">
+          ➜ Merchant Approvals
+        </a>
+
+        <a href="/admin/packages" className="block text-blue-600">
+          ➜ Package Approvals
+        </a>
+      </div>
     </div>
   )
 }
