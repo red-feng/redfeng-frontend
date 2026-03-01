@@ -35,15 +35,14 @@ export default function Step3Facilities({
   <div className="relative min-h-screen">
 
     {/* BACKGROUND IMAGE */}
-    <div
-      className="absolute inset-0 bg-contain bg-no-repeat bg-top opacity-30"
-      style={{
-        backgroundImage: "url('/bg-wizard.png')"
-      }}
-    />
+<div
+  className="absolute inset-0 bg-cover bg-center"
+  style={{
+    backgroundImage: "url('/bg-wizard.png')"
+  }}
+/>
 
-    {/* SOFT OVERLAY */}
-    <div className="absolute inset-0 bg-gradient-to-br from-slate-100/90 via-blue-100/90 to-slate-400/90" />
+<div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
 
     {/* CONTENT */}
     <div className="relative z-10">
