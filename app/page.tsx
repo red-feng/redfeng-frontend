@@ -42,18 +42,39 @@ const supabase = await createClient()
   const facilities = facilitiesData ?? []
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8">
-      <div className="grid grid-cols-4 gap-8 items-start">
+  <div className="w-full bg-gray-50">
 
-        {/* SIDEBAR */}
-        <div className="col-span-1 sticky top-6 self-start">
-          <Suspense fallback={<div>Loading filter...</div>}>
-            <FilterClient facilities={facilities} />
-          </Suspense>
+    {/* MAIN AREA */}
+    <div className="flex w-full min-h-screen">
+
+      {/* SIDEBAR */}
+      <aside className="w-72 shrink-0 bg-white border-r px-6 py-8 sticky top-0 h-screen overflow-y-auto">
+        <Suspense fallback={<div>Loading filter...</div>}>
+          <FilterClient facilities={facilities} />
+        </Suspense>
+      </aside>
+
+      {/* CONTENT AREA */}
+      <main className="flex-1 px-10 py-8">
+
+        {/* TOP BAR (Future: Sort / Result Count / Map Toggle) */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-xl font-semibold">
+            {packages.length} Packages Found
+          </h1>
+
+          <div className="flex gap-3">
+            <button className="border px-4 py-2 rounded-lg bg-white hover:bg-gray-100">
+              Sort
+            </button>
+            <button className="border px-4 py-2 rounded-lg bg-white hover:bg-gray-100">
+              Map View
+            </button>
+          </div>
         </div>
 
-        {/* LIST */}
-        <div className="col-span-3 flex flex-col gap-6">
+        {/* PACKAGE LIST */}
+        <div className="flex flex-col gap-6">
 
           {packages.length === 0 ? (
             <p>Tidak ada paket ditemukan</p>
@@ -64,19 +85,19 @@ const supabase = await createClient()
               return (
                 <div
                   key={pkg.id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition flex overflow-hidden border border-gray-100"
+                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition flex overflow-hidden border"
                 >
                   {/* IMAGE */}
-                  <div className="w-1/4 h-56">
+                  <div className="w-64 h-56 shrink-0">
                     <img
-                    src={pkg.cover_image}
-                    alt={pkg.title}
-                    className="w-full h-48 object-cover rounded"
+                      src={pkg.cover_image}
+                      alt={translation?.title}
+                      className="w-full h-full object-cover"
                     />
                   </div>
 
                   {/* DETAIL */}
-                  <div className="w-2/4 p-6 flex flex-col justify-center">
+                  <div className="flex-1 p-6 flex flex-col justify-center">
                     <h2 className="text-lg font-semibold mb-2">
                       {translation?.title}
                     </h2>
@@ -90,9 +111,9 @@ const supabase = await createClient()
                     </p>
                   </div>
 
-                  {/* PRICE BOX */}
-                  <div className="w-1/4 border-l bg-gray-50 p-6 flex flex-col justify-center items-center">
-                    <p className="text-xl font-bold text-gray-800 mb-1">
+                  {/* PRICE */}
+                  <div className="w-64 border-l bg-gray-50 p-6 flex flex-col justify-center items-center">
+                    <p className="text-xl font-bold text-gray-800 mb-2">
                       {pkg.currency} {pkg.price_adult?.toLocaleString()}
                     </p>
 
@@ -109,8 +130,9 @@ const supabase = await createClient()
           )}
 
         </div>
-      </div>
-    </div>
-  )
-}
 
+      </main>
+    </div>
+  </div>
+)
+}
