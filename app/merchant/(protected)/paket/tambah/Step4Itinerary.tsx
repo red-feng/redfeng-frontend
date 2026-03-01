@@ -72,7 +72,19 @@ export default function Step4Itinerary({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-blue-100 to-slate-400">
+    <div className="relative min-h-screen">
+
+      {/* BACKGROUND IMAGE */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: "url('/bg-wizard.png')"
+        }}
+      />
+
+     
+      {/* CONTENT */}
+      <div className="relative z-10">
 
       {/* HEADER */}
       <div className="px-10 py-8">
@@ -252,6 +264,7 @@ export default function Step4Itinerary({
 
         </div>
 
+      </div>
       </div>
     </div>
   )
