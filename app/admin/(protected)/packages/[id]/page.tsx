@@ -1,26 +1,29 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 
-export default async function Page(props: any) {
-  const supabase = createAdminClient()
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
 
-  const packageId = props.params?.id
-
-  if (!packageId) {
+  if (!id) {
     return <div>ID tidak ditemukan</div>
   }
 
-  const { data, error } = await supabase
+  const supabase = createAdminClient()
+
+  const { data } = await supabase
     .from("packages")
     .select("*")
-    .eq("id", packageId)
+    .eq("id", id)
     .single()
 
   return (
     <div style={{ padding: 40 }}>
-      <h1>DEBUG PACKAGE</h1>
-      <p>ID: {packageId}</p>
+      <h1>DETAIL PACKAGE</h1>
+      <p>ID: {id}</p>
       <pre>{JSON.stringify(data, null, 2)}</pre>
-      <pre>{JSON.stringify(error, null, 2)}</pre>
     </div>
   )
 }
