@@ -30,15 +30,15 @@ export default function Step2Details({
         {/* HEADER LOGO */}
         <div className="px-10 py-8">
           <Image
-            src="/logo-redfeng.png"
-            alt="Red Feng"
-            width={0}
-            height={0}
-            sizes="100vw"
-            className="h-28 w-auto"
-            priority
-          />
-        </div>
+                    src="/logo-redfeng.png"
+                    alt="Red Feng"
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    className="h-32 w-auto"
+                    priority
+                  />
+                </div>
 
         {/* CONTENT WRAPPER */}
         <div className="flex justify-center px-6 pb-28">

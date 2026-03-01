@@ -24,13 +24,15 @@ export default function Step1Basic() {
       {/* HEADER AREA */}
       <div className="px-8 py-6">
         <Image
-          src="/logo-redfeng.png"
-          alt="Red Feng"
-          width={240}
-          height={80}
-          priority
-        />
-      </div>
+                  src="/logo-redfeng.png"
+                  alt="Red Feng"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                  className="h-32 w-auto"
+                  priority
+                />
+              </div>
 
       {/* CONTENT WRAPPER */}
       <div className="flex justify-center px-6 pb-20">
