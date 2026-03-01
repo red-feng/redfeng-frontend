@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { createPackage } from "./actions"
 
 export default async function MerchantDashboard() {
   const supabase = await createClient()
@@ -31,21 +30,23 @@ export default async function MerchantDashboard() {
 
       <h2>Company: {merchant?.company_name}</h2>
 
-      <hr />
+<h2>Tambah Paket</h2>
 
-      {/* FORM TAMBAH PAKET */}
-      <h2>Tambah Paket</h2>
-      <form action={createPackage}>
-        <input name="title" placeholder="Nama Paket" required />
-        <input name="country" placeholder="Country" required />
-        <input name="city" placeholder="City" required />
-        <input name="duration" placeholder="Durasi (hari)" type="number" required />
-        <input name="price_adult" placeholder="Harga Dewasa" type="number" required />
-        <input name="price_child" placeholder="Harga Anak" type="number" />
-        <input name="currency" placeholder="Currency (IDR/USD)" defaultValue="IDR" />
+<a
+  href="/merchant/paket/tambah?step=1"
+  style={{
+    display: "inline-block",
+    padding: "10px 20px",
+    background: "black",
+    color: "white",
+    borderRadius: "8px",
+    textDecoration: "none",
+    marginBottom: "20px"
+  }}
+>
+  + Buat Paket Baru
+</a>
 
-        <button type="submit">Tambah Paket</button>
-      </form>
 
       <hr />
 
