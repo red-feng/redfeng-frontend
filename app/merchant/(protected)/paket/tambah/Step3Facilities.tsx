@@ -42,7 +42,8 @@ export default function Step3Facilities({
   }}
 />
 
-<div className="absolute inset-0 bg-white/60 backdrop-blur-sm" />
+{/* SOFT OVERLAY */}
+<div className="absolute inset-0 bg-black/30" />
 
     {/* CONTENT */}
     <div className="relative z-10">
