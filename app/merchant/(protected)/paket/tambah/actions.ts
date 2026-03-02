@@ -68,18 +68,18 @@ export async function createPackage(formData: FormData) {
   title,
   slug,
 
-  // 🔥 ORIGIN
   origin_country_id: formData.get("origin_country_id"),
   origin_province: formData.get("origin_province"),
 
-  // 🔥 DESTINATION
   destination_country_id: formData.get("destination_country_id"),
   destination_province: formData.get("destination_province"),
 
   travel_style: formData.get("travel_style"),
+
   minimal_peserta: Number(formData.get("minimal_peserta") || 1),
 
-  duration: formData.get("duration_days"),
+  duration: formData.get("duration_days"), // ← HARUS duration
+
   price_adult: Number(formData.get("price_adult") || 0),
   price_child: Number(formData.get("price_child") || 0),
 
