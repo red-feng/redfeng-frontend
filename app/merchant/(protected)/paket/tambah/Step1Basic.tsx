@@ -78,6 +78,75 @@ export default function Step1Basic() {
               <option value="solo">Solo</option>
             </select>
 
+            <select
+  name="country"
+  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  required
+>
+  <option value="">Pilih Negara</option>
+
+  {/* Southeast Asia */}
+  <option value="brunei">Brunei</option>
+  <option value="cambodia">Cambodia</option>
+  <option value="indonesia">Indonesia</option>
+  <option value="laos">Laos</option>
+  <option value="malaysia">Malaysia</option>
+  <option value="myanmar">Myanmar</option>
+  <option value="philippines">Philippines</option>
+  <option value="singapore">Singapore</option>
+  <option value="thailand">Thailand</option>
+  <option value="timor-leste">Timor-Leste</option>
+  <option value="vietnam">Vietnam</option>
+
+  {/* East Asia */}
+  <option value="china">China (RRT)</option>
+  <option value="hong-kong">Hong Kong</option>
+  <option value="macau">Macau</option>
+  <option value="taiwan">Taiwan</option>
+  <option value="japan">Japan</option>
+  <option value="south-korea">South Korea</option>
+  <option value="north-korea">North Korea</option>
+  <option value="mongolia">Mongolia</option>
+
+  {/* South Asia */}
+  <option value="afghanistan">Afghanistan</option>
+  <option value="bangladesh">Bangladesh</option>
+  <option value="bhutan">Bhutan</option>
+  <option value="india">India</option>
+  <option value="maldives">Maldives</option>
+  <option value="nepal">Nepal</option>
+  <option value="pakistan">Pakistan</option>
+  <option value="sri-lanka">Sri Lanka</option>
+
+  {/* Central Asia */}
+  <option value="kazakhstan">Kazakhstan</option>
+  <option value="kyrgyzstan">Kyrgyzstan</option>
+  <option value="tajikistan">Tajikistan</option>
+  <option value="turkmenistan">Turkmenistan</option>
+  <option value="uzbekistan">Uzbekistan</option>
+
+  {/* West Asia / Middle East */}
+  <option value="armenia">Armenia</option>
+  <option value="azerbaijan">Azerbaijan</option>
+  <option value="bahrain">Bahrain</option>
+  <option value="cyprus">Cyprus</option>
+  <option value="georgia">Georgia</option>
+  <option value="iran">Iran</option>
+  <option value="iraq">Iraq</option>
+  <option value="israel">Israel</option>
+  <option value="jordan">Jordan</option>
+  <option value="kuwait">Kuwait</option>
+  <option value="lebanon">Lebanon</option>
+  <option value="oman">Oman</option>
+  <option value="palestine">Palestine</option>
+  <option value="qatar">Qatar</option>
+  <option value="saudi-arabia">Saudi Arabia</option>
+  <option value="syria">Syria</option>
+  <option value="turkiye">Türkiye</option>
+  <option value="uae">United Arab Emirates</option>
+  <option value="yemen">Yemen</option>
+</select>
+
             <div className="grid grid-cols-2 gap-4">
 
               <input
