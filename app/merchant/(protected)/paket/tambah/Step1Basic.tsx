@@ -46,7 +46,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
             priority
           />
         </div>
-
+<h1 className="text-red-500">TEST DEPLOY</h1>
         {/* CONTENT WRAPPER */}
         <div className="flex justify-center px-8 pb-28">
 
