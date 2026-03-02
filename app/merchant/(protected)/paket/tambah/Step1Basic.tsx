@@ -126,11 +126,14 @@ export default async function Step1Basic() {
                   className="border rounded-lg p-3 w-full"
                 />
 
-                <select name="currency" defaultValue="IDR">
+                <select
+                name="currency"
+                className="border rounded-lg p-3 w-full"
+                defaultValue="IDR"
+              >
                 <option value="IDR">IDR</option>
                 <option value="USD">USD</option>
                 <option value="CNY">CNY</option>
-                <option value="EUR">EUR</option>
               </select>
 
               </div>
