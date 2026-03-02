@@ -75,7 +75,7 @@ export async function createPackage(formData: FormData) {
   travel_style: formData.get("travel_style"),
   minimal_peserta: Number(formData.get("minimal_peserta") || 1),
 
-  duration: Number(formData.get("duration") || 0),
+  duration_days: Number(formData.get("duration_days") || 0),
   price_adult: Number(formData.get("price_adult") || 0),
   price_child: Number(formData.get("price_child") || 0),
 

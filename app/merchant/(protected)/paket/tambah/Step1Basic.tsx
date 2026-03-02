@@ -96,7 +96,7 @@ export default function Step1Basic() {
               />
 
               <input
-                name="duration"
+                name="duration_days"
                 type="number"
                 placeholder="Durasi (hari)"
                 className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
