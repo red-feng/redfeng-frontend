@@ -87,88 +87,154 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
               className="space-y-6"
             >
 
-              <div className="grid grid-cols-2 gap-4">
+             <div className="grid grid-cols-2 gap-4">
 
-                {/* ORIGIN */}
-                <div className="col-span-2 font-semibold">
-                  Keberangkatan
-                </div>
+  {/* NAMA PAKET */}
+  <input
+    name="title"
+    placeholder="Nama Paket"
+    className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  />
 
-                <select
-                  name="origin_country_id"
-                  value={originCountry}
-                  onChange={(e) => setOriginCountry(e.target.value)}
-                  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Pilih Negara Keberangkatan</option>
-                  {countries.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+  {/* TRAVEL STYLE */}
+  <select
+    name="travel_style"
+    className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  >
+    <option value="">Pilih Travel Style</option>
+    <option value="explore">Explore</option>
+    <option value="adventure">Adventure</option>
+    <option value="family">Family</option>
+    <option value="luxury">Luxury</option>
+    <option value="honeymoon">Honeymoon</option>
+    <option value="wellness">Wellness</option>
+    <option value="religious">Religious</option>
+    <option value="budget">Budget</option>
+    <option value="group">Group</option>
+    <option value="solo">Solo</option>
+  </select>
 
-                <select
-                  name="origin_province_id"
-                  disabled={!originCountry}
-                  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Pilih Provinsi</option>
-                  {originProvinces.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+  {/* ===== ORIGIN ===== */}
+  <div className="col-span-2 font-semibold pt-2">
+    Keberangkatan
+  </div>
 
-                {/* DESTINATION */}
-                <div className="col-span-2 font-semibold pt-6">
-                  Tujuan
-                </div>
+  <select
+    name="origin_country_id"
+    value={originCountry}
+    onChange={(e) => setOriginCountry(e.target.value)}
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  >
+    <option value="">Pilih Negara Keberangkatan</option>
+    {countries.map(c => (
+      <option key={c.id} value={c.id}>{c.name}</option>
+    ))}
+  </select>
 
-                <select
-                  name="destination_country_id"
-                  value={destinationCountry}
-                  onChange={(e) => setDestinationCountry(e.target.value)}
-                  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Pilih Negara Tujuan</option>
-                  {countries.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+  <select
+    name="origin_province_id"
+    disabled={!originCountry}
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  >
+    <option value="">Pilih Provinsi</option>
+    {originProvinces.map(p => (
+      <option key={p.id} value={p.id}>{p.name}</option>
+    ))}
+  </select>
 
-                <select
-                  name="destination_province_id"
-                  disabled={!destinationCountry}
-                  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-                  required
-                >
-                  <option value="">Pilih Provinsi</option>
-                  {destinationProvinces.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+  {/* ===== DESTINATION ===== */}
+  <div className="col-span-2 font-semibold pt-6">
+    Tujuan
+  </div>
 
-                {/* CURRENCY */}
-                <select
-                  name="currency"
-                  defaultValue="IDR"
-                  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-                >
-                  <option value="IDR">IDR</option>
-                  <option value="USD">USD</option>
-                  <option value="CNY">CNY</option>
-                </select>
+  <select
+    name="destination_country_id"
+    value={destinationCountry}
+    onChange={(e) => setDestinationCountry(e.target.value)}
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  >
+    <option value="">Pilih Negara Tujuan</option>
+    {countries.map(c => (
+      <option key={c.id} value={c.id}>{c.name}</option>
+    ))}
+  </select>
 
-              </div>
+  <select
+    name="destination_province_id"
+    disabled={!destinationCountry}
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  >
+    <option value="">Pilih Provinsi</option>
+    {destinationProvinces.map(p => (
+      <option key={p.id} value={p.id}>{p.name}</option>
+    ))}
+  </select>
+
+  {/* MINIMAL PESERTA */}
+  <input
+    name="minimal_peserta"
+    type="number"
+    placeholder="Minimal Peserta"
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  />
+
+  {/* DURASI */}
+  <input
+    name="duration_days"
+    type="number"
+    placeholder="Durasi (hari)"
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  />
+
+  {/* HARGA DEWASA */}
+  <input
+    name="price_adult"
+    type="number"
+    placeholder="Harga Dewasa"
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    required
+  />
+
+  {/* HARGA ANAK */}
+  <input
+    name="price_child"
+    type="number"
+    placeholder="Harga Anak"
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  />
+
+  {/* CURRENCY */}
+  <select
+    name="currency"
+    defaultValue="IDR"
+    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  >
+    <option value="IDR">IDR</option>
+    <option value="USD">USD</option>
+    <option value="CNY">CNY</option>
+  </select>
+
+  {/* DEFAULT LANGUAGE */}
+  <select
+    name="default_language"
+    className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
+    defaultValue="id"
+    required
+  >
+    <option value="id">Bahasa Indonesia</option>
+    <option value="en">English</option>
+    <option value="zh">Chinese</option>
+  </select>
+
+</div>
 
               <div className="flex justify-center pt-6">
                 <button
