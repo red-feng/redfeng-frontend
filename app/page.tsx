@@ -14,22 +14,27 @@ async function getPackages(searchParams?: {
 }) {
   const supabase = await createClient()
 
+  const hasFacilityFilter = !!searchParams?.facilities
+
   let query = supabase
     .from("packages")
     .select(`
       *,
       package_translations(*),
-      package_facilities(facility_id)
+      ${hasFacilityFilter
+        ? "package_facilities!inner(facility_id)"
+        : "package_facilities(facility_id)"
+      }
     `)
     .eq("status", "approved")
 
-  // FILTER MAX PRICE
+  // FILTER PRICE
   if (searchParams?.max_price) {
     query = query.lte("price_adult", Number(searchParams.max_price))
   }
 
   // FILTER FACILITIES
-  if (searchParams?.facilities) {
+  if (hasFacilityFilter) {
     const facilityIds = String(searchParams.facilities).split(",")
 
     query = query.in(
@@ -38,7 +43,11 @@ async function getPackages(searchParams?: {
     )
   }
 
-  const { data } = await query
+  const { data, error } = await query
+
+  if (error) {
+    console.log("FILTER ERROR:", error)
+  }
 
   return data || []
 }
