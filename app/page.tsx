@@ -9,22 +9,36 @@ import SearchBar from "@/app/components/SearchBar"
 export const dynamic = "force-dynamic"
 
 
-async function getPackages() {
+async function getPackages(searchParams?: {
+  [key: string]: string | string[] | undefined
+}) {
   const supabase = await createClient()
 
-  // 🔍 DEBUG – CEK SUPABASE URL YANG DIPAKAI VERCEL
-  console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL)
+  let query = supabase
+    .from("packages")
+    .select(`
+      *,
+      package_translations(*),
+      package_facilities(facility_id)
+    `)
+    .eq("status", "approved")
 
-  const { data, error } = await supabase
-  .from("packages")
-  .select(`
-    *,
-    package_translations(*)
-  `)
-  .eq("status", "approved")
+  // FILTER MAX PRICE
+  if (searchParams?.max_price) {
+    query = query.lte("price_adult", Number(searchParams.max_price))
+  }
 
-  console.log("DATA RAW:", data)
-  console.log("ERROR RAW:", error)
+  // FILTER FACILITIES
+  if (searchParams?.facilities) {
+    const facilityIds = String(searchParams.facilities).split(",")
+
+    query = query.in(
+      "package_facilities.facility_id",
+      facilityIds
+    )
+  }
+
+  const { data } = await query
 
   return data || []
 }
@@ -35,7 +49,7 @@ export default async function HomePage({
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
 
-  const packages = await getPackages()
+  const packages = await getPackages(searchParams)
 const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase

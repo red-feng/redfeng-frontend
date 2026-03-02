@@ -27,10 +27,14 @@ export default function FilterClient({
 
   // AUTO FILTER PRICE
   useEffect(() => {
+  const timeout = setTimeout(() => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("max_price", String(maxPrice))
     router.push(`/?${params.toString()}`)
-  }, [maxPrice])
+  }, 300)
+
+  return () => clearTimeout(timeout)
+}, [maxPrice])
 
   // AUTO FILTER FACILITIES
   useEffect(() => {
