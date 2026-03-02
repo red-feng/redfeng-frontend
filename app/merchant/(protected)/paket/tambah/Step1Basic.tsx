@@ -206,7 +206,12 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   </select>
 
 </div>
-
+<input
+  type="file"
+  name="cover_image"
+  accept="image/*"
+  required
+/>
               <div className="flex justify-center pt-6">
                 <button
                   type="submit"
