@@ -27,7 +27,26 @@ async function getPackages(searchParams?: {
       }
     `)
     .eq("status", "approved")
+// FILTER COUNTRY
+if (searchParams?.country) {
+  query = query.ilike("country", `%${searchParams.country}%`)
+}
 
+// FILTER TRAVEL STYLE
+if (searchParams?.style) {
+  query = query.eq("travel_style", searchParams.style)
+}
+
+// FILTER DURATION
+if (searchParams?.duration) {
+  if (searchParams.duration === "1-3") {
+    query = query.lte("duration_days", 3)
+  } else if (searchParams.duration === "4-7") {
+    query = query.gte("duration_days", 4).lte("duration_days", 7)
+  } else if (searchParams.duration === "8+") {
+    query = query.gte("duration_days", 8)
+  }
+}
   // FILTER PRICE
   if (searchParams?.max_price) {
     query = query.lte("price_adult", Number(searchParams.max_price))
