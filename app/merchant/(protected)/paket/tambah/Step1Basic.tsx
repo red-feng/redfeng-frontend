@@ -13,7 +13,7 @@ type Province = {
   name: string
 }
 
-export default function Step1Basic({ countries }: { countries: any[] }) {
+export default function Step1Basic({ countries }: { countries: Country[] }) {
   const [originCountry, setOriginCountry] = useState("")
   const [originProvinces, setOriginProvinces] = useState<Province[]>([])
 
