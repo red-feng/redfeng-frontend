@@ -68,7 +68,7 @@ export async function createPackage(formData: FormData) {
   title,
   slug,
 
-  country: formData.get("country"), // kalau masih dipakai
+  country_id: formData.get("country_id"), // kalau masih dipakai
   province: formData.get("province"),
   city: formData.get("city"), // kalau masih dipakai
 
