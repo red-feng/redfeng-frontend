@@ -17,32 +17,11 @@ type Province = {
 export default function Step1Basic({ countries }: { countries: Country[] }) {
 
   const [originCountry, setOriginCountry] = useState("")
-  const [originProvinces, setOriginProvinces] = useState<Province[]>([])
-
+  
   const [destinationCountry, setDestinationCountry] = useState("")
-  const [destinationProvinces, setDestinationProvinces] = useState<Province[]>([])
+  
 
-  useEffect(() => {
-    if (!originCountry) {
-      setOriginProvinces([])
-      return
-    }
-
-    fetch(`/api/provinces?country_id=${originCountry}`)
-      .then(res => res.json())
-      .then(data => setOriginProvinces(data))
-  }, [originCountry])
-
-  useEffect(() => {
-    if (!destinationCountry) {
-      setDestinationProvinces([])
-      return
-    }
-
-    fetch(`/api/provinces?country_id=${destinationCountry}`)
-      .then(res => res.json())
-      .then(data => setDestinationProvinces(data))
-  }, [destinationCountry])
+  
 
   return (
     <div className="relative min-h-screen">
@@ -122,59 +101,51 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   </div>
 
   <select
-    name="origin_country_id"
-    value={originCountry}
-    onChange={(e) => setOriginCountry(e.target.value)}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  >
-    <option value="">Pilih Negara Keberangkatan</option>
-    {countries.map(c => (
-      <option key={c.id} value={c.id}>{c.name}</option>
-    ))}
-  </select>
+  name="origin_country_id"
+  value={originCountry}
+  onChange={(e) => setOriginCountry(e.target.value)}
+  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  required
+>
+  <option value="">Pilih Negara Keberangkatan</option>
+  {countries.map(c => (
+    <option key={c.id} value={c.id}>{c.name}</option>
+  ))}
+</select>
 
-  <select
-    name="origin_province_id"
-    disabled={!originCountry}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  >
-    <option value="">Pilih Provinsi</option>
-    {originProvinces.map(p => (
-      <option key={p.id} value={p.id}>{p.name}</option>
-    ))}
-  </select>
+<input
+  name="origin_province"
+  placeholder="Provinsi Keberangkatan"
+  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  required
+/>
 
   {/* ===== DESTINATION ===== */}
-  <div className="col-span-2 font-semibold pt-6">
-    Tujuan
-  </div>
+<div className="col-span-2 font-semibold pt-6">
+  Tujuan
+</div>
 
-  <select
-    name="destination_country_id"
-    value={destinationCountry}
-    onChange={(e) => setDestinationCountry(e.target.value)}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  >
-    <option value="">Pilih Negara Tujuan</option>
-    {countries.map(c => (
-      <option key={c.id} value={c.id}>{c.name}</option>
-    ))}
-  </select>
+<select
+  name="destination_country_id"
+  value={destinationCountry}
+  onChange={(e) => setDestinationCountry(e.target.value)}
+  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  required
+>
+  <option value="">Pilih Negara Tujuan</option>
+  {countries.map((c) => (
+    <option key={c.id} value={c.id}>
+      {c.name}
+    </option>
+  ))}
+</select>
 
-  <select
-    name="destination_province_id"
-    disabled={!destinationCountry}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  >
-    <option value="">Pilih Provinsi</option>
-    {destinationProvinces.map(p => (
-      <option key={p.id} value={p.id}>{p.name}</option>
-    ))}
-  </select>
+<input
+  name="destination_province"
+  placeholder="Provinsi Tujuan"
+  className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+  required
+/>
 
   {/* MINIMAL PESERTA */}
   <input
