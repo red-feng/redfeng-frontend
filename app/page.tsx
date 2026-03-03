@@ -16,6 +16,7 @@ type PackageListItem = {
   country: string | null
   currency: string | null
   price_adult: number | null
+  package_facilities?: { facility_id: string }[] | null
   package_translations?: { title: string | null; description: string | null }[] | null
 }
 
@@ -96,7 +97,30 @@ if (searchParams?.style) {
     console.log("FILTER ERROR:", error)
   }
 
-  return data || []
+  let filtered = (data as PackageListItem[] | null) || []
+
+  if (searchParams?.max_price) {
+    const max = Number(searchParams.max_price)
+    if (!Number.isNaN(max)) {
+      filtered = filtered.filter((pkg) => (pkg.price_adult ?? 0) <= max)
+    }
+  }
+
+  if (hasFacilityFilter) {
+    const selected = new Set(
+      facilitiesParam
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean)
+    )
+
+    filtered = filtered.filter((pkg) => {
+      const ids = (pkg.package_facilities || []).map((f) => f.facility_id)
+      return ids.some((id) => selected.has(id))
+    })
+  }
+
+  return filtered
 }
 
 export default async function HomePage({
