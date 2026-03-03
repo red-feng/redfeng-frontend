@@ -16,16 +16,19 @@ type PackageCardData = {
 }
 
 export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
-  
   const translation = pkg.package_translations?.[0]
+  const imageSrc = pkg.cover_image || "/placeholder.png"
+  const imageAlt = translation?.title || "Package image"
+  const priceAdult = pkg.price_adult ?? 0
+  const currency = pkg.currency || "IDR"
 
   return (
     <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition flex overflow-hidden">
       {/* IMAGE */}
       <div className="w-[280px] h-[220px] relative shrink-0">
         <img
-          src={pkg.cover_image}
-          alt={translation?.title}
+          src={imageSrc}
+          alt={imageAlt}
           className="w-full h-full object-cover"
         />
 
@@ -74,11 +77,11 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
       <div className="w-[240px] border-l bg-gray-50 p-6 flex flex-col justify-between items-end">
         <div className="text-right">
           <div className="text-sm text-gray-500 line-through">
-            {pkg.currency} {(pkg.price_adult * 1.2)?.toLocaleString()}
+            {currency} {(priceAdult * 1.2).toLocaleString()}
           </div>
 
           <div className="text-2xl font-bold text-orange-600">
-            {pkg.currency} {pkg.price_adult?.toLocaleString()}
+            {currency} {priceAdult.toLocaleString()}
           </div>
 
           <div className="text-xs text-gray-500">
