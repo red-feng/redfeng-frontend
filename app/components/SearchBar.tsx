@@ -74,7 +74,7 @@ export default function SearchBar() {
         <select
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
-          
+
           className="border rounded-xl px-4 py-3 w-[200px]"
         >
           <option value="">Semua Durasi</option>

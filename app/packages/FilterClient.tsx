@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 type Facility = {
@@ -34,7 +33,6 @@ export default function FilterClient({
       isFirstPriceRender.current = false
       return
     }
-
     const timeout = setTimeout(() => {
       const currentValue = searchParams.get("max_price") || ""
       const nextValue = String(maxPrice)
@@ -46,7 +44,7 @@ export default function FilterClient({
     }, 300)
 
     return () => clearTimeout(timeout)
-  }, [maxPrice])
+  }, [maxPrice, router, searchParams])
 
   // AUTO FILTER FACILITIES
   useEffect(() => {
@@ -67,7 +65,7 @@ export default function FilterClient({
     }
 
     router.replace(`/?${params.toString()}`)
-  }, [selectedFacilities])
+   }, [selectedFacilities, router, searchParams])
 
   const grouped = facilities.reduce<Record<string, Facility[]>>(
     (acc, f) => {

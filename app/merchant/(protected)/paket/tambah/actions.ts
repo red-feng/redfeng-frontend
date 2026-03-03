@@ -238,6 +238,11 @@ export async function saveItinerary(formData: FormData) {
   const pickupTimes = formData.getAll("pickup_time[]") as string[]
   const routes = formData.getAll("route[]") as string[]
   const descriptions = formData.getAll("description[]") as string[]
+  type ItineraryRouteInput = {
+    pickup_time: string
+    route: string
+    description: string
+  }
 
   // 1️⃣ Hapus itinerary lama dulu
   await supabase
@@ -246,7 +251,7 @@ export async function saveItinerary(formData: FormData) {
     .eq("package_id", packageId)
 
   // 2️⃣ Group data berdasarkan day_number
-  const grouped: Record<string, any[]> = {}
+    const grouped: Record<string, ItineraryRouteInput[]> = {}
 
   dayNumbers.forEach((day, index) => {
     if (!grouped[day]) grouped[day] = []
