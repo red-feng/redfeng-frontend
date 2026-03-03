@@ -25,17 +25,17 @@ async function getPackages(searchParams?: {
 }): Promise<PackageListItem[]> {
   const supabase = await createClient()
 
-  const hasFacilityFilter = !!searchParams?.facilities
+  const toParamString = (value: string | string[] | undefined): string =>
+    Array.isArray(value) ? value.join(",") : value || ""
+  const facilitiesParam = toParamString(searchParams?.facilities)
+  const hasFacilityFilter = facilitiesParam.length > 0
 
   let query = supabase
     .from("packages")
     .select(`
       *,
       package_translations(*),
-      ${hasFacilityFilter
-        ? "package_facilities!inner(facility_id)"
-        : "package_facilities(facility_id)"
-      }
+      package_facilities(facility_id)
     `)
     .eq("status", "approved")
 // FILTER COUNTRY
@@ -65,12 +65,29 @@ if (searchParams?.style) {
 
   // FILTER FACILITIES
   if (hasFacilityFilter) {
-    const facilityIds = String(searchParams.facilities).split(",")
+    const facilityIds = facilitiesParam
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
 
-    query = query.in(
-      "package_facilities.facility_id",
-      facilityIds
-    )
+    if (facilityIds.length > 0) {
+      const { data: facilityRows, error: facilityError } = await supabase
+        .from("package_facilities")
+        .select("package_id")
+        .in("facility_id", facilityIds)
+
+      if (facilityError) {
+        console.log("FACILITY FILTER ERROR:", facilityError)
+        return []
+      }
+
+      const packageIds = [...new Set((facilityRows || []).map((row) => row.package_id))]
+      if (packageIds.length === 0) {
+        return []
+      }
+
+      query = query.in("id", packageIds)
+    }
   }
 
   const { data, error } = await query
