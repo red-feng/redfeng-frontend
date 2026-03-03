@@ -8,7 +8,7 @@ import Step5Review from "./Step5Review"
 export default async function WizardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ step?: string; id?: string }>
+  searchParams: Promise<{ step?: string; id?: string; error?: string }>
 }) {
   const supabase = await createClient()
   const resolvedSearchParams = await searchParams
@@ -18,11 +18,17 @@ export default async function WizardPage({
     .select("id, name")
     .order("name")
 
-  const step = resolvedSearchParams.step ?? "1"
+   const step = resolvedSearchParams.step ?? "1"
   const packageId = resolvedSearchParams.id ?? null
+  const errorMessage = resolvedSearchParams.error ?? null
 
   return (
     <div>
+      {errorMessage && (
+        <div className="mx-auto mt-4 max-w-5xl rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
       {step === "1" && (
         <Step1Basic countries={countries || []} />
       )}

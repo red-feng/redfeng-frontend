@@ -3,10 +3,9 @@ import { createClient } from "@supabase/supabase-js"
 import type { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // ❗ JANGAN service role
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
   const { searchParams } = new URL(request.url)
@@ -25,7 +24,8 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("packages")
-    .select(`
+    .select(
+      `
       id,
       title,
       slug,
@@ -33,42 +33,49 @@ export async function GET(request: NextRequest) {
       duration,
       price_adult,
       thumbnail_url
-    `, { count: "exact" })
+    `,
+      { count: "exact" }
+    )
     .eq("status", "published")
 
-  // 🔎 Filter destination
-    if (destination && destination !== "Semua") {
-      query = query.eq("destination", destination)
-    }
+  if (destination && destination !== "Semua") {
+    query = query.eq("destination", destination)
+  }
 
-    // 🔎 Filter duration
-    if (duration && duration !== "Semua") {
-      query = query.eq("duration", duration)
-    }
-
-    // 🔎 Price range filter
-    if (minPrice) {
-      query = query.gte("price_adult", Number(minPrice))
-    }
-
-    if (maxPrice) {
-      query = query.lte("price_adult", Number(maxPrice))
-    }
-
-    // 🔎 Search
-    if (search) {
-      query = query.ilike("title", `%${search}%`)
-    }
-
-    // 🔥 CLEAN SORTING LOGIC (NO DOUBLE ORDER)
-    if (sort === "price_asc") {
-      query = query.order("price_adult", { ascending: true })
-    } else if (sort === "price_desc") {
-      query = query.order("price_adult", { ascending: false })
+  if (duration && duration !== "Semua") {
+    if (duration === "1-3") {
+      query = query.lte("duration", 3)
+    } else if (duration === "4-7") {
+      query = query.gte("duration", 4).lte("duration", 7)
+    } else if (duration === "8+") {
+      query = query.gte("duration", 8)
     } else {
-      // default sorting
-      query = query.order("created_at", { ascending: false })
+      const numericDuration = Number(duration)
+      if (!Number.isNaN(numericDuration)) {
+        query = query.eq("duration", numericDuration)
+      }
     }
+  }
+
+  if (minPrice) {
+    query = query.gte("price_adult", Number(minPrice))
+  }
+
+  if (maxPrice) {
+    query = query.lte("price_adult", Number(maxPrice))
+  }
+
+  if (search) {
+    query = query.ilike("title", `%${search}%`)
+  }
+
+  if (sort === "price_asc") {
+    query = query.order("price_adult", { ascending: true })
+  } else if (sort === "price_desc") {
+    query = query.order("price_adult", { ascending: false })
+  } else {
+    query = query.order("created_at", { ascending: false })
+  }
 
   const { data, error, count } = await query.range(from, to)
 
