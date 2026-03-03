@@ -1,7 +1,6 @@
 import FilterClient from "@/app/packages/FilterClient"
 import { createClient } from "@/lib/supabase/server"
 import { Suspense } from "react"
-import Link from "next/link"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
@@ -86,11 +85,12 @@ if (searchParams?.style) {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const resolvedSearchParams = (await searchParams) || {}
 
-  const packages = await getPackages(searchParams)
-const supabase = await createClient()
+  const packages = await getPackages(resolvedSearchParams)
+  const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase
     .from("facilities")
