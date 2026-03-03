@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 
 
 //step 1
+console.log("SERVER ACTION TRIGGERED")
 export async function createPackage(formData: FormData) {
   const supabase = await createClient()
 
@@ -93,7 +94,7 @@ export async function createPackage(formData: FormData) {
 
   if (error) throw error
 
-  redirect(`/merchant/paket/tambah?step=2&id=${data.id}`)
+  redirect(`/merchant/paket/tambah?step=2&id=test123`)
 }
 
 // step 2
