@@ -23,6 +23,16 @@ function wizardPath(step: string, packageId?: string | null, error?: string): st
   return `/merchant/paket/tambah?${params.toString()}`
 }
 
+function slugifyTitle(input: string): string {
+  return input
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+}
+
 // step 1
 export async function createPackage(formData: FormData) {
   const supabase = await createClient()
@@ -49,7 +59,8 @@ export async function createPackage(formData: FormData) {
     if (!title) throw new Error("Nama paket wajib diisi.")
 
     const defaultLanguage = (formData.get("default_language") as string) || "id"
-    const slug = `${title.toLowerCase().replace(/\s+/g, "-")}-${crypto.randomUUID().slice(0, 6)}`
+    const slugBase = slugifyTitle(title)
+    const slug = `${slugBase || "paket"}-${crypto.randomUUID().slice(0, 6)}`
 
     const coverFile = formData.get("cover_image") as File
     let coverImageUrl: string | null = null

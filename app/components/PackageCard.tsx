@@ -90,7 +90,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
         </div>
 
         <Link
-          href={`/packages/${pkg.slug}`}
+          href={`/packages/${encodeURIComponent(pkg.slug)}`}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-center transition"
         >
           Pilih Paket

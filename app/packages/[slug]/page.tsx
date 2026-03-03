@@ -9,12 +9,16 @@ export default async function PaketPage({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params
+  const { slug: rawSlug } = await params
   const supabase = await createClient()
-
-  const { data: pkg, error } = await supabase
-    .from("packages")
-    .select(`
+  const safeDecode = (value: string): string => {
+    try {
+      return decodeURIComponent(value)
+    } catch {
+      return value
+    }
+  }
+  const selectFields = `
       id,
       slug,
       city,
@@ -36,12 +40,72 @@ export default async function PaketPage({
       package_details (
         map_embed
       )
-    `)
-    
-    
-    .eq("slug", slug)
-    .eq("status", "approved")
-    .single()
+    `
+
+  const slugCandidates = [
+    rawSlug,
+    safeDecode(rawSlug),
+    rawSlug.replace(/^["'“”]+|["'“”]+$/g, ""),
+    safeDecode(rawSlug).replace(/^["'“”]+|["'“”]+$/g, ""),
+  ].filter((value, index, arr) => value && arr.indexOf(value) === index)
+
+  type PackageDetailsData = {
+    id: string
+    slug: string
+    city: string | null
+    country: string | null
+    duration: number | null
+    price_adult: number | null
+    price_child: number | null
+    currency: string | null
+    thumbnail_url: string | null
+    package_translations?: {
+      title: string | null
+      description: string | null
+      about_tour: string | null
+      itinerary: string | null
+      service_standard: string | null
+      preparation: string | null
+      terms_conditions: string | null
+    }[] | null
+    package_details?: { map_embed: string | null }[] | null
+  }
+
+  let pkg: PackageDetailsData | null = null
+  let error: unknown = null
+
+  for (const candidate of slugCandidates) {
+    const result = await supabase
+      .from("packages")
+      .select(selectFields)
+      .eq("slug", candidate)
+      .eq("status", "approved")
+      .maybeSingle()
+
+    if (result.data) {
+      pkg = result.data as PackageDetailsData
+      error = null
+      break
+    }
+
+    error = result.error
+  }
+
+  if (!pkg) {
+    const suffix = rawSlug.match(/([a-z0-9]{6,})$/i)?.[1]
+    if (suffix) {
+      const fallback = await supabase
+        .from("packages")
+        .select(selectFields)
+        .ilike("slug", `%${suffix}`)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle()
+
+      pkg = fallback.data as PackageDetailsData | null
+      error = fallback.error
+    }
+  }
 
 
 
