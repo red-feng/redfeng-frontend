@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 
 type ItineraryRouteInput = {
@@ -125,11 +126,38 @@ export async function createPackage(formData: FormData) {
 // step 2
 export async function savePackageDetails(formData: FormData) {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
   const packageId = formData.get("package_id") as string
   let nextPath = wizardPath("2", packageId || null)
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error("Sesi login berakhir. Silakan login ulang.")
+
+    const { data: merchant, error: merchantError } = await supabase
+      .from("merchants")
+      .select("id")
+      .eq("user_id", user.id)
+      .single()
+
+    if (merchantError || !merchant) {
+      throw new Error("Data merchant tidak ditemukan.")
+    }
+
+    const { data: ownedPackage, error: ownedPackageError } = await supabase
+      .from("packages")
+      .select("id")
+      .eq("id", packageId)
+      .eq("merchant_id", merchant.id)
+      .single()
+
+    if (ownedPackageError || !ownedPackage) {
+      throw new Error("Anda tidak memiliki akses ke paket ini.")
+    }
 
     const aboutTour = formData.get("about_tour") as string
     const serviceStandard = formData.get("service_standard") as string
@@ -217,7 +245,7 @@ export async function savePackageDetails(formData: FormData) {
 
     const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
     if (validGalleryFiles.length > 0) {
-      const { error: deleteGalleryError } = await supabase
+      const { error: deleteGalleryError } = await adminSupabase
         .from("package_images")
         .delete()
         .eq("package_id", packageId)
@@ -232,7 +260,7 @@ export async function savePackageDetails(formData: FormData) {
         const fileExt = file.name.split(".").pop() || "jpg"
         const fileName = `${crypto.randomUUID()}.${fileExt}`
 
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await adminSupabase.storage
           .from("package-images")
           .upload(fileName, file, {
             contentType: file.type,
@@ -242,7 +270,7 @@ export async function savePackageDetails(formData: FormData) {
           throw new Error(`Gagal upload gallery: ${uploadError.message}`)
         }
 
-        const { data: publicData } = supabase.storage
+        const { data: publicData } = adminSupabase.storage
           .from("package-images")
           .getPublicUrl(fileName)
 
@@ -252,7 +280,7 @@ export async function savePackageDetails(formData: FormData) {
         })
       }
 
-      const { error: galleryInsertError } = await supabase
+      const { error: galleryInsertError } = await adminSupabase
         .from("package_images")
         .insert(imageRows)
 
