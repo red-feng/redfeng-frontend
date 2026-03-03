@@ -8,25 +8,17 @@ import Step5Review from "./Step5Review"
 export default async function WizardPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams: { step?: string; id?: string }
 }) {
   const supabase = await createClient()
 
-  // 🔥 Fetch countries untuk Step 1
   const { data: countries } = await supabase
     .from("countries")
     .select("id, name")
     .order("name")
 
-  const step =
-    typeof searchParams?.step === "string"
-      ? searchParams.step
-      : "1"
-
-  const packageId =
-    typeof searchParams?.id === "string"
-      ? searchParams.id
-      : undefined
+  const step = searchParams.step ?? "1"
+  const packageId = searchParams.id ?? null
 
   return (
     <div>
@@ -34,16 +26,16 @@ export default async function WizardPage({
         <Step1Basic countries={countries || []} />
       )}
       {step === "2" && (
-        <Step2Details packageId={packageId ?? null} />
+        <Step2Details packageId={packageId} />
       )}
       {step === "3" && (
-        <Step3Facilities packageId={packageId ?? null} />
+        <Step3Facilities packageId={packageId} />
       )}
       {step === "4" && (
-        <Step4Itinerary packageId={packageId ?? null} />
+        <Step4Itinerary packageId={packageId} />
       )}
       {step === "5" && (
-        <Step5Review packageId={packageId ?? null} />
+        <Step5Review packageId={packageId} />
       )}
     </div>
   )
