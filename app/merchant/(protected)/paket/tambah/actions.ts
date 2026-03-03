@@ -129,6 +129,7 @@ export async function savePackageDetails(formData: FormData) {
     const meetingPoint = formData.get("meeting_point") as string
     const mapEmbed = formData.get("map_embed") as string
     const tagsRaw = formData.get("tags") as string
+    const galleryFiles = formData.getAll("gallery_images") as File[]
 
     const { data: pkg } = await supabase
       .from("packages")
@@ -203,6 +204,52 @@ export async function savePackageDetails(formData: FormData) {
       }
     }
 
+    const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
+    if (validGalleryFiles.length > 0) {
+      const { error: deleteGalleryError } = await supabase
+        .from("package_images")
+        .delete()
+        .eq("package_id", packageId)
+
+      if (deleteGalleryError) {
+        throw new Error(`Gagal menghapus gallery lama: ${deleteGalleryError.message}`)
+      }
+
+      const imageRows: { package_id: string; image_url: string }[] = []
+
+      for (const file of validGalleryFiles) {
+        const fileExt = file.name.split(".").pop() || "jpg"
+        const fileName = `${crypto.randomUUID()}.${fileExt}`
+
+        const { error: uploadError } = await supabase.storage
+          .from("package-images")
+          .upload(fileName, file, {
+            contentType: file.type,
+          })
+
+        if (uploadError) {
+          throw new Error(`Gagal upload gallery: ${uploadError.message}`)
+        }
+
+        const { data: publicData } = supabase.storage
+          .from("package-images")
+          .getPublicUrl(fileName)
+
+        imageRows.push({
+          package_id: packageId,
+          image_url: publicData.publicUrl,
+        })
+      }
+
+      const { error: galleryInsertError } = await supabase
+        .from("package_images")
+        .insert(imageRows)
+
+      if (galleryInsertError) {
+        throw new Error(`Gagal menyimpan gallery: ${galleryInsertError.message}`)
+      }
+    }
+
     nextPath = wizardPath("3", packageId)
   } catch (error) {
     console.error("savePackageDetails error:", error)
@@ -261,6 +308,7 @@ export async function saveItinerary(formData: FormData) {
 
     const dayNumbers = formData.getAll("day_number[]") as string[]
     const pickupTimes = formData.getAll("pickup_time[]") as string[]
+    const pickupPeriods = formData.getAll("pickup_period[]") as string[]
     const routes = formData.getAll("route[]") as string[]
     const descriptions = formData.getAll("description[]") as string[]
 
@@ -275,10 +323,19 @@ export async function saveItinerary(formData: FormData) {
       if (!grouped[day]) grouped[day] = []
 
       grouped[day].push({
-        pickup_time: pickupTimes[index] || "",
-        route: routes[index] || "",
-        description: descriptions[index] || "",
+       pickup_time: [pickupTimes[index], pickupPeriods[index]].filter(Boolean).join(" "),
+      route: routes[index] || "",
+      description: "",
       })
+    })
+
+    const orderedDays = Object.keys(grouped).sort((a, b) => Number(a) - Number(b))
+    orderedDays.forEach((dayKey, dayIndex) => {
+      const dayDescription = descriptions[dayIndex] || ""
+      grouped[dayKey] = grouped[dayKey].map((routeRow) => ({
+        ...routeRow,
+        description: dayDescription,
+      }))
     })
 
     for (const day in grouped) {
