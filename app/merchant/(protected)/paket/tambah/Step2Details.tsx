@@ -1,5 +1,6 @@
 "use client"
 
+import { FormEvent, useState } from "react"
 import { savePackageDetails } from "./actions"
 import Image from "next/image"
 
@@ -8,6 +9,30 @@ export default function Step2Details({
 }: {
   packageId: string | null
 }) {
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const validateGallerySize = (event: FormEvent<HTMLFormElement>) => {
+    const form = event.currentTarget
+    const fileInput = form.elements.namedItem("gallery_images") as HTMLInputElement | null
+    const files = fileInput?.files
+
+    if (!files || files.length === 0) {
+      setUploadError(null)
+      return
+    }
+
+    const totalBytes = Array.from(files).reduce((sum, file) => sum + file.size, 0)
+    const totalMb = totalBytes / (1024 * 1024)
+
+    if (totalMb > 18) {
+      event.preventDefault()
+      setUploadError("Total ukuran gallery terlalu besar. Maksimal 18MB per submit.")
+      return
+    }
+
+    setUploadError(null)
+  }
+
   if (!packageId) {
     return <p className="text-red-500">Package ID tidak ditemukan</p>
   }
@@ -56,6 +81,7 @@ export default function Step2Details({
             <form
               action={savePackageDetails}
               encType="multipart/form-data"
+              onSubmit={validateGallerySize}
               className="space-y-8"
             >
               <input type="hidden" name="package_id" value={packageId} />
@@ -172,6 +198,14 @@ export default function Step2Details({
                   accept="image/*"
                   className="border rounded-lg p-4 w-full"
                 />
+                <p className="mt-2 text-xs text-gray-500">
+                  Maksimal total ukuran upload 18MB per submit.
+                </p>
+                {uploadError && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {uploadError}
+                  </p>
+                )}
               </div>
 
               {/* BUTTON */}
