@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 type Facility = {
@@ -21,32 +22,51 @@ export default function FilterClient({
     Number(searchParams.get("max_price")) || 100000000
   )
 
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
+    const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
     searchParams.get("facilities")?.split(",") || []
   )
+  const isFirstPriceRender = useRef(true)
+  const isFirstFacilitiesRender = useRef(true)
 
   // AUTO FILTER PRICE
   useEffect(() => {
-  const timeout = setTimeout(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("max_price", String(maxPrice))
-    router.push(`/?${params.toString()}`)
-  }, 300)
+    if (isFirstPriceRender.current) {
+      isFirstPriceRender.current = false
+      return
+    }
 
-  return () => clearTimeout(timeout)
-}, [maxPrice])
+    const timeout = setTimeout(() => {
+      const currentValue = searchParams.get("max_price") || ""
+      const nextValue = String(maxPrice)
+      if (currentValue === nextValue) return
+
+      const params = new URLSearchParams(searchParams.toString())
+      params.set("max_price", nextValue)
+      router.replace(`/?${params.toString()}`)
+    }, 300)
+
+    return () => clearTimeout(timeout)
+  }, [maxPrice])
 
   // AUTO FILTER FACILITIES
   useEffect(() => {
+    if (isFirstFacilitiesRender.current) {
+      isFirstFacilitiesRender.current = false
+      return
+    }
+
     const params = new URLSearchParams(searchParams.toString())
+    const currentFacilities = searchParams.get("facilities") || ""
+    const nextFacilities = selectedFacilities.join(",")
+    if (currentFacilities === nextFacilities) return
 
     if (selectedFacilities.length > 0) {
-      params.set("facilities", selectedFacilities.join(","))
+      params.set("facilities", nextFacilities)
     } else {
       params.delete("facilities")
     }
 
-    router.push(`/?${params.toString()}`)
+    router.replace(`/?${params.toString()}`)
   }, [selectedFacilities])
 
   const grouped = facilities.reduce<Record<string, Facility[]>>(
@@ -107,7 +127,6 @@ export default function FilterClient({
           ))}
         </div>
       ))}
-
     </div>
   )
 }

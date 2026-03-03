@@ -1,11 +1,25 @@
 import Link from "next/link"
 
-export default function PackageCard({ pkg }: any) {
+type PackageCardTranslation = {
+  title: string | null
+  description: string | null
+}
+
+type PackageCardData = {
+  slug: string
+  cover_image: string | null
+  city: string | null
+  country: string | null
+  currency: string | null
+  price_adult: number | null
+  package_translations?: PackageCardTranslation[] | null
+}
+
+export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
   const translation = pkg.package_translations?.[0]
 
   return (
     <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition flex overflow-hidden">
-
       {/* IMAGE */}
       <div className="w-[280px] h-[220px] relative shrink-0">
         <img
@@ -27,7 +41,7 @@ export default function PackageCard({ pkg }: any) {
         </h2>
 
         <div className="text-sm text-gray-500 mb-2">
-          📍 {pkg.city}, {pkg.country}
+          Location: {pkg.city}, {pkg.country}
         </div>
 
         {/* Rating */}

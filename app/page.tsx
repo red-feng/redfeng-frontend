@@ -6,12 +6,24 @@ import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 
+
 export const dynamic = "force-dynamic"
+
+type PackageListItem = {
+  id: string
+  slug: string
+  cover_image: string | null
+  city: string | null
+  country: string | null
+  currency: string | null
+  price_adult: number | null
+  package_translations?: { title: string | null; description: string | null }[] | null
+}
 
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
-}) {
+}): Promise<PackageListItem[]> {
   const supabase = await createClient()
 
   const hasFacilityFilter = !!searchParams?.facilities
@@ -111,7 +123,7 @@ const supabase = await createClient()
           {packages.length === 0 ? (
             <p>Tidak ada paket ditemukan</p>
           ) : (
-            packages.map((pkg: any) => (
+            packages.map((pkg) => (
               <PackageCard key={pkg.id} pkg={pkg} />
             ))
           )}

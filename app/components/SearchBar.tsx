@@ -14,9 +14,23 @@ export default function SearchBar() {
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
 
-    country ? params.set("country", country) : params.delete("country")
-    style ? params.set("style", style) : params.delete("style")
-    duration ? params.set("duration", duration) : params.delete("duration")
+    if (country) {
+      params.set("country", country)
+    } else {
+      params.delete("country")
+    }
+
+    if (style) {
+      params.set("style", style)
+    } else {
+      params.delete("style")
+    }
+
+    if (duration) {
+      params.set("duration", duration)
+    } else {
+      params.delete("duration")
+    }
 
     router.push(`/?${params.toString()}`)
   }
@@ -38,22 +52,29 @@ export default function SearchBar() {
         </select>
 
         {/* TRAVEL STYLE */}
-        <select
+         <select
           value={style}
           onChange={(e) => setStyle(e.target.value)}
           className="border rounded-xl px-4 py-3 w-[240px]"
         >
           <option value="">Semua Travel Style</option>
+          <option value="explore">Explore</option>
           <option value="luxury">Luxury</option>
           <option value="adventure">Adventure</option>
           <option value="family">Family</option>
           <option value="honeymoon">Honeymoon</option>
+          <option value="wellness">Wellness</option>
+          <option value="religious">Religious</option>
+          <option value="budget">Budget</option>
+          <option value="group">Group</option>
+          <option value="solo">Solo</option>
         </select>
 
         {/* DURASI */}
         <select
           value={duration}
           onChange={(e) => setDuration(e.target.value)}
+          
           className="border rounded-xl px-4 py-3 w-[200px]"
         >
           <option value="">Semua Durasi</option>

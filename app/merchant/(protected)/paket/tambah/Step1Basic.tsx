@@ -1,15 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
 
 type Country = {
-  id: string
-  name: string
-}
-
-type Province = {
   id: string
   name: string
 }
@@ -46,8 +41,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
             priority
           />
         </div>
-<h1 className="text-red-500">TEST DEPLOY</h1>
-        {/* CONTENT WRAPPER */}
+          {/* CONTENT WRAPPER */}
         <div className="flex justify-center px-8 pb-28">
 
           <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
@@ -57,7 +51,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
             </h1>
 
             <p className="text-gray-500 mb-8">
-              Step 1 – Basic Info
+              Step 1 - Basic Info
             </p>
 
             <form
