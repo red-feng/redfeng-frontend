@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
+import Image from "next/image"
 
 type CountryRow = {
   id: string
@@ -157,7 +158,14 @@ export default async function Page({
         <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_360px]">
           <main className="space-y-6">
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <img src={coverImage} alt="cover" className="h-[360px] w-full object-cover" />
+              <Image
+                src={coverImage}
+                alt="cover"
+                width={1600}
+                height={900}
+                unoptimized
+                className="h-[360px] w-full object-cover"
+              />
               <div className="grid gap-4 border-t border-slate-200 p-5 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Adult Price</p>
@@ -183,10 +191,13 @@ export default async function Page({
                 <h2 className="text-lg font-semibold text-slate-900">Gallery</h2>
                 <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
                   {galleryImages.map((image) => (
-                    <img
+                    <Image
                       key={image.id}
                       src={image.image_url}
                       alt="gallery"
+                      width={800}
+                      height={600}
+                      unoptimized
                       className="h-36 w-full rounded-xl object-cover"
                     />
                   ))}
