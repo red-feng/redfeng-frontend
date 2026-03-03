@@ -79,6 +79,7 @@ export async function createPackage(formData: FormData) {
 
   duration_days: Number(formData.get("duration_days") || 0),
 
+
   price_adult: Number(formData.get("price_adult") || 0),
   price_child: Number(formData.get("price_child") || 0),
 
@@ -237,11 +238,6 @@ export async function saveItinerary(formData: FormData) {
   const pickupTimes = formData.getAll("pickup_time[]") as string[]
   const routes = formData.getAll("route[]") as string[]
   const descriptions = formData.getAll("description[]") as string[]
-  type ItineraryRouteInput = {
-    pickup_time: string
-    route: string
-    description: string
-  }
 
   // 1️⃣ Hapus itinerary lama dulu
   await supabase
@@ -250,7 +246,7 @@ export async function saveItinerary(formData: FormData) {
     .eq("package_id", packageId)
 
   // 2️⃣ Group data berdasarkan day_number
-  const grouped: Record<string, ItineraryRouteInput[]> = {}
+  const grouped: Record<string, any[]> = {}
 
   dayNumbers.forEach((day, index) => {
     if (!grouped[day]) grouped[day] = []

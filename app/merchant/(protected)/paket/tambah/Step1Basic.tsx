@@ -51,7 +51,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
             </h1>
 
             <p className="text-gray-500 mb-8">
-              Step 1 - Basic Info
+               Step 1 - Basic Info
             </p>
 
             <form

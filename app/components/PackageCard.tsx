@@ -1,21 +1,6 @@
 import Link from "next/link"
 
-type PackageCardTranslation = {
-  title: string | null
-  description: string | null
-}
-
-type PackageCardData = {
-  slug: string
-  cover_image: string | null
-  city: string | null
-  country: string | null
-  currency: string | null
-  price_adult: number | null
-  package_translations?: PackageCardTranslation[] | null
-}
-
-export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
+export default function PackageCard({ pkg }: any) {
   const translation = pkg.package_translations?.[0]
 
   return (
