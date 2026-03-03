@@ -77,7 +77,7 @@ export async function createPackage(formData: FormData) {
 
   minimal_peserta: Number(formData.get("minimal_peserta") || 1),
 
-  duration_days: Number(formData.get("duration_days") || 0),
+   duration: Number(formData.get("duration_days") || 0),
 
 
   price_adult: Number(formData.get("price_adult") || 0),
