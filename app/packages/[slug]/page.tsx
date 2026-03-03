@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic"
 export default async function PaketPage({
   params,
 }: {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }) {
+  const { slug } = await params
   const supabase = await createClient()
 
   const { data: pkg, error } = await supabase
@@ -38,7 +39,7 @@ export default async function PaketPage({
     `)
     
     
-    .eq("slug", params.slug)
+    .eq("slug", slug)
     .eq("status", "approved")
     .single()
 
