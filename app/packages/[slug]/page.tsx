@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Gallery from "./Gallery"
@@ -85,7 +85,7 @@ export default async function PaketPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug: rawSlug } = await params
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const slugCandidates = [
     rawSlug,
