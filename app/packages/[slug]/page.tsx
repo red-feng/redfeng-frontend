@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Gallery from "./Gallery"
+import PackageTabs from "./PackageTabs"
 
 export const dynamic = "force-dynamic"
 
@@ -264,117 +265,31 @@ export default async function PaketPage({
               )}
             </section>
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-              <div className="flex flex-wrap gap-2 text-sm font-medium">
-                <a href="#overview" className="rounded-lg bg-emerald-600 px-4 py-2 text-white">Tentang Tour</a>
-                <a href="#itinerary" className="rounded-lg bg-orange-500 px-4 py-2 text-white">Itinerary</a>
-                <a href="#facilities" className="rounded-lg bg-orange-500 px-4 py-2 text-white">Fasilitas</a>
-                <a href="#service" className="rounded-lg bg-orange-500 px-4 py-2 text-white">Standar Layanan</a>
-              </div>
-            </section>
-
-            <section id="overview" className="rounded-2xl border border-orange-300 bg-white p-5 shadow-sm md:p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Info</h2>
-              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{translation?.about_tour || "-"}</p>
-            </section>
-
-            <section id="service" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Detail Konten</h2>
-              <div className="mt-5 grid gap-5 text-sm leading-7 text-slate-700 md:grid-cols-2">
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan</h3>
-                  <p className="whitespace-pre-line">{translation?.service_standard || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Include</h3>
-                  <p className="whitespace-pre-line">{translation?.include || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Exclude</h3>
-                  <p className="whitespace-pre-line">{translation?.exclude || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Persiapan</h3>
-                  <p className="whitespace-pre-line">{translation?.preparation || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Syarat & Ketentuan</h3>
-                  <p className="whitespace-pre-line">{translation?.terms_conditions || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
-                  <p className="whitespace-pre-line">{detail?.meeting_point || "-"}</p>
-                </div>
-              </div>
-            </section>
-
-            <section id="facilities" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Fasilitas</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {facilities.length === 0 && (
-                  <span className="text-sm text-slate-500">Tidak ada fasilitas.</span>
-                )}
-                {facilities.map((facility) => (
-                  <span
-                    key={facility.facility_id}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
-                  >
-                    {getFacilityName(facility.facilities)}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Tags / Highlights</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {tags.length === 0 && <span className="text-sm text-slate-500">Tidak ada tags.</span>}
-                {tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="rounded-full bg-slate-900 px-3 py-1 text-sm font-medium text-white"
-                  >
-                    {tag.tag}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <section id="itinerary" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-              <h2 className="text-lg font-semibold text-slate-900">Itinerary</h2>
-              <div className="mt-5 space-y-5">
-                {itineraryDays.length === 0 && (
-                  <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>
-                )}
-                {itineraryDays.map((day) => (
-                  <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-base font-semibold text-slate-900">Hari {day.day_number}</h3>
-                    <div className="mt-3 space-y-3">
-                      {day.package_itinerary_routes.length === 0 && (
-                        <p className="text-sm text-slate-500">Rute belum tersedia.</p>
-                      )}
-                      {day.package_itinerary_routes.map((route) => (
-                        <div key={route.id} className="rounded-lg border border-slate-200 bg-white p-3">
-                          <p className="text-sm font-semibold text-slate-900">{route.pickup_time || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-700">{route.route || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-500">{route.description || "-"}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {detail?.map_embed && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                <h2 className="text-lg font-semibold text-slate-900">Map</h2>
-                <div
-                  className="mt-4 overflow-hidden rounded-xl border border-slate-200"
-                  dangerouslySetInnerHTML={{ __html: detail.map_embed }}
-                />
-              </section>
-            )}
+            <PackageTabs
+              data={{
+                aboutTour: translation?.about_tour || null,
+                serviceStandard: translation?.service_standard || null,
+                include: translation?.include || null,
+                exclude: translation?.exclude || null,
+                preparation: translation?.preparation || null,
+                termsConditions: translation?.terms_conditions || null,
+                meetingPoint: detail?.meeting_point || null,
+                mapEmbed: detail?.map_embed || null,
+                facilities: facilities.map((facility) => ({
+                  id: facility.facility_id,
+                  name: getFacilityName(facility.facilities),
+                })),
+                tags: tags.map((tag) => ({
+                  id: tag.id,
+                  tag: tag.tag,
+                })),
+                itineraryDays: itineraryDays.map((day) => ({
+                  id: day.id,
+                  day_number: day.day_number,
+                  routes: day.package_itinerary_routes,
+                })),
+              }}
+            />
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
