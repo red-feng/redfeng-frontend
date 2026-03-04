@@ -1,8 +1,10 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { ChangeEvent, FormEvent, useState } from "react"
 import { savePackageDetails } from "./actions"
 import Image from "next/image"
+
+const MAX_GALLERY_BYTES = 18 * 1024 * 1024
 
 export default function Step2Details({
   packageId,
@@ -11,26 +13,37 @@ export default function Step2Details({
 }) {
   const [uploadError, setUploadError] = useState<string | null>(null)
 
-  const validateGallerySize = (event: FormEvent<HTMLFormElement>) => {
-    const form = event.currentTarget
-    const fileInput = form.elements.namedItem("gallery_images") as HTMLInputElement | null
-    const files = fileInput?.files
-
+  const validateSelectedFiles = (files: FileList | null): boolean => {
     if (!files || files.length === 0) {
       setUploadError(null)
-      return
+      return true
     }
 
     const totalBytes = Array.from(files).reduce((sum, file) => sum + file.size, 0)
-    const totalMb = totalBytes / (1024 * 1024)
-
-    if (totalMb > 18) {
-      event.preventDefault()
-      setUploadError("Total ukuran gallery terlalu besar. Maksimal 18MB per submit.")
-      return
+    if (totalBytes > MAX_GALLERY_BYTES) {
+      setUploadError("file gambar terlalu besar")
+      return false
     }
 
     setUploadError(null)
+    return true
+  }
+
+  const handleGalleryChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const isValid = validateSelectedFiles(event.target.files)
+    if (!isValid) {
+      event.target.value = ""
+    }
+  }
+
+  const validateGallerySize = (event: FormEvent<HTMLFormElement>) => {
+    const form = event.currentTarget
+    const fileInput = form.elements.namedItem("gallery_images") as HTMLInputElement | null
+    const isValid = validateSelectedFiles(fileInput?.files ?? null)
+    if (!isValid) {
+      event.preventDefault()
+      if (fileInput) fileInput.value = ""
+    }
   }
 
   if (!packageId) {
@@ -196,6 +209,7 @@ export default function Step2Details({
                   name="gallery_images"
                   multiple
                   accept="image/*"
+                  onChange={handleGalleryChange}
                   className="border rounded-lg p-4 w-full"
                 />
                 <p className="mt-2 text-xs text-gray-500">

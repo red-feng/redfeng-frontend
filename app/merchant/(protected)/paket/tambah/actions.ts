@@ -10,6 +10,8 @@ type ItineraryRouteInput = {
   description: string
 }
 
+const MAX_GALLERY_BYTES = 18 * 1024 * 1024
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     return error.message
@@ -169,6 +171,12 @@ export async function savePackageDetails(formData: FormData) {
     const mapEmbed = formData.get("map_embed") as string
     const tagsRaw = formData.get("tags") as string
     const galleryFiles = formData.getAll("gallery_images") as File[]
+    const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
+    const totalGalleryBytes = validGalleryFiles.reduce((sum, file) => sum + file.size, 0)
+
+    if (totalGalleryBytes > MAX_GALLERY_BYTES) {
+      throw new Error("file gambar terlalu besar")
+    }
 
     const { data: pkg } = await supabase
       .from("packages")
@@ -243,7 +251,6 @@ export async function savePackageDetails(formData: FormData) {
       }
     }
 
-    const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
     if (validGalleryFiles.length > 0) {
       const { error: deleteGalleryError } = await adminSupabase
         .from("package_images")
