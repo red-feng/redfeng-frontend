@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Image from "next/image"
 import Gallery from "./Gallery"
 import PackageTabs from "./PackageTabs"
+import SidebarActions from "./SidebarActions"
 
 export const dynamic = "force-dynamic"
 
@@ -305,15 +306,11 @@ export default async function PaketPage({
                 Booking now
               </button>
             </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-900">Informasi Lainnya</h3>
-              <div className="mt-3 space-y-2 text-sm">
-                <div className="rounded-lg border border-slate-200 px-3 py-2 text-slate-700">Peralatan & dokumen pribadi</div>
-                <div className="rounded-lg border border-slate-200 px-3 py-2 text-slate-700">Syarat dan ketentuan</div>
-                <div className="rounded-lg border border-slate-200 px-3 py-2 text-slate-700">Info kontak</div>
-              </div>
-            </section>
+            <SidebarActions
+              packageId={pkg.id}
+              preparation={translation?.preparation || null}
+              termsConditions={translation?.terms_conditions || null}
+            />
           </aside>
         </div>
       </div>
