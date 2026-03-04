@@ -14,16 +14,6 @@ type PackageDetailsData = {
   cover_image: string | null
   origin_province: string | null
   destination_province: string | null
-  package_translations?: {
-    title: string | null
-    description: string | null
-    about_tour: string | null
-    itinerary: string | null
-    service_standard: string | null
-    preparation: string | null
-    terms_conditions: string | null
-  }[] | null
-  package_details?: { map_embed: string | null }[] | null
 }
 
 function safeDecode(value: string): string {
@@ -51,19 +41,7 @@ export default async function PaketPage({
     currency,
     cover_image,
     origin_province,
-    destination_province,
-    package_translations (
-      title,
-      description,
-      about_tour,
-      itinerary,
-      service_standard,
-      preparation,
-      terms_conditions
-    ),
-    package_details (
-      map_embed
-    )
+    destination_province
   `
 
   const slugCandidates = [
@@ -111,8 +89,18 @@ export default async function PaketPage({
 
   if (error || !pkg) return notFound()
 
-  const translation = pkg.package_translations?.[0]
-  const detail = pkg.package_details?.[0]
+  const { data: translation } = await supabase
+    .from("package_translations")
+    .select("title, description, about_tour, itinerary, service_standard, preparation, terms_conditions")
+    .eq("package_id", pkg.id)
+    .limit(1)
+    .maybeSingle()
+
+  const { data: detail } = await supabase
+    .from("package_details")
+    .select("map_embed")
+    .eq("package_id", pkg.id)
+    .maybeSingle()
 
   const { data: images } = await supabase
     .from("package_images")
