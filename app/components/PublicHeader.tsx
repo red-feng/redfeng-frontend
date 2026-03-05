@@ -5,7 +5,7 @@ export default function PublicHeader() {
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-5 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-5">
-          <div className="flex items-center gap-3">
+          <a href="https://redfeng.co/" className="flex items-center gap-3">
             <Image
               src="/logo-redfeng.png"
               alt="Red Feng"
@@ -14,7 +14,7 @@ export default function PublicHeader() {
               priority
               className="h-23 w-auto md:h-25"
             />
-          </div>
+          </a>
 
           <nav className="hidden flex-wrap items-center gap-8 text-[15px] font-medium text-slate-700 lg:flex">
             <a href="https://redfeng.co/promo/" className="hover:text-orange-600">Promo</a>
