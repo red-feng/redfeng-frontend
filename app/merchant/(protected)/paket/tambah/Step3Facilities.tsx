@@ -4,23 +4,29 @@ import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { saveFacilities } from "./actions"
 import Image from "next/image"
+import { getFacilityIcon } from "@/lib/facility-icons"
+
+type Facility = {
+  id: string
+  name: string
+}
 
 export default function Step3Facilities({
   packageId,
 }: {
   packageId: string | null
 }) {
-  const supabase = createClient()
-  const [facilities, setFacilities] = useState<any[]>([])
+  const [facilities, setFacilities] = useState<Facility[]>([])
 
   useEffect(() => {
     const fetchFacilities = async () => {
+      const supabase = createClient()
       const { data } = await supabase
         .from("facilities")
         .select("*")
         .order("category", { ascending: true })
 
-      setFacilities(data || [])
+      setFacilities((data as Facility[] | null) || [])
     }
 
     fetchFacilities()
@@ -89,6 +95,9 @@ export default function Step3Facilities({
                     value={facility.id}
                     className="w-5 h-5 accent-orange-500"
                   />
+                  <span className="text-lg leading-none">
+                    {getFacilityIcon(facility.name)}
+                  </span>
                   <span className="text-gray-700">
                     {facility.name}
                   </span>

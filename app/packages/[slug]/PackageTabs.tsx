@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { getFacilityIcon } from "@/lib/facility-icons"
 
 type FacilityItem = {
   id: string
@@ -129,8 +130,9 @@ export default function PackageTabs({ data }: { data: ContentData }) {
               {data.facilities.map((facility) => (
                 <span
                   key={facility.id}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
                 >
+                  <span>{getFacilityIcon(facility.name)}</span>
                   {facility.name}
                 </span>
               ))}
