@@ -2,6 +2,8 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getCurrentLocale } from "@/lib/locale"
+import type { Locale } from "@/lib/i18n"
 import { sendChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -29,12 +31,56 @@ type PackageRow = {
 
 export const dynamic = "force-dynamic"
 
+function chatText(locale: Locale) {
+  if (locale === "en" || locale === "zh" || locale === "th") {
+    return {
+      title: "Chat",
+      merchantInbox: "Merchant inbox",
+      customerInbox: "Chat with package merchant",
+      migrationMissing: "Chat tables are not available yet. Please run chat migration first.",
+      createRoomFailed: "Failed to create chat room",
+      loadRoomsFailed: "Failed to load chat rooms",
+      loadMessagesFailed: "Failed to load messages",
+      chatRooms: "Chat Rooms",
+      noChats: "No chats yet.",
+      packageLabel: "Package",
+      selectRoom: "Select a chat room",
+      viewPackageDetail: "View package detail",
+      noMessages: "No messages yet. Start a conversation now.",
+      writeMessage: "Write a message...",
+      send: "Send",
+      packageFallback: "Package",
+    }
+  }
+
+  return {
+    title: "Chat",
+    merchantInbox: "Inbox merchant",
+    customerInbox: "Chat dengan merchant paket",
+    migrationMissing: "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu.",
+    createRoomFailed: "Gagal membuat ruang chat",
+    loadRoomsFailed: "Gagal memuat ruang chat",
+    loadMessagesFailed: "Gagal memuat pesan",
+    chatRooms: "Ruang Chat",
+    noChats: "Belum ada chat.",
+    packageLabel: "Paket",
+    selectRoom: "Pilih ruang chat",
+    viewPackageDetail: "Lihat detail paket",
+    noMessages: "Belum ada pesan. Mulai percakapan sekarang.",
+    writeMessage: "Tulis pesan...",
+    send: "Kirim",
+    packageFallback: "Paket",
+  }
+}
+
 export default async function ChatPage({
   searchParams,
 }: {
   searchParams: Promise<{ room_id?: string; package_id?: string; error?: string }>
 }) {
   const params = await searchParams
+  const locale = await getCurrentLocale()
+  const t = chatText(locale)
   const roomId = params.room_id || ""
   const packageId = params.package_id || ""
   const errorMessage = params.error || ""
@@ -99,8 +145,8 @@ export default async function ChatPage({
 
           if (createRoomError) {
             const msg = createRoomError.message.includes("does not exist")
-              ? "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu."
-              : `Gagal membuat ruang chat: ${createRoomError.message}`
+              ? t.migrationMissing
+              : `${t.createRoomFailed}: ${createRoomError.message}`
             return (
               <main className="mx-auto max-w-3xl p-6">
                 <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -127,8 +173,8 @@ export default async function ChatPage({
 
   if (roomsError) {
     const msg = roomsError.message.includes("does not exist")
-      ? "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu."
-      : `Gagal memuat ruang chat: ${roomsError.message}`
+      ? t.migrationMissing
+      : `${t.loadRoomsFailed}: ${roomsError.message}`
     return (
       <main className="mx-auto max-w-3xl p-6">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -165,8 +211,8 @@ export default async function ChatPage({
 
   if (messagesError) {
     const msg = messagesError.message.includes("does not exist")
-      ? "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu."
-      : `Gagal memuat pesan: ${messagesError.message}`
+      ? t.migrationMissing
+      : `${t.loadMessagesFailed}: ${messagesError.message}`
     return (
       <main className="mx-auto max-w-3xl p-6">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
@@ -182,9 +228,9 @@ export default async function ChatPage({
   return (
     <main className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Chat</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">{t.title}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          {isMerchant ? "Inbox merchant" : "Chat dengan merchant paket"}
+          {isMerchant ? t.merchantInbox : t.customerInbox}
         </p>
 
         {errorMessage && (
@@ -195,10 +241,10 @@ export default async function ChatPage({
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">Ruang Chat</h2>
+            <h2 className="text-sm font-semibold text-slate-900">{t.chatRooms}</h2>
             <div className="mt-3 space-y-2">
               {rooms.length === 0 && (
-                <p className="text-sm text-slate-500">Belum ada chat.</p>
+                <p className="text-sm text-slate-500">{t.noChats}</p>
               )}
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
@@ -212,7 +258,7 @@ export default async function ChatPage({
                         : "border-slate-200 text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    <p className="line-clamp-2 font-medium">{pkg?.title || "Paket"}</p>
+                    <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
                     <p className="mt-1 text-xs text-slate-500">{room.updated_at || "-"}</p>
                   </Link>
                 )
@@ -222,23 +268,23 @@ export default async function ChatPage({
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
-              <p className="text-sm text-slate-500">Paket</p>
+              <p className="text-sm text-slate-500">{t.packageLabel}</p>
               <p className="text-base font-semibold text-slate-900">
-                {activePackageForRoom?.title || activePackage?.title || "Pilih ruang chat"}
+                {activePackageForRoom?.title || activePackage?.title || t.selectRoom}
               </p>
               {(activePackageForRoom?.slug || activePackage?.slug) && (
                 <Link
                   href={`/packages/${encodeURIComponent(activePackageForRoom?.slug || activePackage?.slug || "")}`}
                   className="mt-1 inline-block text-xs text-orange-600 hover:text-orange-700"
                 >
-                  Lihat detail paket
+                  {t.viewPackageDetail}
                 </Link>
               )}
             </div>
 
             <div className="h-[52vh] space-y-3 overflow-y-auto px-5 py-4">
               {messages.length === 0 && (
-                <p className="text-sm text-slate-500">Belum ada pesan. Mulai percakapan sekarang.</p>
+                <p className="text-sm text-slate-500">{t.noMessages}</p>
               )}
               {messages.map((message) => {
                 const mine = message.sender_id === user.id
@@ -267,7 +313,7 @@ export default async function ChatPage({
                 <textarea
                   name="message"
                   required
-                  placeholder="Tulis pesan..."
+                  placeholder={t.writeMessage}
                   className="h-20 flex-1 rounded-xl border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
                 />
                 <button
@@ -275,7 +321,7 @@ export default async function ChatPage({
                   disabled={!activeRoomId}
                   className="self-end rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  Kirim
+                  {t.send}
                 </button>
               </div>
             </form>
