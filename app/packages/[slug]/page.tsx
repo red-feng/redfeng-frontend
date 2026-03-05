@@ -272,8 +272,6 @@ export default async function PaketPage({
                 serviceStandard: translation?.service_standard || null,
                 include: translation?.include || null,
                 exclude: translation?.exclude || null,
-                preparation: translation?.preparation || null,
-                termsConditions: translation?.terms_conditions || null,
                 meetingPoint: detail?.meeting_point || null,
                 mapEmbed: detail?.map_embed || null,
                 facilities: facilities.map((facility) => ({

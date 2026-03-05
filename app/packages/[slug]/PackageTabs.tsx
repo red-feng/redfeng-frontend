@@ -30,8 +30,6 @@ type ContentData = {
   serviceStandard: string | null
   include: string | null
   exclude: string | null
-  preparation: string | null
-  termsConditions: string | null
   meetingPoint: string | null
   mapEmbed: string | null
   facilities: FacilityItem[]
@@ -153,14 +151,6 @@ export default function PackageTabs({ data }: { data: ContentData }) {
             <div>
               <h3 className="mb-1 text-sm font-semibold text-slate-900">Exclude</h3>
               <p className="whitespace-pre-line">{data.exclude || "-"}</p>
-            </div>
-            <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Persiapan</h3>
-              <p className="whitespace-pre-line">{data.preparation || "-"}</p>
-            </div>
-            <div className="md:col-span-2">
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Syarat & Ketentuan</h3>
-              <p className="whitespace-pre-line">{data.termsConditions || "-"}</p>
             </div>
           </div>
         )}
