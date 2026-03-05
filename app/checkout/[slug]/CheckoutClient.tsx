@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import type { Locale } from "@/lib/i18n";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 declare global {
   interface Window {
@@ -10,34 +10,6 @@ declare global {
       pay: (token: string) => void;
     };
   }
-}
-
-function checkoutText(locale: Locale) {
-  if (locale === "en" || locale === "zh" || locale === "th") {
-    return {
-      title: "Checkout",
-      totalPay: "Total Payment",
-      name: "Name",
-      email: "Email",
-      phone: "Phone",
-      createBookingPay: "Create Booking & Pay",
-      saveBookingFailed: "Failed to save booking",
-      createTransactionFailed: "Failed to create transaction",
-      snapNotReady: "Snap is not ready",
-    };
-  }
-
-  return {
-    title: "Checkout",
-    totalPay: "Total Bayar",
-    name: "Nama",
-    email: "Email",
-    phone: "Nomor Telepon",
-    createBookingPay: "Buat Booking & Bayar",
-    saveBookingFailed: "Gagal menyimpan booking",
-    createTransactionFailed: "Gagal membuat transaksi",
-    snapNotReady: "Snap belum siap",
-  };
 }
 
 export default function CheckoutClient({
@@ -54,7 +26,7 @@ export default function CheckoutClient({
   locale?: Locale;
 }) {
   const supabase = createClient();
-  const t = checkoutText(locale);
+  const t = dictionaries[locale].checkout;
 
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");

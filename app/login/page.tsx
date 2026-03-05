@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Locale } from "@/lib/i18n";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 function getLocaleFromCookie(): Locale {
   if (typeof document === "undefined") return "id";
@@ -16,26 +16,6 @@ function getLocaleFromCookie(): Locale {
   return "id";
 }
 
-function loginText(locale: Locale) {
-  if (locale === "en" || locale === "zh" || locale === "th") {
-    return {
-      title: "Merchant Login",
-      email: "Email",
-      password: "Password",
-      login: "Login",
-      loggingIn: "Logging in...",
-    };
-  }
-
-  return {
-    title: "Login Merchant",
-    email: "Email",
-    password: "Password",
-    login: "Login",
-    loggingIn: "Sedang login...",
-  };
-}
-
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -46,7 +26,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const t = loginText(locale);
+  const t = dictionaries[locale].login;
 
   useEffect(() => {
     const checkSession = async () => {

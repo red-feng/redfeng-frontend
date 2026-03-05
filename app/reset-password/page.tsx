@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import type { Locale } from "@/lib/i18n";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 function getLocaleFromCookie(): Locale {
   if (typeof document === "undefined") return "id";
@@ -16,26 +16,6 @@ function getLocaleFromCookie(): Locale {
   return "id";
 }
 
-function resetText(locale: Locale) {
-  if (locale === "en" || locale === "zh" || locale === "th") {
-    return {
-      title: "Set New Password",
-      placeholder: "New password",
-      updating: "Updating...",
-      update: "Update Password",
-      success: "Password updated successfully",
-    };
-  }
-
-  return {
-    title: "Atur Password Baru",
-    placeholder: "Password baru",
-    updating: "Menyimpan...",
-    update: "Perbarui Password",
-    success: "Password berhasil diperbarui",
-  };
-}
-
 export default function ResetPasswordPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -44,7 +24,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const t = resetText(locale);
+  const t = dictionaries[locale].resetPassword;
 
   const handleUpdatePassword = async () => {
     setLoading(true);

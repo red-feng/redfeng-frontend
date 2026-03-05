@@ -1,6 +1,6 @@
 import CheckoutClient from "./CheckoutClient";
 import { getCurrentLocale } from "@/lib/locale";
-import type { Locale } from "@/lib/i18n";
+import { dictionaries, type Locale } from "@/lib/i18n";
 
 async function getDetail(slug: string) {
   const res = await fetch(
@@ -20,12 +20,12 @@ export default async function CheckoutPage({
 }) {
   const { slug } = params;
   const locale = await getCurrentLocale();
-  const isId = locale === "id";
+  const t = dictionaries[locale].checkout;
 
   const data = await getDetail(slug);
 
   if (!data) {
-    return <div className="p-10">{isId ? "Paket tidak ditemukan" : "Package not found"}</div>;
+    return <div className="p-10">{t.packageNotFound}</div>;
   }
 
   return <CheckoutClient data={data} slug={slug} locale={locale as Locale} />;

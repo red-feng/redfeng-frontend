@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
-import type { Locale } from "@/lib/i18n"
+import { dictionaries } from "@/lib/i18n"
 import { sendChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -31,48 +31,6 @@ type PackageRow = {
 
 export const dynamic = "force-dynamic"
 
-function chatText(locale: Locale) {
-  if (locale === "en" || locale === "zh" || locale === "th") {
-    return {
-      title: "Chat",
-      merchantInbox: "Merchant inbox",
-      customerInbox: "Chat with package merchant",
-      migrationMissing: "Chat tables are not available yet. Please run chat migration first.",
-      createRoomFailed: "Failed to create chat room",
-      loadRoomsFailed: "Failed to load chat rooms",
-      loadMessagesFailed: "Failed to load messages",
-      chatRooms: "Chat Rooms",
-      noChats: "No chats yet.",
-      packageLabel: "Package",
-      selectRoom: "Select a chat room",
-      viewPackageDetail: "View package detail",
-      noMessages: "No messages yet. Start a conversation now.",
-      writeMessage: "Write a message...",
-      send: "Send",
-      packageFallback: "Package",
-    }
-  }
-
-  return {
-    title: "Chat",
-    merchantInbox: "Inbox merchant",
-    customerInbox: "Chat dengan merchant paket",
-    migrationMissing: "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu.",
-    createRoomFailed: "Gagal membuat ruang chat",
-    loadRoomsFailed: "Gagal memuat ruang chat",
-    loadMessagesFailed: "Gagal memuat pesan",
-    chatRooms: "Ruang Chat",
-    noChats: "Belum ada chat.",
-    packageLabel: "Paket",
-    selectRoom: "Pilih ruang chat",
-    viewPackageDetail: "Lihat detail paket",
-    noMessages: "Belum ada pesan. Mulai percakapan sekarang.",
-    writeMessage: "Tulis pesan...",
-    send: "Kirim",
-    packageFallback: "Paket",
-  }
-}
-
 export default async function ChatPage({
   searchParams,
 }: {
@@ -80,7 +38,7 @@ export default async function ChatPage({
 }) {
   const params = await searchParams
   const locale = await getCurrentLocale()
-  const t = chatText(locale)
+  const t = dictionaries[locale].chat
   const roomId = params.room_id || ""
   const packageId = params.package_id || ""
   const errorMessage = params.error || ""
