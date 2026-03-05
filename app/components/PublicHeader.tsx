@@ -10,10 +10,10 @@ export default function PublicHeader() {
             <Image
               src="/logo-redfeng.png"
               alt="Red Feng"
-              width={210}
-              height={68}
+              width={290}
+              height={96}
               priority
-              className="h-14 w-auto md:h-16"
+              className="h-16 w-auto md:h-20"
             />
           </div>
 
