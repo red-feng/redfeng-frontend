@@ -4,14 +4,6 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
-declare global {
-  interface Window {
-    snap?: {
-      pay: (token: string) => void;
-    };
-  }
-}
-
 export default function CheckoutClient({
   data,
   slug,
