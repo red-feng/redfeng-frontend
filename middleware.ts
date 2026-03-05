@@ -2,21 +2,36 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+const CANONICAL_HOST = "app.redfeng.co"
+
 export async function middleware(req: NextRequest) {
-
   const pathname = req.nextUrl.pathname
+  const host = req.headers.get("host") || ""
 
-  // 🔥 Redirect lama /paket → /packages
+  // Canonical redirect: focus all traffic to app.redfeng.co
+  if (host.endsWith(".vercel.app")) {
+    const redirectUrl = new URL(req.url)
+    redirectUrl.protocol = "https:"
+    redirectUrl.host = CANONICAL_HOST
+    return NextResponse.redirect(redirectUrl, 301)
+  }
+
+  // Redirect legacy /paket -> /packages
   if (pathname === "/paket") {
     return NextResponse.redirect(new URL("/packages", req.url), 301)
   }
 
   if (pathname.startsWith("/paket/")) {
-    const newPath = pathname.replace("/paket/", "/packages/")
-    return NextResponse.redirect(new URL(newPath, req.url), 301)
+    const redirectUrl = new URL(req.url)
+    redirectUrl.pathname = pathname.replace("/paket/", "/packages/")
+    return NextResponse.redirect(redirectUrl, 301)
   }
 
-  let res = NextResponse.next()
+  const res = NextResponse.next()
+
+  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
+    return res
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,11 +51,9 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
-    return res
-  }
-
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
     return NextResponse.redirect(new URL("/", req.url))
@@ -72,9 +85,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/merchant/:path*",
-    "/paket/:path*"
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 }
