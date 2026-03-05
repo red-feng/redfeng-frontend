@@ -4,6 +4,7 @@ import { Suspense } from "react"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
+import PublicHeader from "@/app/components/PublicHeader"
 
 
 export const dynamic = "force-dynamic"
@@ -141,6 +142,7 @@ export default async function HomePage({
 
   return (
   <div className="bg-gray-100 min-h-screen">
+    <PublicHeader />
 
     <SearchBar />
 
