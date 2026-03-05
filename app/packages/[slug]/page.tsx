@@ -240,8 +240,8 @@ export default async function PaketPage({
               <Image
                 src="/logo-redfeng.png"
                 alt="Red Feng"
-                width={135}
-                height={39}
+                width={150}
+                height={54}
                 priority
                 className="h-20 w-auto"
               />
