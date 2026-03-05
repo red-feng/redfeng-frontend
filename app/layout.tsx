@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   title: "RedFeng Travel",
   description: "RedFeng Digital Travel Ecosystem",
   icons: {
-    icon: "/logo-redfeng.png",
-    shortcut: "/logo-redfeng.png",
-    apple: "/logo-redfeng.png",
+    icon: "/redfeng-favicon.png",
+    shortcut: "/redfeng-favicon.png",
+    apple: "/redfeng-favicon.png",
   },
 };
 
