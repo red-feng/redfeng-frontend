@@ -1,25 +1,103 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Locale } from "@/lib/i18n";
+
+function getLocaleFromCookie(): Locale {
+  if (typeof document === "undefined") return "id";
+  const cookie = document.cookie
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("rf_locale="));
+  const value = cookie?.split("=")[1];
+  if (value === "en" || value === "zh" || value === "th") return value;
+  return "id";
+}
+
+function loginText(locale: Locale) {
+  if (locale === "en" || locale === "zh" || locale === "th") {
+    return {
+      title: "Merchant Login",
+      email: "Email",
+      password: "Password",
+      login: "Login",
+      loggingIn: "Logging in...",
+    };
+  }
+
+  return {
+    title: "Login Merchant",
+    email: "Email",
+    password: "Password",
+    login: "Login",
+    loggingIn: "Sedang login...",
+  };
+}
 
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
 
+  const [locale] = useState<Locale>(() => getLocaleFromCookie());
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const t = loginText(locale);
+
   useEffect(() => {
-  const checkSession = async () => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!profile) return;
+
+      if (profile.role === "merchant") {
+        router.replace("/merchant/dashboard");
+      } else if (profile.role === "admin" || profile.role === "superadmin") {
+        router.replace("/admin/dashboard");
+      }
+    };
+
+    checkSession();
+  }, [router, supabase]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg("");
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session?.user) return;
+    if (!session?.user) {
+      router.replace("/");
+      return;
+    }
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -27,81 +105,30 @@ export default function LoginPage() {
       .eq("id", session.user.id)
       .maybeSingle();
 
-    if (!profile) return;
+    if (!profile) {
+      router.replace("/");
+      return;
+    }
 
     if (profile.role === "merchant") {
       router.replace("/merchant/dashboard");
-    } else if (
-      profile.role === "admin" ||
-      profile.role === "superadmin"
-    ) {
+    } else if (profile.role === "admin" || profile.role === "superadmin") {
       router.replace("/admin/dashboard");
+    } else {
+      router.replace("/");
     }
   };
 
-  checkSession();
-}, []);
-
-  const handleLogin = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setErrorMsg("");
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    setErrorMsg(error.message);
-    setLoading(false);
-    return;
-  }
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  if (!session?.user) {
-    router.replace("/");
-    return;
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .maybeSingle();
-
-  if (!profile) {
-    router.replace("/");
-    return;
-  }
-
-  if (profile.role === "merchant") {
-    router.replace("/merchant/dashboard");
-  } else if (
-    profile.role === "admin" ||
-    profile.role === "superadmin"
-  ) {
-    router.replace("/admin/dashboard");
-  } else {
-    router.replace("/");
-  }
-};
-
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">
-          Merchant Login
-        </h1>
+    <main className="flex min-h-screen items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
+        <h1 className="mb-6 text-center text-2xl font-bold">{t.title}</h1>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="email"
-            placeholder="Email"
-            className="w-full border p-3 rounded"
+            placeholder={t.email}
+            className="w-full rounded border p-3"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -109,25 +136,21 @@ export default function LoginPage() {
 
           <input
             type="password"
-            placeholder="Password"
-            className="w-full border p-3 rounded"
+            placeholder={t.password}
+            className="w-full rounded border p-3"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
 
-          {errorMsg && (
-            <div className="text-red-500 text-sm">
-              {errorMsg}
-            </div>
-          )}
+          {errorMsg && <div className="text-sm text-red-500">{errorMsg}</div>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition"
+            className="w-full rounded-lg bg-blue-600 py-3 text-white transition hover:bg-blue-700"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? t.loggingIn : t.login}
           </button>
         </form>
       </div>
