@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { dictionaries, type Locale } from "@/lib/i18n"
 
 type PackageCardTranslation = {
   title: string | null
@@ -15,8 +16,9 @@ type PackageCardData = {
   package_translations?: PackageCardTranslation[] | null
 }
 
-export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
+export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; locale: Locale }) {
   const translation = pkg.package_translations?.[0]
+  const t = dictionaries[locale].packageCard
   const imageSrc = pkg.cover_image || "/placeholder.png"
   const imageAlt = translation?.title || "Package image"
   const priceAdult = pkg.price_adult ?? 0
@@ -34,7 +36,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
 
         {/* Promo Badge */}
         <div className="absolute top-3 left-3 bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-          Special Deal
+          {t.specialDeal}
         </div>
       </div>
 
@@ -45,7 +47,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
         </h2>
 
         <div className="text-sm text-gray-500 mb-2">
-          Location: {pkg.city}, {pkg.country}
+          {t.location}: {pkg.city}, {pkg.country}
         </div>
 
         {/* Rating */}
@@ -54,7 +56,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
             8.4
           </div>
           <span className="text-sm text-gray-600">
-            Excellent
+            {t.excellent}
           </span>
         </div>
 
@@ -65,10 +67,10 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
         {/* Tags */}
         <div className="flex gap-2 flex-wrap text-xs">
           <span className="bg-gray-100 px-2 py-1 rounded">
-            Free Cancellation
+            {t.freeCancellation}
           </span>
           <span className="bg-gray-100 px-2 py-1 rounded">
-            Breakfast Included
+            {t.breakfastIncluded}
           </span>
         </div>
       </div>
@@ -85,7 +87,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
           </div>
 
           <div className="text-xs text-gray-500">
-            Termasuk pajak & biaya
+            {t.taxesIncluded}
           </div>
         </div>
 
@@ -93,7 +95,7 @@ export default function PackageCard({ pkg }: { pkg: PackageCardData }) {
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
           className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-center transition"
         >
-          Pilih Paket
+          {t.choosePackage}
         </Link>
       </div>
     </div>

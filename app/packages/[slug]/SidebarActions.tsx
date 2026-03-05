@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { dictionaries, type Locale } from "@/lib/i18n"
 
 type ModalType = "equipment" | "terms" | null
 
@@ -9,42 +10,46 @@ export default function SidebarActions({
   packageId,
   preparation,
   termsConditions,
+  locale,
 }: {
   packageId: string
   preparation: string | null
   termsConditions: string | null
+  locale: Locale
 }) {
   const [activeModal, setActiveModal] = useState<ModalType>(null)
+  const tDetail = dictionaries[locale].detail
+  const tSidebar = dictionaries[locale].sidebar
 
   const modalTitle =
-    activeModal === "equipment" ? "Peralatan & dokumen pribadi" : "Syarat dan ketentuan"
+    activeModal === "equipment" ? tSidebar.personalDocs : tSidebar.terms
   const modalContent =
     activeModal === "equipment" ? preparation || "-" : termsConditions || "-"
 
   return (
     <>
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-base font-semibold text-slate-900">Informasi Lainnya</h3>
+        <h3 className="text-base font-semibold text-slate-900">{tDetail.otherInfo}</h3>
         <div className="mt-3 space-y-2 text-sm">
           <button
             type="button"
             onClick={() => setActiveModal("equipment")}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-slate-700 transition hover:bg-slate-50"
           >
-            Peralatan & dokumen pribadi
+            {tSidebar.personalDocs}
           </button>
           <button
             type="button"
             onClick={() => setActiveModal("terms")}
             className="w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-slate-700 transition hover:bg-slate-50"
           >
-            Syarat dan ketentuan
+            {tSidebar.terms}
           </button>
           <Link
             href={`/chat?package_id=${packageId}`}
             className="block w-full rounded-lg border border-slate-200 px-3 py-2 text-left text-slate-700 transition hover:bg-slate-50"
           >
-            Chat
+            {tDetail.chat}
           </Link>
         </div>
       </section>

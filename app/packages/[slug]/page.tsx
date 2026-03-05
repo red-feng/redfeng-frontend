@@ -5,6 +5,8 @@ import Gallery from "./Gallery"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
+import { getCurrentLocale } from "@/lib/locale"
+import { dictionaries } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -88,6 +90,8 @@ export default async function PaketPage({
   params: Promise<{ slug: string }>
 }) {
   const { slug: rawSlug } = await params
+  const locale = await getCurrentLocale()
+  const t = dictionaries[locale].detail
   const supabase = createAdminClient()
 
   const slugCandidates = [
@@ -233,7 +237,7 @@ export default async function PaketPage({
 
   return (
     <main className="min-h-screen bg-slate-100">
-      <PublicHeader />
+      <PublicHeader locale={locale} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
@@ -247,7 +251,7 @@ export default async function PaketPage({
               {pkg.travel_style || "-"}
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
-              Bahasa {pkg.default_language || "-"}
+              {t.language} {pkg.default_language || "-"}
             </span>
           </div>
         </section>
@@ -270,6 +274,7 @@ export default async function PaketPage({
             </section>
 
             <PackageTabs
+              locale={locale}
               data={{
                 aboutTour: translation?.about_tour || null,
                 serviceStandard: translation?.service_standard || null,
@@ -296,21 +301,22 @@ export default async function PaketPage({
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-300/40">
-              <h2 className="text-xl font-semibold text-slate-900">Booking Tour</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{t.bookingTour}</h2>
               <p className="mt-2 text-3xl font-bold text-orange-600">{formatMoney(pkg.price_adult, pkg.currency)}</p>
               <div className="mt-4 space-y-2 text-sm text-slate-700">
-                <p>Durasi: {pkg.duration || 0} hari</p>
-                <p>Minimal peserta: {pkg.minimal_peserta || 0} orang</p>
-                <p>Harga anak: {formatMoney(pkg.price_child, pkg.currency)}</p>
+                <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
+                <p>{t.minimumParticipants}: {pkg.minimal_peserta || 0} {t.people}</p>
+                <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
               </div>
               <button className="mt-5 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600">
-                Booking now
+                {t.bookingNow}
               </button>
             </section>
             <SidebarActions
               packageId={pkg.id}
               preparation={translation?.preparation || null}
               termsConditions={translation?.terms_conditions || null}
+              locale={locale}
             />
           </aside>
         </div>

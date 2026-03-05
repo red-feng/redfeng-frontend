@@ -2,10 +2,12 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
+import { dictionaries, type Locale } from "@/lib/i18n"
 
-export default function SearchBar() {
+export default function SearchBar({ locale }: { locale: Locale }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = dictionaries[locale].searchBar
 
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
@@ -45,7 +47,7 @@ export default function SearchBar() {
           onChange={(e) => setCountry(e.target.value)}
           className="border rounded-xl px-4 py-3 w-[240px]"
         >
-          <option value="">Semua Negara</option>
+          <option value="">{t.allCountries}</option>
           <option value="indonesia">Indonesia</option>
           <option value="japan">Japan</option>
           <option value="singapore">Singapore</option>
@@ -57,7 +59,7 @@ export default function SearchBar() {
           onChange={(e) => setStyle(e.target.value)}
           className="border rounded-xl px-4 py-3 w-[240px]"
         >
-          <option value="">Semua Travel Style</option>
+          <option value="">{t.allStyles}</option>
           <option value="explore">Explore</option>
           <option value="luxury">Luxury</option>
           <option value="adventure">Adventure</option>
@@ -77,10 +79,10 @@ export default function SearchBar() {
 
           className="border rounded-xl px-4 py-3 w-[200px]"
         >
-          <option value="">Semua Durasi</option>
-          <option value="1-3">1-3 Hari</option>
-          <option value="4-7">4-7 Hari</option>
-          <option value="8+">8+ Hari</option>
+          <option value="">{t.allDurations}</option>
+          <option value="1-3">1-3 {t.day}</option>
+          <option value="4-7">4-7 {t.day}</option>
+          <option value="8+">8+ {t.day}</option>
         </select>
 
         {/* BUTTON */}
@@ -88,7 +90,7 @@ export default function SearchBar() {
           onClick={applyFilter}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
         >
-          Terapkan
+          {t.apply}
         </button>
 
       </div>

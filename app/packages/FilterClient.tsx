@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { dictionaries, type Locale } from "@/lib/i18n"
 
 type Facility = {
   id: string
@@ -11,11 +12,14 @@ type Facility = {
 
 export default function FilterClient({
   facilities,
+  locale,
 }: {
   facilities: Facility[]
+  locale: Locale
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = dictionaries[locale].filter
 
   const [maxPrice, setMaxPrice] = useState<number>(
     Number(searchParams.get("max_price")) || 100000000
@@ -82,7 +86,7 @@ export default function FilterClient({
     <div className="space-y-6 sticky top-6">
 
       <div>
-        <label className="font-semibold">Price Range</label>
+        <label className="font-semibold">{t.priceRange}</label>
 
         <input
           type="range"

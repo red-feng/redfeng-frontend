@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { getFacilityIcon } from "@/lib/facility-icons"
+import { dictionaries, type Locale } from "@/lib/i18n"
 
 type FacilityItem = {
   id: string
@@ -40,19 +41,31 @@ type ContentData = {
 
 type TabKey = "about" | "itinerary" | "facilities" | "service"
 
-const TAB_ITEMS: { key: TabKey; label: string }[] = [
-  { key: "about", label: "Info Tour" },
-  { key: "itinerary", label: "Itinerary" },
-  { key: "facilities", label: "Fasilitas" },
-  { key: "service", label: "Standar Layanan" },
+const TAB_ITEMS: { key: TabKey }[] = [
+  { key: "about" },
+  { key: "itinerary" },
+  { key: "facilities" },
+  { key: "service" },
 ]
 
-export default function PackageTabs({ data }: { data: ContentData }) {
+export default function PackageTabs({
+  data,
+  locale,
+}: {
+  data: ContentData
+  locale: Locale
+}) {
   const [activeTab, setActiveTab] = useState<TabKey>("about")
+  const t = dictionaries[locale].tabs
 
   const activeTabLabel = useMemo(
-    () => TAB_ITEMS.find((item) => item.key === activeTab)?.label || "Info Tour",
-    [activeTab]
+    () => {
+      if (activeTab === "about") return t.infoTour
+      if (activeTab === "itinerary") return t.itinerary
+      if (activeTab === "facilities") return t.facilities
+      return t.standardService
+    },
+    [activeTab, t]
   )
 
   return (
@@ -70,7 +83,13 @@ export default function PackageTabs({ data }: { data: ContentData }) {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              {tab.label}
+              {tab.key === "about"
+                ? t.infoTour
+                : tab.key === "itinerary"
+                  ? t.itinerary
+                  : tab.key === "facilities"
+                    ? t.facilities
+                    : t.standardService}
             </button>
           ))}
         </div>
@@ -80,23 +99,23 @@ export default function PackageTabs({ data }: { data: ContentData }) {
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-900">{activeTabLabel}</h2>
           <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">
-            Detail Paket
+            {t.packageDetail}
           </span>
         </div>
 
         {activeTab === "about" && (
           <div className="space-y-5 text-sm leading-7 text-slate-700">
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Tentang Tour</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">{t.aboutTour}</h3>
               <p className="whitespace-pre-line">{data.aboutTour || "-"}</p>
             </div>
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">{t.meetingPoint}</h3>
               <p className="whitespace-pre-line">{data.meetingPoint || "-"}</p>
             </div>
             {data.tags.length > 0 && (
               <div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-900">Highlights</h3>
+                <h3 className="mb-2 text-sm font-semibold text-slate-900">{t.highlights}</h3>
                 <div className="flex flex-wrap gap-2">
                   {data.tags.map((tag) => (
                     <span
@@ -111,7 +130,7 @@ export default function PackageTabs({ data }: { data: ContentData }) {
             )}
             {data.mapEmbed && (
               <div>
-                <h3 className="mb-2 text-sm font-semibold text-slate-900">Map</h3>
+                <h3 className="mb-2 text-sm font-semibold text-slate-900">{t.map}</h3>
                 <div
                   className="overflow-hidden rounded-xl border border-slate-200"
                   dangerouslySetInnerHTML={{ __html: data.mapEmbed }}
@@ -124,7 +143,7 @@ export default function PackageTabs({ data }: { data: ContentData }) {
         {activeTab === "facilities" && (
           <div className="space-y-4">
             {data.facilities.length === 0 && (
-              <p className="text-sm text-slate-500">Tidak ada fasilitas.</p>
+              <p className="text-sm text-slate-500">{t.noFacilities}</p>
             )}
             <div className="flex flex-wrap gap-2">
               {data.facilities.map((facility) => (
@@ -143,15 +162,15 @@ export default function PackageTabs({ data }: { data: ContentData }) {
         {activeTab === "service" && (
           <div className="grid gap-5 text-sm leading-7 text-slate-700 md:grid-cols-2">
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Layanan</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">{t.service}</h3>
               <p className="whitespace-pre-line">{data.serviceStandard || "-"}</p>
             </div>
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Include</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">{t.include}</h3>
               <p className="whitespace-pre-line">{data.include || "-"}</p>
             </div>
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Exclude</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">{t.exclude}</h3>
               <p className="whitespace-pre-line">{data.exclude || "-"}</p>
             </div>
           </div>
@@ -160,14 +179,14 @@ export default function PackageTabs({ data }: { data: ContentData }) {
         {activeTab === "itinerary" && (
           <div className="space-y-5">
             {data.itineraryDays.length === 0 && (
-              <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>
+              <p className="text-sm text-slate-500">{t.noItinerary}</p>
             )}
             {data.itineraryDays.map((day) => (
               <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-base font-semibold text-slate-900">Hari {day.day_number}</h3>
+                <h3 className="text-base font-semibold text-slate-900">{t.dayLabel} {day.day_number}</h3>
                 <div className="mt-3 space-y-3">
                   {day.routes.length === 0 && (
-                    <p className="text-sm text-slate-500">Rute belum tersedia.</p>
+                    <p className="text-sm text-slate-500">{t.noRoute}</p>
                   )}
                   {day.routes.map((route) => (
                     <div key={route.id} className="rounded-lg border border-slate-200 bg-white p-3">

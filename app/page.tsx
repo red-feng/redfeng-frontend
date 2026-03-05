@@ -5,6 +5,8 @@ import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
+import { getCurrentLocale } from "@/lib/locale"
+import { dictionaries } from "@/lib/i18n"
 
 
 export const dynamic = "force-dynamic"
@@ -130,6 +132,8 @@ export default async function HomePage({
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
+  const locale = await getCurrentLocale()
+  const t = dictionaries[locale]
 
   const packages = await getPackages(resolvedSearchParams)
   const supabase = await createClient()
@@ -142,9 +146,9 @@ export default async function HomePage({
 
   return (
   <div className="bg-gray-100 min-h-screen">
-    <PublicHeader />
+    <PublicHeader locale={locale} />
 
-    <SearchBar />
+    <SearchBar locale={locale} />
 
     <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
 
@@ -152,7 +156,7 @@ export default async function HomePage({
       <aside className="w-[280px] shrink-0">
         <div className="sticky top-24 space-y-4">
           <Suspense fallback={<div>Loading filter...</div>}>
-            <FilterClient facilities={facilities} />
+            <FilterClient facilities={facilities} locale={locale} />
           </Suspense>
         </div>
       </aside>
@@ -160,14 +164,14 @@ export default async function HomePage({
       {/* LIST AREA */}
       <main className="flex-1">
 
-        <SortBar total={packages.length} />
+        <SortBar total={packages.length} locale={locale} />
 
         <div className="flex flex-col gap-6">
           {packages.length === 0 ? (
-            <p>Tidak ada paket ditemukan</p>
+            <p>{t.home.noPackages}</p>
           ) : (
             packages.map((pkg) => (
-              <PackageCard key={pkg.id} pkg={pkg} />
+              <PackageCard key={pkg.id} pkg={pkg} locale={locale} />
             ))
           )}
         </div>
