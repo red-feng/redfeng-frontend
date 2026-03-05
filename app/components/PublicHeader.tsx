@@ -13,7 +13,7 @@ export default function PublicHeader() {
               width={295}
               height={101}
               priority
-              className="h-20 w-auto md:h-23"
+              className="h-23 w-auto md:h-25"
             />
           </div>
 
