@@ -44,7 +44,7 @@ const TAB_ITEMS: { key: TabKey; label: string }[] = [
   { key: "about", label: "Info Tour" },
   { key: "itinerary", label: "Itinerary" },
   { key: "facilities", label: "Fasilitas" },
-  { key: "service", label: "Layanan" },
+  { key: "service", label: "Standar Layanan" },
 ]
 
 export default function PackageTabs({ data }: { data: ContentData }) {
