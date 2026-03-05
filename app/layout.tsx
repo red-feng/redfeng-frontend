@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "RedFeng Travel",
   description: "RedFeng Digital Travel Ecosystem",
+  icons: {
+    icon: "/logo-redfeng.png",
+    shortcut: "/logo-redfeng.png",
+    apple: "/logo-redfeng.png",
+  },
 };
 
 export default function RootLayout({
