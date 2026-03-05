@@ -4,20 +4,20 @@ import Link from "next/link"
 export default function PublicHeader() {
   return (
     <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-4 md:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto max-w-7xl px-4 py-5 md:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-5">
           <div className="flex items-center gap-3">
             <Image
               src="/logo-redfeng.png"
               alt="Red Feng"
-              width={170}
-              height={56}
+              width={210}
+              height={68}
               priority
-              className="h-12 w-auto md:h-14"
+              className="h-14 w-auto md:h-16"
             />
           </div>
 
-          <nav className="hidden flex-wrap items-center gap-8 text-sm text-slate-700 lg:flex">
+          <nav className="hidden flex-wrap items-center gap-8 text-[15px] font-medium text-slate-700 lg:flex">
             <Link href="#" className="hover:text-orange-600">Promo</Link>
             <Link href="#" className="hover:text-orange-600">Pesanan</Link>
             <Link href="#" className="hover:text-orange-600">Kemitraan Tour</Link>
@@ -26,23 +26,23 @@ export default function PublicHeader() {
             <Link href="#" className="hover:text-orange-600">Bahasa</Link>
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
             <button type="button" className="text-slate-600 hover:text-orange-600" aria-label="Search">
-              <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-2">
+              <svg viewBox="0 0 24 24" className="h-[22px] w-[22px] fill-none stroke-current stroke-2">
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20L16.65 16.65" />
               </svg>
             </button>
             <button
               type="button"
-              className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+              className="rounded-md bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
             >
               Akun Saya
             </button>
           </div>
         </div>
 
-        <nav className="mt-4 flex flex-wrap items-center gap-5 text-sm text-slate-700">
+        <nav className="mt-4 flex flex-wrap items-center gap-5 text-[15px] font-medium text-slate-700">
           <Link href="#" className="hover:text-orange-600">Paket Tour</Link>
           <Link href="#" className="hover:text-orange-600">Pesawat</Link>
           <Link href="#" className="hover:text-orange-600">Hotel</Link>
