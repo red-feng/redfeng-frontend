@@ -44,7 +44,7 @@ const TAB_ITEMS: { key: TabKey; label: string }[] = [
   { key: "about", label: "Info Tour" },
   { key: "itinerary", label: "Itinerary" },
   { key: "facilities", label: "Fasilitas" },
-  { key: "service", label: "Standar Layanan" },
+  { key: "service", label: "Layanan" },
 ]
 
 export default function PackageTabs({ data }: { data: ContentData }) {
@@ -143,7 +143,7 @@ export default function PackageTabs({ data }: { data: ContentData }) {
         {activeTab === "service" && (
           <div className="grid gap-5 text-sm leading-7 text-slate-700 md:grid-cols-2">
             <div>
-              <h3 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan</h3>
+              <h3 className="mb-1 text-sm font-semibold text-slate-900">Layanan</h3>
               <p className="whitespace-pre-line">{data.serviceStandard || "-"}</p>
             </div>
             <div>
