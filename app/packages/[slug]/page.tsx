@@ -243,7 +243,7 @@ export default async function PaketPage({
                 width={170}
                 height={56}
                 priority
-                className="h-12 w-auto md:h-14"
+                className="h-22 w-auto md:h-24"
               />
             </div>
 
