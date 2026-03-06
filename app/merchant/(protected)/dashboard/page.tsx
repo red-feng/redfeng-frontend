@@ -8,15 +8,33 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '../../../../lib/supabase/client'
 import Link from 'next/link'
 
+type Merchant = {
+  brand_name: string
+  verification_status: string
+  onboarding_completed: boolean
+}
+
+const merchantMenus = [
+  { label: 'Kelola Paket', href: '/merchant/paket', available: true },
+  { label: 'Pesanan', href: '', available: false },
+  { label: 'Chat Customer', href: '', available: false },
+  { label: 'Kalender Booking', href: '', available: false },
+  { label: 'Statistik', href: '', available: false },
+  { label: 'Saldo & Payout', href: '', available: false },
+  { label: 'Review', href: '', available: false },
+  { label: 'Profil Merchant', href: '', available: false },
+  { label: 'Support', href: '', available: false },
+]
+
 export default function Dashboard() {
   const router = useRouter()
-  const supabase = createClient()
 
-  const [merchant, setMerchant] = useState<any>(null)
+  const [merchant, setMerchant] = useState<Merchant | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const checkAccess = async () => {
+      const supabase = createClient()
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -79,12 +97,27 @@ if (!merchantData.onboarding_completed) {
         Dashboard Marchant {merchant.brand_name}
       </h1>
 
-      <Link
-        href="/merchant/paket"
-        className="bg-blue-600 text-white px-4 py-2 mt-4 inline-block rounded"
-      >
-        Kelola Paket
-      </Link>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {merchantMenus.map((menu) =>
+          menu.available ? (
+            <Link
+              key={menu.label}
+              href={menu.href}
+              className="rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+            >
+              {menu.label}
+            </Link>
+          ) : (
+            <div
+              key={menu.label}
+              className="rounded-md border border-gray-300 bg-white px-4 py-3 text-gray-500"
+            >
+              <p className="font-medium">{menu.label}</p>
+              <p className="text-sm">Segera hadir</p>
+            </div>
+          ),
+        )}
+      </div>
     </div>
   )
 }
