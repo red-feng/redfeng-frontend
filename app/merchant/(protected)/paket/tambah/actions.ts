@@ -161,12 +161,7 @@ export async function savePackageDetails(formData: FormData) {
       throw new Error("Anda tidak memiliki akses ke paket ini.")
     }
 
-    const aboutTour = formData.get("about_tour") as string
-    const serviceStandard = formData.get("service_standard") as string
-    const include = formData.get("include") as string
-    const exclude = formData.get("exclude") as string
-    const preparation = formData.get("preparation") as string
-    const termsConditions = formData.get("terms_conditions") as string
+    const languageCodes = ["id", "en", "zh", "th"] as const
     const meetingPoint = formData.get("meeting_point") as string
     const mapEmbed = formData.get("map_embed") as string
     const tagsRaw = formData.get("tags") as string
@@ -186,24 +181,43 @@ export async function savePackageDetails(formData: FormData) {
 
     if (!pkg) throw new Error("Package tidak ditemukan.")
 
+    const translationRows = languageCodes
+      .map((code) => {
+        const aboutTour = String(formData.get(`about_tour_${code}`) || "").trim()
+        const serviceStandard = String(formData.get(`service_standard_${code}`) || "").trim()
+        const include = String(formData.get(`include_${code}`) || "").trim()
+        const exclude = String(formData.get(`exclude_${code}`) || "").trim()
+        const preparation = String(formData.get(`preparation_${code}`) || "").trim()
+        const termsConditions = String(formData.get(`terms_conditions_${code}`) || "").trim()
+        const isDefault = code === pkg.default_language
+        const hasAnyContent = Boolean(
+          aboutTour || serviceStandard || include || exclude || preparation || termsConditions
+        )
+
+        if (!isDefault && !hasAnyContent) return null
+        if (isDefault && !aboutTour) {
+          throw new Error(`Info Tentang Tour wajib diisi untuk bahasa default (${pkg.default_language})`)
+        }
+
+        return {
+          package_id: packageId,
+          language_code: code,
+          title: pkg.title,
+          about_tour: aboutTour || null,
+          service_standard: serviceStandard || null,
+          include: include || null,
+          exclude: exclude || null,
+          preparation: preparation || null,
+          terms_conditions: termsConditions || null,
+        }
+      })
+      .filter(Boolean)
+
     const { error: translationError } = await supabase
       .from("package_translations")
-      .upsert(
-        {
-          package_id: packageId,
-          language_code: pkg.default_language,
-          title: pkg.title,
-          about_tour: aboutTour,
-          service_standard: serviceStandard,
-          include,
-          exclude,
-          preparation,
-          terms_conditions: termsConditions,
-        },
-        {
-          onConflict: "package_id,language_code",
-        }
-      )
+      .upsert(translationRows, {
+        onConflict: "package_id,language_code",
+      })
 
     if (translationError) {
       throw new Error(`Gagal menyimpan konten: ${translationError.message}`)

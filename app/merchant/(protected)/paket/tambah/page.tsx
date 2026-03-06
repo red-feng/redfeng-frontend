@@ -18,9 +18,20 @@ export default async function WizardPage({
     .select("id, name")
     .order("name")
 
-   const step = resolvedSearchParams.step ?? "1"
+  const step = resolvedSearchParams.step ?? "1"
   const packageId = resolvedSearchParams.id ?? null
   const errorMessage = resolvedSearchParams.error ?? null
+  let defaultLanguage = "id"
+
+  if (step === "2" && packageId) {
+    const { data: pkg } = await supabase
+      .from("packages")
+      .select("default_language")
+      .eq("id", packageId)
+      .maybeSingle()
+
+    defaultLanguage = pkg?.default_language || "id"
+  }
 
   return (
     <div>
@@ -33,7 +44,7 @@ export default async function WizardPage({
         <Step1Basic countries={countries || []} />
       )}
       {step === "2" && (
-        <Step2Details packageId={packageId} />
+        <Step2Details packageId={packageId} defaultLanguage={defaultLanguage} />
       )}
       {step === "3" && (
         <Step3Facilities packageId={packageId} />
