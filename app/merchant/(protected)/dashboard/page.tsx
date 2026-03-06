@@ -16,7 +16,7 @@ type Merchant = {
 
 const merchantMenus = [
   { label: 'Kelola Paket', href: '/merchant/paket', available: true },
-  { label: 'Pesanan', href: '', available: false },
+  { label: 'Pesanan', href: '/merchant/pesanan', available: true },
   { label: 'Chat Customer', href: '', available: false },
   { label: 'Kalender Booking', href: '', available: false },
   { label: 'Statistik', href: '', available: false },
