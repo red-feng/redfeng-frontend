@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
+import { createClient as createServerClient } from "@/lib/supabase/server"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -15,6 +16,11 @@ function generateBookingCode() {
 
 export async function POST(req: Request) {
   try {
+    const authSupabase = await createServerClient()
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser()
+
     const body = await req.json()
 
     const {
@@ -47,7 +53,7 @@ export async function POST(req: Request) {
     const { data: bookingData, error: rpcError } = await supabase.rpc(
       "create_booking_atomic_v2",
       {
-        p_user_id: null, // guest booking
+        p_user_id: user?.id ?? null, // guest booking jika tidak login
         p_package_id: package_id,
         p_adult: adult_count,
         p_child: child_count
@@ -89,6 +95,71 @@ const { data: booking, error: updateError } = await supabase
         { error: "Gagal menyimpan data booking" },
         { status: 500 }
       )
+    }
+
+    // Hubungkan chat room customer ke booking jika user login.
+    // Jika migration booking_id belum diterapkan, proses booking tetap lanjut.
+    if (user?.id) {
+      const { data: pkg } = await supabase
+        .from("packages")
+        .select("merchant_id")
+        .eq("id", package_id)
+        .maybeSingle()
+
+      if (pkg?.merchant_id) {
+        const { data: merchantOwner } = await supabase
+          .from("merchants")
+          .select("user_id")
+          .eq("id", pkg.merchant_id)
+          .maybeSingle()
+
+        if (merchantOwner?.user_id) {
+          const { data: existingRoom } = await supabase
+            .from("package_chat_rooms")
+            .select("id")
+            .eq("package_id", package_id)
+            .eq("customer_id", user.id)
+            .eq("merchant_user_id", merchantOwner.user_id)
+            .maybeSingle()
+
+          if (existingRoom?.id) {
+            const { error: linkError } = await supabase
+              .from("package_chat_rooms")
+              .update({
+                booking_id: booking.id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", existingRoom.id)
+
+            if (linkError && !linkError.message.includes("booking_id")) {
+              console.error("Gagal link chat room ke booking:", linkError.message)
+            }
+          } else {
+            const roomPayload = {
+              package_id,
+              customer_id: user.id,
+              merchant_user_id: merchantOwner.user_id,
+              booking_id: booking.id,
+            }
+
+            const { error: createRoomError } = await supabase
+              .from("package_chat_rooms")
+              .insert(roomPayload)
+
+            if (createRoomError) {
+              if (createRoomError.message.includes("booking_id")) {
+                await supabase.from("package_chat_rooms").insert({
+                  package_id,
+                  customer_id: user.id,
+                  merchant_user_id: merchantOwner.user_id,
+                })
+              } else {
+                console.error("Gagal membuat chat room booking:", createRoomError.message)
+              }
+            }
+          }
+        }
+      }
     }
 
     return NextResponse.json({
