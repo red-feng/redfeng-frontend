@@ -93,7 +93,7 @@ if (!merchantData.onboarding_completed) {
 
 if (!merchant) {
   return (
-    <div className="p-10">
+    <div className="min-h-screen bg-gray-50 p-10">
       Merchant belum terdaftar
     </div>
   )
@@ -101,17 +101,49 @@ if (!merchant) {
 
   return (
   <div className="p-10">
-    <h1 className="text-2xl font-bold">
-      Dashboard Merchant {merchant.brand_name}
-    </h1>
+    <div className="mb-8">
+  <h1 className="text-3xl font-bold">
+    Welcome, {merchant.brand_name}
+  </h1>
+  <p className="text-gray-500">
+    Manage your travel packages and bookings
+  </p>
+</div>
 
-    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+<div className="grid gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+
+  <div className="rounded-xl border p-4 bg-white">
+    <p className="text-sm text-gray-500">Total Paket</p>
+    <p className="text-2xl font-bold">12</p>
+  </div>
+
+  <div className="rounded-xl border p-4 bg-white">
+    <p className="text-sm text-gray-500">Total Booking</p>
+    <p className="text-2xl font-bold">58</p>
+  </div>
+
+  <div className="rounded-xl border p-4 bg-white">
+    <p className="text-sm text-gray-500">Revenue Bulan Ini</p>
+    <p className="text-2xl font-bold">Rp 24.5M</p>
+  </div>
+
+  <div className="rounded-xl border p-4 bg-white">
+    <p className="text-sm text-gray-500">Rating</p>
+    <p className="text-2xl font-bold">4.8 ⭐</p>
+  </div>
+
+</div>
+<h2 className="text-lg font-semibold mb-4">
+  Merchant Tools
+</h2>
+
+    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {merchantMenus.map((menu) =>
         menu.available ? (
           <Link
             key={menu.label}
             href={menu.href}
-            className="rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+            className="rounded-xl border bg-white p-5 shadow-sm hover:shadow-md transition"
           >
             {menu.label}
           </Link>
