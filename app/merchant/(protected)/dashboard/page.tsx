@@ -91,33 +91,41 @@ if (!merchantData.onboarding_completed) {
 
   if (loading) return <div>Checking access...</div>
 
+if (!merchant) {
   return (
     <div className="p-10">
-      <h1 className="text-2xl font-bold">
-        Dashboard Marchant {merchant.brand_name}
-      </h1>
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {merchantMenus.map((menu) =>
-          menu.available ? (
-            <Link
-              key={menu.label}
-              href={menu.href}
-              className="rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
-            >
-              {menu.label}
-            </Link>
-          ) : (
-            <div
-              key={menu.label}
-              className="rounded-md border border-gray-300 bg-white px-4 py-3 text-gray-500"
-            >
-              <p className="font-medium">{menu.label}</p>
-              <p className="text-sm">Segera hadir</p>
-            </div>
-          ),
-        )}
-      </div>
+      Merchant belum terdaftar
     </div>
+  )
+}
+
+  return (
+  <div className="p-10">
+    <h1 className="text-2xl font-bold">
+      Dashboard Merchant {merchant.brand_name}
+    </h1>
+
+    <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {merchantMenus.map((menu) =>
+        menu.available ? (
+          <Link
+            key={menu.label}
+            href={menu.href}
+            className="rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+          >
+            {menu.label}
+          </Link>
+        ) : (
+          <div
+            key={menu.label}
+            className="rounded-md border border-gray-300 bg-white px-4 py-3 text-gray-500"
+          >
+            <p className="font-medium">{menu.label}</p>
+            <p className="text-sm">Segera hadir</p>
+          </div>
+        )
+      )}
+    </div>
+  </div>
   )
 }
