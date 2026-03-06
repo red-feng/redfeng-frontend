@@ -162,6 +162,20 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   required
 />
 
+  {/* MATA UANG MERCHANT */}
+  <div className="col-span-2">
+    <p className="mb-2 text-sm font-semibold text-slate-700">Mata Uang Merchant</p>
+    <select
+      name="currency"
+      defaultValue="IDR"
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    >
+      <option value="IDR">IDR</option>
+      <option value="USD">USD</option>
+      <option value="CNY">CNY</option>
+    </select>
+  </div>
+
   {/* MINIMAL PESERTA */}
   <input
     name="minimal_peserta"
@@ -197,30 +211,22 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   />
 
-  {/* CURRENCY */}
-  <select
-    name="currency"
-    defaultValue="IDR"
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-  >
-    <option value="IDR">IDR</option>
-    <option value="USD">USD</option>
-    <option value="CNY">CNY</option>
-  </select>
-
   {/* DEFAULT LANGUAGE */}
-  <select
-    name="default_language"
-    className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
-    value={defaultLanguage}
-    onChange={(e) => onDefaultLanguageChange(e.target.value)}
-    required
-  >
-    <option value="id">Bahasa Indonesia</option>
-    <option value="en">English</option>
-    <option value="zh">Chinese</option>
-    <option value="th">Thai</option>
-  </select>
+  <div className="col-span-2">
+    <p className="mb-2 text-sm font-semibold text-slate-700">Bahasa Default Merchant</p>
+    <select
+      name="default_language"
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+      value={defaultLanguage}
+      onChange={(e) => onDefaultLanguageChange(e.target.value)}
+      required
+    >
+      <option value="id">Bahasa Indonesia</option>
+      <option value="en">English</option>
+      <option value="zh">Chinese</option>
+      <option value="th">Thai</option>
+    </select>
+  </div>
 
   <div className="col-span-2">
     <p className="mb-2 text-sm font-semibold text-slate-700">Bahasa Publish</p>
