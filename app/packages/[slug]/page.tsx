@@ -171,12 +171,34 @@ export default async function PaketPage({
 
   if (error || !pkg) return notFound()
 
-  const { data: translation } = await supabase
+  const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions")
+    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions")
     .eq("package_id", pkg.id)
-    .limit(1)
-    .maybeSingle()
+    .in(
+      "language_code",
+      [...new Set([locale, pkg.default_language || "id", "id"])].filter(Boolean)
+    )
+
+  const translations = (translationRows || []) as Array<{
+    language_code: string | null
+    title: string | null
+    description: string | null
+    about_tour: string | null
+    service_standard: string | null
+    include: string | null
+    exclude: string | null
+    preparation: string | null
+    terms_conditions: string | null
+  }>
+
+  const translationPriority = [locale, pkg.default_language || "id", "id"]
+  const translation =
+    translationPriority
+      .map((code) => translations.find((row) => row.language_code === code))
+      .find(Boolean) ||
+    translations[0] ||
+    null
 
   const { data: detail } = await supabase
     .from("package_details")
@@ -243,7 +265,7 @@ export default async function PaketPage({
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{displayTitle}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} to{" "}
+            {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
             {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
