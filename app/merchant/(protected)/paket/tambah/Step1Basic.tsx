@@ -12,11 +12,32 @@ type Country = {
 export default function Step1Basic({ countries }: { countries: Country[] }) {
 
   const [originCountry, setOriginCountry] = useState("")
-  
   const [destinationCountry, setDestinationCountry] = useState("")
-  
+  const [defaultLanguage, setDefaultLanguage] = useState("id")
+  const [publishedLanguages, setPublishedLanguages] = useState<string[]>(["id"])
 
-  
+  const languageOptions = [
+    { code: "id", label: "Bahasa Indonesia" },
+    { code: "en", label: "English" },
+    { code: "zh", label: "Chinese" },
+    { code: "th", label: "Thai" },
+  ]
+
+  const onDefaultLanguageChange = (nextDefault: string) => {
+    setDefaultLanguage(nextDefault)
+    setPublishedLanguages((prev) => {
+      if (prev.includes(nextDefault)) return prev
+      return [...prev, nextDefault]
+    })
+  }
+
+  const onTogglePublishedLanguage = (code: string, checked: boolean) => {
+    if (code === defaultLanguage) return
+    setPublishedLanguages((prev) => {
+      if (checked) return [...prev, code]
+      return prev.filter((item) => item !== code)
+    })
+  }
 
   return (
     <div className="relative min-h-screen">
@@ -191,13 +212,50 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   <select
     name="default_language"
     className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
-    defaultValue="id"
+    value={defaultLanguage}
+    onChange={(e) => onDefaultLanguageChange(e.target.value)}
     required
   >
     <option value="id">Bahasa Indonesia</option>
     <option value="en">English</option>
     <option value="zh">Chinese</option>
+    <option value="th">Thai</option>
   </select>
+
+  <div className="col-span-2">
+    <p className="mb-2 text-sm font-semibold text-slate-700">Bahasa Publish</p>
+    <p className="mb-3 text-xs text-slate-500">
+      Paket akan tampil di pilihan bahasa yang dicentang.
+    </p>
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      {languageOptions.map((language) => {
+        const checked = publishedLanguages.includes(language.code)
+        const isDefault = language.code === defaultLanguage
+
+        return (
+          <label
+            key={language.code}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 p-2 text-sm"
+          >
+            <input
+              type="checkbox"
+              name="publish_languages[]"
+              value={language.code}
+              checked={checked}
+              disabled={isDefault}
+              onChange={(e) => onTogglePublishedLanguage(language.code, e.target.checked)}
+            />
+            <span>{language.label}</span>
+            {isDefault && (
+              <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                default
+              </span>
+            )}
+          </label>
+        )
+      })}
+    </div>
+  </div>
 
 </div>
 <input

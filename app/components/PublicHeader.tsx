@@ -4,9 +4,17 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { dictionaries, type Locale } from "@/lib/i18n"
 
-export default function PublicHeader({ locale }: { locale: Locale }) {
+type PublicHeaderProps = {
+  locale: Locale
+  languageOptions?: Locale[]
+}
+
+export default function PublicHeader({ locale, languageOptions }: PublicHeaderProps) {
   const router = useRouter()
   const t = dictionaries[locale].header
+  const availableLocales = languageOptions && languageOptions.length > 0
+    ? languageOptions
+    : (["id", "en", "zh", "th"] as Locale[])
 
   const changeLocale = async (nextLocale: Locale) => {
     await fetch("/api/locale", {
@@ -41,10 +49,18 @@ export default function PublicHeader({ locale }: { locale: Locale }) {
             <details className="relative">
               <summary className="list-none cursor-pointer hover:text-orange-600">{t.language}</summary>
               <div className="absolute right-0 z-20 mt-2 w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
-                <button type="button" onClick={() => changeLocale("id")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langId}</button>
-                <button type="button" onClick={() => changeLocale("en")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langEn}</button>
-                <button type="button" onClick={() => changeLocale("zh")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langZh}</button>
-                <button type="button" onClick={() => changeLocale("th")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langTh}</button>
+                {availableLocales.includes("id") && (
+                  <button type="button" onClick={() => changeLocale("id")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langId}</button>
+                )}
+                {availableLocales.includes("en") && (
+                  <button type="button" onClick={() => changeLocale("en")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langEn}</button>
+                )}
+                {availableLocales.includes("zh") && (
+                  <button type="button" onClick={() => changeLocale("zh")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langZh}</button>
+                )}
+                {availableLocales.includes("th") && (
+                  <button type="button" onClick={() => changeLocale("th")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langTh}</button>
+                )}
               </div>
             </details>
           </nav>

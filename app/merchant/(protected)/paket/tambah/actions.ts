@@ -11,6 +11,8 @@ type ItineraryRouteInput = {
 }
 
 const MAX_GALLERY_BYTES = 18 * 1024 * 1024
+const SUPPORTED_LANGUAGES = ["id", "en", "zh", "th"] as const
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -34,6 +36,22 @@ function slugifyTitle(input: string): string {
     .toLowerCase()
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
+}
+
+function normalizePublishedLanguages(input: FormDataEntryValue[], defaultLanguage: string): SupportedLanguage[] {
+  const fromForm = input
+    .map((value) => String(value).trim())
+    .filter((value): value is SupportedLanguage =>
+      (SUPPORTED_LANGUAGES as readonly string[]).includes(value)
+    )
+
+  const fallbackDefault: SupportedLanguage =
+    (SUPPORTED_LANGUAGES as readonly string[]).includes(defaultLanguage) ?
+      (defaultLanguage as SupportedLanguage) :
+      "id"
+
+  const merged = [...fromForm, fallbackDefault]
+  return [...new Set(merged)]
 }
 
 // step 1
@@ -62,6 +80,10 @@ export async function createPackage(formData: FormData) {
     if (!title) throw new Error("Nama paket wajib diisi.")
 
     const defaultLanguage = (formData.get("default_language") as string) || "id"
+    const publishedLanguages = normalizePublishedLanguages(
+      formData.getAll("publish_languages[]"),
+      defaultLanguage
+    )
     const slugBase = slugifyTitle(title)
     const slug = `${slugBase || "paket"}-${crypto.randomUUID().slice(0, 6)}`
 
@@ -89,28 +111,43 @@ export async function createPackage(formData: FormData) {
       coverImageUrl = data.publicUrl
     }
 
-    const { data, error } = await supabase
+    const basePayload = {
+      merchant_id: merchant.id,
+      title,
+      slug,
+      origin_country_id: formData.get("origin_country_id"),
+      origin_province: formData.get("origin_province"),
+      destination_country_id: formData.get("destination_country_id"),
+      destination_province: formData.get("destination_province"),
+      travel_style: formData.get("travel_style"),
+      minimal_peserta: Number(formData.get("minimal_peserta") || 1),
+      duration: Number(formData.get("duration_days") || 0),
+      price_adult: Number(formData.get("price_adult") || 0),
+      price_child: Number(formData.get("price_child") || 0),
+      currency: formData.get("currency"),
+      default_language: defaultLanguage,
+      cover_image: coverImageUrl,
+      status: "draft",
+    }
+
+    let insertResult = await supabase
       .from("packages")
       .insert({
-        merchant_id: merchant.id,
-        title,
-        slug,
-        origin_country_id: formData.get("origin_country_id"),
-        origin_province: formData.get("origin_province"),
-        destination_country_id: formData.get("destination_country_id"),
-        destination_province: formData.get("destination_province"),
-        travel_style: formData.get("travel_style"),
-        minimal_peserta: Number(formData.get("minimal_peserta") || 1),
-        duration: Number(formData.get("duration_days") || 0),
-        price_adult: Number(formData.get("price_adult") || 0),
-        price_child: Number(formData.get("price_child") || 0),
-        currency: formData.get("currency"),
-        default_language: defaultLanguage,
-        cover_image: coverImageUrl,
-        status: "draft",
+        ...basePayload,
+        published_languages: publishedLanguages,
       })
       .select()
       .single()
+
+    if (insertResult.error && insertResult.error.message.includes("published_languages")) {
+      insertResult = await supabase
+        .from("packages")
+        .insert(basePayload)
+        .select()
+        .single()
+    }
+
+    const { data, error } = insertResult
 
     if (error) {
       throw new Error(`Gagal menyimpan paket: ${error.message}`)
@@ -161,7 +198,7 @@ export async function savePackageDetails(formData: FormData) {
       throw new Error("Anda tidak memiliki akses ke paket ini.")
     }
 
-    const languageCodes = ["id", "en", "zh", "th"] as const
+    const languageCodes = SUPPORTED_LANGUAGES
     const meetingPoint = formData.get("meeting_point") as string
     const mapEmbed = formData.get("map_embed") as string
     const tagsRaw = formData.get("tags") as string
@@ -173,13 +210,40 @@ export async function savePackageDetails(formData: FormData) {
       throw new Error("file gambar terlalu besar")
     }
 
-    const { data: pkg } = await supabase
+    let pkg: {
+      default_language: string | null
+      title: string | null
+      published_languages?: string[] | null
+    } | null = null
+
+    const pkgWithPublished = await supabase
       .from("packages")
-      .select("default_language, title")
+      .select("default_language, title, published_languages")
       .eq("id", packageId)
       .single()
 
+    if (pkgWithPublished.error && pkgWithPublished.error.message.includes("published_languages")) {
+      const pkgLegacy = await supabase
+        .from("packages")
+        .select("default_language, title")
+        .eq("id", packageId)
+        .single()
+      pkg = pkgLegacy.data as { default_language: string | null; title: string | null } | null
+    } else {
+      pkg = pkgWithPublished.data as {
+        default_language: string | null
+        title: string | null
+        published_languages?: string[] | null
+      } | null
+    }
+
     if (!pkg) throw new Error("Package tidak ditemukan.")
+
+    const defaultLanguage = String(pkg.default_language || "id")
+    const publishedLanguages = normalizePublishedLanguages(
+      (pkg.published_languages || []) as FormDataEntryValue[],
+      defaultLanguage
+    )
 
     const translationRows = languageCodes
       .map((code) => {
@@ -189,14 +253,35 @@ export async function savePackageDetails(formData: FormData) {
         const exclude = String(formData.get(`exclude_${code}`) || "").trim()
         const preparation = String(formData.get(`preparation_${code}`) || "").trim()
         const termsConditions = String(formData.get(`terms_conditions_${code}`) || "").trim()
-        const isDefault = code === pkg.default_language
+        const isDefault = code === defaultLanguage
+        const isPublished = publishedLanguages.includes(code)
         const hasAnyContent = Boolean(
           aboutTour || serviceStandard || include || exclude || preparation || termsConditions
         )
 
-        if (!isDefault && !hasAnyContent) return null
+        if (!isPublished && !hasAnyContent) return null
         if (isDefault && !aboutTour) {
-          throw new Error(`Info Tentang Tour wajib diisi untuk bahasa default (${pkg.default_language})`)
+          throw new Error(`Info Tentang Tour wajib diisi untuk bahasa default (${defaultLanguage})`)
+        }
+        if (!isDefault && isPublished && !hasAnyContent) {
+          const defaultAboutTour = String(formData.get(`about_tour_${defaultLanguage}`) || "").trim()
+          const defaultServiceStandard = String(formData.get(`service_standard_${defaultLanguage}`) || "").trim()
+          const defaultInclude = String(formData.get(`include_${defaultLanguage}`) || "").trim()
+          const defaultExclude = String(formData.get(`exclude_${defaultLanguage}`) || "").trim()
+          const defaultPreparation = String(formData.get(`preparation_${defaultLanguage}`) || "").trim()
+          const defaultTermsConditions = String(formData.get(`terms_conditions_${defaultLanguage}`) || "").trim()
+
+          return {
+            package_id: packageId,
+            language_code: code,
+            title: pkg.title,
+            about_tour: defaultAboutTour || null,
+            service_standard: defaultServiceStandard || null,
+            include: defaultInclude || null,
+            exclude: defaultExclude || null,
+            preparation: defaultPreparation || null,
+            terms_conditions: defaultTermsConditions || null,
+          }
         }
 
         return {

@@ -6,7 +6,7 @@ import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
-import { dictionaries } from "@/lib/i18n"
+import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +21,7 @@ type PackageRow = {
   currency: string | null
   travel_style: string | null
   default_language: string | null
+  published_languages: string[] | null
   cover_image: string | null
   origin_country_id: string | null
   origin_province: string | null
@@ -84,14 +85,18 @@ function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
   return relation?.name || "-"
 }
 
+function toSupportedLocale(input: string | null | undefined): Locale | null {
+  if (input === "id" || input === "en" || input === "zh" || input === "th") return input
+  return null
+}
+
 export default async function PaketPage({
   params,
 }: {
   params: Promise<{ slug: string }>
 }) {
   const { slug: rawSlug } = await params
-  const locale = await getCurrentLocale()
-  const t = dictionaries[locale].detail
+  const cookieLocale = await getCurrentLocale()
   const supabase = createAdminClient()
 
   const slugCandidates = [
@@ -118,6 +123,7 @@ export default async function PaketPage({
         currency,
         travel_style,
         default_language,
+        published_languages,
         cover_image,
         origin_country_id,
         origin_province,
@@ -128,19 +134,11 @@ export default async function PaketPage({
       .eq("status", "approved")
       .maybeSingle()
 
-    if (result.data) {
-      pkg = result.data as PackageRow
-      error = null
-      break
-    }
+    let resolvedData = result.data as PackageRow | null
+    let resolvedError = result.error
 
-    error = result.error
-  }
-
-  if (!pkg) {
-    const suffix = rawSlug.match(/([a-z0-9]{6,})$/i)?.[1]
-    if (suffix) {
-      const fallback = await supabase
+    if (resolvedError && resolvedError.message.includes("published_languages")) {
+      const legacyResult = await supabase
         .from("packages")
         .select(`
           id,
@@ -159,17 +157,109 @@ export default async function PaketPage({
           destination_country_id,
           destination_province
         `)
+        .eq("slug", candidate)
+        .eq("status", "approved")
+        .maybeSingle()
+
+      resolvedData = legacyResult.data
+        ? ({
+            ...legacyResult.data,
+            published_languages: [legacyResult.data.default_language || "id"],
+          } as PackageRow)
+        : null
+      resolvedError = legacyResult.error
+    }
+
+    if (resolvedData) {
+      pkg = resolvedData
+      error = null
+      break
+    }
+
+    error = resolvedError
+  }
+
+  if (!pkg) {
+    const suffix = rawSlug.match(/([a-z0-9]{6,})$/i)?.[1]
+    if (suffix) {
+      const fallback = await supabase
+        .from("packages")
+        .select(`
+          id,
+          slug,
+          title,
+          duration,
+          minimal_peserta,
+          price_adult,
+          price_child,
+          currency,
+          travel_style,
+          default_language,
+          published_languages,
+          cover_image,
+          origin_country_id,
+          origin_province,
+          destination_country_id,
+          destination_province
+        `)
         .ilike("slug", `%${suffix}`)
         .eq("status", "approved")
         .limit(1)
         .maybeSingle()
 
-      pkg = fallback.data as PackageRow | null
-      error = fallback.error
+      let fallbackData = fallback.data as PackageRow | null
+      let fallbackError = fallback.error
+
+      if (fallbackError && fallbackError.message.includes("published_languages")) {
+        const legacyFallback = await supabase
+          .from("packages")
+          .select(`
+            id,
+            slug,
+            title,
+            duration,
+            minimal_peserta,
+            price_adult,
+            price_child,
+            currency,
+            travel_style,
+            default_language,
+            cover_image,
+            origin_country_id,
+            origin_province,
+            destination_country_id,
+            destination_province
+          `)
+          .ilike("slug", `%${suffix}`)
+          .eq("status", "approved")
+          .limit(1)
+          .maybeSingle()
+
+        fallbackData = legacyFallback.data
+          ? ({
+              ...legacyFallback.data,
+              published_languages: [legacyFallback.data.default_language || "id"],
+            } as PackageRow)
+          : null
+        fallbackError = legacyFallback.error
+      }
+
+      pkg = fallbackData
+      error = fallbackError
     }
   }
 
   if (error || !pkg) return notFound()
+
+  const defaultLocale = toSupportedLocale(pkg.default_language) || "id"
+  const allowedLocalesRaw = (pkg.published_languages || [])
+    .map((lang) => toSupportedLocale(lang))
+    .filter((lang): lang is Locale => Boolean(lang))
+  const allowedLocales = [...new Set([...allowedLocalesRaw, defaultLocale])]
+  const activeLocale = allowedLocales.includes(cookieLocale)
+    ? cookieLocale
+    : allowedLocales[0] || normalizeLocale(pkg.default_language)
+  const t = dictionaries[activeLocale].detail
 
   const { data: translationRows } = await supabase
     .from("package_translations")
@@ -177,7 +267,7 @@ export default async function PaketPage({
     .eq("package_id", pkg.id)
     .in(
       "language_code",
-      [...new Set([locale, pkg.default_language || "id", "id"])].filter(Boolean)
+      [...new Set([activeLocale, defaultLocale, "id"])].filter(Boolean)
     )
 
   const translations = (translationRows || []) as Array<{
@@ -192,7 +282,7 @@ export default async function PaketPage({
     terms_conditions: string | null
   }>
 
-  const translationPriority = [locale, pkg.default_language || "id", "id"]
+  const translationPriority = [activeLocale, defaultLocale, "id"]
   const translation =
     translationPriority
       .map((code) => translations.find((row) => row.language_code === code))
@@ -259,7 +349,7 @@ export default async function PaketPage({
 
   return (
     <main className="min-h-screen bg-slate-100">
-      <PublicHeader locale={locale} />
+      <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
@@ -296,7 +386,7 @@ export default async function PaketPage({
             </section>
 
             <PackageTabs
-              locale={locale}
+              locale={activeLocale}
               data={{
                 aboutTour: translation?.about_tour || null,
                 serviceStandard: translation?.service_standard || null,
@@ -338,7 +428,7 @@ export default async function PaketPage({
               packageId={pkg.id}
               preparation={translation?.preparation || null}
               termsConditions={translation?.terms_conditions || null}
-              locale={locale}
+              locale={activeLocale}
             />
           </aside>
         </div>
