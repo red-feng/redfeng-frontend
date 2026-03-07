@@ -133,6 +133,16 @@ export default async function ChatPage({
             )
           }
 
+          if (!newRoom?.id) {
+            return (
+              <main className="mx-auto max-w-3xl p-6">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                  {t.createRoomFailed}
+                </div>
+              </main>
+            )
+          }
+
           activeRoomId = newRoom.id
         }
       }
