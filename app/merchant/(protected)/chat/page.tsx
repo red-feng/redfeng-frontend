@@ -150,7 +150,8 @@ export default async function MerchantChatPage({
 
         {!bookingLinkReady && (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-            Fitur "Sesudah Booking" butuh migration terbaru. Jalankan migration `add_booking_id_to_package_chat_rooms`.
+            Fitur &quot;Sesudah Booking&quot; butuh migration terbaru. Jalankan migration
+            `add_booking_id_to_package_chat_rooms`.
           </div>
         )}
 

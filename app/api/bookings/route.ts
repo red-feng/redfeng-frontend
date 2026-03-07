@@ -1,5 +1,3 @@
-// app/api/bookings/route.ts
-
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
@@ -22,7 +20,6 @@ export async function POST(req: Request) {
     } = await authSupabase.auth.getUser()
 
     const body = await req.json()
-
     const {
       package_id,
       pickup_date,
@@ -30,75 +27,61 @@ export async function POST(req: Request) {
       child_count,
       customer_name,
       customer_email,
-      customer_phone
+      customer_phone,
     } = body
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
 
-    const totalPax = adult_count + child_count
-
-    // 🔹 Validate booking window
     const windowCheck = validateBookingWindow(pickup_date)
     if (!windowCheck.allowed) {
-      return NextResponse.json(
-        { error: windowCheck.reason },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: windowCheck.reason }, { status: 400 })
     }
 
-    // 🔥 CALL ATOMIC FUNCTION
     const { data: bookingData, error: rpcError } = await supabase.rpc(
       "create_booking_atomic_v2",
       {
-        p_user_id: user?.id ?? null, // guest booking jika tidak login
+        p_user_id: user?.id ?? null,
         p_package_id: package_id,
         p_adult: adult_count,
-        p_child: child_count
-      }
+        p_child: child_count,
+      },
     )
 
     if (rpcError || !bookingData) {
       return NextResponse.json(
         { error: rpcError?.message || "Booking gagal" },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
     const bookingCode = generateBookingCode()
+    const expiry = new Date()
+    expiry.setMinutes(expiry.getMinutes() + 30)
 
-// ==================================
-//  EXPIRY TIME (30 MENIT)
-// ==================================
-const expiry = new Date()
-expiry.setMinutes(expiry.getMinutes() + 30)
+    const { data: booking, error: updateError } = await supabase
+      .from("bookings")
+      .update({
+        booking_code: bookingCode,
+        pickup_date,
+        customer_name,
+        customer_email,
+        customer_phone,
+        expiry_time: expiry.toISOString(),
+      })
+      .eq("id", bookingData.id)
+      .select()
+      .single()
 
-// 🔹 Update booking dengan data customer + expiry
-const { data: booking, error: updateError } = await supabase
-  .from("bookings")
-  .update({
-    booking_code: bookingCode,
-    pickup_date,
-    customer_name,
-    customer_email,
-    customer_phone,
-    expiry_time: expiry.toISOString()
-  })
-  .eq("id", bookingData.id)
-  .select()
-  .single()
-
-    if (updateError) {
+    if (updateError || !booking) {
       return NextResponse.json(
         { error: "Gagal menyimpan data booking" },
-        { status: 500 }
+        { status: 500 },
       )
     }
 
-    // Hubungkan chat room customer ke booking jika user login.
-    // Jika migration booking_id belum diterapkan, proses booking tetap lanjut.
     if (user?.id) {
       const { data: pkg } = await supabase
         .from("packages")
@@ -135,16 +118,14 @@ const { data: booking, error: updateError } = await supabase
               console.error("Gagal link chat room ke booking:", linkError.message)
             }
           } else {
-            const roomPayload = {
-              package_id,
-              customer_id: user.id,
-              merchant_user_id: merchantOwner.user_id,
-              booking_id: booking.id,
-            }
-
             const { error: createRoomError } = await supabase
               .from("package_chat_rooms")
-              .insert(roomPayload)
+              .insert({
+                package_id,
+                customer_id: user.id,
+                merchant_user_id: merchantOwner.user_id,
+                booking_id: booking.id,
+              })
 
             if (createRoomError) {
               if (createRoomError.message.includes("booking_id")) {
@@ -163,17 +144,13 @@ const { data: booking, error: updateError } = await supabase
     }
 
     return NextResponse.json({
-    booking_id: booking.id,
-    payment_type: booking.payment_type,
-    dp_amount: booking.dp_amount,
-    total_amount: booking.total_amount
+      booking_id: booking.id,
+      payment_type: booking.payment_type,
+      dp_amount: booking.dp_amount,
+      total_amount: booking.total_amount,
     })
-
   } catch (error) {
     console.error(error)
-    return NextResponse.json(
-      { error: "Server error" },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
