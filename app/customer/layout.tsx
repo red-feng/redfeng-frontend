@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import SignOutButton from "@/app/components/SignOutButton"
 
 export default async function CustomerLayout({
   children,
@@ -15,20 +16,6 @@ export default async function CustomerLayout({
 
   if (!user) {
     redirect("/login?next=/customer/dashboard")
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle()
-
-  if (profile?.role === "merchant") {
-    redirect("/merchant/dashboard")
-  }
-
-  if (profile?.role === "admin" || profile?.role === "superadmin") {
-    redirect("/admin/dashboard")
   }
 
   return (
@@ -52,6 +39,7 @@ export default async function CustomerLayout({
             <Link href="/" className="rounded-full border border-slate-200 px-4 py-2 font-medium hover:border-orange-300 hover:text-orange-600">
               Kembali ke Situs
             </Link>
+            <SignOutButton className="rounded-full border border-slate-200 px-4 py-2 font-medium hover:border-rose-300 hover:text-rose-600" />
           </div>
         </div>
       </header>

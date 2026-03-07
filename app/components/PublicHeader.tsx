@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import SignOutButton from "@/app/components/SignOutButton"
 
 type PublicHeaderProps = {
   locale: Locale
@@ -21,6 +22,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
     : (["id", "en", "zh", "th"] as Locale[])
   const [accountHref, setAccountHref] = useState("/login")
   const [accountLabel, setAccountLabel] = useState("Login")
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     const syncSession = async () => {
@@ -31,29 +33,13 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
       if (!session?.user) {
         setAccountHref("/login")
         setAccountLabel("Login")
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle()
-
-      if (profile?.role === "merchant") {
-        setAccountHref("/merchant/dashboard")
-        setAccountLabel("Akun Saya")
-        return
-      }
-
-      if (profile?.role === "admin" || profile?.role === "superadmin") {
-        setAccountHref("/admin/dashboard")
-        setAccountLabel("Akun Saya")
+        setIsAuthenticated(false)
         return
       }
 
       setAccountHref("/customer/dashboard")
       setAccountLabel(t.account)
+      setIsAuthenticated(true)
     }
 
     syncSession()
@@ -115,12 +101,23 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
                 <path d="M20 20L16.65 16.65" />
               </svg>
             </button>
+            {!isAuthenticated && (
+              <Link
+                href="/register"
+                className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-orange-300 hover:text-orange-600"
+              >
+                Register
+              </Link>
+            )}
             <Link
               href={accountHref}
               className="rounded-md bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
             >
               {accountLabel}
             </Link>
+            {isAuthenticated && (
+              <SignOutButton className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600" />
+            )}
           </div>
         </div>
 

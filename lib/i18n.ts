@@ -258,7 +258,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap belum siap",
     },
     login: {
-      title: "Login",
+      title: "Login Customer",
       email: "Email",
       password: "Password",
       login: "Login",
@@ -390,7 +390,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap is not ready",
     },
     login: {
-      title: "Login",
+      title: "Customer Login",
       email: "Email",
       password: "Password",
       login: "Login",
@@ -522,7 +522,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap 尚未就绪",
     },
     login: {
-      title: "登录",
+      title: "客户登录",
       email: "邮箱",
       password: "密码",
       login: "登录",
@@ -654,7 +654,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap ยังไม่พร้อมใช้งาน",
     },
     login: {
-      title: "เข้าสู่ระบบ",
+      title: "เข้าสู่ระบบลูกค้า",
       email: "อีเมล",
       password: "รหัสผ่าน",
       login: "เข้าสู่ระบบ",
