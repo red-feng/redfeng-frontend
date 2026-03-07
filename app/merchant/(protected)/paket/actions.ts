@@ -104,6 +104,7 @@ export async function updatePackage(formData: FormData) {
 
 export async function deletePackage(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const returnStatus = String(formData.get("return_status") || "draft").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
@@ -172,8 +173,61 @@ export async function deletePackage(formData: FormData) {
 
     revalidatePath("/merchant/paket")
   } catch (error) {
-    redirect(`/merchant/paket?error=${encodeURIComponent(getErrorMessage(error))}`)
+    const errorPath =
+      returnStatus
+        ? `/merchant/paket?status=${encodeURIComponent(returnStatus)}&error=${encodeURIComponent(getErrorMessage(error))}`
+        : `/merchant/paket?error=${encodeURIComponent(getErrorMessage(error))}`
+    redirect(errorPath)
   }
 
-  redirect("/merchant/paket?success=Paket berhasil dihapus")
+  const successPath =
+    returnStatus
+      ? `/merchant/paket?status=${encodeURIComponent(returnStatus)}&success=${encodeURIComponent("Paket berhasil dihapus")}`
+      : `/merchant/paket?success=${encodeURIComponent("Paket berhasil dihapus")}`
+
+  redirect(successPath)
+}
+
+export async function togglePackageStatus(formData: FormData) {
+  const packageId = String(formData.get("package_id") || "")
+  const targetStatus = String(formData.get("target_status") || "").trim()
+  const returnStatus = String(formData.get("return_status") || "draft").trim()
+
+  try {
+    if (!packageId) throw new Error("Package ID tidak ditemukan.")
+    if (!["approved", "inactive"].includes(targetStatus)) {
+      throw new Error("Status tujuan tidak valid.")
+    }
+
+    const { adminSupabase } = await getOwnedMerchantPackage(packageId)
+
+    const { error } = await adminSupabase
+      .from("packages")
+      .update({
+        status: targetStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", packageId)
+
+    if (error) {
+      throw new Error(`Gagal memperbarui status paket: ${error.message}`)
+    }
+
+    revalidatePath("/merchant/paket")
+  } catch (error) {
+    const errorPath =
+      returnStatus
+        ? `/merchant/paket?status=${encodeURIComponent(returnStatus)}&error=${encodeURIComponent(getErrorMessage(error))}`
+        : `/merchant/paket?error=${encodeURIComponent(getErrorMessage(error))}`
+    redirect(errorPath)
+  }
+
+  const successMessage =
+    targetStatus === "approved" ? "Paket berhasil diaktifkan" : "Paket berhasil dinonaktifkan"
+  const successPath =
+    returnStatus
+      ? `/merchant/paket?status=${encodeURIComponent(returnStatus)}&success=${encodeURIComponent(successMessage)}`
+      : `/merchant/paket?success=${encodeURIComponent(successMessage)}`
+
+  redirect(successPath)
 }

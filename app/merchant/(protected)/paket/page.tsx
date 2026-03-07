@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
-import { deletePackage } from "./actions"
+import { deletePackage, togglePackageStatus } from "./actions"
 
 type PackageRow = {
   id: string
@@ -14,7 +14,6 @@ type PackageRow = {
 }
 
 const packageMenus = [
-  { label: "Semua Paket", key: "all" },
   { label: "Tambah Paket", key: "add", href: "/merchant/paket/tambah" },
   { label: "Draft Paket", key: "draft" },
   { label: "Paket Aktif", key: "approved" },
@@ -52,7 +51,7 @@ export default async function MerchantPackagePage({
   searchParams: Promise<{ status?: string; success?: string; error?: string }>
 }) {
   const params = await searchParams
-  const activeStatus = params.status || "all"
+  const activeStatus = params.status || "draft"
   const successMessage = params.success || ""
   const errorMessage = params.error || ""
   const supabase = await createClient()
@@ -76,7 +75,7 @@ export default async function MerchantPackagePage({
     .eq("merchant_id", merchant.id)
     .order("created_at", { ascending: false })
 
-  if (activeStatus !== "all" && activeStatus !== "add") {
+  if (activeStatus !== "add") {
     query = query.eq("status", activeStatus)
   }
 
@@ -143,11 +142,11 @@ export default async function MerchantPackagePage({
             )
           }
 
-          const active = activeStatus === menu.key || (menu.key === "all" && activeStatus === "all")
+          const active = activeStatus === menu.key
           return (
             <Link
               key={menu.key}
-              href={`/merchant/paket${menu.key === "all" ? "" : `?status=${menu.key}`}`}
+              href={`/merchant/paket?status=${menu.key}`}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 active
                   ? "bg-slate-900 text-white"
@@ -187,6 +186,32 @@ export default async function MerchantPackagePage({
                   <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(pkg.price_adult)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {pkg.status !== "approved" && (
+                    <form action={togglePackageStatus}>
+                      <input type="hidden" name="package_id" value={pkg.id} />
+                      <input type="hidden" name="target_status" value="approved" />
+                      <input type="hidden" name="return_status" value={activeStatus} />
+                      <button
+                        type="submit"
+                        className="rounded-xl border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+                      >
+                        Aktifkan Paket
+                      </button>
+                    </form>
+                  )}
+                  {pkg.status !== "inactive" && (
+                    <form action={togglePackageStatus}>
+                      <input type="hidden" name="package_id" value={pkg.id} />
+                      <input type="hidden" name="target_status" value="inactive" />
+                      <input type="hidden" name="return_status" value={activeStatus} />
+                      <button
+                        type="submit"
+                        className="rounded-xl border border-amber-200 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50"
+                      >
+                        Nonaktifkan Paket
+                      </button>
+                    </form>
+                  )}
                   <Link
                     href={`/merchant/paket/${pkg.id}/edit`}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
@@ -195,6 +220,7 @@ export default async function MerchantPackagePage({
                   </Link>
                   <form action={deletePackage}>
                     <input type="hidden" name="package_id" value={pkg.id} />
+                    <input type="hidden" name="return_status" value={activeStatus} />
                     <button
                       type="submit"
                       className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50"
