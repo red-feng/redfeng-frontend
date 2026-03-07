@@ -44,7 +44,7 @@ async function getMerchantOwnedBooking(bookingId: string, userId: string) {
   return { error: null, booking }
 }
 
-function redirectBack(message: string, filter: string | null, type: "success" | "error") {
+function redirectBack(message: string, filter: string | null, type: "success" | "error"): never {
   const suffix = filter ? `?filter=${encodeURIComponent(filter)}&${type}=${encodeURIComponent(message)}` : `?${type}=${encodeURIComponent(message)}`
   redirect(`/merchant/pesanan${suffix}`)
 }
