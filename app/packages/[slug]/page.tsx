@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import Link from "next/link"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Gallery from "./Gallery"
@@ -423,9 +424,12 @@ export default async function PaketPage({
                 <p>{t.minimumParticipants}: {pkg.minimal_peserta || 0} {t.people}</p>
                 <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
               </div>
-              <button className="mt-5 w-full rounded-[20px] bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
+              <Link
+                href={`/checkout/${encodeURIComponent(pkg.slug)}`}
+                className="mt-5 block w-full rounded-[20px] bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800"
+              >
                 {t.bookingNow}
-              </button>
+              </Link>
             </section>
             <SidebarActions
               packageId={pkg.id}
