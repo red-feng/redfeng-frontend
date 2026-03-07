@@ -81,6 +81,9 @@ export async function updatePackage(formData: FormData) {
       duration,
       price_adult: priceAdult,
       price_child: priceChild,
+      status: "pending",
+      rejection_reason: null,
+      reviewed_at: null,
       updated_at: new Date().toISOString(),
     }
 
@@ -99,7 +102,7 @@ export async function updatePackage(formData: FormData) {
     redirect(`/merchant/paket/${packageId}/edit?error=${encodeURIComponent(getErrorMessage(error))}`)
   }
 
-  redirect("/merchant/paket?success=Paket berhasil diperbarui")
+  redirect("/merchant/paket?status=pending&success=Paket berhasil diperbarui dan dikirim ulang untuk review admin")
 }
 
 export async function deletePackage(formData: FormData) {
