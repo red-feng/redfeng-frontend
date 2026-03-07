@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 type BookingRow = {
   id: string
+  package_id: string | null
   booking_code: string | null
   customer_name: string | null
   pickup_date: string | null
@@ -11,10 +12,11 @@ type BookingRow = {
   child_count: number | null
   payment_status: string | null
   booking_status: string | null
-  packages: {
-    title: string | null
-    merchant_id: string | null
-  } | null
+}
+
+type PackageRow = {
+  id: string
+  title: string | null
 }
 
 type OrderFilter = {
@@ -52,9 +54,9 @@ function isMatchingFilter(booking: BookingRow, filter: string) {
   const tripStatus = normalizeStatus(booking.booking_status)
 
   if (filter === "all") return true
-  if (filter === "new") return tripStatus === "pending" && paymentStatus !== "paid"
+  if (filter === "new") return tripStatus === "pending"
   if (filter === "waiting-payment") return paymentStatus === "pending"
-  if (filter === "paid") return paymentStatus === "paid"
+  if (filter === "paid") return paymentStatus === "paid" || tripStatus === "confirmed"
   if (filter === "done") return tripStatus === "completed" || tripStatus === "done"
   if (filter === "refund") return paymentStatus === "refund" || tripStatus === "refund"
   if (filter === "cancelled") return tripStatus === "cancelled" || paymentStatus === "cancelled"
@@ -102,13 +104,22 @@ export default async function MerchantOrdersPage({
 
   if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
 
-  const { data, error } = await adminSupabase
-    .from("bookings")
-    .select(
-      "id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status, packages!inner(title, merchant_id)",
-    )
-    .eq("packages.merchant_id", merchant.id)
-    .order("created_at", { ascending: false })
+  const { data: packageRows, error: packageError } = await adminSupabase
+    .from("packages")
+    .select("id, title")
+    .eq("merchant_id", merchant.id)
+
+  const merchantPackages = (packageRows as PackageRow[] | null) || []
+  const packageIds = merchantPackages.map((pkg) => pkg.id)
+  const packageMap = new Map(merchantPackages.map((pkg) => [pkg.id, pkg.title || "-"]))
+
+  const { data, error } = packageIds.length
+    ? await adminSupabase
+        .from("bookings")
+        .select("id, package_id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status")
+        .in("package_id", packageIds)
+        .order("created_at", { ascending: false })
+    : { data: [] as BookingRow[], error: packageError }
 
   const allBookings = (data as BookingRow[] | null) ?? []
   const bookings = allBookings.filter((booking) => isMatchingFilter(booking, activeFilter))
@@ -170,7 +181,7 @@ export default async function MerchantOrdersPage({
           })}
         </div>
 
-        {error ? (
+        {error || packageError ? (
           <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
             Gagal memuat data pesanan.
           </div>
@@ -202,7 +213,7 @@ export default async function MerchantOrdersPage({
                         {booking.booking_code || booking.id}
                       </td>
                       <td className="border-b p-4">{booking.customer_name || "-"}</td>
-                      <td className="border-b p-4">{booking.packages?.title || "-"}</td>
+                      <td className="border-b p-4">{packageMap.get(booking.package_id || "") || "-"}</td>
                       <td className="border-b p-4">{formatDate(booking.pickup_date)}</td>
                       <td className="border-b p-4">{totalPeserta}</td>
                       <td className="border-b p-4">
