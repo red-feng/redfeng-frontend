@@ -124,13 +124,19 @@ export default function CheckoutClient({
         return
       }
 
-      if (!window.snap) {
+      const snap = (window as Window & {
+        snap?: {
+          pay: (token: string, callbacks?: Record<string, () => void>) => void
+        }
+      }).snap
+
+      if (!snap) {
         setErrorMsg(t.snapNotReady)
         setSubmitting(false)
         return
       }
 
-      window.snap.pay(snapData.snap_token, {
+      snap.pay(snapData.snap_token, {
         onSuccess: () => router.push(`/booking/${bookingPayload.booking_id}`),
         onPending: () => router.push(`/booking/${bookingPayload.booking_id}`),
         onError: () => setSubmitting(false),
