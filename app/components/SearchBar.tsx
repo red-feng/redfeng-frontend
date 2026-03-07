@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { travelStyleOptions } from "@/lib/travelStyles"
 
 export default function SearchBar({ locale }: { locale: Locale }) {
   const router = useRouter()
@@ -54,22 +55,17 @@ export default function SearchBar({ locale }: { locale: Locale }) {
         </select>
 
         {/* TRAVEL STYLE */}
-         <select
+        <select
           value={style}
           onChange={(e) => setStyle(e.target.value)}
           className="border rounded-xl px-4 py-3 w-[240px]"
         >
           <option value="">{t.allStyles}</option>
-          <option value="explore">Explore</option>
-          <option value="luxury">Luxury</option>
-          <option value="adventure">Adventure</option>
-          <option value="family">Family</option>
-          <option value="honeymoon">Honeymoon</option>
-          <option value="wellness">Wellness</option>
-          <option value="religious">Religious</option>
-          <option value="budget">Budget</option>
-          <option value="group">Group</option>
-          <option value="solo">Solo</option>
+          {travelStyleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
         </select>
 
         {/* DURASI */}

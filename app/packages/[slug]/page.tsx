@@ -7,6 +7,7 @@ import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
+import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 export const dynamic = "force-dynamic"
 
@@ -360,7 +361,7 @@ export default async function PaketPage({
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             <span className="rounded-full bg-orange-100 px-3 py-1 font-semibold text-orange-700">
-              {pkg.travel_style || "-"}
+              {formatTravelStyleLabel(pkg.travel_style)}
             </span>
             <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
               {t.language} {pkg.default_language || "-"}

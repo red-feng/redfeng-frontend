@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
+import { travelStyleOptions } from "@/lib/travelStyles"
 
 type Country = {
   id: string
@@ -98,16 +99,11 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     required
   >
     <option value="">Pilih Travel Style</option>
-    <option value="explore">Explore</option>
-    <option value="adventure">Adventure</option>
-    <option value="family">Family</option>
-    <option value="luxury">Luxury</option>
-    <option value="honeymoon">Honeymoon</option>
-    <option value="wellness">Wellness</option>
-    <option value="religious">Religious</option>
-    <option value="budget">Budget</option>
-    <option value="group">Group</option>
-    <option value="solo">Solo</option>
+    {travelStyleOptions.map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ))}
   </select>
 
   {/* ===== ORIGIN ===== */}

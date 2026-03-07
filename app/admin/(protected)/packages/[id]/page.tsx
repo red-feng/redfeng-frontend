@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
 import Image from "next/image"
+import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 type CountryRow = {
   id: string
@@ -349,7 +350,7 @@ export default async function Page({
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
                   <dt className="text-slate-500">Travel Style</dt>
-                  <dd className="font-medium text-slate-900">{pkg.travel_style || "-"}</dd>
+                  <dd className="font-medium text-slate-900">{formatTravelStyleLabel(pkg.travel_style)}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">Default Language</dt>

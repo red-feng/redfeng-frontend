@@ -15,7 +15,7 @@ const merchantMenus = [
   { label: 'Kelola Paket', href: '/merchant/paket', available: true },
   { label: 'Pesanan', href: '/merchant/pesanan', available: true },
   { label: 'Chat Customer', href: '/merchant/chat', available: true },
-  { label: 'Kalender Booking', href: '', available: false },
+  { label: 'Kalender Booking', href: '/merchant/kalender-booking', available: true },
   { label: 'Statistik', href: '', available: false },
   { label: 'Saldo & Payout', href: '', available: false },
   { label: 'Review', href: '', available: false },
@@ -27,6 +27,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [merchant, setMerchant] = useState<Merchant | null>(null)
   const [loading, setLoading] = useState(true)
+  const [unreadChatCount, setUnreadChatCount] = useState(0)
 
   useEffect(() => {
     const checkAccess = async () => {
@@ -72,7 +73,22 @@ export default function Dashboard() {
         return
       }
 
+      const { data: chatRooms, error: chatRoomsError } = await supabase
+        .from('package_chat_rooms')
+        .select('last_message_at, last_message_sender_id, merchant_last_read_at')
+        .eq('merchant_user_id', user.id)
+
+      const unreadCount = chatRoomsError
+        ? 0
+        : (chatRooms || []).filter((room) => {
+            if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
+            if (!room.last_message_at) return false
+            if (!room.merchant_last_read_at) return true
+            return room.last_message_at > room.merchant_last_read_at
+          }).length
+
       setMerchant(merchantData)
+      setUnreadChatCount(unreadCount)
       setLoading(false)
     }
 
@@ -121,7 +137,14 @@ export default function Dashboard() {
               href={menu.href}
               className="rounded-xl border bg-white p-5 shadow-sm transition hover:shadow-md"
             >
-              {menu.label}
+              <div className="flex items-center justify-between gap-3">
+                <span>{menu.label}</span>
+                {menu.label === 'Chat Customer' && unreadChatCount > 0 && (
+                  <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">
+                    {unreadChatCount}
+                  </span>
+                )}
+              </div>
             </Link>
           ) : (
             <div

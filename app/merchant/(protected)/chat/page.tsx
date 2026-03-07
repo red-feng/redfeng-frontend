@@ -10,6 +10,9 @@ type ChatRoomRow = {
   merchant_user_id: string
   booking_id?: string | null
   updated_at: string | null
+  last_message_at?: string | null
+  last_message_sender_id?: string | null
+  merchant_last_read_at?: string | null
   bookings?:
     | {
         booking_code: string | null
@@ -79,21 +82,32 @@ export default async function MerchantChatPage({
 
   let roomsError: { message: string } | null = null
   let bookingLinkReady = true
+  let readTrackingReady = true
 
   const roomsWithBooking = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, bookings(booking_code, payment_status, booking_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, bookings(booking_code, payment_status, booking_status, customer_name)",
     )
     .eq("merchant_user_id", user.id)
     .order("updated_at", { ascending: false })
 
   let allRooms: ChatRoomRow[] = []
-  if (roomsWithBooking.error && roomsWithBooking.error.message.includes("booking_id")) {
-    bookingLinkReady = false
+  if (roomsWithBooking.error) {
+    if (roomsWithBooking.error.message.includes("booking_id")) {
+      bookingLinkReady = false
+    }
+    if (
+      roomsWithBooking.error.message.includes("last_message") ||
+      roomsWithBooking.error.message.includes("merchant_last_read_at")
+    ) {
+      readTrackingReady = false
+    }
     const fallback = await adminSupabase
       .from("package_chat_rooms")
-      .select("id, package_id, customer_id, merchant_user_id, updated_at")
+      .select(
+        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at",
+      )
       .eq("merchant_user_id", user.id)
       .order("updated_at", { ascending: false })
     allRooms = (fallback.data as ChatRoomRow[] | null) || []
@@ -109,6 +123,23 @@ export default async function MerchantChatPage({
   const rooms = activeTab === "post" ? postBookingRooms : preBookingRooms
   const activeRoomId = requestedRoomId || rooms[0]?.id || ""
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
+
+  if (
+    activeRoom &&
+    activeRoom.last_message_sender_id &&
+    activeRoom.last_message_sender_id !== user.id &&
+    (!activeRoom.merchant_last_read_at ||
+      (activeRoom.last_message_at || "") > activeRoom.merchant_last_read_at)
+  ) {
+    const readIso = new Date().toISOString()
+    const { error: markReadError } = await adminSupabase
+      .from("package_chat_rooms")
+      .update({ merchant_last_read_at: readIso })
+      .eq("id", activeRoom.id)
+    if (!markReadError) {
+      activeRoom.merchant_last_read_at = readIso
+    }
+  }
 
   const packageIds = [...new Set(rooms.map((room) => room.package_id))]
   const { data: packageRows } = packageIds.length
@@ -175,6 +206,12 @@ export default async function MerchantChatPage({
           </div>
         )}
 
+        {!readTrackingReady && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+            Badge chat baru butuh migration `add_read_tracking_to_package_chat_rooms`.
+          </div>
+        )}
+
         <div className="mt-6 grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Daftar Chat</h2>
@@ -193,6 +230,11 @@ export default async function MerchantChatPage({
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
                 const booking = getBookingInfo(room)
+                const hasUnread =
+                  room.last_message_sender_id &&
+                  room.last_message_sender_id !== user.id &&
+                  (!room.merchant_last_read_at ||
+                    (room.last_message_at || "") > room.merchant_last_read_at)
                 return (
                   <div
                     key={room.id}
@@ -203,7 +245,14 @@ export default async function MerchantChatPage({
                     }`}
                   >
                     <Link href={`/merchant/chat?tab=${activeTab}&room_id=${room.id}`} className="block">
-                      <p className="font-medium text-slate-900">{getCustomerLabel(room)}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium text-slate-900">{getCustomerLabel(room)}</p>
+                        {hasUnread && (
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                            Baru
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-1 line-clamp-2 text-xs text-slate-600">
                         Paket: {pkg?.title || "Paket tidak ditemukan"}
                       </p>

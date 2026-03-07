@@ -12,6 +12,9 @@ type ChatRoomRow = {
   customer_id: string
   merchant_user_id: string
   updated_at: string | null
+  last_message_at?: string | null
+  last_message_sender_id?: string | null
+  customer_last_read_at?: string | null
 }
 
 type ChatMessageRow = {
@@ -91,15 +94,31 @@ export default async function ChatPage({
         if (existingRoom?.id) {
           activeRoomId = existingRoom.id
         } else {
-          const { data: newRoom, error: createRoomError } = await adminSupabase
+          const nowIso = new Date().toISOString()
+          let { data: newRoom, error: createRoomError } = await adminSupabase
             .from("package_chat_rooms")
             .insert({
               package_id: packageId,
               customer_id: user.id,
               merchant_user_id: merchantOwner.user_id,
+              customer_last_read_at: nowIso,
             })
             .select("id")
             .single()
+
+          if (createRoomError && createRoomError.message.includes("customer_last_read_at")) {
+            const fallbackRoom = await adminSupabase
+              .from("package_chat_rooms")
+              .insert({
+                package_id: packageId,
+                customer_id: user.id,
+                merchant_user_id: merchantOwner.user_id,
+              })
+              .select("id")
+              .single()
+            newRoom = fallbackRoom.data
+            createRoomError = fallbackRoom.error
+          }
 
           if (createRoomError) {
             const msg = createRoomError.message.includes("does not exist")
@@ -120,14 +139,34 @@ export default async function ChatPage({
     }
   }
 
+  let roomsData: ChatRoomRow[] | null = null
+  let roomsError: { message: string } | null = null
+
   const roomQuery = adminSupabase
     .from("package_chat_rooms")
-    .select("id, package_id, customer_id, merchant_user_id, updated_at")
+    .select(
+      "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at",
+    )
     .order("updated_at", { ascending: false })
 
-  const { data: roomsData, error: roomsError } = isMerchant
+  const roomResult = isMerchant
     ? await roomQuery.eq("merchant_user_id", user.id)
     : await roomQuery.eq("customer_id", user.id)
+
+  if (roomResult.error && roomResult.error.message.includes("last_message")) {
+    const fallbackQuery = adminSupabase
+      .from("package_chat_rooms")
+      .select("id, package_id, customer_id, merchant_user_id, updated_at")
+      .order("updated_at", { ascending: false })
+    const fallbackResult = isMerchant
+      ? await fallbackQuery.eq("merchant_user_id", user.id)
+      : await fallbackQuery.eq("customer_id", user.id)
+    roomsData = fallbackResult.data as ChatRoomRow[] | null
+    roomsError = fallbackResult.error
+  } else {
+    roomsData = roomResult.data as ChatRoomRow[] | null
+    roomsError = roomResult.error
+  }
 
   if (roomsError) {
     const msg = roomsError.message.includes("does not exist")
@@ -142,13 +181,30 @@ export default async function ChatPage({
     )
   }
 
-  const rooms = (roomsData as ChatRoomRow[] | null) || []
+  const rooms = roomsData || []
 
   if (!activeRoomId && rooms.length > 0) {
     activeRoomId = rooms[0].id
   }
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
+
+  if (
+    activeRoom &&
+    activeRoom.last_message_sender_id &&
+    activeRoom.last_message_sender_id !== user.id &&
+    (!activeRoom.customer_last_read_at ||
+      (activeRoom.last_message_at || "") > activeRoom.customer_last_read_at)
+  ) {
+    const readIso = new Date().toISOString()
+    const { error: markReadError } = await adminSupabase
+      .from("package_chat_rooms")
+      .update({ customer_last_read_at: readIso })
+      .eq("id", activeRoom.id)
+    if (!markReadError) {
+      activeRoom.customer_last_read_at = readIso
+    }
+  }
 
   const packageIds = [...new Set(rooms.map((room) => room.package_id))]
   const { data: packageRows } = packageIds.length
@@ -206,6 +262,11 @@ export default async function ChatPage({
               )}
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
+                const hasUnread =
+                  room.last_message_sender_id &&
+                  room.last_message_sender_id !== user.id &&
+                  (!room.customer_last_read_at ||
+                    (room.last_message_at || "") > room.customer_last_read_at)
                 return (
                   <Link
                     key={room.id}
@@ -216,7 +277,14 @@ export default async function ChatPage({
                         : "border-slate-200 text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
+                      {hasUnread && (
+                        <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          Baru
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-1 text-xs text-slate-500">{room.updated_at || "-"}</p>
                   </Link>
                 )

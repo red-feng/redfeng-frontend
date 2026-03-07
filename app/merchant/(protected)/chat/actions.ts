@@ -53,10 +53,24 @@ export async function sendMerchantChatMessage(formData: FormData) {
     redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}&error=${encodeURIComponent(text)}`)
   }
 
-  await adminSupabase
+  const roomUpdate = {
+    updated_at: new Date().toISOString(),
+    last_message_at: new Date().toISOString(),
+    last_message_sender_id: user.id,
+    merchant_last_read_at: new Date().toISOString(),
+  }
+
+  const { error: updateRoomError } = await adminSupabase
     .from("package_chat_rooms")
-    .update({ updated_at: new Date().toISOString() })
+    .update(roomUpdate)
     .eq("id", room.id)
+
+  if (updateRoomError && updateRoomError.message.includes("last_message")) {
+    await adminSupabase
+      .from("package_chat_rooms")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", room.id)
+  }
 
   redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}`)
 }
