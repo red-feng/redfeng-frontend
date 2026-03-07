@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { notFound } from "next/navigation"
 import Image from "next/image"
 import Gallery from "./Gallery"
+import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
@@ -350,6 +351,7 @@ export default async function PaketPage({
 
   return (
     <main className="min-h-screen bg-slate-100">
+      <PackageViewTracker packageId={pkg.id} />
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
