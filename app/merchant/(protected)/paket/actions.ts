@@ -95,10 +95,11 @@ export async function updatePackage(formData: FormData) {
 
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
-    redirect("/merchant/paket?success=Paket berhasil diperbarui")
   } catch (error) {
     redirect(`/merchant/paket/${packageId}/edit?error=${encodeURIComponent(getErrorMessage(error))}`)
   }
+
+  redirect("/merchant/paket?success=Paket berhasil diperbarui")
 }
 
 export async function deletePackage(formData: FormData) {
@@ -170,8 +171,9 @@ export async function deletePackage(formData: FormData) {
     }
 
     revalidatePath("/merchant/paket")
-    redirect("/merchant/paket?success=Paket berhasil dihapus")
   } catch (error) {
     redirect(`/merchant/paket?error=${encodeURIComponent(getErrorMessage(error))}`)
   }
+
+  redirect("/merchant/paket?success=Paket berhasil dihapus")
 }
