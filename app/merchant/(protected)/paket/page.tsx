@@ -231,7 +231,7 @@ export default async function MerchantPackagePage({
                       </button>
                     </form>
                   )}
-                  {pkg.status !== "approved" && (
+                  {["inactive", "rejected"].includes(pkg.status || "") && (
                     <form action={togglePackageStatus}>
                       <input type="hidden" name="package_id" value={pkg.id} />
                       <input type="hidden" name="target_status" value="approved" />
@@ -244,7 +244,7 @@ export default async function MerchantPackagePage({
                       </button>
                     </form>
                   )}
-                  {pkg.status !== "inactive" && (
+                  {pkg.status === "approved" && (
                     <form action={togglePackageStatus}>
                       <input type="hidden" name="package_id" value={pkg.id} />
                       <input type="hidden" name="target_status" value="inactive" />
