@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
+import { deletePackage } from "./actions"
 
 type PackageRow = {
   id: string
@@ -48,10 +49,12 @@ function statusClasses(value: string | null) {
 export default async function MerchantPackagePage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; success?: string; error?: string }>
 }) {
   const params = await searchParams
   const activeStatus = params.status || "all"
+  const successMessage = params.success || ""
+  const errorMessage = params.error || ""
   const supabase = await createClient()
   const {
     data: { user },
@@ -94,6 +97,18 @@ export default async function MerchantPackagePage({
         <h1 className="text-2xl font-bold text-slate-900">Kelola Paket</h1>
         <p className="mt-1 text-sm text-slate-500">Kelola paket merchant berdasarkan status dan kesiapan publikasi.</p>
       </div>
+
+      {successMessage && (
+        <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+          {errorMessage}
+        </div>
+      )}
 
       <div className="mb-8 grid gap-4 md:grid-cols-4">
         <div className="rounded-2xl border bg-white p-5 shadow-sm">
@@ -166,19 +181,36 @@ export default async function MerchantPackagePage({
                   {formatStatus(pkg.status)}
                 </span>
               </div>
-              <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Harga Dewasa</p>
                   <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(pkg.price_adult)}</p>
                 </div>
-                {pkg.slug ? (
+                <div className="flex flex-wrap gap-2">
                   <Link
-                    href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                    href={`/merchant/paket/${pkg.id}/edit`}
                     className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                   >
-                    Lihat Paket
+                    Edit Paket
                   </Link>
-                ) : null}
+                  <form action={deletePackage}>
+                    <input type="hidden" name="package_id" value={pkg.id} />
+                    <button
+                      type="submit"
+                      className="rounded-xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+                    >
+                      Hapus Paket
+                    </button>
+                  </form>
+                  {pkg.slug ? (
+                    <Link
+                      href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                      className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                    >
+                      Lihat Paket
+                    </Link>
+                  ) : null}
+                </div>
               </div>
             </article>
           ))}
