@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -19,6 +19,7 @@ function getLocaleFromCookie(): Locale {
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [locale] = useState<Locale>(() => getLocaleFromCookie());
   const [email, setEmail] = useState("");
@@ -27,6 +28,8 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState("");
 
   const t = dictionaries[locale].login;
+  const requestedNext = searchParams.get("next");
+  const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard";
 
   useEffect(() => {
     const checkSession = async () => {
@@ -42,17 +45,22 @@ export default function LoginPage() {
         .eq("id", session.user.id)
         .maybeSingle();
 
-      if (!profile) return;
+      if (!profile) {
+        router.replace(safeNext);
+        return;
+      }
 
       if (profile.role === "merchant") {
         router.replace("/merchant/dashboard");
       } else if (profile.role === "admin" || profile.role === "superadmin") {
         router.replace("/admin/dashboard");
+      } else {
+        router.replace(safeNext);
       }
     };
 
     checkSession();
-  }, [router, supabase]);
+  }, [router, safeNext, supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +94,7 @@ export default function LoginPage() {
       .maybeSingle();
 
     if (!profile) {
-      router.replace("/");
+      router.replace(safeNext);
       return;
     }
 
@@ -95,7 +103,7 @@ export default function LoginPage() {
     } else if (profile.role === "admin" || profile.role === "superadmin") {
       router.replace("/admin/dashboard");
     } else {
-      router.replace("/");
+      router.replace(safeNext);
     }
   };
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -18,7 +19,10 @@ export default function CheckoutClient({
   locale?: Locale;
 }) {
   const supabase = createClient();
+  const router = useRouter();
   const t = dictionaries[locale].checkout;
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const [nama, setNama] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +34,25 @@ export default function CheckoutClient({
   const ppn = subtotal * 0.11;
   const total = Math.round(subtotal + ppn);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      setIsAuthenticated(Boolean(session?.user));
+      setCheckingSession(false);
+    };
+
+    checkSession();
+  }, [supabase]);
+
   const handleBooking = async () => {
+    if (!isAuthenticated) {
+      router.push(`/login?next=${encodeURIComponent(`/checkout/${slug}`)}`);
+      return;
+    }
+
     const safeEmail = email.trim().toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "guest";
     const bookingCode = `RF-${slug.slice(0, 6).toUpperCase()}-${safeEmail}-${total}`;
 
@@ -85,6 +107,12 @@ export default function CheckoutClient({
       <div className="mx-auto max-w-3xl rounded-xl bg-white p-8 shadow">
         <h1 className="mb-6 text-3xl font-bold">{t.title}</h1>
 
+        {!checkingSession && !isAuthenticated && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Anda harus login terlebih dahulu sebelum bisa membuat booking dan melanjutkan pembayaran.
+          </div>
+        )}
+
         <div className="mb-6 space-y-3 text-lg">
           <div className="flex justify-between">
             <span>{t.totalPay}</span>
@@ -118,7 +146,7 @@ export default function CheckoutClient({
             onClick={handleBooking}
             className="w-full rounded-lg bg-blue-600 py-3 text-white"
           >
-            {t.createBookingPay}
+            {!checkingSession && !isAuthenticated ? "Login untuk Booking" : t.createBookingPay}
           </button>
         </div>
       </div>
