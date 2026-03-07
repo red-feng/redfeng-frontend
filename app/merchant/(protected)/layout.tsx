@@ -60,22 +60,24 @@ if (merchant.verification_status === "rejected") {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center px-6 py-4 md:px-10">
+        <div className="mx-auto flex w-full max-w-7xl items-center px-6 py-5 md:px-10">
           <Link href="/merchant/dashboard" className="inline-flex items-center">
             <Image
               src="/logo-redfeng.png"
               alt="RedFeng"
-              width={140}
-              height={40}
+              width={220}
+              height={64}
               priority
-              className="h-10 w-auto"
+              className="h-14 w-auto md:h-16"
             />
           </Link>
         </div>
       </header>
-      {children}
+      <div className="mx-auto w-full max-w-7xl">
+        {children}
+      </div>
     </div>
   )
 }
