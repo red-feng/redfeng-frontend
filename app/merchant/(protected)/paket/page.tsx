@@ -11,6 +11,7 @@ type PackageRow = {
   status: string | null
   travel_style: string | null
   created_at: string | null
+  rejection_reason: string | null
 }
 
 const packageMenus = [
@@ -71,7 +72,7 @@ export default async function MerchantPackagePage({
 
   let query = supabase
     .from("packages")
-    .select("id, title, slug, price_adult, status, travel_style, created_at")
+    .select("id, title, slug, price_adult, status, travel_style, created_at, rejection_reason")
     .eq("merchant_id", merchant.id)
     .order("created_at", { ascending: false })
 
@@ -180,6 +181,14 @@ export default async function MerchantPackagePage({
                   {formatStatus(pkg.status)}
                 </span>
               </div>
+              {pkg.status === "rejected" && (
+                <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-rose-600">Alasan Admin</p>
+                  <p className="mt-2 text-sm leading-6 text-rose-800">
+                    {pkg.rejection_reason || "Paket ditolak tanpa catatan tambahan dari admin."}
+                  </p>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Harga Dewasa</p>
