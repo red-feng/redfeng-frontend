@@ -16,10 +16,10 @@ const merchantMenus = [
   { label: 'Pesanan', href: '/merchant/pesanan', available: true },
   { label: 'Chat Customer', href: '/merchant/chat', available: true },
   { label: 'Kalender Booking', href: '/merchant/kalender-booking', available: true },
-  { label: 'Statistik', href: '', available: false },
-  { label: 'Saldo & Payout', href: '', available: false },
-  { label: 'Review', href: '', available: false },
-  { label: 'Profil Merchant', href: '', available: false },
+  { label: 'Statistik', href: '/merchant/statistik', available: true },
+  { label: 'Saldo & Payout', href: '/merchant/saldo-payout', available: true },
+  { label: 'Review', href: '/merchant/review', available: true },
+  { label: 'Profil Merchant', href: '/merchant/profil', available: true },
   { label: 'Support', href: '', available: false },
 ]
 
