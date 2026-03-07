@@ -7,7 +7,7 @@ type PayoutBookingRow = {
   package_id: string | null
   booking_code: string | null
   created_at: string | null
-  trip_date: string | null
+  pickup_date: string | null
   customer_name: string | null
   total_amount: number | null
   adult_count: number | null
@@ -133,9 +133,7 @@ export default async function MerchantSaldoPayoutPage({
     packageIds.length > 0
       ? adminSupabase
           .from("bookings")
-          .select(
-            "id, package_id, booking_code, created_at, trip_date, customer_name, total_amount, adult_count, child_count, payment_status, booking_status",
-          )
+          .select("id, package_id, booking_code, created_at, pickup_date, customer_name, total_amount, adult_count, child_count, payment_status, booking_status")
           .in("package_id", packageIds)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
@@ -395,7 +393,7 @@ export default async function MerchantSaldoPayoutPage({
                             {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
                           </td>
                           <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
-                          <td className="border-b p-4 text-slate-700">{formatDate(booking.trip_date)}</td>
+                          <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
                           <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
                           <td className="border-b p-4 font-medium text-slate-900">
                             {formatMoney(Number(booking.total_amount || 0))}
@@ -459,7 +457,7 @@ export default async function MerchantSaldoPayoutPage({
                             {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
                           </td>
                           <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
-                          <td className="border-b p-4 text-slate-700">{formatDate(booking.trip_date)}</td>
+                          <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
                           <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
                           <td className="border-b p-4 font-medium text-slate-900">
                             {formatMoney(Number(booking.total_amount || 0))}
