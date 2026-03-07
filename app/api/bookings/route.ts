@@ -20,6 +20,13 @@ export async function POST(req: Request) {
       data: { user },
     } = await authSupabase.auth.getUser()
 
+    if (!user) {
+      return NextResponse.json(
+        { error: "Silakan login terlebih dahulu untuk melakukan booking" },
+        { status: 401 },
+      )
+    }
+
     const body = await req.json()
     const {
       package_id,
@@ -44,7 +51,7 @@ export async function POST(req: Request) {
     const { data: bookingData, error: rpcError } = await supabase.rpc(
       "create_booking_atomic_v2",
       {
-        p_user_id: user?.id ?? null,
+        p_user_id: user.id,
         p_package_id: package_id,
         p_adult: adult_count,
         p_child: child_count,
@@ -83,61 +90,59 @@ export async function POST(req: Request) {
       )
     }
 
-    if (user?.id) {
-      const { data: pkg } = await supabase
-        .from("packages")
-        .select("merchant_id")
-        .eq("id", package_id)
+    const { data: pkg } = await supabase
+      .from("packages")
+      .select("merchant_id")
+      .eq("id", package_id)
+      .maybeSingle()
+
+    if (pkg?.merchant_id) {
+      const { data: merchantOwner } = await supabase
+        .from("merchants")
+        .select("user_id")
+        .eq("id", pkg.merchant_id)
         .maybeSingle()
 
-      if (pkg?.merchant_id) {
-        const { data: merchantOwner } = await supabase
-          .from("merchants")
-          .select("user_id")
-          .eq("id", pkg.merchant_id)
+      if (merchantOwner?.user_id) {
+        const { data: existingRoom } = await supabase
+          .from("package_chat_rooms")
+          .select("id")
+          .eq("package_id", package_id)
+          .eq("customer_id", user.id)
+          .eq("merchant_user_id", merchantOwner.user_id)
           .maybeSingle()
 
-        if (merchantOwner?.user_id) {
-          const { data: existingRoom } = await supabase
+        if (existingRoom?.id) {
+          const { error: linkError } = await supabase
             .from("package_chat_rooms")
-            .select("id")
-            .eq("package_id", package_id)
-            .eq("customer_id", user.id)
-            .eq("merchant_user_id", merchantOwner.user_id)
-            .maybeSingle()
+            .update({
+              booking_id: booking.id,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingRoom.id)
 
-          if (existingRoom?.id) {
-            const { error: linkError } = await supabase
-              .from("package_chat_rooms")
-              .update({
-                booking_id: booking.id,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", existingRoom.id)
+          if (linkError && !linkError.message.includes("booking_id")) {
+            console.error("Gagal link chat room ke booking:", linkError.message)
+          }
+        } else {
+          const { error: createRoomError } = await supabase
+            .from("package_chat_rooms")
+            .insert({
+              package_id,
+              customer_id: user.id,
+              merchant_user_id: merchantOwner.user_id,
+              booking_id: booking.id,
+            })
 
-            if (linkError && !linkError.message.includes("booking_id")) {
-              console.error("Gagal link chat room ke booking:", linkError.message)
-            }
-          } else {
-            const { error: createRoomError } = await supabase
-              .from("package_chat_rooms")
-              .insert({
+          if (createRoomError) {
+            if (createRoomError.message.includes("booking_id")) {
+              await supabase.from("package_chat_rooms").insert({
                 package_id,
                 customer_id: user.id,
                 merchant_user_id: merchantOwner.user_id,
-                booking_id: booking.id,
               })
-
-            if (createRoomError) {
-              if (createRoomError.message.includes("booking_id")) {
-                await supabase.from("package_chat_rooms").insert({
-                  package_id,
-                  customer_id: user.id,
-                  merchant_user_id: merchantOwner.user_id,
-                })
-              } else {
-                console.error("Gagal membuat chat room booking:", createRoomError.message)
-              }
+            } else {
+              console.error("Gagal membuat chat room booking:", createRoomError.message)
             }
           }
         }

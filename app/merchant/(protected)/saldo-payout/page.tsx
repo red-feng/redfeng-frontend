@@ -14,6 +14,10 @@ type PayoutBookingRow = {
   child_count: number | null
   payment_status: string | null
   booking_status: string | null
+  escrow_status: string | null
+  merchant_arrived_at: string | null
+  merchant_picked_up_at: string | null
+  customer_picked_up_at: string | null
 }
 
 type PayoutRequestRow = {
@@ -77,19 +81,17 @@ function payoutStatusClass(value: string | null) {
 }
 
 function isAvailableBooking(booking: PayoutBookingRow) {
-  const paymentStatus = normalizeStatus(booking.payment_status)
-  const bookingStatus = normalizeStatus(booking.booking_status)
-  return paymentStatus === "paid" || bookingStatus === "confirmed" || bookingStatus === "completed"
+  return normalizeStatus(booking.payment_status) === "paid" && normalizeStatus(booking.escrow_status) === "ready_for_payout"
 }
 
 function isHeldBooking(booking: PayoutBookingRow) {
   const paymentStatus = normalizeStatus(booking.payment_status)
-  const bookingStatus = normalizeStatus(booking.booking_status)
+  const escrowStatus = normalizeStatus(booking.escrow_status)
   return (
     paymentStatus === "pending" ||
-    paymentStatus === "challenge" ||
-    paymentStatus === "capture" ||
-    bookingStatus === "pending"
+    paymentStatus === "dp_paid" ||
+    escrowStatus === "held" ||
+    escrowStatus === "partial_hold"
   )
 }
 
@@ -133,7 +135,7 @@ export default async function MerchantSaldoPayoutPage({
     packageIds.length > 0
       ? adminSupabase
           .from("bookings")
-          .select("id, package_id, booking_code, created_at, pickup_date, customer_name, total_amount, adult_count, child_count, payment_status, booking_status")
+          .select("id, package_id, booking_code, created_at, pickup_date, customer_name, total_amount, adult_count, child_count, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
           .in("package_id", packageIds)
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
@@ -172,12 +174,12 @@ export default async function MerchantSaldoPayoutPage({
     {
       label: "Saldo tersedia",
       value: formatMoney(saldoTersedia),
-      note: "Booking sudah layak dicairkan",
+      note: "Sudah lolos konfirmasi pickup dan siap payout",
     },
     {
       label: "Saldo tertahan",
       value: formatMoney(saldoTertahan),
-      note: "Booking masih menunggu settlement",
+      note: "Masih ditahan di escrow RedFeng",
     },
     {
       label: "Payout diproses",
@@ -212,7 +214,7 @@ export default async function MerchantSaldoPayoutPage({
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">Saldo & Payout</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Pantau saldo siap cair, dana tertahan, histori pencairan, dan sumber pemasukan booking merchant.
+          Dana customer masuk ke rekening RedFeng, ditahan sebagai escrow, lalu baru tersedia untuk merchant setelah pickup dikonfirmasi dua pihak.
         </p>
       </section>
 
@@ -277,9 +279,7 @@ export default async function MerchantSaldoPayoutPage({
                             {formatMoney(Number(payout.amount || 0))}
                           </td>
                           <td className="border-b p-4">
-                            <span
-                              className={`rounded-full px-3 py-1 text-xs font-semibold ${payoutStatusClass(payout.status)}`}
-                            >
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${payoutStatusClass(payout.status)}`}>
                               {titleCaseStatus(payout.status)}
                             </span>
                           </td>
@@ -301,7 +301,7 @@ export default async function MerchantSaldoPayoutPage({
               <div>
                 <h2 className="text-xl font-semibold text-slate-900">Tarik dana</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Ajukan payout ke rekening merchant yang tersimpan di profil bisnis.
+                  Dana baru bisa diajukan ketika status escrow sudah `Ready For Payout`.
                 </p>
               </div>
 
@@ -338,7 +338,7 @@ export default async function MerchantSaldoPayoutPage({
                   Saldo tersedia saat ini: <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
                 </div>
                 <div className="rounded-[20px] bg-slate-50 p-4 text-sm text-slate-600">
-                  Dana tersedia berasal dari booking yang sudah `paid`, `confirmed`, atau `completed`.
+                  RedFeng tetap menahan dana customer sampai merchant klik `Tiba`, merchant klik `Dijemput`, dan customer klik `Sudah dijemput`.
                 </div>
                 <button
                   type="submit"
@@ -355,9 +355,9 @@ export default async function MerchantSaldoPayoutPage({
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Sumber saldo tersedia</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Booking siap payout</h3>
                   <p className="mt-1 text-sm text-slate-500">
-                    Booking yang sudah memenuhi syarat payout dan menjadi dasar saldo merchant saat ini.
+                    Booking yang sudah lunas dan pickup-nya sudah dikonfirmasi merchant dan customer.
                   </p>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -367,7 +367,7 @@ export default async function MerchantSaldoPayoutPage({
 
               {availableBookings.length === 0 ? (
                 <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  Belum ada booking yang masuk ke saldo tersedia.
+                  Belum ada booking yang siap payout.
                 </div>
               ) : (
                 <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200">
@@ -380,33 +380,22 @@ export default async function MerchantSaldoPayoutPage({
                         <th className="border-b p-4">Trip</th>
                         <th className="border-b p-4">Peserta</th>
                         <th className="border-b p-4">Nominal</th>
-                        <th className="border-b p-4">Status</th>
+                        <th className="border-b p-4">Escrow</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {availableBookings.map((booking) => (
                         <tr key={booking.id} className="hover:bg-slate-50">
-                          <td className="border-b p-4 font-medium text-slate-900">
-                            {booking.booking_code || booking.id.slice(0, 8)}
-                          </td>
-                          <td className="border-b p-4 text-slate-700">
-                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
-                          </td>
+                          <td className="border-b p-4 font-medium text-slate-900">{booking.booking_code || booking.id.slice(0, 8)}</td>
+                          <td className="border-b p-4 text-slate-700">{packageMap.get(booking.package_id || "") || "Paket tanpa nama"}</td>
                           <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
                           <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
                           <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
-                          <td className="border-b p-4 font-medium text-slate-900">
-                            {formatMoney(Number(booking.total_amount || 0))}
-                          </td>
+                          <td className="border-b p-4 font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</td>
                           <td className="border-b p-4">
-                            <div className="flex flex-wrap gap-2">
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                Bayar: {titleCaseStatus(booking.payment_status)}
-                              </span>
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                Trip: {titleCaseStatus(booking.booking_status)}
-                              </span>
-                            </div>
+                            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                              {titleCaseStatus(booking.escrow_status)}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -419,9 +408,9 @@ export default async function MerchantSaldoPayoutPage({
             <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Saldo tertahan</h3>
+                  <h3 className="text-lg font-semibold text-slate-900">Dana masih ditahan</h3>
                   <p className="mt-1 text-sm text-slate-500">
-                    Booking yang masih menunggu settlement atau belum layak dicairkan.
+                    Booking yang dananya masih berada di escrow RedFeng atau belum lunas.
                   </p>
                 </div>
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
@@ -431,7 +420,7 @@ export default async function MerchantSaldoPayoutPage({
 
               {heldBookings.length === 0 ? (
                 <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  Tidak ada saldo tertahan saat ini.
+                  Tidak ada dana yang sedang ditahan.
                 </div>
               ) : (
                 <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200">
@@ -444,33 +433,22 @@ export default async function MerchantSaldoPayoutPage({
                         <th className="border-b p-4">Trip</th>
                         <th className="border-b p-4">Peserta</th>
                         <th className="border-b p-4">Nominal</th>
-                        <th className="border-b p-4">Status</th>
+                        <th className="border-b p-4">Escrow</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {heldBookings.map((booking) => (
                         <tr key={booking.id} className="hover:bg-slate-50">
-                          <td className="border-b p-4 font-medium text-slate-900">
-                            {booking.booking_code || booking.id.slice(0, 8)}
-                          </td>
-                          <td className="border-b p-4 text-slate-700">
-                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
-                          </td>
+                          <td className="border-b p-4 font-medium text-slate-900">{booking.booking_code || booking.id.slice(0, 8)}</td>
+                          <td className="border-b p-4 text-slate-700">{packageMap.get(booking.package_id || "") || "Paket tanpa nama"}</td>
                           <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
                           <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
                           <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
-                          <td className="border-b p-4 font-medium text-slate-900">
-                            {formatMoney(Number(booking.total_amount || 0))}
-                          </td>
+                          <td className="border-b p-4 font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</td>
                           <td className="border-b p-4">
-                            <div className="flex flex-wrap gap-2">
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                Bayar: {titleCaseStatus(booking.payment_status)}
-                              </span>
-                              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                Trip: {titleCaseStatus(booking.booking_status)}
-                              </span>
-                            </div>
+                            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                              {titleCaseStatus(booking.escrow_status)}
+                            </span>
                           </td>
                         </tr>
                       ))}

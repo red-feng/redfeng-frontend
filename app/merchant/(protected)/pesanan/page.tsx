@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { markMerchantArrived, markMerchantPickedUp } from "./actions"
 
 type BookingRow = {
   id: string
@@ -12,6 +13,10 @@ type BookingRow = {
   child_count: number | null
   payment_status: string | null
   booking_status: string | null
+  escrow_status: string | null
+  merchant_arrived_at: string | null
+  merchant_picked_up_at: string | null
+  customer_picked_up_at: string | null
 }
 
 type PackageRow = {
@@ -45,8 +50,31 @@ function formatDate(dateStr: string | null) {
   })
 }
 
+function formatDateTime(dateStr: string | null) {
+  if (!dateStr) return "-"
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return dateStr
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
+}
+
+function titleCaseStatus(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (!normalized) return "-"
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
 }
 
 function isMatchingFilter(booking: BookingRow, filter: string) {
@@ -55,22 +83,27 @@ function isMatchingFilter(booking: BookingRow, filter: string) {
 
   if (filter === "all") return true
   if (filter === "new") return tripStatus === "pending"
-  if (filter === "waiting-payment") return paymentStatus === "pending"
-  if (filter === "paid") return paymentStatus === "paid" || tripStatus === "confirmed"
-  if (filter === "done") return tripStatus === "completed" || tripStatus === "done"
+  if (filter === "waiting-payment") return paymentStatus === "pending" || paymentStatus === "dp_paid"
+  if (filter === "paid") return paymentStatus === "paid" || tripStatus === "confirmed" || booking.escrow_status === "held"
+  if (filter === "done") {
+    return tripStatus === "completed" || tripStatus === "done" || tripStatus === "pickup_confirmed"
+  }
   if (filter === "refund") return paymentStatus === "refund" || tripStatus === "refund"
   if (filter === "cancelled") return tripStatus === "cancelled" || paymentStatus === "cancelled"
 
   return true
 }
 
-function badgeClass(value: string | null, type: "payment" | "trip") {
+function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   const normalized = normalizeStatus(value)
-  if (normalized === "paid" || normalized === "confirmed" || normalized === "completed") {
+  if (normalized === "paid" || normalized === "confirmed" || normalized === "completed" || normalized === "ready_for_payout" || normalized === "pickup_confirmed") {
     return "bg-emerald-50 text-emerald-700"
   }
-  if (normalized === "pending") {
+  if (normalized === "pending" || normalized === "dp_paid" || normalized === "held" || normalized === "partial_hold") {
     return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
+  }
+  if (normalized === "merchant_arrived" || normalized === "pickup_confirm_merchant") {
+    return "bg-violet-50 text-violet-700"
   }
   if (normalized === "cancelled" || normalized === "refund" || normalized === "rejected") {
     return "bg-rose-50 text-rose-700"
@@ -78,10 +111,30 @@ function badgeClass(value: string | null, type: "payment" | "trip") {
   return "bg-slate-100 text-slate-700"
 }
 
+function pickupTimeline(booking: BookingRow) {
+  return [
+    {
+      label: "Merchant tiba di meeting point",
+      done: Boolean(booking.merchant_arrived_at),
+      value: booking.merchant_arrived_at,
+    },
+    {
+      label: "Merchant klik Dijemput",
+      done: Boolean(booking.merchant_picked_up_at),
+      value: booking.merchant_picked_up_at,
+    },
+    {
+      label: "Customer konfirmasi Sudah dijemput",
+      done: Boolean(booking.customer_picked_up_at),
+      value: booking.customer_picked_up_at,
+    },
+  ]
+}
+
 export default async function MerchantOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>
+  searchParams: Promise<{ filter?: string; success?: string; error?: string }>
 }) {
   const params = await searchParams
   const activeFilter = orderFilters.some((item) => item.key === params.filter)
@@ -116,7 +169,7 @@ export default async function MerchantOrdersPage({
   const { data, error } = packageIds.length
     ? await adminSupabase
         .from("bookings")
-        .select("id, package_id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status")
+        .select("id, package_id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
         .in("package_id", packageIds)
         .order("created_at", { ascending: false })
     : { data: [] as BookingRow[], error: packageError }
@@ -131,15 +184,15 @@ export default async function MerchantOrdersPage({
       value: allBookings.filter((booking) => normalizeStatus(booking.payment_status) === "pending").length,
     },
     {
-      label: "Terbayar",
-      value: allBookings.filter((booking) => normalizeStatus(booking.payment_status) === "paid").length,
+      label: "Dana Ditahan Escrow",
+      value: allBookings.filter((booking) => {
+        const escrowStatus = normalizeStatus(booking.escrow_status)
+        return escrowStatus === "held" || escrowStatus === "partial_hold"
+      }).length,
     },
     {
-      label: "Selesai",
-      value: allBookings.filter((booking) => {
-        const status = normalizeStatus(booking.booking_status)
-        return status === "completed" || status === "done"
-      }).length,
+      label: "Siap Payout",
+      value: allBookings.filter((booking) => normalizeStatus(booking.escrow_status) === "ready_for_payout").length,
     },
   ]
 
@@ -148,9 +201,21 @@ export default async function MerchantOrdersPage({
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <h1 className="text-2xl font-bold text-slate-900">Pesanan</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Kelola pesanan customer dengan tampilan operasional yang lebih rapi dan cepat dipindai.
+          Kelola pesanan customer, status escrow RedFeng, dan progres meeting point dalam satu tampilan.
         </p>
       </section>
+
+      {params.success && (
+        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
+          {params.success}
+        </div>
+      )}
+
+      {params.error && (
+        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+          {params.error}
+        </div>
+      )}
 
       <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {summaryCards.map((card) => (
@@ -190,47 +255,107 @@ export default async function MerchantOrdersPage({
             Belum ada data pada kategori ini.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-[24px] border border-slate-200">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="border-b p-4">ID Booking</th>
-                  <th className="border-b p-4">Nama Customer</th>
-                  <th className="border-b p-4">Paket</th>
-                  <th className="border-b p-4">Tanggal Wisata</th>
-                  <th className="border-b p-4">Jumlah Peserta</th>
-                  <th className="border-b p-4">Status Pembayaran</th>
-                  <th className="border-b p-4">Status Trip</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white">
-                {bookings.map((booking) => {
-                  const totalPeserta = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
+          <div className="space-y-5">
+            {bookings.map((booking) => {
+              const totalPeserta = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
+              const timeline = pickupTimeline(booking)
+              const canMarkArrived = normalizeStatus(booking.payment_status) === "paid" && !booking.merchant_arrived_at
+              const canMarkPickedUp = Boolean(booking.merchant_arrived_at) && !booking.merchant_picked_up_at
 
-                  return (
-                    <tr key={booking.id} className="hover:bg-slate-50">
-                      <td className="border-b p-4 font-medium text-slate-900">
-                        {booking.booking_code || booking.id}
-                      </td>
-                      <td className="border-b p-4">{booking.customer_name || "-"}</td>
-                      <td className="border-b p-4">{packageMap.get(booking.package_id || "") || "-"}</td>
-                      <td className="border-b p-4">{formatDate(booking.pickup_date)}</td>
-                      <td className="border-b p-4">{totalPeserta}</td>
-                      <td className="border-b p-4">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
-                          {booking.payment_status || "-"}
-                        </span>
-                      </td>
-                      <td className="border-b p-4">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
-                          {booking.booking_status || "-"}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+              return (
+                <div key={booking.id} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-slate-500">ID Booking</p>
+                        <p className="mt-1 text-lg font-bold text-slate-900">{booking.booking_code || booking.id}</p>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Customer</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{booking.customer_name || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Paket</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{packageMap.get(booking.package_id || "") || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tanggal Wisata</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Jumlah Peserta</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{totalPeserta}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 lg:max-w-sm lg:justify-end">
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
+                        Bayar: {titleCaseStatus(booking.payment_status)}
+                      </span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
+                        Trip: {titleCaseStatus(booking.booking_status)}
+                      </span>
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
+                        Escrow: {titleCaseStatus(booking.escrow_status)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_auto]">
+                    <div className="rounded-[20px] bg-slate-50 p-4">
+                      <p className="text-sm font-semibold text-slate-900">Progress meeting point</p>
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        {timeline.map((item) => (
+                          <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                            <p className="text-sm font-medium text-slate-900">{item.label}</p>
+                            <p className={`mt-2 text-xs font-semibold ${item.done ? "text-emerald-600" : "text-slate-500"}`}>
+                              {item.done ? "Selesai" : "Menunggu"}
+                            </p>
+                            <p className="mt-2 text-xs text-slate-500">{formatDateTime(item.value)}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-4 text-xs text-slate-500">
+                        Dana customer tetap ditahan di rekening RedFeng sampai merchant dan customer sama-sama konfirmasi proses pickup.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-3 xl:w-56">
+                      <form action={markMerchantArrived}>
+                        <input type="hidden" name="booking_id" value={booking.id} />
+                        <input type="hidden" name="filter" value={activeFilter} />
+                        <button
+                          type="submit"
+                          disabled={!canMarkArrived}
+                          className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          Tiba
+                        </button>
+                      </form>
+                      <form action={markMerchantPickedUp}>
+                        <input type="hidden" name="booking_id" value={booking.id} />
+                        <input type="hidden" name="filter" value={activeFilter} />
+                        <button
+                          type="submit"
+                          disabled={!canMarkPickedUp}
+                          className="w-full rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        >
+                          Dijemput
+                        </button>
+                      </form>
+                      <Link
+                        href={`/booking/${booking.id}`}
+                        className="rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                      >
+                        Detail Customer
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </section>

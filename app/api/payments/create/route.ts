@@ -2,10 +2,19 @@ import { NextResponse } from "next/server"
 import midtransClient from "midtrans-client"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
+import { createClient as createServerClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
   try {
     const { booking_id } = await req.json()
+    const authSupabase = await createServerClient()
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 })
+    }
 
     const supabase = createClient(
       getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
@@ -25,6 +34,13 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Booking tidak ditemukan" },
         { status: 404 }
+      )
+    }
+
+    if (booking.user_id && booking.user_id !== user.id) {
+      return NextResponse.json(
+        { error: "Booking ini bukan milik akun Anda" },
+        { status: 403 }
       )
     }
 

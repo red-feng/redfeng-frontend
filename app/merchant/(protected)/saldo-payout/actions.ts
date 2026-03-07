@@ -8,6 +8,13 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function isEligibleForPayout(booking: {
+  payment_status: string | null
+  escrow_status: string | null
+}) {
+  return normalizeStatus(booking.payment_status) === "paid" && normalizeStatus(booking.escrow_status) === "ready_for_payout"
+}
+
 export async function requestPayout(formData: FormData) {
   const amount = Number(formData.get("amount") || 0)
   const supabase = await createClient()
@@ -48,16 +55,12 @@ export async function requestPayout(formData: FormData) {
 
   const { data: bookingsData } = await adminSupabase
     .from("bookings")
-    .select("total_amount, payment_status, booking_status")
+    .select("total_amount, payment_status, escrow_status")
     .in("package_id", packageIds)
 
   const bookings = bookingsData || []
   const grossAvailable = bookings
-    .filter((booking) => {
-      const paymentStatus = normalizeStatus(booking.payment_status)
-      const bookingStatus = normalizeStatus(booking.booking_status)
-      return paymentStatus === "paid" || bookingStatus === "confirmed" || bookingStatus === "completed"
-    })
+    .filter(isEligibleForPayout)
     .reduce((sum, booking) => sum + Number(booking.total_amount || 0), 0)
 
   const { data: payoutData } = await adminSupabase
@@ -75,7 +78,7 @@ export async function requestPayout(formData: FormData) {
   const availableBalance = grossAvailable - reservedPayout
 
   if (amount > availableBalance) {
-    redirect("/merchant/saldo-payout?error=Nominal melebihi saldo tersedia")
+    redirect("/merchant/saldo-payout?error=Nominal melebihi saldo yang sudah approved RedFeng")
   }
 
   const { error } = await adminSupabase.from("payout_requests").insert({
