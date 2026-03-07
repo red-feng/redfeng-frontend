@@ -10,11 +10,20 @@ type ChatRoomRow = {
   merchant_user_id: string
   booking_id?: string | null
   updated_at: string | null
-  bookings?: {
-    booking_code: string | null
-    payment_status: string | null
-    booking_status: string | null
-  } | null
+  bookings?:
+    | {
+        booking_code: string | null
+        payment_status: string | null
+        booking_status: string | null
+        customer_name?: string | null
+      }
+    | {
+        booking_code: string | null
+        payment_status: string | null
+        booking_status: string | null
+        customer_name?: string | null
+      }[]
+    | null
 }
 
 type ChatMessageRow = {
@@ -35,6 +44,17 @@ type MerchantChatParams = {
   tab?: string
   room_id?: string
   error?: string
+}
+
+function getBookingInfo(room: ChatRoomRow) {
+  if (Array.isArray(room.bookings)) return room.bookings[0] || null
+  return room.bookings || null
+}
+
+function getCustomerLabel(room: ChatRoomRow) {
+  const booking = getBookingInfo(room)
+  if (booking?.customer_name) return booking.customer_name
+  return `Customer ${room.customer_id.slice(0, 8)}`
 }
 
 export const dynamic = "force-dynamic"
@@ -63,7 +83,7 @@ export default async function MerchantChatPage({
   const roomsWithBooking = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, bookings(booking_code, payment_status, booking_status)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, bookings(booking_code, payment_status, booking_status, customer_name)",
     )
     .eq("merchant_user_id", user.id)
     .order("updated_at", { ascending: false })
@@ -172,27 +192,37 @@ export default async function MerchantChatPage({
               )}
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
+                const booking = getBookingInfo(room)
                 return (
-                  <Link
+                  <div
                     key={room.id}
-                    href={`/merchant/chat?tab=${activeTab}&room_id=${room.id}`}
-                    className={`block rounded-lg border px-3 py-2 text-sm transition ${
+                    className={`rounded-lg border px-3 py-2 text-sm transition ${
                       room.id === activeRoomId
-                        ? "border-orange-300 bg-orange-50 text-orange-700"
+                        ? "border-orange-300 bg-orange-50"
                         : "border-slate-200 text-slate-700 hover:bg-slate-50"
                     }`}
                   >
-                    <p className="line-clamp-2 font-medium">{pkg?.title || "Paket tidak ditemukan"}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Customer: {room.customer_id.slice(0, 8)}...
-                    </p>
-                    {room.booking_id && (
-                      <p className="mt-1 text-xs text-slate-500">
-                        Booking: {room.bookings?.booking_code || room.booking_id}
+                    <Link href={`/merchant/chat?tab=${activeTab}&room_id=${room.id}`} className="block">
+                      <p className="font-medium text-slate-900">{getCustomerLabel(room)}</p>
+                      <p className="mt-1 line-clamp-2 text-xs text-slate-600">
+                        Paket: {pkg?.title || "Paket tidak ditemukan"}
                       </p>
+                      {room.booking_id && (
+                        <p className="mt-2 text-[11px] text-emerald-700">
+                          Booking: {booking?.booking_code || room.booking_id}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-slate-500">{room.updated_at || "-"}</p>
+                    </Link>
+                    {pkg?.slug && (
+                      <Link
+                        href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                        className="mt-2 inline-block text-xs font-medium text-orange-600 hover:text-orange-700"
+                      >
+                        Lihat paket
+                      </Link>
                     )}
-                    <p className="mt-1 text-xs text-slate-500">{room.updated_at || "-"}</p>
-                  </Link>
+                  </div>
                 )
               })}
             </div>
@@ -200,6 +230,10 @@ export default async function MerchantChatPage({
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b border-slate-200 px-5 py-4">
+              <p className="text-sm text-slate-500">Customer</p>
+              <p className="text-base font-semibold text-slate-900">
+                {activeRoom ? getCustomerLabel(activeRoom) : "Pilih ruang chat"}
+              </p>
               <p className="text-sm text-slate-500">Paket</p>
               <p className="text-base font-semibold text-slate-900">
                 {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : "Pilih ruang chat"}
