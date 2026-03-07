@@ -35,10 +35,21 @@ export async function requestPayout(formData: FormData) {
     redirect("/merchant/saldo-payout?error=Nominal payout tidak valid")
   }
 
+  const { data: merchantPackages } = await adminSupabase
+    .from("packages")
+    .select("id")
+    .eq("merchant_id", merchant.id)
+
+  const packageIds = (merchantPackages || []).map((pkg) => pkg.id).filter(Boolean)
+
+  if (packageIds.length === 0) {
+    redirect("/merchant/saldo-payout?error=Belum ada paket merchant yang dapat diproses")
+  }
+
   const { data: bookingsData } = await adminSupabase
     .from("bookings")
-    .select("total_amount, payment_status, booking_status, packages!inner(merchant_id)")
-    .eq("packages.merchant_id", merchant.id)
+    .select("total_amount, payment_status, booking_status")
+    .in("package_id", packageIds)
 
   const bookings = bookingsData || []
   const grossAvailable = bookings
