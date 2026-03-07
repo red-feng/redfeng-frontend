@@ -1,7 +1,10 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 
 type PublicHeaderProps = {
@@ -11,10 +14,50 @@ type PublicHeaderProps = {
 
 export default function PublicHeader({ locale, languageOptions }: PublicHeaderProps) {
   const router = useRouter()
+  const supabase = createClient()
   const t = dictionaries[locale].header
   const availableLocales = languageOptions && languageOptions.length > 0
     ? languageOptions
     : (["id", "en", "zh", "th"] as Locale[])
+  const [accountHref, setAccountHref] = useState("/login")
+  const [accountLabel, setAccountLabel] = useState("Login")
+
+  useEffect(() => {
+    const syncSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+
+      if (!session?.user) {
+        setAccountHref("/login")
+        setAccountLabel("Login")
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle()
+
+      if (profile?.role === "merchant") {
+        setAccountHref("/merchant/dashboard")
+        setAccountLabel("Akun Saya")
+        return
+      }
+
+      if (profile?.role === "admin" || profile?.role === "superadmin") {
+        setAccountHref("/admin/dashboard")
+        setAccountLabel("Akun Saya")
+        return
+      }
+
+      setAccountHref("/customer/dashboard")
+      setAccountLabel(t.account)
+    }
+
+    syncSession()
+  }, [supabase, t.account])
 
   const changeLocale = async (nextLocale: Locale) => {
     await fetch("/api/locale", {
@@ -72,12 +115,12 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
                 <path d="M20 20L16.65 16.65" />
               </svg>
             </button>
-            <button
-              type="button"
+            <Link
+              href={accountHref}
               className="rounded-md bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
             >
-              {t.account}
-            </button>
+              {accountLabel}
+            </Link>
           </div>
         </div>
 

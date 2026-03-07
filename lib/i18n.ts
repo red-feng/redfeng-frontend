@@ -125,6 +125,8 @@ type Dictionary = {
     password: string
     login: string
     loggingIn: string
+    registerCta: string
+    registerLink: string
   }
   resetPassword: {
     title: string
@@ -256,11 +258,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap belum siap",
     },
     login: {
-      title: "Login Merchant",
+      title: "Login",
       email: "Email",
       password: "Password",
       login: "Login",
       loggingIn: "Sedang login...",
+      registerCta: "Belum punya akun customer?",
+      registerLink: "Daftar",
     },
     resetPassword: {
       title: "Atur Password Baru",
@@ -386,11 +390,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap is not ready",
     },
     login: {
-      title: "Merchant Login",
+      title: "Login",
       email: "Email",
       password: "Password",
       login: "Login",
       loggingIn: "Logging in...",
+      registerCta: "Don't have a customer account yet?",
+      registerLink: "Register",
     },
     resetPassword: {
       title: "Set New Password",
@@ -516,11 +522,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap 尚未就绪",
     },
     login: {
-      title: "商家登录",
+      title: "登录",
       email: "邮箱",
       password: "密码",
       login: "登录",
       loggingIn: "登录中...",
+      registerCta: "还没有客户账户？",
+      registerLink: "注册",
     },
     resetPassword: {
       title: "设置新密码",
@@ -646,11 +654,13 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap ยังไม่พร้อมใช้งาน",
     },
     login: {
-      title: "เข้าสู่ระบบผู้ขาย",
+      title: "เข้าสู่ระบบ",
       email: "อีเมล",
       password: "รหัสผ่าน",
       login: "เข้าสู่ระบบ",
       loggingIn: "กำลังเข้าสู่ระบบ...",
+      registerCta: "ยังไม่มีบัญชีลูกค้า?",
+      registerLink: "สมัครสมาชิก",
     },
     resetPassword: {
       title: "ตั้งรหัสผ่านใหม่",

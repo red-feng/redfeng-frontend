@@ -145,6 +145,13 @@ export default function LoginPage() {
             {loading ? t.loggingIn : t.login}
           </button>
         </form>
+
+        <p className="mt-5 text-center text-sm text-slate-600">
+          {t.registerCta}{" "}
+          <a href="/register" className="font-semibold text-orange-600 hover:text-orange-700">
+            {t.registerLink}
+          </a>
+        </p>
       </div>
     </main>
   );
