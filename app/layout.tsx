@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script"; // ✅ TAMBAHKAN INI
+import Script from "next/script";
+import { getOptionalEnv } from "@/lib/env";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,22 +30,26 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
-  return (
-  <html lang="id">
-    <body
-      className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 min-h-screen`}
-    >
-      {children}
+}>) {
+  const midtransClientKey = getOptionalEnv("NEXT_PUBLIC_MIDTRANS_CLIENT_KEY");
 
-      <Script
-        src="https://app.midtrans.com/snap/snap.js"
-        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
-        strategy="afterInteractive"
-      />
-    </body>
-  </html>
-);
+  return (
+    <html lang="id">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-gray-100 antialiased`}
+      >
+        {children}
+
+        {midtransClientKey && (
+          <Script
+            src="https://app.midtrans.com/snap/snap.js"
+            data-client-key={midtransClientKey}
+            strategy="afterInteractive"
+          />
+        )}
+      </body>
+    </html>
+  );
 }

@@ -1,23 +1,20 @@
 "use server"
 
-import { createClient } from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 export async function approveMerchant(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
   if (!merchantId) return
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabaseAdmin = createAdminClient()
 
   const { error } = await supabaseAdmin
     .from("merchants")
     .update({
       verification_status: "approved",
       rejection_reason: null,
-      verified_at: new Date(),
+      verified_at: new Date().toISOString(),
     })
     .eq("id", merchantId)
 
@@ -44,10 +41,7 @@ export async function rejectMerchant(formData: FormData) {
 
   if (!merchantId || !reason) return
 
-  const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabaseAdmin = createAdminClient()
 
   const { error } = await supabaseAdmin
     .from("merchants")

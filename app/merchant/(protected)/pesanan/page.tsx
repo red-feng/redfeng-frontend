@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 type BookingRow = {
   id: string
@@ -86,18 +87,27 @@ export default async function MerchantOrdersPage({
     : "all"
 
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) return null
 
-  const { data, error } = await supabase
+  const { data: merchant } = await adminSupabase
+    .from("merchants")
+    .select("id")
+    .eq("user_id", user.id)
+    .single()
+
+  if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
+
+  const { data, error } = await adminSupabase
     .from("bookings")
     .select(
       "id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status, packages!inner(title, merchant_id)",
     )
-    .eq("packages.merchant_id", user.id)
+    .eq("packages.merchant_id", merchant.id)
     .order("created_at", { ascending: false })
 
   const allBookings = (data as BookingRow[] | null) ?? []

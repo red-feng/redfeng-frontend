@@ -31,33 +31,68 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .maybeSingle()
 
   return (
-    <main className="min-h-screen bg-gray-100 p-10">
-      <div className="mx-auto max-w-3xl rounded-xl bg-white p-8 shadow">
-        <h1 className="mb-6 text-3xl font-bold">Booking Berhasil</h1>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
+      <div className="mx-auto max-w-4xl">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-bold text-slate-900">Booking Berhasil</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Detail booking, status pembayaran, dan form review customer tersedia di halaman ini.
+          </p>
+        </section>
 
         {resolvedSearchParams.success && (
-          <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
             {resolvedSearchParams.success}
           </div>
         )}
 
         {resolvedSearchParams.error && (
-          <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {resolvedSearchParams.error}
           </div>
         )}
 
-        <div className="space-y-2 text-lg">
-          <p><strong>Kode Booking:</strong> {booking.booking_code}</p>
-          <p><strong>Nama:</strong> {booking.customer_name}</p>
-          <p><strong>Email:</strong> {booking.customer_email}</p>
-          <p><strong>Total:</strong> Rp {Number(booking.total_amount ?? 0).toLocaleString("id-ID")}</p>
-          <p><strong>Status Booking:</strong> {booking.booking_status}</p>
-          <p><strong>Status Pembayaran:</strong> {booking.payment_status}</p>
-        </div>
+        <section className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Kode Booking</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{booking.booking_code || booking.id}</p>
+          </div>
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Total</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              Rp {Number(booking.total_amount ?? 0).toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Status Pembayaran</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{booking.payment_status || "-"}</p>
+          </div>
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">Detail Booking</h2>
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div>
+              <p className="text-sm text-slate-500">Nama</p>
+              <p className="mt-2 font-medium text-slate-900">{booking.customer_name || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Email</p>
+              <p className="mt-2 font-medium text-slate-900">{booking.customer_email || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Status Booking</p>
+              <p className="mt-2 font-medium text-slate-900">{booking.booking_status || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Status Pembayaran</p>
+              <p className="mt-2 font-medium text-slate-900">{booking.payment_status || "-"}</p>
+            </div>
+          </div>
+        </section>
 
         {existingReview ? (
-          <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-6">
+          <div className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Review Anda</h2>
             <p className="mt-3 text-sm text-slate-600">Rating: {existingReview.rating ?? "-"} / 5</p>
             <p className="mt-2 text-sm text-slate-700">{existingReview.comment || "-"}</p>

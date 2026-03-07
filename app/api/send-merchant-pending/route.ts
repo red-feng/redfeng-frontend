@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { getOptionalEnv } from '@/lib/env'
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const resendApiKey = getOptionalEnv("RESEND_API_KEY")
+
+    if (!resendApiKey) {
       console.error('RESEND_API_KEY not found')
       return NextResponse.json(
         { error: 'Email service not configured' },
@@ -11,7 +14,7 @@ export async function POST(req: Request) {
       )
     }
 
-    const resend = new Resend(process.env.RESEND_API_KEY)
+    const resend = new Resend(resendApiKey)
 
     const { email, brandName } = await req.json()
 

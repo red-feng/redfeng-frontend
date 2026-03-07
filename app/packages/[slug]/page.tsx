@@ -350,12 +350,12 @@ export default async function PaketPage({
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
       <PackageViewTracker packageId={pkg.id} />
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
           <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{displayTitle}</h1>
           <p className="mt-2 text-sm text-slate-600">
             {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
@@ -373,7 +373,7 @@ export default async function PaketPage({
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_340px]">
           <div className="space-y-6">
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
               {galleryImages.length > 0 ? (
                 <Gallery images={galleryImages} />
               ) : (
@@ -415,7 +415,7 @@ export default async function PaketPage({
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-slate-300/40">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-300/40">
               <h2 className="text-xl font-semibold text-slate-900">{t.bookingTour}</h2>
               <p className="mt-2 text-3xl font-bold text-orange-600">{formatMoney(pkg.price_adult, pkg.currency)}</p>
               <div className="mt-4 space-y-2 text-sm text-slate-700">
@@ -423,7 +423,7 @@ export default async function PaketPage({
                 <p>{t.minimumParticipants}: {pkg.minimal_peserta || 0} {t.people}</p>
                 <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
               </div>
-              <button className="mt-5 w-full rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600">
+              <button className="mt-5 w-full rounded-[20px] bg-slate-900 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800">
                 {t.bookingNow}
               </button>
             </section>

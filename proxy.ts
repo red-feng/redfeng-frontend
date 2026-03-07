@@ -1,14 +1,14 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { getRequiredEnv } from "@/lib/env"
 
 const CANONICAL_HOST = "app.redfeng.co"
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
   const host = req.headers.get("host") || ""
 
-  // Canonical redirect: focus all traffic to app.redfeng.co
   if (host.endsWith(".vercel.app")) {
     const redirectUrl = new URL(req.url)
     redirectUrl.protocol = "https:"
@@ -16,7 +16,6 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301)
   }
 
-  // Redirect legacy /paket -> /packages
   if (pathname === "/paket") {
     return NextResponse.redirect(new URL("/packages", req.url), 301)
   }
@@ -34,8 +33,8 @@ export async function middleware(req: NextRequest) {
   }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
       cookies: {
         get(name) {
@@ -69,16 +68,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (pathname.startsWith("/admin")) {
-    if (!["admin", "superadmin"].includes(profile.role)) {
-      return NextResponse.redirect(new URL("/", req.url))
-    }
+  if (pathname.startsWith("/admin") && !["admin", "superadmin"].includes(profile.role)) {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (pathname.startsWith("/merchant")) {
-    if (profile.role !== "merchant") {
-      return NextResponse.redirect(new URL("/", req.url))
-    }
+  if (pathname.startsWith("/merchant") && profile.role !== "merchant") {
+    return NextResponse.redirect(new URL("/", req.url))
   }
 
   return res
