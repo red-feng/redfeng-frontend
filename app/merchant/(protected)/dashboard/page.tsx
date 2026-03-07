@@ -20,7 +20,6 @@ const merchantMenus = [
   { label: 'Saldo & Payout', href: '/merchant/saldo-payout', available: true },
   { label: 'Review', href: '/merchant/review', available: true },
   { label: 'Profil Merchant', href: '/merchant/profil', available: true },
-  { label: 'Support', href: '', available: false },
 ]
 
 export default function Dashboard() {
