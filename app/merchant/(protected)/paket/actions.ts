@@ -231,3 +231,39 @@ export async function togglePackageStatus(formData: FormData) {
 
   redirect(successPath)
 }
+
+export async function pullPackageToDraft(formData: FormData) {
+  const packageId = String(formData.get("package_id") || "")
+  const returnStatus = String(formData.get("return_status") || "pending").trim()
+
+  try {
+    if (!packageId) throw new Error("Package ID tidak ditemukan.")
+
+    const { adminSupabase, pkg } = await getOwnedMerchantPackage(packageId)
+
+    if (pkg.status !== "pending") {
+      throw new Error("Hanya paket yang sedang pending review yang bisa ditarik ke draft.")
+    }
+
+    const { error } = await adminSupabase
+      .from("packages")
+      .update({
+        status: "draft",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", packageId)
+
+    if (error) {
+      throw new Error(`Gagal mengubah paket ke draft: ${error.message}`)
+    }
+
+    revalidatePath("/merchant/paket")
+  } catch (error) {
+    const errorPath = returnStatus
+      ? `/merchant/paket?status=${encodeURIComponent(returnStatus)}&error=${encodeURIComponent(getErrorMessage(error))}`
+      : `/merchant/paket?error=${encodeURIComponent(getErrorMessage(error))}`
+    redirect(errorPath)
+  }
+
+  redirect("/merchant/paket?status=draft&success=Paket%20berhasil%20ditarik%20ke%20draft")
+}

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
-import { deletePackage, togglePackageStatus } from "./actions"
+import { deletePackage, pullPackageToDraft, togglePackageStatus } from "./actions"
 
 type PackageRow = {
   id: string
@@ -11,6 +11,7 @@ type PackageRow = {
   status: string | null
   travel_style: string | null
   created_at: string | null
+  updated_at: string | null
   rejection_reason: string | null
 }
 
@@ -46,6 +47,17 @@ function statusClasses(value: string | null) {
   return "bg-slate-100 text-slate-700"
 }
 
+function formatDate(value: string | null) {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+}
+
 export default async function MerchantPackagePage({
   searchParams,
 }: {
@@ -72,7 +84,7 @@ export default async function MerchantPackagePage({
 
   let query = supabase
     .from("packages")
-    .select("id, title, slug, price_adult, status, travel_style, created_at, rejection_reason")
+    .select("id, title, slug, price_adult, status, travel_style, created_at, updated_at, rejection_reason")
     .eq("merchant_id", merchant.id)
     .order("created_at", { ascending: false })
 
@@ -189,12 +201,36 @@ export default async function MerchantPackagePage({
                   </p>
                 </div>
               )}
+              {pkg.status === "pending" && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Status Review</p>
+                  <p className="mt-2 text-sm font-medium text-amber-900">Sedang direview admin</p>
+                  <p className="mt-2 text-sm text-amber-800">
+                    Tanggal submit: {formatDate(pkg.updated_at || pkg.created_at)}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-amber-800">
+                    Paket belum tampil ke customer selama proses review. Tarik ke draft jika Anda ingin membatalkan review dan melanjutkan revisi.
+                  </p>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Harga Dewasa</p>
                   <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(pkg.price_adult)}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {pkg.status === "pending" && (
+                    <form action={pullPackageToDraft}>
+                      <input type="hidden" name="package_id" value={pkg.id} />
+                      <input type="hidden" name="return_status" value={activeStatus} />
+                      <button
+                        type="submit"
+                        className="rounded-xl border border-amber-200 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50"
+                      >
+                        Tarik ke Draft
+                      </button>
+                    </form>
+                  )}
                   {pkg.status !== "approved" && (
                     <form action={togglePackageStatus}>
                       <input type="hidden" name="package_id" value={pkg.id} />
