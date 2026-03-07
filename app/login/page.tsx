@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
@@ -16,20 +16,24 @@ function getLocaleFromCookie(): Locale {
   return "id";
 }
 
+function getSafeNextFromLocation() {
+  if (typeof window === "undefined") return "/customer/dashboard";
+  const requestedNext = new URLSearchParams(window.location.search).get("next");
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard";
+}
+
 export default function LoginPage() {
   const supabase = createClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [locale] = useState<Locale>(() => getLocaleFromCookie());
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [safeNext] = useState(getSafeNextFromLocation);
 
   const t = dictionaries[locale].login;
-  const requestedNext = searchParams.get("next");
-  const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard";
 
   useEffect(() => {
     const checkSession = async () => {
