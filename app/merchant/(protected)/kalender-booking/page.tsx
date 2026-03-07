@@ -5,25 +5,27 @@ import { formatTravelStyleLabel } from "@/lib/travelStyles"
 type BookingCalendarRow = {
   id: string
   booking_code: string | null
+  customer_name: string | null
   pickup_date: string | null
   adult_count: number | null
   child_count: number | null
   payment_status: string | null
   booking_status: string | null
   package_id: string | null
-  packages: {
-    id: string
-    title: string | null
-    travel_style: string | null
-    minimal_peserta: number | null
-    merchant_id: string | null
-  } | null
+}
+
+type MerchantPackageRow = {
+  id: string
+  title: string | null
+  travel_style: string | null
+  minimal_peserta: number | null
 }
 
 type CalendarEntry = {
   key: string
   tripDate: string
   packageName: string
+  packageId: string
   travelStyle: string | null
   totalParticipants: number
   capacityTarget: number | null
@@ -60,7 +62,7 @@ function badgeClass(value: string | null, type: "payment" | "trip") {
   return "bg-slate-100 text-slate-700"
 }
 
-function isOpenTripOrUmroh(pkg: BookingCalendarRow["packages"]) {
+function isOpenTripOrUmroh(pkg: MerchantPackageRow | null | undefined) {
   const title = (pkg?.title || "").toLowerCase()
   const style = (pkg?.travel_style || "").toLowerCase()
   return (
@@ -90,32 +92,43 @@ export default async function MerchantBookingCalendarPage() {
 
   if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
 
-  const { data, error } = await adminSupabase
-    .from("bookings")
-    .select(
-      "id, booking_code, pickup_date, adult_count, child_count, payment_status, booking_status, package_id, packages!inner(id, title, travel_style, minimal_peserta, merchant_id)",
-    )
-    .eq("packages.merchant_id", merchant.id)
-    .order("pickup_date", { ascending: true })
+  const { data: packageRows, error: packageError } = await adminSupabase
+    .from("packages")
+    .select("id, title, travel_style, minimal_peserta")
+    .eq("merchant_id", merchant.id)
+
+  const merchantPackages = (packageRows as MerchantPackageRow[] | null) || []
+  const packageIds = merchantPackages.map((pkg) => pkg.id)
+  const packageMap = new Map(merchantPackages.map((pkg) => [pkg.id, pkg]))
+
+  const { data, error } = packageIds.length
+    ? await adminSupabase
+        .from("bookings")
+        .select("id, booking_code, customer_name, pickup_date, adult_count, child_count, payment_status, booking_status, package_id")
+        .in("package_id", packageIds)
+        .order("pickup_date", { ascending: true })
+    : { data: [] as BookingCalendarRow[], error: packageError }
 
   const bookings = (data as BookingCalendarRow[] | null) || []
   const grouped = new Map<string, CalendarEntry>()
 
   for (const booking of bookings) {
+    const pkg = packageMap.get(booking.package_id || "")
     const tripDate = booking.pickup_date || "tanpa-tanggal"
-    const packageName = booking.packages?.title || "Paket tidak ditemukan"
+    const packageName = pkg?.title || "Paket tidak ditemukan"
     const key = `${tripDate}-${booking.package_id || booking.id}`
     const participants = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
 
     if (!grouped.has(key)) {
-      const shouldShowCapacity = isOpenTripOrUmroh(booking.packages)
-      const capacityTarget = shouldShowCapacity ? booking.packages?.minimal_peserta ?? null : null
+      const shouldShowCapacity = isOpenTripOrUmroh(pkg)
+      const capacityTarget = shouldShowCapacity ? pkg?.minimal_peserta ?? null : null
 
       grouped.set(key, {
         key,
         tripDate,
         packageName,
-        travelStyle: booking.packages?.travel_style || null,
+        packageId: booking.package_id || booking.id,
+        travelStyle: pkg?.travel_style || null,
         totalParticipants: 0,
         capacityTarget,
         remainingCapacity: capacityTarget,
@@ -137,12 +150,28 @@ export default async function MerchantBookingCalendarPage() {
   const totalTrips = calendarEntries.length
   const totalParticipants = calendarEntries.reduce((sum, entry) => sum + entry.totalParticipants, 0)
   const openTripSchedules = calendarEntries.filter((entry) => entry.capacityTarget !== null).length
+  const fullSchedules = calendarEntries.filter(
+    (entry) => entry.capacityTarget !== null && (entry.remainingCapacity || 0) <= 0,
+  ).length
 
   const upcomingTrip = calendarEntries.find((entry) => {
     if (!entry.tripDate || entry.tripDate === "tanpa-tanggal") return false
     const date = new Date(entry.tripDate)
-    return !Number.isNaN(date.getTime())
+    return !Number.isNaN(date.getTime()) && date >= new Date(new Date().setHours(0, 0, 0, 0))
   })
+
+  const getCapacityStatus = (entry: CalendarEntry) => {
+    if (entry.capacityTarget === null || entry.remainingCapacity === null) {
+      return { label: "Private / fleksibel", className: "bg-slate-100 text-slate-700" }
+    }
+    if (entry.remainingCapacity <= 0) {
+      return { label: "Penuh", className: "bg-rose-50 text-rose-700" }
+    }
+    if (entry.remainingCapacity <= Math.max(Math.ceil(entry.capacityTarget * 0.2), 2)) {
+      return { label: "Hampir penuh", className: "bg-amber-50 text-amber-700" }
+    }
+    return { label: "Masih tersedia", className: "bg-emerald-50 text-emerald-700" }
+  }
 
   const metricCards = [
     { label: "Jadwal trip", value: String(totalTrips), note: "Total tanggal keberangkatan" },
@@ -152,6 +181,11 @@ export default async function MerchantBookingCalendarPage() {
       label: "Trip terdekat",
       value: upcomingTrip ? formatDate(upcomingTrip.tripDate) : "-",
       note: upcomingTrip?.packageName || "Belum ada jadwal aktif",
+    },
+    {
+      label: "Jadwal penuh",
+      value: String(fullSchedules),
+      note: "Open trip / umroh yang sudah penuh",
     },
   ]
 
@@ -164,7 +198,7 @@ export default async function MerchantBookingCalendarPage() {
         </p>
       </section>
 
-      {error ? (
+      {error || packageError ? (
         <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
           Gagal memuat kalender booking.
         </div>
@@ -174,7 +208,7 @@ export default async function MerchantBookingCalendarPage() {
         </div>
       ) : (
         <>
-          <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {metricCards.map((card) => (
               <div key={card.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
                 <p className="text-sm text-slate-500">{card.label}</p>
@@ -200,9 +234,14 @@ export default async function MerchantBookingCalendarPage() {
                     <p className="mt-1 text-xs text-slate-500">
                       Travel Style: {formatTravelStyleLabel(entry.travelStyle)}
                     </p>
+                    <div className="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold">
+                      <span className={`rounded-full px-3 py-1 ${getCapacityStatus(entry).className}`}>
+                        {getCapacityStatus(entry).label}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3 xl:min-w-[540px]">
+                  <div className="grid gap-3 sm:grid-cols-4 xl:min-w-[720px]">
                     <div className="rounded-[20px] bg-slate-50 p-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Tanggal Trip</p>
                       <p className="mt-2 text-base font-semibold text-slate-900">{formatDate(entry.tripDate)}</p>
@@ -217,6 +256,10 @@ export default async function MerchantBookingCalendarPage() {
                         {entry.remainingCapacity !== null ? `${entry.remainingCapacity} kursi` : "Tidak diterapkan"}
                       </p>
                     </div>
+                    <div className="rounded-[20px] bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Jumlah Booking</p>
+                      <p className="mt-2 text-base font-semibold text-slate-900">{entry.bookings.length} booking</p>
+                    </div>
                   </div>
                 </div>
 
@@ -225,6 +268,7 @@ export default async function MerchantBookingCalendarPage() {
                     <thead className="bg-slate-50 text-slate-600">
                       <tr>
                         <th className="border-b p-4">ID Booking</th>
+                        <th className="border-b p-4">Nama Customer</th>
                         <th className="border-b p-4">Tanggal Trip</th>
                         <th className="border-b p-4">Paket</th>
                         <th className="border-b p-4">Jumlah Peserta</th>
@@ -240,8 +284,9 @@ export default async function MerchantBookingCalendarPage() {
                             <td className="border-b p-4 font-medium text-slate-900">
                               {booking.booking_code || booking.id}
                             </td>
+                            <td className="border-b p-4">{booking.customer_name || "-"}</td>
                             <td className="border-b p-4">{formatDate(booking.pickup_date)}</td>
-                            <td className="border-b p-4">{booking.packages?.title || "-"}</td>
+                            <td className="border-b p-4">{entry.packageName}</td>
                             <td className="border-b p-4">{participants} peserta</td>
                             <td className="border-b p-4">
                               <span
