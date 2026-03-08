@@ -116,3 +116,17 @@ x-rf-sso-secret: <WORDPRESS_SSO_SHARED_SECRET>
   - `email`
 
 Do not sync passwords from Supabase into WordPress.
+
+## Ready-made WordPress plugin template
+
+Files provided in this repo:
+
+- [redfeng-customer-sso.php](/c:/Users/UsEr/redfeng-frontend/docs/wordpress/redfeng-customer-sso.php)
+- [INSTALL_RED_FENG_CUSTOMER_SSO.md](/c:/Users/UsEr/redfeng-frontend/docs/wordpress/INSTALL_RED_FENG_CUSTOMER_SSO.md)
+
+This plugin:
+- receives `/rf-sso-login`
+- exchanges token to `app.redfeng.co`
+- creates or updates WP customer user
+- logs customer into WordPress
+- redirects to the requested page
