@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     .eq("id", ssoToken.user_id)
     .maybeSingle()
 
-  if (profile?.role === "merchant" || profile?.role === "admin" || profile?.role === "superadmin") {
+  if (profile?.role === "admin" || profile?.role === "superadmin") {
     return NextResponse.json({ error: "Role tidak diizinkan untuk SSO customer" }, { status: 403 })
   }
 
