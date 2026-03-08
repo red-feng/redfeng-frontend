@@ -23,11 +23,11 @@ if (!defined('RF_SSO_LOGIN_PATH')) {
 }
 
 if (!defined('RF_SSO_DEFAULT_REDIRECT')) {
-    define('RF_SSO_DEFAULT_REDIRECT', '/my-account');
+    define('RF_SSO_DEFAULT_REDIRECT', '/akun-saya');
 }
 
 if (!defined('RF_SSO_WORDPRESS_ACCOUNT_PATH')) {
-    define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/my-account');
+    define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/akun-saya');
 }
 
 if (!defined('RF_SSO_AUTO_MENU_ENABLED')) {
