@@ -4,15 +4,23 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
+function getSafeNextFromLocation() {
+  if (typeof window === "undefined") return "/customer/dashboard"
+  const requestedNext = new URLSearchParams(window.location.search).get("next")
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard"
+}
+
 export default function CustomerRegisterPage() {
   const supabase = createClient()
   const router = useRouter()
 
   const [fullName, setFullName] = useState("")
+  const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
+  const [safeNext] = useState(getSafeNextFromLocation)
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -25,6 +33,7 @@ export default function CustomerRegisterPage() {
       options: {
         data: {
           full_name: fullName,
+          phone_number: phone,
         },
       },
     })
@@ -48,6 +57,28 @@ export default function CustomerRegisterPage() {
     setLoading(false)
   }
 
+  const handleGoogleRegister = async () => {
+    setLoading(true)
+    setErrorMsg("")
+
+    const redirectTo =
+      typeof window === "undefined"
+        ? undefined
+        : `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    })
+
+    if (error) {
+      setErrorMsg(error.message)
+      setLoading(false)
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
@@ -62,6 +93,15 @@ export default function CustomerRegisterPage() {
             placeholder="Nama lengkap"
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
+            required
+          />
+
+          <input
+            type="tel"
+            className="w-full rounded border p-3"
+            placeholder="No telp"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
             required
           />
 
@@ -93,6 +133,22 @@ export default function CustomerRegisterPage() {
             {loading ? "Mendaftarkan..." : "Register"}
           </button>
         </form>
+
+        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-400">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span>atau</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleRegister}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <span className="text-base">G</span>
+          <span>Lanjutkan dengan Google</span>
+        </button>
 
         <p className="mt-5 text-center text-sm text-slate-600">
           Sudah punya akun?{" "}

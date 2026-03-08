@@ -65,8 +65,12 @@ export default function CheckoutClient({
       }
 
       const fullName = (session?.user?.user_metadata?.full_name as string | undefined) || ""
+      const phoneNumber = (session?.user?.user_metadata?.phone_number as string | undefined) || ""
       if (fullName) {
         setNama(fullName)
+      }
+      if (phoneNumber) {
+        setPhone(phoneNumber)
       }
     }
 

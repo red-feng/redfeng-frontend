@@ -111,6 +111,28 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    setErrorMsg("");
+
+    const redirectTo =
+      typeof window === "undefined"
+        ? undefined
+        : `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+
+    if (error) {
+      setErrorMsg(error.message);
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
@@ -145,6 +167,22 @@ export default function LoginPage() {
             {loading ? t.loggingIn : t.login}
           </button>
         </form>
+
+        <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.24em] text-slate-400">
+          <div className="h-px flex-1 bg-slate-200" />
+          <span>atau</span>
+          <div className="h-px flex-1 bg-slate-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-slate-300 bg-white py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <span className="text-base">G</span>
+          <span>Lanjutkan dengan Google</span>
+        </button>
 
         <p className="mt-5 text-center text-sm text-slate-600">
           {t.registerCta}{" "}
