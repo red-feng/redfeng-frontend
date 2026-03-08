@@ -53,7 +53,7 @@ export default function CustomerRegisterPage() {
       })
     }
 
-    router.replace("/login")
+    router.replace(`/login?next=${encodeURIComponent(safeNext)}`)
     setLoading(false)
   }
 

@@ -19,6 +19,12 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
   - Required if Snap payment script is used on customer-facing checkout/payment pages.
 - `RESEND_API_KEY`
   - Required if merchant verification email sending is enabled.
+- `WORDPRESS_SITE_URL`
+  - Required if customer SSO between `www.redfeng.co` and `app.redfeng.co` is enabled.
+- `WORDPRESS_SSO_SHARED_SECRET`
+  - Required for secure token exchange between WordPress and Next.js app.
+- `WORDPRESS_SSO_LOGIN_PATH`
+  - Optional custom WordPress callback path. Default is `/rf-sso-login`.
 
 ## Verification checklist
 
