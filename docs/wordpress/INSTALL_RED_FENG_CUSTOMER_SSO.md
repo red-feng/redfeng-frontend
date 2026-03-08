@@ -36,12 +36,16 @@ Recommended values for your current setup:
 define('RF_SSO_APP_URL', 'https://app.redfeng.co');
 define('RF_SSO_SHARED_SECRET', '9f3a7e8b4c1d6a9e2f7c5d8b1a3e6f4c');
 define('RF_SSO_LOGIN_PATH', 'rf-sso-login');
+define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/my-account');
+define('RF_SSO_AUTO_MENU_ENABLED', true);
 ```
 
 Important:
 - in WordPress plugin use `rf-sso-login`
 - in Vercel env use `/rf-sso-login`
 - they represent the same endpoint path
+- `RF_SSO_AUTO_MENU_ENABLED = true` means plugin will append auth links automatically to common header menus
+- if your theme already has a custom login area, set it to `false`
 
 3. Activate the plugin in WordPress admin
 
@@ -63,6 +67,33 @@ Use these shortcode helpers in menus, buttons, or templates:
 
 Or directly link to app URLs generated with the same pattern.
 
+## 3a. Automatic menu injection
+
+By default the plugin now tries to append:
+
+- `Login`
+- `Register`
+- `Akun Saya`
+- `Logout`
+
+to common WordPress header menus with theme locations:
+
+- `primary`
+- `main-menu`
+- `header-menu`
+
+If your theme does not use one of those locations:
+
+1. keep using shortcode:
+   - `[rf_customer_auth_links redirect_to="/my-account"]`
+2. or change the plugin logic for your actual menu location
+
+If your theme already renders its own auth buttons, disable auto injection:
+
+```php
+define('RF_SSO_AUTO_MENU_ENABLED', false);
+```
+
 ## 4. Flush rewrite rules
 
 If `/rf-sso-login` returns 404 after activation:
@@ -83,6 +114,9 @@ https://www.redfeng.co/rf-sso-login?token=...
 
 5. Confirm WordPress logs in the customer
 6. Confirm redirect lands on `/my-account`
+7. Confirm WordPress header now shows:
+   - before login: `Login`, `Register`
+   - after login: `Akun Saya`, `Logout`
 
 ## Notes
 

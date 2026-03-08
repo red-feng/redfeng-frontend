@@ -27,16 +27,6 @@ export async function GET(request: Request) {
           id: user.id,
           role: "customer",
         })
-
-        return NextResponse.redirect(new URL(safeNext, origin))
-      }
-
-      if (profile.role === "merchant") {
-        return NextResponse.redirect(new URL("/merchant/dashboard", origin))
-      }
-
-      if (profile.role === "admin" || profile.role === "superadmin") {
-        return NextResponse.redirect(new URL("/admin/dashboard", origin))
       }
 
       return NextResponse.redirect(new URL(safeNext, origin))

@@ -26,6 +26,30 @@ if (!defined('RF_SSO_DEFAULT_REDIRECT')) {
     define('RF_SSO_DEFAULT_REDIRECT', '/my-account');
 }
 
+if (!defined('RF_SSO_WORDPRESS_ACCOUNT_PATH')) {
+    define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/my-account');
+}
+
+if (!defined('RF_SSO_AUTO_MENU_ENABLED')) {
+    define('RF_SSO_AUTO_MENU_ENABLED', true);
+}
+
+if (!defined('RF_SSO_BUTTON_PRIMARY_BG')) {
+    define('RF_SSO_BUTTON_PRIMARY_BG', '#f97316');
+}
+
+if (!defined('RF_SSO_BUTTON_PRIMARY_TEXT')) {
+    define('RF_SSO_BUTTON_PRIMARY_TEXT', '#ffffff');
+}
+
+if (!defined('RF_SSO_BUTTON_SECONDARY_BG')) {
+    define('RF_SSO_BUTTON_SECONDARY_BG', '#ffffff');
+}
+
+if (!defined('RF_SSO_BUTTON_SECONDARY_TEXT')) {
+    define('RF_SSO_BUTTON_SECONDARY_TEXT', '#0f172a');
+}
+
 function rf_sso_sanitize_redirect_path($path) {
     if (!$path || !is_string($path) || strpos($path, '/') !== 0) {
         return RF_SSO_DEFAULT_REDIRECT;
@@ -41,6 +65,14 @@ function rf_sso_build_app_auth_url($mode = 'login', $redirect_to = '/my-account'
     $path = $mode === 'register' ? '/register' : '/login';
 
     return $base . $path . '?next=' . rawurlencode($next);
+}
+
+function rf_sso_get_wordpress_account_url() {
+    return home_url(rf_sso_sanitize_redirect_path(RF_SSO_WORDPRESS_ACCOUNT_PATH));
+}
+
+function rf_sso_get_wordpress_logout_url() {
+    return wp_logout_url(home_url('/'));
 }
 
 function rf_sso_upsert_wordpress_user($payload) {
@@ -205,6 +237,128 @@ add_shortcode('rf_customer_register_url', function ($atts) {
 
     return esc_url(rf_sso_build_app_auth_url('register', $atts['redirect_to']));
 });
+
+add_shortcode('rf_customer_auth_links', function ($atts) {
+    $atts = shortcode_atts(array(
+        'redirect_to' => RF_SSO_DEFAULT_REDIRECT,
+        'class' => 'rf-customer-auth-links',
+    ), $atts);
+
+    $redirect_to = rf_sso_sanitize_redirect_path($atts['redirect_to']);
+    $class = sanitize_html_class($atts['class']);
+
+    if (is_user_logged_in()) {
+        return sprintf(
+            '<div class="%1$s rf-customer-auth-links"><a class="rf-sso-button rf-sso-button-primary" href="%2$s">Akun Saya</a><a class="rf-sso-button rf-sso-button-secondary" href="%3$s">Logout</a></div>',
+            esc_attr($class),
+            esc_url(rf_sso_get_wordpress_account_url()),
+            esc_url(rf_sso_get_wordpress_logout_url())
+        );
+    }
+
+    return sprintf(
+        '<div class="%1$s rf-customer-auth-links"><a class="rf-sso-button rf-sso-button-secondary" href="%2$s">Login</a><a class="rf-sso-button rf-sso-button-primary" href="%3$s">Register</a></div>',
+        esc_attr($class),
+        esc_url(rf_sso_build_app_auth_url('login', $redirect_to)),
+        esc_url(rf_sso_build_app_auth_url('register', $redirect_to))
+    );
+});
+
+add_action('wp_head', function () {
+    ?>
+    <style id="rf-customer-sso-styles">
+        .rf-customer-auth-links {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .rf-customer-auth-links .rf-sso-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .rf-customer-auth-links .rf-sso-button-primary {
+            background: <?php echo esc_html(RF_SSO_BUTTON_PRIMARY_BG); ?>;
+            color: <?php echo esc_html(RF_SSO_BUTTON_PRIMARY_TEXT); ?> !important;
+            border-color: <?php echo esc_html(RF_SSO_BUTTON_PRIMARY_BG); ?>;
+        }
+
+        .rf-customer-auth-links .rf-sso-button-primary:hover {
+            filter: brightness(0.95);
+            color: <?php echo esc_html(RF_SSO_BUTTON_PRIMARY_TEXT); ?> !important;
+        }
+
+        .rf-customer-auth-links .rf-sso-button-secondary {
+            background: <?php echo esc_html(RF_SSO_BUTTON_SECONDARY_BG); ?>;
+            color: <?php echo esc_html(RF_SSO_BUTTON_SECONDARY_TEXT); ?> !important;
+            border-color: #cbd5e1;
+        }
+
+        .rf-customer-auth-links .rf-sso-button-secondary:hover {
+            border-color: #94a3b8;
+            color: <?php echo esc_html(RF_SSO_BUTTON_SECONDARY_TEXT); ?> !important;
+        }
+    </style>
+    <?php
+});
+
+if (RF_SSO_AUTO_MENU_ENABLED) {
+    add_filter('wp_nav_menu_items', function ($items, $args) {
+        if (is_admin()) {
+            return $items;
+        }
+
+        $theme_location = isset($args->theme_location) ? (string) $args->theme_location : '';
+        if ($theme_location && !in_array($theme_location, array('primary', 'main-menu', 'header-menu'), true)) {
+            return $items;
+        }
+
+        $auth_items = '';
+        if (is_user_logged_in()) {
+            $auth_items .= '<li class="menu-item menu-item-rf-account"><a href="' . esc_url(rf_sso_get_wordpress_account_url()) . '">Akun Saya</a></li>';
+            $auth_items .= '<li class="menu-item menu-item-rf-logout"><a href="' . esc_url(rf_sso_get_wordpress_logout_url()) . '">Logout</a></li>';
+        } else {
+            $auth_items .= '<li class="menu-item menu-item-rf-login"><a href="' . esc_url(rf_sso_build_app_auth_url('login', RF_SSO_DEFAULT_REDIRECT)) . '">Login</a></li>';
+            $auth_items .= '<li class="menu-item menu-item-rf-register"><a href="' . esc_url(rf_sso_build_app_auth_url('register', RF_SSO_DEFAULT_REDIRECT)) . '">Register</a></li>';
+        }
+
+        return $items . $auth_items;
+    }, 20, 2);
+}
+
+add_action('admin_bar_menu', function ($wp_admin_bar) {
+    if (!is_user_logged_in()) {
+        return;
+    }
+
+    $wp_admin_bar->add_node(array(
+        'id' => 'rf-customer-account',
+        'title' => 'Akun Saya',
+        'href' => rf_sso_get_wordpress_account_url(),
+    ));
+
+    $wp_admin_bar->add_node(array(
+        'id' => 'rf-customer-logout',
+        'title' => 'Logout',
+        'href' => rf_sso_get_wordpress_logout_url(),
+        'parent' => 'rf-customer-account',
+    ));
+}, 100);
 
 add_action('wp_logout', function () {
     if (headers_sent()) {

@@ -43,24 +43,7 @@ export default function LoginPage() {
 
       if (!session?.user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      if (!profile) {
-        router.replace(safeNext);
-        return;
-      }
-
-      if (profile.role === "merchant") {
-        router.replace("/merchant/dashboard");
-      } else if (profile.role === "admin" || profile.role === "superadmin") {
-        router.replace("/admin/dashboard");
-      } else {
-        router.replace(safeNext);
-      }
+      router.replace(safeNext);
     };
 
     checkSession();
@@ -91,24 +74,7 @@ export default function LoginPage() {
       return;
     }
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    if (!profile) {
-      router.replace(safeNext);
-      return;
-    }
-
-    if (profile.role === "merchant") {
-      router.replace("/merchant/dashboard");
-    } else if (profile.role === "admin" || profile.role === "superadmin") {
-      router.replace("/admin/dashboard");
-    } else {
-      router.replace(safeNext);
-    }
+    router.replace(safeNext);
   };
 
   const handleGoogleLogin = async () => {
