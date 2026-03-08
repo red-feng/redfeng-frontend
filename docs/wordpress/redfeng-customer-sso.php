@@ -58,7 +58,7 @@ function rf_sso_sanitize_redirect_path($path) {
     return $path;
 }
 
-function rf_sso_build_app_auth_url($mode = 'login', $redirect_to = '/my-account') {
+function rf_sso_build_app_auth_url($mode = 'login', $redirect_to = '/akun-saya') {
     $redirect_to = rf_sso_sanitize_redirect_path($redirect_to);
     $next = '/api/sso/wordpress/issue?redirect_to=' . rawurlencode($redirect_to);
     $base = rtrim(RF_SSO_APP_URL, '/');
