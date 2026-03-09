@@ -17,13 +17,13 @@ const providerConfig: Array<{
     provider: "google",
     enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_GOOGLE !== "false",
     className:
-      "flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70",
+      "flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] disabled:cursor-not-allowed disabled:opacity-70",
   },
   {
     provider: "facebook",
     enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK === "true",
     className:
-      "flex items-center justify-center gap-3 rounded-2xl border border-[#dbeafe] bg-[#1877F2] px-5 py-4 text-base font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70",
+      "flex w-full items-center justify-center gap-3 rounded-2xl border border-[#1877F2] bg-[#1877F2] px-5 py-4 text-base font-semibold text-white shadow-[0_10px_30px_rgba(24,119,242,0.24)] transition hover:-translate-y-0.5 hover:bg-[#166fe5] hover:shadow-[0_18px_40px_rgba(24,119,242,0.3)] disabled:cursor-not-allowed disabled:opacity-70",
   },
 ];
 
@@ -67,6 +67,19 @@ function getProviderIcon(provider: AuthProvider) {
   }
 }
 
+function getLoginDictionary(locale: Locale) {
+  return dictionaries[locale].login;
+}
+
+function getProviderLabel(provider: AuthProvider, t: ReturnType<typeof getLoginDictionary>) {
+  switch (provider) {
+    case "google":
+      return t.continueWithGoogle;
+    case "facebook":
+      return t.continueWithFacebook;
+  }
+}
+
 function getLocaleFromCookie(): Locale {
   if (typeof document === "undefined") return "id";
   const cookie = document.cookie
@@ -92,7 +105,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const [errorMsg, setErrorMsg] = useState("");
   const enabledProviders = providerConfig.filter((item) => item.enabled);
 
-  const t = dictionaries[locale].login;
+  const t = getLoginDictionary(locale);
   const footerHref = mode === "login" ? "/register" : "/login";
   const footerLead = mode === "login" ? t.registerCta : t.loginCta;
   const footerLabel = mode === "login" ? t.registerLink : t.loginLink;
@@ -100,6 +113,17 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
     () => (mode === "login" ? t.title : footerLabel === t.loginLink ? "Daftar Cepat" : t.title),
     [footerLabel, mode, t.title, t.loginLink],
   );
+  const showcaseTitle =
+    mode === "login" ? "Akses perjalanan premium dalam satu akun" : "Buat akun untuk booking lebih cepat";
+  const showcaseCopy =
+    mode === "login"
+      ? "Masuk sekali untuk melanjutkan checkout, melihat booking, dan terhubung ke pengalaman RedFeng di website utama."
+      : "Daftar dengan akun sosial untuk menyimpan detail traveler, memantau booking, dan mempermudah transaksi berikutnya.";
+  const trustItems = [
+    "Kurasi paket dan merchant terverifikasi",
+    "Checkout cepat untuk perjalanan privat dan grup",
+    "Sinkron dengan akun customer RedFeng",
+  ];
 
   const handleProviderAuth = async (provider: AuthProvider) => {
     setLoadingProvider(provider);
@@ -124,103 +148,155 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   };
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[linear-gradient(180deg,#dff1ff_0%,#eff5fb_48%,#f7f8fb_100%)] px-4 py-12">
-      <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top_left,_rgba(14,116,144,0.18),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(251,146,60,0.20),_transparent_30%)]" />
-      <div className="relative w-full max-w-xl overflow-hidden rounded-[32px] border border-white/70 bg-white shadow-[0_24px_90px_rgba(15,23,42,0.12)]">
-        <div className="grid gap-8 bg-[linear-gradient(135deg,#ecfeff_0%,#f0f9ff_46%,#fff7ed_100%)] px-8 py-8 md:grid-cols-[1.35fr,0.9fr]">
-          <div>
-            <div className="mb-4 inline-flex rounded-full border border-sky-100 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-              {eyebrow}
+    <main className="relative min-h-screen overflow-hidden bg-[#f6f3ee] px-4 py-8 md:px-6 md:py-10">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.22),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(194,65,12,0.18),_transparent_24%),linear-gradient(180deg,#fbf7f1_0%,#f4efe8_100%)]" />
+      <div className="absolute left-[-8rem] top-20 h-72 w-72 rounded-full bg-orange-200/40 blur-3xl" />
+      <div className="absolute bottom-10 right-[-6rem] h-80 w-80 rounded-full bg-amber-100/70 blur-3xl" />
+
+      <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/70 bg-white shadow-[0_30px_120px_rgba(95,45,12,0.14)] lg:grid-cols-[1.15fr_0.85fr]">
+        <section className="relative overflow-hidden bg-[linear-gradient(155deg,#a84316_0%,#d86118_28%,#ef7f1a_55%,#f6b14f_100%)] px-7 py-8 text-white md:px-10 md:py-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.16),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(124,45,18,0.34),_transparent_32%)]" />
+          <div className="relative flex h-full flex-col">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
+                  RedFeng Travel
+                </p>
+                <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight md:text-5xl">
+                  {showcaseTitle}
+                </h2>
+              </div>
+              <div className="hidden rounded-[28px] border border-white/20 bg-white/12 px-5 py-4 text-right shadow-[0_16px_50px_rgba(124,45,18,0.2)] backdrop-blur md:block">
+                <div className="text-xs uppercase tracking-[0.22em] text-orange-50/75">Preferred sign-in</div>
+                <div className="mt-2 text-2xl font-semibold">Social OAuth</div>
+              </div>
             </div>
-            <h1 className="max-w-sm text-3xl font-bold leading-tight text-slate-950">{t.title}</h1>
-            <p className="mt-3 max-w-sm text-sm leading-6 text-slate-600">{t.subtitle}</p>
-          </div>
-          <div className="flex items-center justify-center">
-            <div className="grid h-28 w-28 place-items-center rounded-[28px] bg-white/90 shadow-[0_12px_30px_rgba(14,165,233,0.14)]">
-              <div className="grid h-20 w-20 place-items-center rounded-[24px] bg-[linear-gradient(135deg,#0284c7_0%,#38bdf8_52%,#fb923c_100%)] text-center text-sm font-semibold text-white">
-                Red
-                <br />
-                Feng
+
+            <p className="mt-6 max-w-xl text-sm leading-7 text-orange-50/88 md:text-base">
+              {showcaseCopy}
+            </p>
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Booking flow</p>
+                <p className="mt-3 text-3xl font-semibold">1x</p>
+                <p className="mt-2 text-sm text-orange-50/85">
+                  Satu akun untuk checkout, dashboard, dan sinkron ke website utama.
+                </p>
+              </div>
+              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Support</p>
+                <p className="mt-3 text-3xl font-semibold">24/7</p>
+                <p className="mt-2 text-sm text-orange-50/85">
+                  Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.
+                </p>
+              </div>
+              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Trust layer</p>
+                <p className="mt-3 text-3xl font-semibold">OTA</p>
+                <p className="mt-2 text-sm text-orange-50/85">
+                  Pengalaman login dibuat lebih rapi, aman, dan konsisten seperti platform travel besar.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-[30px] border border-white/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.17),rgba(255,255,255,0.09))] p-6 shadow-[0_18px_70px_rgba(124,45,18,0.22)] backdrop-blur">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">
+                    Why customers use RedFeng
+                  </p>
+                  <p className="mt-2 text-xl font-semibold">
+                    Premium travel, checkout discipline, cleaner account access.
+                  </p>
+                </div>
+                <div className="grid h-20 w-20 place-items-center rounded-[26px] border border-white/20 bg-white/12 text-center text-sm font-semibold leading-tight text-white">
+                  Red
+                  <br />
+                  Feng
+                </div>
+              </div>
+
+              <div className="mt-6 grid gap-3">
+                {trustItems.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center gap-3 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-orange-50/90"
+                  >
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-xs font-bold text-orange-700">
+                      *
+                    </span>
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="px-8 pb-8 pt-7">
-          {enabledProviders[0] ? (
-            <button
-              type="button"
-              onClick={() => handleProviderAuth(enabledProviders[0].provider)}
-              disabled={loadingProvider !== null}
-              className={enabledProviders[0].className}
-            >
-              {getProviderIcon(enabledProviders[0].provider)}
-              <span>
-                {loadingProvider === enabledProviders[0].provider
-                  ? t.processing
-                  : enabledProviders[0].provider === "google"
-                    ? t.continueWithGoogle
-                    : t.continueWithFacebook}
-              </span>
-            </button>
-          ) : null}
+        <section className="relative flex items-center bg-[linear-gradient(180deg,#fffdfa_0%,#fff7ef_100%)] px-5 py-8 md:px-8 lg:px-10">
+          <div className="w-full">
+            <div className="mx-auto max-w-md rounded-[32px] border border-[#f1e4d5] bg-white/95 p-7 shadow-[0_22px_60px_rgba(95,45,12,0.08)] backdrop-blur">
+              <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700">
+                {eyebrow}
+              </div>
+              <h1 className="mt-5 text-3xl font-semibold leading-tight text-slate-950">{t.title}</h1>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{t.subtitle}</p>
 
-          {enabledProviders.length > 1 ? (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {enabledProviders.slice(1).map((item) => (
-                <button
-                  key={item.provider}
-                  type="button"
-                  onClick={() => handleProviderAuth(item.provider)}
-                  disabled={loadingProvider !== null}
-                  className={item.className}
-                >
-                  {getProviderIcon(item.provider)}
-                  <span>
-                    {loadingProvider === item.provider
-                      ? t.processing
-                      : item.provider === "google"
-                        ? t.continueWithGoogle
-                        : t.continueWithFacebook}
-                  </span>
-                </button>
-              ))}
+              <div className="mt-8 space-y-3">
+                {enabledProviders.map((item) => (
+                  <button
+                    key={item.provider}
+                    type="button"
+                    onClick={() => handleProviderAuth(item.provider)}
+                    disabled={loadingProvider !== null}
+                    className={item.className}
+                  >
+                    {getProviderIcon(item.provider)}
+                    <span>
+                      {loadingProvider === item.provider ? t.processing : getProviderLabel(item.provider, t)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span>{t.otherOptions}</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#fff9f2_0%,#fffdf9_100%)] px-5 py-4 text-sm leading-7 text-slate-600">
+                {t.autoCreateHint}
+              </div>
+
+              {errorMsg ? (
+                <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {errorMsg}
+                </div>
+              ) : null}
+
+              <p className="mt-6 text-xs leading-6 text-slate-500">
+                {t.termsLead}{" "}
+                <Link href="/terms" className="font-semibold text-orange-700 hover:text-orange-800">
+                  {t.terms}
+                </Link>{" "}
+                dan{" "}
+                <Link href="/privacy" className="font-semibold text-orange-700 hover:text-orange-800">
+                  {t.privacy}
+                </Link>
+                .
+              </p>
+
+              <p className="mt-6 text-sm text-slate-600">
+                {footerLead}{" "}
+                <Link href={footerHref} className="font-semibold text-orange-600 hover:text-orange-700">
+                  {footerLabel}
+                </Link>
+              </p>
             </div>
-          ) : null}
-
-          <div className="my-6 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span>{t.otherOptions}</span>
-            <div className="h-px flex-1 bg-slate-200" />
           </div>
-
-          <p className="mx-auto max-w-md text-center text-sm leading-6 text-slate-600">{t.autoCreateHint}</p>
-
-          {errorMsg ? (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {errorMsg}
-            </div>
-          ) : null}
-
-          <p className="mt-6 text-center text-xs leading-6 text-slate-500">
-            {t.termsLead}{" "}
-            <Link href="/terms" className="font-semibold text-sky-700 hover:text-sky-800">
-              {t.terms}
-            </Link>{" "}
-            dan{" "}
-            <Link href="/privacy" className="font-semibold text-sky-700 hover:text-sky-800">
-              {t.privacy}
-            </Link>
-            .
-          </p>
-
-          <p className="mt-5 text-center text-sm text-slate-600">
-            {footerLead}{" "}
-            <Link href={footerHref} className="font-semibold text-orange-600 hover:text-orange-700">
-              {footerLabel}
-            </Link>
-          </p>
-        </div>
+        </section>
       </div>
     </main>
   );
