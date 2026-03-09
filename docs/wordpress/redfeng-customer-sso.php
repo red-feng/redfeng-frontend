@@ -68,7 +68,7 @@ function rf_sso_build_app_auth_url($mode = 'login', $redirect_to = '/akun-saya')
 }
 
 function rf_sso_get_wordpress_account_url() {
-    return home_url(rf_sso_sanitize_redirect_path(RF_SSO_WORDPRESS_ACCOUNT_PATH));
+    return rtrim(RF_SSO_APP_URL, '/') . '/customer/dashboard';
 }
 
 function rf_sso_get_wordpress_logout_url() {
@@ -200,6 +200,12 @@ function rf_sso_handle_login() {
     wp_set_auth_cookie($user_id, true);
 
     $redirect_to = isset($payload['redirect_to']) ? rf_sso_sanitize_redirect_path($payload['redirect_to']) : $requested_redirect;
+
+    if ($redirect_to === '/akun-saya') {
+        wp_redirect(rtrim(RF_SSO_APP_URL, '/') . '/customer/dashboard');
+        exit;
+    }
+
     wp_safe_redirect(home_url($redirect_to));
     exit;
 }

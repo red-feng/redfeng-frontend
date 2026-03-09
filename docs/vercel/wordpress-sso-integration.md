@@ -21,7 +21,7 @@ Run:
 ## Next.js endpoints
 
 - Issue WordPress SSO token:
-  - `GET /api/sso/wordpress/issue?redirect_to=/my-account`
+  - `GET /api/sso/wordpress/issue?redirect_to=/akun-saya`
 - Exchange WordPress SSO token:
   - `POST /api/sso/wordpress/exchange`
   - Header: `x-rf-sso-secret: <WORDPRESS_SSO_SHARED_SECRET>`
@@ -54,7 +54,7 @@ Meaning:
 - after login/register, app redirects to `/api/sso/wordpress/issue`
 - app creates a one-time token
 - app redirects browser back to WordPress callback path:
-  - `https://www.redfeng.co/rf-sso-login?token=...&redirect_to=/my-account`
+  - `https://www.redfeng.co/rf-sso-login?token=...&redirect_to=/akun-saya`
 
 ## What WordPress must do
 
@@ -97,7 +97,7 @@ x-rf-sso-secret: <WORDPRESS_SSO_SHARED_SECRET>
   "full_name": "Customer Name",
   "phone_number": "08123456789",
   "role": "customer",
-  "redirect_to": "/my-account"
+  "redirect_to": "/akun-saya"
 }
 ```
 

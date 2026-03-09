@@ -36,16 +36,16 @@ Recommended values for your current setup:
 define('RF_SSO_APP_URL', 'https://app.redfeng.co');
 define('RF_SSO_SHARED_SECRET', '9f3a7e8b4c1d6a9e2f7c5d8b1a3e6f4c');
 define('RF_SSO_LOGIN_PATH', 'rf-sso-login');
-define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/my-account');
-define('RF_SSO_AUTO_MENU_ENABLED', true);
+define('RF_SSO_WORDPRESS_ACCOUNT_PATH', '/akun-saya');
+define('RF_SSO_AUTO_MENU_ENABLED', false);
 ```
 
 Important:
 - in WordPress plugin use `rf-sso-login`
 - in Vercel env use `/rf-sso-login`
 - they represent the same endpoint path
-- `RF_SSO_AUTO_MENU_ENABLED = true` means plugin will append auth links automatically to common header menus
-- if your theme already has a custom login area, set it to `false`
+- `RF_SSO_AUTO_MENU_ENABLED = false` is recommended for Elementor headers that already place auth buttons via shortcode
+- `RF_SSO_WORDPRESS_ACCOUNT_PATH` stays on `/akun-saya` as the symbolic customer target, but successful SSO will send that target to `https://app.redfeng.co/customer/dashboard`
 
 3. Activate the plugin in WordPress admin
 
@@ -56,13 +56,13 @@ Use these shortcode helpers in menus, buttons, or templates:
 - Login URL:
 
 ```text
-[rf_customer_login_url redirect_to="/my-account"]
+[rf_customer_login_url redirect_to="/akun-saya"]
 ```
 
 - Register URL:
 
 ```text
-[rf_customer_register_url redirect_to="/my-account"]
+[rf_customer_register_url redirect_to="/akun-saya"]
 ```
 
 Or directly link to app URLs generated with the same pattern.
@@ -85,7 +85,7 @@ to common WordPress header menus with theme locations:
 If your theme does not use one of those locations:
 
 1. keep using shortcode:
-   - `[rf_customer_auth_links redirect_to="/my-account"]`
+   - `[rf_customer_auth_links redirect_to="/akun-saya"]`
 2. or change the plugin logic for your actual menu location
 
 If your theme already renders its own auth buttons, disable auto injection:
@@ -113,7 +113,7 @@ https://www.redfeng.co/rf-sso-login?token=...
 ```
 
 5. Confirm WordPress logs in the customer
-6. Confirm redirect lands on `/my-account`
+6. Confirm redirect lands on `https://app.redfeng.co/customer/dashboard`
 7. Confirm WordPress header now shows:
    - before login: `Login`, `Register`
    - after login: `Akun Saya`, `Logout`

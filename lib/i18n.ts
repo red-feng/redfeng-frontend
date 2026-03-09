@@ -121,12 +121,20 @@ type Dictionary = {
   }
   login: {
     title: string
-    email: string
-    password: string
-    login: string
-    loggingIn: string
+    subtitle: string
+    continueWithGoogle: string
+    continueWithApple: string
+    continueWithFacebook: string
+    processing: string
+    otherOptions: string
+    autoCreateHint: string
+    termsLead: string
+    terms: string
+    privacy: string
     registerCta: string
     registerLink: string
+    loginCta: string
+    loginLink: string
   }
   resetPassword: {
     title: string
@@ -258,13 +266,21 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap belum siap",
     },
     login: {
-      title: "Login Customer",
-      email: "Email",
-      password: "Password",
-      login: "Login",
-      loggingIn: "Sedang login...",
-      registerCta: "Belum punya akun customer?",
-      registerLink: "Daftar",
+      title: "Masuk atau Daftar",
+      subtitle: "Lanjutkan lebih cepat dengan akun yang Anda gunakan setiap hari.",
+      continueWithGoogle: "Lanjutkan dengan Google",
+      continueWithApple: "Apple",
+      continueWithFacebook: "Facebook",
+      processing: "Memproses...",
+      otherOptions: "Pilihan lainnya",
+      autoCreateHint: "Jika belum punya akun, akun customer akan dibuat otomatis saat Anda melanjutkan.",
+      termsLead: "Dengan melanjutkan, Anda menyetujui",
+      terms: "Syarat & Ketentuan",
+      privacy: "Kebijakan Privasi",
+      registerCta: "Belum punya akun?",
+      registerLink: "Buat akun",
+      loginCta: "Sudah punya akun?",
+      loginLink: "Masuk",
     },
     resetPassword: {
       title: "Atur Password Baru",
@@ -390,13 +406,21 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap is not ready",
     },
     login: {
-      title: "Customer Login",
-      email: "Email",
-      password: "Password",
-      login: "Login",
-      loggingIn: "Logging in...",
-      registerCta: "Don't have a customer account yet?",
-      registerLink: "Register",
+      title: "Sign In or Register",
+      subtitle: "Continue faster with the account you already use every day.",
+      continueWithGoogle: "Continue with Google",
+      continueWithApple: "Apple",
+      continueWithFacebook: "Facebook",
+      processing: "Processing...",
+      otherOptions: "Other options",
+      autoCreateHint: "If you do not have an account yet, a customer account will be created automatically when you continue.",
+      termsLead: "By continuing, you agree to our",
+      terms: "Terms & Conditions",
+      privacy: "Privacy Policy",
+      registerCta: "Don't have an account?",
+      registerLink: "Create one",
+      loginCta: "Already have an account?",
+      loginLink: "Sign in",
     },
     resetPassword: {
       title: "Set New Password",
@@ -522,13 +546,21 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap 尚未就绪",
     },
     login: {
-      title: "客户登录",
-      email: "邮箱",
-      password: "密码",
-      login: "登录",
-      loggingIn: "登录中...",
-      registerCta: "还没有客户账户？",
-      registerLink: "注册",
+      title: "登录或注册",
+      subtitle: "使用您每天常用的账号，更快继续。",
+      continueWithGoogle: "使用 Google 继续",
+      continueWithApple: "Apple",
+      continueWithFacebook: "Facebook",
+      processing: "处理中...",
+      otherOptions: "其他选项",
+      autoCreateHint: "如果您还没有账号，继续后系统会自动为您创建客户账号。",
+      termsLead: "继续即表示您同意我们的",
+      terms: "条款与条件",
+      privacy: "隐私政策",
+      registerCta: "还没有账号？",
+      registerLink: "创建账号",
+      loginCta: "已有账号？",
+      loginLink: "登录",
     },
     resetPassword: {
       title: "设置新密码",
@@ -654,13 +686,21 @@ export const dictionaries: Record<Locale, Dictionary> = {
       snapNotReady: "Snap ยังไม่พร้อมใช้งาน",
     },
     login: {
-      title: "เข้าสู่ระบบลูกค้า",
-      email: "อีเมล",
-      password: "รหัสผ่าน",
-      login: "เข้าสู่ระบบ",
-      loggingIn: "กำลังเข้าสู่ระบบ...",
-      registerCta: "ยังไม่มีบัญชีลูกค้า?",
-      registerLink: "สมัครสมาชิก",
+      title: "เข้าสู่ระบบหรือสมัครสมาชิก",
+      subtitle: "ไปต่อได้เร็วขึ้นด้วยบัญชีที่คุณใช้เป็นประจำทุกวัน",
+      continueWithGoogle: "ดำเนินการต่อด้วย Google",
+      continueWithApple: "Apple",
+      continueWithFacebook: "Facebook",
+      processing: "กำลังดำเนินการ...",
+      otherOptions: "ตัวเลือกอื่น",
+      autoCreateHint: "หากยังไม่มีบัญชี ระบบจะสร้างบัญชีลูกค้าให้อัตโนมัติเมื่อคุณดำเนินการต่อ",
+      termsLead: "เมื่อดำเนินการต่อ แสดงว่าคุณยอมรับ",
+      terms: "ข้อกำหนดและเงื่อนไข",
+      privacy: "นโยบายความเป็นส่วนตัว",
+      registerCta: "ยังไม่มีบัญชี?",
+      registerLink: "สร้างบัญชี",
+      loginCta: "มีบัญชีอยู่แล้ว?",
+      loginLink: "เข้าสู่ระบบ",
     },
     resetPassword: {
       title: "ตั้งรหัสผ่านใหม่",
