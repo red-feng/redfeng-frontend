@@ -5,8 +5,27 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 
-type AuthProvider = "google" | "apple" | "facebook";
+type AuthProvider = "google" | "facebook";
 type Mode = "login" | "register";
+
+const providerConfig: Array<{
+  provider: AuthProvider;
+  enabled: boolean;
+  className: string;
+}> = [
+  {
+    provider: "google",
+    enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_GOOGLE !== "false",
+    className:
+      "flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70",
+  },
+  {
+    provider: "facebook",
+    enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK === "true",
+    className:
+      "flex items-center justify-center gap-3 rounded-2xl border border-[#dbeafe] bg-[#1877F2] px-5 py-4 text-base font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70",
+  },
+];
 
 function GoogleIcon() {
   return (
@@ -31,14 +50,6 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-      <path d="M15.1 3.2c.9-1.1 1.4-2.5 1.3-3.2-1.3.1-2.7.9-3.6 2-.8.9-1.5 2.4-1.3 3.7 1.4.1 2.8-.7 3.6-2.5Zm4.2 14.6c-.8 1.2-1.2 1.7-2.2 3-1.3 1.6-3.2 3.5-5.5 3.5-2 0-2.6-1.3-5-1.3-2.4 0-3.1 1.3-5.1 1.3-2.3 0-4.1-1.7-5.4-3.3C-3.3 16.8-4.4 12-2.1 8.3c1.6-2.5 4-4 6.3-4 2.4 0 3.8 1.3 5.8 1.3 1.9 0 3.1-1.3 5.8-1.3 2 0 4.2 1.1 5.7 3.1-5 2.7-4.2 9.7-2.2 10.4Z" />
-    </svg>
-  );
-}
-
 function FacebookIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
@@ -51,8 +62,6 @@ function getProviderIcon(provider: AuthProvider) {
   switch (provider) {
     case "google":
       return <GoogleIcon />;
-    case "apple":
-      return <AppleIcon />;
     case "facebook":
       return <FacebookIcon />;
   }
@@ -81,6 +90,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const [safeNext] = useState(getSafeNextFromLocation);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const enabledProviders = providerConfig.filter((item) => item.enabled);
 
   const t = dictionaries[locale].login;
   const footerHref = mode === "login" ? "/register" : "/login";
@@ -137,36 +147,46 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
         </div>
 
         <div className="px-8 pb-8 pt-7">
-          <button
-            type="button"
-            onClick={() => handleProviderAuth("google")}
-            disabled={loadingProvider !== null}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {getProviderIcon("google")}
-            <span>{loadingProvider === "google" ? t.processing : t.continueWithGoogle}</span>
-          </button>
+          {enabledProviders[0] ? (
+            <button
+              type="button"
+              onClick={() => handleProviderAuth(enabledProviders[0].provider)}
+              disabled={loadingProvider !== null}
+              className={enabledProviders[0].className}
+            >
+              {getProviderIcon(enabledProviders[0].provider)}
+              <span>
+                {loadingProvider === enabledProviders[0].provider
+                  ? t.processing
+                  : enabledProviders[0].provider === "google"
+                    ? t.continueWithGoogle
+                    : t.continueWithFacebook}
+              </span>
+            </button>
+          ) : null}
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => handleProviderAuth("apple")}
-              disabled={loadingProvider !== null}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-950 px-5 py-4 text-base font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {getProviderIcon("apple")}
-              <span>{loadingProvider === "apple" ? t.processing : t.continueWithApple}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleProviderAuth("facebook")}
-              disabled={loadingProvider !== null}
-              className="flex items-center justify-center gap-3 rounded-2xl border border-[#dbeafe] bg-[#1877F2] px-5 py-4 text-base font-semibold text-white transition hover:bg-[#166fe5] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {getProviderIcon("facebook")}
-              <span>{loadingProvider === "facebook" ? t.processing : t.continueWithFacebook}</span>
-            </button>
-          </div>
+          {enabledProviders.length > 1 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {enabledProviders.slice(1).map((item) => (
+                <button
+                  key={item.provider}
+                  type="button"
+                  onClick={() => handleProviderAuth(item.provider)}
+                  disabled={loadingProvider !== null}
+                  className={item.className}
+                >
+                  {getProviderIcon(item.provider)}
+                  <span>
+                    {loadingProvider === item.provider
+                      ? t.processing
+                      : item.provider === "google"
+                        ? t.continueWithGoogle
+                        : t.continueWithFacebook}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="my-6 flex items-center gap-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
             <div className="h-px flex-1 bg-slate-200" />

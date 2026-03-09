@@ -25,6 +25,10 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
   - Required for secure token exchange between WordPress and Next.js app.
 - `WORDPRESS_SSO_LOGIN_PATH`
   - Optional custom WordPress callback path. Default is `/rf-sso-login`.
+- `NEXT_PUBLIC_AUTH_ENABLE_GOOGLE`
+  - Optional. Default enabled unless explicitly set to `false`.
+- `NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK`
+  - Optional. Set `true` only after Facebook provider is enabled in Supabase.
 
 ## Verification checklist
 
@@ -46,3 +50,7 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
   - Snap script will not load on the frontend.
 - Missing `RESEND_API_KEY`
   - Merchant pending email route returns `Email service not configured`.
+- Missing or disabled `NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK`
+  - Facebook button stays hidden on login/register pages.
+- Enabled frontend provider flag without enabling the same provider in Supabase
+  - OAuth redirect returns `Unsupported provider: provider is not enabled`.
