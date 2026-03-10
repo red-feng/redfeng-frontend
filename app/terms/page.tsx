@@ -113,7 +113,7 @@ export default function TermsPage() {
                 Quick Links
               </p>
               <div className="mt-4 grid gap-3 text-sm">
-                <Link href="/" className="font-semibold text-slate-800 hover:text-orange-700">
+                <Link href="https://redfeng.co/" className="font-semibold text-slate-800 hover:text-orange-700">
                   Back to home
                 </Link>
                 <Link href="/privacy" className="font-semibold text-slate-800 hover:text-orange-700">
@@ -131,7 +131,7 @@ export default function TermsPage() {
                 </div>
                 <h2 className="mt-4 text-3xl font-semibold text-slate-950">Service rules and account responsibilities</h2>
               </div>
-              <Link href="/" className="text-sm font-semibold text-orange-700 hover:text-orange-800">
+              <Link href="https://redfeng.co/" className="text-sm font-semibold text-orange-700 hover:text-orange-800">
                 Back to home
               </Link>
             </div>
