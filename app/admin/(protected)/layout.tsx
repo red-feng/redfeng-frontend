@@ -22,9 +22,17 @@ export default async function AdminProtectedLayout({
     .eq("id", user.id)
     .single()
 
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
-  redirect("/")
-}
+  if (!profile) {
+    redirect("/admin/login")
+  }
+
+  if (profile.role === "merchant") {
+    redirect("/merchant/dashboard")
+  }
+
+  if (!["admin", "superadmin"].includes(profile.role)) {
+    redirect("/admin/login")
+  }
 
   return <>{children}</>
 }
