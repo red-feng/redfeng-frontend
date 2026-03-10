@@ -40,7 +40,7 @@ const sections = [
   },
   {
     title: "Contact",
-    body: "Questions about these terms can be sent to jenovacinfinityroyal@gmail.com.",
+    body: "Questions about these terms can be sent to hello@redfeng.co.",
   },
 ]
 
@@ -97,11 +97,8 @@ export default function TermsPage() {
                 <p>
                   Service contact:
                   <br />
-                  <a
-                    className="font-semibold text-orange-700 hover:text-orange-800"
-                    href="mailto:jenovacinfinityroyal@gmail.com"
-                  >
-                    jenovacinfinityroyal@gmail.com
+                  <a className="font-semibold text-orange-700 hover:text-orange-800" href="mailto:hello@redfeng.co">
+                    hello@redfeng.co
                   </a>
                 </p>
                 <p>
