@@ -3,24 +3,23 @@
 import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowRight, BadgeCheck, Landmark, ShieldCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 const partnerPoints = [
   {
     title: "Akses merchant workspace",
     description: "Masuk ke dashboard partner untuk mengelola paket, pesanan, saldo, dan performa.",
-    icon: Landmark,
+    icon: "▣",
   },
   {
     title: "Review status bisnis",
     description: "Lihat apakah akun masih draft, pending review, approved, atau perlu revisi dokumen.",
-    icon: BadgeCheck,
+    icon: "◎",
   },
   {
     title: "Autentikasi aman",
     description: "Gunakan email bisnis terverifikasi untuk melanjutkan proses merchant dengan aman.",
-    icon: ShieldCheck,
+    icon: "◈",
   },
 ]
 
@@ -116,14 +115,13 @@ export default function MerchantLogin() {
 
             <div className="relative mt-10 grid gap-4 xl:grid-cols-3">
               {partnerPoints.map((item) => {
-                const Icon = item.icon
                 return (
                   <article
                     key={item.title}
                     className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur"
                   >
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/16">
-                      <Icon className="h-5 w-5 text-white" />
+                      <span className="text-lg font-semibold text-white">{item.icon}</span>
                     </div>
                     <h2 className="mt-4 text-lg font-semibold text-white">{item.title}</h2>
                     <p className="mt-2 text-sm leading-7 text-orange-50/86">{item.description}</p>
@@ -146,7 +144,7 @@ export default function MerchantLogin() {
                   className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white transition hover:text-orange-100"
                 >
                   Buat akun merchant
-                  <ArrowRight className="h-4 w-4" />
+                  <span aria-hidden="true">→</span>
                 </Link>
               </div>
             </div>
@@ -174,7 +172,7 @@ export default function MerchantLogin() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 transition hover:text-orange-800"
                 >
                   Kembali ke beranda
-                  <ArrowRight className="h-4 w-4" />
+                  <span aria-hidden="true">→</span>
                 </Link>
               </div>
 
@@ -227,7 +225,7 @@ export default function MerchantLogin() {
                   className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_42%,#fb923c_100%)] px-5 py-4 text-base font-semibold text-white shadow-[0_16px_36px_rgba(194,65,12,0.24)] transition hover:shadow-[0_20px_44px_rgba(194,65,12,0.3)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? "Memproses login..." : "Masuk ke merchant dashboard"}
-                  <ArrowRight className="h-4 w-4" />
+                  <span aria-hidden="true">→</span>
                 </button>
               </div>
 
@@ -244,7 +242,7 @@ export default function MerchantLogin() {
                   className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
                 >
                   Daftar merchant baru
-                  <ArrowRight className="h-4 w-4" />
+                  <span aria-hidden="true">→</span>
                 </Link>
               </div>
             </div>

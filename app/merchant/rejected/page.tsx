@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { AlertTriangle, ArrowRight, RotateCcw } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { resubmitMerchant } from "./actions"
 
@@ -40,7 +39,7 @@ export default async function RejectedPage() {
           <article className="rounded-[28px] border border-red-200 bg-white p-6 shadow-[0_20px_50px_rgba(127,29,29,0.08)]">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-red-700">
-                <AlertTriangle className="h-6 w-6" />
+                <span className="text-xl font-semibold">!</span>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
@@ -57,7 +56,7 @@ export default async function RejectedPage() {
 
             <form action={resubmitMerchant} className="mt-6">
               <button className="inline-flex items-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_42%,#fb923c_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(194,65,12,0.22)] transition hover:shadow-[0_18px_36px_rgba(194,65,12,0.28)]">
-                <RotateCcw className="h-4 w-4" />
+                <span aria-hidden="true">↻</span>
                 Perbaiki dan ajukan ulang
               </button>
             </form>
@@ -77,7 +76,7 @@ export default async function RejectedPage() {
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
             >
               Kembali ke beranda
-              <ArrowRight className="h-4 w-4" />
+              <span aria-hidden="true">→</span>
             </Link>
           </aside>
         </section>

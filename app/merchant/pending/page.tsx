@@ -1,5 +1,4 @@
 import Link from "next/link"
-import { ArrowRight, Clock3, ShieldCheck } from "lucide-react"
 
 export default function PendingPage() {
   return (
@@ -22,7 +21,7 @@ export default function PendingPage() {
           <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_20px_50px_rgba(148,64,14,0.08)]">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
-                <Clock3 className="h-6 w-6" />
+                <span className="text-xl font-semibold">◔</span>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
@@ -39,7 +38,7 @@ export default function PendingPage() {
 
           <aside className="rounded-[28px] border border-slate-200 bg-slate-50/80 p-6">
             <div className="flex items-center gap-3 text-slate-900">
-              <ShieldCheck className="h-5 w-5 text-orange-700" />
+              <span className="text-base font-semibold text-orange-700">◈</span>
               <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
                 Next
               </p>
@@ -54,7 +53,7 @@ export default function PendingPage() {
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
             >
               Kembali ke beranda
-              <ArrowRight className="h-4 w-4" />
+              <span aria-hidden="true">→</span>
             </Link>
           </aside>
         </section>

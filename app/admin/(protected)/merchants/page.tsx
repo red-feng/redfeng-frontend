@@ -1,4 +1,3 @@
-import { Building2, CheckCircle2, Clock3, Mail, Send, XCircle } from "lucide-react"
 import { createClient } from '@/lib/supabase/server'
 import { approveMerchant, rejectMerchant } from './actions'
 
@@ -39,7 +38,7 @@ export default async function AdminMerchantsPage() {
         {!merchants?.length ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-orange-100 text-orange-700">
-              <CheckCircle2 className="h-8 w-8" />
+              <span className="text-2xl font-semibold">✓</span>
             </div>
             <h2 className="mt-5 text-2xl font-semibold text-slate-950">Tidak ada merchant pending</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -59,7 +58,7 @@ export default async function AdminMerchantsPage() {
                       <div>
                         <div className="flex items-center gap-3">
                           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
-                            <Building2 className="h-6 w-6" />
+                            <span className="text-xl font-semibold">▣</span>
                           </div>
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
@@ -72,7 +71,7 @@ export default async function AdminMerchantsPage() {
                         </div>
                       </div>
                       <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">
-                        <Clock3 className="h-4 w-4" />
+                        <span aria-hidden="true">◔</span>
                         Pending review
                       </span>
                     </div>
@@ -83,7 +82,7 @@ export default async function AdminMerchantsPage() {
                           Email
                         </p>
                         <p className="mt-2 flex items-center gap-2 text-sm font-medium text-slate-800">
-                          <Mail className="h-4 w-4 text-orange-700" />
+                          <span className="text-sm text-orange-700">@</span>
                           {merchant.email || "-"}
                         </p>
                       </div>
@@ -132,7 +131,7 @@ export default async function AdminMerchantsPage() {
                       <form action={approveMerchant} className="mt-5">
                         <input type="hidden" name="merchantId" value={merchant.id} />
                         <button className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
-                          <CheckCircle2 className="h-4 w-4" />
+                          <span aria-hidden="true">✓</span>
                           Approve merchant
                         </button>
                       </form>
@@ -154,7 +153,7 @@ export default async function AdminMerchantsPage() {
                           className="min-h-[132px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                         />
                         <button className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,38,38,0.22)] transition hover:bg-red-700">
-                          <XCircle className="h-4 w-4" />
+                          <span aria-hidden="true">✕</span>
                           Reject merchant
                         </button>
                       </form>
@@ -165,7 +164,7 @@ export default async function AdminMerchantsPage() {
                         Review note
                       </p>
                       <p className="mt-3 flex items-start gap-2 text-sm leading-7 text-slate-600">
-                        <Send className="mt-1 h-4 w-4 text-orange-700" />
+                        <span className="mt-1 text-sm text-orange-700">→</span>
                         Merchant yang ditolak akan diarahkan ke halaman revisi dan bisa submit ulang ke antrian review.
                       </p>
                     </div>
