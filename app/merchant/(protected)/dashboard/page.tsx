@@ -119,83 +119,179 @@ export default async function MerchantDashboardPage() {
     "Kelola Paket": `${activePackages} aktif • ${pendingPackages} pending review`,
     Pesanan: `${totalBookings} total booking`,
     "Chat Customer": unreadChats > 0 ? `${unreadChats} chat baru` : "Inbox customer",
-    "Kalender Booking": "Jadwal trip & kapasitas peserta",
+    "Kalender Booking": "Jadwal trip dan kapasitas peserta",
     Statistik: "Revenue, top paket, conversion",
-    "Saldo & Payout": "Saldo tersedia & pending payout",
-    Review: reviews.length > 0 ? `${reviews.length} ulasan masuk` : "Rating & komentar customer",
+    "Saldo & Payout": "Saldo tersedia dan pending payout",
+    Review: reviews.length > 0 ? `${reviews.length} ulasan masuk` : "Rating dan komentar customer",
     "Profil Merchant": merchant.company_name || "Profil bisnis merchant",
   }
 
+  const quickSignals = [
+    { label: "Chat baru", value: String(unreadChats), tone: "from-orange-500 to-amber-400" },
+    { label: "Paket pending", value: String(pendingPackages), tone: "from-amber-500 to-orange-300" },
+    { label: "Booking paid", value: String(paidBookings.length), tone: "from-emerald-500 to-lime-400" },
+  ]
+
+  const operationalNotes = [
+    `Draft paket: ${draftPackages}`,
+    `Pembayaran pending: ${pendingPayments}`,
+    reviews.length > 0 ? `Ulasan aktif: ${reviews.length}` : "Belum ada ulasan customer",
+  ]
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f6f7fb_0%,#eef2f7_100%)] p-6 md:p-10">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,#fff7ed,transparent_30%),linear-gradient(135deg,#0f172a,#1e293b)] p-8 text-white shadow-[0_24px_60px_rgba(15,23,42,0.18)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-200">Merchant Command Center</p>
-        <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-semibold md:text-4xl">
-              {merchant.brand_name || merchant.company_name || "Merchant Dashboard"}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300 md:text-base">
-              Pantau paket, booking, revenue, chat customer, dan kualitas layanan dalam satu dashboard merchant.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="text-xs uppercase tracking-wide text-slate-300">Chat Baru</p>
-              <p className="mt-1 text-2xl font-bold">{unreadChats}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="text-xs uppercase tracking-wide text-slate-300">Pending Review</p>
-              <p className="mt-1 text-2xl font-bold">{pendingPackages}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
-              <p className="text-xs uppercase tracking-wide text-slate-300">Paid Booking</p>
-              <p className="mt-1 text-2xl font-bold">{paidBookings.length}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(146,64,14,0.18)] sm:px-10 lg:px-12">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
+            <div>
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Merchant Command Center
+              </span>
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                {merchant.brand_name || merchant.company_name || "Merchant Dashboard"}
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
+                Pantau performa paket, booking, revenue, chat customer, dan kualitas layanan dari satu
+                dashboard merchant yang lebih premium dan terstruktur.
+              </p>
 
-      <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {spotlightCards.map((card) => (
-          <div key={card.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{card.label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{card.value}</p>
-            <p className="mt-2 text-xs text-slate-500">{card.note}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-900">Merchant Tools</h2>
-            <p className="text-sm text-slate-500">Akses cepat ke seluruh area operasional merchant.</p>
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {merchantMenus.map((menu) => (
-            <Link
-              key={menu.label}
-              href={menu.href}
-              className="group rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold text-slate-900">{menu.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{menuMeta[menu.label]}</p>
-                </div>
-                {menu.label === "Chat Customer" && unreadChats > 0 && (
-                  <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
-                    {unreadChats}
-                  </span>
-                )}
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {quickSignals.map((signal) => (
+                  <div
+                    key={signal.label}
+                    className={`rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur`}
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">{signal.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-white">{signal.value}</p>
+                    <div className={`mt-4 h-2 rounded-full bg-gradient-to-r ${signal.tone}`} />
+                  </div>
+                ))}
               </div>
-            </Link>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="rounded-[28px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Performance focus</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{formatMoney(monthlyRevenue)}</p>
+                <p className="mt-2 text-sm leading-7 text-orange-50/85">
+                  Revenue terhitung dari booking berstatus paid yang terkait langsung dengan merchant Anda.
+                </p>
+              </div>
+
+              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Operational notes</p>
+                <div className="mt-4 space-y-3">
+                  {operationalNotes.map((note) => (
+                    <div key={note} className="flex items-start gap-3">
+                      <span className="mt-0.5 text-sm text-amber-200">●</span>
+                      <p className="text-sm leading-7 text-orange-50/90">{note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {spotlightCards.map((card) => (
+            <article
+              key={card.label}
+              className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
+              <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
+            </article>
           ))}
-        </div>
-      </section>
-    </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
+                  Merchant Tools
+                </span>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+                  Area operasional merchant
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  Akses cepat ke seluruh area operasional merchant untuk menjaga kualitas listing, booking,
+                  dan layanan customer.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {merchantMenus.map((menu) => (
+                <Link
+                  key={menu.label}
+                  href={menu.href}
+                  className="group rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-5 transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_18px_40px_rgba(194,65,12,0.12)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-lg font-semibold text-slate-950">{menu.label}</p>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{menuMeta[menu.label]}</p>
+                    </div>
+                    {menu.label === "Chat Customer" && unreadChats > 0 ? (
+                      <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
+                        {unreadChats}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-orange-500 transition group-hover:text-orange-700">→</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+              <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
+                Business Snapshot
+              </span>
+              <div className="mt-5 space-y-4">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Brand</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {merchant.brand_name || merchant.company_name || "Merchant belum memiliki brand name"}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Company</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {merchant.company_name || "Lengkapi profil merchant"}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Customer Rating</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">
+                    {averageRating === "-" ? "Belum ada rating" : `${averageRating} / 5`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Recommended next move</p>
+              <p className="mt-4 text-lg font-semibold text-slate-950">
+                {pendingPackages > 0
+                  ? "Selesaikan review paket yang masih pending."
+                  : draftPackages > 0
+                    ? "Lengkapi draft paket agar bisa diajukan."
+                    : "Fokus pada optimasi booking dan respons customer."}
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Dashboard ini dirancang untuk membantu merchant menjaga performa operasional, kualitas
+                listing, dan kecepatan respons ke customer.
+              </p>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
   )
 }
