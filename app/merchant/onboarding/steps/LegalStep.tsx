@@ -3,14 +3,13 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-export default function LegalStep({ 
+export default function LegalStep({
   merchantId,
   setStep
-}: { 
+}: {
   merchantId: string
   setStep: (step: number) => void
 }) {
-
   const supabase = createClient()
 
   const [form, setForm] = useState({
@@ -22,8 +21,9 @@ export default function LegalStep({
   })
 
   const [saving, setSaving] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const handleChange = (e: any) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({
       ...form,
       [e.target.name]: e.target.value
@@ -32,13 +32,14 @@ export default function LegalStep({
 
   const handleNext = async () => {
     if (!form.pic_name || !form.ktp_number) {
-      alert('PIC Name & KTP wajib diisi')
+      setErrorMsg('PIC Name & KTP wajib diisi')
       return
     }
 
     setSaving(true)
+    setErrorMsg('')
 
-    await supabase
+    const { error } = await supabase
       .from('merchants')
       .update({
         ...form,
@@ -46,57 +47,87 @@ export default function LegalStep({
       })
       .eq('id', merchantId)
 
-    setSaving(false)
+    if (error) {
+      setErrorMsg(error.message)
+      setSaving(false)
+      return
+    }
 
-    setStep(3) // 🔥 pindah ke Step 3 TANPA reload
+    setSaving(false)
+    setStep(3)
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">PIC Name</span>
+          <input
+            name="pic_name"
+            placeholder="Nama penanggung jawab"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            onChange={handleChange}
+          />
+        </label>
 
-      <input
-        name="pic_name"
-        placeholder="PIC Name"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">PIC Position</span>
+          <input
+            name="pic_position"
+            placeholder="Founder / Director / Manager"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            onChange={handleChange}
+          />
+        </label>
+      </div>
 
-      <input
-        name="pic_position"
-        placeholder="PIC Position"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">KTP Number</span>
+          <input
+            name="ktp_number"
+            placeholder="Nomor KTP penanggung jawab"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            onChange={handleChange}
+          />
+        </label>
 
-      <input
-        name="ktp_number"
-        placeholder="KTP Number"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">NPWP Personal</span>
+          <input
+            name="npwp_personal"
+            placeholder="Opsional jika tersedia"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            onChange={handleChange}
+          />
+        </label>
+      </div>
 
-      <input
-        name="npwp_personal"
-        placeholder="NPWP Personal"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <label className="space-y-2">
+        <span className="text-sm font-semibold text-slate-700">NPWP Company</span>
+        <input
+          name="npwp_company"
+          placeholder="Nomor NPWP badan usaha"
+          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+          onChange={handleChange}
+        />
+      </label>
 
-      <input
-        name="npwp_company"
-        placeholder="NPWP Company"
-        className="w-full border p-2"
-        onChange={handleChange}
-      />
+      <div className="rounded-[24px] border border-orange-100 bg-[#fff9f2] px-5 py-4 text-sm leading-7 text-slate-600">
+        Gunakan data identitas yang sama dengan dokumen upload agar admin dapat memverifikasi tanpa revisi tambahan.
+      </div>
 
-      <button
-        onClick={handleNext}
-        disabled={saving}
-        className="bg-black text-white px-6 py-2"
-      >
-        {saving ? 'Saving...' : 'Next'}
-      </button>
+      <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
+        {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : <div />}
 
+        <button
+          onClick={handleNext}
+          disabled={saving}
+          className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          {saving ? 'Saving...' : 'Continue to Banking Details'}
+        </button>
+      </div>
     </div>
   )
 }

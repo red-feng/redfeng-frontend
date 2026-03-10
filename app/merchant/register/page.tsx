@@ -11,42 +11,68 @@ export default function MerchantRegister() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
   const handleRegister = async () => {
-  setLoading(true)
+    setLoading(true)
+    setErrorMsg("")
 
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  })
+    const normalizedEmail = email.trim().toLowerCase()
+    if (!normalizedEmail || !password) {
+      setErrorMsg("Email dan password wajib diisi.")
+      setLoading(false)
+      return
+    }
 
-  if (error) {
-    alert(error.message)
-    setLoading(false)
-    return
-  }
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+    })
 
-  const user = data.user
+    if (error) {
+      setErrorMsg(error.message)
+      setLoading(false)
+      return
+    }
 
-  if (user) {
-    // insert profile
-    await supabase.from("profiles").insert({
+    const user = data.user
+    if (!user) {
+      setErrorMsg("User merchant gagal dibuat. Coba ulangi.")
+      setLoading(false)
+      return
+    }
+
+    const { error: profileError } = await supabase.from("profiles").upsert({
       id: user.id,
       role: "merchant",
     })
 
-    // create merchant draft
-    await supabase.from("merchants").insert({
-      user_id: user.id,
-      verification_status: "draft",
-      onboarding_step: 1,
-      onboarding_completed: false
-    })
-  }
+    if (profileError) {
+      setErrorMsg(profileError.message)
+      setLoading(false)
+      return
+    }
 
-  router.push("/merchant/onboarding")
-  setLoading(false)
-}
+    const { error: merchantError } = await supabase.from("merchants").upsert(
+      {
+        user_id: user.id,
+        email: normalizedEmail,
+        verification_status: "draft",
+        onboarding_step: 1,
+        onboarding_completed: false,
+      },
+      { onConflict: "user_id" },
+    )
+
+    if (merchantError) {
+      setErrorMsg(merchantError.message)
+      setLoading(false)
+      return
+    }
+
+    router.push("/merchant/onboarding")
+    setLoading(false)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -77,6 +103,10 @@ export default function MerchantRegister() {
         >
           {loading ? "Loading..." : "Register"}
         </button>
+
+        {errorMsg ? (
+          <p className="mt-4 text-sm text-red-600">{errorMsg}</p>
+        ) : null}
       </div>
     </div>
   )
