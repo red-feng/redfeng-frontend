@@ -103,7 +103,7 @@ export default function PrivacyPage() {
                 </p>
                 <p>
                   This policy applies to customer-facing activity on{" "}
-                  <span className="font-semibold text-slate-950">app.redfeng.co</span>.
+                  <span className="font-semibold text-slate-950">redfeng.co</span>.
                 </p>
               </div>
             </div>

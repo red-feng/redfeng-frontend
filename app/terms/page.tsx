@@ -103,7 +103,7 @@ export default function TermsPage() {
                 </p>
                 <p>
                   These terms govern customer use of{" "}
-                  <span className="font-semibold text-slate-950">app.redfeng.co</span>.
+                  <span className="font-semibold text-slate-950">redfeng.co</span>.
                 </p>
               </div>
             </div>
