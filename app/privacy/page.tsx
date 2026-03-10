@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | RedFeng Travel",
-  description: "Privacy Policy for RedFeng Travel customer accounts and services.",
+  title: "Privacy Policy | Red Feng",
+  description: "Privacy Policy for Red Feng customer accounts and services.",
   alternates: {
     canonical: "/privacy",
   },
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "Overview",
-    body: "RedFeng Travel collects and processes personal information to provide account access, booking services, customer support, fraud prevention, and service improvements across app.redfeng.co and connected customer journeys.",
+    body: "Red Feng collects and processes personal information to provide account access, booking services, customer support, fraud prevention, and service improvements across app.redfeng.co and connected customer journeys.",
   },
   {
     title: "Information We Collect",
@@ -55,13 +55,13 @@ export default function PrivacyPage() {
         <section className="grid gap-8 bg-[linear-gradient(145deg,#a84316_0%,#d86118_30%,#ef7f1a_58%,#f6b14f_100%)] px-6 py-8 text-white md:grid-cols-[1.1fr_0.9fr] md:px-10 md:py-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
-              RedFeng Travel
+              Red Feng
             </p>
             <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight md:text-5xl">
               Privacy Policy for customer accounts, bookings, and connected services.
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-7 text-orange-50/90 md:text-base">
-              This page explains what data RedFeng collects, why it is used, how long it may be
+              This page explains what data Red Feng collects, why it is used, how long it may be
               retained, and how customers can request access or deletion.
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
                 <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700">
                   Privacy Policy
                 </div>
-                <h2 className="mt-4 text-3xl font-semibold text-slate-950">How RedFeng handles personal data</h2>
+                <h2 className="mt-4 text-3xl font-semibold text-slate-950">How Red Feng handles personal data</h2>
               </div>
               <Link href="https://redfeng.co/" className="text-sm font-semibold text-orange-700 hover:text-orange-800">
                 Back to home

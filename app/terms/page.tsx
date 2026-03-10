@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 export const metadata: Metadata = {
-  title: "Terms of Service | RedFeng Travel",
-  description: "Terms of Service for using RedFeng Travel websites and customer accounts.",
+  title: "Terms of Service | Red Feng",
+  description: "Terms of Service for using Red Feng websites and customer accounts.",
   alternates: {
     canonical: "/terms",
   },
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const sections = [
   {
     title: "Acceptance of Terms",
-    body: "By accessing or using RedFeng Travel services, you agree to these Terms of Service and any related policies published on this website.",
+    body: "By accessing or using Red Feng services, you agree to these Terms of Service and any related policies published on this website.",
   },
   {
     title: "Accounts",
@@ -32,7 +32,7 @@ const sections = [
   },
   {
     title: "Limitation of Liability",
-    body: "To the extent permitted by law, RedFeng Travel is not liable for indirect, incidental, special, or consequential damages resulting from use of the service or third-party offerings.",
+    body: "To the extent permitted by law, Red Feng is not liable for indirect, incidental, special, or consequential damages resulting from use of the service or third-party offerings.",
   },
   {
     title: "Changes",
@@ -55,14 +55,14 @@ export default function TermsPage() {
         <section className="grid gap-8 bg-[linear-gradient(145deg,#a84316_0%,#d86118_30%,#ef7f1a_58%,#f6b14f_100%)] px-6 py-8 text-white md:grid-cols-[1.1fr_0.9fr] md:px-10 md:py-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
-              RedFeng Travel
+              Red Feng
             </p>
             <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight md:text-5xl">
-              Terms of Service for using RedFeng customer accounts and booking flows.
+              Terms of Service for using Red Feng customer accounts and booking flows.
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-7 text-orange-50/90 md:text-base">
               These terms define account responsibilities, booking limitations, acceptable use,
-              and the boundaries of RedFeng Travel services and third-party integrations.
+              and the boundaries of Red Feng services and third-party integrations.
             </p>
           </div>
 

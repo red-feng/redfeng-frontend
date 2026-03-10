@@ -117,12 +117,12 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
     mode === "login" ? "Akses perjalanan premium dalam satu akun" : "Buat akun untuk booking lebih cepat";
   const showcaseCopy =
     mode === "login"
-      ? "Masuk sekali untuk melanjutkan checkout, melihat booking, dan terhubung ke pengalaman RedFeng di website utama."
+      ? "Masuk sekali untuk melanjutkan checkout, melihat booking, dan terhubung ke pengalaman Red Feng di website utama."
       : "Daftar dengan akun sosial untuk menyimpan detail traveler, memantau booking, dan mempermudah transaksi berikutnya.";
   const trustItems = [
     "Kurasi paket dan merchant terverifikasi",
     "Checkout cepat untuk perjalanan privat dan grup",
-    "Sinkron dengan akun customer RedFeng",
+    "Sinkron dengan akun customer Red Feng",
   ];
 
   const handleProviderAuth = async (provider: AuthProvider) => {
@@ -160,7 +160,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
-                  RedFeng Travel
+                  Red Feng
                 </p>
                 <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight md:text-5xl">
                   {showcaseTitle}
@@ -204,7 +204,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">
-                    Why customers use RedFeng
+                    Why customers use Red Feng
                   </p>
                   <p className="mt-2 text-xl font-semibold">
                     Premium travel, checkout discipline, cleaner account access.

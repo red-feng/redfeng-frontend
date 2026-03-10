@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.redfeng.co"),
-  title: "RedFeng Travel",
-  description: "RedFeng Digital Travel Ecosystem",
+  title: "Red Feng",
+  description: "The Digital Travel Ecosystem",
   alternates: {
     canonical: "/",
   },
