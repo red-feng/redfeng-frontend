@@ -15,9 +15,9 @@ const adminMenus = [
     tone: "from-sky-500 to-cyan-500",
   },
   {
-    label: "Payout Approvals",
-    href: "/admin/payouts",
-    description: "Approve dan selesaikan pencairan merchant setelah pickup tervalidasi.",
+    label: "Finance Dashboard",
+    href: "/finance/dashboard",
+    description: "Masuk ke workspace finance untuk approval payout merchant.",
     tone: "from-emerald-500 to-lime-500",
   },
 ]
