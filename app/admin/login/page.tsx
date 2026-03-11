@@ -1,7 +1,7 @@
 'use client'
 
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
@@ -12,51 +12,7 @@ export default function AdminLogin() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const [checkingSession, setCheckingSession] = useState(true)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    let active = true
-
-    const checkExistingSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!active) return
-
-      if (!session?.user) {
-        setCheckingSession(false)
-        return
-      }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle()
-
-      if (!active) return
-
-      if (profile?.role === "admin" || profile?.role === "superadmin") {
-        router.replace("/admin/dashboard")
-        return
-      }
-
-      if (profile?.role === "merchant") {
-        router.replace("/merchant/dashboard")
-        return
-      }
-
-      setCheckingSession(false)
-    }
-
-    void checkExistingSession()
-
-    return () => {
-      active = false
-    }
-  }, [router, supabase])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -114,19 +70,6 @@ export default function AdminLogin() {
     setError("Akun ini tidak memiliki akses ke area admin.")
     await supabase.auth.signOut()
     setLoading(false)
-  }
-
-  if (checkingSession) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fff8f1_0%,#f6f0e8_100%)] px-4">
-        <div className="rounded-[28px] border border-orange-100 bg-white px-8 py-10 text-center shadow-[0_20px_60px_rgba(146,64,14,0.12)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-orange-700">
-            Admin Access
-          </p>
-          <p className="mt-4 text-base text-slate-600">Memeriksa sesi login...</p>
-        </div>
-      </main>
-    )
   }
 
   return (
