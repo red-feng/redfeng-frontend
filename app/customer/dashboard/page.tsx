@@ -161,25 +161,25 @@ export default async function CustomerDashboardPage() {
       label: "Total Booking",
       value: customerBookings.length,
       note: "Riwayat seluruh transaksi Anda",
-      tone: "from-sky-500 to-cyan-400",
+      tone: "from-amber-500 to-orange-400",
     },
     {
       label: "Trip Mendatang",
       value: upcomingTrips.length,
       note: "Booking dengan tanggal wisata terdekat",
-      tone: "from-emerald-500 to-lime-400",
+      tone: "from-orange-500 to-amber-300",
     },
     {
       label: "Menunggu Aksi Anda",
       value: waitingCustomerAction.length,
       note: "Booking yang perlu konfirmasi customer",
-      tone: "from-amber-500 to-orange-400",
+      tone: "from-orange-600 to-red-400",
     },
     {
       label: "Dana Diproses RedFeng",
       value: readyForPayout.length,
       note: "Escrow siap diteruskan ke merchant",
-      tone: "from-violet-500 to-fuchsia-400",
+      tone: "from-lime-500 to-emerald-400",
     },
   ]
 
@@ -217,18 +217,18 @@ export default async function CustomerDashboardPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#eef6ff_100%)] px-6 py-8 md:px-8 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_28%,#0ea5e9_62%,#f97316_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(15,23,42,0.18)] sm:px-10 lg:px-12">
+        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(146,64,14,0.18)] sm:px-10 lg:px-12">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
-              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-sky-50">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Customer Travel Hub
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
                 Kelola booking, pembayaran, dan progress trip Anda dalam satu workspace.
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-sky-50/92">
+              <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
                 Pantau status transaksi, alur escrow RedFeng, progres pickup merchant, dan akses cepat
                 ke detail trip tanpa perlu lompat antar halaman.
               </p>
@@ -236,29 +236,29 @@ export default async function CustomerDashboardPage() {
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 {quickSignals.map((signal) => (
                   <div key={signal.label} className="rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-sky-100/85">{signal.label}</p>
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/85">{signal.label}</p>
                     <p className="mt-3 text-3xl font-semibold text-white">{signal.value}</p>
-                    <p className="mt-3 text-sm leading-6 text-sky-50/85">{signal.note}</p>
+                    <p className="mt-3 text-sm leading-6 text-orange-50/85">{signal.note}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="grid gap-4">
-              <div className="rounded-[28px] border border-white/18 bg-slate-950/18 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-sky-100/80">Travel snapshot</p>
+              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Travel snapshot</p>
                 <p className="mt-4 text-3xl font-semibold text-white">{customerBookings.length}</p>
-                <p className="mt-2 text-sm leading-7 text-sky-50/85">
+                <p className="mt-2 text-sm leading-7 text-orange-50/85">
                   Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.
                 </p>
               </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-sky-100/80">Quick actions</p>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
                 <div className="mt-5 grid gap-3">
                   <Link
                     href="/packages"
-                    className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-sky-50"
+                    className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-orange-50"
                   >
                     Jelajahi Paket
                   </Link>
@@ -278,21 +278,21 @@ export default async function CustomerDashboardPage() {
           {summaryCards.map((card) => (
             <article
               key={card.label}
-              className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]"
+              className="rounded-[28px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
             >
               <div className={`h-2 w-20 rounded-full bg-gradient-to-r ${card.tone}`} />
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
-              <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
+              <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+              <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+              <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
             </article>
           ))}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:p-7">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
+                <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
                   Booking Feed
                 </span>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Booking terbaru Anda</h2>
@@ -308,7 +308,7 @@ export default async function CustomerDashboardPage() {
                 {error.message ? <div className="mt-2 text-xs text-rose-600">Detail: {error.message}</div> : null}
               </div>
             ) : customerBookings.length === 0 ? (
-              <div className="mt-6 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-6 text-sm text-slate-600">
+              <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-6 text-sm text-slate-600">
                 Belum ada booking. Mulai dari jelajahi paket, lanjut checkout, lalu semua progres trip akan muncul di sini.
               </div>
             ) : (
@@ -320,7 +320,7 @@ export default async function CustomerDashboardPage() {
                   return (
                     <article
                       key={booking.id}
-                      className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-5 transition hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)]"
+                      className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
@@ -344,15 +344,15 @@ export default async function CustomerDashboardPage() {
                       </div>
 
                       <div className="mt-5 grid gap-4 md:grid-cols-3">
-                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                        <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Tanggal Wisata</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
                         </div>
-                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                        <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total Transaksi</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</p>
                         </div>
-                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                        <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Pickup</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking)}</p>
                         </div>
@@ -393,14 +393,14 @@ export default async function CustomerDashboardPage() {
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm">
               <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
                 Customer Guide
               </span>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Checklist aksi customer</h2>
               <div className="mt-5 space-y-4">
                 {customerChecklist.map((item, index) => (
-                  <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                  <div key={item.title} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
                     <p className="text-sm font-semibold text-slate-900">
                       {index + 1}. {item.title}
                     </p>
@@ -410,19 +410,19 @@ export default async function CustomerDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Payment overview</p>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Ringkasan pembayaran</h2>
               <div className="mt-5 space-y-4 text-sm text-slate-600">
-                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
                   <span>Menunggu pembayaran</span>
                   <span className="font-semibold text-slate-900">{pendingPayments.length}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
                   <span>Menunggu aksi customer</span>
                   <span className="font-semibold text-slate-900">{waitingCustomerAction.length}</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
                   <span>Siap payout ke merchant</span>
                   <span className="font-semibold text-slate-900">{readyForPayout.length}</span>
                 </div>

@@ -19,7 +19,7 @@ export default async function CustomerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#eef6ff_100%)]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <Link href="/customer/dashboard" className="inline-flex items-center">
