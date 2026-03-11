@@ -14,17 +14,7 @@ const adminMenus = [
     description: "Validasi paket yang siap tayang ke customer.",
     tone: "from-sky-500 to-cyan-500",
   },
-  {
-    label: "Finance Dashboard",
-    href: "/finance/dashboard",
-    description: "Masuk ke workspace finance untuk approval payout merchant.",
-    tone: "from-emerald-500 to-lime-500",
-  },
 ]
-
-function formatMoney(value: number) {
-  return `Rp ${value.toLocaleString("id-ID")}`
-}
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -55,16 +45,6 @@ export default async function AdminDashboard() {
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
   const payoutPendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
-  const payoutProcessingCount = payouts.filter((item) => {
-    const status = normalizeStatus(item.status)
-    return status === "approved" || status === "processing"
-  }).length
-  const payoutPendingNominal = payouts
-    .filter((item) => {
-      const status = normalizeStatus(item.status)
-      return status === "pending" || status === "approved" || status === "processing"
-    })
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   const metricCards = [
     {
@@ -83,9 +63,9 @@ export default async function AdminDashboard() {
       note: "Paket yang sudah lolos review dan siap tayang.",
     },
     {
-      label: "Finance handoff",
-      value: `${payoutPendingCount} req`,
-      note: `${formatMoney(payoutPendingNominal)} outstanding di workspace finance.`,
+      label: "Finance queue",
+      value: String(payoutPendingCount),
+      note: "Snapshot payout pending yang dikelola terpisah di dashboard finance.",
     },
   ]
 
@@ -103,7 +83,7 @@ export default async function AdminDashboard() {
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
                 Dashboard ini merangkum antrean approval utama Red Feng untuk merchant dan package.
-                Workstream payout sekarang dipusatkan di dashboard finance.
+                Dashboard finance berjalan terpisah di area sendiri untuk kebutuhan payout.
               </p>
             </div>
 
@@ -152,7 +132,7 @@ export default async function AdminDashboard() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
               {adminMenus.map((menu) => (
                 <Link
                   key={menu.label}
@@ -174,16 +154,12 @@ export default async function AdminDashboard() {
 
           <div className="grid gap-6">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance handoff</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Payout sekarang ada di finance</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team split</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Admin dan finance terpisah</h2>
               <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
-                <p>Antrean payout approval sudah dipindahkan keluar dari dashboard admin.</p>
-                <p>Admin tetap bisa masuk ke workspace finance lewat kartu `Finance Dashboard` di area workstreams.</p>
-                <p>
-                  Snapshot saat ini: <span className="font-semibold text-slate-950">{payoutPendingCount}</span> request pending,
-                  <span className="font-semibold text-slate-950"> {payoutProcessingCount}</span> sedang diproses,
-                  nominal outstanding <span className="font-semibold text-slate-950">{formatMoney(payoutPendingNominal)}</span>.
-                </p>
+                <p>Dashboard admin sekarang fokus ke approval merchant dan package.</p>
+                <p>Dashboard finance berdiri sendiri di `/finance/dashboard` untuk payout approval.</p>
+                <p>Snapshot payout yang tampil di admin hanya sebagai penanda antrean lintas fungsi.</p>
               </div>
             </div>
 
