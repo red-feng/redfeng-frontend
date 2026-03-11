@@ -48,11 +48,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, user_id, booking_code, customer_name, customer_email, total_amount, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, total_amount, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single()
 
-  if (error || !booking || booking.user_id !== user.id) {
+  if (error || !booking || !user.email || booking.customer_email !== user.email) {
     return <div className="p-10">Booking tidak ditemukan</div>
   }
 

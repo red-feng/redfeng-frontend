@@ -18,14 +18,17 @@ async function getOwnedBooking(bookingId: string) {
   if (!user) {
     return { user: null, booking: null as null, error: "Silakan login terlebih dahulu" }
   }
+  if (!user.email) {
+    return { user, booking: null as null, error: "Akun Anda belum memiliki email" }
+  }
 
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, user_id, package_id, payment_status, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, package_id, customer_email, payment_status, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", bookingId)
     .single()
 
-  if (!booking || booking.user_id !== user.id) {
+  if (!booking || booking.customer_email !== user.email) {
     return { user, booking: null as null, error: "Booking ini bukan milik akun Anda" }
   }
 

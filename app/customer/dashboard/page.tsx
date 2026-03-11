@@ -7,6 +7,7 @@ type BookingRow = {
   id: string
   package_id: string | null
   booking_code: string | null
+  customer_email?: string | null
   pickup_date: string | null
   total_amount: number | null
   payment_status: string | null
@@ -84,15 +85,16 @@ export default async function CustomerDashboardPage() {
   } = await supabase.auth.getUser()
 
   if (!user) return null
+  if (!user.email) return null
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null
   const adminBookingsResult = await adminSupabase
     .from("bookings")
     .select(
-      "id, user_id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      "id, package_id, booking_code, customer_email, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
     )
-    .eq("user_id", user.id)
+    .eq("customer_email", user.email)
 
   bookings = (adminBookingsResult.data as BookingRow[] | null) || null
   error = adminBookingsResult.error
@@ -103,9 +105,9 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, user_id, package_id, booking_code, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_code, customer_email, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
-      .eq("user_id", user.id)
+      .eq("customer_email", user.email)
 
     bookings =
       ((fallbackBookingsResult.data as Omit<BookingRow, "pickup_date">[] | null) || []).map((booking) => ({
@@ -115,7 +117,11 @@ export default async function CustomerDashboardPage() {
     error = fallbackBookingsResult.error
   }
 
-  const customerBookings = (bookings as BookingRow[] | null) || []
+  const customerBookings = ((bookings as BookingRow[] | null) || []).sort((a, b) => {
+    const timeA = a.pickup_date ? new Date(a.pickup_date).getTime() : 0
+    const timeB = b.pickup_date ? new Date(b.pickup_date).getTime() : 0
+    return timeB - timeA
+  })
   const packageIds = [...new Set(customerBookings.map((booking) => booking.package_id).filter(Boolean))]
 
   let packageRows: PackageRow[] | null = []
