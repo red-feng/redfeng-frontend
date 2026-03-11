@@ -194,93 +194,117 @@ export default async function MerchantChatPage({
   ]
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Chat Customer</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Kelola pertanyaan customer dari halaman paket dan komunikasi setelah booking dalam satu inbox.
-        </p>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] p-6 md:p-10">
+      <section className="overflow-hidden rounded-[34px] border border-orange-100 bg-[linear-gradient(135deg,#983108_0%,#f76707_52%,#ffb357_100%)] text-white shadow-[0_28px_80px_rgba(194,65,12,0.24)]">
+        <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_420px] lg:px-10 lg:py-10">
+          <div>
+            <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
+              Merchant Inbox
+            </div>
+            <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
+              Percakapan customer yang siap ditangani dalam satu command center.
+            </h1>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
+              Kelola pertanyaan sebelum booking, follow-up sesudah pembayaran, dan jaga response time
+              merchant dengan inbox yang lebih rapi dan lebih siap untuk operasional OTA.
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Business Snapshot</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {metricCards.map((card) => (
+                  <div key={card.label} className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{card.label}</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{card.value}</p>
+                    <p className="mt-1 text-xs leading-5 text-white/70">{card.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-white/30 bg-white/10 p-5 backdrop-blur-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Inbox Lens</p>
+              <p className="mt-3 text-sm leading-6 text-white/90">
+                Gunakan tab untuk memisahkan lead pre-booking dan percakapan yang sudah terkait transaksi.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href="/merchant/chat?tab=pre"
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    activeTab === "pre"
+                      ? "border-white bg-white text-orange-700"
+                      : "border-white/30 bg-white/10 text-white hover:bg-white/15"
+                  }`}
+                >
+                  Sebelum Booking
+                </Link>
+                <Link
+                  href="/merchant/chat?tab=post"
+                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    activeTab === "post"
+                      ? "border-white bg-white text-orange-700"
+                      : "border-white/30 bg-white/10 text-white hover:bg-white/15"
+                  }`}
+                >
+                  Sesudah Booking
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {roomsError && (
-        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           Gagal memuat ruang chat: {roomsError.message}
         </div>
       )}
 
       {errorMessage && (
-        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="mt-4 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           {errorMessage}
         </div>
       )}
 
       {!bookingLinkReady && (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
           Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.
         </div>
       )}
 
       {!readTrackingReady && (
-        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
           Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.
         </div>
       )}
 
-      <section className="mt-6 grid gap-4 md:grid-cols-3">
-        {metricCards.map((card) => (
-          <div key={card.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{card.label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{card.value}</p>
-            <p className="mt-2 text-xs text-slate-500">{card.note}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/merchant/chat?tab=pre"
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === "pre"
-                ? "bg-slate-900 text-white"
-                : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
-            }`}
-          >
-            Sebelum Booking
-          </Link>
-          <Link
-            href="/merchant/chat?tab=post"
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              activeTab === "post"
-                ? "bg-slate-900 text-white"
-                : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
-            }`}
-          >
-            Sesudah Booking
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4">
+      <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+          <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-slate-900">Daftar Chat</h2>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Customer Rooms</p>
+                <h2 className="mt-2 text-lg font-semibold text-slate-950">Daftar percakapan</h2>
+              </div>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
-                  {unreadCount}
-                </span>
+                <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">{unreadCount} baru</span>
               )}
             </div>
+
             <div className="mt-4 space-y-3">
               {rooms.length === 0 && activeTab === "pre" && (
-                <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
                   Belum ada chat customer dari halaman detail paket.
                 </div>
               )}
               {rooms.length === 0 && activeTab === "post" && (
-                <div className="rounded-[20px] border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-600">
-                  Tab ini siap digunakan. Data sesudah booking akan muncul setelah room chat terhubung ke booking.
+                <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
+                  Tab ini siap digunakan. Percakapan booking akan muncul begitu room terhubung ke transaksi.
                 </div>
               )}
+
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
                 const booking = getBookingInfo(room)
@@ -293,26 +317,26 @@ export default async function MerchantChatPage({
                 return (
                   <div
                     key={room.id}
-                    className={`rounded-[20px] border px-4 py-3 transition ${
+                    className={`rounded-[22px] border px-4 py-4 transition ${
                       room.id === activeRoomId
-                        ? "border-orange-300 bg-orange-50"
-                        : "border-slate-200 bg-white hover:border-slate-300"
+                        ? "border-orange-200 bg-[linear-gradient(135deg,#fff3e8_0%,#ffffff_100%)] shadow-sm"
+                        : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
                     }`}
                   >
                     <Link href={`/merchant/chat?tab=${activeTab}&room_id=${room.id}`} className="block">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-medium text-slate-900">{getCustomerLabel(room)}</p>
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-950">{getCustomerLabel(room)}</p>
                         {hasUnread && (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                          <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
                             Baru
                           </span>
                         )}
                       </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-slate-600">
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
                         Paket: {pkg?.title || "Paket tidak ditemukan"}
                       </p>
                       {room.booking_id && (
-                        <p className="mt-2 text-[11px] text-emerald-700">
+                        <p className="mt-2 text-xs font-medium text-emerald-700">
                           Booking: {booking?.booking_code || room.booking_id}
                         </p>
                       )}
@@ -323,7 +347,7 @@ export default async function MerchantChatPage({
                     {pkg?.slug && (
                       <Link
                         href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                        className="mt-2 inline-block text-xs font-medium text-orange-600 hover:text-orange-700"
+                        className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
                       >
                         Lihat paket
                       </Link>
@@ -334,54 +358,64 @@ export default async function MerchantChatPage({
             </div>
           </aside>
 
-          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Customer</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">
+          <section className="overflow-hidden rounded-[28px] border border-[#f3dbc3] bg-white">
+            <div className="border-b border-[#efe3d1] bg-[linear-gradient(180deg,#fff9f2_0%,#fffefc_100%)] px-5 py-5 lg:px-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Conversation Focus</p>
+                  <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
                     {activeRoom ? getCustomerLabel(activeRoom) : "Pilih ruang chat"}
                   </p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Paket</p>
-                  <p className="mt-1 text-base font-medium text-slate-900">
-                    {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : "Pilih ruang chat"}
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : "Pilih room untuk melihat isi percakapan merchant."}
                   </p>
                   {activeRoom && packageMap.get(activeRoom.package_id)?.slug && (
                     <Link
                       href={`/packages/${encodeURIComponent(packageMap.get(activeRoom.package_id)?.slug || "")}`}
-                      className="mt-2 inline-block text-xs font-medium text-orange-600 hover:text-orange-700"
+                      className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
                     >
                       Lihat detail paket
                     </Link>
                   )}
                 </div>
-                {activeRoom?.booking_id && (
-                  <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Thread booking aktif
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Jenis Thread</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {activeRoom?.booking_id ? "Sesudah booking" : "Sebelum booking"}
+                    </p>
                   </div>
-                )}
+                  <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {activeRoom?.booking_id ? "Transaksi aktif" : "Lead / inquiry"}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="h-[56vh] space-y-3 overflow-y-auto bg-slate-50/50 px-5 py-4">
+            <div className="h-[56vh] space-y-4 overflow-y-auto bg-[#fffaf5] px-5 py-5 lg:px-6">
               {messages.length === 0 && (
-                <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
                   Belum ada pesan di ruang chat ini.
                 </div>
               )}
+
               {messages.map((message) => {
                 const mine = message.sender_id === user.id
                 return (
                   <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[80%] rounded-[20px] px-4 py-3 text-sm shadow-sm ${
+                      className={`max-w-[82%] rounded-[24px] px-4 py-3 text-sm shadow-sm ${
                         mine
-                          ? "bg-slate-900 text-white"
-                          : "border border-slate-200 bg-white text-slate-700"
+                          ? "bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] text-white"
+                          : "border border-[#eadfce] bg-white text-slate-700"
                       }`}
                     >
-                      <p className="whitespace-pre-line leading-6">{message.message}</p>
-                      <p className={`mt-2 text-[11px] ${mine ? "text-slate-300" : "text-slate-400"}`}>
+                      <p className="whitespace-pre-line leading-7">{message.message}</p>
+                      <p className={`mt-2 text-[11px] ${mine ? "text-white/70" : "text-slate-400"}`}>
                         {formatDateTime(message.created_at)}
                       </p>
                     </div>
@@ -390,7 +424,7 @@ export default async function MerchantChatPage({
               })}
             </div>
 
-            <form action={sendMerchantChatMessage} className="border-t border-slate-200 bg-white p-4">
+            <form action={sendMerchantChatMessage} className="border-t border-[#efe3d1] bg-white px-5 py-4 lg:px-6">
               <input type="hidden" name="room_id" value={activeRoomId} />
               <input type="hidden" name="tab" value={activeTab} />
               <div className="flex gap-3">
@@ -399,12 +433,12 @@ export default async function MerchantChatPage({
                   required
                   disabled={!activeRoomId}
                   placeholder="Tulis balasan untuk customer..."
-                  className="h-24 flex-1 rounded-[20px] border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  className="h-24 flex-1 rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
                 <button
                   type="submit"
                   disabled={!activeRoomId}
-                  className="self-end rounded-[20px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="self-end rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                 >
                   Kirim
                 </button>
