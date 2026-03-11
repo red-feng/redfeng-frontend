@@ -31,7 +31,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
       } = await supabase.auth.getSession()
 
       if (!session?.user) {
-        setAccountHref("/access")
+        setAccountHref("/login")
         setAccountLabel("Login")
         setIsAuthenticated(false)
         return
@@ -96,14 +96,8 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
 
           <div className="flex items-center gap-5">
             <Link
-              href="/access"
-              className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 transition hover:text-orange-600 lg:inline-flex"
-            >
-              Portal
-            </Link>
-            <Link
               href="/staff"
-              className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 transition hover:text-orange-600 xl:inline-flex"
+              className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 transition hover:text-orange-600 lg:inline-flex"
             >
               Admin
             </Link>
