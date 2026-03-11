@@ -27,6 +27,15 @@ type ReviewRow = {
   rating: number | null
 }
 
+type PeriodKey = "7d" | "30d" | "90d" | "6m"
+
+const periodOptions: { key: PeriodKey; label: string; days: number }[] = [
+  { key: "7d", label: "7 hari", days: 7 },
+  { key: "30d", label: "30 hari", days: 30 },
+  { key: "90d", label: "90 hari", days: 90 },
+  { key: "6m", label: "6 bulan", days: 180 },
+]
+
 function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
 }
@@ -94,7 +103,41 @@ function findMostCommonStatus(bookings: StatsBookingRow[]) {
   return topStatus || "-"
 }
 
-export default async function MerchantStatisticsPage() {
+function resolvePeriod(raw: string | string[] | undefined): PeriodKey {
+  const value = Array.isArray(raw) ? raw[0] : raw
+  return periodOptions.some((option) => option.key === value) ? (value as PeriodKey) : "30d"
+}
+
+function isWithinDays(dateStr: string | null | undefined, days: number, endDate: Date) {
+  if (!dateStr) return false
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return false
+  const start = new Date(endDate)
+  start.setHours(23, 59, 59, 999)
+  start.setDate(start.getDate() - (days - 1))
+  start.setHours(0, 0, 0, 0)
+  return date >= start && date <= endDate
+}
+
+function compareDelta(current: number, previous: number) {
+  if (previous === 0 && current === 0) return { label: "stabil", tone: "text-slate-500" }
+  if (previous === 0) return { label: "+100%", tone: "text-emerald-700" }
+  const delta = ((current - previous) / previous) * 100
+  const tone = delta >= 0 ? "text-emerald-700" : "text-rose-700"
+  const prefix = delta >= 0 ? "+" : ""
+  return { label: `${prefix}${delta.toFixed(1)}%`, tone }
+}
+
+export default async function MerchantStatisticsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
+}) {
+  const params = (await searchParams) || {}
+  const selectedPeriod = resolvePeriod(params.period)
+  const selectedPeriodMeta = periodOptions.find((option) => option.key === selectedPeriod) || periodOptions[1]
+  const previousEndDate = new Date()
+  previousEndDate.setDate(previousEndDate.getDate() - selectedPeriodMeta.days)
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
   const {
@@ -165,31 +208,42 @@ export default async function MerchantStatisticsPage() {
   const error = packagesError || analyticsState.bookingsError
   const analyticsWarnings = [analyticsState.packageViewsError, analyticsState.reviewsError].filter(Boolean)
 
-  const revenueBookings = bookings.filter(isRevenueBooking)
-  const totalBookings = bookings.length
+  const filteredBookings = bookings.filter((booking) => isWithinDays(booking.created_at, selectedPeriodMeta.days, new Date()))
+  const filteredViews = packageViews.filter((view) => isWithinDays(view.viewed_at, selectedPeriodMeta.days, new Date()))
+  const filteredReviews = reviews
+
+  const previousBookings = bookings.filter((booking) => isWithinDays(booking.created_at, selectedPeriodMeta.days, previousEndDate))
+  const previousViews = packageViews.filter((view) => isWithinDays(view.viewed_at, selectedPeriodMeta.days, previousEndDate))
+
+  const revenueBookings = filteredBookings.filter(isRevenueBooking)
+  const totalBookings = filteredBookings.length
   const totalRevenue = revenueBookings.reduce((sum, booking) => sum + (booking.total_amount ?? 0), 0)
-  const totalVisitors = packageViews.length
+  const totalVisitors = filteredViews.length
   const conversionRate = totalVisitors > 0 ? (totalBookings / totalVisitors) * 100 : 0
 
-  const pendingPaymentCount = bookings.filter((booking) => {
+  const pendingPaymentCount = filteredBookings.filter((booking) => {
     const status = normalizeStatus(booking.payment_status)
     return status === "pending" || status === "dp_paid"
   }).length
 
-  const confirmedTripCount = bookings.filter((booking) => {
+  const confirmedTripCount = filteredBookings.filter((booking) => {
     const status = normalizeStatus(booking.booking_status)
     return status === "confirmed" || status === "pickup_confirmed" || status === "completed"
   }).length
 
-  const cancelledBookingCount = bookings.filter(
+  const cancelledBookingCount = filteredBookings.filter(
     (booking) => normalizeStatus(booking.booking_status) === "cancelled",
   ).length
 
   const averageOrderValue = revenueBookings.length > 0 ? totalRevenue / revenueBookings.length : 0
   const averageRating =
-    reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / reviews.length
+    filteredReviews.length > 0
+      ? filteredReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / filteredReviews.length
       : 0
+
+  const activePackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
+  const draftPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
+  const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
 
   const packageStats = new Map<
     string,
@@ -206,7 +260,7 @@ export default async function MerchantStatisticsPage() {
     })
   }
 
-  for (const booking of bookings) {
+  for (const booking of filteredBookings) {
     const packageId = booking.package_id || booking.id
     const packageTitle = packageStats.get(packageId)?.title || "Paket tidak ditemukan"
     const current = packageStats.get(packageId) || {
@@ -226,7 +280,7 @@ export default async function MerchantStatisticsPage() {
     packageStats.set(packageId, current)
   }
 
-  for (const view of packageViews) {
+  for (const view of filteredViews) {
     const current = packageStats.get(view.package_id) || {
       title: "Paket tidak ditemukan",
       bookings: 0,
@@ -251,6 +305,13 @@ export default async function MerchantStatisticsPage() {
     })
     .slice(0, 5)
 
+  const topViewedPackage = Array.from(packageStats.values()).sort((a, b) => b.views - a.views)[0] || null
+  const lowConversionHighViewPackage =
+    Array.from(packageStats.values())
+      .filter((pkg) => pkg.views >= 3 && pkg.bookings === 0)
+      .sort((a, b) => b.views - a.views)[0] || null
+  const packagesWithoutViews = Array.from(packageStats.values()).filter((pkg) => pkg.views === 0).length
+
   const now = new Date()
   const monthBuckets = Array.from({ length: 6 }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1)
@@ -264,7 +325,7 @@ export default async function MerchantStatisticsPage() {
   })
   const bucketMap = new Map(monthBuckets.map((bucket) => [bucket.key, bucket]))
 
-  for (const booking of bookings) {
+  for (const booking of filteredBookings) {
     if (!booking.created_at) continue
     const date = new Date(booking.created_at)
     if (Number.isNaN(date.getTime())) continue
@@ -276,7 +337,7 @@ export default async function MerchantStatisticsPage() {
     }
   }
 
-  for (const view of packageViews) {
+  for (const view of filteredViews) {
     if (!view.viewed_at) continue
     const date = new Date(view.viewed_at)
     if (Number.isNaN(date.getTime())) continue
@@ -290,7 +351,7 @@ export default async function MerchantStatisticsPage() {
     {
       label: "Total revenue",
       value: formatMoney(totalRevenue),
-      note: `${revenueBookings.length} booking terkonversi menjadi revenue`,
+      note: `${revenueBookings.length} booking menghasilkan revenue dalam ${selectedPeriodMeta.label}`,
     },
     {
       label: "Total booking",
@@ -309,17 +370,26 @@ export default async function MerchantStatisticsPage() {
     },
   ]
 
+  const metricDeltas = {
+    revenue: compareDelta(
+      totalRevenue,
+      previousBookings.filter(isRevenueBooking).reduce((sum, booking) => sum + (booking.total_amount ?? 0), 0),
+    ),
+    bookings: compareDelta(totalBookings, previousBookings.length),
+    visitors: compareDelta(totalVisitors, previousViews.length),
+  }
+
   const healthCards = [
     { label: "Menunggu pembayaran", value: String(pendingPaymentCount), tone: "text-amber-700" },
     { label: "Trip terkonfirmasi", value: String(confirmedTripCount), tone: "text-emerald-700" },
     { label: "Booking dibatalkan", value: String(cancelledBookingCount), tone: "text-rose-700" },
     {
       label: "Rating customer",
-      value: reviews.length > 0 ? averageRating.toFixed(1) : "-",
+      value: filteredReviews.length > 0 ? averageRating.toFixed(1) : "-",
       tone: "text-orange-700",
     },
   ]
-  const dominantBookingStatus = titleCaseStatus(findMostCommonStatus(bookings))
+  const dominantBookingStatus = titleCaseStatus(findMostCommonStatus(filteredBookings))
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
@@ -346,13 +416,28 @@ export default async function MerchantStatisticsPage() {
                   {merchant.brand_name || merchant.company_name || "Merchant"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
-                    Statistik ini dihitung dari booking, package views, dan review yang terkait langsung dengan
-                    merchant Anda.
-                  </p>
-                </div>
+                  Statistik periode {selectedPeriodMeta.label.toLowerCase()} ini dihitung dari booking, package
+                  views, dan review yang terkait langsung dengan merchant Anda.
+                </p>
+              </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-50/80">
+                  {periodOptions.map((option) => (
+                    <Link
+                      key={option.key}
+                      href={`/merchant/statistik?period=${option.key}`}
+                      className={`rounded-full border px-3 py-2 transition ${
+                        option.key === selectedPeriod
+                          ? "border-white/40 bg-white/15 text-white"
+                          : "border-white/18 bg-white/5 text-orange-50/75 hover:bg-white/10"
+                      }`}
+                    >
+                      {option.label}
+                    </Link>
+                  ))}
+                </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Link
                     href="/merchant/paket"
@@ -393,8 +478,46 @@ export default async function MerchantStatisticsPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
                   <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
+                  {card.label === "Total revenue" ? (
+                    <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.revenue.tone}`}>
+                      vs periode sebelumnya {metricDeltas.revenue.label}
+                    </p>
+                  ) : null}
+                  {card.label === "Total booking" ? (
+                    <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.bookings.tone}`}>
+                      vs periode sebelumnya {metricDeltas.bookings.label}
+                    </p>
+                  ) : null}
+                  {card.label === "Conversion rate" ? (
+                    <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.visitors.tone}`}>
+                      trafik paket {metricDeltas.visitors.label}
+                    </p>
+                  ) : null}
                 </article>
               ))}
+            </section>
+
+            <section className="grid gap-4 xl:grid-cols-4">
+              <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Paket aktif</p>
+                <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{activePackages}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">Listing siap jual yang bisa langsung menerima booking.</p>
+              </article>
+              <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Draft paket</p>
+                <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{draftPackages}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">Paket belum selesai yang masih bisa dioptimasi sebelum diajukan.</p>
+              </article>
+              <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Pending review</p>
+                <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{pendingPackages}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">Paket yang sudah dikirim dan masih menunggu approval admin.</p>
+              </article>
+              <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Tanpa views</p>
+                <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{packagesWithoutViews}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">Paket yang belum tersentuh trafik pada periode yang dipilih.</p>
+              </article>
             </section>
 
             <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -482,6 +605,32 @@ export default async function MerchantStatisticsPage() {
                     ))}
                   </div>
                 </div>
+
+                <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                  <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
+                    Package insight
+                  </span>
+                  <div className="mt-5 space-y-4 text-sm text-slate-600">
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Paket paling dilihat</p>
+                      <p className="mt-2 font-semibold text-slate-900">
+                        {topViewedPackage ? topViewedPackage.title : "Belum ada trafik paket"}
+                      </p>
+                      <p className="mt-1">{topViewedPackage ? `${topViewedPackage.views} views` : "Dorong trafik dari promo atau SEO."}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Perlu optimasi conversion</p>
+                      <p className="mt-2 font-semibold text-slate-900">
+                        {lowConversionHighViewPackage ? lowConversionHighViewPackage.title : "Belum ada kandidat utama"}
+                      </p>
+                      <p className="mt-1">
+                        {lowConversionHighViewPackage
+                          ? `${lowConversionHighViewPackage.views} views tanpa booking pada periode ini.`
+                          : "Saat trafik sudah cukup, paket dengan views tinggi tanpa booking akan muncul di sini."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </aside>
             </section>
 
@@ -540,19 +689,25 @@ export default async function MerchantStatisticsPage() {
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">Optimasi paket dengan view tinggi</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Jika view tinggi tapi conversion rendah, periksa harga, foto, itinerary, dan CTA paket.
+                    {lowConversionHighViewPackage
+                      ? `${lowConversionHighViewPackage.title} punya trafik tinggi tetapi belum menghasilkan booking. Periksa harga, foto, itinerary, dan CTA paket.`
+                      : "Jika view tinggi tapi conversion rendah, periksa harga, foto, itinerary, dan CTA paket."}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">Turunkan pembayaran pending</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Booking dengan status pending atau dp paid perlu follow up agar funnel tidak bocor.
+                    {pendingPaymentCount > 0
+                      ? `${pendingPaymentCount} booking masih pending atau dp paid. Follow up agar funnel tidak bocor.`
+                      : "Belum ada pembayaran pending pada periode ini. Jaga kecepatan follow up saat booking baru masuk."}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">Jaga rating merchant</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Rating customer memengaruhi trust. Fokus pada pengalaman trip dan respons cepat ke customer.
+                    {filteredReviews.length > 0
+                      ? `Rating rata-rata saat ini ${averageRating.toFixed(1)}. Fokus pada pengalaman trip dan respons cepat ke customer.`
+                      : "Belum ada review customer. Prioritaskan kualitas trip dan follow up pasca perjalanan agar review mulai terkumpul."}
                   </p>
                 </div>
               </div>
