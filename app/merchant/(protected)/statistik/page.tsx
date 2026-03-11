@@ -8,11 +8,7 @@ type StatsBookingRow = {
   total_amount: number | null
   payment_status: string | null
   booking_status: string | null
-  packages: {
-    id: string
-    title: string | null
-    merchant_id: string | null
-  } | null
+  package_id: string | null
 }
 
 type PackageRow = {
@@ -119,36 +115,55 @@ export default async function MerchantStatisticsPage() {
 
   const [
     { data: packagesData, error: packagesError },
-    { data: bookingsData, error: bookingsError },
-    packageViewsResult,
-    reviewsResult,
   ] = await Promise.all([
     adminSupabase
       .from("packages")
       .select("id, title, status, created_at")
       .eq("merchant_id", merchant.id)
       .order("created_at", { ascending: false }),
-    adminSupabase
-      .from("bookings")
-      .select("id, created_at, total_amount, payment_status, booking_status, packages!inner(id, title, merchant_id)")
-      .eq("packages.merchant_id", merchant.id)
-      .order("created_at", { ascending: false }),
-    adminSupabase
-      .from("package_views")
-      .select("package_id, viewed_at, packages!inner(merchant_id)")
-      .eq("packages.merchant_id", merchant.id),
-    adminSupabase
-      .from("package_reviews")
-      .select("rating, packages!inner(merchant_id)")
-      .eq("packages.merchant_id", merchant.id),
   ])
 
   const packages = (packagesData as PackageRow[] | null) || []
-  const bookings = (bookingsData as StatsBookingRow[] | null) || []
-  const packageViews = packageViewsResult.error ? [] : (packageViewsResult.data as PackageViewRow[] | null) || []
-  const reviews = reviewsResult.error ? [] : (reviewsResult.data as ReviewRow[] | null) || []
-  const error = packagesError || bookingsError
-  const analyticsWarnings = [packageViewsResult.error, reviewsResult.error].filter(Boolean)
+  const packageIds = packages.map((pkg) => pkg.id)
+
+  const emptyAnalyticsState = {
+    bookings: [] as StatsBookingRow[],
+    packageViews: [] as PackageViewRow[],
+    reviews: [] as ReviewRow[],
+    bookingsError: null as { message?: string } | null,
+    packageViewsError: null as { message?: string } | null,
+    reviewsError: null as { message?: string } | null,
+  }
+
+  const analyticsState =
+    packageIds.length === 0
+      ? emptyAnalyticsState
+      : await (async () => {
+          const [{ data: bookingsData, error: bookingsError }, packageViewsResult, reviewsResult] = await Promise.all([
+            adminSupabase
+              .from("bookings")
+              .select("id, created_at, total_amount, payment_status, booking_status, package_id")
+              .in("package_id", packageIds)
+              .order("created_at", { ascending: false }),
+            adminSupabase.from("package_views").select("package_id, viewed_at").in("package_id", packageIds),
+            adminSupabase.from("package_reviews").select("rating").in("package_id", packageIds),
+          ])
+
+          return {
+            bookings: (bookingsData as StatsBookingRow[] | null) || [],
+            packageViews: packageViewsResult.error ? [] : (packageViewsResult.data as PackageViewRow[] | null) || [],
+            reviews: reviewsResult.error ? [] : (reviewsResult.data as ReviewRow[] | null) || [],
+            bookingsError,
+            packageViewsError: packageViewsResult.error,
+            reviewsError: reviewsResult.error,
+          }
+        })()
+
+  const bookings = analyticsState.bookings
+  const packageViews = analyticsState.packageViews
+  const reviews = analyticsState.reviews
+  const error = packagesError || analyticsState.bookingsError
+  const analyticsWarnings = [analyticsState.packageViewsError, analyticsState.reviewsError].filter(Boolean)
 
   const revenueBookings = bookings.filter(isRevenueBooking)
   const totalBookings = bookings.length
@@ -192,8 +207,8 @@ export default async function MerchantStatisticsPage() {
   }
 
   for (const booking of bookings) {
-    const packageId = booking.packages?.id || booking.id
-    const packageTitle = booking.packages?.title || "Paket tidak ditemukan"
+    const packageId = booking.package_id || booking.id
+    const packageTitle = packageStats.get(packageId)?.title || "Paket tidak ditemukan"
     const current = packageStats.get(packageId) || {
       title: packageTitle,
       bookings: 0,
