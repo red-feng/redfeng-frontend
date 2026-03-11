@@ -3,6 +3,7 @@ import Link from "next/link"
 const adminMenus = [
   { label: "Merchant Approvals", href: "/admin/merchants", available: true },
   { label: "Package Approvals", href: "/admin/packages", available: true },
+  { label: "Payout Approvals", href: "/admin/payouts", available: true },
   { label: "Support", href: "", available: false },
 ]
 
