@@ -87,30 +87,32 @@ export default async function CustomerDashboardPage() {
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null
-
-  const customerBookingsQuery = supabase
+  const adminBookingsResult = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      "id, user_id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
     )
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
 
-  const customerBookingsResult = await customerBookingsQuery
-  bookings = (customerBookingsResult.data as BookingRow[] | null) || null
-  error = customerBookingsResult.error
+  bookings = (adminBookingsResult.data as BookingRow[] | null) || null
+  error = adminBookingsResult.error
 
+  // Some production environments lag schema updates. Fall back to a reduced
+  // query so the dashboard still renders instead of failing entirely.
   if (error) {
-    const adminBookingsResult = await adminSupabase
+    const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, user_id, package_id, booking_code, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
 
-    bookings = (adminBookingsResult.data as BookingRow[] | null) || null
-    error = adminBookingsResult.error
+    bookings =
+      ((fallbackBookingsResult.data as Omit<BookingRow, "pickup_date">[] | null) || []).map((booking) => ({
+        ...booking,
+        pickup_date: null,
+      }))
+    error = fallbackBookingsResult.error
   }
 
   const customerBookings = (bookings as BookingRow[] | null) || []
@@ -119,21 +121,11 @@ export default async function CustomerDashboardPage() {
   let packageRows: PackageRow[] | null = []
 
   if (packageIds.length) {
-    const customerPackagesResult = await supabase
+    const adminPackagesResult = await adminSupabase
       .from("packages")
       .select("id, title, slug")
       .in("id", packageIds)
-
-    if (customerPackagesResult.error) {
-      const adminPackagesResult = await adminSupabase
-        .from("packages")
-        .select("id, title, slug")
-        .in("id", packageIds)
-
-      packageRows = (adminPackagesResult.data as PackageRow[] | null) || []
-    } else {
-      packageRows = (customerPackagesResult.data as PackageRow[] | null) || []
-    }
+    packageRows = (adminPackagesResult.data as PackageRow[] | null) || []
   }
 
   const packageMap = new Map(((packageRows as PackageRow[] | null) || []).map((pkg) => [pkg.id, pkg]))
@@ -225,6 +217,7 @@ export default async function CustomerDashboardPage() {
           {error ? (
             <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
               Gagal memuat dashboard customer.
+              {error.message ? <div className="mt-2 text-xs text-rose-600">Detail: {error.message}</div> : null}
             </div>
           ) : customerBookings.length === 0 ? (
             <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
