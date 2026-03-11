@@ -85,21 +85,56 @@ export default async function CustomerDashboardPage() {
 
   if (!user) return null
 
-  const { data: bookings, error } = await adminSupabase
+  let bookings: BookingRow[] | null = null
+  let error: { message?: string } | null = null
+
+  const customerBookingsQuery = supabase
     .from("bookings")
-    .select("id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select(
+      "id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+    )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
+
+  const customerBookingsResult = await customerBookingsQuery
+  bookings = (customerBookingsResult.data as BookingRow[] | null) || null
+  error = customerBookingsResult.error
+
+  if (error) {
+    const adminBookingsResult = await adminSupabase
+      .from("bookings")
+      .select(
+        "id, package_id, booking_code, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      )
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    bookings = (adminBookingsResult.data as BookingRow[] | null) || null
+    error = adminBookingsResult.error
+  }
 
   const customerBookings = (bookings as BookingRow[] | null) || []
   const packageIds = [...new Set(customerBookings.map((booking) => booking.package_id).filter(Boolean))]
 
-  const { data: packageRows } = packageIds.length
-    ? await adminSupabase
+  let packageRows: PackageRow[] | null = []
+
+  if (packageIds.length) {
+    const customerPackagesResult = await supabase
+      .from("packages")
+      .select("id, title, slug")
+      .in("id", packageIds)
+
+    if (customerPackagesResult.error) {
+      const adminPackagesResult = await adminSupabase
         .from("packages")
         .select("id, title, slug")
         .in("id", packageIds)
-    : { data: [] as PackageRow[] }
+
+      packageRows = (adminPackagesResult.data as PackageRow[] | null) || []
+    } else {
+      packageRows = (customerPackagesResult.data as PackageRow[] | null) || []
+    }
+  }
 
   const packageMap = new Map(((packageRows as PackageRow[] | null) || []).map((pkg) => [pkg.id, pkg]))
 
