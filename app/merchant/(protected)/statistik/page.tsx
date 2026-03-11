@@ -15,6 +15,13 @@ type StatsBookingRow = {
   } | null
 }
 
+type PackageRow = {
+  id: string
+  title: string | null
+  status: string | null
+  created_at?: string | null
+}
+
 type PackageViewRow = {
   package_id: string
   viewed_at?: string | null
@@ -110,7 +117,17 @@ export default async function MerchantStatisticsPage() {
     return <div className="p-10">Data merchant tidak ditemukan.</div>
   }
 
-  const [{ data: bookingsData, error: bookingsError }, packageViewsResult, reviewsResult] = await Promise.all([
+  const [
+    { data: packagesData, error: packagesError },
+    { data: bookingsData, error: bookingsError },
+    packageViewsResult,
+    reviewsResult,
+  ] = await Promise.all([
+    adminSupabase
+      .from("packages")
+      .select("id, title, status, created_at")
+      .eq("merchant_id", merchant.id)
+      .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
       .select("id, created_at, total_amount, payment_status, booking_status, packages!inner(id, title, merchant_id)")
@@ -126,10 +143,12 @@ export default async function MerchantStatisticsPage() {
       .eq("packages.merchant_id", merchant.id),
   ])
 
+  const packages = (packagesData as PackageRow[] | null) || []
   const bookings = (bookingsData as StatsBookingRow[] | null) || []
-  const packageViews = (packageViewsResult.data as PackageViewRow[] | null) || []
-  const reviews = (reviewsResult.data as ReviewRow[] | null) || []
-  const error = bookingsError || packageViewsResult.error || reviewsResult.error
+  const packageViews = packageViewsResult.error ? [] : (packageViewsResult.data as PackageViewRow[] | null) || []
+  const reviews = reviewsResult.error ? [] : (reviewsResult.data as ReviewRow[] | null) || []
+  const error = packagesError || bookingsError
+  const analyticsWarnings = [packageViewsResult.error, reviewsResult.error].filter(Boolean)
 
   const revenueBookings = bookings.filter(isRevenueBooking)
   const totalBookings = bookings.length
@@ -161,6 +180,16 @@ export default async function MerchantStatisticsPage() {
     string,
     { title: string; bookings: number; revenue: number; paidBookings: number; views: number }
   >()
+
+  for (const pkg of packages) {
+    packageStats.set(pkg.id, {
+      title: pkg.title || "Paket tanpa judul",
+      bookings: 0,
+      revenue: 0,
+      paidBookings: 0,
+      views: 0,
+    })
+  }
 
   for (const booking of bookings) {
     const packageId = booking.packages?.id || booking.id
@@ -302,10 +331,10 @@ export default async function MerchantStatisticsPage() {
                   {merchant.brand_name || merchant.company_name || "Merchant"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
-                  Statistik ini dihitung dari booking, package views, dan review yang terkait langsung dengan
-                  merchant Anda.
-                </p>
-              </div>
+                    Statistik ini dihitung dari booking, package views, dan review yang terkait langsung dengan
+                    merchant Anda.
+                  </p>
+                </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
@@ -334,6 +363,12 @@ export default async function MerchantStatisticsPage() {
           </div>
         ) : (
           <>
+            {analyticsWarnings.length > 0 ? (
+              <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 text-amber-800">
+                Beberapa data analytics tambahan belum tersedia di production. Statistik utama tetap dihitung dari
+                data paket dan booking merchant.
+              </div>
+            ) : null}
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {metricCards.map((card) => (
                 <article
