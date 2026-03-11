@@ -19,8 +19,8 @@ export default async function CustomerLayout({
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#eef6ff_100%)]">
+      <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5 md:px-10">
           <Link href="/customer/dashboard" className="inline-flex items-center">
             <Image
@@ -33,13 +33,13 @@ export default async function CustomerLayout({
             />
           </Link>
           <div className="flex items-center gap-3 text-sm text-slate-600">
-            <Link href="/customer/dashboard" className="rounded-full border border-slate-200 px-4 py-2 font-medium hover:border-orange-300 hover:text-orange-600">
+            <Link href="/customer/dashboard" className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 font-medium text-orange-700 transition hover:border-orange-300 hover:bg-orange-100">
               Dashboard Customer
             </Link>
-            <Link href="/" className="rounded-full border border-slate-200 px-4 py-2 font-medium hover:border-orange-300 hover:text-orange-600">
+            <Link href="/" className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-orange-300 hover:text-orange-600">
               Kembali ke Situs
             </Link>
-            <SignOutButton className="rounded-full border border-slate-200 px-4 py-2 font-medium hover:border-rose-300 hover:text-rose-600" />
+            <SignOutButton className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-rose-300 hover:text-rose-600" />
           </div>
         </div>
       </header>

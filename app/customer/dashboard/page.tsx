@@ -161,182 +161,276 @@ export default async function CustomerDashboardPage() {
       label: "Total Booking",
       value: customerBookings.length,
       note: "Riwayat seluruh transaksi Anda",
+      tone: "from-sky-500 to-cyan-400",
     },
     {
       label: "Trip Mendatang",
       value: upcomingTrips.length,
       note: "Booking dengan tanggal wisata terdekat",
+      tone: "from-emerald-500 to-lime-400",
     },
     {
       label: "Menunggu Aksi Anda",
       value: waitingCustomerAction.length,
       note: "Booking yang perlu konfirmasi customer",
+      tone: "from-amber-500 to-orange-400",
     },
     {
       label: "Dana Diproses RedFeng",
       value: readyForPayout.length,
       note: "Escrow siap diteruskan ke merchant",
+      tone: "from-violet-500 to-fuchsia-400",
+    },
+  ]
+
+  const quickSignals = [
+    {
+      label: "Payment pending",
+      value: String(pendingPayments.length),
+      note: "Perlu diselesaikan agar booking tetap aman.",
+    },
+    {
+      label: "Pickup confirmation",
+      value: String(waitingCustomerAction.length),
+      note: "Merchant sudah tandai pickup, customer perlu konfirmasi.",
+    },
+    {
+      label: "Upcoming plans",
+      value: String(upcomingTrips.length),
+      note: "Trip aktif yang tanggalnya belum lewat.",
+    },
+  ]
+
+  const customerChecklist = [
+    {
+      title: "Login sebelum checkout",
+      body: "Booking dan pembayaran hanya bisa dilakukan oleh customer yang sudah login ke akun RedFeng.",
+    },
+    {
+      title: "Pantau progress meeting point",
+      body: "Saat merchant klik Tiba atau Dijemput, update akan muncul di booking Anda sebagai acuan koordinasi.",
+    },
+    {
+      title: "Konfirmasi sudah dijemput",
+      body: "Konfirmasi customer diperlukan agar escrow bisa dilanjutkan ke merchant sesuai alur operasional.",
     },
   ]
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-500">Customer Dashboard</p>
-            <h1 className="mt-3 text-3xl font-bold text-slate-900 md:text-4xl">Kelola booking, pembayaran, dan progress trip Anda</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500 md:text-base">
-              Pantau status pembayaran, escrow RedFeng, progres pickup merchant, dan akses cepat ke detail booking dalam satu dashboard yang lebih rapi.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link href="/" className="rounded-2xl border border-slate-300 px-5 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600">
-              Cari Paket Lagi
-            </Link>
-            <Link href="/packages" className="rounded-2xl bg-slate-900 px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-800">
-              Jelajahi Paket
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {summaryCards.map((card) => (
-          <div key={card.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{card.label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{card.value}</p>
-            <p className="mt-2 text-xs text-slate-500">{card.note}</p>
-          </div>
-        ))}
-      </section>
-
-      <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#eef6ff_100%)] px-6 py-8 md:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#0f172a_0%,#1d4ed8_28%,#0ea5e9_62%,#f97316_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(15,23,42,0.18)] sm:px-10 lg:px-12">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">Booking Terbaru</h2>
-              <p className="mt-1 text-sm text-slate-500">Booking terbaru Anda beserta status pembayaran, trip, dan escrow.</p>
-            </div>
-          </div>
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-sky-50">
+                Customer Travel Hub
+              </span>
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                Kelola booking, pembayaran, dan progress trip Anda dalam satu workspace.
+              </h1>
+              <p className="mt-4 max-w-2xl text-base leading-8 text-sky-50/92">
+                Pantau status transaksi, alur escrow RedFeng, progres pickup merchant, dan akses cepat
+                ke detail trip tanpa perlu lompat antar halaman.
+              </p>
 
-          {error ? (
-            <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-              Gagal memuat dashboard customer.
-              {error.message ? <div className="mt-2 text-xs text-rose-600">Detail: {error.message}</div> : null}
-            </div>
-          ) : customerBookings.length === 0 ? (
-            <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-              Belum ada booking. Mulai dari jelajahi paket lalu lanjutkan checkout.
-            </div>
-          ) : (
-            <div className="mt-5 space-y-4">
-              {customerBookings.slice(0, 6).map((booking) => {
-                const pkg = packageMap.get(booking.package_id || "")
-                const canConfirmPickup = Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at
-
-                return (
-                  <div key={booking.id} className="rounded-[24px] border border-slate-200 p-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Booking</p>
-                        <h3 className="mt-2 text-lg font-semibold text-slate-900">{pkg?.title || booking.booking_code || booking.id}</h3>
-                        <p className="mt-2 text-sm text-slate-500">Kode: {booking.booking_code || booking.id}</p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
-                          Bayar: {titleCaseStatus(booking.payment_status)}
-                        </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
-                          Trip: {titleCaseStatus(booking.booking_status)}
-                        </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
-                          Escrow: {titleCaseStatus(booking.escrow_status)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 grid gap-4 md:grid-cols-3">
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Tanggal Wisata</p>
-                        <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Total Transaksi</p>
-                        <p className="mt-2 text-sm font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Progress Pickup</p>
-                        <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking)}</p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap gap-3">
-                      <Link href={`/booking/${booking.id}`} className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                        Lihat Detail Booking
-                      </Link>
-                      {canConfirmPickup && (
-                        <form action={confirmCustomerPickedUp}>
-                          <input type="hidden" name="booking_id" value={booking.id} />
-                          <button
-                            type="submit"
-                            className="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-                          >
-                            Sudah dijemput
-                          </button>
-                        </form>
-                      )}
-                      {pkg?.slug && (
-                        <Link href={`/packages/${encodeURIComponent(pkg.slug)}`} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600">
-                          Lihat Paket
-                        </Link>
-                      )}
-                    </div>
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {quickSignals.map((signal) => (
+                  <div key={signal.label} className="rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur">
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-sky-100/85">{signal.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-white">{signal.value}</p>
+                    <p className="mt-3 text-sm leading-6 text-sky-50/85">{signal.note}</p>
                   </div>
-                )
-              })}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
 
-        <div className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Checklist Aksi Customer</h2>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-[20px] bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-900">1. Login sebelum checkout</p>
-                <p className="mt-2 text-sm text-slate-600">Booking dan pembayaran hanya bisa dilakukan oleh customer yang sudah login.</p>
+            <div className="grid gap-4">
+              <div className="rounded-[28px] border border-white/18 bg-slate-950/18 p-6 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-sky-100/80">Travel snapshot</p>
+                <p className="mt-4 text-3xl font-semibold text-white">{customerBookings.length}</p>
+                <p className="mt-2 text-sm leading-7 text-sky-50/85">
+                  Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.
+                </p>
               </div>
-              <div className="rounded-[20px] bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-900">2. Pantau progress meeting point</p>
-                <p className="mt-2 text-sm text-slate-600">Saat merchant klik `Tiba` atau `Dijemput`, status akan muncul di detail booking Anda.</p>
-              </div>
-              <div className="rounded-[20px] bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-900">3. Konfirmasi `Sudah dijemput`</p>
-                <p className="mt-2 text-sm text-slate-600">Konfirmasi customer diperlukan agar RedFeng dapat memproses pelepasan escrow ke merchant.</p>
+
+              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.32em] text-sky-100/80">Quick actions</p>
+                <div className="mt-5 grid gap-3">
+                  <Link
+                    href="/packages"
+                    className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-sky-50"
+                  >
+                    Jelajahi Paket
+                  </Link>
+                  <Link
+                    href="/"
+                    className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    Kembali ke Beranda
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Ringkasan Pembayaran</h2>
-            <div className="mt-5 space-y-4 text-sm text-slate-600">
-              <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-4 py-3">
-                <span>Menunggu pembayaran</span>
-                <span className="font-semibold text-slate-900">{pendingPayments.length}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-4 py-3">
-                <span>Menunggu aksi customer</span>
-                <span className="font-semibold text-slate-900">{waitingCustomerAction.length}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-[18px] bg-slate-50 px-4 py-3">
-                <span>Siap payout ke merchant</span>
-                <span className="font-semibold text-slate-900">{readyForPayout.length}</span>
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {summaryCards.map((card) => (
+            <article
+              key={card.label}
+              className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]"
+            >
+              <div className={`h-2 w-20 rounded-full bg-gradient-to-r ${card.tone}`} />
+              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
+              <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">
+                  Booking Feed
+                </span>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Booking terbaru Anda</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
+                  Monitor pembayaran, status trip, dan escrow untuk booking yang paling relevan saat ini.
+                </p>
               </div>
             </div>
+
+            {error ? (
+              <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+                Gagal memuat dashboard customer.
+                {error.message ? <div className="mt-2 text-xs text-rose-600">Detail: {error.message}</div> : null}
+              </div>
+            ) : customerBookings.length === 0 ? (
+              <div className="mt-6 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-6 text-sm text-slate-600">
+                Belum ada booking. Mulai dari jelajahi paket, lanjut checkout, lalu semua progres trip akan muncul di sini.
+              </div>
+            ) : (
+              <div className="mt-6 space-y-4">
+                {customerBookings.slice(0, 6).map((booking) => {
+                  const pkg = packageMap.get(booking.package_id || "")
+                  const canConfirmPickup = Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at
+
+                  return (
+                    <article
+                      key={booking.id}
+                      className="rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-5 transition hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(15,23,42,0.08)]"
+                    >
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Booking</p>
+                          <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                            {pkg?.title || booking.booking_code || booking.id}
+                          </h3>
+                          <p className="mt-2 text-sm text-slate-500">Kode: {booking.booking_code || booking.id}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
+                            Bayar: {titleCaseStatus(booking.payment_status)}
+                          </span>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
+                            Trip: {titleCaseStatus(booking.booking_status)}
+                          </span>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
+                            Escrow: {titleCaseStatus(booking.escrow_status)}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid gap-4 md:grid-cols-3">
+                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Tanggal Wisata</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
+                        </div>
+                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total Transaksi</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</p>
+                        </div>
+                        <div className="rounded-[20px] border border-slate-200 bg-white/80 p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Pickup</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex flex-wrap gap-3">
+                        <Link
+                          href={`/booking/${booking.id}`}
+                          className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        >
+                          Lihat Detail Booking
+                        </Link>
+                        {canConfirmPickup && (
+                          <form action={confirmCustomerPickedUp}>
+                            <input type="hidden" name="booking_id" value={booking.id} />
+                            <button
+                              type="submit"
+                              className="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                            >
+                              Sudah dijemput
+                            </button>
+                          </form>
+                        )}
+                        {pkg?.slug && (
+                          <Link
+                            href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                            className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                          >
+                            Lihat Paket
+                          </Link>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
           </div>
-        </div>
-      </section>
-    </div>
+
+          <aside className="space-y-6">
+            <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+              <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
+                Customer Guide
+              </span>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Checklist aksi customer</h2>
+              <div className="mt-5 space-y-4">
+                {customerChecklist.map((item, index) => (
+                  <div key={item.title} className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      {index + 1}. {item.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">{item.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Payment overview</p>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Ringkasan pembayaran</h2>
+              <div className="mt-5 space-y-4 text-sm text-slate-600">
+                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                  <span>Menunggu pembayaran</span>
+                  <span className="font-semibold text-slate-900">{pendingPayments.length}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                  <span>Menunggu aksi customer</span>
+                  <span className="font-semibold text-slate-900">{waitingCustomerAction.length}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[18px] border border-slate-200 bg-white/80 px-4 py-3">
+                  <span>Siap payout ke merchant</span>
+                  <span className="font-semibold text-slate-900">{readyForPayout.length}</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </main>
   )
 }
