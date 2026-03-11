@@ -210,85 +210,117 @@ export default async function MerchantSaldoPayoutPage({
       .join(" | ") || "-"
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Saldo & Payout</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Dana customer masuk ke rekening RedFeng, ditahan sebagai escrow, lalu baru tersedia untuk merchant setelah pickup dikonfirmasi dua pihak.
-        </p>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] p-6 md:p-10">
+      <section className="overflow-hidden rounded-[34px] border border-orange-100 bg-[linear-gradient(135deg,#983108_0%,#f76707_52%,#ffb357_100%)] text-white shadow-[0_28px_80px_rgba(194,65,12,0.24)]">
+        <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_440px] lg:px-10 lg:py-10">
+          <div>
+            <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
+              Wallet & Payout
+            </div>
+            <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
+              Kontrol saldo merchant dan ritme pencairan dalam workspace yang lebih profesional.
+            </h1>
+            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
+              Pantau escrow, dana siap payout, request yang sedang diproses, dan riwayat pencairan tanpa
+              kehilangan konteks operasional booking merchant.
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Payout Snapshot</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Request pending</p>
+                  <p className="mt-2 text-2xl font-semibold text-white">{payoutCounts.pending}</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">Menunggu approval atau transfer</p>
+                </div>
+                <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Rekening tujuan</p>
+                  <p className="mt-2 text-sm font-semibold text-white">{destinationAccount}</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">Akun yang dipakai saat payout</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {params.success && (
-        <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
+        <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
           {params.success}
         </div>
       )}
 
       {params.error && (
-        <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+        <div className="mt-4 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           {params.error}
         </div>
       )}
 
       {error ? (
-        <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700">
+        <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           Gagal memuat data saldo merchant.
         </div>
       ) : (
         <>
-          <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {metricCards.map((card) => (
-              <div key={card.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-sm text-slate-500">{card.label}</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">{card.value}</p>
-                <p className="mt-2 text-xs text-slate-500">{card.note}</p>
+              <div
+                key={card.label}
+                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
               </div>
             ))}
           </section>
 
-          <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <section className="mt-8 grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex flex-col gap-2">
-                <h2 className="text-xl font-semibold text-slate-900">Riwayat pencairan</h2>
-                <p className="text-sm text-slate-500">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Payout History</p>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat pencairan</h2>
+                <p className="text-sm leading-6 text-slate-500">
                   Semua request payout merchant berikut status proses dan rekening tujuan.
                 </p>
               </div>
 
               {payouts.length === 0 ? (
-                <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+                <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-5 text-sm text-slate-600">
                   Belum ada riwayat pencairan.
                 </div>
               ) : (
-                <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200">
+                <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="bg-slate-50 text-slate-600">
+                    <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b p-4">Tanggal Request</th>
-                        <th className="border-b p-4">Nominal</th>
-                        <th className="border-b p-4">Status</th>
-                        <th className="border-b p-4">Rekening Tujuan</th>
-                        <th className="border-b p-4">Diproses</th>
+                        <th className="border-b border-[#efe3d1] p-4">Tanggal Request</th>
+                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
+                        <th className="border-b border-[#efe3d1] p-4">Status</th>
+                        <th className="border-b border-[#efe3d1] p-4">Rekening Tujuan</th>
+                        <th className="border-b border-[#efe3d1] p-4">Diproses</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {payouts.map((payout) => (
-                        <tr key={payout.id} className="hover:bg-slate-50">
-                          <td className="border-b p-4">{formatDate(payout.requested_at)}</td>
-                          <td className="border-b p-4 font-medium text-slate-900">
+                        <tr key={payout.id} className="hover:bg-[#fffdf9]">
+                          <td className="border-b border-[#f3ebdf] p-4">{formatDate(payout.requested_at)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
                             {formatMoney(Number(payout.amount || 0))}
                           </td>
-                          <td className="border-b p-4">
+                          <td className="border-b border-[#f3ebdf] p-4">
                             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${payoutStatusClass(payout.status)}`}>
                               {titleCaseStatus(payout.status)}
                             </span>
                           </td>
-                          <td className="border-b p-4">
+                          <td className="border-b border-[#f3ebdf] p-4">
                             {[payout.bank_name, payout.bank_account_holder, payout.bank_account_number]
                               .filter(Boolean)
                               .join(" | ") || "-"}
                           </td>
-                          <td className="border-b p-4">{formatDate(payout.processed_at)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4">{formatDate(payout.processed_at)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -297,28 +329,29 @@ export default async function MerchantSaldoPayoutPage({
               )}
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div>
-                <h2 className="text-xl font-semibold text-slate-900">Tarik dana</h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Withdraw Funds</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Tarik dana</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
                   Dana baru bisa diajukan ketika status escrow sudah `Ready For Payout`.
                 </p>
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-[20px] bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Request pending</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">{payoutCounts.pending}</p>
+                <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Request pending</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutCounts.pending}</p>
                 </div>
-                <div className="rounded-[20px] bg-slate-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Payout selesai</p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">{payoutCounts.paid}</p>
+                <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Payout selesai</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutCounts.paid}</p>
                 </div>
               </div>
 
-              <div className="mt-5 rounded-[20px] bg-slate-50 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Rekening tujuan</p>
-                <p className="mt-3 text-sm leading-6 text-slate-700">{destinationAccount}</p>
+              <div className="mt-5 rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Rekening tujuan</p>
+                <p className="mt-3 text-sm leading-7 text-slate-700">{destinationAccount}</p>
               </div>
 
               <form action={requestPayout} className="mt-5 space-y-4">
@@ -330,20 +363,21 @@ export default async function MerchantSaldoPayoutPage({
                     min="1"
                     max={saldoTersedia}
                     placeholder="Masukkan nominal"
-                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    className="w-full rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                     required
                   />
                 </div>
-                <div className="rounded-[20px] bg-amber-50 p-4 text-sm text-amber-800">
+                <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                   Saldo tersedia saat ini: <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
                 </div>
-                <div className="rounded-[20px] bg-slate-50 p-4 text-sm text-slate-600">
-                  RedFeng tetap menahan dana customer sampai merchant klik `Tiba`, merchant klik `Dijemput`, dan customer klik `Sudah dijemput`.
+                <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4 text-sm leading-6 text-slate-600">
+                  RedFeng tetap menahan dana customer sampai merchant klik `Tiba`, merchant klik `Dijemput`,
+                  dan customer klik `Sudah dijemput`.
                 </div>
                 <button
                   type="submit"
                   disabled={saldoTersedia <= 0}
-                  className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="w-full rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                 >
                   Tarik Dana
                 </button>
@@ -352,11 +386,12 @@ export default async function MerchantSaldoPayoutPage({
           </section>
 
           <section className="mt-8 grid gap-6 xl:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Booking siap payout</h3>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ready For Payout</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-950">Booking siap payout</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
                     Booking yang sudah lunas dan pickup-nya sudah dikonfirmasi merchant dan customer.
                   </p>
                 </div>
@@ -366,33 +401,39 @@ export default async function MerchantSaldoPayoutPage({
               </div>
 
               {availableBookings.length === 0 ? (
-                <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-4 text-sm text-slate-600">
                   Belum ada booking yang siap payout.
                 </div>
               ) : (
-                <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200">
+                <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="bg-slate-50 text-slate-600">
+                    <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b p-4">Booking</th>
-                        <th className="border-b p-4">Paket</th>
-                        <th className="border-b p-4">Customer</th>
-                        <th className="border-b p-4">Trip</th>
-                        <th className="border-b p-4">Peserta</th>
-                        <th className="border-b p-4">Nominal</th>
-                        <th className="border-b p-4">Escrow</th>
+                        <th className="border-b border-[#efe3d1] p-4">Booking</th>
+                        <th className="border-b border-[#efe3d1] p-4">Paket</th>
+                        <th className="border-b border-[#efe3d1] p-4">Customer</th>
+                        <th className="border-b border-[#efe3d1] p-4">Trip</th>
+                        <th className="border-b border-[#efe3d1] p-4">Peserta</th>
+                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
+                        <th className="border-b border-[#efe3d1] p-4">Escrow</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {availableBookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-slate-50">
-                          <td className="border-b p-4 font-medium text-slate-900">{booking.booking_code || booking.id.slice(0, 8)}</td>
-                          <td className="border-b p-4 text-slate-700">{packageMap.get(booking.package_id || "") || "Paket tanpa nama"}</td>
-                          <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
-                          <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
-                          <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
-                          <td className="border-b p-4 font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</td>
-                          <td className="border-b p-4">
+                        <tr key={booking.id} className="hover:bg-[#fffdf9]">
+                          <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
+                            {booking.booking_code || booking.id.slice(0, 8)}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
+                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{booking.customer_name || "-"}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{participantCount(booking)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
+                            {formatMoney(Number(booking.total_amount || 0))}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4">
                             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                               {titleCaseStatus(booking.escrow_status)}
                             </span>
@@ -405,11 +446,12 @@ export default async function MerchantSaldoPayoutPage({
               )}
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Dana masih ditahan</h3>
-                  <p className="mt-1 text-sm text-slate-500">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Funds On Hold</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-950">Dana masih ditahan</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
                     Booking yang dananya masih berada di escrow RedFeng atau belum lunas.
                   </p>
                 </div>
@@ -419,33 +461,39 @@ export default async function MerchantSaldoPayoutPage({
               </div>
 
               {heldBookings.length === 0 ? (
-                <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-4 text-sm text-slate-600">
                   Tidak ada dana yang sedang ditahan.
                 </div>
               ) : (
-                <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200">
+                <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="bg-slate-50 text-slate-600">
+                    <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b p-4">Booking</th>
-                        <th className="border-b p-4">Paket</th>
-                        <th className="border-b p-4">Customer</th>
-                        <th className="border-b p-4">Trip</th>
-                        <th className="border-b p-4">Peserta</th>
-                        <th className="border-b p-4">Nominal</th>
-                        <th className="border-b p-4">Escrow</th>
+                        <th className="border-b border-[#efe3d1] p-4">Booking</th>
+                        <th className="border-b border-[#efe3d1] p-4">Paket</th>
+                        <th className="border-b border-[#efe3d1] p-4">Customer</th>
+                        <th className="border-b border-[#efe3d1] p-4">Trip</th>
+                        <th className="border-b border-[#efe3d1] p-4">Peserta</th>
+                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
+                        <th className="border-b border-[#efe3d1] p-4">Escrow</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
                       {heldBookings.map((booking) => (
-                        <tr key={booking.id} className="hover:bg-slate-50">
-                          <td className="border-b p-4 font-medium text-slate-900">{booking.booking_code || booking.id.slice(0, 8)}</td>
-                          <td className="border-b p-4 text-slate-700">{packageMap.get(booking.package_id || "") || "Paket tanpa nama"}</td>
-                          <td className="border-b p-4 text-slate-700">{booking.customer_name || "-"}</td>
-                          <td className="border-b p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
-                          <td className="border-b p-4 text-slate-700">{participantCount(booking)}</td>
-                          <td className="border-b p-4 font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</td>
-                          <td className="border-b p-4">
+                        <tr key={booking.id} className="hover:bg-[#fffdf9]">
+                          <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
+                            {booking.booking_code || booking.id.slice(0, 8)}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
+                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{booking.customer_name || "-"}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{participantCount(booking)}</td>
+                          <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
+                            {formatMoney(Number(booking.total_amount || 0))}
+                          </td>
+                          <td className="border-b border-[#f3ebdf] p-4">
                             <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
                               {titleCaseStatus(booking.escrow_status)}
                             </span>
@@ -460,6 +508,6 @@ export default async function MerchantSaldoPayoutPage({
           </section>
         </>
       )}
-    </div>
+    </main>
   )
 }
