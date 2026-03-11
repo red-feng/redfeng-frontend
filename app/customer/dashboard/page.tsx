@@ -257,7 +257,7 @@ export default async function CustomerDashboardPage() {
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
                 <div className="mt-5 grid gap-3">
                   <Link
-                    href="/packages"
+                    href="https://redfeng.co/paket-tour/"
                     className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-orange-50"
                   >
                     Jelajahi Paket
