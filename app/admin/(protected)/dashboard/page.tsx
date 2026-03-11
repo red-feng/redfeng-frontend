@@ -78,14 +78,14 @@ export default async function AdminDashboard() {
       note: "Paket perlu dicek sebelum live.",
     },
     {
-      label: "Payout pending",
-      value: String(payoutPendingCount),
-      note: "Request payout menunggu keputusan.",
+      label: "Package approved",
+      value: String(approvedPackages),
+      note: "Paket yang sudah lolos review dan siap tayang.",
     },
     {
-      label: "Nominal menunggu payout",
-      value: formatMoney(payoutPendingNominal),
-      note: "Dana yang belum ditandai paid.",
+      label: "Finance handoff",
+      value: `${payoutPendingCount} req`,
+      note: `${formatMoney(payoutPendingNominal)} outstanding di workspace finance.`,
     },
   ]
 
@@ -99,11 +99,11 @@ export default async function AdminDashboard() {
                 Admin Control Center
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Operasional approval merchant, package, dan payout dalam satu workspace.
+                Approval merchant dan package dalam satu workspace admin.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Dashboard ini merangkum antrean approval utama Red Feng agar tim admin bisa memproses
-                merchant, paket, dan payout tanpa kehilangan konteks bisnis harian.
+                Dashboard ini merangkum antrean approval utama Red Feng untuk merchant dan package.
+                Workstream payout sekarang dipusatkan di dashboard finance.
               </p>
             </div>
 
@@ -119,8 +119,8 @@ export default async function AdminDashboard() {
                   <p className="mt-1 text-3xl font-semibold text-white">{approvedPackages}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Payout processing</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{payoutProcessingCount}</p>
+                  <p className="text-sm text-orange-50/80">Package approved</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{approvedPackages}</p>
                 </div>
               </div>
             </div>
@@ -174,33 +174,27 @@ export default async function AdminDashboard() {
 
           <div className="grid gap-6">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Payout focus</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Ringkasan payout merchant</h2>
-              <div className="mt-5 space-y-4">
-                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Pending request</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutPendingCount}</p>
-                </div>
-                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Sedang diproses</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutProcessingCount}</p>
-                </div>
-                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Nominal outstanding</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(payoutPendingNominal)}</p>
-                </div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance handoff</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Payout sekarang ada di finance</h2>
+              <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
+                <p>Antrean payout approval sudah dipindahkan keluar dari dashboard admin.</p>
+                <p>Admin tetap bisa masuk ke workspace finance lewat kartu `Finance Dashboard` di area workstreams.</p>
+                <p>
+                  Snapshot saat ini: <span className="font-semibold text-slate-950">{payoutPendingCount}</span> request pending,
+                  <span className="font-semibold text-slate-950"> {payoutProcessingCount}</span> sedang diproses,
+                  nominal outstanding <span className="font-semibold text-slate-950">{formatMoney(payoutPendingNominal)}</span>.
+                </p>
               </div>
             </div>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ops note</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aturan release dana</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pembagian area kerja</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Dana customer tetap masuk dan ditahan di rekening Red Feng.</p>
-                <p>2. Merchant klik <span className="font-semibold text-slate-900">Tiba</span> saat sudah di meeting point.</p>
-                <p>3. Merchant klik <span className="font-semibold text-slate-900">Dijemput</span> saat customer benar-benar sudah naik.</p>
-                <p>4. Customer klik <span className="font-semibold text-slate-900">Sudah dijemput</span>.</p>
-                <p>5. Setelah itu booking masuk status <span className="font-semibold text-slate-900">ready_for_payout</span> dan admin bisa proses payout penuh.</p>
+                <p>1. Admin fokus pada approval merchant dan package.</p>
+                <p>2. Finance dashboard menangani payout approval dan proses pencairan.</p>
+                <p>3. Eksekusi update payout dilakukan penuh dari workspace finance.</p>
+                <p>4. Dashboard admin tidak lagi menjadi area approval payout.</p>
               </div>
             </div>
           </div>
