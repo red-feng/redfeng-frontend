@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default function FinanceEntryPage() {
-  redirect("/finance/dashboard")
+  redirect("/finance/login")
 }

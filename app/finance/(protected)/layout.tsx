@@ -13,7 +13,7 @@ export default async function FinanceProtectedLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/admin/login")
+    redirect("/finance/login")
   }
 
   const { data: profile } = await supabase
@@ -23,7 +23,7 @@ export default async function FinanceProtectedLayout({
     .single()
 
   if (!profile) {
-    redirect("/admin/login")
+    redirect("/finance/login")
   }
 
   if (profile.role === "merchant") {
@@ -31,7 +31,7 @@ export default async function FinanceProtectedLayout({
   }
 
   if (!["admin", "superadmin"].includes(profile.role)) {
-    redirect("/admin/login")
+    redirect("/finance/login")
   }
 
   return <>{children}</>
