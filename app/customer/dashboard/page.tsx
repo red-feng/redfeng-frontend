@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 
 type BookingRow = {
   id: string
@@ -198,6 +199,8 @@ export default async function CustomerDashboardPage() {
             <div className="mt-5 space-y-4">
               {customerBookings.slice(0, 6).map((booking) => {
                 const pkg = packageMap.get(booking.package_id || "")
+                const canConfirmPickup = Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at
+
                 return (
                   <div key={booking.id} className="rounded-[24px] border border-slate-200 p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -238,6 +241,17 @@ export default async function CustomerDashboardPage() {
                       <Link href={`/booking/${booking.id}`} className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
                         Lihat Detail Booking
                       </Link>
+                      {canConfirmPickup && (
+                        <form action={confirmCustomerPickedUp}>
+                          <input type="hidden" name="booking_id" value={booking.id} />
+                          <button
+                            type="submit"
+                            className="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                          >
+                            Sudah dijemput
+                          </button>
+                        </form>
+                      )}
                       {pkg?.slug && (
                         <Link href={`/packages/${encodeURIComponent(pkg.slug)}`} className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600">
                           Lihat Paket
