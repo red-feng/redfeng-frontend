@@ -263,7 +263,7 @@ export default async function CustomerDashboardPage() {
                     Jelajahi Paket
                   </Link>
                   <Link
-                    href="/"
+                    href="https://redfeng.co/"
                     className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     Kembali ke Beranda

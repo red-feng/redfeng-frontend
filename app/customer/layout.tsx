@@ -36,10 +36,16 @@ export default async function CustomerLayout({
             <Link href="/customer/dashboard" className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 font-medium text-orange-700 transition hover:border-orange-300 hover:bg-orange-100">
               Dashboard Customer
             </Link>
-            <Link href="/" className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-orange-300 hover:text-orange-600">
+            <Link
+              href="https://redfeng.co/"
+              className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-orange-300 hover:text-orange-600"
+            >
               Kembali ke Situs
             </Link>
-            <SignOutButton className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-rose-300 hover:text-rose-600" />
+            <SignOutButton
+              redirectTo="https://app.redfeng.co/login"
+              className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-rose-300 hover:text-rose-600"
+            />
           </div>
         </div>
       </header>
