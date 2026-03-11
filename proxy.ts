@@ -8,6 +8,13 @@ const CANONICAL_HOST = "app.redfeng.co"
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
   const host = req.headers.get("host") || ""
+  const isAdminLoginRoute = pathname === "/admin/login"
+  const isMerchantPublicRoute =
+    pathname === "/merchant/login" ||
+    pathname === "/merchant/register" ||
+    pathname === "/merchant/pending" ||
+    pathname === "/merchant/rejected" ||
+    pathname.startsWith("/merchant/onboarding")
 
   if (host.endsWith(".vercel.app")) {
     const redirectUrl = new URL(req.url)
@@ -29,6 +36,10 @@ export async function proxy(req: NextRequest) {
   const res = NextResponse.next()
 
   if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
+    return res
+  }
+
+  if (isAdminLoginRoute || isMerchantPublicRoute) {
     return res
   }
 
