@@ -1,8 +1,8 @@
 'use client'
 
 import Link from "next/link"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 const partnerPoints = [
@@ -25,12 +25,26 @@ const partnerPoints = [
 
 export default function MerchantLogin() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const blockedStatus = searchParams.get("blocked")
+  const blockedError =
+    blockedStatus === "inactive"
+      ? "Akun merchant Anda sedang dinonaktifkan sementara oleh admin."
+      : blockedStatus === "deleted"
+        ? "Akun merchant Anda sudah dihapus dari akses merchant oleh admin."
+        : ""
+
+  useEffect(() => {
+    if (!blockedStatus) return
+
+    void supabase.auth.signOut()
+  }, [blockedStatus, supabase])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -70,6 +84,26 @@ export default function MerchantLogin() {
     }
 
     if (profile.role === "merchant") {
+      const { data: merchant } = await supabase
+        .from("merchants")
+        .select("verification_status")
+        .eq("user_id", userId)
+        .maybeSingle()
+
+      if (merchant?.verification_status === "inactive") {
+        await supabase.auth.signOut()
+        setError("Akun merchant Anda sedang dinonaktifkan sementara oleh admin.")
+        setLoading(false)
+        return
+      }
+
+      if (merchant?.verification_status === "deleted") {
+        await supabase.auth.signOut()
+        setError("Akun merchant Anda sudah dihapus dari akses merchant oleh admin.")
+        setLoading(false)
+        return
+      }
+
       router.push("/merchant/dashboard")
     } else if (profile.role === "admin" || profile.role === "superadmin") {
       router.push("/admin/dashboard")
@@ -176,9 +210,9 @@ export default function MerchantLogin() {
                 </Link>
               </div>
 
-              {error ? (
+              {error || blockedError ? (
                 <div className="mt-8 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error}
+                  {error || blockedError}
                 </div>
               ) : null}
 

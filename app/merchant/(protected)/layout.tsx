@@ -62,6 +62,14 @@ export default async function MerchantLayout({
     redirect("/merchant/rejected")
   }
 
+  if (merchant.verification_status === "inactive") {
+    redirect("/merchant/login?blocked=inactive")
+  }
+
+  if (merchant.verification_status === "deleted") {
+    redirect("/merchant/login?blocked=deleted")
+  }
+
   if (!merchant.onboarding_completed) {
     redirect("/merchant/onboarding")
   }
