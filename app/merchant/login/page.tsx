@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 const partnerPoints = [
@@ -25,14 +25,16 @@ const partnerPoints = [
 
 export default function MerchantLogin() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const blockedStatus = searchParams.get("blocked")
+  const [blockedStatus] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null
+    return new URLSearchParams(window.location.search).get("blocked")
+  })
   const blockedError =
     blockedStatus === "inactive"
       ? "Akun merchant Anda sedang dinonaktifkan sementara oleh admin."
