@@ -19,7 +19,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
   const t = dictionaries[locale].header
   const availableLocales = languageOptions && languageOptions.length > 0
     ? languageOptions
-    : (["id", "en", "zh", "th"] as Locale[])
+    : (["id", "en", "zh"] as Locale[])
   const [accountHref, setAccountHref] = useState("/login")
   const [accountLabel, setAccountLabel] = useState("Login")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -86,9 +86,6 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
                 )}
                 {availableLocales.includes("zh") && (
                   <button type="button" onClick={() => changeLocale("zh")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langZh}</button>
-                )}
-                {availableLocales.includes("th") && (
-                  <button type="button" onClick={() => changeLocale("th")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langTh}</button>
                 )}
               </div>
             </details>

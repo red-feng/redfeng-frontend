@@ -12,7 +12,7 @@ function getLocaleFromCookie(): Locale {
     .map((c) => c.trim())
     .find((c) => c.startsWith("rf_locale="));
   const value = cookie?.split("=")[1];
-  if (value === "en" || value === "zh" || value === "th") return value;
+  if (value === "en" || value === "zh") return value;
   return "id";
 }
 

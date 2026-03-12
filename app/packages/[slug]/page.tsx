@@ -89,7 +89,7 @@ function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
 }
 
 function toSupportedLocale(input: string | null | undefined): Locale | null {
-  if (input === "id" || input === "en" || input === "zh" || input === "th") return input
+  if (input === "id" || input === "en" || input === "zh") return input
   return null
 }
 

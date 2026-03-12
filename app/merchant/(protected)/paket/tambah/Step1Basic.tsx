@@ -21,7 +21,6 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     { code: "id", label: "Bahasa Indonesia" },
     { code: "en", label: "English" },
     { code: "zh", label: "Chinese" },
-    { code: "th", label: "Thai" },
   ]
 
   const onDefaultLanguageChange = (nextDefault: string) => {
@@ -217,11 +216,10 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
       onChange={(e) => onDefaultLanguageChange(e.target.value)}
       required
     >
-      <option value="id">Bahasa Indonesia</option>
-      <option value="en">English</option>
-      <option value="zh">Chinese</option>
-      <option value="th">Thai</option>
-    </select>
+            <option value="id">Bahasa Indonesia</option>
+            <option value="en">English</option>
+            <option value="zh">Chinese</option>
+          </select>
   </div>
 
   <div className="col-span-2">

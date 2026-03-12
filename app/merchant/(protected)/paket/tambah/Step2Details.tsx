@@ -9,7 +9,6 @@ const LANGS = [
   { code: "id", label: "Indonesia" },
   { code: "en", label: "English" },
   { code: "zh", label: "Chinese" },
-  { code: "th", label: "Thailand" },
 ] as const
 
 type LangCode = (typeof LANGS)[number]["code"]

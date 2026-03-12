@@ -43,7 +43,6 @@ export default function EditStep1Basic({
     { code: "id", label: "Bahasa Indonesia" },
     { code: "en", label: "English" },
     { code: "zh", label: "Chinese" },
-    { code: "th", label: "Thai" },
   ]
 
   const onDefaultLanguageChange = (nextDefault: string) => {
@@ -222,7 +221,6 @@ export default function EditStep1Basic({
             <option value="id">Bahasa Indonesia</option>
             <option value="en">English</option>
             <option value="zh">Chinese</option>
-            <option value="th">Thai</option>
           </select>
         </div>
 

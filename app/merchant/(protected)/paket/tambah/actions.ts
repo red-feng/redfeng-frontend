@@ -11,7 +11,7 @@ type ItineraryRouteInput = {
 }
 
 const MAX_GALLERY_BYTES = 18 * 1024 * 1024
-const SUPPORTED_LANGUAGES = ["id", "en", "zh", "th"] as const
+const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 function getErrorMessage(error: unknown): string {

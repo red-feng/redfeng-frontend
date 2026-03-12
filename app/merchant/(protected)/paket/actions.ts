@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
-const SUPPORTED_LANGUAGES = ["id", "en", "zh", "th"] as const
+const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 function getErrorMessage(error: unknown) {
