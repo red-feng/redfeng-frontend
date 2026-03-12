@@ -107,6 +107,19 @@ function canHandoffToFinance(booking: BookingRow) {
   )
 }
 
+function hasCompleteAdminData(booking: BookingRow, packageTitle: string | null | undefined) {
+  return Boolean(
+    packageTitle &&
+      booking.customer_name &&
+      booking.pickup_date &&
+      booking.total_amount !== null &&
+      booking.subtotal_amount !== null &&
+      booking.customer_admin_fee_amount !== null &&
+      booking.customer_tax_amount !== null &&
+      booking.final_payment_amount !== null,
+  )
+}
+
 export default async function AdminBookingsPage({
   searchParams,
 }: {
@@ -130,8 +143,16 @@ export default async function AdminBookingsPage({
       : { data: [] as PackageRow[] }
 
   const packageMap = new Map(((packageData as PackageRow[] | null) || []).map((pkg) => [pkg.id, pkg.title || "-"]))
-  const readyForAdmin = bookings.filter((booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff")
-  const inFinance = bookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review")
+  const validBookings = bookings.filter((booking) =>
+    hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
+  )
+  const incompleteBookings = bookings.filter(
+    (booking) => !hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
+  )
+  const readyForAdmin = validBookings.filter(
+    (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff",
+  )
+  const inFinance = validBookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review")
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -160,10 +181,17 @@ export default async function AdminBookingsPage({
           </div>
         )}
 
+        {incompleteBookings.length > 0 && (
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
+            {incompleteBookings.length} booking lama / belum lengkap disembunyikan dari queue admin karena data paket
+            atau nominalnya belum sinkron.
+          </div>
+        )}
+
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Total booking</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{bookings.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{validBookings.length}</p>
           </div>
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Siap handoff</p>
@@ -188,15 +216,16 @@ export default async function AdminBookingsPage({
             <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
               Gagal memuat data booking.
             </div>
-          ) : bookings.length === 0 ? (
+          ) : validBookings.length === 0 ? (
             <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
-              Belum ada data booking.
+              Belum ada data booking yang lengkap untuk diproses admin.
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              {bookings.map((booking) => {
+              {validBookings.map((booking) => {
                 const ready = canHandoffToFinance(booking)
                 const phase = journeyPhase(booking)
+                const packageTitle = packageMap.get(booking.package_id || "") || "-"
 
                 return (
                   <article
@@ -209,7 +238,7 @@ export default async function AdminBookingsPage({
                           {booking.booking_code || booking.id}
                         </p>
                         <h3 className="mt-2 text-xl font-semibold text-slate-950">
-                          {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                          {packageTitle}
                         </h3>
                         <p className="mt-2 text-sm text-slate-600">
                           {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}

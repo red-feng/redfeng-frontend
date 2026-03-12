@@ -95,6 +95,19 @@ function bookingPhaseTone(status: string | null) {
   return "bg-slate-100 text-slate-700 border-slate-200"
 }
 
+function hasCompleteBookingData(booking: BookingLiteRow | null | undefined) {
+  return Boolean(
+    booking &&
+      booking.booking_code &&
+      booking.customer_name &&
+      booking.total_amount !== null &&
+      booking.subtotal_amount !== null &&
+      booking.customer_admin_fee_amount !== null &&
+      booking.customer_tax_amount !== null &&
+      booking.final_payment_amount !== null,
+  )
+}
+
 export default async function FinancePayoutsPage({
   searchParams,
 }: {
@@ -129,19 +142,23 @@ export default async function FinancePayoutsPage({
           .in("id", bookingIds)
       : { data: [] as BookingLiteRow[] }
   const bookingMap = new Map(((bookingsData as BookingLiteRow[] | null) || []).map((booking) => [booking.id, booking]))
+  const validPayouts = payouts.filter((payout) => !payout.booking_id || hasCompleteBookingData(bookingMap.get(payout.booking_id)))
+  const incompleteLinkedPayouts = payouts.filter(
+    (payout) => Boolean(payout.booking_id) && !hasCompleteBookingData(bookingMap.get(payout.booking_id || "")),
+  )
 
-  const pendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
-  const processingCount = payouts.filter((item) => {
+  const pendingCount = validPayouts.filter((item) => normalizeStatus(item.status) === "pending").length
+  const processingCount = validPayouts.filter((item) => {
     const status = normalizeStatus(item.status)
     return status === "approved" || status === "processing"
   }).length
-  const paidTotal = payouts
+  const paidTotal = validPayouts
     .filter((item) => {
       const status = normalizeStatus(item.status)
       return status === "paid" || status === "completed"
     })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0)
-  const pendingTotal = payouts
+  const pendingTotal = validPayouts
     .filter((item) => {
       const status = normalizeStatus(item.status)
       return status === "pending" || status === "approved" || status === "processing"
@@ -203,11 +220,18 @@ export default async function FinancePayoutsPage({
           </div>
         )}
 
+        {incompleteLinkedPayouts.length > 0 && (
+          <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
+            {incompleteLinkedPayouts.length} payout terkait booking lama / belum sinkron disembunyikan dari queue finance
+            agar tim finance hanya melihat data payout yang lengkap.
+          </div>
+        )}
+
         {error ? (
           <section className="rounded-[30px] border border-rose-200 bg-rose-50 p-8 text-rose-700 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
             Gagal memuat data payout request.
           </section>
-        ) : !payouts.length ? (
+        ) : !validPayouts.length ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
             <h2 className="text-2xl font-semibold text-slate-950">Belum ada payout request</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
@@ -216,7 +240,7 @@ export default async function FinancePayoutsPage({
           </section>
         ) : (
           <section className="grid gap-6">
-            {payouts.map((payout) => {
+            {validPayouts.map((payout) => {
               const merchant = merchantMap.get(payout.merchant_id)
               const booking = payout.booking_id ? bookingMap.get(payout.booking_id) : null
               const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tanpa nama"
