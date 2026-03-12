@@ -18,6 +18,11 @@ export default async function FinanceDashboardPage() {
     .order("requested_at", { ascending: false })
 
   const payouts = payoutsData || []
+  const { data: bookingsData } = await adminSupabase
+    .from("bookings")
+    .select("id, booking_status")
+    .order("created_at", { ascending: false })
+  const bookings = bookingsData || []
   const pendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
   const processingCount = payouts.filter((item) => {
     const status = normalizeStatus(item.status)
@@ -35,6 +40,7 @@ export default async function FinanceDashboardPage() {
     .reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   const metricCards = [
+    { label: "Booking dari admin", value: String(bookings.filter((item) => normalizeStatus(item.booking_status) === "finance_review").length), note: "Booking yang sudah di-handoff admin ke finance." },
     { label: "Payout pending", value: String(pendingCount), note: "Request payout menunggu keputusan finance." },
     { label: "Sedang diproses", value: String(processingCount), note: "Transfer sedang dijalankan atau sudah di-approve." },
     { label: "Sudah paid", value: String(paidCount), note: "Request payout yang sudah final." },
@@ -54,8 +60,7 @@ export default async function FinanceDashboardPage() {
                 Kelola payout approval merchant dari workspace finance.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Semua arus payout dipusatkan di area finance agar approval merchant dan package tetap
-                terpisah dari proses pencairan dana.
+                Semua arus payout dipusatkan di area finance agar admin hanya melakukan handoff booking dan finance mengontrol transfer, komisi, fee, serta potongan payout merchant.
               </p>
             </div>
 
@@ -102,7 +107,7 @@ export default async function FinanceDashboardPage() {
               </p>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
               <Link
                 href="/finance/payouts"
                 className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
@@ -118,6 +123,21 @@ export default async function FinanceDashboardPage() {
                   Buka area kerja -&gt;
                 </div>
               </Link>
+              <Link
+                href="/finance/settings"
+                className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+              >
+                <div className="inline-flex rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
+                  Open settings
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-slate-950">Finance Settings</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Atur komisi Red Feng, admin fee customer, pajak, dan biaya transfer merchant.
+                </p>
+                <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
+                  Buka pengaturan -&gt;
+                </div>
+              </Link>
             </div>
           </div>
 
@@ -127,10 +147,10 @@ export default async function FinanceDashboardPage() {
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aturan release dana</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                 <p>1. Dana customer tetap masuk dan ditahan di rekening Red Feng.</p>
-                <p>2. Merchant klik <span className="font-semibold text-slate-900">Tiba</span> saat sudah di meeting point.</p>
-                <p>3. Merchant klik <span className="font-semibold text-slate-900">Dijemput</span> saat customer benar-benar sudah naik.</p>
-                <p>4. Customer klik <span className="font-semibold text-slate-900">Sudah dijemput</span>.</p>
-                <p>5. Setelah itu booking masuk status <span className="font-semibold text-slate-900">ready_for_payout</span> dan finance bisa proses payout penuh.</p>
+                <p>2. Merchant klik <span className="font-semibold text-slate-900">Arrived</span> saat sudah di meeting point.</p>
+                <p>3. Customer klik <span className="font-semibold text-slate-900">Picked up</span> saat sudah naik kendaraan.</p>
+                <p>4. Merchant klik <span className="font-semibold text-slate-900">Go</span> agar admin tahu trip sudah berjalan.</p>
+                <p>5. Admin handoff booking ke finance, lalu finance transfer sesuai setting komisi dan biaya.</p>
               </div>
             </div>
           </div>

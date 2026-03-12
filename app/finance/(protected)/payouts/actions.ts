@@ -15,7 +15,7 @@ async function ensureFinance() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/admin/login")
+    redirect("/finance/login")
   }
 
   const { data: profile } = await supabase
@@ -25,7 +25,7 @@ async function ensureFinance() {
     .single()
 
   if (!profile || !["admin", "superadmin"].includes(profile.role)) {
-    redirect("/admin/login")
+    redirect("/finance/login")
   }
 
   return user
@@ -58,7 +58,7 @@ export async function updatePayoutStatus(formData: FormData) {
   const adminSupabase = createAdminClient()
   const { data: payout, error: payoutError } = await adminSupabase
     .from("payout_requests")
-    .select("id, status")
+    .select("id, status, booking_id")
     .eq("id", payoutId)
     .single()
 
@@ -95,6 +95,34 @@ export async function updatePayoutStatus(formData: FormData) {
 
   if (error) {
     backToPayouts(error.message, "error")
+  }
+
+  if (payout.booking_id) {
+    const bookingPatch =
+      nextStatus === "approved"
+        ? { booking_status: "finance_approved", escrow_status: "finance_review" }
+        : nextStatus === "processing"
+          ? { booking_status: "finance_processing", escrow_status: "payout_processing" }
+          : nextStatus === "paid"
+            ? {
+                booking_status: "payout_completed",
+                escrow_status: "paid_out",
+                escrow_released_at: new Date().toISOString(),
+              }
+            : {
+                booking_status: "awaiting_admin_handoff",
+                escrow_status: "awaiting_admin_handoff",
+                escrow_released_at: null,
+              }
+
+    const { error: bookingUpdateError } = await adminSupabase
+      .from("bookings")
+      .update(bookingPatch)
+      .eq("id", payout.booking_id)
+
+    if (bookingUpdateError) {
+      backToPayouts(bookingUpdateError.message, "error")
+    }
   }
 
   const successMessage =

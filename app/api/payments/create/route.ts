@@ -37,6 +37,13 @@ export async function POST(req: Request) {
       )
     }
 
+    if (booking.payment_status === "paid") {
+      return NextResponse.json(
+        { error: "Booking ini sudah lunas" },
+        { status: 400 }
+      )
+    }
+
     if (booking.user_id && booking.user_id !== user.id) {
       return NextResponse.json(
         { error: "Booking ini bukan milik akun Anda" },
@@ -47,16 +54,21 @@ export async function POST(req: Request) {
     // ===============================
     // 2️⃣ Tentukan amount
     // ===============================
+    const hasPaidDp = booking.payment_type === "dp" && booking.payment_status === "dp_paid"
     let amount = booking.total_amount
+    let paymentType = booking.payment_type || "full"
 
-    if (booking.payment_type === "dp") {
+    if (hasPaidDp) {
+      paymentType = "full"
+      amount = Math.max(Number(booking.final_payment_amount || 0), 0)
+    } else if (booking.payment_type === "dp") {
       amount = booking.dp_amount
     }
 
     // ===============================
     // 3️⃣ Generate Order ID
     // ===============================
-    const orderId = `${booking.booking_code}-${booking.payment_type}`
+    const orderId = `${booking.booking_code}-${paymentType}`
 
     // ===============================
     // 4️⃣ Simpan ke table payments
@@ -66,7 +78,7 @@ export async function POST(req: Request) {
   .insert({
     booking_id: booking.id,
     order_id: orderId,
-    payment_type: booking.payment_type,
+    payment_type: paymentType,
     gross_amount: amount,
     transaction_status: "pending"
   })

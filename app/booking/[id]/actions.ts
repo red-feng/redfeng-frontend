@@ -24,7 +24,7 @@ async function getOwnedBooking(bookingId: string) {
 
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, package_id, customer_email, payment_status, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, package_id, customer_email, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", bookingId)
     .single()
 
@@ -99,8 +99,8 @@ export async function confirmCustomerPickedUp(formData: FormData) {
     redirect(`/booking/${bookingId}?error=${encodeURIComponent(bookingError || "Booking tidak ditemukan")}`)
   }
 
-  if (!booking.merchant_picked_up_at) {
-    redirect(`/booking/${bookingId}?error=Merchant belum menekan status Dijemput`)
+  if (!booking.merchant_arrived_at) {
+    redirect(`/booking/${bookingId}?error=Merchant belum menekan status Arrived`)
   }
 
   if (booking.customer_picked_up_at) {
@@ -112,9 +112,9 @@ export async function confirmCustomerPickedUp(formData: FormData) {
     .from("bookings")
     .update({
       customer_picked_up_at: new Date().toISOString(),
-      booking_status: "pickup_confirmed",
-      escrow_status: paymentStatus === "paid" ? "ready_for_payout" : "partial_hold",
-      escrow_released_at: paymentStatus === "paid" ? new Date().toISOString() : null,
+      booking_status: paymentStatus === "paid" ? "customer_picked_up" : "customer_picked_up_pending_final_payment",
+      escrow_status: paymentStatus === "paid" ? "held" : "partial_hold",
+      escrow_released_at: null,
     })
     .eq("id", bookingId)
 
@@ -122,5 +122,5 @@ export async function confirmCustomerPickedUp(formData: FormData) {
     redirect(`/booking/${bookingId}?error=${encodeURIComponent(error.message)}`)
   }
 
-  redirect(`/booking/${bookingId}?success=Konfirmasi penjemputan berhasil dikirim. Dana siap diproses RedFeng untuk merchant.`)
+  redirect(`/booking/${bookingId}?success=Status Picked up berhasil dikirim. Merchant dapat melanjutkan dengan klik Go.`)
 }

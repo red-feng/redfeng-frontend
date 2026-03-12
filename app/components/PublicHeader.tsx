@@ -73,7 +73,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
             <a href="https://redfeng.co/promo/" className="hover:text-orange-600">{t.promo}</a>
             <a href="https://redfeng.co/pesanan/" className="hover:text-orange-600">{t.orders}</a>
             <a href="https://redfeng.co/kemitraan_tour/" className="hover:text-orange-600">{t.partnerTour}</a>
-            <a href="https://redfeng.co/verifikasi-invoice/" className="hover:text-orange-600">{t.verifyInvoice}</a>
+            <Link href="/verifikasi-invoice" className="hover:text-orange-600">{t.verifyInvoice}</Link>
             <a href="https://redfeng.co/bantuan/" className="hover:text-orange-600">{t.help}</a>
             <details className="relative">
               <summary className="list-none cursor-pointer hover:text-orange-600">{t.language}</summary>

@@ -1,4 +1,5 @@
 import CheckoutClient from "./CheckoutClient"
+import { defaultFinanceSettings } from "@/lib/finance/settings"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -82,5 +83,28 @@ export default async function CheckoutPage({
     return <div className="p-10">{t.packageNotFound}</div>
   }
 
-  return <CheckoutClient data={pkg} locale={locale as Locale} />
+  const settingsResult = await ((supabase
+    .from("finance_settings")
+    .select(
+      "redfeng_commission_percent, customer_admin_fee_percent, customer_tax_percent, merchant_transfer_fee",
+    )
+    .eq("id", "default")
+    .maybeSingle()) as unknown as Promise<{
+    data: {
+      customer_admin_fee_percent?: number | string | null
+      customer_tax_percent?: number | string | null
+    } | null
+    error: { message?: string } | null
+  }>)
+
+  const financeSettings = {
+    customerAdminFeePercent: Number(
+      settingsResult.data?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
+    ),
+    customerTaxPercent: Number(
+      settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
+    ),
+  }
+
+  return <CheckoutClient data={pkg} locale={locale as Locale} financeSettings={financeSettings} />
 }

@@ -4,6 +4,7 @@ import { updatePayoutStatus } from "./actions"
 type PayoutRow = {
   id: string
   merchant_id: string
+  booking_id: string | null
   amount: number | null
   status: string | null
   note: string | null
@@ -12,6 +13,13 @@ type PayoutRow = {
   bank_name: string | null
   bank_account_number: string | null
   bank_account_holder: string | null
+  gross_booking_amount?: number | null
+  redfeng_commission_percent?: number | null
+  redfeng_commission_amount?: number | null
+  customer_admin_fee_percent?: number | null
+  customer_tax_percent?: number | null
+  merchant_transfer_fee?: number | null
+  source?: string | null
 }
 
 type MerchantRow = {
@@ -19,6 +27,18 @@ type MerchantRow = {
   brand_name: string | null
   company_name: string | null
   email: string | null
+}
+
+type BookingLiteRow = {
+  id: string
+  booking_code: string | null
+  customer_name: string | null
+  booking_status: string | null
+  subtotal_amount: number | null
+  customer_admin_fee_amount: number | null
+  customer_tax_amount: number | null
+  total_amount: number | null
+  final_payment_amount: number | null
 }
 
 function normalizeStatus(value: string | null) {
@@ -62,6 +82,19 @@ function statusTone(status: string | null) {
   return "bg-amber-50 text-amber-700 border-amber-200"
 }
 
+function bookingPhaseTone(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "awaiting_admin_handoff" || normalized === "finance_review") {
+    return "bg-sky-50 text-sky-700 border-sky-200"
+  }
+  if (normalized === "finance_processing") return "bg-indigo-50 text-indigo-700 border-indigo-200"
+  if (normalized === "payout_completed") return "bg-violet-50 text-violet-700 border-violet-200"
+  if (normalized === "merchant_arrived" || normalized === "customer_picked_up") {
+    return "bg-amber-50 text-amber-700 border-amber-200"
+  }
+  return "bg-slate-100 text-slate-700 border-slate-200"
+}
+
 export default async function FinancePayoutsPage({
   searchParams,
 }: {
@@ -72,11 +105,12 @@ export default async function FinancePayoutsPage({
 
   const { data: payoutsData, error } = await adminSupabase
     .from("payout_requests")
-    .select("id, merchant_id, amount, status, note, requested_at, processed_at, bank_name, bank_account_number, bank_account_holder")
+    .select("*")
     .order("requested_at", { ascending: false })
 
   const payouts = (payoutsData as PayoutRow[] | null) || []
   const merchantIds = Array.from(new Set(payouts.map((item) => item.merchant_id).filter(Boolean)))
+  const bookingIds = Array.from(new Set(payouts.map((item) => item.booking_id).filter(Boolean)))
 
   const { data: merchantsData } =
     merchantIds.length > 0
@@ -87,6 +121,14 @@ export default async function FinancePayoutsPage({
       : { data: [] as MerchantRow[] }
 
   const merchantMap = new Map(((merchantsData as MerchantRow[] | null) || []).map((merchant) => [merchant.id, merchant]))
+  const { data: bookingsData } =
+    bookingIds.length > 0
+      ? await adminSupabase
+          .from("bookings")
+          .select("id, booking_code, customer_name, booking_status, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, total_amount, final_payment_amount")
+          .in("id", bookingIds)
+      : { data: [] as BookingLiteRow[] }
+  const bookingMap = new Map(((bookingsData as BookingLiteRow[] | null) || []).map((booking) => [booking.id, booking]))
 
   const pendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
   const processingCount = payouts.filter((item) => {
@@ -120,9 +162,9 @@ export default async function FinancePayoutsPage({
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
                 Semua dana customer tetap masuk ke escrow Red Feng. Payout baru boleh diproses penuh setelah
-                merchant klik <span className="font-semibold">Tiba</span>, merchant klik{" "}
-                <span className="font-semibold">Dijemput</span>, dan customer klik{" "}
-                <span className="font-semibold">Sudah dijemput</span>.
+                merchant klik <span className="font-semibold">Arrived</span>, customer klik{" "}
+                <span className="font-semibold">Picked up</span>, merchant klik{" "}
+                <span className="font-semibold">Go</span>, lalu admin handoff booking ke finance.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
@@ -176,6 +218,7 @@ export default async function FinancePayoutsPage({
           <section className="grid gap-6">
             {payouts.map((payout) => {
               const merchant = merchantMap.get(payout.merchant_id)
+              const booking = payout.booking_id ? bookingMap.get(payout.booking_id) : null
               const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tanpa nama"
               const isFinal = ["paid", "completed", "rejected"].includes(normalizeStatus(payout.status))
 
@@ -194,6 +237,9 @@ export default async function FinancePayoutsPage({
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">{merchantName}</h2>
                           <p className="mt-2 text-sm leading-7 text-slate-600">
                             {merchant?.email || "Email merchant belum tersedia"}
+                          </p>
+                          <p className="mt-2 text-sm leading-7 text-slate-500">
+                            {booking ? `Booking ${booking.booking_code || booking.id} • ${booking.customer_name || "-"}` : "Request payout manual / legacy"}
                           </p>
                         </div>
                         <span className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] ${statusTone(payout.status)}`}>
@@ -219,6 +265,62 @@ export default async function FinancePayoutsPage({
                           <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
                             {[payout.bank_name, payout.bank_account_holder, payout.bank_account_number].filter(Boolean).join(" | ") || "-"}
                           </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Total customer</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(booking?.total_amount || 0))}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Subtotal paket</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(booking?.subtotal_amount || 0))}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Admin fee customer</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(booking?.customer_admin_fee_amount || 0))}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Pajak customer</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(booking?.customer_tax_amount || 0))}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Gross booking</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(payout.gross_booking_amount || 0))}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Komisi Red Feng</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {Number(payout.redfeng_commission_percent || 0)}% • {formatMoney(Number(payout.redfeng_commission_amount || 0))}
+                          </p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Biaya transfer merchant</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(payout.merchant_transfer_fee || 0))}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Net payout / pelunasan</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {formatMoney(Number(payout.amount || 0))}
+                            {booking?.final_payment_amount ? ` • sisa Rp ${Number(booking.final_payment_amount).toLocaleString("id-ID")}` : ""}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Source</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(payout.source || "manual")}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Status booking</p>
+                          <span className={`mt-2 inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${bookingPhaseTone(booking?.booking_status || "-")}`}>
+                            {titleCaseStatus(booking?.booking_status || "-")}
+                          </span>
                         </div>
                       </div>
 

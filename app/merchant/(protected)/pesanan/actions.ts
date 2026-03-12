@@ -65,8 +65,8 @@ export async function markMerchantArrived(formData: FormData) {
   if (error || !booking) redirectBack(error || "Booking tidak ditemukan", filter, "error")
 
   const paymentStatus = normalizeStatus(booking.payment_status)
-  if (paymentStatus !== "paid") {
-    redirectBack("Merchant hanya bisa klik Tiba setelah pelunasan customer", filter, "error")
+  if (!["paid", "dp_paid"].includes(paymentStatus)) {
+    redirectBack("Merchant hanya bisa klik Arrived setelah ada pembayaran customer", filter, "error")
   }
 
   if (booking.merchant_arrived_at) {
@@ -79,7 +79,7 @@ export async function markMerchantArrived(formData: FormData) {
     .update({
       merchant_arrived_at: new Date().toISOString(),
       booking_status: "merchant_arrived",
-      escrow_status: "held",
+      escrow_status: paymentStatus === "paid" ? "held" : "partial_hold",
     })
     .eq("id", bookingId)
 
@@ -87,10 +87,10 @@ export async function markMerchantArrived(formData: FormData) {
     redirectBack(updateError.message, filter, "error")
   }
 
-  redirectBack("Status merchant tiba berhasil dikirim ke customer", filter, "success")
+  redirectBack("Status Arrived berhasil dikirim ke customer dan admin", filter, "success")
 }
 
-export async function markMerchantPickedUp(formData: FormData) {
+export async function markMerchantGo(formData: FormData) {
   const bookingId = String(formData.get("booking_id") || "")
   const filter = String(formData.get("filter") || "all")
   const supabase = await createClient()
@@ -106,21 +106,27 @@ export async function markMerchantPickedUp(formData: FormData) {
   if (error || !booking) redirectBack(error || "Booking tidak ditemukan", filter, "error")
 
   if (!booking.merchant_arrived_at) {
-    redirectBack("Klik Tiba terlebih dahulu saat merchant sudah sampai meeting point", filter, "error")
+    redirectBack("Klik Arrived terlebih dahulu saat merchant sudah sampai meeting point", filter, "error")
+  }
+
+  if (!booking.customer_picked_up_at) {
+    redirectBack("Customer harus klik Picked up terlebih dahulu sebelum merchant klik Go", filter, "error")
   }
 
   if (booking.merchant_picked_up_at) {
-    redirectBack("Status dijemput dari merchant sudah pernah dikirim", filter, "success")
+    redirectBack("Status Go sudah pernah dikirim", filter, "success")
   }
 
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const readyForAdminHandoff = paymentStatus === "paid"
   const adminSupabase = createAdminClient()
   const { error: updateError } = await adminSupabase
     .from("bookings")
     .update({
       merchant_picked_up_at: new Date().toISOString(),
-      booking_status: "pickup_confirm_merchant",
-      escrow_status: booking.customer_picked_up_at ? "ready_for_payout" : "held",
-      escrow_released_at: booking.customer_picked_up_at ? new Date().toISOString() : null,
+      booking_status: readyForAdminHandoff ? "awaiting_admin_handoff" : "pickup_completed_pending_final_payment",
+      escrow_status: readyForAdminHandoff ? "awaiting_admin_handoff" : "partial_hold",
+      escrow_released_at: null,
     })
     .eq("id", bookingId)
 
@@ -128,5 +134,11 @@ export async function markMerchantPickedUp(formData: FormData) {
     redirectBack(updateError.message, filter, "error")
   }
 
-  redirectBack("Status dijemput berhasil dikirim. Menunggu konfirmasi customer.", filter, "success")
+  redirectBack(
+    readyForAdminHandoff
+      ? "Status Go berhasil dikirim. Booking menunggu handoff admin ke finance."
+      : "Status Go berhasil dikirim. Booking masih menunggu pelunasan customer.",
+    filter,
+    "success",
+  )
 }

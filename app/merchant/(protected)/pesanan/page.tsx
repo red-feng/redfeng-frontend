@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { markMerchantArrived, markMerchantPickedUp } from "./actions"
+import { markMerchantArrived, markMerchantGo } from "./actions"
 
 type BookingRow = {
   id: string
@@ -85,7 +85,9 @@ function isMatchingFilter(booking: BookingRow, filter: string) {
   if (filter === "new") return tripStatus === "pending"
   if (filter === "waiting-payment") return paymentStatus === "pending" || paymentStatus === "dp_paid"
   if (filter === "paid") return paymentStatus === "paid" || tripStatus === "confirmed" || booking.escrow_status === "held"
-  if (filter === "done") return tripStatus === "completed" || tripStatus === "done" || tripStatus === "pickup_confirmed"
+  if (filter === "done") {
+    return ["completed", "done", "awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(tripStatus)
+  }
   if (filter === "refund") return paymentStatus === "refund" || tripStatus === "refund"
   if (filter === "cancelled") return tripStatus === "cancelled" || paymentStatus === "cancelled"
 
@@ -98,15 +100,19 @@ function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
     normalized === "paid" ||
     normalized === "confirmed" ||
     normalized === "completed" ||
-    normalized === "ready_for_payout" ||
-    normalized === "pickup_confirmed"
+    normalized === "awaiting_admin_handoff" ||
+    normalized === "finance_review" ||
+    normalized === "finance_approved" ||
+    normalized === "finance_processing" ||
+    normalized === "payout_completed" ||
+    normalized === "paid_out"
   ) {
     return "bg-emerald-50 text-emerald-700"
   }
   if (normalized === "pending" || normalized === "dp_paid" || normalized === "held" || normalized === "partial_hold") {
     return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
   }
-  if (normalized === "merchant_arrived" || normalized === "pickup_confirm_merchant") {
+  if (normalized === "merchant_arrived" || normalized === "customer_picked_up" || normalized === "customer_picked_up_pending_final_payment") {
     return "bg-violet-50 text-violet-700"
   }
   if (normalized === "cancelled" || normalized === "refund" || normalized === "rejected") {
@@ -123,14 +129,14 @@ function pickupTimeline(booking: BookingRow) {
       value: booking.merchant_arrived_at,
     },
     {
-      label: "Merchant klik Dijemput",
-      done: Boolean(booking.merchant_picked_up_at),
-      value: booking.merchant_picked_up_at,
-    },
-    {
-      label: "Customer konfirmasi Sudah dijemput",
+      label: "Customer klik Picked up",
       done: Boolean(booking.customer_picked_up_at),
       value: booking.customer_picked_up_at,
+    },
+    {
+      label: "Merchant klik Go",
+      done: Boolean(booking.merchant_picked_up_at),
+      value: booking.merchant_picked_up_at,
     },
   ]
 }
@@ -192,7 +198,9 @@ export default async function MerchantOrdersPage({
     },
     {
       label: "Siap Payout",
-      value: allBookings.filter((booking) => normalizeStatus(booking.escrow_status) === "ready_for_payout").length,
+      value: allBookings.filter((booking) =>
+        ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(normalizeStatus(booking.escrow_status)),
+      ).length,
     },
   ]
 
@@ -213,8 +221,8 @@ export default async function MerchantOrdersPage({
     },
     {
       label: "Pickup Aktif",
-      value: allBookings.filter((booking) => Boolean(booking.merchant_arrived_at) && !booking.merchant_picked_up_at).length,
-      note: "Merchant sudah di meeting point.",
+      value: allBookings.filter((booking) => Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at).length,
+      note: "Merchant sudah tiba dan menunggu customer naik.",
     },
   ]
 
@@ -322,8 +330,9 @@ export default async function MerchantOrdersPage({
             {bookings.map((booking) => {
               const totalPeserta = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
               const timeline = pickupTimeline(booking)
-              const canMarkArrived = normalizeStatus(booking.payment_status) === "paid" && !booking.merchant_arrived_at
-              const canMarkPickedUp = Boolean(booking.merchant_arrived_at) && !booking.merchant_picked_up_at
+              const paymentStatus = normalizeStatus(booking.payment_status)
+              const canMarkArrived = ["paid", "dp_paid"].includes(paymentStatus) && !booking.merchant_arrived_at
+              const canMarkGo = Boolean(booking.customer_picked_up_at) && !booking.merchant_picked_up_at
 
               return (
                 <div
@@ -384,7 +393,7 @@ export default async function MerchantOrdersPage({
                         ))}
                       </div>
                       <p className="mt-4 text-xs leading-6 text-slate-500">
-                        Dana customer tetap ditahan di rekening RedFeng sampai merchant dan customer sama-sama konfirmasi proses pickup.
+                        Dana customer tetap ditahan di rekening RedFeng sampai urutan Arrived, customer Picked up, dan merchant Go selesai.
                       </p>
                     </div>
 
@@ -397,18 +406,18 @@ export default async function MerchantOrdersPage({
                           disabled={!canMarkArrived}
                           className="w-full rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          Tiba
+                          Arrived
                         </button>
                       </form>
-                      <form action={markMerchantPickedUp}>
+                      <form action={markMerchantGo}>
                         <input type="hidden" name="booking_id" value={booking.id} />
                         <input type="hidden" name="filter" value={activeFilter} />
                         <button
                           type="submit"
-                          disabled={!canMarkPickedUp}
+                          disabled={!canMarkGo}
                           className="w-full rounded-[20px] border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                         >
-                          Dijemput
+                          Go
                         </button>
                       </form>
                       <Link

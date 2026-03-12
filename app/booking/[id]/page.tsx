@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import ReviewForm from "./ReviewForm"
+import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp, submitPackageReview } from "./actions"
 
 export const dynamic = "force-dynamic"
@@ -8,6 +9,25 @@ export const dynamic = "force-dynamic"
 type BookingPageProps = {
   params: Promise<{ id: string }>
   searchParams: Promise<{ success?: string; error?: string }>
+}
+
+type BookingDetailRow = {
+  id: string
+  booking_code: string | null
+  customer_name: string | null
+  customer_email: string | null
+  total_amount: number | null
+  subtotal_amount?: number | null
+  customer_admin_fee_amount?: number | null
+  customer_tax_amount?: number | null
+  final_payment_amount?: number | null
+  booking_status: string | null
+  payment_status: string | null
+  package_id: string | null
+  escrow_status: string | null
+  merchant_arrived_at: string | null
+  merchant_picked_up_at: string | null
+  customer_picked_up_at: string | null
 }
 
 function formatDateTime(dateStr: string | null) {
@@ -33,6 +53,53 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function normalizeStatus(value: string | null) {
+  return (value || "").trim().toLowerCase()
+}
+
+function badgeTone(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (normalized === "dp_paid") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "cancelled") return "border-rose-200 bg-rose-50 text-rose-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function escrowBadgeTone(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "held" || normalized === "partial_hold") return "border-orange-200 bg-orange-50 text-orange-700"
+  if (normalized === "awaiting_admin_handoff" || normalized === "ready_for_payout") {
+    return "border-sky-200 bg-sky-50 text-sky-700"
+  }
+  if (normalized === "paid_out") return "border-violet-200 bg-violet-50 text-violet-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function resolveJourneyPhase(booking: BookingDetailRow) {
+  if (normalizeStatus(booking.escrow_status) === "paid_out") {
+    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
+  }
+  if (normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" || normalizeStatus(booking.escrow_status) === "awaiting_admin_handoff") {
+    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
+  }
+  if (booking.merchant_picked_up_at) {
+    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (booking.customer_picked_up_at) {
+    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (booking.merchant_arrived_at) {
+    return { label: "Awaiting Pickup", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "paid") {
+    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "dp_paid") {
+    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+  }
+  return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
+}
+
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
@@ -48,9 +115,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, total_amount, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
-    .single()
+    .single<BookingDetailRow>()
 
   if (error || !booking || !user.email || booking.customer_email !== user.email) {
     return <div className="p-10">Booking tidak ditemukan</div>
@@ -69,18 +136,20 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
       value: booking.merchant_arrived_at,
     },
     {
-      label: "Merchant menekan Dijemput",
-      done: Boolean(booking.merchant_picked_up_at),
-      value: booking.merchant_picked_up_at,
-    },
-    {
-      label: "Customer konfirmasi Sudah dijemput",
+      label: "Customer klik Picked up",
       done: Boolean(booking.customer_picked_up_at),
       value: booking.customer_picked_up_at,
     },
+    {
+      label: "Merchant klik Go",
+      done: Boolean(booking.merchant_picked_up_at),
+      value: booking.merchant_picked_up_at,
+    },
   ]
 
-  const canConfirmPickup = Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at
+  const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
+  const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
+  const phase = resolveJourneyPhase(booking)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
@@ -117,11 +186,42 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Status Pembayaran</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{titleCaseStatus(booking.payment_status)}</p>
+            <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
+              {titleCaseStatus(booking.payment_status)}
+            </span>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Status Escrow</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{titleCaseStatus(booking.escrow_status)}</p>
+            <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${escrowBadgeTone(booking.escrow_status)}`}>
+              {titleCaseStatus(booking.escrow_status)}
+            </span>
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-4 md:grid-cols-4">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Subtotal Paket</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              Rp {Number(booking.subtotal_amount ?? 0).toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Admin Fee</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              Rp {Number(booking.customer_admin_fee_amount ?? 0).toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Pajak</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              Rp {Number(booking.customer_tax_amount ?? 0).toLocaleString("id-ID")}
+            </p>
+          </div>
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Sisa Pelunasan</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              Rp {Number(booking.final_payment_amount ?? 0).toLocaleString("id-ID")}
+            </p>
           </div>
         </section>
 
@@ -137,12 +237,16 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="mt-2 font-medium text-slate-900">{booking.customer_email || "-"}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Status Booking</p>
-              <p className="mt-2 font-medium text-slate-900">{titleCaseStatus(booking.booking_status)}</p>
+              <p className="text-sm text-slate-500">Journey Phase</p>
+              <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
+                {phase.label}
+              </span>
             </div>
             <div>
               <p className="text-sm text-slate-500">Status Pembayaran</p>
-              <p className="mt-2 font-medium text-slate-900">{titleCaseStatus(booking.payment_status)}</p>
+              <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
+                {titleCaseStatus(booking.payment_status)}
+              </span>
             </div>
           </div>
         </section>
@@ -151,7 +255,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold text-slate-900">Progress Meeting Point</h2>
             <p className="text-sm text-slate-500">
-              Dana baru siap diproses ke merchant setelah merchant dan customer sama-sama menyelesaikan konfirmasi pickup.
+              Dana baru bisa dilanjutkan ke finance setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go.
             </p>
           </div>
 
@@ -173,10 +277,19 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <button
                 type="submit"
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Sudah dijemput
-              </button>
-            </form>
+                >
+                  Picked up
+                </button>
+              </form>
+            )}
+          {canPayRemaining && (
+            <div className="mt-4">
+              <BookingPaymentButton
+                bookingId={booking.id}
+                label="Bayar Pelunasan"
+                className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+              />
+            </div>
           )}
         </section>
 

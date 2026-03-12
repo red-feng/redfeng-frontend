@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
+import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)$/i)
@@ -16,6 +17,17 @@ function resolveOrder(orderId: string) {
     bookingCode: orderId,
     paymentType: null as string | null,
   }
+}
+
+function formatDateLabel(value: string | null) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
 }
 
 export async function POST(req: Request) {
@@ -48,7 +60,9 @@ export async function POST(req: Request) {
     const { bookingCode, paymentType } = resolveOrder(order_id)
     const { data: booking } = await supabase
       .from("bookings")
-      .select("id, payment_type")
+      .select(
+        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      )
       .or(`booking_code.eq.${bookingCode},id.eq.${order_id}`)
       .maybeSingle()
 
@@ -71,13 +85,78 @@ export async function POST(req: Request) {
               booking_status: "awaiting_final_payment",
               escrow_status: "partial_hold",
             }
-          : {
-              payment_status: "paid",
-              booking_status: "confirmed",
-              escrow_status: "held",
-            }
+          : (() => {
+              if (booking.merchant_picked_up_at) {
+                return {
+                  payment_status: "paid",
+                  booking_status: "awaiting_admin_handoff",
+                  escrow_status: "awaiting_admin_handoff",
+                }
+              }
+
+              if (booking.customer_picked_up_at) {
+                return {
+                  payment_status: "paid",
+                  booking_status: "customer_picked_up",
+                  escrow_status: "held",
+                }
+              }
+
+              if (booking.merchant_arrived_at) {
+                return {
+                  payment_status: "paid",
+                  booking_status: "merchant_arrived",
+                  escrow_status: "held",
+                }
+              }
+
+              return {
+                payment_status: "paid",
+                booking_status: "confirmed",
+                escrow_status: "held",
+              }
+            })()
 
       await supabase.from("bookings").update(bookingPatch).eq("id", booking.id)
+
+      const amountPaid =
+        resolvedPaymentType === "dp"
+          ? Number(booking.dp_amount || 0)
+          : Number(booking.total_amount || 0)
+
+      try {
+        const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(booking.booking_code || booking.id)}`
+        const { data: packageRow } = booking.package_id
+          ? await supabase.from("packages").select("title, merchant_id").eq("id", booking.package_id).maybeSingle()
+          : { data: null as { title?: string | null; merchant_id?: string | null } | null }
+        const { data: merchantRow } = packageRow?.merchant_id
+          ? await supabase
+              .from("merchants")
+              .select("brand_name, company_name")
+              .eq("id", packageRow.merchant_id)
+              .maybeSingle()
+          : { data: null as { brand_name?: string | null; company_name?: string | null } | null }
+
+        await sendCustomerPaymentEmail({
+          bookingCode: booking.booking_code || booking.id,
+          customerName: booking.customer_name || null,
+          customerEmail: booking.customer_email || null,
+          packageTitle: packageRow?.title || null,
+          pickupDateLabel: formatDateLabel(booking.pickup_date || null),
+          merchantName: merchantRow?.brand_name || merchantRow?.company_name || null,
+          verificationUrl,
+          totalAmount: amountPaid,
+          subtotalAmount: Number(booking.subtotal_amount || 0),
+          adminFeeAmount: Number(booking.customer_admin_fee_amount || 0),
+          taxAmount: Number(booking.customer_tax_amount || 0),
+          finalPaymentAmount: Number(booking.final_payment_amount || 0),
+          paymentTypeLabel: resolvedPaymentType === "dp" ? "DP booking" : "Pelunasan / full payment",
+          paymentStatusLabel: resolvedPaymentType === "dp" ? "DP diterima" : "Lunas",
+          sendInvoicePdf: resolvedPaymentType !== "dp",
+        })
+      } catch (emailError) {
+        console.error("Failed to send payment email:", emailError)
+      }
     }
 
     if (transaction_status === "expire" || transaction_status === "cancel") {

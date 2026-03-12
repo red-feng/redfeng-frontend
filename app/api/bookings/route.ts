@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
+import { defaultFinanceSettings } from "@/lib/finance/settings"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
@@ -43,6 +44,42 @@ export async function POST(req: Request) {
       getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY"),
     )
 
+    const { data: packagePricing } = await supabase
+      .from("packages")
+      .select("price_adult, price_child")
+      .eq("id", package_id)
+      .single()
+
+    if (!packagePricing) {
+      return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 404 })
+    }
+
+    const settingsResult = await ((supabase
+      .from("finance_settings")
+      .select("customer_admin_fee_percent, customer_tax_percent")
+      .eq("id", "default")
+      .maybeSingle()) as unknown as Promise<{
+      data: {
+        customer_admin_fee_percent?: number | string | null
+        customer_tax_percent?: number | string | null
+      } | null
+      error: { message?: string } | null
+    }>)
+
+    const customerAdminFeePercent = Number(
+      settingsResult.data?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
+    )
+    const customerTaxPercent = Number(
+      settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
+    )
+    const subtotalAmount =
+      Number(packagePricing.price_adult || 0) * Number(adult_count || 0) +
+      Number(packagePricing.price_child || 0) * Number(child_count || 0)
+    const customerAdminFeeAmount = Math.round(subtotalAmount * (customerAdminFeePercent / 100))
+    const customerTaxAmount = Math.round((subtotalAmount + customerAdminFeeAmount) * (customerTaxPercent / 100))
+    const totalAmount = subtotalAmount + customerAdminFeeAmount + customerTaxAmount
+    const dpAmount = Math.round(totalAmount * 0.3)
+
     const windowCheck = validateBookingWindow(pickup_date)
     if (!windowCheck.allowed) {
       return NextResponse.json({ error: windowCheck.reason }, { status: 400 })
@@ -78,6 +115,14 @@ export async function POST(req: Request) {
         customer_email,
         customer_phone,
         expiry_time: expiry.toISOString(),
+        subtotal_amount: subtotalAmount,
+        customer_admin_fee_amount: customerAdminFeeAmount,
+        customer_tax_amount: customerTaxAmount,
+        customer_admin_fee_percent: customerAdminFeePercent,
+        customer_tax_percent: customerTaxPercent,
+        total_amount: totalAmount,
+        final_payment_amount: Math.max(totalAmount - dpAmount, 0),
+        dp_amount: dpAmount,
       })
       .eq("id", bookingData.id)
       .select()

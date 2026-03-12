@@ -18,12 +18,19 @@ type CheckoutPackageData = {
   cover_image: string | null
 }
 
+type CheckoutFinanceSettings = {
+  customerAdminFeePercent: number
+  customerTaxPercent: number
+}
+
 export default function CheckoutClient({
   data,
   locale = "id",
+  financeSettings,
 }: {
   data: CheckoutPackageData
   locale?: Locale
+  financeSettings: CheckoutFinanceSettings
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -47,8 +54,8 @@ export default function CheckoutClient({
     () => adultPrice * adultCount + childPrice * childCount,
     [adultCount, adultPrice, childCount, childPrice],
   )
-  const adminFee = Math.round(subtotal * 0.03)
-  const ppn = Math.round((subtotal + adminFee) * 0.11)
+  const adminFee = Math.round(subtotal * (financeSettings.customerAdminFeePercent / 100))
+  const ppn = Math.round((subtotal + adminFee) * (financeSettings.customerTaxPercent / 100))
   const total = subtotal + adminFee + ppn
 
   useEffect(() => {
@@ -271,11 +278,11 @@ export default function CheckoutClient({
                     <span className="font-semibold text-slate-900">Rp {subtotal.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span>Admin fee</span>
+                    <span>Admin fee ({financeSettings.customerAdminFeePercent}%)</span>
                     <span className="font-semibold text-slate-900">Rp {adminFee.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span>PPN</span>
+                    <span>Pajak ({financeSettings.customerTaxPercent}%)</span>
                     <span className="font-semibold text-slate-900">Rp {ppn.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">

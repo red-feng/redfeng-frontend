@@ -66,7 +66,9 @@ function isRevenueBooking(booking: StatsBookingRow) {
     paymentStatus === "paid" ||
     bookingStatus === "confirmed" ||
     bookingStatus === "completed" ||
-    bookingStatus === "pickup_confirmed"
+    bookingStatus === "awaiting_admin_handoff" ||
+    bookingStatus === "finance_review" ||
+    bookingStatus === "payout_completed"
   )
 }
 
@@ -228,7 +230,7 @@ export default async function MerchantStatisticsPage({
 
   const confirmedTripCount = filteredBookings.filter((booking) => {
     const status = normalizeStatus(booking.booking_status)
-    return status === "confirmed" || status === "pickup_confirmed" || status === "completed"
+    return ["confirmed", "awaiting_admin_handoff", "finance_review", "payout_completed", "completed"].includes(status)
   }).length
 
   const cancelledBookingCount = filteredBookings.filter(

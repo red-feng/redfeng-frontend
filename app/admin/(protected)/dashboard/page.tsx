@@ -14,6 +14,12 @@ const adminMenus = [
     description: "Validasi paket yang siap tayang ke customer.",
     tone: "from-sky-500 to-cyan-500",
   },
+  {
+    label: "Booking Handoff",
+    href: "/admin/bookings",
+    description: "Validasi flow pickup lalu kirim booking lunas ke finance.",
+    tone: "from-emerald-500 to-lime-500",
+  },
 ]
 
 function normalizeStatus(value: string | null) {
@@ -23,7 +29,7 @@ function normalizeStatus(value: string | null) {
 export default async function AdminDashboard() {
   const adminSupabase = createAdminClient()
 
-  const [merchantResult, packageResult, payoutResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id", { count: "exact", head: true })
@@ -33,18 +39,18 @@ export default async function AdminDashboard() {
       .select("id, status")
       .order("created_at", { ascending: false }),
     adminSupabase
-      .from("payout_requests")
-      .select("id, amount, status, requested_at")
-      .order("requested_at", { ascending: false }),
+      .from("bookings")
+      .select("id, booking_status")
+      .order("created_at", { ascending: false }),
   ])
 
   const pendingMerchants = merchantResult.count || 0
   const packages = packageResult.data || []
-  const payouts = payoutResult.data || []
+  const bookings = bookingResult.data || []
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
-  const payoutPendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
+  const financeReadyCount = bookings.filter((item) => normalizeStatus(item.booking_status) === "awaiting_admin_handoff").length
 
   const metricCards = [
     {
@@ -63,9 +69,9 @@ export default async function AdminDashboard() {
       note: "Paket yang sudah lolos review dan siap tayang.",
     },
     {
-      label: "Finance queue",
-      value: String(payoutPendingCount),
-      note: "Snapshot payout pending yang dikelola terpisah di dashboard finance.",
+      label: "Finance handoff",
+      value: String(financeReadyCount),
+      note: "Booking yang sudah siap dikirim admin ke finance.",
     },
   ]
 
@@ -79,11 +85,10 @@ export default async function AdminDashboard() {
                 Admin Control Center
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Approval merchant dan package dalam satu workspace admin.
+                Approval merchant, package, dan handoff booking dalam satu workspace admin.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Dashboard ini merangkum antrean approval utama Red Feng untuk merchant dan package.
-                Dashboard finance berjalan terpisah di area sendiri untuk kebutuhan payout.
+                Dashboard ini merangkum antrean approval utama Red Feng dan handoff booking yang sudah selesai pickup ke finance.
               </p>
             </div>
 
@@ -95,8 +100,8 @@ export default async function AdminDashboard() {
                   <p className="mt-1 text-3xl font-semibold text-white">{pendingMerchants}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Package approved</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{approvedPackages}</p>
+                  <p className="text-sm text-orange-50/80">Ready for finance</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{financeReadyCount}</p>
                 </div>
                 <div>
                   <p className="text-sm text-orange-50/80">Package approved</p>
@@ -127,7 +132,7 @@ export default async function AdminDashboard() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin workstreams</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Approval queue utama</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Masuk ke area review yang paling sering dipakai oleh tim operasional Red Feng.
+                  Masuk ke area review merchant/package atau validasi booking yang siap di-handoff ke finance.
                 </p>
               </div>
             </div>
@@ -157,9 +162,9 @@ export default async function AdminDashboard() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team split</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Admin dan finance terpisah</h2>
               <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
-                <p>Dashboard admin sekarang fokus ke approval merchant dan package.</p>
-                <p>Dashboard finance berdiri sendiri di `/finance/dashboard` untuk payout approval.</p>
-                <p>Snapshot payout yang tampil di admin hanya sebagai penanda antrean lintas fungsi.</p>
+                <p>Dashboard admin fokus ke approval merchant, package, dan validasi flow pickup booking.</p>
+                <p>Dashboard finance berdiri sendiri di `/finance/dashboard` untuk setting payout dan transfer merchant.</p>
+                <p>Admin tidak mengeksekusi transfer dana, hanya mengirim booking ke finance.</p>
               </div>
             </div>
 
@@ -167,10 +172,10 @@ export default async function AdminDashboard() {
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ops note</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pembagian area kerja</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Admin fokus pada approval merchant dan package.</p>
-                <p>2. Finance dashboard menangani payout approval dan proses pencairan.</p>
-                <p>3. Eksekusi update payout dilakukan penuh dari workspace finance.</p>
-                <p>4. Dashboard admin tidak lagi menjadi area approval payout.</p>
+                <p>1. Admin fokus pada approval merchant, package, dan validasi urutan Arrived, Picked up, Go.</p>
+                <p>2. Setelah flow pickup lengkap, admin kirim booking ke finance.</p>
+                <p>3. Finance menentukan komisi, biaya transfer, dan menjalankan payout merchant.</p>
+                <p>4. Dashboard admin tidak mengeksekusi transfer dana.</p>
               </div>
             </div>
           </div>

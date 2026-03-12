@@ -12,7 +12,12 @@ function isEligibleForPayout(booking: {
   payment_status: string | null
   escrow_status: string | null
 }) {
-  return normalizeStatus(booking.payment_status) === "paid" && normalizeStatus(booking.escrow_status) === "ready_for_payout"
+  return (
+    normalizeStatus(booking.payment_status) === "paid" &&
+    ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(
+      normalizeStatus(booking.escrow_status),
+    )
+  )
 }
 
 export async function requestPayout(formData: FormData) {

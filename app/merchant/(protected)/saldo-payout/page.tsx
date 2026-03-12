@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { requestPayout } from "./actions"
 
 type PayoutBookingRow = {
   id: string
@@ -81,7 +80,12 @@ function payoutStatusClass(value: string | null) {
 }
 
 function isAvailableBooking(booking: PayoutBookingRow) {
-  return normalizeStatus(booking.payment_status) === "paid" && normalizeStatus(booking.escrow_status) === "ready_for_payout"
+  return (
+    normalizeStatus(booking.payment_status) === "paid" &&
+    ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(
+      normalizeStatus(booking.escrow_status),
+    )
+  )
 }
 
 function isHeldBooking(booking: PayoutBookingRow) {
@@ -331,10 +335,10 @@ export default async function MerchantSaldoPayoutPage({
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Withdraw Funds</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Tarik dana</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance Controlled</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Payout diproses internal</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Dana baru bisa diajukan ketika status escrow sudah `Ready For Payout`.
+                  Merchant tidak lagi menarik dana manual. Setelah Arrived, customer Picked up, dan merchant Go selesai, admin akan handoff ke finance.
                 </p>
               </div>
 
@@ -354,34 +358,16 @@ export default async function MerchantSaldoPayoutPage({
                 <p className="mt-3 text-sm leading-7 text-slate-700">{destinationAccount}</p>
               </div>
 
-              <form action={requestPayout} className="mt-5 space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Nominal payout</label>
-                  <input
-                    name="amount"
-                    type="number"
-                    min="1"
-                    max={saldoTersedia}
-                    placeholder="Masukkan nominal"
-                    className="w-full rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                    required
-                  />
-                </div>
+              <div className="mt-5 space-y-4">
                 <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                  Saldo tersedia saat ini: <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
+                  Estimasi payout yang siap diproses saat ini: <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
                 </div>
                 <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4 text-sm leading-6 text-slate-600">
-                  RedFeng tetap menahan dana customer sampai merchant klik `Tiba`, merchant klik `Dijemput`,
-                  dan customer klik `Sudah dijemput`.
+                  Dana customer tetap ditahan sampai merchant klik <span className="font-semibold">Arrived</span>,
+                  customer klik <span className="font-semibold">Picked up</span>, merchant klik <span className="font-semibold">Go</span>,
+                  lalu admin mengirim booking ke finance untuk transfer.
                 </div>
-                <button
-                  type="submit"
-                  disabled={saldoTersedia <= 0}
-                  className="w-full rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-                >
-                  Tarik Dana
-                </button>
-              </form>
+              </div>
             </div>
           </section>
 

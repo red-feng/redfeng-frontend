@@ -1,42 +1,288 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { handoffBookingToFinance } from "./actions"
 
-export default async function AdminBookingsPage() {
-  const supabase = await createClient()
+type BookingRow = {
+  id: string
+  package_id: string | null
+  booking_code: string | null
+  customer_name: string | null
+  pickup_date: string | null
+  subtotal_amount: number | null
+  customer_admin_fee_amount: number | null
+  customer_tax_amount: number | null
+  final_payment_amount: number | null
+  total_amount: number | null
+  payment_status: string | null
+  booking_status: string | null
+  escrow_status: string | null
+  merchant_arrived_at: string | null
+  customer_picked_up_at: string | null
+  merchant_picked_up_at: string | null
+}
 
-  const { data: bookings } = await supabase
+type PackageRow = {
+  id: string
+  title: string | null
+}
+
+function normalizeStatus(value: string | null) {
+  return (value || "").trim().toLowerCase()
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+function formatMoney(value: number | null) {
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function titleCaseStatus(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (!normalized) return "-"
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function paymentTone(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (normalized === "dp_paid") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "cancelled") return "border-rose-200 bg-rose-50 text-rose-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function escrowTone(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "held" || normalized === "partial_hold") return "border-orange-200 bg-orange-50 text-orange-700"
+  if (normalized === "awaiting_admin_handoff" || normalized === "ready_for_payout") {
+    return "border-sky-200 bg-sky-50 text-sky-700"
+  }
+  if (normalized === "paid_out") return "border-violet-200 bg-violet-50 text-violet-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function journeyPhase(booking: BookingRow) {
+  if (normalizeStatus(booking.escrow_status) === "paid_out") {
+    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
+  }
+  if (normalizeStatus(booking.booking_status) === "finance_review") {
+    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
+  }
+  if (booking.merchant_picked_up_at) {
+    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (booking.customer_picked_up_at) {
+    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (booking.merchant_arrived_at) {
+    return { label: "Awaiting Pickup", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "paid") {
+    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "dp_paid") {
+    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+  }
+  return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
+}
+
+function canHandoffToFinance(booking: BookingRow) {
+  return (
+    normalizeStatus(booking.payment_status) === "paid" &&
+    Boolean(booking.merchant_arrived_at) &&
+    Boolean(booking.customer_picked_up_at) &&
+    Boolean(booking.merchant_picked_up_at) &&
+    !["finance_review", "finance_processing", "payout_completed"].includes(normalizeStatus(booking.booking_status))
+  )
+}
+
+export default async function AdminBookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string }>
+}) {
+  const params = await searchParams
+  const adminSupabase = createAdminClient()
+
+  const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
-    .select("*")
+    .select(
+      "id, package_id, booking_code, customer_name, pickup_date, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+    )
     .order("created_at", { ascending: false })
 
+  const bookings = (bookingsData as BookingRow[] | null) || []
+  const packageIds = [...new Set(bookings.map((booking) => booking.package_id).filter(Boolean))]
+  const { data: packageData } =
+    packageIds.length > 0
+      ? await adminSupabase.from("packages").select("id, title").in("id", packageIds)
+      : { data: [] as PackageRow[] }
+
+  const packageMap = new Map(((packageData as PackageRow[] | null) || []).map((pkg) => [pkg.id, pkg.title || "-"]))
+  const readyForAdmin = bookings.filter((booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff")
+  const inFinance = bookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review")
+
   return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">Booking Tour Management</h1>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)]">
+          <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+            Admin Booking Control
+          </p>
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+            Admin memvalidasi alur pickup lalu handoff payout ke finance.
+          </h1>
+          <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
+            Setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go, admin mengirim booking ke finance untuk proses transfer.
+          </p>
+        </section>
 
-      <table className="w-full border">
-        <thead className="bg-gray-100">
-          <tr>
-            <th className="p-2 border">Code</th>
-            <th className="p-2 border">Customer</th>
-            <th className="p-2 border">Total</th>
-            <th className="p-2 border">Payment</th>
-            <th className="p-2 border">Status</th>
-          </tr>
-        </thead>
+        {params.success && (
+          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+            {params.success}
+          </div>
+        )}
 
-        <tbody>
-          {bookings?.map((booking) => (
-            <tr key={booking.id}>
-              <td className="p-2 border">{booking.booking_code}</td>
-              <td className="p-2 border">{booking.customer_name}</td>
-              <td className="p-2 border">
-                Rp {booking.total_amount?.toLocaleString("id-ID")}
-              </td>
-              <td className="p-2 border">{booking.payment_status}</td>
-              <td className="p-2 border">{booking.booking_status}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        {params.error && (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {params.error}
+          </div>
+        )}
+
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Total booking</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{bookings.length}</p>
+          </div>
+          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Siap handoff</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{readyForAdmin.length}</p>
+          </div>
+          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Sedang di finance</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{inFinance.length}</p>
+          </div>
+        </section>
+
+        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin handoff queue</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Validasi booking ke finance</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Admin hanya mengirim booking yang sudah lunas dan seluruh urutan pickup selesai.
+            </p>
+          </div>
+
+          {error ? (
+            <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+              Gagal memuat data booking.
+            </div>
+          ) : bookings.length === 0 ? (
+            <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
+              Belum ada data booking.
+            </div>
+          ) : (
+            <div className="mt-6 space-y-4">
+              {bookings.map((booking) => {
+                const ready = canHandoffToFinance(booking)
+                const phase = journeyPhase(booking)
+
+                return (
+                  <article
+                    key={booking.id}
+                    className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-5"
+                  >
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                          {booking.booking_code || booking.id}
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold text-slate-950">
+                          {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                        </h3>
+                        <p className="mt-2 text-sm text-slate-600">
+                          {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                        <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>
+                          {titleCaseStatus(booking.payment_status)}
+                        </span>
+                        <span className={`rounded-full border px-3 py-1 ${phase.tone}`}>
+                          {phase.label}
+                        </span>
+                        <span className={`rounded-full border px-3 py-1 ${escrowTone(booking.escrow_status)}`}>
+                          Escrow {titleCaseStatus(booking.escrow_status)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-[20px] border border-white bg-white p-4 text-sm text-slate-700">
+                        Arrived: {booking.merchant_arrived_at ? "Selesai" : "Menunggu"}
+                      </div>
+                      <div className="rounded-[20px] border border-white bg-white p-4 text-sm text-slate-700">
+                        Picked up: {booking.customer_picked_up_at ? "Selesai" : "Menunggu"}
+                      </div>
+                      <div className="rounded-[20px] border border-white bg-white p-4 text-sm text-slate-700">
+                        Go: {booking.merchant_picked_up_at ? "Selesai" : "Menunggu"}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-4">
+                      <div className="rounded-[20px] border border-white bg-white p-4">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Paket</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.subtotal_amount)}</p>
+                      </div>
+                      <div className="rounded-[20px] border border-white bg-white p-4">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Admin Fee</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.customer_admin_fee_amount)}</p>
+                      </div>
+                      <div className="rounded-[20px] border border-white bg-white p-4">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Pajak</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.customer_tax_amount)}</p>
+                      </div>
+                      <div className="rounded-[20px] border border-white bg-white p-4">
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Sisa Pelunasan</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.final_payment_amount)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <form action={handoffBookingToFinance}>
+                        <input type="hidden" name="booking_id" value={booking.id} />
+                        <button
+                          type="submit"
+                          disabled={!ready}
+                          className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          Kirim ke Finance
+                        </button>
+                      </form>
+                      {!ready && (
+                        <span className="rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
+                          Menunggu lunas dan urutan pickup lengkap
+                        </span>
+                      )}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   )
 }

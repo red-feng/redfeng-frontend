@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 
 type BookingRow = {
@@ -55,13 +56,26 @@ function formatDate(dateStr: string | null) {
 
 function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   const normalized = normalizeStatus(value)
-  if (normalized === "paid" || normalized === "confirmed" || normalized === "pickup_confirmed" || normalized === "ready_for_payout") {
+  if (
+    normalized === "paid" ||
+    normalized === "confirmed" ||
+    normalized === "awaiting_admin_handoff" ||
+    normalized === "finance_review" ||
+    normalized === "payout_completed" ||
+    normalized === "paid_out"
+  ) {
     return "bg-emerald-50 text-emerald-700"
   }
   if (normalized === "pending" || normalized === "dp_paid" || normalized === "held" || normalized === "partial_hold") {
     return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
   }
-  if (normalized === "merchant_arrived" || normalized === "pickup_confirm_merchant") {
+  if (
+    normalized === "merchant_arrived" ||
+    normalized === "customer_picked_up" ||
+    normalized === "customer_picked_up_pending_final_payment" ||
+    normalized === "finance_processing" ||
+    normalized === "payout_processing"
+  ) {
     return "bg-violet-50 text-violet-700"
   }
   if (normalized === "cancelled" || normalized === "refund") {
@@ -71,8 +85,8 @@ function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
 }
 
 function getTimelineStatus(booking: BookingRow) {
-  if (booking.customer_picked_up_at) return "Customer sudah konfirmasi dijemput"
-  if (booking.merchant_picked_up_at) return "Menunggu konfirmasi customer"
+  if (booking.merchant_picked_up_at) return "Merchant sudah klik Go"
+  if (booking.customer_picked_up_at) return "Customer sudah klik Picked up"
   if (booking.merchant_arrived_at) return "Merchant sudah tiba di meeting point"
   return "Menunggu progress pickup"
 }
@@ -149,11 +163,11 @@ export default async function CustomerDashboardPage() {
   })
 
   const waitingCustomerAction = customerBookings.filter(
-    (booking) => Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at,
+    (booking) => Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at,
   )
 
   const readyForPayout = customerBookings.filter(
-    (booking) => normalizeStatus(booking.escrow_status) === "ready_for_payout",
+    (booking) => ["finance_review", "payout_processing", "paid_out"].includes(normalizeStatus(booking.escrow_status)),
   )
 
   const summaryCards = [
@@ -178,7 +192,7 @@ export default async function CustomerDashboardPage() {
     {
       label: "Dana Diproses RedFeng",
       value: readyForPayout.length,
-      note: "Escrow siap diteruskan ke merchant",
+      note: "Dana sedang atau sudah diproses melalui finance",
       tone: "from-lime-500 to-emerald-400",
     },
   ]
@@ -192,7 +206,7 @@ export default async function CustomerDashboardPage() {
     {
       label: "Pickup confirmation",
       value: String(waitingCustomerAction.length),
-      note: "Merchant sudah tandai pickup, customer perlu konfirmasi.",
+      note: "Merchant sudah Arrived, customer perlu klik Picked up.",
     },
     {
       label: "Upcoming plans",
@@ -208,11 +222,11 @@ export default async function CustomerDashboardPage() {
     },
     {
       title: "Pantau progress meeting point",
-      body: "Saat merchant klik Tiba atau Dijemput, update akan muncul di booking Anda sebagai acuan koordinasi.",
+      body: "Saat merchant klik Arrived atau Go, update akan muncul di booking Anda sebagai acuan koordinasi.",
     },
     {
       title: "Konfirmasi sudah dijemput",
-      body: "Konfirmasi customer diperlukan agar escrow bisa dilanjutkan ke merchant sesuai alur operasional.",
+      body: "Klik Picked up setelah benar-benar naik kendaraan agar merchant bisa lanjut klik Go dan admin bisa handoff ke finance.",
     },
   ]
 
@@ -315,7 +329,8 @@ export default async function CustomerDashboardPage() {
               <div className="mt-6 space-y-4">
                 {customerBookings.slice(0, 6).map((booking) => {
                   const pkg = packageMap.get(booking.package_id || "")
-                  const canConfirmPickup = Boolean(booking.merchant_picked_up_at) && !booking.customer_picked_up_at
+                  const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
+                  const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
 
                   return (
                     <article
@@ -372,9 +387,16 @@ export default async function CustomerDashboardPage() {
                               type="submit"
                               className="rounded-2xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                             >
-                              Sudah dijemput
+                              Picked up
                             </button>
                           </form>
+                        )}
+                        {canPayRemaining && (
+                          <BookingPaymentButton
+                            bookingId={booking.id}
+                            label="Bayar Pelunasan"
+                            className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+                          />
                         )}
                         {pkg?.slug && (
                           <Link
@@ -423,7 +445,7 @@ export default async function CustomerDashboardPage() {
                   <span className="font-semibold text-slate-900">{waitingCustomerAction.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
-                  <span>Siap payout ke merchant</span>
+                  <span>Diproses finance</span>
                   <span className="font-semibold text-slate-900">{readyForPayout.length}</span>
                 </div>
               </div>
