@@ -94,31 +94,45 @@ function isMatchingFilter(booking: BookingRow, filter: string) {
   return true
 }
 
-function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
+function paymentTone(value: string | null) {
   const normalized = normalizeStatus(value)
-  if (
-    normalized === "paid" ||
-    normalized === "confirmed" ||
-    normalized === "completed" ||
-    normalized === "awaiting_admin_handoff" ||
-    normalized === "finance_review" ||
-    normalized === "finance_approved" ||
-    normalized === "finance_processing" ||
-    normalized === "payout_completed" ||
-    normalized === "paid_out"
-  ) {
-    return "bg-emerald-50 text-emerald-700"
+  if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (normalized === "dp_paid") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "cancelled" || normalized === "refund") return "border-rose-200 bg-rose-50 text-rose-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function escrowTone(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "held" || normalized === "partial_hold") return "border-orange-200 bg-orange-50 text-orange-700"
+  if (normalized === "awaiting_admin_handoff" || normalized === "ready_for_payout") return "border-sky-200 bg-sky-50 text-sky-700"
+  if (normalized === "paid_out") return "border-violet-200 bg-violet-50 text-violet-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function journeyPhase(booking: BookingRow) {
+  if (normalizeStatus(booking.escrow_status) === "paid_out") {
+    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
   }
-  if (normalized === "pending" || normalized === "dp_paid" || normalized === "held" || normalized === "partial_hold") {
-    return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
+  if (["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(normalizeStatus(booking.booking_status))) {
+    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
   }
-  if (normalized === "merchant_arrived" || normalized === "customer_picked_up" || normalized === "customer_picked_up_pending_final_payment") {
-    return "bg-violet-50 text-violet-700"
+  if (booking.merchant_picked_up_at) {
+    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
-  if (normalized === "cancelled" || normalized === "refund" || normalized === "rejected") {
-    return "bg-rose-50 text-rose-700"
+  if (booking.customer_picked_up_at) {
+    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
-  return "bg-slate-100 text-slate-700"
+  if (booking.merchant_arrived_at) {
+    return { label: "Awaiting Pickup", tone: "border-orange-200 bg-orange-50 text-orange-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "paid") {
+    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+  }
+  if (normalizeStatus(booking.payment_status) === "dp_paid") {
+    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+  }
+  return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
 }
 
 function pickupTimeline(booking: BookingRow) {
@@ -333,6 +347,7 @@ export default async function MerchantOrdersPage({
               const paymentStatus = normalizeStatus(booking.payment_status)
               const canMarkArrived = ["paid", "dp_paid"].includes(paymentStatus) && !booking.merchant_arrived_at
               const canMarkGo = Boolean(booking.customer_picked_up_at) && !booking.merchant_picked_up_at
+              const phase = journeyPhase(booking)
 
               return (
                 <div
@@ -366,14 +381,14 @@ export default async function MerchantOrdersPage({
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:max-w-sm lg:justify-end">
-                      <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
-                        Bayar: {titleCaseStatus(booking.payment_status)}
+                      <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${paymentTone(booking.payment_status)}`}>
+                        {titleCaseStatus(booking.payment_status)}
                       </span>
-                      <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
-                        Trip: {titleCaseStatus(booking.booking_status)}
+                      <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
+                        {phase.label}
                       </span>
-                      <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
-                        Escrow: {titleCaseStatus(booking.escrow_status)}
+                      <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${escrowTone(booking.escrow_status)}`}>
+                        Escrow {titleCaseStatus(booking.escrow_status)}
                       </span>
                     </div>
                   </div>

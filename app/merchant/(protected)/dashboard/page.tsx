@@ -17,6 +17,7 @@ type BookingRow = {
   total_amount: number | null
   payment_status: string | null
   booking_status: string | null
+  escrow_status: string | null
 }
 
 type ChatRoomRow = {
@@ -35,6 +36,21 @@ function normalizeStatus(value: string | null) {
 
 function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
+}
+
+function countJourneyPhase(bookings: BookingRow[], phase: "dp" | "paid" | "pickup" | "finance" | "paid_out") {
+  return bookings.filter((booking) => {
+    const paymentStatus = normalizeStatus(booking.payment_status)
+    const bookingStatus = normalizeStatus(booking.booking_status)
+    const escrowStatus = normalizeStatus(booking.escrow_status)
+
+    if (phase === "dp") return paymentStatus === "dp_paid"
+    if (phase === "paid") return paymentStatus === "paid" && !["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(bookingStatus)
+    if (phase === "pickup") return ["merchant_arrived", "customer_picked_up"].includes(bookingStatus)
+    if (phase === "finance") return ["awaiting_admin_handoff", "finance_review", "finance_processing"].includes(bookingStatus) || escrowStatus === "awaiting_admin_handoff"
+    if (phase === "paid_out") return bookingStatus === "payout_completed" || escrowStatus === "paid_out"
+    return false
+  }).length
 }
 
 const merchantMenus = [
@@ -69,7 +85,7 @@ export default async function MerchantDashboardPage() {
     supabase.from("packages").select("id, status").eq("merchant_id", merchant.id),
     supabase
       .from("bookings")
-      .select("id, total_amount, payment_status, booking_status, packages!inner(merchant_id)")
+      .select("id, total_amount, payment_status, booking_status, escrow_status, packages!inner(merchant_id)")
       .eq("packages.merchant_id", merchant.id),
     supabase
       .from("package_chat_rooms")
@@ -138,6 +154,14 @@ export default async function MerchantDashboardPage() {
     reviews.length > 0 ? `Ulasan aktif: ${reviews.length}` : "Belum ada ulasan customer",
   ]
 
+  const journeyBadges = [
+    { label: "DP Paid", value: countJourneyPhase(bookings, "dp"), tone: "border-amber-200 bg-amber-50 text-amber-700" },
+    { label: "Fully Paid", value: countJourneyPhase(bookings, "paid"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+    { label: "Awaiting Pickup", value: countJourneyPhase(bookings, "pickup"), tone: "border-orange-200 bg-orange-50 text-orange-700" },
+    { label: "Ready for Finance", value: countJourneyPhase(bookings, "finance"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
+    { label: "Paid Out", value: countJourneyPhase(bookings, "paid_out"), tone: "border-violet-200 bg-violet-50 text-violet-700" },
+  ]
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -180,6 +204,13 @@ export default async function MerchantDashboardPage() {
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Operational notes</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {journeyBadges.map((item) => (
+                    <span key={item.label} className={`inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${item.tone}`}>
+                      {item.label} {item.value}
+                    </span>
+                  ))}
+                </div>
                 <div className="mt-4 space-y-3">
                   {operationalNotes.map((note) => (
                     <div key={note} className="flex items-start gap-3">
@@ -282,11 +313,13 @@ export default async function MerchantDashboardPage() {
                   ? "Selesaikan review paket yang masih pending."
                   : draftPackages > 0
                     ? "Lengkapi draft paket agar bisa diajukan."
-                    : "Fokus pada optimasi booking dan respons customer."}
+                    : countJourneyPhase(bookings, "pickup") > 0
+                      ? "Fokus pada booking yang sedang menunggu pickup."
+                      : "Fokus pada optimasi booking dan respons customer."}
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Dashboard ini dirancang untuk membantu merchant menjaga performa operasional, kualitas
-                listing, dan kecepatan respons ke customer.
+                Merchant sekarang melihat fase operasional yang sama persis dengan customer, admin,
+                finance, dan halaman verifikasi invoice.
               </p>
             </div>
           </aside>
