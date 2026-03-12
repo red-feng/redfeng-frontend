@@ -150,8 +150,8 @@ export async function POST(req: Request) {
           adminFeeAmount: Number(booking.customer_admin_fee_amount || 0),
           taxAmount: Number(booking.customer_tax_amount || 0),
           finalPaymentAmount: Number(booking.final_payment_amount || 0),
-          paymentTypeLabel: resolvedPaymentType === "dp" ? "DP booking" : "Pelunasan / full payment",
-          paymentStatusLabel: resolvedPaymentType === "dp" ? "DP diterima" : "Lunas",
+          paymentTypeLabel: resolvedPaymentType === "dp" ? "DP Payment" : "Final / Full Payment",
+          paymentStatusLabel: resolvedPaymentType === "dp" ? "DP Paid" : "Fully Paid",
           sendInvoicePdf: resolvedPaymentType !== "dp",
         })
       } catch (emailError) {

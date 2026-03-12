@@ -104,7 +104,7 @@ export async function confirmCustomerPickedUp(formData: FormData) {
   }
 
   if (booking.customer_picked_up_at) {
-    redirect(`/booking/${bookingId}?success=Konfirmasi sudah pernah dikirim`)
+    redirect(`/booking/${bookingId}?success=Status Picked up sudah pernah dikirim`)
   }
 
   const paymentStatus = normalizeStatus(booking.payment_status)
@@ -122,5 +122,5 @@ export async function confirmCustomerPickedUp(formData: FormData) {
     redirect(`/booking/${bookingId}?error=${encodeURIComponent(error.message)}`)
   }
 
-  redirect(`/booking/${bookingId}?success=Status Picked up berhasil dikirim. Merchant dapat melanjutkan dengan klik Go.`)
+  redirect(`/booking/${bookingId}?success=Status Picked up berhasil dikirim. Merchant dapat melanjutkan ke Go Confirmed.`)
 }

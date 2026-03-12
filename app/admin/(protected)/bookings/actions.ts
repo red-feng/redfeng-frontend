@@ -54,7 +54,7 @@ export async function handoffBookingToFinance(formData: FormData) {
   }
 
   if (normalizeStatus(booking.payment_status) !== "paid") {
-    backToBookings("Booking belum lunas sehingga belum bisa dikirim ke finance", "error")
+    backToBookings("Booking belum berstatus Fully Paid sehingga belum bisa dikirim ke finance", "error")
   }
 
   if (!booking.merchant_arrived_at || !booking.customer_picked_up_at || !booking.merchant_picked_up_at) {
@@ -62,7 +62,7 @@ export async function handoffBookingToFinance(formData: FormData) {
   }
 
   if (normalizeStatus(booking.booking_status) === "finance_review") {
-    backToBookings("Booking ini sudah pernah dikirim ke finance", "success")
+    backToBookings("Booking ini sudah berstatus Ready for Finance", "success")
   }
 
   const { data: existingPayout } = await adminSupabase
@@ -162,5 +162,5 @@ export async function handoffBookingToFinance(formData: FormData) {
     backToBookings(updateError.message, "error")
   }
 
-  backToBookings("Booking berhasil dikirim ke finance", "success")
+  backToBookings("Booking berhasil dikirim ke finance dan sekarang berstatus Ready for Finance", "success")
 }

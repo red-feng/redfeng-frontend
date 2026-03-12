@@ -68,7 +68,7 @@ export async function updatePayoutStatus(formData: FormData) {
 
   const currentStatus = normalizeStatus(payout.status)
   if (currentStatus === "paid") {
-    backToPayouts("Payout yang sudah paid tidak bisa diubah lagi", "error")
+    backToPayouts("Payout yang sudah berstatus Paid Out tidak bisa diubah lagi", "error")
   }
 
   const processedAt =
@@ -127,11 +127,11 @@ export async function updatePayoutStatus(formData: FormData) {
 
   const successMessage =
     nextStatus === "approved"
-      ? "Payout berhasil di-approve"
+      ? "Payout berhasil di-approve dan booking tetap di fase Ready for Finance"
       : nextStatus === "processing"
-        ? "Payout ditandai sedang diproses"
+        ? "Payout ditandai Processing oleh finance"
         : nextStatus === "paid"
-          ? "Payout berhasil ditandai paid"
+          ? "Payout berhasil ditandai Paid Out"
           : "Payout berhasil ditolak"
 
   backToPayouts(successMessage, "success")

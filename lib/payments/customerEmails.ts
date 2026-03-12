@@ -60,13 +60,13 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
     from: fromEmail,
     to: payload.customerEmail,
     subject: payload.sendInvoicePdf
-      ? `Invoice pembayaran ${payload.bookingCode}`
-      : `Konfirmasi pembayaran ${payload.bookingCode}`,
+      ? `Invoice ${payload.paymentStatusLabel} - ${payload.bookingCode}`
+      : `Konfirmasi ${payload.paymentStatusLabel} - ${payload.bookingCode}`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
         <h2 style="margin-bottom:8px">Red Feng</h2>
         <p>Halo ${payload.customerName || "Customer"},</p>
-        <p>Pembayaran booking Anda sudah kami terima.</p>
+        <p>Status pembayaran booking Anda sudah diperbarui menjadi <strong>${payload.paymentStatusLabel}</strong>.</p>
         <ul>
           <li>Kode booking: ${payload.bookingCode}</li>
           <li>Status pembayaran: ${payload.paymentStatusLabel}</li>
@@ -79,8 +79,9 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
           <li>Pajak customer: ${formatMoney(Number(payload.taxAmount || 0))}</li>
           <li>Nominal: ${formatMoney(payload.totalAmount)}</li>
         </ul>
+        <p>Fase operasional berikutnya akan mengikuti alur Arrived, Picked up, Go, lalu Ready for Finance sebelum payout merchant diproses.</p>
         <p>Verifikasi Booking ID: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
-        <p>${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah pelunasan selesai."}</p>
+        <p>${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah status berubah menjadi Fully Paid."}</p>
       </div>
     `,
     attachments,

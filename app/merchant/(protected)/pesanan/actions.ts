@@ -70,7 +70,7 @@ export async function markMerchantArrived(formData: FormData) {
   }
 
   if (booking.merchant_arrived_at) {
-    redirectBack("Status tiba sudah pernah dikirim", filter, "success")
+    redirectBack("Status Arrived sudah pernah dikirim", filter, "success")
   }
 
   const adminSupabase = createAdminClient()
@@ -114,7 +114,7 @@ export async function markMerchantGo(formData: FormData) {
   }
 
   if (booking.merchant_picked_up_at) {
-    redirectBack("Status Go sudah pernah dikirim", filter, "success")
+    redirectBack("Status Go Confirmed sudah pernah dikirim", filter, "success")
   }
 
   const paymentStatus = normalizeStatus(booking.payment_status)
@@ -136,8 +136,8 @@ export async function markMerchantGo(formData: FormData) {
 
   redirectBack(
     readyForAdminHandoff
-      ? "Status Go berhasil dikirim. Booking menunggu handoff admin ke finance."
-      : "Status Go berhasil dikirim. Booking masih menunggu pelunasan customer.",
+      ? "Status Go Confirmed berhasil dikirim. Booking sekarang menuju fase Ready for Finance."
+      : "Status Go Confirmed berhasil dikirim. Booking masih menunggu status Fully Paid.",
     filter,
     "success",
   )
