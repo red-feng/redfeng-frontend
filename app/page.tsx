@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic"
 type PackageListItem = {
   id: string
   slug: string
+  merchant_id: string | null
   cover_image: string | null
   city: string | null
   country: string | null
@@ -101,6 +102,28 @@ if (searchParams?.style) {
   }
 
   let filtered = (data as PackageListItem[] | null) || []
+
+  if (filtered.length > 0) {
+    const merchantIds = [...new Set(filtered.map((pkg) => pkg.merchant_id).filter(Boolean))]
+
+    if (merchantIds.length > 0) {
+      const { data: merchantRows, error: merchantError } = await supabase
+        .from("merchants")
+        .select("id")
+        .in("id", merchantIds)
+        .eq("verification_status", "approved")
+
+      if (merchantError) {
+        console.log("MERCHANT FILTER ERROR:", merchantError)
+        return []
+      }
+
+      const activeMerchantIds = new Set((merchantRows || []).map((merchant) => merchant.id))
+      filtered = filtered.filter((pkg) => pkg.merchant_id && activeMerchantIds.has(pkg.merchant_id))
+    } else {
+      filtered = []
+    }
+  }
 
   if (searchParams?.max_price) {
     const max = Number(searchParams.max_price)
