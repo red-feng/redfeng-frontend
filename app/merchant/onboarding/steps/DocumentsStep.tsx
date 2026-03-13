@@ -47,10 +47,12 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
 
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
 
   const handleBack = async () => {
     setSaving(true)
     setErrorMsg('')
+    setSuccessMsg('')
 
     const { error } = await supabase
       .from('merchants')
@@ -67,6 +69,30 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
 
     setSaving(false)
     router.refresh()
+  }
+
+  const handleSaveDraft = async () => {
+    setSaving(true)
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    const { error } = await supabase
+      .from('merchants')
+      .update({
+        onboarding_step: 4,
+        onboarding_completed: false,
+        verification_status: 'draft'
+      })
+      .eq('id', merchantId)
+
+    if (error) {
+      setErrorMsg(error.message)
+      setSaving(false)
+      return
+    }
+
+    setSuccessMsg('Draft step documents upload berhasil disimpan.')
+    setSaving(false)
   }
 
   const uploadFile = async (file: File, folder: string): Promise<UploadResult> => {
@@ -91,6 +117,7 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
     e.preventDefault()
     setSaving(true)
     setErrorMsg('')
+    setSuccessMsg('')
 
     const form = e.currentTarget
     const ktpFile = form.ktp.files?.[0]
@@ -210,9 +237,20 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
-        {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : <div />}
+        <div>
+          {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : null}
+          {successMsg ? <p className="text-sm text-emerald-600">{successMsg}</p> : null}
+        </div>
 
         <div className="flex flex-col gap-3 md:flex-row">
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={saving}
+            className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-white px-6 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {saving ? 'Saving...' : 'Save Draft'}
+          </button>
           <button
             type="button"
             onClick={handleBack}

@@ -23,6 +23,7 @@ export default function CompanyStep({
 
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
 
   useEffect(() => {
     const loadMerchant = async () => {
@@ -62,6 +63,7 @@ export default function CompanyStep({
 
     setSaving(true)
     setErrorMsg('')
+    setSuccessMsg('')
 
     const { error } = await supabase
       .from('merchants')
@@ -79,6 +81,31 @@ export default function CompanyStep({
 
     setSaving(false)
     setStep(2)
+  }
+
+  const handleSaveDraft = async () => {
+    setSaving(true)
+    setErrorMsg('')
+    setSuccessMsg('')
+
+    const { error } = await supabase
+      .from('merchants')
+      .update({
+        ...form,
+        onboarding_step: 1,
+        onboarding_completed: false,
+        verification_status: 'draft'
+      })
+      .eq('id', merchantId)
+
+    if (error) {
+      setErrorMsg(error.message)
+      setSaving(false)
+      return
+    }
+
+    setSuccessMsg('Draft step company profile berhasil disimpan.')
+    setSaving(false)
   }
 
   return (
@@ -164,15 +191,29 @@ export default function CompanyStep({
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
-        {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : <div />}
+        <div>
+          {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : null}
+          {successMsg ? <p className="text-sm text-emerald-600">{successMsg}</p> : null}
+        </div>
 
-        <button
-          onClick={handleNext}
-          disabled={saving}
-          className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {saving ? 'Saving...' : 'Continue to Legal Identity'}
-        </button>
+        <div className="flex flex-col gap-3 md:flex-row">
+          <button
+            type="button"
+            onClick={handleSaveDraft}
+            disabled={saving}
+            className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-white px-6 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {saving ? 'Saving...' : 'Save Draft'}
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={saving}
+            className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {saving ? 'Saving...' : 'Continue to Legal Identity'}
+          </button>
+        </div>
       </div>
     </div>
   )
