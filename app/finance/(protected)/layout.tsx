@@ -30,7 +30,7 @@ export default async function FinanceProtectedLayout({
     redirect("/merchant/dashboard")
   }
 
-  if (!["admin", "superadmin"].includes(profile.role)) {
+  if (!["finance", "superadmin"].includes(profile.role)) {
     redirect("/finance/login")
   }
 

@@ -138,6 +138,21 @@ export default async function FinanceDashboardPage() {
                   Buka pengaturan -&gt;
                 </div>
               </Link>
+              <Link
+                href="/finance/admin-users"
+                className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+              >
+                <div className="inline-flex rounded-full bg-gradient-to-r from-slate-700 to-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
+                  Internal accounts
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-slate-950">Admin &amp; Finance Accounts</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Finance mengelola akun admin, sedangkan superadmin membuat dan mengelola akun finance.
+                </p>
+                <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
+                  Buka manajemen akun -&gt;
+                </div>
+              </Link>
             </div>
           </div>
 

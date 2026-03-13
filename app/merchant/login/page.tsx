@@ -108,6 +108,8 @@ export default function MerchantLogin() {
       }
 
       router.push("/merchant/dashboard")
+    } else if (profile.role === "finance") {
+      router.push("/finance/dashboard")
     } else if (profile.role === "admin" || profile.role === "superadmin") {
       router.push("/admin/dashboard")
     } else {

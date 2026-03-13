@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       profile = { role: "customer" }
     }
 
-    if (profile.role === "admin" || profile.role === "superadmin") {
+    if (profile.role === "admin" || profile.role === "finance" || profile.role === "superadmin") {
       return NextResponse.json({ error: "SSO WordPress hanya untuk customer" }, { status: 403 })
     }
 

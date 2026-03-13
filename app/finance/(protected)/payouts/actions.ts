@@ -24,7 +24,7 @@ async function ensureFinance() {
     .eq("id", user.id)
     .single()
 
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  if (!profile || !["finance", "superadmin"].includes(profile.role)) {
     redirect("/finance/login")
   }
 

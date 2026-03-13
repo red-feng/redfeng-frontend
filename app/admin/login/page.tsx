@@ -5,12 +5,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
+import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 
 export default function AdminLogin() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -19,15 +20,19 @@ export default function AdminLogin() {
     setLoading(true)
     setError("")
 
-    const normalizedEmail = email.trim().toLowerCase()
-    if (!normalizedEmail || !password) {
-      setError("Email dan password wajib diisi.")
+    const normalizedUsername = normalizeInternalUsername(username)
+    if (!normalizedUsername || !password) {
+      setError("Username dan password wajib diisi.")
       setLoading(false)
       return
     }
 
+    const loginIdentifier = normalizedUsername.includes("@")
+      ? normalizedUsername
+      : buildInternalAdminEmail(normalizedUsername)
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
+      email: loginIdentifier,
       password,
     })
 
@@ -58,6 +63,12 @@ export default function AdminLogin() {
 
     if (profile.role === "merchant") {
       router.push("/merchant/dashboard")
+      setLoading(false)
+      return
+    }
+
+    if (profile.role === "finance") {
+      router.push("/finance/dashboard")
       setLoading(false)
       return
     }
@@ -124,7 +135,7 @@ export default function AdminLogin() {
                     Masuk ke admin dashboard
                   </h2>
                   <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan akun internal yang memiliki role admin atau superadmin.
+                    Gunakan username admin internal yang dibuat oleh tim finance.
                   </p>
                 </div>
                 <Link
@@ -145,19 +156,19 @@ export default function AdminLogin() {
               <div className="mt-8 space-y-6">
                 <div className="space-y-3">
                   <label
-                    htmlFor="admin-email"
+                    htmlFor="admin-username"
                     className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500"
                   >
-                    Email admin
+                    Username admin
                   </label>
                   <input
-                    id="admin-email"
-                    type="email"
-                    autoComplete="email"
+                    id="admin-username"
+                    type="text"
+                    autoComplete="username"
                     className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                    placeholder="hello@redfeng.co"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="mis: admin.operasional"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
 
@@ -177,12 +188,9 @@ export default function AdminLogin() {
                     onChange={setPassword}
                   />
                   <div className="flex justify-end">
-                    <Link
-                      href="/forgot-password?next=/admin/login"
-                      className="text-sm font-medium text-orange-700 transition hover:text-orange-800"
-                    >
-                      Lupa password?
-                    </Link>
+                    <span className="text-sm font-medium text-orange-700">
+                      Reset password dikelola oleh tim finance.
+                    </span>
                   </div>
                 </div>
 

@@ -62,7 +62,13 @@ export default function FinanceLogin() {
       return
     }
 
-    if (profile.role === "admin" || profile.role === "superadmin") {
+    if (profile.role === "admin") {
+      router.push("/admin/dashboard")
+      setLoading(false)
+      return
+    }
+
+    if (profile.role === "finance" || profile.role === "superadmin") {
       router.push("/finance/dashboard")
       setLoading(false)
       return
@@ -94,7 +100,7 @@ export default function FinanceLogin() {
               {[
                 "Payout approval dan kontrol status transfer",
                 "Monitoring nominal outstanding dan paid",
-                "Akses internal untuk admin dan superadmin saja",
+                "Akses internal untuk finance dan superadmin saja",
               ].map((item) => (
                 <div
                   key={item}
@@ -124,7 +130,7 @@ export default function FinanceLogin() {
                     Masuk ke finance dashboard
                   </h2>
                   <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan akun internal yang memiliki akses ke workspace finance Red Feng.
+                    Gunakan akun internal yang memiliki role finance atau superadmin.
                   </p>
                 </div>
                 <Link
