@@ -215,7 +215,7 @@ export default function OnboardingPage() {
                 )}
 
                 {merchantId && step === 4 && (
-                  <DocumentsStep merchantId={merchantId} />
+                  <DocumentsStep merchantId={merchantId} setStep={setStep} />
                 )}
               </div>
             </div>

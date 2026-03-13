@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { Dispatch, SetStateAction, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
@@ -41,7 +41,13 @@ function UploadField({
   )
 }
 
-export default function DocumentsStep({ merchantId }: { merchantId: string }) {
+export default function DocumentsStep({
+  merchantId,
+  setStep,
+}: {
+  merchantId: string
+  setStep: Dispatch<SetStateAction<number>>
+}) {
   const supabase = createClient()
   const router = useRouter()
 
@@ -68,7 +74,7 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
     }
 
     setSaving(false)
-    router.refresh()
+    setStep(3)
   }
 
   const handleSaveDraft = async () => {
