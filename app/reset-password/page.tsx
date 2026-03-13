@@ -17,11 +17,18 @@ function getLocaleFromCookie(): Locale {
   return "id";
 }
 
+function getSafeLoginTarget() {
+  if (typeof window === "undefined") return "/login";
+  const requestedNext = new URLSearchParams(window.location.search).get("next");
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/login";
+}
+
 export default function ResetPasswordPage() {
   const supabase = createClient();
   const router = useRouter();
 
   const [locale] = useState<Locale>(() => getLocaleFromCookie());
+  const [loginTarget] = useState(getSafeLoginTarget);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -41,7 +48,7 @@ export default function ResetPasswordPage() {
     }
 
     alert(t.success);
-    router.push("/login");
+    router.push(loginTarget);
   };
 
   return (

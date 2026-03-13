@@ -253,6 +253,14 @@ export default function MerchantLogin() {
                     value={password}
                     onChange={setPassword}
                   />
+                  <div className="flex justify-end">
+                    <Link
+                      href="/forgot-password?next=/merchant/login"
+                      className="text-sm font-medium text-orange-700 transition hover:text-orange-800"
+                    >
+                      Lupa password?
+                    </Link>
+                  </div>
                 </div>
 
                 <button

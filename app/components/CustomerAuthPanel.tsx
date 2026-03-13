@@ -276,6 +276,15 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
                 </div>
               ) : null}
 
+              <div className="mt-5">
+                <Link
+                  href="/forgot-password?next=/login"
+                  className="text-sm font-medium text-orange-700 hover:text-orange-800"
+                >
+                  Lupa password?
+                </Link>
+              </div>
+
               <p className="mt-6 text-xs leading-6 text-slate-500">
                 {t.termsLead}{" "}
                 <Link href="/terms" className="font-semibold text-orange-700 hover:text-orange-800">
