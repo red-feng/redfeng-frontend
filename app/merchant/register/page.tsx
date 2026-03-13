@@ -68,30 +68,21 @@ export default function MerchantRegister() {
       return
     }
 
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "merchant",
+    const bootstrapResponse = await fetch("/api/merchant/register/bootstrap", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: user.id,
+        email: normalizedEmail,
+      }),
     })
 
-    if (profileError) {
-      setErrorMsg(profileError.message)
-      setLoading(false)
-      return
-    }
+    const bootstrapPayload = (await bootstrapResponse.json()) as { error?: string }
 
-    const { error: merchantError } = await supabase.from("merchants").upsert(
-      {
-        user_id: user.id,
-        email: normalizedEmail,
-        verification_status: "draft",
-        onboarding_step: 1,
-        onboarding_completed: false,
-      },
-      { onConflict: "user_id" },
-    )
-
-    if (merchantError) {
-      setErrorMsg(merchantError.message)
+    if (!bootstrapResponse.ok) {
+      setErrorMsg(bootstrapPayload.error || "Merchant bootstrap gagal dibuat.")
       setLoading(false)
       return
     }
