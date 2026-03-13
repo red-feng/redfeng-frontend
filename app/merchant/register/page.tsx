@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import PasswordField from "@/app/components/PasswordField"
 
 const highlights = [
   {
@@ -228,14 +229,13 @@ export default function MerchantRegister() {
                   >
                     Password
                   </label>
-                  <input
+                  <PasswordField
                     id="merchant-password"
-                    type="password"
                     autoComplete="new-password"
-                    className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                    className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 pr-28 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                     placeholder="Minimal 8 karakter"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={setPassword}
                   />
                 </div>
 

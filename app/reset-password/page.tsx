@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { dictionaries, type Locale } from "@/lib/i18n";
+import PasswordField from "@/app/components/PasswordField";
 
 function getLocaleFromCookie(): Locale {
   if (typeof document === "undefined") return "id";
@@ -48,13 +49,16 @@ export default function ResetPasswordPage() {
       <div className="w-96 rounded bg-white p-8 shadow">
         <h1 className="mb-4 text-xl font-bold">{t.title}</h1>
 
-        <input
-          type="password"
-          placeholder={t.placeholder}
-          className="mb-4 w-full border p-2"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="mb-4">
+          <PasswordField
+            id="reset-password"
+            autoComplete="new-password"
+            placeholder={t.placeholder}
+            className="w-full border p-2 pr-24"
+            value={password}
+            onChange={setPassword}
+          />
+        </div>
 
         <button
           onClick={handleUpdatePassword}
