@@ -78,7 +78,7 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
     const logoFile = form.logo.files?.[0]
 
     if (!ktpFile || !npwpFile || !nibFile) {
-      setErrorMsg('KTP, NPWP, dan NIB wajib diupload.')
+      setErrorMsg('KTP, NPWP Badan Usaha, dan NIB wajib diupload.')
       setSaving(false)
       return
     }
@@ -166,7 +166,7 @@ export default function DocumentsStep({ merchantId }: { merchantId: string }) {
           note="Upload identitas penanggung jawab yang masih berlaku."
         />
         <UploadField
-          label="NPWP"
+          label="NPWP Badan Usaha"
           name="npwp"
           required
           note="Gunakan dokumen pajak yang sesuai dengan identitas atau badan usaha."
