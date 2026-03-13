@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function CompanyStep({
@@ -23,6 +23,29 @@ export default function CompanyStep({
 
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+
+  useEffect(() => {
+    const loadMerchant = async () => {
+      const { data } = await supabase
+        .from('merchants')
+        .select('company_name, brand_name, business_type, address, city, province')
+        .eq('id', merchantId)
+        .maybeSingle()
+
+      if (!data) return
+
+      setForm({
+        company_name: data.company_name ?? '',
+        brand_name: data.brand_name ?? '',
+        business_type: data.business_type ?? '',
+        address: data.address ?? '',
+        city: data.city ?? '',
+        province: data.province ?? '',
+      })
+    }
+
+    void loadMerchant()
+  }, [merchantId, supabase])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({
@@ -67,6 +90,7 @@ export default function CompanyStep({
             name="company_name"
             placeholder="PT Red Feng Digital Nusantara"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.company_name}
             onChange={handleChange}
           />
         </label>
@@ -77,6 +101,7 @@ export default function CompanyStep({
             name="brand_name"
             placeholder="Red Feng"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.brand_name}
             onChange={handleChange}
           />
         </label>
@@ -88,6 +113,7 @@ export default function CompanyStep({
           <select
             name="business_type"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.business_type}
             onChange={handleChange}
           >
             <option value="">Select business type</option>
@@ -103,6 +129,7 @@ export default function CompanyStep({
             name="address"
             placeholder="Alamat operasional utama"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.address}
             onChange={handleChange}
           />
         </label>
@@ -115,6 +142,7 @@ export default function CompanyStep({
             name="city"
             placeholder="Jakarta"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.city}
             onChange={handleChange}
           />
         </label>
@@ -125,6 +153,7 @@ export default function CompanyStep({
             name="province"
             placeholder="DKI Jakarta"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.province}
             onChange={handleChange}
           />
         </label>
