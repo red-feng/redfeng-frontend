@@ -56,7 +56,49 @@ export default function MerchantRegister() {
     })
 
     if (error) {
-      setErrorMsg(error.message)
+      const isAlreadyRegistered = error.message.toLowerCase().includes("already registered")
+
+      if (!isAlreadyRegistered) {
+        setErrorMsg(error.message)
+        setLoading(false)
+        return
+      }
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      })
+
+      if (signInError || !signInData.user) {
+        setErrorMsg(
+          "Email sudah terdaftar. Gunakan password yang sama untuk melanjutkan onboarding, atau reset password jika lupa.",
+        )
+        setLoading(false)
+        return
+      }
+
+      const resumeBootstrapResponse = await fetch("/api/merchant/register/bootstrap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: signInData.user.id,
+          email: normalizedEmail,
+        }),
+      })
+
+      const resumeBootstrapPayload = (await resumeBootstrapResponse.json()) as { error?: string }
+
+      if (!resumeBootstrapResponse.ok) {
+        setErrorMsg(
+          resumeBootstrapPayload.error || "Merchant draft gagal dipulihkan. Coba ulangi.",
+        )
+        setLoading(false)
+        return
+      }
+
+      router.push("/merchant/onboarding")
       setLoading(false)
       return
     }
