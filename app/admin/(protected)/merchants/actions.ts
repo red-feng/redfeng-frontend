@@ -35,7 +35,7 @@ async function sendMerchantDecisionEmail({
 
   if (type === "approved") {
     await resend.emails.send({
-      from: "Onboarding RedFeng <onboarding@redfeng.co>",
+      from: "RedFeng Admin <admin@redfeng.co>",
       to: email,
       subject: "Akun Merchant Anda Disetujui",
       html: `
@@ -50,7 +50,7 @@ async function sendMerchantDecisionEmail({
   }
 
   await resend.emails.send({
-    from: "Onboarding RedFeng <onboarding@redfeng.co>",
+    from: "RedFeng Admin <admin@redfeng.co>",
     to: email,
     subject: "Pengajuan Merchant Perlu Diperbaiki",
     html: `

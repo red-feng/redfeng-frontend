@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const { email, brandName } = await req.json()
 
     await resend.emails.send({
-      from: 'Onboarding RedFeng <onboarding@redfeng.co>',
+      from: 'RedFeng Admin <admin@redfeng.co>',
       to: email,
       subject: 'Akun Anda Sedang Diverifikasi',
       html: `
