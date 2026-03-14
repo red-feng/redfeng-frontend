@@ -17,7 +17,8 @@ export default function LegalStep({
     pic_position: '',
     ktp_number: '',
     npwp_personal: '',
-    npwp_company: ''
+    npwp_company: '',
+    nib: '',
   })
 
   const [saving, setSaving] = useState(false)
@@ -28,7 +29,7 @@ export default function LegalStep({
     const loadMerchant = async () => {
       const { data } = await supabase
         .from('merchants')
-        .select('pic_name, pic_position, ktp_number, npwp_personal, npwp_company')
+        .select('pic_name, pic_position, ktp_number, npwp_personal, npwp_company, nib')
         .eq('id', merchantId)
         .maybeSingle()
 
@@ -40,6 +41,7 @@ export default function LegalStep({
         ktp_number: data.ktp_number ?? '',
         npwp_personal: data.npwp_personal ?? '',
         npwp_company: data.npwp_company ?? '',
+        nib: data.nib ?? '',
       })
     }
 
@@ -54,8 +56,8 @@ export default function LegalStep({
   }
 
   const handleNext = async () => {
-    if (!form.pic_name || !form.ktp_number) {
-      setErrorMsg('PIC Name & KTP wajib diisi')
+    if (!form.pic_name || !form.ktp_number || !form.npwp_company || !form.nib) {
+      setErrorMsg('PIC Name, KTP, NPWP Badan Usaha, dan NIB wajib diisi')
       return
     }
 
@@ -178,19 +180,32 @@ export default function LegalStep({
         </label>
       </div>
 
-      <label className="space-y-2">
-        <span className="text-sm font-semibold text-slate-700">NPWP Company</span>
-        <input
-          name="npwp_company"
-          placeholder="Nomor NPWP badan usaha"
-          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-          value={form.npwp_company}
-          onChange={handleChange}
-        />
-      </label>
+      <div className="grid gap-5 md:grid-cols-2">
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">NPWP Badan Usaha</span>
+          <input
+            name="npwp_company"
+            placeholder="Nomor NPWP badan usaha"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.npwp_company}
+            onChange={handleChange}
+          />
+        </label>
+
+        <label className="space-y-2">
+          <span className="text-sm font-semibold text-slate-700">NIB Number</span>
+          <input
+            name="nib"
+            placeholder="Nomor induk berusaha"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+            value={form.nib}
+            onChange={handleChange}
+          />
+        </label>
+      </div>
 
       <div className="rounded-[24px] border border-orange-100 bg-[#fff9f2] px-5 py-4 text-sm leading-7 text-slate-600">
-        Gunakan data identitas yang sama dengan dokumen upload agar admin dapat memverifikasi tanpa revisi tambahan.
+        Gunakan data identitas yang sama dengan dokumen upload agar admin dapat memverifikasi tanpa revisi tambahan. Nomor NIB dan NPWP Badan Usaha yang diisi di sini akan tampil juga di panel review admin.
       </div>
 
       <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">

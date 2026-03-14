@@ -12,13 +12,60 @@ type MerchantRow = {
   brand_name: string | null
   company_name: string | null
   email: string | null
+  business_type: string | null
+  address: string | null
+  city: string | null
+  province: string | null
+  pic_name: string | null
+  pic_position: string | null
+  ktp_number: string | null
+  npwp_personal: string | null
+  npwp_company: string | null
   nib: string | null
-  npwp: string | null
+  bank_name: string | null
+  bank_account_number: string | null
+  bank_account_holder: string | null
+  bank_branch: string | null
+  ktp_file_url: string | null
+  npwp_file_url: string | null
+  nib_file_url: string | null
+  logo_url: string | null
   onboarding_step: number | null
   onboarding_completed: boolean | null
   verification_status: string | null
   rejection_reason: string | null
   created_at: string | null
+}
+
+function fieldValue(value: string | null) {
+  return value && value.trim() ? value : "-"
+}
+
+function DocumentLink({
+  href,
+  label,
+}: {
+  href: string | null
+  label: string
+}) {
+  if (!href) {
+    return (
+      <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+        {label}: belum upload
+      </div>
+    )
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-[18px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+    >
+      Lihat {label}
+    </a>
+  )
 }
 
 function getStatusBadge(status: string | null) {
@@ -135,22 +182,24 @@ export default async function AdminMerchantsPage() {
                       <div className="mt-7 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Email</p>
-                          <p className="mt-2 text-sm font-medium text-slate-800">{merchant.email || "-"}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{fieldValue(merchant.email)}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Company</p>
-                          <p className="mt-2 text-sm font-medium text-slate-800">{merchant.company_name || "-"}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{fieldValue(merchant.company_name)}</p>
                         </div>
                       </div>
 
                       <div className="mt-4 grid gap-4 sm:grid-cols-3">
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">NIB</p>
-                          <p className="mt-2 text-sm text-slate-800">{merchant.nib || "-"}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Business Type</p>
+                          <p className="mt-2 text-sm text-slate-800">{fieldValue(merchant.business_type)}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">NPWP</p>
-                          <p className="mt-2 text-sm text-slate-800">{merchant.npwp || "-"}</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Created</p>
+                          <p className="mt-2 text-sm text-slate-800">
+                            {merchant.created_at ? new Date(merchant.created_at).toLocaleString("id-ID") : "-"}
+                          </p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Onboarding</p>
@@ -158,6 +207,51 @@ export default async function AdminMerchantsPage() {
                             Step {merchant.onboarding_step ?? "-"} / completed:{" "}
                             {merchant.onboarding_completed ? "yes" : "no"}
                           </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Business details</p>
+                          <div className="mt-4 space-y-3 text-sm text-slate-700">
+                            <p>Alamat: <span className="font-medium text-slate-900">{fieldValue(merchant.address)}</span></p>
+                            <p>Kota: <span className="font-medium text-slate-900">{fieldValue(merchant.city)}</span></p>
+                            <p>Provinsi: <span className="font-medium text-slate-900">{fieldValue(merchant.province)}</span></p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">PIC & legal identity</p>
+                          <div className="mt-4 space-y-3 text-sm text-slate-700">
+                            <p>PIC: <span className="font-medium text-slate-900">{fieldValue(merchant.pic_name)}</span></p>
+                            <p>Jabatan: <span className="font-medium text-slate-900">{fieldValue(merchant.pic_position)}</span></p>
+                            <p>KTP: <span className="font-medium text-slate-900">{fieldValue(merchant.ktp_number)}</span></p>
+                            <p>NPWP Personal: <span className="font-medium text-slate-900">{fieldValue(merchant.npwp_personal)}</span></p>
+                            <p>NPWP Badan Usaha: <span className="font-medium text-slate-900">{fieldValue(merchant.npwp_company)}</span></p>
+                            <p>NIB: <span className="font-medium text-slate-900">{fieldValue(merchant.nib)}</span></p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Banking details</p>
+                          <div className="mt-4 space-y-3 text-sm text-slate-700">
+                            <p>Bank: <span className="font-medium text-slate-900">{fieldValue(merchant.bank_name)}</span></p>
+                            <p>Nomor rekening: <span className="font-medium text-slate-900">{fieldValue(merchant.bank_account_number)}</span></p>
+                            <p>Atas nama: <span className="font-medium text-slate-900">{fieldValue(merchant.bank_account_holder)}</span></p>
+                            <p>Cabang: <span className="font-medium text-slate-900">{fieldValue(merchant.bank_branch)}</span></p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Uploaded documents</p>
+                          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <DocumentLink href={merchant.ktp_file_url} label="KTP" />
+                            <DocumentLink href={merchant.npwp_file_url} label="NPWP Badan Usaha" />
+                            <DocumentLink href={merchant.nib_file_url} label="NIB" />
+                            <DocumentLink href={merchant.logo_url} label="Logo Brand" />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -245,10 +339,10 @@ export default async function AdminMerchantsPage() {
                         </span>
                       </div>
                       <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-                        <p>Email: <span className="font-medium text-slate-800">{merchant.email || "-"}</span></p>
-                        <p>Company: <span className="font-medium text-slate-800">{merchant.company_name || "-"}</span></p>
-                        <p>NIB: <span className="font-medium text-slate-800">{merchant.nib || "-"}</span></p>
-                        <p>NPWP: <span className="font-medium text-slate-800">{merchant.npwp || "-"}</span></p>
+                        <p>Email: <span className="font-medium text-slate-800">{fieldValue(merchant.email)}</span></p>
+                        <p>Company: <span className="font-medium text-slate-800">{fieldValue(merchant.company_name)}</span></p>
+                        <p>NIB: <span className="font-medium text-slate-800">{fieldValue(merchant.nib)}</span></p>
+                        <p>NPWP Badan Usaha: <span className="font-medium text-slate-800">{fieldValue(merchant.npwp_company)}</span></p>
                       </div>
                       {merchant.rejection_reason ? (
                         <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
