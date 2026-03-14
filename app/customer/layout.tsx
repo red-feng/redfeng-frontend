@@ -44,7 +44,7 @@ export default async function CustomerLayout({
             </Link>
             <SignOutButton
               redirectTo="https://app.redfeng.co/login"
-              className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-rose-300 hover:text-rose-600"
+              className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
             />
           </div>
         </div>
