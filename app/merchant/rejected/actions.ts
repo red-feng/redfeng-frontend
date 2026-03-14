@@ -17,10 +17,11 @@ export async function resubmitMerchant() {
   await supabase
     .from("merchants")
     .update({
-      verification_status: "pending",
-      rejection_reason: null,
+      verification_status: "draft",
+      onboarding_completed: false,
+      onboarding_step: 1,
     })
     .eq("user_id", user.id)
 
-  redirect("/merchant/pending")
+  redirect("/merchant/onboarding")
 }

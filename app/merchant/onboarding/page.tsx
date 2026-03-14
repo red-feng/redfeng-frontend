@@ -61,8 +61,13 @@ export default function OnboardingPage() {
         .single()
 
       if (existing) {
-        if (existing.onboarding_completed) {
+        if (existing.onboarding_completed && existing.verification_status === 'approved') {
           router.replace('/merchant/dashboard')
+          return
+        }
+
+        if (existing.verification_status === 'pending') {
+          router.replace('/merchant/pending')
           return
         }
 

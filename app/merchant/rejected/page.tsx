@@ -57,7 +57,7 @@ export default async function RejectedPage() {
             <form action={resubmitMerchant} className="mt-6">
               <button className="inline-flex items-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_42%,#fb923c_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(194,65,12,0.22)] transition hover:shadow-[0_18px_36px_rgba(194,65,12,0.28)]">
                 <span aria-hidden="true">↻</span>
-                Perbaiki dan ajukan ulang
+                Perbaiki data dan lanjutkan onboarding
               </button>
             </form>
           </article>
@@ -69,7 +69,7 @@ export default async function RejectedPage() {
             <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
               <li>Tinjau alasan penolakan dari tim admin.</li>
               <li>Lengkapi atau perbaiki data yang diminta.</li>
-              <li>Ajukan ulang untuk masuk ke antrian review berikutnya.</li>
+              <li>Masuk lagi ke onboarding, perbaiki data, lalu submit ulang untuk review berikutnya.</li>
             </ul>
             <Link
               href="https://redfeng.co/"
