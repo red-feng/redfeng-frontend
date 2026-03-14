@@ -60,28 +60,34 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
     from: fromEmail,
     to: payload.customerEmail,
     subject: payload.sendInvoicePdf
-      ? `Invoice ${payload.paymentStatusLabel} - ${payload.bookingCode}`
-      : `Konfirmasi ${payload.paymentStatusLabel} - ${payload.bookingCode}`,
+      ? `RedFeng Booking: ${payload.paymentStatusLabel} - ${payload.bookingCode}`
+      : `RedFeng Booking: ${payload.paymentStatusLabel} - ${payload.bookingCode}`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a">
-        <h2 style="margin-bottom:8px">Red Feng</h2>
-        <p>Halo ${payload.customerName || "Customer"},</p>
-        <p>Status pembayaran booking Anda sudah diperbarui menjadi <strong>${payload.paymentStatusLabel}</strong>.</p>
-        <ul>
-          <li>Kode booking: ${payload.bookingCode}</li>
-          <li>Status pembayaran: ${payload.paymentStatusLabel}</li>
-          <li>Jenis pembayaran: ${payload.paymentTypeLabel}</li>
-          <li>Nama paket: ${payload.packageTitle || "-"}</li>
-          <li>Tanggal wisata: ${payload.pickupDateLabel || "-"}</li>
-          <li>Merchant / operator: ${payload.merchantName || "-"}</li>
-          <li>Subtotal paket: ${formatMoney(Number(payload.subtotalAmount || 0))}</li>
-          <li>Admin fee customer: ${formatMoney(Number(payload.adminFeeAmount || 0))}</li>
-          <li>Pajak customer: ${formatMoney(Number(payload.taxAmount || 0))}</li>
-          <li>Nominal: ${formatMoney(payload.totalAmount)}</li>
-        </ul>
-        <p>Fase operasional berikutnya akan mengikuti alur Arrived, Picked up, Go, lalu Ready for Finance sebelum payout merchant diproses.</p>
-        <p>Verifikasi Booking ID: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
-        <p>${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah status berubah menjadi Fully Paid."}</p>
+      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a">
+        <h2 style="margin-bottom:8px">Halo ${payload.customerName || "Customer"},</h2>
+        <p style="margin:0 0 14px;">Status pembayaran booking Anda telah diperbarui menjadi <strong>${payload.paymentStatusLabel}</strong>.</p>
+        <p style="margin:0 0 18px;">Berikut ringkasan transaksi Anda di RedFeng.</p>
+
+        <div style="border:1px solid #e2e8f0;border-radius:16px;padding:16px 18px;margin:0 0 18px;background:#fffdfa;">
+          <p style="margin:0 0 8px;"><strong>Kode booking:</strong> ${payload.bookingCode}</p>
+          <p style="margin:0 0 8px;"><strong>Status pembayaran:</strong> ${payload.paymentStatusLabel}</p>
+          <p style="margin:0 0 8px;"><strong>Jenis pembayaran:</strong> ${payload.paymentTypeLabel}</p>
+          <p style="margin:0 0 8px;"><strong>Nama paket:</strong> ${payload.packageTitle || "-"}</p>
+          <p style="margin:0 0 8px;"><strong>Tanggal wisata:</strong> ${payload.pickupDateLabel || "-"}</p>
+          <p style="margin:0;"><strong>Merchant / operator:</strong> ${payload.merchantName || "-"}</p>
+        </div>
+
+        <div style="border:1px solid #fed7aa;border-radius:16px;padding:16px 18px;margin:0 0 18px;background:#fff7ed;">
+          <p style="margin:0 0 8px;"><strong>Subtotal paket:</strong> ${formatMoney(Number(payload.subtotalAmount || 0))}</p>
+          <p style="margin:0 0 8px;"><strong>Admin fee customer:</strong> ${formatMoney(Number(payload.adminFeeAmount || 0))}</p>
+          <p style="margin:0 0 8px;"><strong>Pajak customer:</strong> ${formatMoney(Number(payload.taxAmount || 0))}</p>
+          <p style="margin:0;"><strong>Nominal dibayar:</strong> ${formatMoney(payload.totalAmount)}</p>
+        </div>
+
+        <p style="margin:0 0 14px;">Tahap operasional berikutnya akan mengikuti alur <strong>Arrived</strong>, <strong>Picked up</strong>, <strong>Go</strong>, lalu <strong>Ready for Finance</strong> sebelum payout merchant diproses.</p>
+        <p style="margin:0 0 14px;">Verifikasi Booking ID: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
+        <p style="margin:0 0 18px;">${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah status pembayaran berubah menjadi Fully Paid."}</p>
+        <p style="margin:0;">Terima kasih,<br/><strong>Tim RedFeng</strong></p>
       </div>
     `,
     attachments,

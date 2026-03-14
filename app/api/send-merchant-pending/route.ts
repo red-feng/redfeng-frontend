@@ -23,11 +23,14 @@ export async function POST(req: Request) {
       to: email,
       subject: 'RedFeng Merchant: Pengajuan Sedang Diverifikasi',
       html: `
-        <h2>Halo ${brandName},</h2>
-        <p>Akun merchant Anda sedang dalam proses verifikasi oleh tim RedFeng.</p>
-        <p>Proses ini biasanya memakan waktu maksimal 1x24 jam.</p>
-        <br/>
-        <p>Terima kasih,<br/>Tim RedFeng</p>
+        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+          <h2 style="margin-bottom:8px;">Halo ${brandName},</h2>
+          <p style="margin:0 0 14px;">Pengajuan akun merchant Anda sudah kami terima dan saat ini sedang diverifikasi oleh tim RedFeng.</p>
+          <p style="margin:0 0 14px;">Pada tahap ini, admin akan meninjau profil bisnis, data legal, rekening payout, serta dokumen pendukung yang Anda unggah.</p>
+          <p style="margin:0 0 14px;">Estimasi proses review biasanya maksimal <strong>1 x 24 jam kerja</strong>. Jika ada revisi, kami akan mengirim pemberitahuan melalui email ini.</p>
+          <p style="margin:0 0 18px;">Mohon pastikan email ini tetap aktif agar Anda tidak melewatkan hasil review merchant.</p>
+          <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
+        </div>
       `
     })
 

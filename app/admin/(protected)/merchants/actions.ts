@@ -39,11 +39,13 @@ async function sendMerchantDecisionEmail({
       to: email,
       subject: "RedFeng Merchant: Akun Anda Disetujui",
       html: `
-        <h2>Halo ${merchantName},</h2>
-        <p>Kabar baik. Akun merchant Anda telah disetujui oleh tim RedFeng.</p>
-        <p>Anda sekarang dapat login ke dashboard merchant dan mulai mengelola paket wisata Anda.</p>
-        <br/>
-        <p>Terima kasih,<br/>Tim RedFeng</p>
+        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+          <h2 style="margin-bottom:8px;">Halo ${merchantName},</h2>
+          <p style="margin:0 0 14px;">Kabar baik. Akun merchant Anda telah <strong>disetujui</strong> oleh tim RedFeng.</p>
+          <p style="margin:0 0 14px;">Anda sekarang dapat login ke dashboard merchant untuk mulai mengelola profil bisnis dan mengunggah paket wisata.</p>
+          <p style="margin:0 0 18px;">Silakan gunakan akun merchant Anda untuk melanjutkan operasional di platform RedFeng.</p>
+          <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
+        </div>
       `,
     })
     return
@@ -54,13 +56,14 @@ async function sendMerchantDecisionEmail({
     to: email,
     subject: "RedFeng Merchant: Pengajuan Perlu Diperbaiki",
     html: `
-      <h2>Halo ${merchantName},</h2>
-      <p>Pengajuan merchant Anda belum dapat kami setujui saat ini.</p>
-      <p><strong>Catatan admin:</strong></p>
-      <p>${reason || "Mohon periksa kembali data dan dokumen yang Anda unggah."}</p>
-      <p>Silakan login kembali, perbaiki data yang diminta, lalu ajukan ulang untuk review admin.</p>
-      <br/>
-      <p>Terima kasih,<br/>Tim RedFeng</p>
+      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+        <h2 style="margin-bottom:8px;">Halo ${merchantName},</h2>
+        <p style="margin:0 0 14px;">Pengajuan merchant Anda belum dapat kami setujui saat ini dan masih perlu diperbaiki.</p>
+        <p style="margin:0 0 8px;"><strong>Catatan admin:</strong></p>
+        <p style="margin:0 0 14px;">${reason || "Mohon periksa kembali data dan dokumen yang Anda unggah."}</p>
+        <p style="margin:0 0 18px;">Silakan login kembali ke akun merchant Anda, lengkapi atau perbaiki data yang diminta, lalu ajukan ulang untuk review admin.</p>
+        <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
+      </div>
     `,
   })
 }
