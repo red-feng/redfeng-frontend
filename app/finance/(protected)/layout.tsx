@@ -41,13 +41,16 @@ export default async function FinanceProtectedLayout({
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-6 py-4 sm:px-8 lg:px-10">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance Workspace</p>
+            <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+              Finance Workspace
+            </p>
             <p className="mt-1 text-sm font-semibold text-slate-950">Dashboard finance internal Red Feng</p>
+            <p className="text-xs text-slate-500">Area payout, fee, pengaturan dana, dan akun internal</p>
           </div>
           <div className="flex items-center gap-2">
             <Link
               href="/finance/dashboard"
-              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
+              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
             >
               Dashboard
             </Link>

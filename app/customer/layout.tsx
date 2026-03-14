@@ -22,23 +22,36 @@ export default async function CustomerLayout({
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5 md:px-10">
-          <Link href="/customer/dashboard" className="inline-flex items-center">
-            <Image
-              src="/logo-redfeng.png"
-              alt="RedFeng"
-              width={220}
-              height={64}
-              priority
-              className="h-14 w-auto md:h-16"
-            />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/customer/dashboard" className="inline-flex items-center">
+              <Image
+                src="/logo-redfeng.png"
+                alt="RedFeng"
+                width={220}
+                height={64}
+                priority
+                className="h-14 w-auto md:h-16"
+              />
+            </Link>
+            <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
+            <div className="hidden lg:block">
+              <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+                Customer Space
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-950">Dashboard customer Red Feng</p>
+              <p className="text-xs text-slate-500">Area booking, pembayaran, dan status perjalanan</p>
+            </div>
+          </div>
           <div className="flex items-center gap-3 text-sm text-slate-600">
-            <Link href="/customer/dashboard" className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 font-medium text-orange-700 transition hover:border-orange-300 hover:bg-orange-100">
+            <Link
+              href="/customer/dashboard"
+              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+            >
               Dashboard Customer
             </Link>
             <Link
               href="https://redfeng.co/"
-              className="rounded-full border border-slate-200 px-4 py-2 font-medium transition hover:border-orange-300 hover:text-orange-600"
+              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
             >
               Kembali ke Situs
             </Link>

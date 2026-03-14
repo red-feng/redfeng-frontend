@@ -99,10 +99,10 @@ export default async function MerchantLayout({
                 <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
 
                 <div className="hidden lg:block">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+                  <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
                     Merchant Suite
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950">{merchantLabel}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
                   <p className="text-xs text-slate-500">{locationLabel}</p>
                 </div>
               </div>
