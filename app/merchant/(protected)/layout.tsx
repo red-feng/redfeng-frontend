@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
 
 const merchantNav = [
@@ -116,6 +117,10 @@ export default async function MerchantLayout({
                 >
                   Lihat situs
                 </Link>
+                <SignOutButton
+                  redirectTo="https://app.redfeng.co/merchant/login"
+                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                />
               </div>
             </div>
 
