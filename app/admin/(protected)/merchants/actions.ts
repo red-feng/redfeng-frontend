@@ -37,7 +37,7 @@ async function sendMerchantDecisionEmail({
     await resend.emails.send({
       from: "RedFeng Admin <admin@redfeng.co>",
       to: email,
-      subject: "Akun Merchant Anda Disetujui",
+      subject: "RedFeng Merchant: Akun Anda Disetujui",
       html: `
         <h2>Halo ${merchantName},</h2>
         <p>Kabar baik. Akun merchant Anda telah disetujui oleh tim RedFeng.</p>
@@ -52,7 +52,7 @@ async function sendMerchantDecisionEmail({
   await resend.emails.send({
     from: "RedFeng Admin <admin@redfeng.co>",
     to: email,
-    subject: "Pengajuan Merchant Perlu Diperbaiki",
+    subject: "RedFeng Merchant: Pengajuan Perlu Diperbaiki",
     html: `
       <h2>Halo ${merchantName},</h2>
       <p>Pengajuan merchant Anda belum dapat kami setujui saat ini.</p>

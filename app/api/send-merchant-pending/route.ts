@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     await resend.emails.send({
       from: 'RedFeng Admin <admin@redfeng.co>',
       to: email,
-      subject: 'Akun Anda Sedang Diverifikasi',
+      subject: 'RedFeng Merchant: Pengajuan Sedang Diverifikasi',
       html: `
         <h2>Halo ${brandName},</h2>
         <p>Akun merchant Anda sedang dalam proses verifikasi oleh tim RedFeng.</p>
