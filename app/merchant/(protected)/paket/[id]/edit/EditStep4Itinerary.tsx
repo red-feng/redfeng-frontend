@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { updatePackageStep4 } from "../../actions"
+import { formatPickupTimeInput, parseStoredPickupTime } from "@/lib/time/pickupTime"
 
 type RouteType = {
   pickupTime: string
@@ -13,22 +14,6 @@ type DayType = {
   day: number
   description: string
   routes: RouteType[]
-}
-
-function parsePickup(value: string) {
-  const normalized = value.trim()
-  const match = normalized.match(/^(\d{2}:\d{2})(?:\s+(AM|PM))?$/i)
-  if (!match) {
-    return {
-      pickupTime: "",
-      pickupPeriod: "AM",
-    }
-  }
-
-  return {
-    pickupTime: match[1],
-    pickupPeriod: (match[2] || "AM").toUpperCase(),
-  }
 }
 
 export default function EditStep4Itinerary({
@@ -52,7 +37,7 @@ export default function EditStep4Itinerary({
           description: day.description,
           routes: day.routes.length > 0
             ? day.routes.map((route) => ({
-                ...parsePickup(route.pickup_time || ""),
+                ...parseStoredPickupTime(route.pickup_time || ""),
                 route: route.route || "",
               }))
             : [{ pickupTime: "", pickupPeriod: "AM", route: "" }],
@@ -101,7 +86,7 @@ export default function EditStep4Itinerary({
       const updated = [...prev]
       updated[dayIndex].routes[routeIndex] = {
         ...updated[dayIndex].routes[routeIndex],
-        [field]: value,
+        [field]: field === "pickupTime" ? formatPickupTimeInput(value) : value,
       }
       return updated
     })
@@ -137,10 +122,13 @@ export default function EditStep4Itinerary({
                   {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">Jam</label>}
                   <div className="flex gap-2">
                     <input
-                      type="time"
+                      type="text"
                       name="pickup_time[]"
                       value={route.pickupTime}
                       onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
+                      placeholder="11.30"
+                      inputMode="numeric"
+                      maxLength={5}
                       className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                     />
                     <select

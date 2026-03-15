@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
@@ -380,7 +381,7 @@ export async function updatePackageStep4(formData: FormData) {
       if (!grouped[day]) grouped[day] = []
 
       grouped[day].push({
-        pickup_time: [pickupTimes[index], pickupPeriods[index]].filter(Boolean).join(" "),
+        pickup_time: normalizePickupTimeForStorage(pickupTimes[index] || "", pickupPeriods[index] || "AM"),
         route: routes[index] || "",
         description: "",
       })

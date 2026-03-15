@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { redirect } from "next/navigation"
 
 type ItineraryRouteInput = {
@@ -483,9 +484,9 @@ export async function saveItinerary(formData: FormData) {
       if (!grouped[day]) grouped[day] = []
 
       grouped[day].push({
-       pickup_time: [pickupTimes[index], pickupPeriods[index]].filter(Boolean).join(" "),
-      route: routes[index] || "",
-      description: "",
+        pickup_time: normalizePickupTimeForStorage(pickupTimes[index] || "", pickupPeriods[index] || "AM"),
+        route: routes[index] || "",
+        description: "",
       })
     })
 

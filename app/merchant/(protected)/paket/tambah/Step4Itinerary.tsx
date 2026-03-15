@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { saveItinerary } from "./actions"
 import Image from "next/image"
+import { formatPickupTimeInput } from "@/lib/time/pickupTime"
 
 type RouteType = {
-  pickup: string
+  pickupTime: string
+  pickupPeriod: "AM" | "PM"
   route: string
 }
 
@@ -25,7 +27,7 @@ export default function Step4Itinerary({
     {
       day: 1,
       description: "",
-      routes: [{ pickup: "", route: "" }]
+      routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
     }
   ])
 
@@ -39,7 +41,7 @@ export default function Step4Itinerary({
       {
         day: prev.length + 1,
         description: "",
-        routes: [{ pickup: "", route: "" }]
+        routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
       }
     ])
   }
@@ -57,7 +59,7 @@ export default function Step4Itinerary({
   const addRoute = (dayIndex: number) => {
     setDays(prev => {
       const updated = [...prev]
-      updated[dayIndex].routes.push({ pickup: "", route: "" })
+      updated[dayIndex].routes.push({ pickupTime: "", pickupPeriod: "AM", route: "" })
       return updated
     })
   }
@@ -67,6 +69,23 @@ export default function Step4Itinerary({
       const updated = [...prev]
       updated[dayIndex].routes =
         updated[dayIndex].routes.filter((_, i) => i !== routeIndex)
+      return updated
+    })
+  }
+
+  const updateRouteField = (
+    dayIndex: number,
+    routeIndex: number,
+    field: keyof RouteType,
+    value: string
+  ) => {
+    setDays(prev => {
+      const updated = [...prev]
+      const nextValue = field === "pickupTime" ? formatPickupTimeInput(value) : value
+      updated[dayIndex].routes[routeIndex] = {
+        ...updated[dayIndex].routes[routeIndex],
+        [field]: nextValue,
+      }
       return updated
     })
   }
@@ -169,13 +188,20 @@ export default function Step4Itinerary({
 
                         <div className="flex gap-2">
                           <input
-                            type="time"
+                            type="text"
                             name="pickup_time[]"
+                            value={route.pickupTime}
+                            onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
+                            placeholder="11.30"
+                            inputMode="numeric"
+                            maxLength={5}
                             className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
                           />
 
                           <select
                             name="pickup_period[]"
+                            value={route.pickupPeriod}
+                            onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value)}
                             className="border rounded-lg p-3 focus:ring-2 focus:ring-orange-400 outline-none"
                           >
                             <option value="AM">AM</option>
@@ -193,6 +219,8 @@ export default function Step4Itinerary({
                         )}
                         <input
                           name="route[]"
+                          value={route.route}
+                          onChange={(event) => updateRouteField(dayIndex, routeIndex, "route", event.target.value)}
                           className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
                         />
                       </div>
