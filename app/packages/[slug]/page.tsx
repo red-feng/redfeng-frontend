@@ -7,6 +7,7 @@ import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
+import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
 import { parseHighlights } from "@/lib/packages/highlights"
@@ -426,7 +427,7 @@ export default async function PaketPage({
                 mapEmbed: detail?.map_embed || null,
                 facilities: facilities.map((facility) => ({
                   id: facility.facility_id,
-                  name: getFacilityName(facility.facilities),
+                  name: getFacilityLabel(getFacilityName(facility.facilities), activeLocale),
                 })),
                 tags: (
                   parseHighlights(translation?.highlights).length > 0

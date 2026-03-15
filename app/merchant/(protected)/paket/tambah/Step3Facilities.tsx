@@ -9,6 +9,7 @@ import { getFacilityIcon } from "@/lib/facility-icons"
 type Facility = {
   id: string
   name: string
+  category: string
 }
 
 export default function Step3Facilities({
@@ -35,6 +36,13 @@ export default function Step3Facilities({
   if (!packageId) {
     return <p className="text-red-500">Package ID tidak ditemukan</p>
   }
+
+  const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
+    const category = facility.category || "Lainnya"
+    if (!acc[category]) acc[category] = []
+    acc[category].push(facility)
+    return acc
+  }, {})
 
  
   return (
@@ -82,28 +90,33 @@ export default function Step3Facilities({
             <input type="hidden" name="package_id" value={packageId} />
 
             {/* FACILITIES GRID */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-
-              {facilities.map((facility) => (
-                <label
-                  key={facility.id}
-                  className="flex items-center gap-3 p-4 border rounded-xl hover:bg-orange-50 transition cursor-pointer"
-                >
-                  <input
-                    type="checkbox"
-                    name="facility_ids[]"
-                    value={facility.id}
-                    className="w-5 h-5 accent-orange-500"
-                  />
-                  <span className="text-lg leading-none">
-                    {getFacilityIcon(facility.name)}
-                  </span>
-                  <span className="text-gray-700">
-                    {facility.name}
-                  </span>
-                </label>
+            <div className="space-y-8">
+              {Object.entries(groupedFacilities).map(([category, items]) => (
+                <div key={category}>
+                  <h3 className="mb-4 text-lg font-semibold text-slate-800">{category}</h3>
+                  <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
+                    {items.map((facility) => (
+                      <label
+                        key={facility.id}
+                        className="flex items-center gap-3 rounded-xl border p-4 transition cursor-pointer hover:bg-orange-50"
+                      >
+                        <input
+                          type="checkbox"
+                          name="facility_ids[]"
+                          value={facility.id}
+                          className="h-5 w-5 accent-orange-500"
+                        />
+                        <span className="text-lg leading-none">
+                          {getFacilityIcon(facility.name)}
+                        </span>
+                        <span className="text-gray-700">
+                          {facility.name}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
               ))}
-
             </div>
 
             {/* BUTTON */}

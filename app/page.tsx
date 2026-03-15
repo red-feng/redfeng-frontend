@@ -5,6 +5,7 @@ import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
+import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
 
@@ -172,7 +173,11 @@ export default async function HomePage({
     .from("facilities")
     .select("id, name, category")
 
-  const facilities = facilitiesData ?? []
+  const facilities = (facilitiesData ?? []).map((facility) => ({
+    ...facility,
+    name: getFacilityLabel(facility.name, locale),
+    category: getFacilityCategoryLabel(facility.category, locale),
+  }))
 
   return (
   <div className="bg-gray-100 min-h-screen">

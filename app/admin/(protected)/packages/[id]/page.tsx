@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
 import Image from "next/image"
+import { getFacilityLabel } from "@/lib/facility-labels"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import TranslationTabs from "./TranslationTabs"
 
@@ -292,7 +293,7 @@ export default async function Page({
                     key={facility.facility_id}
                     className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
                   >
-                    {getFacilityName(facility.facilities)}
+                    {getFacilityLabel(getFacilityName(facility.facilities), "id")}
                   </span>
                 ))}
               </div>

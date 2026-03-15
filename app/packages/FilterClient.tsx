@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 
 type Facility = {
   id: string
@@ -106,7 +107,7 @@ export default function FilterClient({
 
       {Object.entries(grouped).map(([category, items]) => (
         <div key={category}>
-          <h4 className="font-semibold mb-2">{category}</h4>
+          <h4 className="font-semibold mb-2">{getFacilityCategoryLabel(category, locale)}</h4>
 
           {items.map((f) => (
             <label key={f.id} className="flex items-center gap-2 mb-1">
@@ -124,7 +125,7 @@ export default function FilterClient({
                   }
                 }}
               />
-              {f.name}
+              {getFacilityLabel(f.name, locale)}
             </label>
           ))}
         </div>

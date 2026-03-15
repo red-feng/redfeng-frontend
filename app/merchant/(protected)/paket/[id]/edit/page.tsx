@@ -111,7 +111,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       .eq("package_id", id),
     adminSupabase
       .from("facilities")
-      .select("id, name")
+      .select("id, name, category")
       .order("category", { ascending: true }),
     adminSupabase
       .from("package_facilities")
@@ -277,11 +277,11 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         )}
 
         {activeStep === "3" && (
-          <EditStep3Facilities
-            packageId={id}
-            facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string }>}
-            selectedFacilityIds={selectedFacilityIds}
-          />
+            <EditStep3Facilities
+              packageId={id}
+              facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string; category: string }>}
+              selectedFacilityIds={selectedFacilityIds}
+            />
         )}
 
         {activeStep === "4" && (

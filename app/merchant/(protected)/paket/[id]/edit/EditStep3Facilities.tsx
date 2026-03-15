@@ -4,6 +4,7 @@ import { updatePackageStep3 } from "../../actions"
 type Facility = {
   id: string
   name: string
+  category: string
 }
 
 export default function EditStep3Facilities({
@@ -15,26 +16,40 @@ export default function EditStep3Facilities({
   facilities: Facility[]
   selectedFacilityIds: string[]
 }) {
+  const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
+    const category = facility.category || "Lainnya"
+    if (!acc[category]) acc[category] = []
+    acc[category].push(facility)
+    return acc
+  }, {})
+
   return (
     <form action={updatePackageStep3} className="space-y-10">
       <input type="hidden" name="package_id" value={packageId} />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {facilities.map((facility) => (
-          <label
-            key={facility.id}
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 transition hover:bg-orange-50"
-          >
-            <input
-              type="checkbox"
-              name="facility_ids[]"
-              value={facility.id}
-              defaultChecked={selectedFacilityIds.includes(facility.id)}
-              className="h-5 w-5 accent-orange-500"
-            />
-            <span className="text-lg leading-none">{getFacilityIcon(facility.name)}</span>
-            <span className="text-slate-700">{facility.name}</span>
-          </label>
+      <div className="space-y-8">
+        {Object.entries(groupedFacilities).map(([category, items]) => (
+          <div key={category}>
+            <h3 className="mb-4 text-lg font-semibold text-slate-800">{category}</h3>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {items.map((facility) => (
+                <label
+                  key={facility.id}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 p-4 transition hover:bg-orange-50"
+                >
+                  <input
+                    type="checkbox"
+                    name="facility_ids[]"
+                    value={facility.id}
+                    defaultChecked={selectedFacilityIds.includes(facility.id)}
+                    className="h-5 w-5 accent-orange-500"
+                  />
+                  <span className="text-lg leading-none">{getFacilityIcon(facility.name)}</span>
+                  <span className="text-slate-700">{facility.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
