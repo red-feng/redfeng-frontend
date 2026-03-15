@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
+import TranslationTabs from "./TranslationTabs"
 
 type CountryRow = {
   id: string
@@ -247,64 +248,11 @@ export default async function Page({
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Detail Konten</h2>
               <div className="mt-5 space-y-5">
-                {sortedTranslations.length === 0 && (
-                  <p className="text-sm text-slate-500">Konten terjemahan belum tersedia.</p>
-                )}
-
-                {sortedTranslations.map((translation, index) => (
-                  <details
-                    key={translation.language_code || "unknown"}
-                    open={index === 0}
-                    className="group rounded-xl border border-slate-200 bg-slate-50"
-                  >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold text-slate-900">
-                          Konten Bahasa {getLanguageLabel(translation.language_code)}
-                        </h3>
-                        {translation.language_code === pkg.default_language && (
-                          <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
-                            Bahasa Default
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-500 transition group-open:rotate-180">
-                        ▼
-                      </span>
-                    </summary>
-
-                    <div className="border-t border-slate-200 px-4 pb-4 pt-4 text-sm leading-7 text-slate-700">
-                      <div>
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Judul Paket</h4>
-                        <p className="whitespace-pre-line">{translation.title || pkg.title || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Info Tentang Tour</h4>
-                        <p className="whitespace-pre-line">{translation.about_tour || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan Merchant</h4>
-                        <p className="whitespace-pre-line">{translation.service_standard || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Yang Termasuk</h4>
-                        <p className="whitespace-pre-line">{translation.include || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Yang Tidak Termasuk</h4>
-                        <p className="whitespace-pre-line">{translation.exclude || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Peralatan & Dokumen yang Disiapkan Peserta</h4>
-                        <p className="whitespace-pre-line">{translation.preparation || "-"}</p>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Syarat & Ketentuan saat di Lokasi</h4>
-                        <p className="whitespace-pre-line">{translation.terms_conditions || "-"}</p>
-                      </div>
-                    </div>
-                  </details>
-                ))}
+                <TranslationTabs
+                  translations={sortedTranslations}
+                  defaultLanguage={pkg.default_language}
+                  fallbackTitle={pkg.title}
+                />
 
                 <div>
                   <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
