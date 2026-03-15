@@ -468,6 +468,7 @@ export async function saveItinerary(formData: FormData) {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
 
     const dayNumbers = formData.getAll("day_number[]") as string[]
+    const dayTitles = formData.getAll("day_title[]") as string[]
     const pickupTimes = formData.getAll("pickup_time[]") as string[]
     const pickupPeriods = formData.getAll("pickup_period[]") as string[]
     const routes = formData.getAll("route[]") as string[]
@@ -497,14 +498,19 @@ export async function saveItinerary(formData: FormData) {
         ...routeRow,
         description: dayDescription,
       }))
+      grouped[dayKey][0] = {
+        ...grouped[dayKey][0],
+        description: dayDescription,
+      }
     })
 
-    for (const day in grouped) {
+    for (const [dayIndex, day] of orderedDays.entries()) {
       const { data: dayInsert, error: dayError } = await supabase
         .from("package_itinerary_days")
         .insert({
           package_id: packageId,
           day_number: Number(day),
+          day_title: String(dayTitles[dayIndex] || "").trim() || null,
         })
         .select()
         .single()

@@ -13,6 +13,7 @@ type RouteType = {
 
 type DayType = {
   day: number
+  title: string
   description: string
   routes: RouteType[]
 }
@@ -26,6 +27,7 @@ export default function Step4Itinerary({
   const [days, setDays] = useState<DayType[]>([
     {
       day: 1,
+      title: "",
       description: "",
       routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
     }
@@ -40,6 +42,7 @@ export default function Step4Itinerary({
       ...prev,
       {
         day: prev.length + 1,
+        title: "",
         description: "",
         routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
       }
@@ -69,6 +72,17 @@ export default function Step4Itinerary({
       const updated = [...prev]
       updated[dayIndex].routes =
         updated[dayIndex].routes.filter((_, i) => i !== routeIndex)
+      return updated
+    })
+  }
+
+  const updateDayField = (dayIndex: number, field: "title" | "description", value: string) => {
+    setDays(prev => {
+      const updated = [...prev]
+      updated[dayIndex] = {
+        ...updated[dayIndex],
+        [field]: value,
+      }
       return updated
     })
   }
@@ -144,9 +158,18 @@ export default function Step4Itinerary({
 
                 {/* HEADER HARI */}
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-semibold text-gray-800">
-                    Hari ke {day.day}
-                  </h3>
+                  <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+                    <h3 className="text-xl font-semibold text-gray-800">
+                      Hari ke {day.day}
+                    </h3>
+                    <input
+                      name="day_title[]"
+                      value={day.title}
+                      onChange={(event) => updateDayField(dayIndex, "title", event.target.value)}
+                      placeholder="Arrival Bali & Tanah Lot Sunset"
+                      className="w-full max-w-xl rounded-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
 
                   {days.length > 1 && (
                     <button
@@ -258,6 +281,8 @@ export default function Step4Itinerary({
                   </label>
                   <textarea
                     name="description[]"
+                    value={day.description}
+                    onChange={(event) => updateDayField(dayIndex, "description", event.target.value)}
                     className="border rounded-lg p-4 w-full h-32 focus:ring-2 focus:ring-orange-400 outline-none"
                   />
                 </div>

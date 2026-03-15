@@ -24,6 +24,7 @@ type ItineraryRouteItem = {
 type ItineraryDayItem = {
   id: string
   day_number: number
+  day_title?: string | null
   routes: ItineraryRouteItem[]
 }
 
@@ -183,7 +184,9 @@ export default function PackageTabs({
             )}
             {data.itineraryDays.map((day) => (
               <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-base font-semibold text-slate-900">{t.dayLabel} {day.day_number}</h3>
+                <h3 className="text-base font-semibold text-slate-900">
+                  {t.dayLabel} {day.day_number}{day.day_title ? ` - ${day.day_title}` : ""}
+                </h3>
                 <div className="mt-3 space-y-3">
                   {day.routes.length === 0 && (
                     <p className="text-sm text-slate-500">{t.noRoute}</p>

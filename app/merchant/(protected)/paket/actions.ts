@@ -370,6 +370,7 @@ export async function updatePackageStep4(formData: FormData) {
     }
 
     const dayNumbers = formData.getAll("day_number[]") as string[]
+    const dayTitles = formData.getAll("day_title[]") as string[]
     const pickupTimes = formData.getAll("pickup_time[]") as string[]
     const pickupPeriods = formData.getAll("pickup_period[]") as string[]
     const routes = formData.getAll("route[]") as string[]
@@ -396,12 +397,13 @@ export async function updatePackageStep4(formData: FormData) {
       }))
     })
 
-    for (const day of orderedDays) {
+    for (const [dayIndex, day] of orderedDays.entries()) {
       const { data: dayInsert, error: dayError } = await adminSupabase
         .from("package_itinerary_days")
         .insert({
           package_id: packageId,
           day_number: Number(day),
+          day_title: String(dayTitles[dayIndex] || "").trim() || null,
         })
         .select()
         .single()

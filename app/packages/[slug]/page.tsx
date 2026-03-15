@@ -68,6 +68,7 @@ type ItineraryRouteRow = {
 type ItineraryDayRow = {
   id: string
   day_number: number
+  day_title: string | null
   package_itinerary_routes: ItineraryRouteRow[]
 }
 
@@ -346,6 +347,7 @@ export default async function PaketPage({
     .select(`
       id,
       day_number,
+      day_title,
       package_itinerary_routes (
         id,
         pickup_time,
@@ -430,6 +432,7 @@ export default async function PaketPage({
                 itineraryDays: itineraryDays.map((day) => ({
                   id: day.id,
                   day_number: day.day_number,
+                  day_title: day.day_title,
                   routes: day.package_itinerary_routes,
                 })),
               }}

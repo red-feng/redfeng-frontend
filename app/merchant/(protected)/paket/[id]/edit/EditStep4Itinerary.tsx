@@ -12,6 +12,7 @@ type RouteType = {
 
 type DayType = {
   day: number
+  title: string
   description: string
   routes: RouteType[]
 }
@@ -23,6 +24,7 @@ export default function EditStep4Itinerary({
   packageId: string
   initialDays: Array<{
     day: number
+    title: string
     description: string
     routes: Array<{
       pickup_time: string
@@ -32,23 +34,24 @@ export default function EditStep4Itinerary({
 }) {
   const [days, setDays] = useState<DayType[]>(
     initialDays.length > 0
-      ? initialDays.map((day) => ({
-          day: day.day,
-          description: day.description,
-          routes: day.routes.length > 0
+        ? initialDays.map((day) => ({
+            day: day.day,
+            title: day.title,
+            description: day.description,
+            routes: day.routes.length > 0
             ? day.routes.map((route) => ({
                 ...parseStoredPickupTime(route.pickup_time || ""),
                 route: route.route || "",
               }))
             : [{ pickupTime: "", pickupPeriod: "AM", route: "" }],
         }))
-      : [{ day: 1, description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] }],
+      : [{ day: 1, title: "", description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] }],
   )
 
   const addDay = () => {
     setDays((prev) => [
       ...prev,
-      { day: prev.length + 1, description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] },
+      { day: prev.length + 1, title: "", description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] },
     ])
   }
 
@@ -73,7 +76,7 @@ export default function EditStep4Itinerary({
     })
   }
 
-  const updateField = (dayIndex: number, field: keyof DayType, value: string) => {
+  const updateField = (dayIndex: number, field: "title" | "description", value: string) => {
     setDays((prev) => {
       const updated = [...prev]
       updated[dayIndex] = { ...updated[dayIndex], [field]: value }
@@ -99,7 +102,16 @@ export default function EditStep4Itinerary({
       {days.map((day, dayIndex) => (
         <div key={dayIndex} className="space-y-8 rounded-2xl border border-slate-200 bg-slate-50 p-8">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-slate-800">Hari ke {day.day}</h3>
+            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+              <h3 className="text-xl font-semibold text-slate-800">Hari ke {day.day}</h3>
+              <input
+                name="day_title[]"
+                value={day.title}
+                onChange={(event) => updateField(dayIndex, "title", event.target.value)}
+                placeholder="Arrival Bali & Tanah Lot Sunset"
+                className="w-full max-w-xl rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
             {days.length > 1 && (
               <button
                 type="button"

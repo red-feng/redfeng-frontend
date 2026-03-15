@@ -37,6 +37,7 @@ type ItineraryRouteRow = {
 type ItineraryDayRow = {
   id: string
   day_number: number
+  day_title: string | null
   package_itinerary_routes: ItineraryRouteRow[]
 }
 
@@ -290,7 +291,9 @@ export default async function Page({
                 )}
                 {itineraryDays.map((day) => (
                   <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-base font-semibold text-slate-900">Hari {day.day_number}</h3>
+                    <h3 className="text-base font-semibold text-slate-900">
+                      Hari {day.day_number}{day.day_title ? ` - ${day.day_title}` : ""}
+                    </h3>
                     <div className="mt-3 space-y-3">
                       {day.package_itinerary_routes.map((route) => (
                         <div key={route.id} className="rounded-lg border border-slate-200 bg-white p-3">

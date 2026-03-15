@@ -119,7 +119,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       .eq("package_id", id),
     adminSupabase
       .from("package_itinerary_days")
-      .select("day_number, package_itinerary_routes(pickup_time, route, description)")
+      .select("day_number, day_title, package_itinerary_routes(pickup_time, route, description)")
       .eq("package_id", id)
       .order("day_number", { ascending: true }),
   ])
@@ -151,6 +151,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const selectedFacilityIds = ((selectedFacilitiesResult.data || []) as Array<{ facility_id: string }>).map((item) => item.facility_id)
   const itineraryDays = ((itineraryResult.data || []) as Array<{
     day_number: number
+    day_title: string | null
     package_itinerary_routes: Array<{
       pickup_time: string | null
       route: string | null
@@ -158,6 +159,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     }>
   }>).map((day) => ({
     day: day.day_number,
+    title: day.day_title || "",
     description: day.package_itinerary_routes?.[0]?.description || "",
     routes: (day.package_itinerary_routes || []).map((route) => ({
       pickup_time: route.pickup_time || "",
