@@ -27,6 +27,11 @@ type Dictionary = {
     noPackages: string
   }
   searchBar: {
+    countryLabel: string
+    styleLabel: string
+    durationLabel: string
+    departureDateLabel: string
+    departureDateHint: string
     allCountries: string
     allStyles: string
     allDurations: string
@@ -172,6 +177,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noPackages: "Tidak ada paket ditemukan",
     },
     searchBar: {
+      countryLabel: "Negara",
+      styleLabel: "Travel Style",
+      durationLabel: "Durasi",
+      departureDateLabel: "Tanggal Keberangkatan",
+      departureDateHint: "Khusus Open Trip dan Umroh",
       allCountries: "Semua Negara",
       allStyles: "Semua Travel Style",
       allDurations: "Semua Durasi",
@@ -313,6 +323,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     home: { noPackages: "No packages found" },
     searchBar: {
+      countryLabel: "Country",
+      styleLabel: "Travel Style",
+      durationLabel: "Duration",
+      departureDateLabel: "Departure Date",
+      departureDateHint: "For Open Trip and Umrah only",
       allCountries: "All Countries",
       allStyles: "All Travel Styles",
       allDurations: "All Durations",
@@ -452,6 +467,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     home: { noPackages: "?????" },
     searchBar: {
+      countryLabel: "国家",
+      styleLabel: "旅行方式",
+      durationLabel: "行程时长",
+      departureDateLabel: "出发日期",
+      departureDateHint: "仅适用于拼团和副朝",
       allCountries: "????",
       allStyles: "??????",
       allDurations: "????",

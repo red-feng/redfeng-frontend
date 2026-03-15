@@ -189,7 +189,7 @@ export default function Step2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Embedding tourist destinations on Google Maps</label>
+                <label className="mb-2 block font-medium">Embedding titik penjemputan wisatawan di Google Maps</label>
                 <textarea
                   name="map_embed"
                   className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"

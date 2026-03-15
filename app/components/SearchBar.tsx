@@ -47,70 +47,86 @@ export default function SearchBar({ locale }: { locale: Locale }) {
 
   return (
     <div className="bg-white border-b shadow-sm px-8 py-4">
-      <div className="max-w-[1360px] mx-auto flex gap-4 items-center">
+      <div className="max-w-[1360px] mx-auto flex flex-wrap gap-4 items-end">
 
-        {/* NEGARA */}
-        <select
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          className="border rounded-xl px-4 py-3 w-[240px]"
-        >
-          <option value="">{t.allCountries}</option>
-          <option value="indonesia">Indonesia</option>
-          <option value="japan">Japan</option>
-          <option value="singapore">Singapore</option>
-        </select>
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            {t.countryLabel}
+          </span>
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            className="border rounded-xl px-4 py-3 w-[240px]"
+          >
+            <option value="">{t.allCountries}</option>
+            <option value="indonesia">Indonesia</option>
+            <option value="japan">Japan</option>
+            <option value="singapore">Singapore</option>
+          </select>
+        </label>
 
-        {/* TRAVEL STYLE */}
-        <select
-          value={style}
-          onChange={(e) => {
-            const nextStyle = e.target.value
-            setStyle(nextStyle)
-            if (!isQuotaTravelStyle(nextStyle)) {
-              setDepartureDate("")
-            }
-          }}
-          className="border rounded-xl px-4 py-3 w-[240px]"
-        >
-          <option value="">{t.allStyles}</option>
-          {travelStyleOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            {t.styleLabel}
+          </span>
+          <select
+            value={style}
+            onChange={(e) => {
+              const nextStyle = e.target.value
+              setStyle(nextStyle)
+              if (!isQuotaTravelStyle(nextStyle)) {
+                setDepartureDate("")
+              }
+            }}
+            className="border rounded-xl px-4 py-3 w-[240px]"
+          >
+            <option value="">{t.allStyles}</option>
+            {travelStyleOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
 
         {isQuotaTravelStyle(style) && (
-          <input
-            type="date"
-            value={departureDate}
-            onChange={(e) => setDepartureDate(e.target.value)}
-            className="border rounded-xl px-4 py-3 w-[220px]"
-          />
+          <label className="flex flex-col gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              {t.departureDateLabel}
+            </span>
+            <input
+              type="date"
+              value={departureDate}
+              onChange={(e) => setDepartureDate(e.target.value)}
+              className="border rounded-xl px-4 py-3 w-[220px]"
+              aria-label={t.departureDateLabel}
+            />
+            <span className="text-xs text-slate-500">{t.departureDateHint}</span>
+          </label>
         )}
 
-        {/* DURASI */}
-        <select
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
+        <label className="flex flex-col gap-2">
+          <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+            {t.durationLabel}
+          </span>
+          <select
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+            className="border rounded-xl px-4 py-3 w-[200px]"
+          >
+            <option value="">{t.allDurations}</option>
+            <option value="1-3">1-3 {t.day}</option>
+            <option value="4-7">4-7 {t.day}</option>
+            <option value="8+">8+ {t.day}</option>
+          </select>
+        </label>
 
-          className="border rounded-xl px-4 py-3 w-[200px]"
-        >
-          <option value="">{t.allDurations}</option>
-          <option value="1-3">1-3 {t.day}</option>
-          <option value="4-7">4-7 {t.day}</option>
-          <option value="8+">8+ {t.day}</option>
-        </select>
-
-        {/* BUTTON */}
         <button
           onClick={applyFilter}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl"
         >
           {t.apply}
         </button>
-
       </div>
     </div>
   )

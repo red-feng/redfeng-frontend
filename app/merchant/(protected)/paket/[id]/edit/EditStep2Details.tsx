@@ -150,7 +150,7 @@ export default function EditStep2Details({
       </div>
 
       <div>
-        <label className="mb-2 block font-medium text-slate-800">Embedding tourist destinations on Google Maps</label>
+        <label className="mb-2 block font-medium text-slate-800">Embedding titik penjemputan wisatawan di Google Maps</label>
         <textarea
           name="map_embed"
           defaultValue={mapEmbed}
