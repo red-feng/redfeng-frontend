@@ -170,6 +170,22 @@ export default function Step2Details({
                     </div>
 
                     <div>
+                      <label className="mb-2 block font-medium">Meeting Point</label>
+                      <input
+                        name={`meeting_point_${lang.code}`}
+                        className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block font-medium">Tags / Highlights</label>
+                      <input
+                        name={`highlights_${lang.code}`}
+                        className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    </div>
+
+                    <div>
                       <label className="mb-2 block font-medium">Syarat & Ketentuan saat di lokasi</label>
                       <textarea
                         name={`terms_conditions_${lang.code}`}
@@ -181,26 +197,10 @@ export default function Step2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Meeting Point</label>
-                <input
-                  name="meeting_point"
-                  className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              </div>
-
-              <div>
                 <label className="mb-2 block font-medium">Embedding titik penjemputan wisatawan di Google Maps</label>
                 <textarea
                   name="map_embed"
                   className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block font-medium">Tags / Highlights</label>
-                <input
-                  name="tags"
-                  className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
 

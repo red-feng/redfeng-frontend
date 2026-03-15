@@ -215,9 +215,7 @@ export async function savePackageDetails(formData: FormData) {
     }
 
     const languageCodes = SUPPORTED_LANGUAGES
-    const meetingPoint = formData.get("meeting_point") as string
     const mapEmbed = formData.get("map_embed") as string
-    const tagsRaw = formData.get("tags") as string
     const galleryFiles = formData.getAll("gallery_images") as File[]
     const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
     const totalGalleryBytes = validGalleryFiles.reduce((sum, file) => sum + file.size, 0)
@@ -269,10 +267,12 @@ export async function savePackageDetails(formData: FormData) {
         const exclude = String(formData.get(`exclude_${code}`) || "").trim()
         const preparation = String(formData.get(`preparation_${code}`) || "").trim()
         const termsConditions = String(formData.get(`terms_conditions_${code}`) || "").trim()
+        const meetingPoint = String(formData.get(`meeting_point_${code}`) || "").trim()
+        const highlights = String(formData.get(`highlights_${code}`) || "").trim()
         const isDefault = code === defaultLanguage
         const isPublished = publishedLanguages.includes(code)
         const hasAnyContent = Boolean(
-          aboutTour || serviceStandard || include || exclude || preparation || termsConditions
+          aboutTour || serviceStandard || include || exclude || preparation || termsConditions || meetingPoint || highlights
         )
 
         if (!isPublished && !hasAnyContent) return null
@@ -286,6 +286,8 @@ export async function savePackageDetails(formData: FormData) {
           const defaultExclude = String(formData.get(`exclude_${defaultLanguage}`) || "").trim()
           const defaultPreparation = String(formData.get(`preparation_${defaultLanguage}`) || "").trim()
           const defaultTermsConditions = String(formData.get(`terms_conditions_${defaultLanguage}`) || "").trim()
+          const defaultMeetingPoint = String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim()
+          const defaultHighlights = String(formData.get(`highlights_${defaultLanguage}`) || "").trim()
 
           return {
             package_id: packageId,
@@ -297,6 +299,8 @@ export async function savePackageDetails(formData: FormData) {
             exclude: defaultExclude || null,
             preparation: defaultPreparation || null,
             terms_conditions: defaultTermsConditions || null,
+            meeting_point: defaultMeetingPoint || null,
+            highlights: defaultHighlights || null,
           }
         }
 
@@ -310,6 +314,8 @@ export async function savePackageDetails(formData: FormData) {
           exclude: exclude || null,
           preparation: preparation || null,
           terms_conditions: termsConditions || null,
+          meeting_point: meetingPoint || null,
+          highlights: highlights || null,
         }
       })
       .filter(Boolean)
@@ -329,7 +335,7 @@ export async function savePackageDetails(formData: FormData) {
       .upsert(
         {
           package_id: packageId,
-          meeting_point: meetingPoint,
+          meeting_point: String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim(),
           map_embed: mapEmbed,
         },
         { onConflict: "package_id" }
@@ -344,6 +350,7 @@ export async function savePackageDetails(formData: FormData) {
       .delete()
       .eq("package_id", packageId)
 
+    const tagsRaw = String(formData.get(`highlights_${defaultLanguage}`) || "").trim()
     if (tagsRaw) {
       const tagList = tagsRaw
         .split(",")

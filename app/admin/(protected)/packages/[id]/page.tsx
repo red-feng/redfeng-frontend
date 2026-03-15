@@ -51,6 +51,8 @@ type TranslationRow = {
   exclude: string | null
   preparation: string | null
   terms_conditions: string | null
+  meeting_point: string | null
+  highlights: string | null
 }
 
 function formatMoney(value: number | null, currency: string | null): string {
@@ -122,7 +124,7 @@ export default async function Page({
 
   const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions")
+    .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
     .eq("package_id", id)
   const translations = (translationRows as TranslationRow[] | null) || []
   const sortedTranslations = [...translations].sort((a, b) => {
@@ -249,15 +251,23 @@ export default async function Page({
               <h2 className="text-lg font-semibold text-slate-900">Detail Konten</h2>
               <div className="mt-5 space-y-5">
                 <TranslationTabs
-                  translations={sortedTranslations}
+                  translations={sortedTranslations.map((translation) => ({
+                    ...translation,
+                    meeting_point: translation.meeting_point || detail?.meeting_point || null,
+                    highlights: translation.highlights || null,
+                  }))}
                   defaultLanguage={pkg.default_language}
                   fallbackTitle={pkg.title}
                 />
 
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
-                  <p className="text-sm text-slate-700">{detail?.meeting_point || "-"}</p>
-                </div>
+                {sortedTranslations.every((translation) => !translation.highlights) && (
+                  <div>
+                    <h3 className="mb-1 text-sm font-semibold text-slate-900">Tag / Sorotan Lama</h3>
+                    <p className="text-sm text-slate-700">
+                      {tags.length > 0 ? tags.map((tag) => tag.tag).join(", ") : "-"}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {detail?.map_embed && (

@@ -9,6 +9,7 @@ import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
+import { parseHighlights } from "@/lib/packages/highlights"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
 export const dynamic = "force-dynamic"
@@ -288,7 +289,7 @@ export default async function PaketPage({
 
   const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions")
+    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
     .eq("package_id", pkg.id)
     .in(
       "language_code",
@@ -305,6 +306,8 @@ export default async function PaketPage({
     exclude: string | null
     preparation: string | null
     terms_conditions: string | null
+    meeting_point: string | null
+    highlights: string | null
   }>
 
   const translationPriority = [activeLocale, defaultLocale, "id"]
@@ -419,16 +422,23 @@ export default async function PaketPage({
                 serviceStandard: translation?.service_standard || null,
                 include: translation?.include || null,
                 exclude: translation?.exclude || null,
-                meetingPoint: detail?.meeting_point || null,
+                meetingPoint: translation?.meeting_point || detail?.meeting_point || null,
                 mapEmbed: detail?.map_embed || null,
                 facilities: facilities.map((facility) => ({
                   id: facility.facility_id,
                   name: getFacilityName(facility.facilities),
                 })),
-                tags: tags.map((tag) => ({
-                  id: tag.id,
-                  tag: tag.tag,
-                })),
+                tags: (
+                  parseHighlights(translation?.highlights).length > 0
+                    ? parseHighlights(translation?.highlights).map((tag, index) => ({
+                        id: `translated-${index}`,
+                        tag,
+                      }))
+                    : tags.map((tag) => ({
+                        id: tag.id,
+                        tag: tag.tag,
+                      }))
+                ),
                 itineraryDays: itineraryDays.map((day) => ({
                   id: day.id,
                   day_number: day.day_number,

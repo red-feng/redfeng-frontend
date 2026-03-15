@@ -18,22 +18,20 @@ type TranslationValues = {
   exclude: string
   preparation: string
   terms_conditions: string
+  meeting_point: string
+  highlights: string
 }
 
 export default function EditStep2Details({
   packageId,
   defaultLanguage,
   initialTranslations,
-  meetingPoint,
   mapEmbed,
-  tags,
 }: {
   packageId: string
   defaultLanguage: string
   initialTranslations: Record<string, TranslationValues>
-  meetingPoint: string
   mapEmbed: string
-  tags: string
 }) {
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode,
@@ -66,14 +64,16 @@ export default function EditStep2Details({
         </div>
 
         {LANGS.map((lang) => {
-          const values = initialTranslations[lang.code] || {
-            about_tour: "",
-            service_standard: "",
-            include: "",
-            exclude: "",
-            preparation: "",
-            terms_conditions: "",
-          }
+              const values = initialTranslations[lang.code] || {
+                about_tour: "",
+                service_standard: "",
+                include: "",
+                exclude: "",
+                preparation: "",
+                terms_conditions: "",
+                meeting_point: "",
+                highlights: "",
+              }
 
           return (
             <div key={lang.code} className={activeLang === lang.code ? "space-y-6" : "hidden"}>
@@ -128,6 +128,24 @@ export default function EditStep2Details({
               </div>
 
               <div>
+                <label className="mb-2 block font-medium text-slate-800">Meeting Point</label>
+                <input
+                  name={`meeting_point_${lang.code}`}
+                  defaultValue={values.meeting_point}
+                  className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block font-medium text-slate-800">Tags / Highlights</label>
+                <input
+                  name={`highlights_${lang.code}`}
+                  defaultValue={values.highlights}
+                  className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+
+              <div>
                 <label className="mb-2 block font-medium text-slate-800">Syarat & Ketentuan saat di lokasi</label>
                 <textarea
                   name={`terms_conditions_${lang.code}`}
@@ -141,29 +159,11 @@ export default function EditStep2Details({
       </div>
 
       <div>
-        <label className="mb-2 block font-medium text-slate-800">Meeting Point</label>
-        <input
-          name="meeting_point"
-          defaultValue={meetingPoint}
-          className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-        />
-      </div>
-
-      <div>
         <label className="mb-2 block font-medium text-slate-800">Embedding titik penjemputan wisatawan di Google Maps</label>
         <textarea
           name="map_embed"
           defaultValue={mapEmbed}
           className="h-24 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-        />
-      </div>
-
-      <div>
-        <label className="mb-2 block font-medium text-slate-800">Tags / Highlights</label>
-        <input
-          name="tags"
-          defaultValue={tags}
-          className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
         />
       </div>
 

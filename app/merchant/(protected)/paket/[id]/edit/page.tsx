@@ -98,7 +98,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
     adminSupabase
       .from("package_translations")
-      .select("language_code, about_tour, service_standard, include, exclude, preparation, terms_conditions")
+      .select("language_code, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
       .eq("package_id", id),
     adminSupabase
       .from("package_details")
@@ -130,10 +130,12 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       about_tour: string | null
       service_standard: string | null
       include: string | null
-      exclude: string | null
-      preparation: string | null
-      terms_conditions: string | null
-    }>).map((item) => [
+        exclude: string | null
+        preparation: string | null
+        terms_conditions: string | null
+        meeting_point: string | null
+        highlights: string | null
+      }>).map((item) => [
       item.language_code || "id",
       {
         about_tour: item.about_tour || "",
@@ -142,12 +144,30 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         exclude: item.exclude || "",
         preparation: item.preparation || "",
         terms_conditions: item.terms_conditions || "",
+        meeting_point: item.meeting_point || "",
+        highlights: item.highlights || "",
       },
     ]),
   )
 
   const details = detailsResult.data || { meeting_point: "", map_embed: "" }
   const tags = ((tagsResult.data || []) as Array<{ tag: string | null }>).map((item) => item.tag).filter(Boolean).join(", ")
+  for (const lang of ["id", "en", "zh"]) {
+    if (!translations[lang]) {
+      translations[lang] = {
+        about_tour: "",
+        service_standard: "",
+        include: "",
+        exclude: "",
+        preparation: "",
+        terms_conditions: "",
+        meeting_point: "",
+        highlights: "",
+      }
+    }
+    if (!translations[lang].meeting_point) translations[lang].meeting_point = details.meeting_point || ""
+    if (!translations[lang].highlights) translations[lang].highlights = tags
+  }
   const selectedFacilityIds = ((selectedFacilitiesResult.data || []) as Array<{ facility_id: string }>).map((item) => item.facility_id)
   const itineraryDays = ((itineraryResult.data || []) as Array<{
     day_number: number
@@ -252,9 +272,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
             packageId={id}
             defaultLanguage={pkg.default_language || "id"}
             initialTranslations={translations}
-            meetingPoint={details.meeting_point || ""}
             mapEmbed={details.map_embed || ""}
-            tags={tags}
           />
         )}
 

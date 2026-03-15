@@ -208,10 +208,12 @@ export async function updatePackageStep2(formData: FormData) {
         const exclude = String(formData.get(`exclude_${code}`) || "").trim()
         const preparation = String(formData.get(`preparation_${code}`) || "").trim()
         const termsConditions = String(formData.get(`terms_conditions_${code}`) || "").trim()
+        const meetingPoint = String(formData.get(`meeting_point_${code}`) || "").trim()
+        const highlights = String(formData.get(`highlights_${code}`) || "").trim()
         const isDefault = code === defaultLanguage
         const isPublished = publishedLanguages.includes(code)
         const hasAnyContent = Boolean(
-          aboutTour || serviceStandard || include || exclude || preparation || termsConditions,
+          aboutTour || serviceStandard || include || exclude || preparation || termsConditions || meetingPoint || highlights,
         )
 
         if (!isPublished && !hasAnyContent) return null
@@ -229,6 +231,8 @@ export async function updatePackageStep2(formData: FormData) {
           exclude: exclude || null,
           preparation: preparation || null,
           terms_conditions: termsConditions || null,
+          meeting_point: meetingPoint || null,
+          highlights: highlights || null,
         }
       })
       .filter(Boolean)
@@ -246,7 +250,7 @@ export async function updatePackageStep2(formData: FormData) {
       .upsert(
         {
           package_id: packageId,
-          meeting_point: String(formData.get("meeting_point") || "").trim(),
+          meeting_point: String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim(),
           map_embed: String(formData.get("map_embed") || "").trim(),
         },
         { onConflict: "package_id" },
@@ -265,7 +269,7 @@ export async function updatePackageStep2(formData: FormData) {
       throw new Error(`Gagal menghapus tags lama: ${deleteTagsError.message}`)
     }
 
-    const tagsRaw = String(formData.get("tags") || "")
+    const tagsRaw = String(formData.get(`highlights_${defaultLanguage}`) || "")
     const tagList = tagsRaw
       .split(",")
       .map((tag) => tag.trim())

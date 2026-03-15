@@ -11,6 +11,8 @@ type TranslationItem = {
   exclude: string | null
   preparation: string | null
   terms_conditions: string | null
+  meeting_point: string | null
+  highlights: string | null
 }
 
 function getLanguageLabel(code: string | null): string {
@@ -66,6 +68,10 @@ export default function TranslationTabs({
           <p className="whitespace-pre-line">{activeTranslation.about_tour || "-"}</p>
         </div>
         <div className="mt-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
+          <p className="whitespace-pre-line">{activeTranslation.meeting_point || "-"}</p>
+        </div>
+        <div className="mt-4">
           <h3 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan Merchant</h3>
           <p className="whitespace-pre-line">{activeTranslation.service_standard || "-"}</p>
         </div>
@@ -76,6 +82,10 @@ export default function TranslationTabs({
         <div className="mt-4">
           <h3 className="mb-1 text-sm font-semibold text-slate-900">Yang Tidak Termasuk</h3>
           <p className="whitespace-pre-line">{activeTranslation.exclude || "-"}</p>
+        </div>
+        <div className="mt-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900">Tag / Sorotan</h3>
+          <p className="whitespace-pre-line">{activeTranslation.highlights || "-"}</p>
         </div>
         <div className="mt-4">
           <h3 className="mb-1 text-sm font-semibold text-slate-900">Peralatan & Dokumen yang Disiapkan Peserta</h3>
