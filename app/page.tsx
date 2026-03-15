@@ -19,6 +19,9 @@ type PackageListItem = {
   city: string | null
   country: string | null
   currency: string | null
+  departure_date: string | null
+  minimal_peserta: number | null
+  travel_style: string | null
   price_adult: number | null
   package_facilities?: { facility_id: string }[] | null
   package_translations?: { title: string | null; description: string | null }[] | null
