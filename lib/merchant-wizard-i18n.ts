@@ -75,6 +75,7 @@ type MerchantWizardDictionary = {
   step2Short: string
   step3Short: string
   step4Short: string
+  step5Short: string
   reviewSubmitInfoTitle: string
   reviewSubmitInfoBody: string
   reviewPendingNotice: string
@@ -163,6 +164,7 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     step2Short: "Step 2",
     step3Short: "Step 3",
     step4Short: "Step 4",
+    step5Short: "Step 5",
     reviewSubmitInfoTitle: "Setelah disubmit, paket akan direview oleh Admin.",
     reviewSubmitInfoBody: "Paket tidak bisa diedit sampai proses review selesai.",
     reviewPendingNotice: "Pastikan seluruh data sudah benar sebelum melakukan submit. Setelah submit, status paket akan berubah menjadi Pending.",
@@ -243,6 +245,7 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     step2Short: "Step 2",
     step3Short: "Step 3",
     step4Short: "Step 4",
+    step5Short: "Step 5",
     reviewSubmitInfoTitle: "After submission, the package will be reviewed by the Admin.",
     reviewSubmitInfoBody: "The package cannot be edited until the review process is complete.",
     reviewPendingNotice: "Please make sure all data is correct before submitting. After submission, the package status will change to Pending.",
@@ -323,6 +326,7 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     step2Short: "第 2 步",
     step3Short: "第 3 步",
     step4Short: "第 4 步",
+    step5Short: "第 5 步",
     reviewSubmitInfoTitle: "提交后，套餐将由管理员进行审核。",
     reviewSubmitInfoBody: "在审核完成之前，套餐无法被编辑。",
     reviewPendingNotice: "请在提交前确认所有数据已正确填写。提交后，套餐状态将变为 Pending。",
