@@ -166,7 +166,7 @@ export default function Step4Itinerary({
                       name="day_title[]"
                       value={day.title}
                       onChange={(event) => updateDayField(dayIndex, "title", event.target.value)}
-                      placeholder="Arrival Bali & Tanah Lot Sunset"
+                      placeholder="Judul"
                       className="w-full max-w-xl rounded-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
                     />
                   </div>
@@ -215,7 +215,7 @@ export default function Step4Itinerary({
                             name="pickup_time[]"
                             value={route.pickupTime}
                             onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
-                            placeholder="11.30"
+                            placeholder=""
                             inputMode="numeric"
                             maxLength={5}
                             className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
