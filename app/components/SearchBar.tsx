@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { travelStyleOptions } from "@/lib/travelStyles"
+import { isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
 export default function SearchBar({ locale }: { locale: Locale }) {
   const router = useRouter()
@@ -13,6 +13,7 @@ export default function SearchBar({ locale }: { locale: Locale }) {
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
+  const [departureDate, setDepartureDate] = useState(searchParams.get("departure_date") || "")
 
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
@@ -33,6 +34,12 @@ export default function SearchBar({ locale }: { locale: Locale }) {
       params.set("duration", duration)
     } else {
       params.delete("duration")
+    }
+
+    if (isQuotaTravelStyle(style) && departureDate) {
+      params.set("departure_date", departureDate)
+    } else {
+      params.delete("departure_date")
     }
 
     router.push(`/?${params.toString()}`)
@@ -57,7 +64,13 @@ export default function SearchBar({ locale }: { locale: Locale }) {
         {/* TRAVEL STYLE */}
         <select
           value={style}
-          onChange={(e) => setStyle(e.target.value)}
+          onChange={(e) => {
+            const nextStyle = e.target.value
+            setStyle(nextStyle)
+            if (!isQuotaTravelStyle(nextStyle)) {
+              setDepartureDate("")
+            }
+          }}
           className="border rounded-xl px-4 py-3 w-[240px]"
         >
           <option value="">{t.allStyles}</option>
@@ -67,6 +80,15 @@ export default function SearchBar({ locale }: { locale: Locale }) {
             </option>
           ))}
         </select>
+
+        {isQuotaTravelStyle(style) && (
+          <input
+            type="date"
+            value={departureDate}
+            onChange={(e) => setDepartureDate(e.target.value)}
+            className="border rounded-xl px-4 py-3 w-[220px]"
+          />
+        )}
 
         {/* DURASI */}
         <select

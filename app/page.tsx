@@ -56,6 +56,10 @@ if (searchParams?.style) {
   query = query.eq("travel_style", searchParams.style)
 }
 
+if (searchParams?.departure_date) {
+  query = query.eq("departure_date", searchParams.departure_date)
+}
+
 // FILTER DURATION
   if (searchParams?.duration) {
   if (searchParams.duration === "1-3") {
