@@ -354,7 +354,7 @@ export default function EditStep4Itinerary({
           type="submit"
           className="rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-8 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105"
         >
-          {t.saveAndSendReview}
+          {t.saveAndNext}
         </button>
       </div>
     </form>

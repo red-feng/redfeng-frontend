@@ -31,6 +31,29 @@ function getItineraryTranslations(formData: FormData) {
   )
 }
 
+async function ensureItineraryTranslationTablesReady(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const [dayTranslationCheck, routeTranslationCheck] = await Promise.all([
+    supabase.from("package_itinerary_day_translations").select("id").limit(1),
+    supabase.from("package_itinerary_route_translations").select("id").limit(1),
+  ])
+
+  const relationMissing =
+    dayTranslationCheck.error?.message?.includes("does not exist") ||
+    routeTranslationCheck.error?.message?.includes("does not exist")
+
+  if (relationMissing) {
+    throw new Error("Fitur itinerary 3 bahasa belum aktif di database. Jalankan migrasi 20260316_add_itinerary_translations.sql terlebih dahulu.")
+  }
+
+  if (dayTranslationCheck.error) {
+    throw new Error(`Gagal memeriksa tabel terjemahan itinerary hari: ${dayTranslationCheck.error.message}`)
+  }
+
+  if (routeTranslationCheck.error) {
+    throw new Error(`Gagal memeriksa tabel terjemahan itinerary rute: ${routeTranslationCheck.error.message}`)
+  }
+}
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
     return error.message
@@ -495,6 +518,8 @@ export async function saveItinerary(formData: FormData) {
       .select("default_language")
       .eq("id", packageId)
       .single()
+
+    await ensureItineraryTranslationTablesReady(supabase)
 
     const defaultLanguage = String(pkg?.default_language || formData.get("default_language") || "id") as SupportedLanguage
     const { dayTitles, descriptions, routes: translatedRoutes } = getItineraryTranslations(formData)

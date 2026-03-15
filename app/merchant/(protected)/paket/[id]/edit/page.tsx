@@ -7,6 +7,7 @@ import EditStep1Basic from "./EditStep1Basic"
 import EditStep2Details from "./EditStep2Details"
 import EditStep3Facilities from "./EditStep3Facilities"
 import EditStep4Itinerary from "./EditStep4Itinerary"
+import EditStep5Review from "./EditStep5Review"
 
 type EditPackagePageProps = {
   params: Promise<{ id: string }>
@@ -19,13 +20,14 @@ function getStepLabel(step: string, locale: ReturnType<typeof normalizeLocale>) 
   if (step === "2") return t.contentDetailsStep
   if (step === "3") return t.facilitiesStep
   if (step === "4") return t.itineraryStep
+  if (step === "5") return t.reviewStep
   return t.basicInfoStep
 }
 
 export default async function EditPackagePage({ params, searchParams }: EditPackagePageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
-  const activeStep = ["1", "2", "3", "4"].includes(resolvedSearchParams.step || "")
+  const activeStep = ["1", "2", "3", "4", "5"].includes(resolvedSearchParams.step || "")
     ? String(resolvedSearchParams.step)
     : "1"
 
@@ -263,6 +265,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     { key: "2", label: wizardText.step2Short },
     { key: "3", label: wizardText.step3Short },
     { key: "4", label: wizardText.step4Short },
+    { key: "5", label: wizardText.step5Short },
   ]
 
   return (
@@ -360,6 +363,13 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep4Itinerary
             packageId={id}
             initialDays={initialItineraryDays}
+            defaultLanguage={pkg.default_language || "id"}
+          />
+        )}
+
+        {activeStep === "5" && (
+          <EditStep5Review
+            packageId={id}
             defaultLanguage={pkg.default_language || "id"}
           />
         )}

@@ -25,6 +25,29 @@ function getItineraryTranslations(formData: FormData) {
   )
 }
 
+async function ensureItineraryTranslationTablesReady(adminSupabase: Awaited<ReturnType<typeof getOwnedMerchantPackage>>["adminSupabase"]) {
+  const [dayTranslationCheck, routeTranslationCheck] = await Promise.all([
+    adminSupabase.from("package_itinerary_day_translations").select("id").limit(1),
+    adminSupabase.from("package_itinerary_route_translations").select("id").limit(1),
+  ])
+
+  const relationMissing =
+    dayTranslationCheck.error?.message?.includes("does not exist") ||
+    routeTranslationCheck.error?.message?.includes("does not exist")
+
+  if (relationMissing) {
+    throw new Error("Fitur itinerary 3 bahasa belum aktif di database. Jalankan migrasi 20260316_add_itinerary_translations.sql terlebih dahulu.")
+  }
+
+  if (dayTranslationCheck.error) {
+    throw new Error(`Gagal memeriksa tabel terjemahan itinerary hari: ${dayTranslationCheck.error.message}`)
+  }
+
+  if (routeTranslationCheck.error) {
+    throw new Error(`Gagal memeriksa tabel terjemahan itinerary rute: ${routeTranslationCheck.error.message}`)
+  }
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) return error.message
   return "Terjadi kesalahan. Silakan coba lagi."
@@ -358,6 +381,8 @@ export async function updatePackageStep4(formData: FormData) {
 
     const { adminSupabase } = await getOwnedMerchantPackage(packageId)
 
+    await ensureItineraryTranslationTablesReady(adminSupabase)
+
     const { data: itineraryDays, error: itineraryError } = await adminSupabase
       .from("package_itinerary_days")
       .select("id")
@@ -494,11 +519,28 @@ export async function updatePackageStep4(formData: FormData) {
       }
     }
 
-    await markPackagePending(adminSupabase, packageId)
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
   } catch (error) {
     redirect(`/merchant/paket/${packageId}/edit?step=4&error=${encodeURIComponent(getErrorMessage(error))}`)
+  }
+
+  redirect(`/merchant/paket/${packageId}/edit?step=5`)
+}
+
+export async function submitEditedPackageForReview(formData: FormData) {
+  const packageId = String(formData.get("package_id") || "")
+
+  try {
+    if (!packageId) throw new Error("Package ID tidak ditemukan.")
+
+    const { adminSupabase } = await getOwnedMerchantPackage(packageId)
+
+    await markPackagePending(adminSupabase, packageId)
+    revalidatePath("/merchant/paket")
+    revalidatePath(`/merchant/paket/${packageId}/edit`)
+  } catch (error) {
+    redirect(`/merchant/paket/${packageId}/edit?step=5&error=${encodeURIComponent(getErrorMessage(error))}`)
   }
 
   redirect("/merchant/paket?status=pending&success=Paket berhasil diperbarui dan dikirim ulang untuk review admin")
