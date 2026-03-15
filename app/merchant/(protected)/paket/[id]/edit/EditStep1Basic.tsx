@@ -32,17 +32,19 @@ export default function EditStep1Basic({
   packageId,
   countries,
   initialData,
+  uiLocale = "id",
 }: {
   packageId: string
   countries: Country[]
   initialData: Step1InitialData
+  uiLocale?: string
 }) {
   const [defaultLanguage, setDefaultLanguage] = useState(initialData.default_language || "id")
   const [travelStyle, setTravelStyle] = useState(initialData.travel_style || "")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
-  const locale = normalizeLocale(defaultLanguage)
+  const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
 
   const onDefaultLanguageChange = (nextDefault: string) => {

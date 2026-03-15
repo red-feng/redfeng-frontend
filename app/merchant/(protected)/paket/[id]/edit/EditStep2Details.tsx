@@ -29,13 +29,15 @@ export default function EditStep2Details({
   defaultLanguage,
   initialTranslations,
   mapEmbed,
+  uiLocale = "id",
 }: {
   packageId: string
   defaultLanguage: string
   initialTranslations: Record<string, TranslationValues>
   mapEmbed: string
+  uiLocale?: string
 }) {
-  const locale = normalizeLocale(defaultLanguage)
+  const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode,

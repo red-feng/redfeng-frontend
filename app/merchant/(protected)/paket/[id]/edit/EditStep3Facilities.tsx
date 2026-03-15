@@ -18,16 +18,18 @@ export default function EditStep3Facilities({
   facilities,
   selectedFacilityIds,
   defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string
   facilities: Facility[]
   selectedFacilityIds: string[]
   defaultLanguage?: string
+  uiLocale?: string
 }) {
   const [activeLanguage, setActiveLanguage] = useState<Locale>(
     (merchantWizardLanguageOptions.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
   )
-  const t = getMerchantWizardText(activeLanguage)
+  const t = getMerchantWizardText(uiLocale as Locale)
 
   const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
     const category = facility.category || "Lainnya"

@@ -30,6 +30,7 @@ export default function EditStep4Itinerary({
   packageId,
   initialDays,
   defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string
   initialDays: Array<{
@@ -41,10 +42,10 @@ export default function EditStep4Itinerary({
     }>
   }>
   defaultLanguage?: string
+  uiLocale?: string
 }) {
-  const locale = normalizeLocale(defaultLanguage)
-  const t = getMerchantWizardText(locale)
-  const [activeLang, setActiveLang] = useState<Locale>(locale)
+  const t = getMerchantWizardText(normalizeLocale(uiLocale))
+  const [activeLang, setActiveLang] = useState<Locale>(normalizeLocale(defaultLanguage))
   const [days, setDays] = useState<DayType[]>(
     initialDays.length > 0
       ? initialDays.map((day) => ({

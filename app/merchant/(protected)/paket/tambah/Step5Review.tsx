@@ -6,12 +6,15 @@ import { normalizeLocale } from "@/lib/i18n"
 
 export default function Step5Review({
   packageId,
-  defaultLanguage = "id",
+  defaultLanguage: _defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string | null
   defaultLanguage?: string
+  uiLocale?: string
 }) {
-  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
+  void _defaultLanguage
+  const t = getMerchantWizardText(normalizeLocale(uiLocale))
 
   if (!packageId) {
     return <p className="text-red-500">{t.packageIdMissing}</p>

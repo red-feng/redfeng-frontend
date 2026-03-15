@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { getCurrentLocale } from "@/lib/locale"
+import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { createClient } from "@/lib/supabase/server"
 
 type MerchantRow = {
@@ -66,6 +68,8 @@ const merchantMenus = [
 
 export default async function MerchantDashboardPage() {
   const supabase = await createClient()
+  const locale = await getCurrentLocale()
+  const t = getMerchantShellText(locale).dashboard
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -79,7 +83,7 @@ export default async function MerchantDashboardPage() {
     .single()
 
   const merchant = merchantData as MerchantRow | null
-  if (!merchant) return <div className="p-10">Merchant belum terdaftar.</div>
+  if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
 
   const [{ data: packagesData }, { data: bookingsData }, { data: chatRoomsData }] = await Promise.all([
     supabase.from("packages").select("id, status").eq("merchant_id", merchant.id),
@@ -125,10 +129,10 @@ export default async function MerchantDashboardPage() {
       : "-"
 
   const spotlightCards = [
-    { label: "Total Paket", value: String(totalPackages), note: `${activePackages} aktif • ${draftPackages} draft` },
-    { label: "Total Booking", value: String(totalBookings), note: `${pendingPayments} menunggu pembayaran` },
-    { label: "Revenue", value: formatMoney(monthlyRevenue), note: `${paidBookings.length} booking terbayar` },
-    { label: "Rating", value: averageRating, note: `${reviews.length} review customer` },
+    { label: t.totalPackages, value: String(totalPackages), note: `${activePackages} ${t.active} • ${draftPackages} ${t.draft}` },
+    { label: t.totalBookings, value: String(totalBookings), note: `${pendingPayments} ${t.awaitingPayment}` },
+    { label: t.revenue, value: formatMoney(monthlyRevenue), note: `${paidBookings.length} ${t.paidBookings}` },
+    { label: t.rating, value: averageRating, note: `${reviews.length} ${t.customerReviews}` },
   ]
 
   const menuMeta: Record<string, string> = {
@@ -143,23 +147,23 @@ export default async function MerchantDashboardPage() {
   }
 
   const quickSignals = [
-    { label: "Chat baru", value: String(unreadChats), tone: "from-orange-500 to-amber-400" },
-    { label: "Paket pending", value: String(pendingPackages), tone: "from-amber-500 to-orange-300" },
-    { label: "Booking paid", value: String(paidBookings.length), tone: "from-emerald-500 to-lime-400" },
+    { label: t.newChats, value: String(unreadChats), tone: "from-orange-500 to-amber-400" },
+    { label: t.pendingPackages, value: String(pendingPackages), tone: "from-amber-500 to-orange-300" },
+    { label: t.bookingPaid, value: String(paidBookings.length), tone: "from-emerald-500 to-lime-400" },
   ]
 
   const operationalNotes = [
-    `Draft paket: ${draftPackages}`,
-    `Pembayaran pending: ${pendingPayments}`,
-    reviews.length > 0 ? `Ulasan aktif: ${reviews.length}` : "Belum ada ulasan customer",
+    `${t.packageDraftCount}: ${draftPackages}`,
+    `${t.pendingPaymentCount}: ${pendingPayments}`,
+    reviews.length > 0 ? `${t.customerReviews}: ${reviews.length}` : t.noCustomerReview,
   ]
 
   const journeyBadges = [
-    { label: "DP Paid", value: countJourneyPhase(bookings, "dp"), tone: "border-amber-200 bg-amber-50 text-amber-700" },
-    { label: "Fully Paid", value: countJourneyPhase(bookings, "paid"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-    { label: "Awaiting Pickup", value: countJourneyPhase(bookings, "pickup"), tone: "border-orange-200 bg-orange-50 text-orange-700" },
-    { label: "Ready for Finance", value: countJourneyPhase(bookings, "finance"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
-    { label: "Paid Out", value: countJourneyPhase(bookings, "paid_out"), tone: "border-violet-200 bg-violet-50 text-violet-700" },
+    { label: t.dpPaid, value: countJourneyPhase(bookings, "dp"), tone: "border-amber-200 bg-amber-50 text-amber-700" },
+    { label: t.fullyPaid, value: countJourneyPhase(bookings, "paid"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+    { label: t.awaitingPickup, value: countJourneyPhase(bookings, "pickup"), tone: "border-orange-200 bg-orange-50 text-orange-700" },
+    { label: t.readyForFinance, value: countJourneyPhase(bookings, "finance"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
+    { label: t.paidOut, value: countJourneyPhase(bookings, "paid_out"), tone: "border-violet-200 bg-violet-50 text-violet-700" },
   ]
 
   return (
@@ -169,14 +173,13 @@ export default async function MerchantDashboardPage() {
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Merchant Command Center
+                {t.heroBadge}
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
                 {merchant.brand_name || merchant.company_name || "Merchant Dashboard"}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
-                Pantau performa paket, booking, revenue, chat customer, dan kualitas layanan dari satu
-                dashboard merchant yang lebih premium dan terstruktur.
+                {t.heroDescription}
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -195,15 +198,15 @@ export default async function MerchantDashboardPage() {
 
             <div className="grid gap-4">
               <div className="rounded-[28px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Performance focus</p>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.performanceFocus}</p>
                 <p className="mt-4 text-3xl font-semibold text-white">{formatMoney(monthlyRevenue)}</p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
-                  Revenue terhitung dari booking berstatus paid yang terkait langsung dengan merchant Anda.
+                  {t.revenueDescription}
                 </p>
               </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Operational notes</p>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.operationalNotes}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {journeyBadges.map((item) => (
                     <span key={item.label} className={`inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${item.tone}`}>

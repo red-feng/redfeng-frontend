@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale } from "@/lib/i18n"
 import EditStep1Basic from "./EditStep1Basic"
@@ -27,6 +28,7 @@ function getStepLabel(step: string, locale: ReturnType<typeof normalizeLocale>) 
 export default async function EditPackagePage({ params, searchParams }: EditPackagePageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
+  const uiLocale = await getCurrentLocale()
   const activeStep = ["1", "2", "3", "4", "5"].includes(resolvedSearchParams.step || "")
     ? String(resolvedSearchParams.step)
     : "1"
@@ -100,7 +102,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     return <div className="p-10">Paket tidak ditemukan atau tidak bisa diakses.</div>
   }
 
-  const wizardLocale = normalizeLocale(pkg.default_language || "id")
+  const wizardLocale = normalizeLocale(uiLocale)
   const wizardText = getMerchantWizardText(wizardLocale)
 
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
@@ -322,6 +324,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep1Basic
             packageId={id}
             countries={(countries || []) as Array<{ id: string; name: string }>}
+            uiLocale={uiLocale}
             initialData={{
               title: pkg.title || "",
               travel_style: pkg.travel_style || "",
@@ -345,6 +348,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep2Details
             packageId={id}
             defaultLanguage={pkg.default_language || "id"}
+            uiLocale={uiLocale}
             initialTranslations={translations}
             mapEmbed={details.map_embed || ""}
           />
@@ -356,6 +360,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
               facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string; category: string }>}
               selectedFacilityIds={selectedFacilityIds}
               defaultLanguage={pkg.default_language || "id"}
+              uiLocale={uiLocale}
             />
         )}
 
@@ -364,6 +369,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
             packageId={id}
             initialDays={initialItineraryDays}
             defaultLanguage={pkg.default_language || "id"}
+            uiLocale={uiLocale}
           />
         )}
 
@@ -371,6 +377,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep5Review
             packageId={id}
             defaultLanguage={pkg.default_language || "id"}
+            uiLocale={uiLocale}
           />
         )}
       </section>

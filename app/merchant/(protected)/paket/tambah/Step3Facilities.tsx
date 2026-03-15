@@ -18,15 +18,17 @@ type Facility = {
 export default function Step3Facilities({
   packageId,
   defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string | null
   defaultLanguage?: string
+  uiLocale?: string
 }) {
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [activeLanguage, setActiveLanguage] = useState<Locale>(
     (merchantWizardLanguageOptions.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
   )
-  const t = getMerchantWizardText(activeLanguage)
+  const t = getMerchantWizardText(uiLocale as Locale)
 
   useEffect(() => {
     const fetchFacilities = async () => {

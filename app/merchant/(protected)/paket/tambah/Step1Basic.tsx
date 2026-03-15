@@ -12,13 +12,19 @@ type Country = {
   name: string
 }
 
-export default function Step1Basic({ countries }: { countries: Country[] }) {
+export default function Step1Basic({
+  countries,
+  uiLocale = "id",
+}: {
+  countries: Country[]
+  uiLocale?: string
+}) {
   const [originCountry, setOriginCountry] = useState("")
   const [destinationCountry, setDestinationCountry] = useState("")
   const [defaultLanguage, setDefaultLanguage] = useState("id")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(["id"])
   const [travelStyle, setTravelStyle] = useState("")
-  const locale = normalizeLocale(defaultLanguage)
+  const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
 
   const onDefaultLanguageChange = (nextDefault: string) => {

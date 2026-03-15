@@ -18,12 +18,14 @@ type LangCode = (typeof LANGS)[number]["code"]
 export default function Step2Details({
   packageId,
   defaultLanguage,
+  uiLocale = "id",
 }: {
   packageId: string | null
   defaultLanguage: string
+  uiLocale?: string
 }) {
   const [uploadError, setUploadError] = useState<string | null>(null)
-  const locale = normalizeLocale(defaultLanguage)
+  const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode

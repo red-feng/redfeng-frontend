@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getCurrentLocale } from "@/lib/locale"
 import Step1Basic from "./Step1Basic"
 import Step2Details from "./Step2Details"
 import Step3Facilities from "./Step3Facilities"
@@ -11,6 +12,7 @@ export default async function WizardPage({
   searchParams: Promise<{ step?: string; id?: string; error?: string }>
 }) {
   const supabase = await createClient()
+  const uiLocale = await getCurrentLocale()
   const resolvedSearchParams = await searchParams
 
   const { data: countries } = await supabase
@@ -41,19 +43,19 @@ export default async function WizardPage({
         </div>
       )}
       {step === "1" && (
-        <Step1Basic countries={countries || []} />
+        <Step1Basic countries={countries || []} uiLocale={uiLocale} />
       )}
       {step === "2" && (
-        <Step2Details packageId={packageId} defaultLanguage={defaultLanguage} />
+        <Step2Details packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
       )}
       {step === "3" && (
-        <Step3Facilities packageId={packageId} defaultLanguage={defaultLanguage} />
+        <Step3Facilities packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
       )}
       {step === "4" && (
-        <Step4Itinerary packageId={packageId} defaultLanguage={defaultLanguage} />
+        <Step4Itinerary packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
       )}
       {step === "5" && (
-        <Step5Review packageId={packageId} defaultLanguage={defaultLanguage} />
+        <Step5Review packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
       )}
     </div>
   )

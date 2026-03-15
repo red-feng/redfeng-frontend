@@ -50,13 +50,14 @@ function createEmptyDay(day: number): DayType {
 export default function Step4Itinerary({
   packageId,
   defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string | null
   defaultLanguage?: string
+  uiLocale?: string
 }) {
-  const locale = normalizeLocale(defaultLanguage)
-  const t = getMerchantWizardText(locale)
-  const [activeLang, setActiveLang] = useState<Locale>(locale)
+  const t = getMerchantWizardText(normalizeLocale(uiLocale))
+  const [activeLang, setActiveLang] = useState<Locale>(normalizeLocale(defaultLanguage))
   const [days, setDays] = useState<DayType[]>([createEmptyDay(1)])
   const [expandedDayIndex, setExpandedDayIndex] = useState(0)
 

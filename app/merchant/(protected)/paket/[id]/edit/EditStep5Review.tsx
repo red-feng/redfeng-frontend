@@ -6,12 +6,15 @@ import { normalizeLocale } from "@/lib/i18n"
 
 export default function EditStep5Review({
   packageId,
-  defaultLanguage = "id",
+  defaultLanguage: _defaultLanguage = "id",
+  uiLocale = "id",
 }: {
   packageId: string
   defaultLanguage?: string
+  uiLocale?: string
 }) {
-  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
+  void _defaultLanguage
+  const t = getMerchantWizardText(normalizeLocale(uiLocale))
 
   return (
     <form action={submitEditedPackageForReview} className="space-y-8">

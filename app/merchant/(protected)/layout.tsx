@@ -2,19 +2,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
+import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import { getCurrentLocale } from "@/lib/locale"
+import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { createClient } from "@/lib/supabase/server"
-
-const merchantNav = [
-  { href: "/merchant/dashboard", label: "Dashboard" },
-  { href: "/merchant/paket", label: "Kelola Paket" },
-  { href: "/merchant/pesanan", label: "Pesanan" },
-  { href: "/merchant/statistik", label: "Statistik" },
-  { href: "/merchant/chat", label: "Chat" },
-  { href: "/merchant/kalender-booking", label: "Kalender" },
-  { href: "/merchant/saldo-payout", label: "Saldo & Payout" },
-  { href: "/merchant/review", label: "Review" },
-  { href: "/merchant/profil", label: "Profil" },
-]
 
 export default async function MerchantLayout({
   children,
@@ -22,6 +13,19 @@ export default async function MerchantLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const locale = await getCurrentLocale()
+  const t = getMerchantShellText(locale)
+  const merchantNav = [
+    { href: "/merchant/dashboard", label: t.nav.dashboard },
+    { href: "/merchant/paket", label: t.nav.packages },
+    { href: "/merchant/pesanan", label: t.nav.orders },
+    { href: "/merchant/statistik", label: t.nav.statistics },
+    { href: "/merchant/chat", label: t.nav.chat },
+    { href: "/merchant/kalender-booking", label: t.nav.calendar },
+    { href: "/merchant/saldo-payout", label: t.nav.payout },
+    { href: "/merchant/review", label: t.nav.review },
+    { href: "/merchant/profil", label: t.nav.profile },
+  ]
 
   const {
     data: { user },
@@ -100,7 +104,7 @@ export default async function MerchantLayout({
 
                 <div className="hidden lg:block">
                   <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
-                    Merchant Suite
+                    {t.suiteBadge}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
                   <p className="text-xs text-slate-500">{locationLabel}</p>
@@ -109,15 +113,25 @@ export default async function MerchantLayout({
 
               <div className="flex flex-wrap gap-2">
                 <div className="rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  Red Feng Merchant
+                  {t.merchantBadge}
                 </div>
+                <MerchantLanguageSwitcher
+                  locale={locale}
+                  label={t.languageLabel}
+                  options={[
+                    { value: "id", label: t.langId },
+                    { value: "en", label: t.langEn },
+                    { value: "zh", label: t.langZh },
+                  ]}
+                />
                 <Link
                   href="/"
                   className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
                 >
-                  Lihat situs
+                  {t.viewSite}
                 </Link>
                 <SignOutButton
+                  label={t.logout}
                   redirectTo="https://app.redfeng.co/merchant/login"
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
                 />
