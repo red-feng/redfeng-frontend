@@ -9,6 +9,22 @@ import { redirect } from "next/navigation"
 const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
+function getItineraryTranslations(formData: FormData) {
+  return SUPPORTED_LANGUAGES.reduce(
+    (acc, code) => {
+      acc.dayTitles[code] = formData.getAll(`day_title_${code}[]`).map((value) => String(value || ""))
+      acc.descriptions[code] = formData.getAll(`description_${code}[]`).map((value) => String(value || ""))
+      acc.routes[code] = formData.getAll(`route_${code}[]`).map((value) => String(value || ""))
+      return acc
+    },
+    {
+      dayTitles: {} as Record<SupportedLanguage, string[]>,
+      descriptions: {} as Record<SupportedLanguage, string[]>,
+      routes: {} as Record<SupportedLanguage, string[]>,
+    },
+  )
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) return error.message
   return "Terjadi kesalahan. Silakan coba lagi."
@@ -373,12 +389,17 @@ export async function updatePackageStep4(formData: FormData) {
       throw new Error(`Gagal menghapus itinerary hari lama: ${deleteDaysError.message}`)
     }
 
+    const pkgLanguage = await adminSupabase
+      .from("packages")
+      .select("default_language")
+      .eq("id", packageId)
+      .single()
+
+    const defaultLanguage = String(pkgLanguage.data?.default_language || formData.get("default_language") || "id") as SupportedLanguage
+    const { dayTitles, descriptions, routes: translatedRoutes } = getItineraryTranslations(formData)
     const dayNumbers = formData.getAll("day_number[]") as string[]
-    const dayTitles = formData.getAll("day_title[]") as string[]
     const pickupTimes = formData.getAll("pickup_time[]") as string[]
     const pickupPeriods = formData.getAll("pickup_period[]") as string[]
-    const routes = formData.getAll("route[]") as string[]
-    const descriptions = formData.getAll("description[]") as string[]
 
     const grouped: Record<string, { pickup_time: string; route: string; description: string }[]> = {}
 
@@ -387,14 +408,14 @@ export async function updatePackageStep4(formData: FormData) {
 
       grouped[day].push({
         pickup_time: normalizePickupTimeForStorage(pickupTimes[index] || "", pickupPeriods[index] || "AM"),
-        route: routes[index] || "",
+        route: translatedRoutes[defaultLanguage][index] || "",
         description: "",
       })
     })
 
     const orderedDays = Object.keys(grouped).sort((a, b) => Number(a) - Number(b))
     orderedDays.forEach((dayKey, dayIndex) => {
-      const dayDescription = descriptions[dayIndex] || ""
+      const dayDescription = descriptions[defaultLanguage][dayIndex] || ""
       grouped[dayKey] = grouped[dayKey].map((routeRow) => ({
         ...routeRow,
         description: dayDescription,
@@ -407,7 +428,7 @@ export async function updatePackageStep4(formData: FormData) {
         .insert({
           package_id: packageId,
           day_number: Number(day),
-          day_title: String(dayTitles[dayIndex] || "").trim() || null,
+          day_title: String(dayTitles[defaultLanguage][dayIndex] || "").trim() || null,
         })
         .select()
         .single()
@@ -423,12 +444,53 @@ export async function updatePackageStep4(formData: FormData) {
         description: route.description,
       }))
 
-      const { error: routeError } = await adminSupabase
+      const routeInsertResult = await adminSupabase
         .from("package_itinerary_routes")
         .insert(routesToInsert)
+        .select("id")
 
-      if (routeError) {
-        throw new Error(`Gagal menyimpan rute itinerary: ${routeError.message}`)
+      if (routeInsertResult.error) {
+        throw new Error(`Gagal menyimpan rute itinerary: ${routeInsertResult.error.message}`)
+      }
+
+      const insertedRoutes = routeInsertResult.data || []
+
+      const dayTranslationRows = SUPPORTED_LANGUAGES.map((code) => ({
+        itinerary_day_id: dayInsert.id,
+        language_code: code,
+        day_title: String(dayTitles[code][dayIndex] || "").trim() || null,
+      }))
+
+      const { error: dayTranslationError } = await adminSupabase
+        .from("package_itinerary_day_translations")
+        .insert(dayTranslationRows)
+
+      if (dayTranslationError) {
+        throw new Error(`Gagal menyimpan terjemahan hari itinerary: ${dayTranslationError.message}`)
+      }
+
+      const dayRouteIndexes = dayNumbers.reduce((acc, value, idx) => {
+        if (value === day) acc.push(idx)
+        return acc
+      }, [] as number[])
+
+      const routeTranslationRows = insertedRoutes.flatMap((routeRow, routeIndex) => {
+        const absoluteIndex = dayRouteIndexes[routeIndex]
+
+        return SUPPORTED_LANGUAGES.map((code) => ({
+          itinerary_route_id: routeRow.id,
+          language_code: code,
+          route: String(translatedRoutes[code][absoluteIndex] || "").trim() || null,
+          description: String(descriptions[code][dayIndex] || "").trim() || null,
+        }))
+      })
+
+      const { error: routeTranslationError } = await adminSupabase
+        .from("package_itinerary_route_translations")
+        .insert(routeTranslationRows)
+
+      if (routeTranslationError) {
+        throw new Error(`Gagal menyimpan terjemahan rute itinerary: ${routeTranslationError.message}`)
       }
     }
 

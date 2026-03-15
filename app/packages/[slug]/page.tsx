@@ -362,6 +362,48 @@ export default async function PaketPage({
     .eq("package_id", pkg.id)
     .order("day_number", { ascending: true })
   const itineraryDays = (itineraryDaysData as ItineraryDayRow[] | null) || []
+  const itineraryDayIds = itineraryDays.map((day) => day.id)
+  const itineraryRouteIds = itineraryDays.flatMap((day) => day.package_itinerary_routes.map((route) => route.id))
+
+  const [itineraryDayTranslationResult, itineraryRouteTranslationResult] = await Promise.all([
+    itineraryDayIds.length > 0
+      ? supabase
+          .from("package_itinerary_day_translations")
+          .select("itinerary_day_id, language_code, day_title")
+          .in("itinerary_day_id", itineraryDayIds)
+          .in("language_code", [...new Set([activeLocale, defaultLocale, "id"])])
+      : Promise.resolve({ data: [], error: null }),
+    itineraryRouteIds.length > 0
+      ? supabase
+          .from("package_itinerary_route_translations")
+          .select("itinerary_route_id, language_code, route, description")
+          .in("itinerary_route_id", itineraryRouteIds)
+          .in("language_code", [...new Set([activeLocale, defaultLocale, "id"])])
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  const itineraryDayTranslationMap = new Map(
+    ((itineraryDayTranslationResult.data || []) as Array<{
+      itinerary_day_id: string | null
+      language_code: string | null
+      day_title: string | null
+    }>).map((item) => [`${item.itinerary_day_id}:${item.language_code}`, item.day_title || ""]),
+  )
+
+  const itineraryRouteTranslationMap = new Map(
+    ((itineraryRouteTranslationResult.data || []) as Array<{
+      itinerary_route_id: string | null
+      language_code: string | null
+      route: string | null
+      description: string | null
+    }>).map((item) => [
+      `${item.itinerary_route_id}:${item.language_code}`,
+      {
+        route: item.route,
+        description: item.description,
+      },
+    ]),
+  )
 
   const countryIds = [pkg.origin_country_id, pkg.destination_country_id].filter(Boolean)
   let countries: CountryRow[] = []
@@ -443,8 +485,24 @@ export default async function PaketPage({
                 itineraryDays: itineraryDays.map((day) => ({
                   id: day.id,
                   day_number: day.day_number,
-                  day_title: day.day_title,
-                  routes: day.package_itinerary_routes,
+                  day_title:
+                    itineraryDayTranslationMap.get(`${day.id}:${activeLocale}`) ||
+                    itineraryDayTranslationMap.get(`${day.id}:${defaultLocale}`) ||
+                    itineraryDayTranslationMap.get(`${day.id}:id`) ||
+                    day.day_title,
+                  routes: day.package_itinerary_routes.map((route) => ({
+                    ...route,
+                    route:
+                      itineraryRouteTranslationMap.get(`${route.id}:${activeLocale}`)?.route ||
+                      itineraryRouteTranslationMap.get(`${route.id}:${defaultLocale}`)?.route ||
+                      itineraryRouteTranslationMap.get(`${route.id}:id`)?.route ||
+                      route.route,
+                    description:
+                      itineraryRouteTranslationMap.get(`${route.id}:${activeLocale}`)?.description ||
+                      itineraryRouteTranslationMap.get(`${route.id}:${defaultLocale}`)?.description ||
+                      itineraryRouteTranslationMap.get(`${route.id}:id`)?.description ||
+                      route.description,
+                  })),
                 })),
               }}
             />

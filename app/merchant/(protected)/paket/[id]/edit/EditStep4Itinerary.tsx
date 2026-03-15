@@ -3,19 +3,26 @@
 import { useState } from "react"
 import { updatePackageStep4 } from "../../actions"
 import { formatPickupTimeInput, parseStoredPickupTime } from "@/lib/time/pickupTime"
-import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
-import { normalizeLocale } from "@/lib/i18n"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
+
+const LANGS = merchantWizardLanguageOptions.map((language) => ({
+  code: language.code,
+  label: language.label,
+})) as Array<{ code: Locale; label: string }>
+
+type RouteTranslation = Record<Locale, string>
+type DayTranslation = Record<Locale, { title: string; description: string }>
 
 type RouteType = {
   pickupTime: string
-  pickupPeriod: string
-  route: string
+  pickupPeriod: "AM" | "PM"
+  translations: RouteTranslation
 }
 
 type DayType = {
   day: number
-  title: string
-  description: string
+  translations: DayTranslation
   routes: RouteType[]
 }
 
@@ -27,48 +34,92 @@ export default function EditStep4Itinerary({
   packageId: string
   initialDays: Array<{
     day: number
-    title: string
-    description: string
+    translations: DayTranslation
     routes: Array<{
       pickup_time: string
-      route: string
+      translations: RouteTranslation
     }>
   }>
   defaultLanguage?: string
 }) {
-  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
+  const [activeLang, setActiveLang] = useState<Locale>(locale)
   const [days, setDays] = useState<DayType[]>(
     initialDays.length > 0
-        ? initialDays.map((day) => ({
-            day: day.day,
-            title: day.title,
-            description: day.description,
-            routes: day.routes.length > 0
-            ? day.routes.map((route) => ({
-                ...parseStoredPickupTime(route.pickup_time || ""),
-                route: route.route || "",
-              }))
-            : [{ pickupTime: "", pickupPeriod: "AM", route: "" }],
+      ? initialDays.map((day) => ({
+          day: day.day,
+          translations: day.translations,
+          routes:
+            day.routes.length > 0
+              ? day.routes.map((route) => ({
+                  ...parseStoredPickupTime(route.pickup_time || ""),
+                  translations: route.translations,
+                }))
+              : [
+                  {
+                    pickupTime: "",
+                    pickupPeriod: "AM",
+                    translations: { id: "", en: "", zh: "" },
+                  },
+                ],
         }))
-      : [{ day: 1, title: "", description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] }],
+      : [
+          {
+            day: 1,
+            translations: {
+              id: { title: "", description: "" },
+              en: { title: "", description: "" },
+              zh: { title: "", description: "" },
+            },
+            routes: [
+              {
+                pickupTime: "",
+                pickupPeriod: "AM",
+                translations: { id: "", en: "", zh: "" },
+              },
+            ],
+          },
+        ],
   )
 
   const addDay = () => {
     setDays((prev) => [
       ...prev,
-      { day: prev.length + 1, title: "", description: "", routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }] },
+      {
+        day: prev.length + 1,
+        translations: {
+          id: { title: "", description: "" },
+          en: { title: "", description: "" },
+          zh: { title: "", description: "" },
+        },
+        routes: [
+          {
+            pickupTime: "",
+            pickupPeriod: "AM",
+            translations: { id: "", en: "", zh: "" },
+          },
+        ],
+      },
     ])
   }
 
   const removeDay = (dayIndex: number) => {
-    const filtered = days.filter((_, index) => index !== dayIndex)
-    setDays(filtered.map((day, index) => ({ ...day, day: index + 1 })))
+    setDays((prev) =>
+      prev
+        .filter((_, index) => index !== dayIndex)
+        .map((day, index) => ({ ...day, day: index + 1 })),
+    )
   }
 
   const addRoute = (dayIndex: number) => {
     setDays((prev) => {
       const updated = [...prev]
-      updated[dayIndex].routes.push({ pickupTime: "", pickupPeriod: "AM", route: "" })
+      updated[dayIndex].routes.push({
+        pickupTime: "",
+        pickupPeriod: "AM",
+        translations: { id: "", en: "", zh: "" },
+      })
       return updated
     })
   }
@@ -81,15 +132,18 @@ export default function EditStep4Itinerary({
     })
   }
 
-  const updateField = (dayIndex: number, field: "title" | "description", value: string) => {
+  const updateDayTranslation = (dayIndex: number, field: "title" | "description", value: string) => {
     setDays((prev) => {
       const updated = [...prev]
-      updated[dayIndex] = { ...updated[dayIndex], [field]: value }
+      updated[dayIndex].translations[activeLang] = {
+        ...updated[dayIndex].translations[activeLang],
+        [field]: value,
+      }
       return updated
     })
   }
 
-  const updateRouteField = (dayIndex: number, routeIndex: number, field: keyof RouteType, value: string) => {
+  const updateRouteField = (dayIndex: number, routeIndex: number, field: "pickupTime" | "pickupPeriod", value: string) => {
     setDays((prev) => {
       const updated = [...prev]
       updated[dayIndex].routes[routeIndex] = {
@@ -100,9 +154,40 @@ export default function EditStep4Itinerary({
     })
   }
 
+  const updateRouteTranslation = (dayIndex: number, routeIndex: number, value: string) => {
+    setDays((prev) => {
+      const updated = [...prev]
+      updated[dayIndex].routes[routeIndex].translations[activeLang] = value
+      return updated
+    })
+  }
+
   return (
     <form action={updatePackageStep4} className="space-y-12">
       <input type="hidden" name="package_id" value={packageId} />
+      <input type="hidden" name="default_language" value={defaultLanguage} />
+
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm text-slate-600">
+          {t.contentLanguage}: <strong>{activeLang}</strong>
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {LANGS.map((lang) => (
+            <button
+              key={lang.code}
+              type="button"
+              onClick={() => setActiveLang(lang.code)}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                activeLang === lang.code
+                  ? "bg-orange-500 text-white shadow-sm"
+                  : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+              }`}
+            >
+              {lang.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {days.map((day, dayIndex) => (
         <div key={dayIndex} className="space-y-8 rounded-2xl border border-slate-200 bg-slate-50 p-8">
@@ -110,9 +195,8 @@ export default function EditStep4Itinerary({
             <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
               <h3 className="text-xl font-semibold text-slate-800">{t.dayLabel} {day.day}</h3>
               <input
-                name="day_title[]"
-                value={day.title}
-                onChange={(event) => updateField(dayIndex, "title", event.target.value)}
+                value={day.translations[activeLang].title}
+                onChange={(event) => updateDayTranslation(dayIndex, "title", event.target.value)}
                 placeholder={t.dayTitlePlaceholder}
                 className="w-full max-w-xl rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
               />
@@ -127,6 +211,13 @@ export default function EditStep4Itinerary({
               </button>
             )}
           </div>
+
+          {LANGS.map((lang) => (
+            <div key={`${dayIndex}-${lang.code}`} className="hidden">
+              <input type="hidden" name={`day_title_${lang.code}[]`} value={day.translations[lang.code].title} readOnly />
+              <textarea name={`description_${lang.code}[]`} value={day.translations[lang.code].description} readOnly />
+            </div>
+          ))}
 
           <div className="space-y-6">
             {day.routes.map((route, routeIndex) => (
@@ -143,7 +234,6 @@ export default function EditStep4Itinerary({
                       name="pickup_time[]"
                       value={route.pickupTime}
                       onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
-                      placeholder=""
                       inputMode="numeric"
                       maxLength={5}
                       pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
@@ -153,7 +243,7 @@ export default function EditStep4Itinerary({
                     <select
                       name="pickup_period[]"
                       value={route.pickupPeriod}
-                      onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value)}
+                      onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value as "AM" | "PM")}
                       className="rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                     >
                       <option value="AM">AM</option>
@@ -165,11 +255,19 @@ export default function EditStep4Itinerary({
                 <div className="col-span-6">
                   {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.route}</label>}
                   <input
-                    name="route[]"
-                    value={route.route}
-                    onChange={(event) => updateRouteField(dayIndex, routeIndex, "route", event.target.value)}
+                    value={route.translations[activeLang]}
+                    onChange={(event) => updateRouteTranslation(dayIndex, routeIndex, event.target.value)}
                     className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                   />
+                  {LANGS.map((lang) => (
+                    <input
+                      key={`${dayIndex}-${routeIndex}-${lang.code}`}
+                      type="hidden"
+                      name={`route_${lang.code}[]`}
+                      value={route.translations[lang.code]}
+                      readOnly
+                    />
+                  ))}
                 </div>
 
                 <div className="col-span-2 text-right">
@@ -198,9 +296,8 @@ export default function EditStep4Itinerary({
           <div>
             <label className="text-sm font-medium text-slate-600">{t.dayTripDescription}</label>
             <textarea
-              name="description[]"
-              value={day.description}
-              onChange={(event) => updateField(dayIndex, "description", event.target.value)}
+              value={day.translations[activeLang].description}
+              onChange={(event) => updateDayTranslation(dayIndex, "description", event.target.value)}
               className="mt-2 h-32 w-full rounded-xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
             />
           </div>
@@ -216,7 +313,7 @@ export default function EditStep4Itinerary({
           {t.addDay}
         </button>
         <a
-          href={`?step=3`}
+          href="?step=3"
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
           {t.back}

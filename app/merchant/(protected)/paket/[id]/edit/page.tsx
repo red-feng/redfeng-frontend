@@ -125,7 +125,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       .eq("package_id", id),
     adminSupabase
       .from("package_itinerary_days")
-      .select("day_number, day_title, package_itinerary_routes(pickup_time, route, description)")
+      .select("id, day_number, day_title, package_itinerary_routes(id, pickup_time, route, description)")
       .eq("package_id", id)
       .order("day_number", { ascending: true }),
   ])
@@ -176,22 +176,87 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   }
   const selectedFacilityIds = ((selectedFacilitiesResult.data || []) as Array<{ facility_id: string }>).map((item) => item.facility_id)
   const itineraryDays = ((itineraryResult.data || []) as Array<{
+    id?: string
     day_number: number
     day_title: string | null
     package_itinerary_routes: Array<{
+      id?: string
       pickup_time: string | null
       route: string | null
       description: string | null
     }>
-  }>).map((day) => ({
-    day: day.day_number,
-    title: day.day_title || "",
-    description: day.package_itinerary_routes?.[0]?.description || "",
-    routes: (day.package_itinerary_routes || []).map((route) => ({
-      pickup_time: route.pickup_time || "",
-      route: route.route || "",
-    })),
-  }))
+  }>)
+
+  const itineraryDayIds = itineraryDays.map((day) => day.id).filter(Boolean)
+  const itineraryRouteIds = itineraryDays.flatMap((day) => (day.package_itinerary_routes || []).map((route) => route.id).filter(Boolean))
+
+  const [dayTranslationResult, routeTranslationResult] = await Promise.all([
+    itineraryDayIds.length > 0
+      ? adminSupabase
+          .from("package_itinerary_day_translations")
+          .select("itinerary_day_id, language_code, day_title")
+          .in("itinerary_day_id", itineraryDayIds)
+      : Promise.resolve({ data: [], error: null }),
+    itineraryRouteIds.length > 0
+      ? adminSupabase
+          .from("package_itinerary_route_translations")
+          .select("itinerary_route_id, language_code, route, description")
+          .in("itinerary_route_id", itineraryRouteIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  const dayTranslationsMap = new Map(
+    ((dayTranslationResult.data || []) as Array<{
+      itinerary_day_id: string | null
+      language_code: string | null
+      day_title: string | null
+    }>).map((item) => [`${item.itinerary_day_id}:${item.language_code}`, item.day_title || ""]),
+  )
+
+  const routeTranslationsMap = new Map(
+    ((routeTranslationResult.data || []) as Array<{
+      itinerary_route_id: string | null
+      language_code: string | null
+      route: string | null
+      description: string | null
+    }>).map((item) => [
+      `${item.itinerary_route_id}:${item.language_code}`,
+      {
+        route: item.route || "",
+        description: item.description || "",
+      },
+    ]),
+  )
+
+  const initialItineraryDays = itineraryDays.map((day) => {
+    const firstRoute = day.package_itinerary_routes?.[0]
+
+    return {
+      day: day.day_number,
+      translations: {
+        id: {
+          title: dayTranslationsMap.get(`${day.id}:id`) || day.day_title || "",
+          description: routeTranslationsMap.get(`${firstRoute?.id}:id`)?.description || firstRoute?.description || "",
+        },
+        en: {
+          title: dayTranslationsMap.get(`${day.id}:en`) || "",
+          description: routeTranslationsMap.get(`${firstRoute?.id}:en`)?.description || "",
+        },
+        zh: {
+          title: dayTranslationsMap.get(`${day.id}:zh`) || "",
+          description: routeTranslationsMap.get(`${firstRoute?.id}:zh`)?.description || "",
+        },
+      },
+      routes: (day.package_itinerary_routes || []).map((route) => ({
+        pickup_time: route.pickup_time || "",
+        translations: {
+          id: routeTranslationsMap.get(`${route.id}:id`)?.route || route.route || "",
+          en: routeTranslationsMap.get(`${route.id}:en`)?.route || "",
+          zh: routeTranslationsMap.get(`${route.id}:zh`)?.route || "",
+        },
+      })),
+    }
+  })
 
   const stepItems = [
     { key: "1", label: wizardText.step1Short },
@@ -294,7 +359,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "4" && (
           <EditStep4Itinerary
             packageId={id}
-            initialDays={itineraryDays}
+            initialDays={initialItineraryDays}
             defaultLanguage={pkg.default_language || "id"}
           />
         )}

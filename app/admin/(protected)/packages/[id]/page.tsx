@@ -171,6 +171,46 @@ export default async function Page({
     .eq("package_id", id)
     .order("day_number", { ascending: true })
   const itineraryDays = (itineraryDaysData as ItineraryDayRow[] | null) || []
+  const itineraryDayIds = itineraryDays.map((day) => day.id)
+  const itineraryRouteIds = itineraryDays.flatMap((day) => day.package_itinerary_routes.map((route) => route.id))
+
+  const [itineraryDayTranslationResult, itineraryRouteTranslationResult] = await Promise.all([
+    itineraryDayIds.length > 0
+      ? supabase
+          .from("package_itinerary_day_translations")
+          .select("itinerary_day_id, language_code, day_title")
+          .in("itinerary_day_id", itineraryDayIds)
+          .eq("language_code", pkg.default_language || "id")
+      : Promise.resolve({ data: [], error: null }),
+    itineraryRouteIds.length > 0
+      ? supabase
+          .from("package_itinerary_route_translations")
+          .select("itinerary_route_id, language_code, route, description")
+          .in("itinerary_route_id", itineraryRouteIds)
+          .eq("language_code", pkg.default_language || "id")
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  const itineraryDayTranslationMap = new Map(
+    ((itineraryDayTranslationResult.data || []) as Array<{
+      itinerary_day_id: string | null
+      day_title: string | null
+    }>).map((item) => [item.itinerary_day_id || "", item.day_title || ""]),
+  )
+
+  const itineraryRouteTranslationMap = new Map(
+    ((itineraryRouteTranslationResult.data || []) as Array<{
+      itinerary_route_id: string | null
+      route: string | null
+      description: string | null
+    }>).map((item) => [
+      item.itinerary_route_id || "",
+      {
+        route: item.route || "",
+        description: item.description || "",
+      },
+    ]),
+  )
 
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
   const publishedLanguageLabels =
@@ -323,14 +363,21 @@ export default async function Page({
                 {itineraryDays.map((day) => (
                   <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h3 className="text-base font-semibold text-slate-900">
-                      Hari {day.day_number}{day.day_title ? ` - ${day.day_title}` : ""}
+                      Hari {day.day_number}
+                      {(itineraryDayTranslationMap.get(day.id) || day.day_title)
+                        ? ` - ${itineraryDayTranslationMap.get(day.id) || day.day_title}`
+                        : ""}
                     </h3>
                     <div className="mt-3 space-y-3">
                       {day.package_itinerary_routes.map((route) => (
                         <div key={route.id} className="rounded-lg border border-slate-200 bg-white p-3">
                           <p className="text-sm font-semibold text-slate-900">{route.pickup_time || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-700">{route.route || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-500">{route.description || "-"}</p>
+                          <p className="mt-1 text-sm text-slate-700">
+                            {itineraryRouteTranslationMap.get(route.id)?.route || route.route || "-"}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {itineraryRouteTranslationMap.get(route.id)?.description || route.description || "-"}
+                          </p>
                         </div>
                       ))}
                     </div>

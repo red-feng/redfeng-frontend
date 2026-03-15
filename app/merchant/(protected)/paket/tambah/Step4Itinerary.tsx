@@ -1,23 +1,50 @@
 "use client"
 
 import { useState } from "react"
-import { saveItinerary } from "./actions"
 import Image from "next/image"
+import { saveItinerary } from "./actions"
 import { formatPickupTimeInput } from "@/lib/time/pickupTime"
-import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
-import { normalizeLocale } from "@/lib/i18n"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
+
+const LANGS = merchantWizardLanguageOptions.map((language) => ({
+  code: language.code,
+  label: language.label,
+})) as Array<{ code: Locale; label: string }>
+
+type RouteTranslation = Record<Locale, string>
+type DayTranslation = Record<Locale, { title: string; description: string }>
 
 type RouteType = {
   pickupTime: string
   pickupPeriod: "AM" | "PM"
-  route: string
+  translations: RouteTranslation
 }
 
 type DayType = {
   day: number
-  title: string
-  description: string
+  translations: DayTranslation
   routes: RouteType[]
+}
+
+function createEmptyRoute(): RouteType {
+  return {
+    pickupTime: "",
+    pickupPeriod: "AM",
+    translations: { id: "", en: "", zh: "" },
+  }
+}
+
+function createEmptyDay(day: number): DayType {
+  return {
+    day,
+    translations: {
+      id: { title: "", description: "" },
+      en: { title: "", description: "" },
+      zh: { title: "", description: "" },
+    },
+    routes: [createEmptyRoute()],
+  }
 }
 
 export default function Step4Itinerary({
@@ -27,306 +54,268 @@ export default function Step4Itinerary({
   packageId: string | null
   defaultLanguage?: string
 }) {
-  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
-
-  const [days, setDays] = useState<DayType[]>([
-    {
-      day: 1,
-      title: "",
-      description: "",
-      routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
-    }
-  ])
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
+  const [activeLang, setActiveLang] = useState<Locale>(locale)
+  const [days, setDays] = useState<DayType[]>([createEmptyDay(1)])
 
   if (!packageId) {
     return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   const addDay = () => {
-    setDays(prev => [
-      ...prev,
-      {
-        day: prev.length + 1,
-        title: "",
-        description: "",
-        routes: [{ pickupTime: "", pickupPeriod: "AM", route: "" }]
-      }
-    ])
+    setDays((prev) => [...prev, createEmptyDay(prev.length + 1)])
   }
 
   const removeDay = (dayIndex: number) => {
-    const filtered = days.filter((_, i) => i !== dayIndex)
-    setDays(
-      filtered.map((d, i) => ({
-        ...d,
-        day: i + 1
-      }))
+    setDays((prev) =>
+      prev
+        .filter((_, index) => index !== dayIndex)
+        .map((day, index) => ({
+          ...day,
+          day: index + 1,
+        })),
     )
   }
 
   const addRoute = (dayIndex: number) => {
-    setDays(prev => {
+    setDays((prev) => {
       const updated = [...prev]
-      updated[dayIndex].routes.push({ pickupTime: "", pickupPeriod: "AM", route: "" })
+      updated[dayIndex].routes.push(createEmptyRoute())
       return updated
     })
   }
 
   const removeRoute = (dayIndex: number, routeIndex: number) => {
-    setDays(prev => {
+    setDays((prev) => {
       const updated = [...prev]
-      updated[dayIndex].routes =
-        updated[dayIndex].routes.filter((_, i) => i !== routeIndex)
+      updated[dayIndex].routes = updated[dayIndex].routes.filter((_, index) => index !== routeIndex)
       return updated
     })
   }
 
-  const updateDayField = (dayIndex: number, field: "title" | "description", value: string) => {
-    setDays(prev => {
+  const updateDayTranslation = (dayIndex: number, field: "title" | "description", value: string) => {
+    setDays((prev) => {
       const updated = [...prev]
-      updated[dayIndex] = {
-        ...updated[dayIndex],
+      updated[dayIndex].translations[activeLang] = {
+        ...updated[dayIndex].translations[activeLang],
         [field]: value,
       }
       return updated
     })
   }
 
-  const updateRouteField = (
-    dayIndex: number,
-    routeIndex: number,
-    field: keyof RouteType,
-    value: string
-  ) => {
-    setDays(prev => {
+  const updateRouteField = (dayIndex: number, routeIndex: number, field: "pickupTime" | "pickupPeriod", value: string) => {
+    setDays((prev) => {
       const updated = [...prev]
-      const nextValue = field === "pickupTime" ? formatPickupTimeInput(value) : value
       updated[dayIndex].routes[routeIndex] = {
         ...updated[dayIndex].routes[routeIndex],
-        [field]: nextValue,
+        [field]: field === "pickupTime" ? formatPickupTimeInput(value) : value,
       }
+      return updated
+    })
+  }
+
+  const updateRouteTranslation = (dayIndex: number, routeIndex: number, value: string) => {
+    setDays((prev) => {
+      const updated = [...prev]
+      updated[dayIndex].routes[routeIndex].translations[activeLang] = value
       return updated
     })
   }
 
   return (
     <div className="relative min-h-screen">
-
-      {/* BACKGROUND IMAGE */}
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: "url('/bg-wizard.png')"
-        }}
+        style={{ backgroundImage: "url('/bg-wizard.png')" }}
       />
 
-     
-      {/* CONTENT */}
       <div className="relative z-10">
+        <div className="px-10 py-8">
+          <Image
+            src="/logo-redfeng.png"
+            alt="Red Feng"
+            width={0}
+            height={0}
+            sizes="100vw"
+            className="h-32 w-auto"
+            priority
+          />
+        </div>
 
-      {/* HEADER */}
-      <div className="px-10 py-8">
-        <Image
-          src="/logo-redfeng.png"
-          alt="Red Feng"
-          width={0}
-          height={0}
-          sizes="100vw"
-          className="h-32 w-auto"
-          priority
-        />
-      </div>
+        <div className="flex justify-center px-8 pb-28">
+          <div className="w-full max-w-5xl rounded-3xl bg-white p-14 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
+            <h1 className="mb-2 text-2xl font-bold">{t.createPackageTitle}</h1>
+            <p className="mb-10 text-gray-500">{t.itineraryStep}</p>
 
+            <form action={saveItinerary} className="space-y-12">
+              <input type="hidden" name="package_id" value={packageId} />
+              <input type="hidden" name="default_language" value={defaultLanguage} />
 
-      {/* CONTENT WRAPPER */}
-      <div className="flex justify-center px-8 pb-28">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm text-slate-600">
+                  {t.contentLanguage}: <strong>{activeLang}</strong>
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {LANGS.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => setActiveLang(lang.code)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                        activeLang === lang.code
+                          ? "bg-orange-500 text-white shadow-sm"
+                          : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                      }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
+              {days.map((day, dayIndex) => (
+                <div key={dayIndex} className="space-y-8 rounded-2xl border bg-slate-50 p-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+                      <h3 className="text-xl font-semibold text-gray-800">
+                        {t.dayLabel} {day.day}
+                      </h3>
+                      <input
+                        value={day.translations[activeLang].title}
+                        onChange={(event) => updateDayTranslation(dayIndex, "title", event.target.value)}
+                        placeholder={t.dayTitlePlaceholder}
+                        className="w-full max-w-xl rounded-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                    </div>
 
-          <h1 className="text-2xl font-bold mb-2">
-            {t.createPackageTitle}
-          </h1>
-
-          <p className="text-gray-500 mb-10">
-            {t.itineraryStep}
-          </p>
-
-          <form action={saveItinerary} className="space-y-12">
-
-            <input type="hidden" name="package_id" value={packageId} />
-
-            {days.map((day, dayIndex) => (
-              <div
-                key={dayIndex}
-                className="border rounded-2xl p-8 space-y-8 bg-slate-50"
-              >
-
-                {/* HEADER HARI */}
-                <div className="flex justify-between items-center">
-                  <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-                    <h3 className="text-xl font-semibold text-gray-800">
-                      {t.dayLabel} {day.day}
-                    </h3>
-                    <input
-                      name="day_title[]"
-                      value={day.title}
-                      onChange={(event) => updateDayField(dayIndex, "title", event.target.value)}
-                      placeholder={t.dayTitlePlaceholder}
-                      className="w-full max-w-xl rounded-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
-                    />
+                    {days.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeDay(dayIndex)}
+                        className="text-sm font-medium text-red-500 hover:underline"
+                      >
+                        {t.removeDay}
+                      </button>
+                    )}
                   </div>
 
-                  {days.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeDay(dayIndex)}
-                      className="text-red-500 text-sm font-medium hover:underline"
-                    >
-                      ❌ Hapus Hari
-                    </button>
-                  )}
-                </div>
-
-                {/* ROUTES */}
-                <div className="space-y-6">
-
-                  {day.routes.map((route, routeIndex) => (
-                    <div
-                      key={routeIndex}
-                      className="grid grid-cols-12 gap-6 items-end"
-                    >
-
-                      <input
-                        type="hidden"
-                        name="day_number[]"
-                        value={day.day}
-                      />
-
-                      <div className="col-span-1 text-sm font-semibold text-gray-400">
-                        #{routeIndex + 1}
-                      </div>
-
-                      {/* JAM */}
-                      <div className="col-span-3">
-                        {routeIndex === 0 && (
-                          <label className="text-sm font-medium text-gray-600">
-                            {t.time}
-                          </label>
-                        )}
-
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            name="pickup_time[]"
-                            value={route.pickupTime}
-                            onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
-                            placeholder=""
-                            inputMode="numeric"
-                            maxLength={5}
-                            pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
-                            title={t.timeFormatHint}
-                            className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
-                          />
-
-                          <select
-                            name="pickup_period[]"
-                            value={route.pickupPeriod}
-                            onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value)}
-                            className="border rounded-lg p-3 focus:ring-2 focus:ring-orange-400 outline-none"
-                          >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* RUTE */}
-                      <div className="col-span-6">
-                        {routeIndex === 0 && (
-                          <label className="text-sm font-medium text-gray-600">
-                            {t.route}
-                          </label>
-                        )}
-                        <input
-                          name="route[]"
-                          value={route.route}
-                          onChange={(event) => updateRouteField(dayIndex, routeIndex, "route", event.target.value)}
-                          className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
-                        />
-                      </div>
-
-                      {/* DELETE ROUTE */}
-                      <div className="col-span-2 text-right">
-                        {day.routes.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeRoute(dayIndex, routeIndex)}
-                            className="text-red-500 hover:underline"
-                          >
-                            ❌
-                          </button>
-                        )}
-                      </div>
-
+                  {LANGS.map((lang) => (
+                    <div key={`${dayIndex}-${lang.code}`} className="hidden">
+                      <input type="hidden" name={`day_title_${lang.code}[]`} value={day.translations[lang.code].title} readOnly />
+                      <textarea name={`description_${lang.code}[]`} value={day.translations[lang.code].description} readOnly />
                     </div>
                   ))}
 
-                  <button
-                    type="button"
-                    onClick={() => addRoute(dayIndex)}
-                    className="text-orange-500 font-semibold hover:underline"
-                  >
-                    {t.addRoute}
-                  </button>
+                  <div className="space-y-6">
+                    {day.routes.map((route, routeIndex) => (
+                      <div key={routeIndex} className="grid grid-cols-12 items-end gap-6">
+                        <input type="hidden" name="day_number[]" value={day.day} />
 
+                        <div className="col-span-1 text-sm font-semibold text-gray-400">#{routeIndex + 1}</div>
+
+                        <div className="col-span-3">
+                          {routeIndex === 0 && (
+                            <label className="text-sm font-medium text-gray-600">{t.time}</label>
+                          )}
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              name="pickup_time[]"
+                              value={route.pickupTime}
+                              onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
+                              inputMode="numeric"
+                              maxLength={5}
+                              pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
+                              title={t.timeFormatHint}
+                              className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                            />
+                            <select
+                              name="pickup_period[]"
+                              value={route.pickupPeriod}
+                              onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value as "AM" | "PM")}
+                              className="rounded-lg border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                            >
+                              <option value="AM">AM</option>
+                              <option value="PM">PM</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="col-span-6">
+                          {routeIndex === 0 && (
+                            <label className="text-sm font-medium text-gray-600">{t.route}</label>
+                          )}
+                          <input
+                            value={route.translations[activeLang]}
+                            onChange={(event) => updateRouteTranslation(dayIndex, routeIndex, event.target.value)}
+                            className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                          />
+                          {LANGS.map((lang) => (
+                            <input
+                              key={`${dayIndex}-${routeIndex}-${lang.code}`}
+                              type="hidden"
+                              name={`route_${lang.code}[]`}
+                              value={route.translations[lang.code]}
+                              readOnly
+                            />
+                          ))}
+                        </div>
+
+                        <div className="col-span-2 text-right">
+                          {day.routes.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeRoute(dayIndex, routeIndex)}
+                              className="text-sm font-medium text-red-500 hover:underline"
+                            >
+                              {t.removeRoute}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => addRoute(dayIndex)}
+                      className="font-semibold text-orange-500 hover:underline"
+                    >
+                      {t.addRoute}
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">{t.dayTripDescription}</label>
+                    <textarea
+                      value={day.translations[activeLang].description}
+                      onChange={(event) => updateDayTranslation(dayIndex, "description", event.target.value)}
+                      className="mt-2 h-32 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                    />
+                  </div>
                 </div>
+              ))}
 
-                {/* DESKRIPSI */}
-                <div>
-                  <label className="text-sm font-medium text-gray-600">
-                    {t.dayTripDescription}
-                  </label>
-                  <textarea
-                    name="description[]"
-                    value={day.description}
-                    onChange={(event) => updateDayField(dayIndex, "description", event.target.value)}
-                    className="border rounded-lg p-4 w-full h-32 focus:ring-2 focus:ring-orange-400 outline-none"
-                  />
-                </div>
+              <div className="flex gap-6 pt-6">
+                <button
+                  type="button"
+                  onClick={addDay}
+                  className="rounded-xl bg-gray-700 px-8 py-3 text-white transition hover:bg-gray-800"
+                >
+                  {t.addDay}
+                </button>
 
+                <button
+                  type="submit"
+                  className="rounded-xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-14 py-3 font-semibold text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105"
+                >
+                  {t.saveAndNext}
+                </button>
               </div>
-            ))}
-
-            {/* BUTTON AREA */}
-            <div className="flex gap-6 pt-6">
-
-              <button
-                type="button"
-                onClick={addDay}
-                className="px-8 py-3 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition"
-              >
-                {t.addDay}
-              </button>
-
-              <button
-                type="submit"
-                className="px-14 py-3 rounded-xl font-semibold 
-                           bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300
-                           text-white
-                           shadow-[0_8px_20px_rgba(249,115,22,0.4)]
-                           hover:scale-105
-                           transition-all duration-300"
-              >
-                {t.saveAndNext}
-              </button>
-
-            </div>
-
-          </form>
-
+            </form>
+          </div>
         </div>
-
-      </div>
       </div>
     </div>
   )
