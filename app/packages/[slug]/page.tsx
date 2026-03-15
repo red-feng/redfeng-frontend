@@ -9,7 +9,7 @@ import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
-import { formatTravelStyleLabel } from "@/lib/travelStyles"
+import { formatTravelStyleLabel, getScheduleQuotaLabel } from "@/lib/travelStyles"
 
 export const dynamic = "force-dynamic"
 
@@ -279,6 +279,7 @@ export default async function PaketPage({
     ? cookieLocale
     : allowedLocales[0] || normalizeLocale(pkg.default_language)
   const t = dictionaries[activeLocale].detail
+  const participantLabel = getScheduleQuotaLabel(pkg.travel_style, activeLocale)
 
   const { data: translationRows } = await supabase
     .from("package_translations")
@@ -437,7 +438,7 @@ export default async function PaketPage({
               <p className="mt-2 text-3xl font-bold text-orange-600">{formatMoney(pkg.price_adult, pkg.currency)}</p>
               <div className="mt-4 space-y-2 text-sm text-slate-700">
                 <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
-                <p>{t.minimumParticipants}: {pkg.minimal_peserta || 0} {t.people}</p>
+                <p>{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
                 <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
               </div>
               <Link

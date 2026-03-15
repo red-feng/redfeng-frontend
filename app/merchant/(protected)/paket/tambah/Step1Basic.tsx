@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
-import { travelStyleOptions } from "@/lib/travelStyles"
+import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
 type Country = {
   id: string
@@ -16,6 +16,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   const [destinationCountry, setDestinationCountry] = useState("")
   const [defaultLanguage, setDefaultLanguage] = useState("id")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(["id"])
+  const [travelStyle, setTravelStyle] = useState("")
 
   const languageOptions = [
     { code: "id", label: "Bahasa Indonesia" },
@@ -94,6 +95,8 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   {/* TRAVEL STYLE */}
   <select
     name="travel_style"
+    value={travelStyle}
+    onChange={(event) => setTravelStyle(event.target.value)}
     className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
     required
   >
@@ -171,14 +174,24 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     </select>
   </div>
 
-  {/* MINIMAL PESERTA */}
-  <input
-    name="minimal_peserta"
-    type="number"
-    placeholder="Minimal Peserta"
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  />
+  <div>
+    <label className="mb-2 block text-sm font-semibold text-slate-700">
+      {getParticipantFieldLabel(travelStyle)}
+    </label>
+    <input
+      name="minimal_peserta"
+      type="number"
+      min="1"
+      placeholder={getParticipantFieldLabel(travelStyle)}
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+      required
+    />
+    {isQuotaTravelStyle(travelStyle) && (
+      <p className="mt-2 text-xs text-slate-500">
+        Kuota akan otomatis berkurang berdasarkan jumlah peserta yang booking pada tanggal keberangkatan yang sama.
+      </p>
+    )}
+  </div>
 
   {/* DURASI */}
   <input

@@ -4,6 +4,7 @@ import { defaultFinanceSettings } from "@/lib/finance/settings"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
+import { isQuotaTravelStyle } from "@/lib/travelStyles"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -46,12 +47,59 @@ export async function POST(req: Request) {
 
     const { data: packagePricing } = await supabase
       .from("packages")
-      .select("price_adult, price_child")
+      .select("price_adult, price_child, travel_style, minimal_peserta")
       .eq("id", package_id)
       .single()
 
     if (!packagePricing) {
       return NextResponse.json({ error: "Paket tidak ditemukan" }, { status: 404 })
+    }
+
+    const requestedParticipants = Number(adult_count || 0) + Number(child_count || 0)
+    if (requestedParticipants <= 0) {
+      return NextResponse.json({ error: "Jumlah peserta tidak valid" }, { status: 400 })
+    }
+
+    if (isQuotaTravelStyle(packagePricing.travel_style)) {
+      const { data: existingBookings, error: bookingLookupError } = await supabase
+        .from("bookings")
+        .select("adult_count, child_count, booking_status, payment_status")
+        .eq("package_id", package_id)
+        .eq("pickup_date", pickup_date)
+
+      if (bookingLookupError) {
+        return NextResponse.json({ error: "Gagal memeriksa kuota paket" }, { status: 500 })
+      }
+
+      const reservedParticipants = (existingBookings || []).reduce((sum, booking) => {
+        const bookingStatus = String(booking.booking_status || "").trim().toLowerCase()
+        const paymentStatus = String(booking.payment_status || "").trim().toLowerCase()
+        const isInactive =
+          bookingStatus === "cancelled" ||
+          bookingStatus === "rejected" ||
+          paymentStatus === "cancelled" ||
+          paymentStatus === "refund" ||
+          paymentStatus === "expired"
+
+        if (isInactive) return sum
+
+        return sum + Number(booking.adult_count || 0) + Number(booking.child_count || 0)
+      }, 0)
+
+      const quota = Number(packagePricing.minimal_peserta || 0)
+      const remainingQuota = Math.max(quota - reservedParticipants, 0)
+
+      if (remainingQuota < requestedParticipants) {
+        return NextResponse.json(
+          {
+            error:
+              remainingQuota > 0
+                ? `Sisa kuota hanya ${remainingQuota} peserta untuk tanggal tersebut.`
+                : "Kuota untuk tanggal tersebut sudah penuh.",
+          },
+          { status: 400 },
+        )
+      }
     }
 
     const settingsResult = await ((supabase

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { updatePackageStep1 } from "../../actions"
-import { travelStyleOptions } from "@/lib/travelStyles"
+import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
 type Country = {
   id: string
@@ -35,6 +35,7 @@ export default function EditStep1Basic({
   initialData: Step1InitialData
 }) {
   const [defaultLanguage, setDefaultLanguage] = useState(initialData.default_language || "id")
+  const [travelStyle, setTravelStyle] = useState(initialData.travel_style || "")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
@@ -78,7 +79,8 @@ export default function EditStep1Basic({
           <label className="mb-2 block text-sm font-medium text-slate-700">Travel Style</label>
           <select
             name="travel_style"
-            defaultValue={initialData.travel_style}
+            value={travelStyle}
+            onChange={(event) => setTravelStyle(event.target.value)}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           >
@@ -163,7 +165,9 @@ export default function EditStep1Basic({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Minimal Peserta</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">
+            {getParticipantFieldLabel(travelStyle)}
+          </label>
           <input
             name="minimal_peserta"
             type="number"
@@ -172,6 +176,11 @@ export default function EditStep1Basic({
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
+          {isQuotaTravelStyle(travelStyle) && (
+            <p className="mt-2 text-xs text-slate-500">
+              Kuota akan otomatis berkurang berdasarkan jumlah peserta yang booking pada tanggal keberangkatan yang sama.
+            </p>
+          )}
         </div>
 
         <div>

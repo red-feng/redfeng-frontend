@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { getScheduleQuotaLabel } from "@/lib/travelStyles"
 
 type CheckoutPackageData = {
   id: string
@@ -15,6 +16,7 @@ type CheckoutPackageData = {
   currency: string | null
   duration: number | null
   minimal_peserta: number | null
+  travel_style: string | null
   cover_image: string | null
 }
 
@@ -35,6 +37,7 @@ export default function CheckoutClient({
   const supabase = createClient()
   const router = useRouter()
   const t = dictionaries[locale].checkout
+  const participantLabel = getScheduleQuotaLabel(data.travel_style, locale)
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -269,7 +272,7 @@ export default function CheckoutClient({
                   <span className="font-semibold text-slate-900">{data.duration || 0} hari</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Minimal peserta</span>
+                  <span>{participantLabel}</span>
                   <span className="font-semibold text-slate-900">{data.minimal_peserta || 0} orang</span>
                 </div>
                 <div className="border-t border-slate-200 pt-3">
