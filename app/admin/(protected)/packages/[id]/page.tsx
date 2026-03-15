@@ -41,6 +41,17 @@ type ItineraryDayRow = {
   package_itinerary_routes: ItineraryRouteRow[]
 }
 
+type TranslationRow = {
+  language_code: string | null
+  title: string | null
+  about_tour: string | null
+  service_standard: string | null
+  include: string | null
+  exclude: string | null
+  preparation: string | null
+  terms_conditions: string | null
+}
+
 function formatMoney(value: number | null, currency: string | null): string {
   const safeValue = value ?? 0
   const safeCurrency = currency || "IDR"
@@ -59,6 +70,22 @@ function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
   return relation?.name || "-"
 }
 
+function getLanguageLabel(code: string | null): string {
+  if (code === "id") return "Indonesia"
+  if (code === "en") return "English"
+  if (code === "zh") return "Chinese"
+  return code || "-"
+}
+
+function formatStatusLabel(status: string | null): string {
+  if (status === "approved") return "Disetujui"
+  if (status === "rejected") return "Ditolak"
+  if (status === "pending") return "Menunggu Review"
+  if (status === "draft") return "Draft"
+  if (status === "inactive") return "Nonaktif"
+  return status || "Tidak diketahui"
+}
+
 export default async function Page({
   params,
 }: {
@@ -73,7 +100,7 @@ export default async function Page({
     .eq("id", id)
     .single()
 
-  if (!pkg) return <div className="p-8">Package tidak ditemukan</div>
+  if (!pkg) return <div className="p-8">Paket tidak ditemukan</div>
 
   const { data: merchant } = await supabase
     .from("merchants")
@@ -90,19 +117,25 @@ export default async function Page({
       .in("id", countryIds)
     countries = (data as CountryRow[] | null) || []
   }
-  const countryMap = new Map(countries.map((c) => [c.id, c.name]))
+  const countryMap = new Map(countries.map((country) => [country.id, country.name]))
 
-  const { data: translation } = await supabase
+  const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("*")
+    .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions")
     .eq("package_id", id)
-    .single()
+  const translations = (translationRows as TranslationRow[] | null) || []
+  const sortedTranslations = [...translations].sort((a, b) => {
+    if (a.language_code === pkg.default_language) return -1
+    if (b.language_code === pkg.default_language) return 1
+    return (a.language_code || "").localeCompare(b.language_code || "")
+  })
+  const primaryTranslation = sortedTranslations[0] || null
 
   const { data: detail } = await supabase
     .from("package_details")
     .select("*")
     .eq("package_id", id)
-    .single()
+    .maybeSingle()
 
   const { data: galleryData } = await supabase
     .from("package_images")
@@ -136,24 +169,28 @@ export default async function Page({
   const itineraryDays = (itineraryDaysData as ItineraryDayRow[] | null) || []
 
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
+  const publishedLanguageLabels =
+    Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
+      ? pkg.published_languages.map((code: string) => getLanguageLabel(code)).join(", ")
+      : getLanguageLabel(pkg.default_language)
 
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-7xl px-6 py-8">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold tracking-[0.16em] text-slate-500 uppercase">
-              Admin Package Review
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Tinjauan Paket Admin
             </p>
             <h1 className="mt-2 text-3xl font-semibold text-slate-900">
-              {translation?.title || pkg.title}
+              {primaryTranslation?.title || pkg.title}
             </h1>
             <p className="mt-1 text-sm text-slate-600">
-              Merchant: {merchant?.company_name || "-"} • ID: {pkg.id}
+              Merchant: {merchant?.company_name || "-"} • ID Paket: {pkg.id}
             </p>
           </div>
           <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(pkg.status)}`}>
-            {pkg.status || "unknown"}
+            {formatStatusLabel(pkg.status)}
           </span>
         </div>
 
@@ -170,19 +207,19 @@ export default async function Page({
               />
               <div className="grid gap-4 border-t border-slate-200 p-5 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Adult Price</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Harga Dewasa</p>
                   <p className="mt-1 text-lg font-semibold text-slate-900">{formatMoney(pkg.price_adult, pkg.currency)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Child Price</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Harga Anak</p>
                   <p className="mt-1 text-lg font-semibold text-slate-900">{formatMoney(pkg.price_child, pkg.currency)}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Duration</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Durasi</p>
                   <p className="mt-1 text-lg font-semibold text-slate-900">{pkg.duration || 0} hari</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Minimum Pax</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Minimal Peserta</p>
                   <p className="mt-1 text-lg font-semibold text-slate-900">{pkg.minimal_peserta || 0} orang</p>
                 </div>
               </div>
@@ -190,7 +227,7 @@ export default async function Page({
 
             {galleryImages.length > 0 && (
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Gallery</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Galeri</h2>
                 <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
                   {galleryImages.map((image) => (
                     <Image
@@ -208,41 +245,67 @@ export default async function Page({
             )}
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Content Details</h2>
-              <div className="mt-5 space-y-5 text-sm leading-7 text-slate-700">
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Deskripsi</h3>
-                  <p className="whitespace-pre-line">{translation?.about_tour || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan</h3>
-                  <p className="whitespace-pre-line">{translation?.service_standard || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Include</h3>
-                  <p className="whitespace-pre-line">{translation?.include || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Exclude</h3>
-                  <p className="whitespace-pre-line">{translation?.exclude || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Persiapan</h3>
-                  <p className="whitespace-pre-line">{translation?.preparation || "-"}</p>
-                </div>
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-900">Syarat & Ketentuan</h3>
-                  <p className="whitespace-pre-line">{translation?.terms_conditions || "-"}</p>
-                </div>
+              <h2 className="text-lg font-semibold text-slate-900">Detail Konten</h2>
+              <div className="mt-5 space-y-5">
+                {sortedTranslations.length === 0 && (
+                  <p className="text-sm text-slate-500">Konten terjemahan belum tersedia.</p>
+                )}
+
+                {sortedTranslations.map((translation) => (
+                  <div key={translation.language_code || "unknown"} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-sm font-semibold text-slate-900">
+                        Konten Bahasa {getLanguageLabel(translation.language_code)}
+                      </h3>
+                      {translation.language_code === pkg.default_language && (
+                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                          Bahasa Default
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 space-y-5 text-sm leading-7 text-slate-700">
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Judul Paket</h4>
+                        <p className="whitespace-pre-line">{translation.title || pkg.title || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Info Tentang Tour</h4>
+                        <p className="whitespace-pre-line">{translation.about_tour || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Standar Layanan Merchant</h4>
+                        <p className="whitespace-pre-line">{translation.service_standard || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Include</h4>
+                        <p className="whitespace-pre-line">{translation.include || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Exclude</h4>
+                        <p className="whitespace-pre-line">{translation.exclude || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Peralatan & Dokumen yang Disiapkan Peserta</h4>
+                        <p className="whitespace-pre-line">{translation.preparation || "-"}</p>
+                      </div>
+                      <div>
+                        <h4 className="mb-1 text-sm font-semibold text-slate-900">Syarat & Ketentuan saat di Lokasi</h4>
+                        <p className="whitespace-pre-line">{translation.terms_conditions || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
                 <div>
                   <h3 className="mb-1 text-sm font-semibold text-slate-900">Meeting Point</h3>
-                  <p>{detail?.meeting_point || "-"}</p>
+                  <p className="text-sm text-slate-700">{detail?.meeting_point || "-"}</p>
                 </div>
               </div>
 
               {detail?.map_embed && (
                 <div className="mt-6">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-900">Map Preview</h3>
+                  <h3 className="mb-2 text-sm font-semibold text-slate-900">Preview Peta Titik Penjemputan</h3>
                   <div
                     className="overflow-hidden rounded-xl border border-slate-200"
                     dangerouslySetInnerHTML={{ __html: detail.map_embed }}
@@ -252,7 +315,7 @@ export default async function Page({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Facilities</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Fasilitas</h2>
               <div className="mt-4 flex flex-wrap gap-2">
                 {facilities.length === 0 && (
                   <span className="text-sm text-slate-500">Tidak ada fasilitas.</span>
@@ -269,9 +332,9 @@ export default async function Page({
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Tags / Highlights</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Tag / Sorotan</h2>
               <div className="mt-4 flex flex-wrap gap-2">
-                {tags.length === 0 && <span className="text-sm text-slate-500">Tidak ada tags.</span>}
+                {tags.length === 0 && <span className="text-sm text-slate-500">Tidak ada tag.</span>}
                 {tags.map((tag) => (
                   <span
                     key={tag.id}
@@ -311,9 +374,9 @@ export default async function Page({
 
           <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Admin Decision</h2>
+              <h2 className="text-base font-semibold text-slate-900">Keputusan Admin</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Verifikasi detail paket sebelum approve atau reject.
+                Verifikasi detail paket sebelum disetujui atau ditolak.
               </p>
 
               <form
@@ -324,7 +387,7 @@ export default async function Page({
                 }}
               >
                 <button className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                  Approve Package
+                  Setujui Paket
                 </button>
               </form>
 
@@ -343,21 +406,25 @@ export default async function Page({
                   className="h-28 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
                 />
                 <button className="mt-2 w-full rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
-                  Reject Package
+                  Tolak Paket
                 </button>
               </form>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Quick Facts</h2>
+              <h2 className="text-base font-semibold text-slate-900">Ringkasan Cepat</h2>
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
-                  <dt className="text-slate-500">Travel Style</dt>
+                  <dt className="text-slate-500">Gaya Perjalanan</dt>
                   <dd className="font-medium text-slate-900">{formatTravelStyleLabel(pkg.travel_style)}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">Default Language</dt>
-                  <dd className="font-medium text-slate-900">{pkg.default_language || "-"}</dd>
+                  <dt className="text-slate-500">Bahasa Default</dt>
+                  <dd className="font-medium text-slate-900">{getLanguageLabel(pkg.default_language)}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Bahasa Tersedia</dt>
+                  <dd className="font-medium text-slate-900">{publishedLanguageLabels}</dd>
                 </div>
                 <div>
                   <dt className="text-slate-500">Keberangkatan</dt>
