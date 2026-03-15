@@ -218,6 +218,8 @@ export default function Step4Itinerary({
                             placeholder=""
                             inputMode="numeric"
                             maxLength={5}
+                            pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
+                            title="Gunakan format 12 jam seperti 11.30 atau 1.30"
                             className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
                           />
 
