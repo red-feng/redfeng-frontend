@@ -22,6 +22,7 @@ type PackageCheckoutRow = {
   id: string
   slug: string
   title: string | null
+  departure_date: string | null
   price_adult: number | null
   price_child: number | null
   currency: string | null
@@ -53,7 +54,7 @@ export default async function CheckoutPage({
   for (const candidate of slugCandidates) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
+        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
         .eq("slug", candidate)
       .eq("status", "approved")
       .maybeSingle()
@@ -70,7 +71,7 @@ export default async function CheckoutPage({
     if (suffix) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
+        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
         .ilike("slug", `%${suffix}`)
         .eq("status", "approved")
         .limit(1)

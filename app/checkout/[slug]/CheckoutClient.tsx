@@ -5,12 +5,13 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { getScheduleQuotaLabel } from "@/lib/travelStyles"
+import { getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
 type CheckoutPackageData = {
   id: string
   slug: string
   title: string | null
+  departure_date: string | null
   price_adult: number | null
   price_child: number | null
   currency: string | null
@@ -38,6 +39,7 @@ export default function CheckoutClient({
   const router = useRouter()
   const t = dictionaries[locale].checkout
   const participantLabel = getScheduleQuotaLabel(data.travel_style, locale)
+  const usesFixedDeparture = isQuotaTravelStyle(data.travel_style)
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -87,13 +89,15 @@ export default function CheckoutClient({
     checkSession()
   }, [supabase])
 
+  const effectivePickupDate = usesFixedDeparture ? (data.departure_date || "") : pickupDate
+
   const handleBooking = async () => {
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent(`/checkout/${data.slug}`)}`)
       return
     }
 
-    if (!pickupDate) {
+    if (!effectivePickupDate) {
       setErrorMsg("Pilih tanggal wisata terlebih dahulu")
       return
     }
@@ -107,7 +111,7 @@ export default function CheckoutClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           package_id: data.id,
-          pickup_date: pickupDate,
+          pickup_date: effectivePickupDate,
           adult_count: adultCount,
           child_count: childCount,
           customer_name: nama,
@@ -211,13 +215,23 @@ export default function CheckoutClient({
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal wisata</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                {usesFixedDeparture ? "Tanggal keberangkatan" : "Tanggal wisata"}
+              </label>
               <input
                 type="date"
-                value={pickupDate}
+                value={effectivePickupDate}
                 onChange={(event) => setPickupDate(event.target.value)}
                 className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                min={usesFixedDeparture && data.departure_date ? data.departure_date : undefined}
+                max={usesFixedDeparture && data.departure_date ? data.departure_date : undefined}
+                readOnly={usesFixedDeparture}
               />
+              {usesFixedDeparture && (
+                <p className="mt-2 text-xs text-slate-500">
+                  Jadwal keberangkatan untuk paket ini sudah tetap dan mengikuti tanggal yang ditentukan merchant.
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Peserta dewasa</label>
@@ -275,6 +289,12 @@ export default function CheckoutClient({
                   <span>{participantLabel}</span>
                   <span className="font-semibold text-slate-900">{data.minimal_peserta || 0} orang</span>
                 </div>
+                {usesFixedDeparture && data.departure_date && (
+                  <div className="flex items-center justify-between">
+                    <span>Tanggal keberangkatan</span>
+                    <span className="font-semibold text-slate-900">{data.departure_date}</span>
+                  </div>
+                )}
                 <div className="border-t border-slate-200 pt-3">
                   <div className="flex items-center justify-between">
                     <span>Subtotal</span>

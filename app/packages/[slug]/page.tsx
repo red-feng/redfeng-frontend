@@ -9,7 +9,7 @@ import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
-import { formatTravelStyleLabel, getScheduleQuotaLabel } from "@/lib/travelStyles"
+import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
 export const dynamic = "force-dynamic"
 
@@ -18,6 +18,7 @@ type PackageRow = {
   slug: string
   merchant_id: string | null
   title: string | null
+  departure_date: string | null
   duration: number | null
   minimal_peserta: number | null
   price_adult: number | null
@@ -121,6 +122,7 @@ export default async function PaketPage({
         slug,
         merchant_id,
         title,
+        departure_date,
         duration,
         minimal_peserta,
         price_adult,
@@ -150,6 +152,7 @@ export default async function PaketPage({
           slug,
           merchant_id,
           title,
+          departure_date,
           duration,
           minimal_peserta,
           price_adult,
@@ -195,6 +198,7 @@ export default async function PaketPage({
           slug,
           merchant_id,
           title,
+          departure_date,
           duration,
           minimal_peserta,
           price_adult,
@@ -439,6 +443,9 @@ export default async function PaketPage({
               <div className="mt-4 space-y-2 text-sm text-slate-700">
                 <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
                 <p>{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
+                {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
+                  <p>Tanggal keberangkatan: {pkg.departure_date}</p>
+                )}
                 <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
               </div>
               <Link

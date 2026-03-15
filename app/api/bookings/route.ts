@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
     const { data: packagePricing } = await supabase
       .from("packages")
-      .select("price_adult, price_child, travel_style, minimal_peserta")
+      .select("price_adult, price_child, travel_style, minimal_peserta, departure_date")
       .eq("id", package_id)
       .single()
 
@@ -61,6 +61,17 @@ export async function POST(req: Request) {
     }
 
     if (isQuotaTravelStyle(packagePricing.travel_style)) {
+      if (!packagePricing.departure_date) {
+        return NextResponse.json({ error: "Tanggal keberangkatan paket belum diatur." }, { status: 400 })
+      }
+
+      if (pickup_date !== packagePricing.departure_date) {
+        return NextResponse.json(
+          { error: "Tanggal booking harus mengikuti tanggal keberangkatan paket." },
+          { status: 400 },
+        )
+      }
+
       const { data: existingBookings, error: bookingLookupError } = await supabase
         .from("bookings")
         .select("adult_count, child_count, booking_status, payment_status")
