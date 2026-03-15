@@ -1,4 +1,9 @@
+"use client"
+
+import { useState } from "react"
 import { getFacilityIcon } from "@/lib/facility-icons"
+import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
+import type { Locale } from "@/lib/i18n"
 import { updatePackageStep3 } from "../../actions"
 
 type Facility = {
@@ -7,15 +12,27 @@ type Facility = {
   category: string
 }
 
+const LANGS: Array<{ code: Locale; label: string }> = [
+  { code: "id", label: "Indonesia" },
+  { code: "en", label: "English" },
+  { code: "zh", label: "Chinese" },
+]
+
 export default function EditStep3Facilities({
   packageId,
   facilities,
   selectedFacilityIds,
+  defaultLanguage = "id",
 }: {
   packageId: string
   facilities: Facility[]
   selectedFacilityIds: string[]
+  defaultLanguage?: string
 }) {
+  const [activeLanguage, setActiveLanguage] = useState<Locale>(
+    (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
+  )
+
   const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
     const category = facility.category || "Lainnya"
     if (!acc[category]) acc[category] = []
@@ -28,9 +45,33 @@ export default function EditStep3Facilities({
       <input type="hidden" name="package_id" value={packageId} />
 
       <div className="space-y-8">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm text-slate-600">
+            Pilih bahasa tampilan fasilitas. Data fasilitas tetap sama, hanya labelnya yang berubah.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {LANGS.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setActiveLanguage(lang.code)}
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  activeLanguage === lang.code
+                    ? "bg-orange-500 text-white shadow-sm"
+                    : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                }`}
+              >
+                {lang.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {Object.entries(groupedFacilities).map(([category, items]) => (
           <div key={category}>
-            <h3 className="mb-4 text-lg font-semibold text-slate-800">{category}</h3>
+            <h3 className="mb-4 text-lg font-semibold text-slate-800">
+              {getFacilityCategoryLabel(category, activeLanguage)}
+            </h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {items.map((facility) => (
                 <label
@@ -45,7 +86,7 @@ export default function EditStep3Facilities({
                     className="h-5 w-5 accent-orange-500"
                   />
                   <span className="text-lg leading-none">{getFacilityIcon(facility.name)}</span>
-                  <span className="text-slate-700">{facility.name}</span>
+                  <span className="text-slate-700">{getFacilityLabel(facility.name, activeLanguage)}</span>
                 </label>
               ))}
             </div>

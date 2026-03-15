@@ -281,6 +281,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
               packageId={id}
               facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string; category: string }>}
               selectedFacilityIds={selectedFacilityIds}
+              defaultLanguage={pkg.default_language || "id"}
             />
         )}
 
