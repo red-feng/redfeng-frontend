@@ -249,6 +249,9 @@ export default async function MerchantPackagePage({
                     <p className="mt-2 text-sm leading-6 text-rose-800">
                       {pkg.rejection_reason || "Paket ditolak tanpa catatan tambahan dari admin."}
                     </p>
+                    <p className="mt-2 text-sm leading-6 text-rose-800">
+                      Perbaiki paket lewat tombol edit, lalu kirim ulang ke review admin. Paket yang ditolak tidak bisa langsung diaktifkan.
+                    </p>
                   </div>
                 )}
 
@@ -281,7 +284,7 @@ export default async function MerchantPackagePage({
                         </button>
                       </form>
                     )}
-                    {["inactive", "rejected"].includes(pkg.status || "") && (
+                    {pkg.status === "inactive" && (
                       <form action={togglePackageStatus}>
                         <input type="hidden" name="package_id" value={pkg.id} />
                         <input type="hidden" name="target_status" value="approved" />

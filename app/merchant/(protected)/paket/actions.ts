@@ -597,7 +597,11 @@ export async function togglePackageStatus(formData: FormData) {
       throw new Error("Status tujuan tidak valid.")
     }
 
-    const { adminSupabase } = await getOwnedMerchantPackage(packageId)
+    const { adminSupabase, pkg } = await getOwnedMerchantPackage(packageId)
+
+    if (targetStatus === "approved" && pkg.status === "rejected") {
+      throw new Error("Paket yang ditolak admin harus diedit lalu dikirim ulang ke review sebelum bisa diaktifkan.")
+    }
 
     const { error } = await adminSupabase
       .from("packages")
