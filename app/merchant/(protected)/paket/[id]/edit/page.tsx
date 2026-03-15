@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 import EditStep1Basic from "./EditStep1Basic"
 import EditStep2Details from "./EditStep2Details"
 import EditStep3Facilities from "./EditStep3Facilities"
@@ -11,12 +13,13 @@ type EditPackagePageProps = {
   searchParams: Promise<{ step?: string; error?: string }>
 }
 
-function getStepLabel(step: string) {
-  if (step === "1") return "Basic Info"
-  if (step === "2") return "Detail Konten"
-  if (step === "3") return "Fasilitas"
-  if (step === "4") return "Itinerary"
-  return "Basic Info"
+function getStepLabel(step: string, locale: ReturnType<typeof normalizeLocale>) {
+  const t = getMerchantWizardText(locale)
+  if (step === "1") return t.basicInfoStep
+  if (step === "2") return t.contentDetailsStep
+  if (step === "3") return t.facilitiesStep
+  if (step === "4") return t.itineraryStep
+  return t.basicInfoStep
 }
 
 export default async function EditPackagePage({ params, searchParams }: EditPackagePageProps) {
@@ -94,6 +97,9 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   if (packageError || !pkg) {
     return <div className="p-10">Paket tidak ditemukan atau tidak bisa diakses.</div>
   }
+
+  const wizardLocale = normalizeLocale(pkg.default_language || "id")
+  const wizardText = getMerchantWizardText(wizardLocale)
 
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
     adminSupabase
@@ -188,10 +194,10 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   }))
 
   const stepItems = [
-    { key: "1", label: "Step 1" },
-    { key: "2", label: "Step 2" },
-    { key: "3", label: "Step 3" },
-    { key: "4", label: "Step 4" },
+    { key: "1", label: wizardText.step1Short },
+    { key: "2", label: wizardText.step2Short },
+    { key: "3", label: wizardText.step3Short },
+    { key: "4", label: wizardText.step4Short },
   ]
 
   return (
@@ -199,16 +205,16 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">Edit Paket</h1>
+            <h1 className="text-2xl font-bold text-slate-900">{wizardText.editPackageTitle}</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Wizard edit paket merchant step 1 sampai 4 tanpa gambar sampul dan galeri.
+              {wizardText.editWizardHint}
             </p>
           </div>
           <Link
             href="/merchant/paket"
             className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
           >
-            Kembali ke Kelola Paket
+            {wizardText.backToPackageManagement}
           </Link>
         </div>
       </section>
@@ -236,9 +242,9 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           ))}
         </div>
         <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-slate-800">{getStepLabel(activeStep)}</p>
+          <p className="text-sm font-semibold text-slate-800">{getStepLabel(activeStep, wizardLocale)}</p>
           <p className="mt-1 text-sm text-slate-500">
-            Setiap perubahan paket akan dikirim ulang ke admin untuk verifikasi.
+            {wizardText.resubmissionNotice}
           </p>
         </div>
       </section>
@@ -289,6 +295,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep4Itinerary
             packageId={id}
             initialDays={itineraryDays}
+            defaultLanguage={pkg.default_language || "id"}
           />
         )}
       </section>

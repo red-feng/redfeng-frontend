@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { updatePackageStep2 } from "../../actions"
+import { normalizeLocale } from "@/lib/i18n"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 
 const LANGS = [
   { code: "id", label: "Indonesia" },
@@ -33,6 +35,8 @@ export default function EditStep2Details({
   initialTranslations: Record<string, TranslationValues>
   mapEmbed: string
 }) {
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode,
   )
@@ -42,12 +46,12 @@ export default function EditStep2Details({
       <input type="hidden" name="package_id" value={packageId} />
 
       <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
-        Default language paket: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
+        {t.defaultLanguageNotice}: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
       </div>
 
       <div>
         <div className="mb-4 flex flex-wrap gap-2">
-          {LANGS.map((lang) => (
+          {merchantWizardLanguageOptions.map((lang) => (
             <button
               key={lang.code}
               type="button"
@@ -63,7 +67,7 @@ export default function EditStep2Details({
           ))}
         </div>
 
-        {LANGS.map((lang) => {
+        {merchantWizardLanguageOptions.map((lang) => {
               const values = initialTranslations[lang.code] || {
                 about_tour: "",
                 service_standard: "",
@@ -78,11 +82,11 @@ export default function EditStep2Details({
           return (
             <div key={lang.code} className={activeLang === lang.code ? "space-y-6" : "hidden"}>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                Konten bahasa: <strong>{lang.label}</strong> ({lang.code})
+                {t.contentLanguage}: <strong>{lang.label}</strong> ({lang.code})
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Info Tentang Tour</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.aboutTour}</label>
                 <textarea
                   name={`about_tour_${lang.code}`}
                   defaultValue={values.about_tour}
@@ -92,7 +96,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Standar Layanan Merchant</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.serviceStandard}</label>
                 <textarea
                   name={`service_standard_${lang.code}`}
                   defaultValue={values.service_standard}
@@ -101,7 +105,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Include</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.include}</label>
                 <textarea
                   name={`include_${lang.code}`}
                   defaultValue={values.include}
@@ -110,7 +114,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Exclude</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.exclude}</label>
                 <textarea
                   name={`exclude_${lang.code}`}
                   defaultValue={values.exclude}
@@ -119,7 +123,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Peralatan & Dokumen yang Disiapkan Peserta</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.preparation}</label>
                 <textarea
                   name={`preparation_${lang.code}`}
                   defaultValue={values.preparation}
@@ -128,7 +132,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Meeting Point</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.meetingPoint}</label>
                 <input
                   name={`meeting_point_${lang.code}`}
                   defaultValue={values.meeting_point}
@@ -137,7 +141,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Tags / Highlights</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.highlights}</label>
                 <input
                   name={`highlights_${lang.code}`}
                   defaultValue={values.highlights}
@@ -146,7 +150,7 @@ export default function EditStep2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium text-slate-800">Syarat & Ketentuan saat di lokasi</label>
+                <label className="mb-2 block font-medium text-slate-800">{t.termsConditions}</label>
                 <textarea
                   name={`terms_conditions_${lang.code}`}
                   defaultValue={values.terms_conditions}
@@ -159,7 +163,7 @@ export default function EditStep2Details({
       </div>
 
       <div>
-        <label className="mb-2 block font-medium text-slate-800">Embedding titik penjemputan wisatawan di Google Maps</label>
+        <label className="mb-2 block font-medium text-slate-800">{t.pickupMapEmbed}</label>
         <textarea
           name="map_embed"
           defaultValue={mapEmbed}
@@ -172,13 +176,13 @@ export default function EditStep2Details({
           href={`?step=1`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
-          Kembali
+          {t.back}
         </a>
         <button
           type="submit"
           className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          Simpan & Lanjut
+          {t.saveAndNext}
         </button>
       </div>
     </form>

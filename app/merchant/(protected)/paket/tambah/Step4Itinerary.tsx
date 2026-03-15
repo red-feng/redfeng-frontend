@@ -4,6 +4,8 @@ import { useState } from "react"
 import { saveItinerary } from "./actions"
 import Image from "next/image"
 import { formatPickupTimeInput } from "@/lib/time/pickupTime"
+import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 
 type RouteType = {
   pickupTime: string
@@ -20,9 +22,12 @@ type DayType = {
 
 export default function Step4Itinerary({
   packageId,
+  defaultLanguage = "id",
 }: {
   packageId: string | null
+  defaultLanguage?: string
 }) {
+  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
 
   const [days, setDays] = useState<DayType[]>([
     {
@@ -34,7 +39,7 @@ export default function Step4Itinerary({
   ])
 
   if (!packageId) {
-    return <p className="text-red-500">Package ID tidak ditemukan</p>
+    return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   const addDay = () => {
@@ -139,11 +144,11 @@ export default function Step4Itinerary({
         <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
           <h1 className="text-2xl font-bold mb-2">
-            Buat Paket Baru
+            {t.createPackageTitle}
           </h1>
 
           <p className="text-gray-500 mb-10">
-            Step 4 – Itinerary
+            {t.itineraryStep}
           </p>
 
           <form action={saveItinerary} className="space-y-12">
@@ -160,13 +165,13 @@ export default function Step4Itinerary({
                 <div className="flex justify-between items-center">
                   <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
                     <h3 className="text-xl font-semibold text-gray-800">
-                      Hari ke {day.day}
+                      {t.dayLabel} {day.day}
                     </h3>
                     <input
                       name="day_title[]"
                       value={day.title}
                       onChange={(event) => updateDayField(dayIndex, "title", event.target.value)}
-                      placeholder="Judul"
+                      placeholder={t.dayTitlePlaceholder}
                       className="w-full max-w-xl rounded-lg border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
                     />
                   </div>
@@ -205,7 +210,7 @@ export default function Step4Itinerary({
                       <div className="col-span-3">
                         {routeIndex === 0 && (
                           <label className="text-sm font-medium text-gray-600">
-                            Jam
+                            {t.time}
                           </label>
                         )}
 
@@ -219,7 +224,7 @@ export default function Step4Itinerary({
                             inputMode="numeric"
                             maxLength={5}
                             pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
-                            title="Gunakan format 12 jam seperti 11.30 atau 1.30"
+                            title={t.timeFormatHint}
                             className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-orange-400 outline-none"
                           />
 
@@ -239,7 +244,7 @@ export default function Step4Itinerary({
                       <div className="col-span-6">
                         {routeIndex === 0 && (
                           <label className="text-sm font-medium text-gray-600">
-                            Rute
+                            {t.route}
                           </label>
                         )}
                         <input
@@ -271,7 +276,7 @@ export default function Step4Itinerary({
                     onClick={() => addRoute(dayIndex)}
                     className="text-orange-500 font-semibold hover:underline"
                   >
-                    + Tambah Rute
+                    {t.addRoute}
                   </button>
 
                 </div>
@@ -279,7 +284,7 @@ export default function Step4Itinerary({
                 {/* DESKRIPSI */}
                 <div>
                   <label className="text-sm font-medium text-gray-600">
-                    Deskripsi Perjalanan Hari Ini
+                    {t.dayTripDescription}
                   </label>
                   <textarea
                     name="description[]"
@@ -300,7 +305,7 @@ export default function Step4Itinerary({
                 onClick={addDay}
                 className="px-8 py-3 rounded-xl bg-gray-700 text-white hover:bg-gray-800 transition"
               >
-                + Tambah Hari
+                {t.addDay}
               </button>
 
               <button
@@ -312,7 +317,7 @@ export default function Step4Itinerary({
                            hover:scale-105
                            transition-all duration-300"
               >
-                Simpan & Lanjut
+                {t.saveAndNext}
               </button>
 
             </div>

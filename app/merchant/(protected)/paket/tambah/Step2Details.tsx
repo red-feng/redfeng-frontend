@@ -3,6 +3,8 @@
 import { ChangeEvent, FormEvent, useState } from "react"
 import { savePackageDetails } from "./actions"
 import Image from "next/image"
+import { normalizeLocale } from "@/lib/i18n"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 
 const MAX_GALLERY_BYTES = 18 * 1024 * 1024
 const LANGS = [
@@ -21,6 +23,8 @@ export default function Step2Details({
   defaultLanguage: string
 }) {
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode
   )
@@ -33,7 +37,7 @@ export default function Step2Details({
 
     const totalBytes = Array.from(files).reduce((sum, file) => sum + file.size, 0)
     if (totalBytes > MAX_GALLERY_BYTES) {
-      setUploadError("file gambar terlalu besar")
+      setUploadError(t.uploadTooLarge)
       return false
     }
 
@@ -59,7 +63,7 @@ export default function Step2Details({
   }
 
   if (!packageId) {
-    return <p className="text-red-500">Package ID tidak ditemukan</p>
+    return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   return (
@@ -86,8 +90,8 @@ export default function Step2Details({
 
         <div className="flex justify-center px-8 pb-28">
           <div className="w-full max-w-5xl rounded-3xl bg-white p-14 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
-            <h1 className="mb-1 text-2xl font-bold">Buat Paket Baru</h1>
-            <p className="mb-10 text-gray-500">Step 2 - Detail Konten (Multibahasa)</p>
+            <h1 className="mb-1 text-2xl font-bold">{t.createPackageTitle}</h1>
+            <p className="mb-10 text-gray-500">{t.contentDetailsStep}</p>
 
             <form
               action={savePackageDetails}
@@ -98,12 +102,12 @@ export default function Step2Details({
               <input type="hidden" name="package_id" value={packageId} />
 
               <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
-                Default language paket: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
+                {t.defaultLanguageNotice}: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
               </div>
 
               <div>
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {LANGS.map((lang) => (
+                  {merchantWizardLanguageOptions.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
@@ -119,17 +123,17 @@ export default function Step2Details({
                   ))}
                 </div>
 
-                {LANGS.map((lang) => (
+                {merchantWizardLanguageOptions.map((lang) => (
                   <div
                     key={lang.code}
                     className={activeLang === lang.code ? "space-y-6" : "hidden"}
                   >
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                      Konten bahasa: <strong>{lang.label}</strong> ({lang.code})
+                      {t.contentLanguage}: <strong>{lang.label}</strong> ({lang.code})
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Info Tentang Tour</label>
+                      <label className="mb-2 block font-medium">{t.aboutTour}</label>
                       <textarea
                         name={`about_tour_${lang.code}`}
                         className="h-36 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -138,7 +142,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Standar Layanan Merchant</label>
+                      <label className="mb-2 block font-medium">{t.serviceStandard}</label>
                       <textarea
                         name={`service_standard_${lang.code}`}
                         className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -146,7 +150,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Include</label>
+                      <label className="mb-2 block font-medium">{t.include}</label>
                       <textarea
                         name={`include_${lang.code}`}
                         className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -154,7 +158,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Exclude</label>
+                      <label className="mb-2 block font-medium">{t.exclude}</label>
                       <textarea
                         name={`exclude_${lang.code}`}
                         className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -162,7 +166,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Peralatan & Dokumen yang Disiapkan Peserta</label>
+                      <label className="mb-2 block font-medium">{t.preparation}</label>
                       <textarea
                         name={`preparation_${lang.code}`}
                         className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -170,7 +174,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Meeting Point</label>
+                      <label className="mb-2 block font-medium">{t.meetingPoint}</label>
                       <input
                         name={`meeting_point_${lang.code}`}
                         className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -178,7 +182,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Tags / Highlights</label>
+                      <label className="mb-2 block font-medium">{t.highlights}</label>
                       <input
                         name={`highlights_${lang.code}`}
                         className="w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -186,7 +190,7 @@ export default function Step2Details({
                     </div>
 
                     <div>
-                      <label className="mb-2 block font-medium">Syarat & Ketentuan saat di lokasi</label>
+                      <label className="mb-2 block font-medium">{t.termsConditions}</label>
                       <textarea
                         name={`terms_conditions_${lang.code}`}
                         className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -197,7 +201,7 @@ export default function Step2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Embedding titik penjemputan wisatawan di Google Maps</label>
+                <label className="mb-2 block font-medium">{t.pickupMapEmbed}</label>
                 <textarea
                   name="map_embed"
                   className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
@@ -205,7 +209,7 @@ export default function Step2Details({
               </div>
 
               <div>
-                <label className="mb-2 block font-medium">Gallery Images</label>
+                <label className="mb-2 block font-medium">{t.galleryImages}</label>
                 <input
                   type="file"
                   name="gallery_images"
@@ -214,7 +218,7 @@ export default function Step2Details({
                   onChange={handleGalleryChange}
                   className="w-full rounded-lg border p-4"
                 />
-                <p className="mt-2 text-xs text-gray-500">Maksimal total ukuran upload 18MB per submit.</p>
+                <p className="mt-2 text-xs text-gray-500">{t.galleryLimitHint}</p>
                 {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
               </div>
 
@@ -223,7 +227,7 @@ export default function Step2Details({
                   type="submit"
                   className="rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-14 py-4 text-lg font-semibold text-white shadow-[0_10px_30px_rgba(249,115,22,0.45)] transition-all duration-300 hover:scale-105"
                 >
-                  Simpan & Lanjut
+                  {t.saveAndNext}
                 </button>
               </div>
             </form>

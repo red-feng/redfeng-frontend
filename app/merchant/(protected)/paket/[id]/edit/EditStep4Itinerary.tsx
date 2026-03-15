@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { updatePackageStep4 } from "../../actions"
 import { formatPickupTimeInput, parseStoredPickupTime } from "@/lib/time/pickupTime"
+import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 
 type RouteType = {
   pickupTime: string
@@ -20,6 +22,7 @@ type DayType = {
 export default function EditStep4Itinerary({
   packageId,
   initialDays,
+  defaultLanguage = "id",
 }: {
   packageId: string
   initialDays: Array<{
@@ -31,7 +34,9 @@ export default function EditStep4Itinerary({
       route: string
     }>
   }>
+  defaultLanguage?: string
 }) {
+  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
   const [days, setDays] = useState<DayType[]>(
     initialDays.length > 0
         ? initialDays.map((day) => ({
@@ -103,12 +108,12 @@ export default function EditStep4Itinerary({
         <div key={dayIndex} className="space-y-8 rounded-2xl border border-slate-200 bg-slate-50 p-8">
           <div className="flex items-center justify-between">
             <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-              <h3 className="text-xl font-semibold text-slate-800">Hari ke {day.day}</h3>
+              <h3 className="text-xl font-semibold text-slate-800">{t.dayLabel} {day.day}</h3>
               <input
                 name="day_title[]"
                 value={day.title}
                 onChange={(event) => updateField(dayIndex, "title", event.target.value)}
-                placeholder="Judul"
+                placeholder={t.dayTitlePlaceholder}
                 className="w-full max-w-xl rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
               />
             </div>
@@ -118,7 +123,7 @@ export default function EditStep4Itinerary({
                 onClick={() => removeDay(dayIndex)}
                 className="text-sm font-medium text-red-500 hover:underline"
               >
-                Hapus Hari
+                {t.removeDay}
               </button>
             )}
           </div>
@@ -131,7 +136,7 @@ export default function EditStep4Itinerary({
                 <div className="col-span-1 text-sm font-semibold text-slate-400">#{routeIndex + 1}</div>
 
                 <div className="col-span-3">
-                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">Jam</label>}
+                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.time}</label>}
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -142,7 +147,7 @@ export default function EditStep4Itinerary({
                       inputMode="numeric"
                       maxLength={5}
                       pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
-                      title="Gunakan format 12 jam seperti 11.30 atau 1.30"
+                      title={t.timeFormatHint}
                       className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                     />
                     <select
@@ -158,7 +163,7 @@ export default function EditStep4Itinerary({
                 </div>
 
                 <div className="col-span-6">
-                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">Rute</label>}
+                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.route}</label>}
                   <input
                     name="route[]"
                     value={route.route}
@@ -174,7 +179,7 @@ export default function EditStep4Itinerary({
                       onClick={() => removeRoute(dayIndex, routeIndex)}
                       className="text-sm font-medium text-red-500 hover:underline"
                     >
-                      Hapus
+                      {t.removeRoute}
                     </button>
                   )}
                 </div>
@@ -186,12 +191,12 @@ export default function EditStep4Itinerary({
               onClick={() => addRoute(dayIndex)}
               className="font-semibold text-orange-500 hover:underline"
             >
-              + Tambah Rute
+              {t.addRoute}
             </button>
           </div>
 
           <div>
-            <label className="text-sm font-medium text-slate-600">Deskripsi Perjalanan Hari Ini</label>
+            <label className="text-sm font-medium text-slate-600">{t.dayTripDescription}</label>
             <textarea
               name="description[]"
               value={day.description}
@@ -208,19 +213,19 @@ export default function EditStep4Itinerary({
           onClick={addDay}
           className="rounded-2xl bg-slate-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          + Tambah Hari
+          {t.addDay}
         </button>
         <a
           href={`?step=3`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
-          Kembali
+          {t.back}
         </a>
         <button
           type="submit"
           className="rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-8 py-3 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105"
         >
-          Simpan & Kirim Review
+          {t.saveAndSendReview}
         </button>
       </div>
     </form>

@@ -7,18 +7,13 @@ import Image from "next/image"
 import { getFacilityIcon } from "@/lib/facility-icons"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import type { Locale } from "@/lib/i18n"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 
 type Facility = {
   id: string
   name: string
   category: string
 }
-
-const LANGS: Array<{ code: Locale; label: string }> = [
-  { code: "id", label: "Indonesia" },
-  { code: "en", label: "English" },
-  { code: "zh", label: "Chinese" },
-]
 
 export default function Step3Facilities({
   packageId,
@@ -29,8 +24,9 @@ export default function Step3Facilities({
 }) {
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [activeLanguage, setActiveLanguage] = useState<Locale>(
-    (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
+    (merchantWizardLanguageOptions.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
   )
+  const t = getMerchantWizardText(activeLanguage)
 
   useEffect(() => {
     const fetchFacilities = async () => {
@@ -47,7 +43,7 @@ export default function Step3Facilities({
   }, [])
 
   if (!packageId) {
-    return <p className="text-red-500">Package ID tidak ditemukan</p>
+    return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
@@ -92,11 +88,11 @@ export default function Step3Facilities({
         <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
           <h1 className="text-2xl font-bold mb-1">
-            Buat Paket Baru
+            {t.createPackageTitle}
           </h1>
 
           <p className="text-gray-500 mb-10">
-            Step 3 – Pilih Fasilitas
+            {t.facilitiesStep}
           </p>
 
           <form action={saveFacilities} className="space-y-10">
@@ -106,10 +102,10 @@ export default function Step3Facilities({
             <div className="space-y-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p className="text-sm text-slate-600">
-                  Pilih bahasa tampilan fasilitas. Data fasilitas tetap sama, hanya labelnya yang berubah.
+                  {t.facilitiesLanguageHint}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {LANGS.map((lang) => (
+                  {merchantWizardLanguageOptions.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
@@ -167,7 +163,7 @@ export default function Step3Facilities({
                            hover:scale-105
                            transition-all duration-300"
               >
-                Simpan & Lanjut
+                {t.saveAndNext}
               </button>
             </div>
 

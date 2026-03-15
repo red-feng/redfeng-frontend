@@ -4,6 +4,8 @@ import { useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
 import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 
 type Country = {
   id: string
@@ -11,18 +13,13 @@ type Country = {
 }
 
 export default function Step1Basic({ countries }: { countries: Country[] }) {
-
   const [originCountry, setOriginCountry] = useState("")
   const [destinationCountry, setDestinationCountry] = useState("")
   const [defaultLanguage, setDefaultLanguage] = useState("id")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(["id"])
   const [travelStyle, setTravelStyle] = useState("")
-
-  const languageOptions = [
-    { code: "id", label: "Bahasa Indonesia" },
-    { code: "en", label: "English" },
-    { code: "zh", label: "Chinese" },
-  ]
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
 
   const onDefaultLanguageChange = (nextDefault: string) => {
     setDefaultLanguage(nextDefault)
@@ -69,11 +66,11 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
           <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
             <h1 className="text-2xl font-bold mb-1">
-              Buat Paket Baru
+              {t.createPackageTitle}
             </h1>
 
             <p className="text-gray-500 mb-8">
-               Step 1 - Basic Info
+               {t.basicInfoStep}
             </p>
 
             <form
@@ -87,7 +84,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   {/* NAMA PAKET */}
   <input
     name="title"
-    placeholder="Nama Paket"
+    placeholder={t.packageNamePlaceholder}
     className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
     required
   />
@@ -100,7 +97,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
     required
   >
-    <option value="">Pilih Travel Style</option>
+    <option value="">{t.selectTravelStyle}</option>
     {travelStyleOptions.map((option) => (
       <option key={option.value} value={option.value}>
         {option.label}
@@ -110,7 +107,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
 
   {/* ===== ORIGIN ===== */}
   <div className="col-span-2 font-semibold pt-2">
-    Keberangkatan
+    {t.departureSection}
   </div>
 
   <select
@@ -120,7 +117,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   required
 >
-  <option value="">Pilih Negara Keberangkatan</option>
+  <option value="">{t.selectOriginCountry}</option>
   {countries.map(c => (
     <option key={c.id} value={c.id}>{c.name}</option>
   ))}
@@ -128,14 +125,14 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
 
 <input
   name="origin_province"
-  placeholder="Provinsi Keberangkatan"
+  placeholder={t.originProvincePlaceholder}
   className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   required
 />
 
   {/* ===== DESTINATION ===== */}
 <div className="col-span-2 font-semibold pt-6">
-  Tujuan
+  {t.destinationSection}
 </div>
 
 <select
@@ -145,7 +142,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   required
 >
-  <option value="">Pilih Negara Tujuan</option>
+  <option value="">{t.selectDestinationCountry}</option>
   {countries.map((c) => (
     <option key={c.id} value={c.id}>
       {c.name}
@@ -155,14 +152,14 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
 
 <input
   name="destination_province"
-  placeholder="Provinsi Tujuan"
+  placeholder={t.destinationProvincePlaceholder}
   className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   required
 />
 
   {/* MATA UANG MERCHANT */}
   <div className="col-span-2">
-    <p className="mb-2 text-sm font-semibold text-slate-700">Mata Uang Merchant</p>
+    <p className="mb-2 text-sm font-semibold text-slate-700">{t.merchantCurrency}</p>
     <select
       name="currency"
       defaultValue="IDR"
@@ -175,20 +172,20 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   </div>
 
   <div>
-    <label className="mb-2 block text-sm font-semibold text-slate-700">
-      {getParticipantFieldLabel(travelStyle)}
-    </label>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+      {getParticipantFieldLabel(travelStyle, locale)}
+      </label>
     <input
       name="minimal_peserta"
       type="number"
       min="1"
-      placeholder={getParticipantFieldLabel(travelStyle)}
+      placeholder={getParticipantFieldLabel(travelStyle, locale)}
       className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
       required
     />
     {isQuotaTravelStyle(travelStyle) && (
       <p className="mt-2 text-xs text-slate-500">
-        Kuota akan otomatis berkurang berdasarkan jumlah peserta yang booking pada tanggal keberangkatan yang sama.
+        {t.quotaHint}
       </p>
     )}
   </div>
@@ -196,7 +193,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   {isQuotaTravelStyle(travelStyle) && (
     <div>
       <label className="mb-2 block text-sm font-semibold text-slate-700">
-        Tanggal Keberangkatan
+        {t.departureDate}
       </label>
       <input
         name="departure_date"
@@ -205,7 +202,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
         required
       />
       <p className="mt-2 text-xs text-slate-500">
-        Wajib diisi untuk Open Trip dan Umroh agar jadwal keberangkatan paket jelas.
+        {t.departureDateHint}
       </p>
     </div>
   )}
@@ -214,7 +211,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   <input
     name="duration_days"
     type="number"
-    placeholder="Durasi (hari)"
+    placeholder={t.durationPlaceholder}
     className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
     required
   />
@@ -223,7 +220,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   <input
     name="price_adult"
     type="number"
-    placeholder="Harga Dewasa"
+    placeholder={t.adultPricePlaceholder}
     className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
     required
   />
@@ -232,13 +229,13 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   <input
     name="price_child"
     type="number"
-    placeholder="Harga Anak"
+    placeholder={t.childPricePlaceholder}
     className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
   />
 
   {/* DEFAULT LANGUAGE */}
   <div className="col-span-2">
-    <p className="mb-2 text-sm font-semibold text-slate-700">Bahasa Default Merchant</p>
+    <p className="mb-2 text-sm font-semibold text-slate-700">{t.defaultLanguage}</p>
     <select
       name="default_language"
       className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
@@ -246,19 +243,21 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
       onChange={(e) => onDefaultLanguageChange(e.target.value)}
       required
     >
-            <option value="id">Bahasa Indonesia</option>
-            <option value="en">English</option>
-            <option value="zh">Chinese</option>
+          {merchantWizardLanguageOptions.map((language) => (
+            <option key={language.code} value={language.code}>
+              {language.label}
+            </option>
+          ))}
           </select>
   </div>
 
   <div className="col-span-2">
-    <p className="mb-2 text-sm font-semibold text-slate-700">Bahasa Publish</p>
+    <p className="mb-2 text-sm font-semibold text-slate-700">{t.publishLanguage}</p>
     <p className="mb-3 text-xs text-slate-500">
-      Paket akan tampil di pilihan bahasa yang dicentang.
+      {t.publishLanguageHint}
     </p>
     <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-      {languageOptions.map((language) => {
+      {merchantWizardLanguageOptions.map((language) => {
         const checked = publishedLanguages.includes(language.code)
         const isDefault = language.code === defaultLanguage
 
@@ -278,7 +277,7 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
             <span>{language.label}</span>
             {isDefault && (
               <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                default
+                {t.defaultBadge}
               </span>
             )}
           </label>
@@ -303,8 +302,8 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
                   shadow-[0_8px_20px_rgba(249,115,22,0.4)]
                   hover:scale-105
                   transition-all duration-300"
-                >
-                  Simpan & Lanjut
+              >
+                  {t.saveAndNext}
                 </button>
               </div>
 

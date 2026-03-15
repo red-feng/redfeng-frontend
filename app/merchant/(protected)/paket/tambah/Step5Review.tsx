@@ -1,14 +1,20 @@
 
 import { submitForReview } from "./actions"
 import Image from "next/image"
+import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 
 export default function Step5Review({
   packageId,
+  defaultLanguage = "id",
 }: {
   packageId: string | null
+  defaultLanguage?: string
 }) {
+  const t = getMerchantWizardText(normalizeLocale(defaultLanguage))
+
   if (!packageId) {
-    return <p className="text-red-500">Package ID tidak ditemukan</p>
+    return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   return (
@@ -45,11 +51,11 @@ export default function Step5Review({
          <div className="w-full max-w-5xl bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] p-14">
 
           <h1 className="text-2xl font-bold mb-2">
-            Buat Paket Baru
+            {t.createPackageTitle}
           </h1>
 
           <p className="text-gray-500 mb-10">
-            Step 5 – Review & Submit
+            {t.reviewStep}
           </p>
 
           <form action={submitForReview} className="space-y-10">
@@ -59,21 +65,17 @@ export default function Step5Review({
             {/* INFO BOX */}
             <div className="bg-orange-50 border border-orange-300 p-6 rounded-2xl space-y-2">
               <p className="text-gray-800 font-medium">
-                Setelah disubmit, paket akan direview oleh Admin.
+                {t.reviewSubmitInfoTitle}
               </p>
               <p className="text-gray-700 text-sm">
-                Paket tidak bisa diedit sampai proses review selesai.
+                {t.reviewSubmitInfoBody}
               </p>
             </div>
 
             {/* CONFIRMATION BOX (visual only) */}
             <div className="bg-slate-50 border rounded-2xl p-6">
               <p className="text-gray-600 text-sm">
-                Pastikan seluruh data sudah benar sebelum melakukan submit.
-                Setelah submit, status paket akan berubah menjadi
-                <span className="font-semibold text-orange-500">
-                  {" "}Pending
-                </span>.
+                {t.reviewPendingNotice}
               </p>
             </div>
 
@@ -88,7 +90,7 @@ export default function Step5Review({
                            hover:scale-105
                            transition-all duration-300"
               >
-                Submit untuk Review
+                {t.reviewSubmitButton}
               </button>
             </div>
 

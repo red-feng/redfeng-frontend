@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { updatePackageStep1 } from "../../actions"
 import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
+import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
+import { normalizeLocale } from "@/lib/i18n"
 
 type Country = {
   id: string
@@ -40,12 +42,8 @@ export default function EditStep1Basic({
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
-
-  const languageOptions = [
-    { code: "id", label: "Bahasa Indonesia" },
-    { code: "en", label: "English" },
-    { code: "zh", label: "Chinese" },
-  ]
+  const locale = normalizeLocale(defaultLanguage)
+  const t = getMerchantWizardText(locale)
 
   const onDefaultLanguageChange = (nextDefault: string) => {
     setDefaultLanguage(nextDefault)
@@ -66,18 +64,18 @@ export default function EditStep1Basic({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">Nama Paket</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.packageName}</label>
           <input
             name="title"
             defaultValue={initialData.title}
-            placeholder="Nama Paket"
+            placeholder={t.packageNamePlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">Travel Style</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.travelStyle}</label>
           <select
             name="travel_style"
             value={travelStyle}
@@ -85,7 +83,7 @@ export default function EditStep1Basic({
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           >
-            <option value="">Pilih Travel Style</option>
+            <option value="">{t.selectTravelStyle}</option>
             {travelStyleOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -94,17 +92,17 @@ export default function EditStep1Basic({
           </select>
         </div>
 
-        <div className="md:col-span-2 pt-2 text-sm font-semibold text-slate-800">Keberangkatan</div>
+        <div className="md:col-span-2 pt-2 text-sm font-semibold text-slate-800">{t.departureSection}</div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Negara Keberangkatan</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.originCountry}</label>
           <select
             name="origin_country_id"
             defaultValue={initialData.origin_country_id}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           >
-            <option value="">Pilih Negara Keberangkatan</option>
+            <option value="">{t.selectOriginCountry}</option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {country.name}
@@ -114,26 +112,27 @@ export default function EditStep1Basic({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Provinsi Keberangkatan</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.originProvince}</label>
           <input
             name="origin_province"
             defaultValue={initialData.origin_province}
+            placeholder={t.originProvincePlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
         </div>
 
-        <div className="md:col-span-2 pt-2 text-sm font-semibold text-slate-800">Tujuan</div>
+        <div className="md:col-span-2 pt-2 text-sm font-semibold text-slate-800">{t.destinationSection}</div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Negara Tujuan</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.destinationCountry}</label>
           <select
             name="destination_country_id"
             defaultValue={initialData.destination_country_id}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           >
-            <option value="">Pilih Negara Tujuan</option>
+            <option value="">{t.selectDestinationCountry}</option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {country.name}
@@ -143,17 +142,18 @@ export default function EditStep1Basic({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Provinsi Tujuan</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.destinationProvince}</label>
           <input
             name="destination_province"
             defaultValue={initialData.destination_province}
+            placeholder={t.destinationProvincePlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Mata Uang Merchant</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
           <select
             name="currency"
             defaultValue={initialData.currency || "IDR"}
@@ -167,7 +167,7 @@ export default function EditStep1Basic({
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
-            {getParticipantFieldLabel(travelStyle)}
+            {getParticipantFieldLabel(travelStyle, locale)}
           </label>
           <input
             name="minimal_peserta"
@@ -179,14 +179,14 @@ export default function EditStep1Basic({
           />
           {isQuotaTravelStyle(travelStyle) && (
             <p className="mt-2 text-xs text-slate-500">
-              Kuota akan otomatis berkurang berdasarkan jumlah peserta yang booking pada tanggal keberangkatan yang sama.
+              {t.quotaHint}
             </p>
           )}
         </div>
 
         {isQuotaTravelStyle(travelStyle) && (
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal Keberangkatan</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">{t.departureDate}</label>
             <input
               name="departure_date"
               type="date"
@@ -195,48 +195,51 @@ export default function EditStep1Basic({
               required
             />
             <p className="mt-2 text-xs text-slate-500">
-              Wajib diisi untuk Open Trip dan Umroh agar jadwal keberangkatan paket jelas.
+              {t.departureDateHint}
             </p>
           </div>
         )}
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Durasi (hari)</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.durationDays}</label>
           <input
             name="duration_days"
             type="number"
             min="1"
             defaultValue={initialData.duration}
+            placeholder={t.durationPlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Harga Dewasa</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
           <input
             name="price_adult"
             type="number"
             min="0"
             defaultValue={initialData.price_adult}
+            placeholder={t.adultPricePlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           />
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">Harga Anak</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
           <input
             name="price_child"
             type="number"
             min="0"
             defaultValue={initialData.price_child}
+            placeholder={t.childPricePlaceholder}
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
           />
         </div>
 
         <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">Bahasa Default Merchant</label>
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.defaultLanguage}</label>
           <select
             name="default_language"
             value={defaultLanguage}
@@ -244,17 +247,19 @@ export default function EditStep1Basic({
             className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
             required
           >
-            <option value="id">Bahasa Indonesia</option>
-            <option value="en">English</option>
-            <option value="zh">Chinese</option>
+            {merchantWizardLanguageOptions.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="md:col-span-2">
-          <p className="mb-2 text-sm font-medium text-slate-700">Bahasa Publish</p>
-          <p className="mb-3 text-xs text-slate-500">Paket akan tampil di pilihan bahasa yang dicentang.</p>
+          <p className="mb-2 text-sm font-medium text-slate-700">{t.publishLanguage}</p>
+          <p className="mb-3 text-xs text-slate-500">{t.publishLanguageHint}</p>
           <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            {languageOptions.map((language) => {
+            {merchantWizardLanguageOptions.map((language) => {
               const checked = publishedLanguages.includes(language.code)
               const isDefault = language.code === defaultLanguage
               return (
@@ -272,7 +277,7 @@ export default function EditStep1Basic({
                   />
                   <span>{language.label}</span>
                   {isDefault && (
-                    <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">default</span>
+                    <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{t.defaultBadge}</span>
                   )}
                 </label>
               )
@@ -286,7 +291,7 @@ export default function EditStep1Basic({
           type="submit"
           className="rounded-2xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
         >
-          Simpan & Lanjut
+          {t.saveAndNext}
         </button>
       </div>
     </form>
