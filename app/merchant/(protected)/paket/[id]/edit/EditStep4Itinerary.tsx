@@ -82,34 +82,48 @@ export default function EditStep4Itinerary({
           },
         ],
   )
+  const [expandedDayIndex, setExpandedDayIndex] = useState(0)
 
   const addDay = () => {
-    setDays((prev) => [
-      ...prev,
-      {
-        day: prev.length + 1,
-        translations: {
-          id: { title: "", description: "" },
-          en: { title: "", description: "" },
-          zh: { title: "", description: "" },
-        },
-        routes: [
-          {
-            pickupTime: "",
-            pickupPeriod: "AM",
-            translations: { id: "", en: "", zh: "" },
+    setDays((prev) => {
+      const nextIndex = prev.length
+      setExpandedDayIndex(nextIndex)
+      return [
+        ...prev,
+        {
+          day: nextIndex + 1,
+          translations: {
+            id: { title: "", description: "" },
+            en: { title: "", description: "" },
+            zh: { title: "", description: "" },
           },
-        ],
-      },
-    ])
+          routes: [
+            {
+              pickupTime: "",
+              pickupPeriod: "AM",
+              translations: { id: "", en: "", zh: "" },
+            },
+          ],
+        },
+      ]
+    })
   }
 
   const removeDay = (dayIndex: number) => {
-    setDays((prev) =>
-      prev
+    setDays((prev) => {
+      const nextDays = prev
         .filter((_, index) => index !== dayIndex)
-        .map((day, index) => ({ ...day, day: index + 1 })),
-    )
+        .map((day, index) => ({ ...day, day: index + 1 }))
+
+      setExpandedDayIndex((current) => {
+        if (nextDays.length === 0) return 0
+        if (current === dayIndex) return Math.max(0, dayIndex - 1)
+        if (current > dayIndex) return current - 1
+        return current
+      })
+
+      return nextDays
+    })
   }
 
   const addRoute = (dayIndex: number) => {
@@ -190,17 +204,23 @@ export default function EditStep4Itinerary({
       </div>
 
       {days.map((day, dayIndex) => (
-        <div key={dayIndex} className="space-y-8 rounded-2xl border border-slate-200 bg-slate-50 p-8">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
-              <h3 className="text-xl font-semibold text-slate-800">{t.dayLabel} {day.day}</h3>
-              <input
-                value={day.translations[activeLang].title}
-                onChange={(event) => updateDayTranslation(dayIndex, "title", event.target.value)}
-                placeholder={t.dayTitlePlaceholder}
-                className="w-full max-w-xl rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
-              />
-            </div>
+        <div key={dayIndex} className="rounded-2xl border border-slate-200 bg-slate-50">
+          <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <button
+              type="button"
+              onClick={() => setExpandedDayIndex((current) => (current === dayIndex ? -1 : dayIndex))}
+              className="flex flex-1 items-center justify-between gap-4 text-left"
+            >
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-slate-800">{t.dayLabel} {day.day}</h3>
+                <p className="mt-1 truncate text-sm text-slate-500">
+                  {day.translations[activeLang].title || t.dayTitlePlaceholder}
+                </p>
+              </div>
+              <span className="text-2xl font-light text-slate-400">
+                {expandedDayIndex === dayIndex ? "−" : "+"}
+              </span>
+            </button>
             {days.length > 1 && (
               <button
                 type="button"
@@ -219,87 +239,99 @@ export default function EditStep4Itinerary({
             </div>
           ))}
 
-          <div className="space-y-6">
-            {day.routes.map((route, routeIndex) => (
-              <div key={routeIndex} className="grid grid-cols-12 items-end gap-4">
-                <input type="hidden" name="day_number[]" value={day.day} />
+          <div className={expandedDayIndex === dayIndex ? "space-y-8 p-8" : "hidden"}>
+            <div className="flex flex-1 flex-col gap-3 md:flex-row md:items-center">
+              <h4 className="text-sm font-medium text-slate-600">{t.dayTitleLabel}</h4>
+              <input
+                value={day.translations[activeLang].title}
+                onChange={(event) => updateDayTranslation(dayIndex, "title", event.target.value)}
+                placeholder={t.dayTitlePlaceholder}
+                className="w-full max-w-xl rounded-xl border p-3 text-sm outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
 
-                <div className="col-span-1 text-sm font-semibold text-slate-400">#{routeIndex + 1}</div>
+            <div className="space-y-6">
+              {day.routes.map((route, routeIndex) => (
+                <div key={routeIndex} className="grid grid-cols-12 items-end gap-4">
+                  <input type="hidden" name="day_number[]" value={day.day} />
 
-                <div className="col-span-3">
-                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.time}</label>}
-                  <div className="flex gap-2">
+                  <div className="col-span-1 text-sm font-semibold text-slate-400">#{routeIndex + 1}</div>
+
+                  <div className="col-span-3">
+                    {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.time}</label>}
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        name="pickup_time[]"
+                        value={route.pickupTime}
+                        onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
+                        inputMode="numeric"
+                        maxLength={5}
+                        pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
+                        title={t.timeFormatHint}
+                        className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                      />
+                      <select
+                        name="pickup_period[]"
+                        value={route.pickupPeriod}
+                        onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value as "AM" | "PM")}
+                        className="rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="col-span-6">
+                    {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.route}</label>}
                     <input
-                      type="text"
-                      name="pickup_time[]"
-                      value={route.pickupTime}
-                      onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
-                      inputMode="numeric"
-                      maxLength={5}
-                      pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
-                      title={t.timeFormatHint}
+                      value={route.translations[activeLang]}
+                      onChange={(event) => updateRouteTranslation(dayIndex, routeIndex, event.target.value)}
                       className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                     />
-                    <select
-                      name="pickup_period[]"
-                      value={route.pickupPeriod}
-                      onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupPeriod", event.target.value as "AM" | "PM")}
-                      className="rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
+                    {LANGS.map((lang) => (
+                      <input
+                        key={`${dayIndex}-${routeIndex}-${lang.code}`}
+                        type="hidden"
+                        name={`route_${lang.code}[]`}
+                        value={route.translations[lang.code]}
+                        readOnly
+                      />
+                    ))}
+                  </div>
+
+                  <div className="col-span-2 text-right">
+                    {day.routes.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeRoute(dayIndex, routeIndex)}
+                        className="text-sm font-medium text-red-500 hover:underline"
+                      >
+                        {t.removeRoute}
+                      </button>
+                    )}
                   </div>
                 </div>
+              ))}
 
-                <div className="col-span-6">
-                  {routeIndex === 0 && <label className="text-sm font-medium text-slate-600">{t.route}</label>}
-                  <input
-                    value={route.translations[activeLang]}
-                    onChange={(event) => updateRouteTranslation(dayIndex, routeIndex, event.target.value)}
-                    className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
-                  />
-                  {LANGS.map((lang) => (
-                    <input
-                      key={`${dayIndex}-${routeIndex}-${lang.code}`}
-                      type="hidden"
-                      name={`route_${lang.code}[]`}
-                      value={route.translations[lang.code]}
-                      readOnly
-                    />
-                  ))}
-                </div>
+              <button
+                type="button"
+                onClick={() => addRoute(dayIndex)}
+                className="font-semibold text-orange-500 hover:underline"
+              >
+                {t.addRoute}
+              </button>
+            </div>
 
-                <div className="col-span-2 text-right">
-                  {day.routes.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeRoute(dayIndex, routeIndex)}
-                      className="text-sm font-medium text-red-500 hover:underline"
-                    >
-                      {t.removeRoute}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => addRoute(dayIndex)}
-              className="font-semibold text-orange-500 hover:underline"
-            >
-              {t.addRoute}
-            </button>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-slate-600">{t.dayTripDescription}</label>
-            <textarea
-              value={day.translations[activeLang].description}
-              onChange={(event) => updateDayTranslation(dayIndex, "description", event.target.value)}
-              className="mt-2 h-32 w-full rounded-xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-            />
+            <div>
+              <label className="text-sm font-medium text-slate-600">{t.dayTripDescription}</label>
+              <textarea
+                value={day.translations[activeLang].description}
+                onChange={(event) => updateDayTranslation(dayIndex, "description", event.target.value)}
+                className="mt-2 h-32 w-full rounded-xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
           </div>
         </div>
       ))}
