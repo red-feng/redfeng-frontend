@@ -208,30 +208,45 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
   )}
 
   {/* DURASI */}
-  <input
-    name="duration_days"
-    type="number"
-    placeholder={t.durationPlaceholder}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  />
+  <div>
+    <label className="mb-2 block text-sm font-semibold text-slate-700">
+      {t.durationDays}
+    </label>
+    <input
+      name="duration_days"
+      type="number"
+      placeholder={t.durationPlaceholder}
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+      required
+    />
+  </div>
 
   {/* HARGA DEWASA */}
-  <input
-    name="price_adult"
-    type="number"
-    placeholder={t.adultPricePlaceholder}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  />
+  <div>
+    <label className="mb-2 block text-sm font-semibold text-slate-700">
+      {t.adultPrice}
+    </label>
+    <input
+      name="price_adult"
+      type="number"
+      placeholder={t.adultPricePlaceholder}
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+      required
+    />
+  </div>
 
   {/* HARGA ANAK */}
-  <input
-    name="price_child"
-    type="number"
-    placeholder={t.childPricePlaceholder}
-    className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-  />
+  <div>
+    <label className="mb-2 block text-sm font-semibold text-slate-700">
+      {t.childPrice}
+    </label>
+    <input
+      name="price_child"
+      type="number"
+      placeholder={t.childPricePlaceholder}
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+    />
+  </div>
 
   {/* DEFAULT LANGUAGE */}
   <div className="col-span-2">
