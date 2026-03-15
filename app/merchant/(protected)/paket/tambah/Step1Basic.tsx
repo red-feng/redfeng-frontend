@@ -193,6 +193,23 @@ export default function Step1Basic({ countries }: { countries: Country[] }) {
     )}
   </div>
 
+  {isQuotaTravelStyle(travelStyle) && (
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-slate-700">
+        Tanggal Keberangkatan
+      </label>
+      <input
+        name="departure_date"
+        type="date"
+        className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+        required
+      />
+      <p className="mt-2 text-xs text-slate-500">
+        Wajib diisi untuk Open Trip dan Umroh agar jadwal keberangkatan paket jelas.
+      </p>
+    </div>
+  )}
+
   {/* DURASI */}
   <input
     name="duration_days"

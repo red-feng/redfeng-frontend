@@ -29,6 +29,20 @@ function normalizePublishedLanguages(input: FormDataEntryValue[], defaultLanguag
   return [...new Set(merged)]
 }
 
+function normalizeDepartureDate(travelStyle: FormDataEntryValue | null, departureDate: FormDataEntryValue | null) {
+  const nextTravelStyle = String(travelStyle || "").trim()
+  const nextDepartureDate = String(departureDate || "").trim()
+
+  if (nextTravelStyle === "open_trip" || nextTravelStyle === "umroh") {
+    if (!nextDepartureDate) {
+      throw new Error("Tanggal keberangkatan wajib diisi untuk Open Trip dan Umroh.")
+    }
+    return nextDepartureDate
+  }
+
+  return null
+}
+
 async function getOwnedMerchantPackage(packageId: string) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -94,6 +108,7 @@ export async function updatePackageStep1(formData: FormData) {
     const payload = {
       title: String(formData.get("title") || "").trim(),
       travel_style: String(formData.get("travel_style") || "").trim(),
+      departure_date: normalizeDepartureDate(formData.get("travel_style"), formData.get("departure_date")),
       origin_country_id: String(formData.get("origin_country_id") || "").trim(),
       origin_province: String(formData.get("origin_province") || "").trim(),
       destination_country_id: String(formData.get("destination_country_id") || "").trim(),
@@ -435,6 +450,7 @@ export async function updatePackage(formData: FormData) {
     const destinationCountryId = String(formData.get("destination_country_id") || "").trim()
     const destinationProvince = String(formData.get("destination_province") || "").trim()
     const currency = String(formData.get("currency") || "IDR").trim()
+    const departureDate = normalizeDepartureDate(formData.get("travel_style"), formData.get("departure_date"))
     const minimalPeserta = Number(formData.get("minimal_peserta") || 1)
     const duration = Number(formData.get("duration_days") || 0)
     const priceAdult = Number(formData.get("price_adult") || 0)
@@ -447,6 +463,7 @@ export async function updatePackage(formData: FormData) {
     const payload = {
       title,
       travel_style: travelStyle,
+      departure_date: departureDate,
       origin_country_id: originCountryId,
       origin_province: originProvince,
       destination_country_id: destinationCountryId,

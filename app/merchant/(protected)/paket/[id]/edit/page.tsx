@@ -48,7 +48,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     adminSupabase.from("countries").select("id, name").order("name"),
     adminSupabase
       .from("packages")
-      .select("id, title, travel_style, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language, published_languages")
+      .select("id, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language, published_languages")
       .eq("id", id)
       .eq("merchant_id", merchant.id)
       .single(),
@@ -58,6 +58,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     id: string
     title: string | null
     travel_style: string | null
+    departure_date: string | null
     origin_country_id: string | null
     origin_province: string | null
     destination_country_id: string | null
@@ -76,7 +77,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   if (packageError && packageError.message.includes("published_languages")) {
     const legacyResult = await adminSupabase
       .from("packages")
-      .select("id, title, travel_style, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language")
+      .select("id, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language")
       .eq("id", id)
       .eq("merchant_id", merchant.id)
       .single()
@@ -228,6 +229,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
             initialData={{
               title: pkg.title || "",
               travel_style: pkg.travel_style || "",
+              departure_date: pkg.departure_date || "",
               origin_country_id: pkg.origin_country_id || "",
               origin_province: pkg.origin_province || "",
               destination_country_id: pkg.destination_country_id || "",

@@ -28,6 +28,20 @@ function wizardPath(step: string, packageId?: string | null, error?: string): st
   return `/merchant/paket/tambah?${params.toString()}`
 }
 
+function normalizeDepartureDate(travelStyle: FormDataEntryValue | null, departureDate: FormDataEntryValue | null) {
+  const nextTravelStyle = String(travelStyle || "").trim()
+  const nextDepartureDate = String(departureDate || "").trim()
+
+  if (nextTravelStyle === "open_trip" || nextTravelStyle === "umroh") {
+    if (!nextDepartureDate) {
+      throw new Error("Tanggal keberangkatan wajib diisi untuk Open Trip dan Umroh.")
+    }
+    return nextDepartureDate
+  }
+
+  return null
+}
+
 function slugifyTitle(input: string): string {
   return input
     .normalize("NFKD")
@@ -120,6 +134,7 @@ export async function createPackage(formData: FormData) {
       destination_country_id: formData.get("destination_country_id"),
       destination_province: formData.get("destination_province"),
       travel_style: formData.get("travel_style"),
+      departure_date: normalizeDepartureDate(formData.get("travel_style"), formData.get("departure_date")),
       minimal_peserta: Number(formData.get("minimal_peserta") || 1),
       duration: Number(formData.get("duration_days") || 0),
       price_adult: Number(formData.get("price_adult") || 0),

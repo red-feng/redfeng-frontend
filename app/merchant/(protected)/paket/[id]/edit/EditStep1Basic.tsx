@@ -12,6 +12,7 @@ type Country = {
 type Step1InitialData = {
   title: string
   travel_style: string
+  departure_date: string
   origin_country_id: string
   origin_province: string
   destination_country_id: string
@@ -182,6 +183,22 @@ export default function EditStep1Basic({
             </p>
           )}
         </div>
+
+        {isQuotaTravelStyle(travelStyle) && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Tanggal Keberangkatan</label>
+            <input
+              name="departure_date"
+              type="date"
+              defaultValue={initialData.departure_date}
+              className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+              required
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              Wajib diisi untuk Open Trip dan Umroh agar jadwal keberangkatan paket jelas.
+            </p>
+          </div>
+        )}
 
         <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">Durasi (hari)</label>
