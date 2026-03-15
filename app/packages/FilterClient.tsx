@@ -27,7 +27,7 @@ export default function FilterClient({
   )
 
     const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
-    searchParams.get("facilities")?.split(",") || []
+    searchParams.get("facilities")?.split(",").filter(Boolean) || []
   )
   const isFirstPriceRender = useRef(true)
   const isFirstFacilitiesRender = useRef(true)
@@ -117,7 +117,7 @@ export default function FilterClient({
                 checked={selectedFacilities.includes(f.id)}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    setSelectedFacilities([...selectedFacilities, f.id])
+                      setSelectedFacilities([...selectedFacilities, f.id])
                   } else {
                     setSelectedFacilities(
                       selectedFacilities.filter((id) => id !== f.id)

@@ -5,7 +5,7 @@ import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
-import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
+import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
 
@@ -78,12 +78,29 @@ if (searchParams?.departure_date) {
 
   // FILTER FACILITIES
   if (hasFacilityFilter) {
-    const facilityIds = facilitiesParam
+    const selectedFacilityKeys = facilitiesParam
       .split(",")
-      .map((id) => id.trim())
+      .map((key) => key.trim())
       .filter(Boolean)
 
-    if (facilityIds.length > 0) {
+    if (selectedFacilityKeys.length > 0) {
+      const { data: facilitiesLookup, error: facilitiesLookupError } = await supabase
+        .from("facilities")
+        .select("id, name")
+
+      if (facilitiesLookupError) {
+        console.log("FACILITY LOOKUP ERROR:", facilitiesLookupError)
+        return []
+      }
+
+      const facilityIds = (facilitiesLookup || [])
+        .filter((facility) => selectedFacilityKeys.includes(normalizeFacilityName(facility.name)))
+        .map((facility) => facility.id)
+
+      if (facilityIds.length === 0) {
+        return []
+      }
+
       const { data: facilityRows, error: facilityError } = await supabase
         .from("package_facilities")
         .select("package_id")
@@ -144,13 +161,23 @@ if (searchParams?.departure_date) {
     const selected = new Set(
       facilitiesParam
         .split(",")
-        .map((id) => id.trim())
+        .map((key) => key.trim())
         .filter(Boolean)
+    )
+
+    const { data: facilitiesLookup } = await supabase
+      .from("facilities")
+      .select("id, name")
+    const facilityIdToKey = new Map(
+      ((facilitiesLookup || []) as Array<{ id: string; name: string | null }>).map((facility) => [
+        facility.id,
+        normalizeFacilityName(facility.name),
+      ])
     )
 
     filtered = filtered.filter((pkg) => {
       const ids = (pkg.package_facilities || []).map((f) => f.facility_id)
-      return ids.some((id) => selected.has(id))
+      return ids.some((id) => selected.has(facilityIdToKey.get(id) || ""))
     })
   }
 
@@ -173,11 +200,20 @@ export default async function HomePage({
     .from("facilities")
     .select("id, name, category")
 
-  const facilities = (facilitiesData ?? []).map((facility) => ({
-    ...facility,
-    name: getFacilityLabel(facility.name, locale),
-    category: getFacilityCategoryLabel(facility.category, locale),
-  }))
+  const facilitiesMap = new Map<string, { id: string; name: string; category: string }>()
+  for (const facility of facilitiesData ?? []) {
+    const normalizedName = normalizeFacilityName(facility.name)
+    const normalizedCategory = normalizeFacilityCategory(facility.category)
+    const key = `${normalizedCategory}::${normalizedName}`
+    if (!facilitiesMap.has(key)) {
+      facilitiesMap.set(key, {
+        id: normalizedName,
+        name: getFacilityLabel(normalizedName, locale),
+        category: getFacilityCategoryLabel(normalizedCategory, locale),
+      })
+    }
+  }
+  const facilities = Array.from(facilitiesMap.values())
 
   return (
   <div className="bg-gray-100 min-h-screen">

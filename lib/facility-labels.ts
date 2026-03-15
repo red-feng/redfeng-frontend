@@ -1,5 +1,28 @@
 import type { Locale } from "@/lib/i18n"
 
+const facilityCanonicalNameMap: Record<string, string> = {
+  "Bantuan visa": "Bantuan pengurusan visa",
+  "Termasuk Sarapan": "Sarapan harian",
+  "Restoran Halal": "Pilihan makanan halal",
+  "Tiket pesawat / kereta / kapal": "Tiket transportasi antarkota",
+  "Kendaraan selama tour": "Transportasi selama tour",
+  "Asuransi wisata domestik": "Asuransi perjalanan",
+  "Asuransi wisata internasional": "Asuransi perjalanan",
+  "Perlindungan kecelakaan": "Asuransi perjalanan",
+}
+
+const facilityCanonicalCategoryMap: Record<string, string> = {
+  Aktivitas: "Tiket & Akses",
+  Guide: "Pemandu & Operasional",
+  "Layanan Tambahan": "Layanan Tambahan",
+  Transportasi: "Transportasi",
+  Akomodasi: "Akomodasi",
+  Proteksi: "Proteksi",
+  "Makan & Minum": "Makan & Minum",
+  "Tiket & Akses": "Tiket & Akses",
+  "Pemandu & Operasional": "Pemandu & Operasional",
+}
+
 const facilityLabelMap: Record<string, Record<Locale, string>> = {
   "Bantuan pengurusan visa": {
     id: "Bantuan pengurusan visa",
@@ -182,11 +205,21 @@ const facilityCategoryLabelMap: Record<string, Record<Locale, string>> = {
 }
 
 export function getFacilityLabel(name: string | null | undefined, locale: Locale) {
-  const safeName = String(name || "").trim()
+  const safeName = normalizeFacilityName(name)
   return facilityLabelMap[safeName]?.[locale] || safeName
 }
 
 export function getFacilityCategoryLabel(category: string | null | undefined, locale: Locale) {
-  const safeCategory = String(category || "").trim()
+  const safeCategory = normalizeFacilityCategory(category)
   return facilityCategoryLabelMap[safeCategory]?.[locale] || safeCategory
+}
+
+export function normalizeFacilityName(name: string | null | undefined) {
+  const safeName = String(name || "").trim()
+  return facilityCanonicalNameMap[safeName] || safeName
+}
+
+export function normalizeFacilityCategory(category: string | null | undefined) {
+  const safeCategory = String(category || "").trim()
+  return facilityCanonicalCategoryMap[safeCategory] || safeCategory
 }
