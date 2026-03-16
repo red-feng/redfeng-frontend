@@ -53,6 +53,27 @@ function getChatText(locale: Locale) {
       loadRoomsError: "Gagal memuat ruang chat",
       afterBookingMigration: "Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
+      customerRooms: "Customer Rooms",
+      conversationList: "Daftar percakapan",
+      newBadge: "baru",
+      noPreBookingChats: "Belum ada chat customer dari halaman detail paket.",
+      noPostBookingChats: "Tab ini siap digunakan. Percakapan booking akan muncul begitu room terhubung ke transaksi.",
+      packageLabel: "Paket",
+      packageNotFound: "Paket tidak ditemukan",
+      bookingLabel: "Booking",
+      lastUpdated: "Update terakhir",
+      viewPackage: "Lihat paket",
+      conversationFocus: "Conversation Focus",
+      selectChatRoom: "Pilih ruang chat",
+      selectRoomToViewMerchant: "Pilih room untuk melihat isi percakapan merchant.",
+      viewPackageDetail: "Lihat detail paket",
+      threadType: "Jenis Thread",
+      statusLabel: "Status",
+      activeTransaction: "Transaksi aktif",
+      leadInquiry: "Lead / inquiry",
+      noMessages: "Belum ada pesan di ruang chat ini.",
+      replyPlaceholder: "Tulis balasan untuk customer...",
+      sendButton: "Kirim",
     },
     en: {
       heroBadge: "Merchant Inbox",
@@ -74,6 +95,27 @@ function getChatText(locale: Locale) {
       loadRoomsError: "Failed to load chat rooms",
       afterBookingMigration: "The post-booking tab requires migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "The new chat badge requires migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
+      customerRooms: "Customer Rooms",
+      conversationList: "Conversation list",
+      newBadge: "new",
+      noPreBookingChats: "There are no customer chats yet from the package detail page.",
+      noPostBookingChats: "This tab is ready to use. Booking conversations will appear once the room is linked to a transaction.",
+      packageLabel: "Package",
+      packageNotFound: "Package not found",
+      bookingLabel: "Booking",
+      lastUpdated: "Last updated",
+      viewPackage: "View package",
+      conversationFocus: "Conversation Focus",
+      selectChatRoom: "Select a chat room",
+      selectRoomToViewMerchant: "Select a room to view the merchant conversation.",
+      viewPackageDetail: "View package detail",
+      threadType: "Thread Type",
+      statusLabel: "Status",
+      activeTransaction: "Active transaction",
+      leadInquiry: "Lead / inquiry",
+      noMessages: "There are no messages in this chat room yet.",
+      replyPlaceholder: "Write a reply for the customer...",
+      sendButton: "Send",
     },
     zh: {
       heroBadge: "商家收件箱",
@@ -95,6 +137,27 @@ function getChatText(locale: Locale) {
       loadRoomsError: "加载聊天会话失败",
       afterBookingMigration: "预订后标签需要 migration `20260306_add_booking_id_to_package_chat_rooms.sql`。",
       unreadBadgeMigration: "新消息徽标需要 migration `20260307_add_read_tracking_to_package_chat_rooms.sql`。",
+      customerRooms: "客户会话",
+      conversationList: "对话列表",
+      newBadge: "新消息",
+      noPreBookingChats: "来自套餐详情页的客户聊天暂时还没有。",
+      noPostBookingChats: "此标签已准备就绪。一旦会话关联到交易，预订后的聊天就会显示在这里。",
+      packageLabel: "套餐",
+      packageNotFound: "未找到套餐",
+      bookingLabel: "预订",
+      lastUpdated: "最后更新",
+      viewPackage: "查看套餐",
+      conversationFocus: "当前对话",
+      selectChatRoom: "请选择聊天房间",
+      selectRoomToViewMerchant: "请选择一个房间以查看商家与客户的对话内容。",
+      viewPackageDetail: "查看套餐详情",
+      threadType: "会话类型",
+      statusLabel: "状态",
+      activeTransaction: "进行中的交易",
+      leadInquiry: "咨询 / 线索",
+      noMessages: "该聊天房间里暂时还没有消息。",
+      replyPlaceholder: "输入发给客户的回复...",
+      sendButton: "发送",
     },
   } satisfies Record<Locale, Record<string, string>>
 
@@ -358,23 +421,23 @@ export default async function MerchantChatPage({
           <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Customer Rooms</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">Daftar percakapan</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.customerRooms}</p>
+                <h2 className="mt-2 text-lg font-semibold text-slate-950">{t.conversationList}</h2>
               </div>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">{unreadCount} baru</span>
+                  <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">{unreadCount} {t.newBadge}</span>
               )}
             </div>
 
             <div className="mt-4 space-y-3">
               {rooms.length === 0 && activeTab === "pre" && (
                 <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  Belum ada chat customer dari halaman detail paket.
+                  {t.noPreBookingChats}
                 </div>
               )}
               {rooms.length === 0 && activeTab === "post" && (
                 <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  Tab ini siap digunakan. Percakapan booking akan muncul begitu room terhubung ke transaksi.
+                  {t.noPostBookingChats}
                 </div>
               )}
 
@@ -401,20 +464,20 @@ export default async function MerchantChatPage({
                         <p className="text-sm font-semibold text-slate-950">{getCustomerLabel(room)}</p>
                         {hasUnread && (
                           <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                            Baru
+                            {t.newBadge}
                           </span>
                         )}
                       </div>
                       <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-                        Paket: {pkg?.title || "Paket tidak ditemukan"}
+                        {t.packageLabel}: {pkg?.title || t.packageNotFound}
                       </p>
                       {room.booking_id && (
                         <p className="mt-2 text-xs font-medium text-emerald-700">
-                          Booking: {booking?.booking_code || room.booking_id}
+                          {t.bookingLabel}: {booking?.booking_code || room.booking_id}
                         </p>
                       )}
                       <p className="mt-2 text-xs text-slate-500">
-                        Update terakhir: {formatDateTime(room.last_message_at || room.updated_at)}
+                        {t.lastUpdated}: {formatDateTime(room.last_message_at || room.updated_at)}
                       </p>
                     </Link>
                     {pkg?.slug && (
@@ -422,7 +485,7 @@ export default async function MerchantChatPage({
                         href={`/packages/${encodeURIComponent(pkg.slug)}`}
                         className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
                       >
-                        Lihat paket
+                          {t.viewPackage}
                       </Link>
                     )}
                   </div>
@@ -435,34 +498,34 @@ export default async function MerchantChatPage({
             <div className="border-b border-[#efe3d1] bg-[linear-gradient(180deg,#fff9f2_0%,#fffefc_100%)] px-5 py-5 lg:px-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-3xl">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Conversation Focus</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.conversationFocus}</p>
                   <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                    {activeRoom ? getCustomerLabel(activeRoom) : "Pilih ruang chat"}
+                    {activeRoom ? getCustomerLabel(activeRoom) : t.selectChatRoom}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : "Pilih room untuk melihat isi percakapan merchant."}
+                    {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : t.selectRoomToViewMerchant}
                   </p>
                   {activeRoom && packageMap.get(activeRoom.package_id)?.slug && (
                     <Link
                       href={`/packages/${encodeURIComponent(packageMap.get(activeRoom.package_id)?.slug || "")}`}
                       className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
                     >
-                      Lihat detail paket
+                      {t.viewPackageDetail}
                     </Link>
                   )}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Jenis Thread</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.threadType}</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom?.booking_id ? "Sesudah booking" : "Sebelum booking"}
+                      {activeRoom?.booking_id ? t.afterBooking : t.beforeBooking}
                     </p>
                   </div>
                   <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Status</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.statusLabel}</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom?.booking_id ? "Transaksi aktif" : "Lead / inquiry"}
+                      {activeRoom?.booking_id ? t.activeTransaction : t.leadInquiry}
                     </p>
                   </div>
                 </div>
@@ -472,7 +535,7 @@ export default async function MerchantChatPage({
             <div className="h-[56vh] space-y-4 overflow-y-auto bg-[#fffaf5] px-5 py-5 lg:px-6">
               {messages.length === 0 && (
                 <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  Belum ada pesan di ruang chat ini.
+                  {t.noMessages}
                 </div>
               )}
 
@@ -505,7 +568,7 @@ export default async function MerchantChatPage({
                   name="message"
                   required
                   disabled={!activeRoomId}
-                  placeholder="Tulis balasan untuk customer..."
+                  placeholder={t.replyPlaceholder}
                   className="h-24 flex-1 rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
                 <button
@@ -513,7 +576,7 @@ export default async function MerchantChatPage({
                   disabled={!activeRoomId}
                   className="self-end rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
                 >
-                  Kirim
+                  {t.sendButton}
                 </button>
               </div>
             </form>

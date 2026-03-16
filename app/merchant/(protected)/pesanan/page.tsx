@@ -112,45 +112,45 @@ function escrowTone(value: string | null) {
   return "border-slate-200 bg-slate-100 text-slate-700"
 }
 
-function journeyPhase(booking: BookingRow) {
+function journeyPhase(booking: BookingRow, text: ReturnType<typeof getOrdersText>) {
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
-    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
+    return { label: text.paidOut, tone: "border-violet-200 bg-violet-50 text-violet-700" }
   }
   if (["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(normalizeStatus(booking.booking_status))) {
-    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
+    return { label: text.readyForFinance, tone: "border-sky-200 bg-sky-50 text-sky-700" }
   }
   if (booking.merchant_picked_up_at) {
-    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: text.goConfirmed, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (booking.customer_picked_up_at) {
-    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: text.pickedUp, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (booking.merchant_arrived_at) {
-    return { label: "Awaiting Pickup", tone: "border-orange-200 bg-orange-50 text-orange-700" }
+    return { label: text.awaitingPickup, tone: "border-orange-200 bg-orange-50 text-orange-700" }
   }
   if (normalizeStatus(booking.payment_status) === "paid") {
-    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: text.fullyPaid, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: text.dpPaid, tone: "border-amber-200 bg-amber-50 text-amber-700" }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
 }
 
-function pickupTimeline(booking: BookingRow) {
+function pickupTimeline(booking: BookingRow, text: ReturnType<typeof getOrdersText>) {
   return [
     {
-      label: "Merchant tiba di meeting point",
+      label: text.merchantArrivedMeetingPoint,
       done: Boolean(booking.merchant_arrived_at),
       value: booking.merchant_arrived_at,
     },
     {
-      label: "Customer klik Picked up",
+      label: text.customerClickedPickedUp,
       done: Boolean(booking.customer_picked_up_at),
       value: booking.customer_picked_up_at,
     },
     {
-      label: "Merchant klik Go",
+      label: text.merchantClickedGo,
       done: Boolean(booking.merchant_picked_up_at),
       value: booking.merchant_picked_up_at,
     },
@@ -356,11 +356,11 @@ export default async function MerchantOrdersPage({
           <div className="mt-6 space-y-5">
             {bookings.map((booking) => {
               const totalPeserta = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
-              const timeline = pickupTimeline(booking)
+              const timeline = pickupTimeline(booking, t)
               const paymentStatus = normalizeStatus(booking.payment_status)
               const canMarkArrived = ["paid", "dp_paid"].includes(paymentStatus) && !booking.merchant_arrived_at
               const canMarkGo = Boolean(booking.customer_picked_up_at) && !booking.merchant_picked_up_at
-              const phase = journeyPhase(booking)
+              const phase = journeyPhase(booking, t)
 
               return (
                 <div
@@ -370,24 +370,24 @@ export default async function MerchantOrdersPage({
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-3">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">ID Booking</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t.bookingId}</p>
                         <p className="mt-2 text-xl font-semibold text-slate-950">{booking.booking_code || booking.id}</p>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Customer</p>
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">{t.customer}</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{booking.customer_name || "-"}</p>
                         </div>
                         <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Paket</p>
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">{t.packageLabel}</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{packageMap.get(booking.package_id || "") || "-"}</p>
                         </div>
                         <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Tanggal Wisata</p>
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">{t.tripDate}</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
                         </div>
                         <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">Jumlah Peserta</p>
+                          <p className="text-[11px] uppercase tracking-[0.24em] text-slate-400">{t.participantCount}</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{totalPeserta}</p>
                         </div>
                       </div>
@@ -401,27 +401,27 @@ export default async function MerchantOrdersPage({
                         {phase.label}
                       </span>
                       <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${escrowTone(booking.escrow_status)}`}>
-                        Escrow {titleCaseStatus(booking.escrow_status)}
+                        {t.escrowLabel} {titleCaseStatus(booking.escrow_status)}
                       </span>
                     </div>
                   </div>
 
                   <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_auto]">
                     <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#fffaf5_0%,#fff4ea_100%)] p-4">
-                      <p className="text-sm font-semibold text-slate-950">Progress meeting point</p>
+                      <p className="text-sm font-semibold text-slate-950">{t.meetingPointProgress}</p>
                       <div className="mt-4 grid gap-3 md:grid-cols-3">
                         {timeline.map((item) => (
                           <div key={item.label} className="rounded-[20px] border border-white bg-white p-4 shadow-sm">
                             <p className="text-sm font-medium text-slate-900">{item.label}</p>
                             <p className={`mt-2 text-xs font-semibold ${item.done ? "text-emerald-600" : "text-slate-500"}`}>
-                              {item.done ? "Selesai" : "Menunggu"}
+                              {item.done ? t.completed : t.waiting}
                             </p>
                             <p className="mt-2 text-xs text-slate-500">{formatDateTime(item.value)}</p>
                           </div>
                         ))}
                       </div>
                       <p className="mt-4 text-xs leading-6 text-slate-500">
-                        Dana customer tetap ditahan di rekening RedFeng sampai urutan Arrived, customer Picked up, dan merchant Go selesai.
+                        {t.meetingPointProgressNote}
                       </p>
                     </div>
 
@@ -434,7 +434,7 @@ export default async function MerchantOrdersPage({
                           disabled={!canMarkArrived}
                           className="w-full rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                         >
-                          Arrived
+                          {t.arrivedButton}
                         </button>
                       </form>
                       <form action={markMerchantGo}>
@@ -445,14 +445,14 @@ export default async function MerchantOrdersPage({
                           disabled={!canMarkGo}
                           className="w-full rounded-[20px] border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                         >
-                          Go
+                          {t.goButton}
                         </button>
                       </form>
                       <Link
                         href={`/booking/${booking.id}`}
                         className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
-                        Detail Customer
+                        {t.customerDetail}
                       </Link>
                     </div>
                   </div>
@@ -495,6 +495,29 @@ function getOrdersText(locale: Locale) {
       filterCancelled: "Dibatalkan",
       loadError: "Gagal memuat data pesanan.",
       emptyState: "Belum ada data pada kategori ini.",
+      paidOut: "Paid Out",
+      readyForFinance: "Ready for Finance",
+      goConfirmed: "Go Confirmed",
+      pickedUp: "Picked Up",
+      awaitingPickup: "Awaiting Pickup",
+      fullyPaid: "Fully Paid",
+      dpPaid: "DP Paid",
+      merchantArrivedMeetingPoint: "Merchant tiba di meeting point",
+      customerClickedPickedUp: "Customer klik Picked up",
+      merchantClickedGo: "Merchant klik Go",
+      bookingId: "ID Booking",
+      customer: "Customer",
+      packageLabel: "Paket",
+      tripDate: "Tanggal Wisata",
+      participantCount: "Jumlah Peserta",
+      escrowLabel: "Escrow",
+      meetingPointProgress: "Progress meeting point",
+      completed: "Selesai",
+      waiting: "Menunggu",
+      meetingPointProgressNote: "Dana customer tetap ditahan di rekening RedFeng sampai urutan Arrived, customer Picked up, dan merchant Go selesai.",
+      arrivedButton: "Arrived",
+      goButton: "Go",
+      customerDetail: "Detail Customer",
     },
     en: {
       merchantMissing: "Merchant data not found.",
@@ -523,6 +546,29 @@ function getOrdersText(locale: Locale) {
       filterCancelled: "Cancelled",
       loadError: "Failed to load order data.",
       emptyState: "There is no data in this category yet.",
+      paidOut: "Paid Out",
+      readyForFinance: "Ready for Finance",
+      goConfirmed: "Go Confirmed",
+      pickedUp: "Picked Up",
+      awaitingPickup: "Awaiting Pickup",
+      fullyPaid: "Fully Paid",
+      dpPaid: "DP Paid",
+      merchantArrivedMeetingPoint: "Merchant arrived at meeting point",
+      customerClickedPickedUp: "Customer clicked Picked up",
+      merchantClickedGo: "Merchant clicked Go",
+      bookingId: "Booking ID",
+      customer: "Customer",
+      packageLabel: "Package",
+      tripDate: "Trip Date",
+      participantCount: "Participants",
+      escrowLabel: "Escrow",
+      meetingPointProgress: "Meeting point progress",
+      completed: "Completed",
+      waiting: "Waiting",
+      meetingPointProgressNote: "Customer funds remain held in the RedFeng account until Arrived, customer Picked up, and merchant Go are all completed.",
+      arrivedButton: "Arrived",
+      goButton: "Go",
+      customerDetail: "Customer Detail",
     },
     zh: {
       merchantMissing: "未找到商家数据。",
@@ -551,6 +597,29 @@ function getOrdersText(locale: Locale) {
       filterCancelled: "已取消",
       loadError: "加载订单数据失败。",
       emptyState: "该分类下暂时没有数据。",
+      paidOut: "已结算",
+      readyForFinance: "待财务处理",
+      goConfirmed: "Go 已确认",
+      pickedUp: "已上车",
+      awaitingPickup: "等待接送",
+      fullyPaid: "已全额付款",
+      dpPaid: "已付定金",
+      merchantArrivedMeetingPoint: "商家已到达集合点",
+      customerClickedPickedUp: "客户点击了 Picked up",
+      merchantClickedGo: "商家点击了 Go",
+      bookingId: "预订编号",
+      customer: "客户",
+      packageLabel: "套餐",
+      tripDate: "出游日期",
+      participantCount: "人数",
+      escrowLabel: "托管",
+      meetingPointProgress: "集合点进度",
+      completed: "已完成",
+      waiting: "等待中",
+      meetingPointProgressNote: "在 Arrived、客户 Picked up、以及商家 Go 全部完成之前，客户资金仍会保留在 RedFeng 托管账户中。",
+      arrivedButton: "Arrived",
+      goButton: "Go",
+      customerDetail: "客户详情",
     },
   } satisfies Record<Locale, Record<string, string>>
 
