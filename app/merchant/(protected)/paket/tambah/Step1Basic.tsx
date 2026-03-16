@@ -31,6 +31,7 @@ export default function Step1Basic({
     en: "",
     zh: "",
   })
+  const [isRetranslatingTitle, setIsRetranslatingTitle] = useState(false)
   const manualTitleOverridesRef = useRef<Set<Locale>>(new Set())
   const titleTranslationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const locale = normalizeLocale(uiLocale)
@@ -173,6 +174,31 @@ export default function Step1Basic({
     scheduleTitleAutoTranslate(value, language)
   }
 
+  const retranslateTitle = useCallback(async (language: Locale) => {
+    const sourceValue = titleValues[normalizedDefaultLanguage]
+    if (language === normalizedDefaultLanguage || !publishedLanguages.includes(language) || !sourceValue.trim()) return
+
+    setIsRetranslatingTitle(true)
+    try {
+      const translations = await requestMerchantAutoTranslations({
+        text: sourceValue,
+        sourceLanguage: normalizedDefaultLanguage,
+        targetLanguages: [language],
+      })
+
+      if (typeof translations[language] === "string") {
+        setTitleValues((prev) => ({
+          ...prev,
+          [language]: translations[language] || "",
+        }))
+      }
+    } catch (error) {
+      console.error("step1 retranslate title error:", error)
+    } finally {
+      setIsRetranslatingTitle(false)
+    }
+  }, [normalizedDefaultLanguage, publishedLanguages, titleValues])
+
   return (
     <div className="relative min-h-screen">
 
@@ -240,6 +266,18 @@ export default function Step1Basic({
     </div>
     {merchantWizardLanguageOptions.map((language) => (
       <div key={language.code} className={activeTitleLang === language.code ? "block" : "hidden"}>
+        {language.code !== normalizedDefaultLanguage && publishedLanguages.includes(language.code) && (
+          <div className="mb-2 flex justify-end">
+            <button
+              type="button"
+              onClick={() => void retranslateTitle(language.code)}
+              disabled={isRetranslatingTitle}
+              className="rounded-lg border border-orange-200 px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isRetranslatingTitle ? (t.retranslateInProgress || "Translating...") : (t.retranslate || "Retranslate")}
+            </button>
+          </div>
+        )}
         <input
           name={`title_${language.code}`}
           value={titleValues[language.code]}

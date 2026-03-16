@@ -62,6 +62,7 @@ export default function Step4Itinerary({
   const t = getMerchantWizardText(normalizeLocale(uiLocale))
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const [activeLang, setActiveLang] = useState<Locale>(normalizedDefaultLanguage)
+  const [isRetranslatingLanguage, setIsRetranslatingLanguage] = useState<Locale | null>(null)
   const [days, setDays] = useState<DayType[]>([createEmptyDay(1)])
   const [expandedDayIndex, setExpandedDayIndex] = useState(0)
   const manualOverridesRef = useRef<Set<string>>(new Set())
@@ -359,6 +360,65 @@ export default function Step4Itinerary({
     scheduleRouteAutoTranslate(dayIndex, routeIndex, value)
   }
 
+  const retranslateLanguage = async (language: Locale) => {
+    if (language === normalizedDefaultLanguage || !publishedLanguages.includes(language)) return
+
+    setIsRetranslatingLanguage(language)
+    try {
+      const dayTasks = days.flatMap((day, dayIndex) =>
+        (["title", "description"] as const).map(async (field) => {
+          const sourceValue = day.translations[normalizedDefaultLanguage][field]
+          if (!sourceValue.trim()) return { type: "day" as const, dayIndex, field, value: "" }
+
+          const translations = await requestMerchantAutoTranslations({
+            text: sourceValue,
+            sourceLanguage: normalizedDefaultLanguage,
+            targetLanguages: [language],
+          })
+
+          return { type: "day" as const, dayIndex, field, value: translations[language] || "" }
+        }),
+      )
+
+      const routeTasks = days.flatMap((day, dayIndex) =>
+        day.routes.map(async (route, routeIndex) => {
+          const sourceValue = route.translations[normalizedDefaultLanguage]
+          if (!sourceValue.trim()) return { type: "route" as const, dayIndex, routeIndex, value: "" }
+
+          const translations = await requestMerchantAutoTranslations({
+            text: sourceValue,
+            sourceLanguage: normalizedDefaultLanguage,
+            targetLanguages: [language],
+          })
+
+          return { type: "route" as const, dayIndex, routeIndex, value: translations[language] || "" }
+        }),
+      )
+
+      const results = await Promise.all([...dayTasks, ...routeTasks])
+
+      setDays((prev) => {
+        const updated = [...prev]
+        for (const result of results) {
+          if (result.type === "day") {
+            updated[result.dayIndex].translations[language] = {
+              ...updated[result.dayIndex].translations[language],
+              [result.field]: result.value,
+            }
+            continue
+          }
+
+          updated[result.dayIndex].routes[result.routeIndex].translations[language] = result.value
+        }
+        return updated
+      })
+    } catch (error) {
+      console.error("step4 retranslate language error:", error)
+    } finally {
+      setIsRetranslatingLanguage(null)
+    }
+  }
+
   if (!packageId) {
     return <p className="text-red-500">{t.packageIdMissing}</p>
   }
@@ -393,9 +453,23 @@ export default function Step4Itinerary({
               <input type="hidden" name="default_language" value={defaultLanguage} />
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm text-slate-600">
-                  {t.contentLanguage}: <strong>{activeLang}</strong>
-                </p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-slate-600">
+                    {t.contentLanguage}: <strong>{activeLang}</strong>
+                  </p>
+                  {activeLang !== normalizedDefaultLanguage && publishedLanguages.includes(activeLang) && (
+                    <button
+                      type="button"
+                      onClick={() => void retranslateLanguage(activeLang)}
+                      disabled={isRetranslatingLanguage === activeLang}
+                      className="rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isRetranslatingLanguage === activeLang
+                        ? (t.retranslateInProgress || "Translating...")
+                        : (t.retranslate || "Retranslate")}
+                    </button>
+                  )}
+                </div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {LANGS.map((lang) => (
                     <button
