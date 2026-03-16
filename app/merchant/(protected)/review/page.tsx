@@ -80,7 +80,6 @@ export default async function MerchantReviewPage() {
 
   const metricCards = [
     {
-      label: "Rating rata-rata",
       label: t.averageRating,
       value: reviews.length > 0 ? averageRating.toFixed(1) : "-",
       note: t.averageRatingNote(reviews.length),
