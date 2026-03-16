@@ -65,9 +65,38 @@ async function ensureItineraryTranslationTablesReady(adminSupabase: Awaited<Retu
   }
 }
 
+function sanitizeErrorMessage(message: string) {
+  const trimmed = message.trim()
+  const lower = trimmed.toLowerCase()
+
+  if (
+    lower.startsWith("<!doctype html") ||
+    lower.startsWith("<html") ||
+    lower.includes("cloudflare") ||
+    lower.includes("bad gateway") ||
+    lower.includes("error code 502")
+  ) {
+    return "Layanan sedang bermasalah sementara. Silakan coba lagi beberapa menit lagi."
+  }
+
+  return trimmed
+}
+
 function getErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message) return error.message
+  if (error instanceof Error && error.message) return sanitizeErrorMessage(error.message)
   return "Terjadi kesalahan. Silakan coba lagi."
+}
+
+function shouldRetryWithoutPublishedLanguages(message: string) {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes("published_languages") ||
+    normalized.startsWith("<!doctype html") ||
+    normalized.startsWith("<html") ||
+    normalized.includes("cloudflare") ||
+    normalized.includes("bad gateway") ||
+    normalized.includes("error code 502")
+  )
 }
 
 function normalizePublishedLanguages(input: FormDataEntryValue[], defaultLanguage: string): SupportedLanguage[] {
@@ -185,17 +214,18 @@ export async function updatePackageStep1(formData: FormData) {
       updated_at: new Date().toISOString(),
     }
 
+    const legacyPayload = {
+      ...payload,
+      published_languages: undefined,
+    }
+    delete legacyPayload.published_languages
+
     let updateResult = await adminSupabase
       .from("packages")
       .update(payload)
       .eq("id", packageId)
 
-    if (updateResult.error && updateResult.error.message.includes("published_languages")) {
-      const legacyPayload = {
-        ...payload,
-        published_languages: undefined,
-      }
-      delete legacyPayload.published_languages
+    if (updateResult.error && shouldRetryWithoutPublishedLanguages(updateResult.error.message)) {
       updateResult = await adminSupabase
         .from("packages")
         .update(legacyPayload)
@@ -203,7 +233,7 @@ export async function updatePackageStep1(formData: FormData) {
     }
 
     if (updateResult.error) {
-      throw new Error(`Gagal menyimpan basic info: ${updateResult.error.message}`)
+      throw new Error(`Gagal menyimpan basic info: ${sanitizeErrorMessage(updateResult.error.message)}`)
     }
 
     const titleTranslationRows = publishedLanguages.map((code) => ({
@@ -217,7 +247,7 @@ export async function updatePackageStep1(formData: FormData) {
       .upsert(titleTranslationRows, { onConflict: "package_id,language_code" })
 
     if (translationError) {
-      throw new Error(`Gagal menyimpan judul multibahasa: ${translationError.message}`)
+      throw new Error(`Gagal menyimpan judul multibahasa: ${sanitizeErrorMessage(translationError.message)}`)
     }
 
     revalidatePath("/merchant/paket")

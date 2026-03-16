@@ -71,9 +71,26 @@ async function ensureItineraryTranslationTablesReady(supabase: Awaited<ReturnTyp
   }
 }
 
+function sanitizeErrorMessage(message: string) {
+  const trimmed = message.trim()
+  const lower = trimmed.toLowerCase()
+
+  if (
+    lower.startsWith("<!doctype html") ||
+    lower.startsWith("<html") ||
+    lower.includes("cloudflare") ||
+    lower.includes("bad gateway") ||
+    lower.includes("error code 502")
+  ) {
+    return "Layanan sedang bermasalah sementara. Silakan coba lagi beberapa menit lagi."
+  }
+
+  return trimmed
+}
+
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
-    return error.message
+    return sanitizeErrorMessage(error.message)
   }
   return "Terjadi kesalahan. Silakan coba lagi."
 }
