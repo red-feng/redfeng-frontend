@@ -23,6 +23,63 @@ function getStatisticsText(locale: Locale) {
       managePackages: "Kelola paket",
       openOrders: "Buka pesanan",
       loadError: "Gagal memuat statistik merchant.",
+      packageUntitled: "Paket tanpa judul",
+      packageMissing: "Paket tidak ditemukan",
+      totalRevenue: "Total revenue",
+      totalBookings: "Total booking",
+      conversionRate: "Conversion rate",
+      averageOrderValue: "Average order value",
+      averageOrderValueNote: "Rata-rata nilai booking yang berhasil menghasilkan revenue",
+      waitingPayment: "Menunggu pembayaran",
+      confirmedTrips: "Trip terkonfirmasi",
+      cancelledBookings: "Booking dibatalkan",
+      customerRating: "Rating customer",
+      businessSnapshot: "Business snapshot",
+      quickActions: "Quick actions",
+      activePackages: "Paket aktif",
+      activePackagesNote: "Listing siap jual yang bisa langsung menerima booking.",
+      draftPackages: "Draft paket",
+      draftPackagesNote: "Paket belum selesai yang masih bisa dioptimasi sebelum diajukan.",
+      pendingReview: "Pending review",
+      pendingReviewNote: "Paket yang sudah dikirim dan masih menunggu approval admin.",
+      noViews: "Tanpa views",
+      noViewsNote: "Paket yang belum tersentuh trafik pada periode yang dipilih.",
+      revenueTrend: "Revenue Trend",
+      lastSixMonthsPerformance: "Performa 6 bulan terakhir",
+      revenueTrendNote: "Baca tren revenue, booking, dan page view untuk melihat momentum merchant dari bulan ke bulan.",
+      booking: "Booking",
+      views: "Views",
+      conversion: "Conversion",
+      funnelHealth: "Funnel Health",
+      packageViews: "Views paket",
+      incomingBookings: "Booking masuk",
+      bookingsToRevenue: "Booking jadi revenue",
+      bookingQuality: "Booking quality",
+      packageInsight: "Package insight",
+      mostViewedPackage: "Paket paling dilihat",
+      noPackageTraffic: "Belum ada trafik paket",
+      pushTraffic: "Dorong trafik dari promo atau SEO.",
+      optimizeConversion: "Perlu optimasi conversion",
+      noMainCandidate: "Belum ada kandidat utama",
+      highViewNoBooking: "Saat trafik sudah cukup, paket dengan views tinggi tanpa booking akan muncul di sini.",
+      topPackages: "Top Packages",
+      bestPerformingPackages: "Paket dengan performa terbaik",
+      bestPerformingPackagesNote: "Prioritaskan optimasi pada paket yang sudah punya booking tinggi atau conversion yang bagus.",
+      insufficientStats: "Belum ada data paket yang cukup untuk ditampilkan pada statistik.",
+      recommendedActions: "Recommended actions",
+      optimizeHighViewPackages: "Optimasi paket dengan view tinggi",
+      optimizeHighViewPackagesFallback: "Jika view tinggi tapi conversion rendah, periksa harga, foto, itinerary, dan CTA paket.",
+      reducePendingPayments: "Turunkan pembayaran pending",
+      reducePendingPaymentsFallback: "Belum ada pembayaran pending pada periode ini. Jaga kecepatan follow up saat booking baru masuk.",
+      maintainMerchantRating: "Jaga rating merchant",
+      maintainMerchantRatingFallback: "Belum ada review customer. Prioritaskan kualitas trip dan follow up pasca perjalanan agar review mulai terkumpul.",
+      dominantBookingStatus: "Status booking dominan saat ini:",
+      packageLabel: "Paket",
+      paidLabel: "Paid",
+      previousPeriod: "vs periode sebelumnya",
+      packageTrafficDelta: "trafik paket",
+      additionalAnalyticsMissing: "Beberapa data analytics tambahan belum tersedia di production. Statistik utama tetap dihitung dari data paket dan booking merchant.",
+      stable: "stabil",
     },
     en: {
       merchantMissing: "Merchant data not found.",
@@ -32,6 +89,63 @@ function getStatisticsText(locale: Locale) {
       managePackages: "Manage packages",
       openOrders: "Open orders",
       loadError: "Failed to load merchant statistics.",
+      packageUntitled: "Untitled package",
+      packageMissing: "Package not found",
+      totalRevenue: "Total revenue",
+      totalBookings: "Total bookings",
+      conversionRate: "Conversion rate",
+      averageOrderValue: "Average order value",
+      averageOrderValueNote: "Average booking value that generated revenue",
+      waitingPayment: "Awaiting payment",
+      confirmedTrips: "Confirmed trips",
+      cancelledBookings: "Cancelled bookings",
+      customerRating: "Customer rating",
+      businessSnapshot: "Business snapshot",
+      quickActions: "Quick actions",
+      activePackages: "Active packages",
+      activePackagesNote: "Listings ready to sell and accept bookings.",
+      draftPackages: "Draft packages",
+      draftPackagesNote: "Incomplete packages that can still be optimized before submission.",
+      pendingReview: "Pending review",
+      pendingReviewNote: "Packages that have been submitted and are still awaiting admin approval.",
+      noViews: "No views",
+      noViewsNote: "Packages that have not received any traffic during the selected period.",
+      revenueTrend: "Revenue Trend",
+      lastSixMonthsPerformance: "Performance in the last 6 months",
+      revenueTrendNote: "Read revenue, booking, and page-view trends to understand merchant momentum month by month.",
+      booking: "Bookings",
+      views: "Views",
+      conversion: "Conversion",
+      funnelHealth: "Funnel Health",
+      packageViews: "Package views",
+      incomingBookings: "Incoming bookings",
+      bookingsToRevenue: "Bookings that became revenue",
+      bookingQuality: "Booking quality",
+      packageInsight: "Package insight",
+      mostViewedPackage: "Most viewed package",
+      noPackageTraffic: "No package traffic yet",
+      pushTraffic: "Drive traffic from promotions or SEO.",
+      optimizeConversion: "Needs conversion optimization",
+      noMainCandidate: "No main candidate yet",
+      highViewNoBooking: "Once traffic is high enough, packages with many views but no bookings will appear here.",
+      topPackages: "Top Packages",
+      bestPerformingPackages: "Best performing packages",
+      bestPerformingPackagesNote: "Prioritize optimization on packages that already have strong bookings or conversion.",
+      insufficientStats: "There is not enough package data to display in statistics yet.",
+      recommendedActions: "Recommended actions",
+      optimizeHighViewPackages: "Optimize high-view packages",
+      optimizeHighViewPackagesFallback: "If views are high but conversion is low, review pricing, photos, itinerary, and package CTA.",
+      reducePendingPayments: "Reduce pending payments",
+      reducePendingPaymentsFallback: "There are no pending payments in this period. Keep follow-up response times fast when new bookings come in.",
+      maintainMerchantRating: "Maintain merchant rating",
+      maintainMerchantRatingFallback: "There are no customer reviews yet. Prioritize trip quality and post-trip follow-up so reviews start coming in.",
+      dominantBookingStatus: "Current dominant booking status:",
+      packageLabel: "Package",
+      paidLabel: "Paid",
+      previousPeriod: "vs previous period",
+      packageTrafficDelta: "package traffic",
+      additionalAnalyticsMissing: "Some additional analytics data is not yet available in production. Core statistics are still calculated from merchant package and booking data.",
+      stable: "stable",
     },
     zh: {
       merchantMissing: "未找到商家数据。",
@@ -41,6 +155,63 @@ function getStatisticsText(locale: Locale) {
       managePackages: "管理套餐",
       openOrders: "查看订单",
       loadError: "加载商家统计失败。",
+      packageUntitled: "未命名套餐",
+      packageMissing: "未找到套餐",
+      totalRevenue: "总营收",
+      totalBookings: "总预订数",
+      conversionRate: "转化率",
+      averageOrderValue: "平均订单金额",
+      averageOrderValueNote: "成功形成营收的平均订单金额",
+      waitingPayment: "等待付款",
+      confirmedTrips: "已确认行程",
+      cancelledBookings: "已取消预订",
+      customerRating: "客户评分",
+      businessSnapshot: "业务概览",
+      quickActions: "快捷操作",
+      activePackages: "已上架套餐",
+      activePackagesNote: "可立即销售并接受预订的套餐。",
+      draftPackages: "草稿套餐",
+      draftPackagesNote: "尚未完成、仍可在提交前优化的套餐。",
+      pendingReview: "待审核",
+      pendingReviewNote: "已提交但仍在等待管理员审核的套餐。",
+      noViews: "无浏览量",
+      noViewsNote: "在所选周期内尚未获得流量的套餐。",
+      revenueTrend: "营收趋势",
+      lastSixMonthsPerformance: "最近 6 个月表现",
+      revenueTrendNote: "查看营收、预订和页面浏览趋势，理解商家逐月表现变化。",
+      booking: "预订",
+      views: "浏览量",
+      conversion: "转化率",
+      funnelHealth: "漏斗健康度",
+      packageViews: "套餐浏览量",
+      incomingBookings: "进入的预订",
+      bookingsToRevenue: "形成营收的预订",
+      bookingQuality: "预订质量",
+      packageInsight: "套餐洞察",
+      mostViewedPackage: "浏览最多的套餐",
+      noPackageTraffic: "暂无套餐流量",
+      pushTraffic: "通过推广或 SEO 提升流量。",
+      optimizeConversion: "需要优化转化",
+      noMainCandidate: "暂无重点候选",
+      highViewNoBooking: "当流量足够高时，浏览量高但无预订的套餐会显示在这里。",
+      topPackages: "热门套餐",
+      bestPerformingPackages: "表现最好的套餐",
+      bestPerformingPackagesNote: "优先优化那些已经有较高预订量或较好转化率的套餐。",
+      insufficientStats: "目前还没有足够的套餐数据可用于统计展示。",
+      recommendedActions: "建议操作",
+      optimizeHighViewPackages: "优化高浏览套餐",
+      optimizeHighViewPackagesFallback: "如果浏览量高但转化低，请检查价格、图片、行程和套餐 CTA。",
+      reducePendingPayments: "降低待付款数量",
+      reducePendingPaymentsFallback: "本周期暂无待付款订单。新预订进入时请保持快速跟进。",
+      maintainMerchantRating: "保持商家评分",
+      maintainMerchantRatingFallback: "暂时还没有客户评价。优先保证行程质量并做好行后跟进，逐步积累评价。",
+      dominantBookingStatus: "当前最主要的预订状态：",
+      packageLabel: "套餐",
+      paidLabel: "已付款",
+      previousPeriod: "对比上一周期",
+      packageTrafficDelta: "套餐流量",
+      additionalAnalyticsMissing: "生产环境中部分补充分析数据暂未就绪。核心统计仍会基于商家套餐和预订数据计算。",
+      stable: "稳定",
     },
   } satisfies Record<Locale, Record<string, string>>
 
@@ -65,11 +236,11 @@ type ReviewRow = {
 
 type PeriodKey = "7d" | "30d" | "90d" | "6m"
 
-const periodOptions: { key: PeriodKey; label: string; days: number }[] = [
-  { key: "7d", label: "7 hari", days: 7 },
-  { key: "30d", label: "30 hari", days: 30 },
-  { key: "90d", label: "90 hari", days: 90 },
-  { key: "6m", label: "6 bulan", days: 180 },
+const periodOptions: { key: PeriodKey; days: number }[] = [
+  { key: "7d", days: 7 },
+  { key: "30d", days: 30 },
+  { key: "90d", days: 90 },
+  { key: "6m", days: 180 },
 ]
 
 function formatMoney(value: number) {
@@ -174,8 +345,15 @@ export default async function MerchantStatisticsPage({
   const params = (await searchParams) || {}
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getStatisticsText(locale)
+  const periodLabels: Record<PeriodKey, string> = {
+    "7d": locale === "en" ? "7 days" : locale === "zh" ? "7天" : "7 hari",
+    "30d": locale === "en" ? "30 days" : locale === "zh" ? "30天" : "30 hari",
+    "90d": locale === "en" ? "90 days" : locale === "zh" ? "90天" : "90 hari",
+    "6m": locale === "en" ? "6 months" : locale === "zh" ? "6个月" : "6 bulan",
+  }
   const selectedPeriod = resolvePeriod(params.period)
   const selectedPeriodMeta = periodOptions.find((option) => option.key === selectedPeriod) || periodOptions[1]
+  const selectedPeriodLabel = periodLabels[selectedPeriodMeta.key]
   const previousEndDate = new Date()
   previousEndDate.setDate(previousEndDate.getDate() - selectedPeriodMeta.days)
   const supabase = await createClient()
@@ -292,7 +470,7 @@ export default async function MerchantStatisticsPage({
 
   for (const pkg of packages) {
     packageStats.set(pkg.id, {
-      title: pkg.title || "Paket tanpa judul",
+        title: pkg.title || t.packageUntitled,
       bookings: 0,
       revenue: 0,
       paidBookings: 0,
@@ -302,7 +480,7 @@ export default async function MerchantStatisticsPage({
 
   for (const booking of filteredBookings) {
     const packageId = booking.package_id || booking.id
-    const packageTitle = packageStats.get(packageId)?.title || "Paket tidak ditemukan"
+    const packageTitle = packageStats.get(packageId)?.title || t.packageMissing
     const current = packageStats.get(packageId) || {
       title: packageTitle,
       bookings: 0,
@@ -322,7 +500,7 @@ export default async function MerchantStatisticsPage({
 
   for (const view of filteredViews) {
     const current = packageStats.get(view.package_id) || {
-      title: "Paket tidak ditemukan",
+      title: t.packageMissing,
       bookings: 0,
       revenue: 0,
       paidBookings: 0,
@@ -391,22 +569,23 @@ export default async function MerchantStatisticsPage({
     {
       label: "Total revenue",
       value: formatMoney(totalRevenue),
-      note: `${revenueBookings.length} booking menghasilkan revenue dalam ${selectedPeriodMeta.label}`,
+      label: t.totalRevenue,
+      note: `${revenueBookings.length} ${t.booking.toLowerCase()} menghasilkan revenue dalam ${selectedPeriodLabel}`,
     },
     {
-      label: "Total booking",
+      label: t.totalBookings,
       value: String(totalBookings),
       note: `${confirmedTripCount} booking confirmed/completed`,
     },
     {
-      label: "Conversion rate",
+      label: t.conversionRate,
       value: formatPercent(conversionRate),
       note: `${totalBookings} booking dari ${totalVisitors} total view paket`,
     },
     {
-      label: "Average order value",
+      label: t.averageOrderValue,
       value: formatMoney(averageOrderValue),
-      note: "Rata-rata nilai booking yang berhasil menghasilkan revenue",
+      note: t.averageOrderValueNote,
     },
   ]
 
@@ -420,11 +599,11 @@ export default async function MerchantStatisticsPage({
   }
 
   const healthCards = [
-    { label: "Menunggu pembayaran", value: String(pendingPaymentCount), tone: "text-amber-700" },
-    { label: "Trip terkonfirmasi", value: String(confirmedTripCount), tone: "text-emerald-700" },
-    { label: "Booking dibatalkan", value: String(cancelledBookingCount), tone: "text-rose-700" },
+    { label: t.waitingPayment, value: String(pendingPaymentCount), tone: "text-amber-700" },
+    { label: t.confirmedTrips, value: String(confirmedTripCount), tone: "text-emerald-700" },
+    { label: t.cancelledBookings, value: String(cancelledBookingCount), tone: "text-rose-700" },
     {
-      label: "Rating customer",
+      label: t.customerRating,
       value: filteredReviews.length > 0 ? averageRating.toFixed(1) : "-",
       tone: "text-orange-700",
     },
@@ -450,9 +629,9 @@ export default async function MerchantStatisticsPage({
 
             <div className="grid gap-4">
               <div className="rounded-[28px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Business snapshot</p>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.businessSnapshot}</p>
                 <p className="mt-4 text-3xl font-semibold text-white">
-                  {merchant.brand_name || merchant.company_name || "Merchant"}
+                    {merchant.brand_name || merchant.company_name || "Merchant"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
                   Statistik periode {selectedPeriodMeta.label.toLowerCase()} ini dihitung dari booking, package
@@ -461,7 +640,7 @@ export default async function MerchantStatisticsPage({
               </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
+                  <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.quickActions}</p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-50/80">
                   {periodOptions.map((option) => (
                     <Link
@@ -473,7 +652,7 @@ export default async function MerchantStatisticsPage({
                           : "border-white/18 bg-white/5 text-orange-50/75 hover:bg-white/10"
                       }`}
                     >
-                      {option.label}
+                      {periodLabels[option.key]}
                     </Link>
                   ))}
                 </div>
@@ -504,8 +683,7 @@ export default async function MerchantStatisticsPage({
           <>
             {analyticsWarnings.length > 0 ? (
               <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5 text-amber-800">
-                Beberapa data analytics tambahan belum tersedia di production. Statistik utama tetap dihitung dari
-                data paket dan booking merchant.
+                {t.additionalAnalyticsMissing}
               </div>
             ) : null}
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -517,19 +695,19 @@ export default async function MerchantStatisticsPage({
                   <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
                   <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
-                  {card.label === "Total revenue" ? (
+                  {card.label === t.totalRevenue ? (
                     <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.revenue.tone}`}>
-                      vs periode sebelumnya {metricDeltas.revenue.label}
+                      {t.previousPeriod} {metricDeltas.revenue.label === "stabil" ? t.stable : metricDeltas.revenue.label}
                     </p>
                   ) : null}
-                  {card.label === "Total booking" ? (
+                  {card.label === t.totalBookings ? (
                     <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.bookings.tone}`}>
-                      vs periode sebelumnya {metricDeltas.bookings.label}
+                      {t.previousPeriod} {metricDeltas.bookings.label === "stabil" ? t.stable : metricDeltas.bookings.label}
                     </p>
                   ) : null}
-                  {card.label === "Conversion rate" ? (
+                  {card.label === t.conversionRate ? (
                     <p className={`mt-3 text-xs font-semibold uppercase tracking-[0.18em] ${metricDeltas.visitors.tone}`}>
-                      trafik paket {metricDeltas.visitors.label}
+                      {t.packageTrafficDelta} {metricDeltas.visitors.label === "stabil" ? t.stable : metricDeltas.visitors.label}
                     </p>
                   ) : null}
                 </article>
@@ -538,24 +716,24 @@ export default async function MerchantStatisticsPage({
 
             <section className="grid gap-4 xl:grid-cols-4">
               <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Paket aktif</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{t.activePackages}</p>
                 <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{activePackages}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">Listing siap jual yang bisa langsung menerima booking.</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{t.activePackagesNote}</p>
               </article>
               <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Draft paket</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{t.draftPackages}</p>
                 <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{draftPackages}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">Paket belum selesai yang masih bisa dioptimasi sebelum diajukan.</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{t.draftPackagesNote}</p>
               </article>
               <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Pending review</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{t.pendingReview}</p>
                 <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{pendingPackages}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">Paket yang sudah dikirim dan masih menunggu approval admin.</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{t.pendingReviewNote}</p>
               </article>
               <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">Tanpa views</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{t.noViews}</p>
                 <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{packagesWithoutViews}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">Paket yang belum tersentuh trafik pada periode yang dipilih.</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{t.noViewsNote}</p>
               </article>
             </section>
 
@@ -564,14 +742,13 @@ export default async function MerchantStatisticsPage({
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                      Revenue Trend
+                      {t.revenueTrend}
                     </span>
                     <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-                      Performa 6 bulan terakhir
+                      {t.lastSixMonthsPerformance}
                     </h2>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      Baca tren revenue, booking, dan page view untuk melihat momentum merchant dari bulan ke
-                      bulan.
+                      {t.revenueTrendNote}
                     </p>
                   </div>
                 </div>
@@ -593,15 +770,15 @@ export default async function MerchantStatisticsPage({
 
                       <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-3">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Booking</p>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t.booking}</p>
                           <p className="mt-1 font-semibold text-slate-900">{bucket.bookings}</p>
                         </div>
                         <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Views</p>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t.views}</p>
                           <p className="mt-1 font-semibold text-slate-900">{bucket.views}</p>
                         </div>
                         <div>
-                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Conversion</p>
+                          <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t.conversion}</p>
                           <p className="mt-1 font-semibold text-slate-900">
                             {bucket.views > 0 ? formatPercent((bucket.bookings / bucket.views) * 100) : "0.0%"}
                           </p>
@@ -615,26 +792,26 @@ export default async function MerchantStatisticsPage({
               <aside className="space-y-6">
                 <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
                   <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                    Funnel Health
+                      {t.funnelHealth}
                   </span>
                   <div className="mt-5 space-y-4">
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Views paket</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{t.packageViews}</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{totalVisitors}</p>
                     </div>
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Booking masuk</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{t.incomingBookings}</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{totalBookings}</p>
                     </div>
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Booking jadi revenue</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{t.bookingsToRevenue}</p>
                       <p className="mt-2 text-2xl font-semibold text-slate-950">{revenueBookings.length}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Booking quality</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{t.bookingQuality}</p>
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
                     {healthCards.map((card) => (
                       <div key={card.label} className="rounded-[20px] border border-orange-100 bg-white p-4">
@@ -647,25 +824,25 @@ export default async function MerchantStatisticsPage({
 
                 <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
                   <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                    Package insight
+                      {t.packageInsight}
                   </span>
                   <div className="mt-5 space-y-4 text-sm text-slate-600">
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Paket paling dilihat</p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t.mostViewedPackage}</p>
                       <p className="mt-2 font-semibold text-slate-900">
-                        {topViewedPackage ? topViewedPackage.title : "Belum ada trafik paket"}
+                          {topViewedPackage ? topViewedPackage.title : t.noPackageTraffic}
                       </p>
-                      <p className="mt-1">{topViewedPackage ? `${topViewedPackage.views} views` : "Dorong trafik dari promo atau SEO."}</p>
+                        <p className="mt-1">{topViewedPackage ? `${topViewedPackage.views} ${t.views.toLowerCase()}` : t.pushTraffic}</p>
                     </div>
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Perlu optimasi conversion</p>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{t.optimizeConversion}</p>
                       <p className="mt-2 font-semibold text-slate-900">
-                        {lowConversionHighViewPackage ? lowConversionHighViewPackage.title : "Belum ada kandidat utama"}
+                          {lowConversionHighViewPackage ? lowConversionHighViewPackage.title : t.noMainCandidate}
                       </p>
                       <p className="mt-1">
                         {lowConversionHighViewPackage
                           ? `${lowConversionHighViewPackage.views} views tanpa booking pada periode ini.`
-                          : "Saat trafik sudah cukup, paket dengan views tinggi tanpa booking akan muncul di sini."}
+                          : t.highViewNoBooking}
                       </p>
                     </div>
                   </div>
@@ -677,32 +854,32 @@ export default async function MerchantStatisticsPage({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                    Top Packages
+                      {t.topPackages}
                   </span>
                   <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-                    Paket dengan performa terbaik
+                      {t.bestPerformingPackages}
                   </h2>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Prioritaskan optimasi pada paket yang sudah punya booking tinggi atau conversion yang bagus.
+                      {t.bestPerformingPackagesNote}
                   </p>
                 </div>
               </div>
 
               {topPackages.length === 0 ? (
                 <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-                  Belum ada data paket yang cukup untuk ditampilkan pada statistik.
+                    {t.insufficientStats}
                 </div>
               ) : (
                 <div className="mt-6 overflow-x-auto rounded-[24px] border border-slate-200">
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-slate-50 text-slate-600">
                       <tr>
-                        <th className="border-b p-4">Paket</th>
-                        <th className="border-b p-4">Views</th>
-                        <th className="border-b p-4">Booking</th>
-                        <th className="border-b p-4">Conversion</th>
-                        <th className="border-b p-4">Revenue</th>
-                        <th className="border-b p-4">Paid</th>
+                        <th className="border-b p-4">{t.packageLabel}</th>
+                        <th className="border-b p-4">{t.views}</th>
+                        <th className="border-b p-4">{t.booking}</th>
+                        <th className="border-b p-4">{t.conversion}</th>
+                        <th className="border-b p-4">{t.totalRevenue}</th>
+                        <th className="border-b p-4">{t.paidLabel}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -723,36 +900,36 @@ export default async function MerchantStatisticsPage({
             </section>
 
             <section className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:p-7">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Recommended actions</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{t.recommendedActions}</p>
               <div className="mt-5 grid gap-4 lg:grid-cols-3">
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
-                  <p className="text-sm font-semibold text-slate-950">Optimasi paket dengan view tinggi</p>
+                  <p className="text-sm font-semibold text-slate-950">{t.optimizeHighViewPackages}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
                     {lowConversionHighViewPackage
                       ? `${lowConversionHighViewPackage.title} punya trafik tinggi tetapi belum menghasilkan booking. Periksa harga, foto, itinerary, dan CTA paket.`
-                      : "Jika view tinggi tapi conversion rendah, periksa harga, foto, itinerary, dan CTA paket."}
+                      : t.optimizeHighViewPackagesFallback}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
-                  <p className="text-sm font-semibold text-slate-950">Turunkan pembayaran pending</p>
+                  <p className="text-sm font-semibold text-slate-950">{t.reducePendingPayments}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
                     {pendingPaymentCount > 0
                       ? `${pendingPaymentCount} booking masih pending atau dp paid. Follow up agar funnel tidak bocor.`
-                      : "Belum ada pembayaran pending pada periode ini. Jaga kecepatan follow up saat booking baru masuk."}
+                      : t.reducePendingPaymentsFallback}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
-                  <p className="text-sm font-semibold text-slate-950">Jaga rating merchant</p>
+                  <p className="text-sm font-semibold text-slate-950">{t.maintainMerchantRating}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
                     {filteredReviews.length > 0
                       ? `Rating rata-rata saat ini ${averageRating.toFixed(1)}. Fokus pada pengalaman trip dan respons cepat ke customer.`
-                      : "Belum ada review customer. Prioritaskan kualitas trip dan follow up pasca perjalanan agar review mulai terkumpul."}
+                      : t.maintainMerchantRatingFallback}
                   </p>
                 </div>
               </div>
 
               <div className="mt-6 rounded-[24px] border border-slate-200 bg-white p-5 text-sm text-slate-600">
-                Status booking dominan saat ini:{" "}
+                {t.dominantBookingStatus}{" "}
                 <span className="font-semibold text-slate-900">{dominantBookingStatus}</span>
               </div>
             </section>

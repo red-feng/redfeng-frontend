@@ -26,6 +26,47 @@ function getCalendarText(locale: Locale) {
       heroDescription: "Pantau tanggal trip, peserta terkonfirmasi, kapasitas open trip, dan status pembayaran dalam satu panel operasional yang lebih siap untuk ritme OTA harian.",
       loadError: "Gagal memuat kalender booking.",
       emptyState: "Belum ada jadwal trip.",
+      privateFlexible: "Private / fleksibel",
+      full: "Penuh",
+      almostFull: "Hampir penuh",
+      available: "Masih tersedia",
+      tripSchedules: "Jadwal trip",
+      tripSchedulesNote: "Total tanggal keberangkatan",
+      totalParticipants: "Jumlah peserta",
+      totalParticipantsNote: "Akumulasi seluruh booking",
+      openTripUmroh: "Open trip / Umroh",
+      openTripUmrohNote: "Jadwal dengan kapasitas",
+      nearestTrip: "Trip terdekat",
+      noActiveSchedule: "Belum ada jadwal aktif",
+      fullSchedules: "Jadwal penuh",
+      fullSchedulesNote: "Open trip / umroh yang sudah penuh",
+      operationalSnapshot: "Operational Snapshot",
+      activeTrips: "Trip aktif",
+      activeTripsNote: "Tanggal keberangkatan terjadwal",
+      participants: "Peserta",
+      participantsNote: "Total pax seluruh schedule",
+      openTrip: "Open trip",
+      openTripNote: "Jadwal dengan target kapasitas",
+      soldOut: "Sudah penuh",
+      soldOutNote: "Butuh penutupan inventory",
+      nextSchedule: "Next Schedule",
+      noActiveTrip: "Belum ada trip aktif",
+      nextScheduleHint: "Tambahkan booking atau aktifkan lebih banyak paket agar jadwal berikutnya muncul.",
+      scheduleOverview: "Schedule Overview",
+      participantUnit: "peserta",
+      travelStyle: "Travel style",
+      pax: "pax",
+      remainingCapacity: "Sisa Kapasitas",
+      seats: "kursi",
+      notApplied: "Tidak diterapkan",
+      totalBookings: "Jumlah Booking",
+      bookingUnit: "booking",
+      bookingId: "ID Booking",
+      customerName: "Nama Customer",
+      tripDate: "Tanggal Trip",
+      packageLabel: "Paket",
+      paymentStatus: "Status Pembayaran",
+      tripStatus: "Status Trip",
     },
     en: {
       merchantMissing: "Merchant data not found.",
@@ -35,6 +76,47 @@ function getCalendarText(locale: Locale) {
       heroDescription: "Monitor trip dates, confirmed participants, open-trip capacity, and payment status in one operations panel built for daily OTA rhythm.",
       loadError: "Failed to load booking calendar.",
       emptyState: "There are no trip schedules yet.",
+      privateFlexible: "Private / flexible",
+      full: "Full",
+      almostFull: "Almost full",
+      available: "Available",
+      tripSchedules: "Trip schedules",
+      tripSchedulesNote: "Total departure dates",
+      totalParticipants: "Participants",
+      totalParticipantsNote: "Accumulated from all bookings",
+      openTripUmroh: "Open trip / Umrah",
+      openTripUmrohNote: "Schedules with capacity targets",
+      nearestTrip: "Nearest trip",
+      noActiveSchedule: "No active schedule yet",
+      fullSchedules: "Full schedules",
+      fullSchedulesNote: "Open trip / Umrah schedules that are already full",
+      operationalSnapshot: "Operational Snapshot",
+      activeTrips: "Active trips",
+      activeTripsNote: "Scheduled departure dates",
+      participants: "Participants",
+      participantsNote: "Total pax across all schedules",
+      openTrip: "Open trip",
+      openTripNote: "Schedules with capacity targets",
+      soldOut: "Sold out",
+      soldOutNote: "Needs inventory closure",
+      nextSchedule: "Next Schedule",
+      noActiveTrip: "No active trip yet",
+      nextScheduleHint: "Add bookings or activate more packages so the next schedule appears here.",
+      scheduleOverview: "Schedule Overview",
+      participantUnit: "participants",
+      travelStyle: "Travel style",
+      pax: "pax",
+      remainingCapacity: "Remaining Capacity",
+      seats: "seats",
+      notApplied: "Not applied",
+      totalBookings: "Total Bookings",
+      bookingUnit: "bookings",
+      bookingId: "Booking ID",
+      customerName: "Customer Name",
+      tripDate: "Trip Date",
+      packageLabel: "Package",
+      paymentStatus: "Payment Status",
+      tripStatus: "Trip Status",
     },
     zh: {
       merchantMissing: "未找到商家数据。",
@@ -44,6 +126,47 @@ function getCalendarText(locale: Locale) {
       heroDescription: "在一个更适合 OTA 日常运营的面板中查看出发日期、确认人数、开放团容量与付款状态。",
       loadError: "加载预订日历失败。",
       emptyState: "暂时还没有行程安排。",
+      privateFlexible: "私享 / 灵活",
+      full: "已满",
+      almostFull: "接近满员",
+      available: "仍有名额",
+      tripSchedules: "行程安排",
+      tripSchedulesNote: "总出发日期数",
+      totalParticipants: "总人数",
+      totalParticipantsNote: "所有预订累计人数",
+      openTripUmroh: "开放团 / 朝觐",
+      openTripUmrohNote: "有容量目标的行程",
+      nearestTrip: "最近行程",
+      noActiveSchedule: "暂无有效行程安排",
+      fullSchedules: "满员行程",
+      fullSchedulesNote: "已经满员的开放团 / 朝觐行程",
+      operationalSnapshot: "运营概览",
+      activeTrips: "进行中行程",
+      activeTripsNote: "已排期的出发日期",
+      participants: "人数",
+      participantsNote: "所有行程总 pax",
+      openTrip: "开放团",
+      openTripNote: "有容量目标的行程",
+      soldOut: "已满员",
+      soldOutNote: "需要关闭库存",
+      nextSchedule: "下一行程",
+      noActiveTrip: "暂无有效行程",
+      nextScheduleHint: "添加预订或启用更多套餐后，下一趟行程会显示在这里。",
+      scheduleOverview: "行程概览",
+      participantUnit: "位游客",
+      travelStyle: "出游类型",
+      pax: "pax",
+      remainingCapacity: "剩余容量",
+      seats: "座位",
+      notApplied: "不适用",
+      totalBookings: "预订数量",
+      bookingUnit: "笔预订",
+      bookingId: "预订编号",
+      customerName: "客户姓名",
+      tripDate: "出行日期",
+      packageLabel: "套餐",
+      paymentStatus: "付款状态",
+      tripStatus: "行程状态",
     },
   } satisfies Record<Locale, Record<string, string>>
 
@@ -200,30 +323,30 @@ export default async function MerchantBookingCalendarPage() {
 
   const getCapacityStatus = (entry: CalendarEntry) => {
     if (entry.capacityTarget === null || entry.remainingCapacity === null) {
-      return { label: "Private / fleksibel", className: "bg-slate-100 text-slate-700" }
+      return { label: t.privateFlexible, className: "bg-slate-100 text-slate-700" }
     }
     if (entry.remainingCapacity <= 0) {
-      return { label: "Penuh", className: "bg-rose-50 text-rose-700" }
+      return { label: t.full, className: "bg-rose-50 text-rose-700" }
     }
     if (entry.remainingCapacity <= Math.max(Math.ceil(entry.capacityTarget * 0.2), 2)) {
-      return { label: "Hampir penuh", className: "bg-amber-50 text-amber-700" }
+      return { label: t.almostFull, className: "bg-amber-50 text-amber-700" }
     }
-    return { label: "Masih tersedia", className: "bg-emerald-50 text-emerald-700" }
+    return { label: t.available, className: "bg-emerald-50 text-emerald-700" }
   }
 
   const metricCards = [
-    { label: "Jadwal trip", value: String(totalTrips), note: "Total tanggal keberangkatan" },
-    { label: "Jumlah peserta", value: String(totalParticipants), note: "Akumulasi seluruh booking" },
-    { label: "Open trip / Umroh", value: String(openTripSchedules), note: "Jadwal dengan kapasitas" },
+    { label: t.tripSchedules, value: String(totalTrips), note: t.tripSchedulesNote },
+    { label: t.totalParticipants, value: String(totalParticipants), note: t.totalParticipantsNote },
+    { label: t.openTripUmroh, value: String(openTripSchedules), note: t.openTripUmrohNote },
     {
-      label: "Trip terdekat",
+      label: t.nearestTrip,
       value: upcomingTrip ? formatDate(upcomingTrip.tripDate) : "-",
-      note: upcomingTrip?.packageName || "Belum ada jadwal aktif",
+      note: upcomingTrip?.packageName || t.noActiveSchedule,
     },
     {
-      label: "Jadwal penuh",
+      label: t.fullSchedules,
       value: String(fullSchedules),
-      note: "Open trip / umroh yang sudah penuh",
+      note: t.fullSchedulesNote,
     },
   ]
 
@@ -245,38 +368,38 @@ export default async function MerchantBookingCalendarPage() {
 
           <div className="grid gap-4">
             <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Operational Snapshot</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.operationalSnapshot}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Trip aktif</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.activeTrips}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{totalTrips}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Tanggal keberangkatan terjadwal</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.activeTripsNote}</p>
                 </div>
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Peserta</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.participants}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{totalParticipants}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Total pax seluruh schedule</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.participantsNote}</p>
                 </div>
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Open trip</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.openTrip}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{openTripSchedules}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Jadwal dengan target kapasitas</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.openTripNote}</p>
                 </div>
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Sudah penuh</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.soldOut}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{fullSchedules}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Butuh penutupan inventory</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.soldOutNote}</p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-[28px] border border-white/30 bg-white/10 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Next Schedule</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.nextSchedule}</p>
               <p className="mt-3 text-lg font-semibold text-white">
-                {upcomingTrip ? formatDate(upcomingTrip.tripDate) : "Belum ada trip aktif"}
+                {upcomingTrip ? formatDate(upcomingTrip.tripDate) : t.noActiveTrip}
               </p>
               <p className="mt-2 text-sm leading-6 text-white/85">
-                {upcomingTrip?.packageName || "Tambahkan booking atau aktifkan lebih banyak paket agar jadwal berikutnya muncul."}
+                {upcomingTrip?.packageName || t.nextScheduleHint}
               </p>
             </div>
           </div>
@@ -316,14 +439,14 @@ export default async function MerchantBookingCalendarPage() {
                 >
                   <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                     <div className="max-w-3xl">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Schedule Overview</p>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.scheduleOverview}</p>
                       <h2 className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
                         {formatDate(entry.tripDate)}
                       </h2>
                       <p className="mt-2 text-base font-medium text-slate-900">{entry.packageName}</p>
                       <p className="mt-3 text-sm leading-6 text-slate-600">
                         {entry.totalParticipants}
-                        {entry.capacityTarget !== null ? `/${entry.capacityTarget}` : ""} peserta • Travel style{" "}
+                        {entry.capacityTarget !== null ? `/${entry.capacityTarget}` : ""} {t.participantUnit} • {t.travelStyle}{" "}
                         {formatTravelStyleLabel(entry.travelStyle)}
                       </p>
                       <div className="mt-4 inline-flex rounded-full px-3 py-1 text-xs font-semibold">
@@ -333,22 +456,22 @@ export default async function MerchantBookingCalendarPage() {
 
                     <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[640px] xl:grid-cols-4">
                       <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] px-4 py-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Tanggal Trip</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.tripDate}</p>
                         <p className="mt-2 text-base font-semibold text-slate-950">{formatDate(entry.tripDate)}</p>
                       </div>
                       <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] px-4 py-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Peserta</p>
-                        <p className="mt-2 text-base font-semibold text-slate-950">{entry.totalParticipants} pax</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.participants}</p>
+                        <p className="mt-2 text-base font-semibold text-slate-950">{entry.totalParticipants} {t.pax}</p>
                       </div>
                       <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] px-4 py-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Sisa Kapasitas</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.remainingCapacity}</p>
                         <p className="mt-2 text-base font-semibold text-slate-950">
-                          {entry.remainingCapacity !== null ? `${entry.remainingCapacity} kursi` : "Tidak diterapkan"}
+                          {entry.remainingCapacity !== null ? `${entry.remainingCapacity} ${t.seats}` : t.notApplied}
                         </p>
                       </div>
                       <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] px-4 py-4">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Jumlah Booking</p>
-                        <p className="mt-2 text-base font-semibold text-slate-950">{entry.bookings.length} booking</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.totalBookings}</p>
+                        <p className="mt-2 text-base font-semibold text-slate-950">{entry.bookings.length} {t.bookingUnit}</p>
                       </div>
                     </div>
                   </div>
@@ -357,13 +480,13 @@ export default async function MerchantBookingCalendarPage() {
                     <table className="min-w-full text-left text-sm">
                       <thead className="bg-[#fff8ef] text-slate-600">
                         <tr>
-                          <th className="border-b border-[#efe3d1] p-4">ID Booking</th>
-                          <th className="border-b border-[#efe3d1] p-4">Nama Customer</th>
-                          <th className="border-b border-[#efe3d1] p-4">Tanggal Trip</th>
-                          <th className="border-b border-[#efe3d1] p-4">Paket</th>
-                          <th className="border-b border-[#efe3d1] p-4">Jumlah Peserta</th>
-                          <th className="border-b border-[#efe3d1] p-4">Status Pembayaran</th>
-                          <th className="border-b border-[#efe3d1] p-4">Status Trip</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.bookingId}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.customerName}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.tripDate}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.packageLabel}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.totalParticipants}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.paymentStatus}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.tripStatus}</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white">
@@ -377,7 +500,7 @@ export default async function MerchantBookingCalendarPage() {
                               <td className="border-b border-[#f3ebdf] p-4">{booking.customer_name || "-"}</td>
                               <td className="border-b border-[#f3ebdf] p-4">{formatDate(booking.pickup_date)}</td>
                               <td className="border-b border-[#f3ebdf] p-4">{entry.packageName}</td>
-                              <td className="border-b border-[#f3ebdf] p-4">{participants} peserta</td>
+                              <td className="border-b border-[#f3ebdf] p-4">{participants} {t.participantUnit}</td>
                               <td className="border-b border-[#f3ebdf] p-4">
                                 <span
                                   className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}

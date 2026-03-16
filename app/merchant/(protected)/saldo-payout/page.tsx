@@ -29,6 +29,47 @@ function getPayoutText(locale: Locale) {
       heroTitle: "Kontrol saldo merchant dan ritme pencairan dalam workspace yang lebih profesional.",
       heroDescription: "Pantau escrow, dana siap payout, request yang sedang diproses, dan riwayat pencairan tanpa kehilangan konteks operasional booking merchant.",
       loadError: "Gagal memuat data saldo merchant.",
+      packageUntitled: "Paket tanpa nama",
+      availableBalance: "Saldo tersedia",
+      availableBalanceNote: "Sudah lolos konfirmasi pickup dan siap payout",
+      heldBalance: "Saldo tertahan",
+      heldBalanceNote: "Masih ditahan di escrow RedFeng",
+      payoutInProgress: "Payout diproses",
+      payoutInProgressNote: "Request pending atau processing",
+      payoutCompleted: "Payout selesai",
+      payoutCompletedNote: "Dana yang sudah pernah dicairkan",
+      payoutSnapshot: "Payout Snapshot",
+      pendingRequests: "Request pending",
+      pendingRequestsNote: "Menunggu approval atau transfer",
+      destinationAccount: "Rekening tujuan",
+      destinationAccountNote: "Akun yang dipakai saat payout",
+      payoutHistory: "Payout History",
+      payoutHistoryTitle: "Riwayat pencairan",
+      payoutHistoryDescription: "Semua request payout merchant berikut status proses dan rekening tujuan.",
+      noPayoutHistory: "Belum ada riwayat pencairan.",
+      requestDate: "Tanggal Request",
+      amount: "Nominal",
+      status: "Status",
+      processed: "Diproses",
+      financeControlled: "Finance Controlled",
+      internalPayoutTitle: "Payout diproses internal",
+      internalPayoutDescription: "Merchant tidak lagi menarik dana manual. Setelah Arrived, customer Picked up, dan merchant Go selesai, admin akan handoff ke finance.",
+      payoutReadyEstimate: "Estimasi payout yang siap diproses saat ini:",
+      payoutFlowNote: "Dana customer tetap ditahan sampai merchant klik Arrived, customer klik Picked up, merchant klik Go, lalu admin mengirim booking ke finance untuk transfer.",
+      readyForPayout: "Ready For Payout",
+      readyForPayoutTitle: "Booking siap payout",
+      readyForPayoutDescription: "Booking yang sudah lunas dan pickup-nya sudah dikonfirmasi merchant dan customer.",
+      noReadyPayoutBookings: "Belum ada booking yang siap payout.",
+      fundsOnHold: "Funds On Hold",
+      fundsOnHoldTitle: "Dana masih ditahan",
+      fundsOnHoldDescription: "Booking yang dananya masih berada di escrow RedFeng atau belum lunas.",
+      noFundsOnHold: "Tidak ada dana yang sedang ditahan.",
+      booking: "Booking",
+      packageLabel: "Paket",
+      customer: "Customer",
+      trip: "Trip",
+      participants: "Peserta",
+      escrow: "Escrow",
     },
     en: {
       merchantMissing: "Merchant data not found.",
@@ -36,6 +77,47 @@ function getPayoutText(locale: Locale) {
       heroTitle: "Control merchant balance and payout rhythm in a more professional workspace.",
       heroDescription: "Monitor escrow, funds ready for payout, requests being processed, and payout history without losing merchant booking context.",
       loadError: "Failed to load merchant balance data.",
+      packageUntitled: "Untitled package",
+      availableBalance: "Available balance",
+      availableBalanceNote: "Pickup confirmation completed and ready for payout",
+      heldBalance: "Held balance",
+      heldBalanceNote: "Still being held in RedFeng escrow",
+      payoutInProgress: "Payout in progress",
+      payoutInProgressNote: "Pending or processing requests",
+      payoutCompleted: "Completed payouts",
+      payoutCompletedNote: "Funds that have already been disbursed",
+      payoutSnapshot: "Payout Snapshot",
+      pendingRequests: "Pending requests",
+      pendingRequestsNote: "Awaiting approval or transfer",
+      destinationAccount: "Destination account",
+      destinationAccountNote: "Account used for payouts",
+      payoutHistory: "Payout History",
+      payoutHistoryTitle: "Payout history",
+      payoutHistoryDescription: "All merchant payout requests with their processing status and destination account.",
+      noPayoutHistory: "There is no payout history yet.",
+      requestDate: "Request date",
+      amount: "Amount",
+      status: "Status",
+      processed: "Processed",
+      financeControlled: "Finance Controlled",
+      internalPayoutTitle: "Payout is processed internally",
+      internalPayoutDescription: "Merchants no longer withdraw funds manually. After Arrived, customer Picked up, and merchant Go are completed, admin will hand off the booking to finance.",
+      payoutReadyEstimate: "Estimated payout currently ready to process:",
+      payoutFlowNote: "Customer funds remain held until the merchant clicks Arrived, the customer clicks Picked up, the merchant clicks Go, and then admin sends the booking to finance for transfer.",
+      readyForPayout: "Ready For Payout",
+      readyForPayoutTitle: "Bookings ready for payout",
+      readyForPayoutDescription: "Bookings that are fully paid and whose pickup has been confirmed by merchant and customer.",
+      noReadyPayoutBookings: "There are no bookings ready for payout yet.",
+      fundsOnHold: "Funds On Hold",
+      fundsOnHoldTitle: "Funds still on hold",
+      fundsOnHoldDescription: "Bookings whose funds are still in RedFeng escrow or not yet fully paid.",
+      noFundsOnHold: "There are no funds currently on hold.",
+      booking: "Booking",
+      packageLabel: "Package",
+      customer: "Customer",
+      trip: "Trip",
+      participants: "Participants",
+      escrow: "Escrow",
     },
     zh: {
       merchantMissing: "未找到商家数据。",
@@ -43,6 +125,47 @@ function getPayoutText(locale: Locale) {
       heroTitle: "以更专业的方式掌控商家余额与结算节奏。",
       heroDescription: "查看托管资金、待结算金额、处理中请求以及历史打款记录，同时保留完整的商家订单运营上下文。",
       loadError: "加载商家余额数据失败。",
+      packageUntitled: "未命名套餐",
+      availableBalance: "可用余额",
+      availableBalanceNote: "已完成接送确认，可进入结算",
+      heldBalance: "冻结余额",
+      heldBalanceNote: "仍在 RedFeng 托管中",
+      payoutInProgress: "处理中结算",
+      payoutInProgressNote: "待处理或处理中请求",
+      payoutCompleted: "已完成结算",
+      payoutCompletedNote: "已经打款完成的资金",
+      payoutSnapshot: "结算概览",
+      pendingRequests: "待处理请求",
+      pendingRequestsNote: "等待批准或转账",
+      destinationAccount: "收款账户",
+      destinationAccountNote: "用于结算的账户",
+      payoutHistory: "结算记录",
+      payoutHistoryTitle: "打款历史",
+      payoutHistoryDescription: "所有商家结算请求及其处理状态与收款账户。",
+      noPayoutHistory: "暂时还没有打款记录。",
+      requestDate: "申请日期",
+      amount: "金额",
+      status: "状态",
+      processed: "处理日期",
+      financeControlled: "财务控制",
+      internalPayoutTitle: "结算由内部处理",
+      internalPayoutDescription: "商家不再手动提取资金。完成 Arrived、客户 Picked up 与商家 Go 后，管理员会将订单移交给财务。",
+      payoutReadyEstimate: "当前预计可处理的结算金额：",
+      payoutFlowNote: "客户资金会持续托管，直到商家点击 Arrived、客户点击 Picked up、商家点击 Go，随后管理员再将订单交给财务打款。",
+      readyForPayout: "可结算",
+      readyForPayoutTitle: "可结算订单",
+      readyForPayoutDescription: "已全额付款，且商家与客户都已确认接送的订单。",
+      noReadyPayoutBookings: "暂时还没有可结算订单。",
+      fundsOnHold: "冻结资金",
+      fundsOnHoldTitle: "仍被冻结的资金",
+      fundsOnHoldDescription: "资金仍在 RedFeng 托管中或尚未全额付款的订单。",
+      noFundsOnHold: "当前没有正在冻结的资金。",
+      booking: "预订",
+      packageLabel: "套餐",
+      customer: "客户",
+      trip: "行程",
+      participants: "人数",
+      escrow: "托管",
     },
   } satisfies Record<Locale, Record<string, string>>
 
@@ -165,7 +288,7 @@ export default async function MerchantSaldoPayoutPage({
 
   const packageRows = (merchantPackages as MerchantPackageRow[] | null) || []
   const packageIds = packageRows.map((pkg) => pkg.id).filter(Boolean)
-  const packageMap = new Map(packageRows.map((pkg) => [pkg.id, pkg.title || "Paket tanpa nama"]))
+  const packageMap = new Map(packageRows.map((pkg) => [pkg.id, pkg.title || t.packageUntitled]))
 
   const [bookingResult, payoutResult] = await Promise.all([
     packageIds.length > 0
@@ -208,24 +331,24 @@ export default async function MerchantSaldoPayoutPage({
 
   const metricCards = [
     {
-      label: "Saldo tersedia",
+      label: t.availableBalance,
       value: formatMoney(saldoTersedia),
-      note: "Sudah lolos konfirmasi pickup dan siap payout",
+      note: t.availableBalanceNote,
     },
     {
-      label: "Saldo tertahan",
+      label: t.heldBalance,
       value: formatMoney(saldoTertahan),
-      note: "Masih ditahan di escrow RedFeng",
+      note: t.heldBalanceNote,
     },
     {
-      label: "Payout diproses",
+      label: t.payoutInProgress,
       value: formatMoney(reservedPayout),
-      note: "Request pending atau processing",
+      note: t.payoutInProgressNote,
     },
     {
-      label: "Payout selesai",
+      label: t.payoutCompleted,
       value: formatMoney(paidPayout),
-      note: "Dana yang sudah pernah dicairkan",
+      note: t.payoutCompletedNote,
     },
   ]
 
@@ -263,17 +386,17 @@ export default async function MerchantSaldoPayoutPage({
 
           <div className="grid gap-4">
             <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Payout Snapshot</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.payoutSnapshot}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Request pending</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.pendingRequests}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">{payoutCounts.pending}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Menunggu approval atau transfer</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.pendingRequestsNote}</p>
                 </div>
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Rekening tujuan</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.destinationAccount}</p>
                   <p className="mt-2 text-sm font-semibold text-white">{destinationAccount}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Akun yang dipakai saat payout</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.destinationAccountNote}</p>
                 </div>
               </div>
             </div>
@@ -315,27 +438,27 @@ export default async function MerchantSaldoPayoutPage({
           <section className="mt-8 grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex flex-col gap-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Payout History</p>
-                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat pencairan</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.payoutHistory}</p>
+                <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.payoutHistoryTitle}</h2>
                 <p className="text-sm leading-6 text-slate-500">
-                  Semua request payout merchant berikut status proses dan rekening tujuan.
+                  {t.payoutHistoryDescription}
                 </p>
               </div>
 
               {payouts.length === 0 ? (
                 <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-5 text-sm text-slate-600">
-                  Belum ada riwayat pencairan.
+                  {t.noPayoutHistory}
                 </div>
               ) : (
                 <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b border-[#efe3d1] p-4">Tanggal Request</th>
-                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
-                        <th className="border-b border-[#efe3d1] p-4">Status</th>
-                        <th className="border-b border-[#efe3d1] p-4">Rekening Tujuan</th>
-                        <th className="border-b border-[#efe3d1] p-4">Diproses</th>
+                        <th className="border-b border-[#efe3d1] p-4">{t.requestDate}</th>
+                        <th className="border-b border-[#efe3d1] p-4">{t.amount}</th>
+                        <th className="border-b border-[#efe3d1] p-4">{t.status}</th>
+                        <th className="border-b border-[#efe3d1] p-4">{t.destinationAccount}</th>
+                        <th className="border-b border-[#efe3d1] p-4">{t.processed}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -366,37 +489,35 @@ export default async function MerchantSaldoPayoutPage({
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance Controlled</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Payout diproses internal</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.financeControlled}</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.internalPayoutTitle}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Merchant tidak lagi menarik dana manual. Setelah Arrived, customer Picked up, dan merchant Go selesai, admin akan handoff ke finance.
+                  {t.internalPayoutDescription}
                 </p>
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Request pending</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.pendingRequests}</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutCounts.pending}</p>
                 </div>
                 <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Payout selesai</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.payoutCompleted}</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">{payoutCounts.paid}</p>
                 </div>
               </div>
 
               <div className="mt-5 rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Rekening tujuan</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.destinationAccount}</p>
                 <p className="mt-3 text-sm leading-7 text-slate-700">{destinationAccount}</p>
               </div>
 
               <div className="mt-5 space-y-4">
                 <div className="rounded-[22px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-                  Estimasi payout yang siap diproses saat ini: <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
+                  {t.payoutReadyEstimate} <span className="font-semibold">{formatMoney(saldoTersedia)}</span>
                 </div>
                 <div className="rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4 text-sm leading-6 text-slate-600">
-                  Dana customer tetap ditahan sampai merchant klik <span className="font-semibold">Arrived</span>,
-                  customer klik <span className="font-semibold">Picked up</span>, merchant klik <span className="font-semibold">Go</span>,
-                  lalu admin mengirim booking ke finance untuk transfer.
+                  {t.payoutFlowNote}
                 </div>
               </div>
             </div>
@@ -406,10 +527,10 @@ export default async function MerchantSaldoPayoutPage({
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ready For Payout</p>
-                  <h3 className="mt-2 text-xl font-semibold text-slate-950">Booking siap payout</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.readyForPayout}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-950">{t.readyForPayoutTitle}</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Booking yang sudah lunas dan pickup-nya sudah dikonfirmasi merchant dan customer.
+                    {t.readyForPayoutDescription}
                   </p>
                 </div>
                 <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -419,20 +540,20 @@ export default async function MerchantSaldoPayoutPage({
 
               {availableBookings.length === 0 ? (
                 <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-4 text-sm text-slate-600">
-                  Belum ada booking yang siap payout.
+                  {t.noReadyPayoutBookings}
                 </div>
               ) : (
                 <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b border-[#efe3d1] p-4">Booking</th>
-                        <th className="border-b border-[#efe3d1] p-4">Paket</th>
-                        <th className="border-b border-[#efe3d1] p-4">Customer</th>
-                        <th className="border-b border-[#efe3d1] p-4">Trip</th>
-                        <th className="border-b border-[#efe3d1] p-4">Peserta</th>
-                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
-                        <th className="border-b border-[#efe3d1] p-4">Escrow</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.booking}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.packageLabel}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.customer}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.trip}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.participants}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.amount}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.escrow}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -442,7 +563,7 @@ export default async function MerchantSaldoPayoutPage({
                             {booking.booking_code || booking.id.slice(0, 8)}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
-                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                            {packageMap.get(booking.package_id || "") || t.packageUntitled}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{booking.customer_name || "-"}</td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
@@ -466,10 +587,10 @@ export default async function MerchantSaldoPayoutPage({
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Funds On Hold</p>
-                  <h3 className="mt-2 text-xl font-semibold text-slate-950">Dana masih ditahan</h3>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.fundsOnHold}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-slate-950">{t.fundsOnHoldTitle}</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    Booking yang dananya masih berada di escrow RedFeng atau belum lunas.
+                    {t.fundsOnHoldDescription}
                   </p>
                 </div>
                 <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
@@ -479,20 +600,20 @@ export default async function MerchantSaldoPayoutPage({
 
               {heldBookings.length === 0 ? (
                 <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-4 text-sm text-slate-600">
-                  Tidak ada dana yang sedang ditahan.
+                  {t.noFundsOnHold}
                 </div>
               ) : (
                 <div className="mt-5 overflow-x-auto rounded-[24px] border border-[#efe3d1]">
                   <table className="min-w-full text-left text-sm">
                     <thead className="bg-[#fff8ef] text-slate-600">
                       <tr>
-                        <th className="border-b border-[#efe3d1] p-4">Booking</th>
-                        <th className="border-b border-[#efe3d1] p-4">Paket</th>
-                        <th className="border-b border-[#efe3d1] p-4">Customer</th>
-                        <th className="border-b border-[#efe3d1] p-4">Trip</th>
-                        <th className="border-b border-[#efe3d1] p-4">Peserta</th>
-                        <th className="border-b border-[#efe3d1] p-4">Nominal</th>
-                        <th className="border-b border-[#efe3d1] p-4">Escrow</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.booking}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.packageLabel}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.customer}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.trip}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.participants}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.amount}</th>
+                          <th className="border-b border-[#efe3d1] p-4">{t.escrow}</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -502,7 +623,7 @@ export default async function MerchantSaldoPayoutPage({
                             {booking.booking_code || booking.id.slice(0, 8)}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
-                            {packageMap.get(booking.package_id || "") || "Paket tanpa nama"}
+                            {packageMap.get(booking.package_id || "") || t.packageUntitled}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{booking.customer_name || "-"}</td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">{formatDate(booking.pickup_date)}</td>
