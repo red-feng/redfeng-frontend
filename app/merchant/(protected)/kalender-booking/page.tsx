@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 type BookingCalendarRow = {
@@ -12,6 +14,40 @@ type BookingCalendarRow = {
   payment_status: string | null
   booking_status: string | null
   package_id: string | null
+}
+
+function getCalendarText(locale: Locale) {
+  const dict = {
+    id: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      packageMissing: "Paket tidak ditemukan",
+      heroBadge: "Booking Calendar",
+      heroTitle: "Kalender trip merchant yang lebih rapi untuk mengelola kapasitas dan jadwal keberangkatan.",
+      heroDescription: "Pantau tanggal trip, peserta terkonfirmasi, kapasitas open trip, dan status pembayaran dalam satu panel operasional yang lebih siap untuk ritme OTA harian.",
+      loadError: "Gagal memuat kalender booking.",
+      emptyState: "Belum ada jadwal trip.",
+    },
+    en: {
+      merchantMissing: "Merchant data not found.",
+      packageMissing: "Package not found",
+      heroBadge: "Booking Calendar",
+      heroTitle: "A cleaner merchant trip calendar to manage capacity and departure schedules.",
+      heroDescription: "Monitor trip dates, confirmed participants, open-trip capacity, and payment status in one operations panel built for daily OTA rhythm.",
+      loadError: "Failed to load booking calendar.",
+      emptyState: "There are no trip schedules yet.",
+    },
+    zh: {
+      merchantMissing: "未找到商家数据。",
+      packageMissing: "未找到套餐",
+      heroBadge: "预订日历",
+      heroTitle: "更清晰地管理商家行程日历、容量与出发排期。",
+      heroDescription: "在一个更适合 OTA 日常运营的面板中查看出发日期、确认人数、开放团容量与付款状态。",
+      loadError: "加载预订日历失败。",
+      emptyState: "暂时还没有行程安排。",
+    },
+  } satisfies Record<Locale, Record<string, string>>
+
+  return dict[locale]
 }
 
 type MerchantPackageRow = {
@@ -76,6 +112,8 @@ function isOpenTripOrUmroh(pkg: MerchantPackageRow | null | undefined) {
 }
 
 export default async function MerchantBookingCalendarPage() {
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getCalendarText(locale)
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
   const {
@@ -90,7 +128,7 @@ export default async function MerchantBookingCalendarPage() {
     .eq("user_id", user.id)
     .single()
 
-  if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
+  if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
 
   const { data: packageRows, error: packageError } = await adminSupabase
     .from("packages")
@@ -115,7 +153,7 @@ export default async function MerchantBookingCalendarPage() {
   for (const booking of bookings) {
     const pkg = packageMap.get(booking.package_id || "")
     const tripDate = booking.pickup_date || "tanpa-tanggal"
-    const packageName = pkg?.title || "Paket tidak ditemukan"
+      const packageName = pkg?.title || t.packageMissing
     const key = `${tripDate}-${booking.package_id || booking.id}`
     const participants = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
 
@@ -195,14 +233,13 @@ export default async function MerchantBookingCalendarPage() {
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.45fr)_440px] lg:px-10 lg:py-10">
           <div>
             <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
-              Booking Calendar
+              {t.heroBadge}
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
-              Kalender trip merchant yang lebih rapi untuk mengelola kapasitas dan jadwal keberangkatan.
+              {t.heroTitle}
             </h1>
             <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
-              Pantau tanggal trip, peserta terkonfirmasi, kapasitas open trip, dan status pembayaran dalam satu
-              panel operasional yang lebih siap untuk ritme OTA harian.
+              {t.heroDescription}
             </p>
           </div>
 
@@ -248,11 +285,11 @@ export default async function MerchantBookingCalendarPage() {
 
       {error || packageError ? (
         <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-          Gagal memuat kalender booking.
+          {t.loadError}
         </div>
       ) : calendarEntries.length === 0 ? (
         <div className="mt-6 rounded-[28px] border border-[#eadfce] bg-white px-6 py-5 text-sm text-slate-600 shadow-sm">
-          Belum ada jadwal trip.
+          {t.emptyState}
         </div>
       ) : (
         <>

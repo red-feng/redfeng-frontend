@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
 type MerchantReviewRow = {
@@ -30,6 +32,8 @@ function renderStars(rating: number) {
 }
 
 export default async function MerchantReviewPage() {
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getReviewText(locale)
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
   const {
@@ -44,7 +48,7 @@ export default async function MerchantReviewPage() {
     .eq("user_id", user.id)
     .single()
 
-  if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
+  if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
 
   const reviewResult = await adminSupabase
     .from("package_reviews")
@@ -59,7 +63,7 @@ export default async function MerchantReviewPage() {
   const topRatedPackage =
     Array.from(
       reviews.reduce((map, review) => {
-        const key = review.packages?.title || "Paket"
+        const key = review.packages?.title || t.packageFallback
         const current = map.get(key) || { total: 0, count: 0 }
         map.set(key, {
           total: current.total + (review.rating ?? 0),
@@ -77,23 +81,24 @@ export default async function MerchantReviewPage() {
   const metricCards = [
     {
       label: "Rating rata-rata",
+      label: t.averageRating,
       value: reviews.length > 0 ? averageRating.toFixed(1) : "-",
-      note: `Rata-rata dari ${reviews.length} review`,
+      note: t.averageRatingNote(reviews.length),
     },
     {
-      label: "Komentar customer",
+      label: t.customerComments,
       value: String(commentedReviews),
-      note: "Review yang berisi komentar",
+      note: t.customerCommentsNote,
     },
     {
-      label: "Total review",
+      label: t.totalReviews,
       value: String(reviews.length),
-      note: "Semua rating yang sudah masuk",
+      note: t.totalReviewsNote,
     },
     {
-      label: "Paket terbaik",
+      label: t.topPackage,
       value: topRatedPackage,
-      note: "Rata-rata rating tertinggi",
+      note: t.topPackageNote,
     },
   ]
 
@@ -103,32 +108,31 @@ export default async function MerchantReviewPage() {
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_420px] lg:px-10 lg:py-10">
           <div>
             <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
-              Merchant Reviews
+              {t.heroBadge}
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
-              Reputasi merchant yang lebih jelas untuk menjaga kualitas pengalaman customer.
+              {t.heroTitle}
             </h1>
             <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
-              Pantau rating paket, baca komentar customer, dan identifikasi paket yang paling kuat secara
-              service quality dalam satu review workspace yang lebih rapi.
+              {t.heroDescription}
             </p>
           </div>
 
           <div className="grid gap-4">
             <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Review Snapshot</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.snapshotBadge}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Rating</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.rating}</p>
                   <p className="mt-2 text-2xl font-semibold text-white">
                     {reviews.length > 0 ? averageRating.toFixed(1) : "-"}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Rerata semua review customer</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.ratingSnapshotNote}</p>
                 </div>
                 <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">Paket unggulan</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.featuredPackage}</p>
                   <p className="mt-2 text-base font-semibold text-white">{topRatedPackage}</p>
-                  <p className="mt-1 text-xs leading-5 text-white/70">Berdasarkan rerata rating tertinggi</p>
+                  <p className="mt-1 text-xs leading-5 text-white/70">{t.featuredPackageNote}</p>
                 </div>
               </div>
             </div>
@@ -138,7 +142,7 @@ export default async function MerchantReviewPage() {
 
       {reviewResult.error ? (
         <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-          Gagal memuat review customer.
+          {t.loadError}
         </div>
       ) : (
         <>
@@ -157,16 +161,16 @@ export default async function MerchantReviewPage() {
 
           <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Customer Feedback</p>
-              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Daftar komentar customer</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.feedbackBadge}</p>
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.feedbackTitle}</h2>
               <p className="text-sm leading-6 text-slate-500">
-                Review terbaru dari customer untuk setiap paket merchant.
+                {t.feedbackDescription}
               </p>
             </div>
 
             {reviews.length === 0 ? (
               <div className="mt-5 rounded-[22px] border border-[#eadfce] bg-[#fffaf3] p-5 text-sm text-slate-600">
-                Belum ada review customer untuk paket merchant ini.
+                {t.emptyState}
               </div>
             ) : (
               <div className="mt-6 grid gap-4 xl:grid-cols-2">
@@ -177,11 +181,11 @@ export default async function MerchantReviewPage() {
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div>
-                        <p className="text-lg font-semibold text-slate-950">{review.packages?.title || "Paket"}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {review.customer_name || "Customer"} | {formatDate(review.created_at)}
-                        </p>
-                      </div>
+                          <p className="text-lg font-semibold text-slate-950">{review.packages?.title || t.packageFallback}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                          {review.customer_name || t.customerFallback} | {formatDate(review.created_at)}
+                          </p>
+                        </div>
                       <div className="rounded-full bg-orange-50 px-3 py-1 text-sm font-semibold text-orange-700">
                         {(review.rating ?? 0).toFixed(1)} / 5
                       </div>
@@ -199,4 +203,91 @@ export default async function MerchantReviewPage() {
       )}
     </main>
   )
+}
+
+function getReviewText(locale: Locale) {
+  const dict = {
+    id: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      packageFallback: "Paket",
+      customerFallback: "Customer",
+      averageRating: "Rating rata-rata",
+      averageRatingNote: (count: number) => `Rata-rata dari ${count} review`,
+      customerComments: "Komentar customer",
+      customerCommentsNote: "Review yang berisi komentar",
+      totalReviews: "Total review",
+      totalReviewsNote: "Semua rating yang sudah masuk",
+      topPackage: "Paket terbaik",
+      topPackageNote: "Rata-rata rating tertinggi",
+      heroBadge: "Merchant Reviews",
+      heroTitle: "Reputasi merchant yang lebih jelas untuk menjaga kualitas pengalaman customer.",
+      heroDescription:
+        "Pantau rating paket, baca komentar customer, dan identifikasi paket yang paling kuat secara service quality dalam satu review workspace yang lebih rapi.",
+      snapshotBadge: "Review Snapshot",
+      rating: "Rating",
+      ratingSnapshotNote: "Rerata semua review customer",
+      featuredPackage: "Paket unggulan",
+      featuredPackageNote: "Berdasarkan rerata rating tertinggi",
+      loadError: "Gagal memuat review customer.",
+      feedbackBadge: "Customer Feedback",
+      feedbackTitle: "Daftar komentar customer",
+      feedbackDescription: "Review terbaru dari customer untuk setiap paket merchant.",
+      emptyState: "Belum ada review customer untuk paket merchant ini.",
+    },
+    en: {
+      merchantMissing: "Merchant data not found.",
+      packageFallback: "Package",
+      customerFallback: "Customer",
+      averageRating: "Average rating",
+      averageRatingNote: (count: number) => `Average from ${count} reviews`,
+      customerComments: "Customer comments",
+      customerCommentsNote: "Reviews that contain comments",
+      totalReviews: "Total reviews",
+      totalReviewsNote: "All incoming ratings",
+      topPackage: "Top package",
+      topPackageNote: "Highest average rating",
+      heroBadge: "Merchant Reviews",
+      heroTitle: "A clearer merchant reputation view to protect customer experience quality.",
+      heroDescription:
+        "Track package ratings, read customer comments, and identify your strongest service-quality packages in one cleaner review workspace.",
+      snapshotBadge: "Review Snapshot",
+      rating: "Rating",
+      ratingSnapshotNote: "Average across all customer reviews",
+      featuredPackage: "Featured package",
+      featuredPackageNote: "Based on the highest average rating",
+      loadError: "Failed to load customer reviews.",
+      feedbackBadge: "Customer Feedback",
+      feedbackTitle: "Customer comment list",
+      feedbackDescription: "Latest customer reviews for each merchant package.",
+      emptyState: "There are no customer reviews for this merchant package yet.",
+    },
+    zh: {
+      merchantMissing: "未找到商家数据。",
+      packageFallback: "套餐",
+      customerFallback: "客户",
+      averageRating: "平均评分",
+      averageRatingNote: (count: number) => `来自 ${count} 条评价的平均值`,
+      customerComments: "客户评论",
+      customerCommentsNote: "包含留言的评价",
+      totalReviews: "评价总数",
+      totalReviewsNote: "所有已收到的评分",
+      topPackage: "最佳套餐",
+      topPackageNote: "平均评分最高",
+      heroBadge: "商家评价",
+      heroTitle: "更清晰地查看商家口碑，持续守住客户体验质量。",
+      heroDescription: "在一个更整洁的评价工作台中查看套餐评分、客户评论，并识别服务质量表现最强的套餐。",
+      snapshotBadge: "评价概览",
+      rating: "评分",
+      ratingSnapshotNote: "所有客户评价的平均值",
+      featuredPackage: "热门套餐",
+      featuredPackageNote: "基于最高平均评分",
+      loadError: "加载客户评价失败。",
+      feedbackBadge: "客户反馈",
+      feedbackTitle: "客户评论列表",
+      feedbackDescription: "每个商家套餐的最新客户评价。",
+      emptyState: "该商家套餐暂时还没有客户评价。",
+    },
+  } satisfies Record<Locale, Record<string, unknown>>
+
+  return dict[locale] as typeof dict.id
 }

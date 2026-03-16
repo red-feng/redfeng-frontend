@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { sendMerchantChatMessage } from "./actions"
@@ -27,6 +29,76 @@ type ChatRoomRow = {
         customer_name?: string | null
       }[]
     | null
+}
+
+function getChatText(locale: Locale) {
+  const dict = {
+    id: {
+      heroBadge: "Merchant Inbox",
+      heroTitle: "Percakapan customer yang siap ditangani dalam satu command center.",
+      heroDescription: "Kelola pertanyaan sebelum booking, follow-up sesudah pembayaran, dan jaga response time merchant dengan inbox yang lebih rapi dan lebih siap untuk operasional OTA.",
+      preBookingChats: "Chat sebelum booking",
+      postBookingChats: "Chat sesudah booking",
+      totalRoomsOnActiveTab: "Total room pada tab aktif",
+      newChats: "Chat baru",
+      unreadByMerchant: "Belum dibaca merchant",
+      activeRoomMessages: "Pesan dalam room aktif",
+      currentConversation: "Percakapan saat ini",
+      selectRoomToView: "Pilih room untuk melihat isi",
+      businessSnapshot: "Business Snapshot",
+      inboxLens: "Inbox Lens",
+      inboxLensDescription: "Gunakan tab untuk memisahkan lead pre-booking dan percakapan yang sudah terkait transaksi.",
+      beforeBooking: "Sebelum Booking",
+      afterBooking: "Sesudah Booking",
+      loadRoomsError: "Gagal memuat ruang chat",
+      afterBookingMigration: "Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
+      unreadBadgeMigration: "Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
+    },
+    en: {
+      heroBadge: "Merchant Inbox",
+      heroTitle: "Customer conversations ready to be handled in one command center.",
+      heroDescription: "Manage pre-booking questions, post-payment follow-ups, and merchant response time in a cleaner inbox built for OTA operations.",
+      preBookingChats: "Pre-booking chats",
+      postBookingChats: "Post-booking chats",
+      totalRoomsOnActiveTab: "Total rooms on the active tab",
+      newChats: "New chats",
+      unreadByMerchant: "Not yet read by merchant",
+      activeRoomMessages: "Messages in active room",
+      currentConversation: "Current conversation",
+      selectRoomToView: "Select a room to view its content",
+      businessSnapshot: "Business Snapshot",
+      inboxLens: "Inbox Lens",
+      inboxLensDescription: "Use tabs to separate pre-booking leads from conversations already tied to transactions.",
+      beforeBooking: "Before Booking",
+      afterBooking: "After Booking",
+      loadRoomsError: "Failed to load chat rooms",
+      afterBookingMigration: "The post-booking tab requires migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
+      unreadBadgeMigration: "The new chat badge requires migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
+    },
+    zh: {
+      heroBadge: "商家收件箱",
+      heroTitle: "在一个指挥中心中处理客户对话。",
+      heroDescription: "更有条理地管理预订前咨询、付款后跟进以及商家回复效率，适配 OTA 日常运营。",
+      preBookingChats: "预订前聊天",
+      postBookingChats: "预订后聊天",
+      totalRoomsOnActiveTab: "当前标签中的会话数量",
+      newChats: "新消息",
+      unreadByMerchant: "商家尚未阅读",
+      activeRoomMessages: "当前会话消息数",
+      currentConversation: "当前对话",
+      selectRoomToView: "请选择一个会话查看内容",
+      businessSnapshot: "业务概览",
+      inboxLens: "收件箱视图",
+      inboxLensDescription: "使用标签区分预订前线索与已经关联到交易的对话。",
+      beforeBooking: "预订前",
+      afterBooking: "预订后",
+      loadRoomsError: "加载聊天会话失败",
+      afterBookingMigration: "预订后标签需要 migration `20260306_add_booking_id_to_package_chat_rooms.sql`。",
+      unreadBadgeMigration: "新消息徽标需要 migration `20260307_add_read_tracking_to_package_chat_rooms.sql`。",
+    },
+  } satisfies Record<Locale, Record<string, string>>
+
+  return dict[locale]
 }
 
 type ChatMessageRow = {
@@ -81,6 +153,8 @@ export default async function MerchantChatPage({
   searchParams: Promise<MerchantChatParams>
 }) {
   const params = await searchParams
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getChatText(locale)
   const activeTab = params.tab === "post" ? "post" : "pre"
   const requestedRoomId = params.room_id || ""
   const errorMessage = params.error || ""
@@ -177,19 +251,19 @@ export default async function MerchantChatPage({
 
   const metricCards = [
     {
-      label: activeTab === "post" ? "Chat sesudah booking" : "Chat sebelum booking",
+      label: activeTab === "post" ? t.postBookingChats : t.preBookingChats,
       value: String(rooms.length),
-      note: "Total room pada tab aktif",
+      note: t.totalRoomsOnActiveTab,
     },
     {
-      label: "Chat baru",
+      label: t.newChats,
       value: String(unreadCount),
-      note: "Belum dibaca merchant",
+      note: t.unreadByMerchant,
     },
     {
-      label: "Pesan dalam room aktif",
+      label: t.activeRoomMessages,
       value: String(messages.length),
-      note: activeRoom ? "Percakapan saat ini" : "Pilih room untuk melihat isi",
+      note: activeRoom ? t.currentConversation : t.selectRoomToView,
     },
   ]
 
@@ -199,20 +273,19 @@ export default async function MerchantChatPage({
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_420px] lg:px-10 lg:py-10">
           <div>
             <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
-              Merchant Inbox
+              {t.heroBadge}
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
-              Percakapan customer yang siap ditangani dalam satu command center.
+              {t.heroTitle}
             </h1>
             <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
-              Kelola pertanyaan sebelum booking, follow-up sesudah pembayaran, dan jaga response time
-              merchant dengan inbox yang lebih rapi dan lebih siap untuk operasional OTA.
+              {t.heroDescription}
             </p>
           </div>
 
           <div className="grid gap-4">
             <div className="rounded-[28px] border border-white/30 bg-white/12 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Business Snapshot</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.businessSnapshot}</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
                 {metricCards.map((card) => (
                   <div key={card.label} className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
@@ -225,9 +298,9 @@ export default async function MerchantChatPage({
             </div>
 
             <div className="rounded-[28px] border border-white/30 bg-white/10 p-5 backdrop-blur-sm">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">Inbox Lens</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/75">{t.inboxLens}</p>
               <p className="mt-3 text-sm leading-6 text-white/90">
-                Gunakan tab untuk memisahkan lead pre-booking dan percakapan yang sudah terkait transaksi.
+                {t.inboxLensDescription}
               </p>
               <div className="mt-4 flex flex-wrap gap-3">
                 <Link
@@ -238,7 +311,7 @@ export default async function MerchantChatPage({
                       : "border-white/30 bg-white/10 text-white hover:bg-white/15"
                   }`}
                 >
-                  Sebelum Booking
+                  {t.beforeBooking}
                 </Link>
                 <Link
                   href="/merchant/chat?tab=post"
@@ -248,7 +321,7 @@ export default async function MerchantChatPage({
                       : "border-white/30 bg-white/10 text-white hover:bg-white/15"
                   }`}
                 >
-                  Sesudah Booking
+                  {t.afterBooking}
                 </Link>
               </div>
             </div>
@@ -258,7 +331,7 @@ export default async function MerchantChatPage({
 
       {roomsError && (
         <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-          Gagal memuat ruang chat: {roomsError.message}
+          {t.loadRoomsError}: {roomsError.message}
         </div>
       )}
 
@@ -270,13 +343,13 @@ export default async function MerchantChatPage({
 
       {!bookingLinkReady && (
         <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
-          Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.
+          {t.afterBookingMigration}
         </div>
       )}
 
       {!readTrackingReady && (
         <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
-          Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.
+          {t.unreadBadgeMigration}
         </div>
       )}
 

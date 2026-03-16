@@ -1,4 +1,6 @@
 import Link from "next/link"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { markMerchantArrived, markMerchantGo } from "./actions"
@@ -161,7 +163,18 @@ export default async function MerchantOrdersPage({
   searchParams: Promise<{ filter?: string; success?: string; error?: string }>
 }) {
   const params = await searchParams
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getOrdersText(locale)
   const activeFilter = orderFilters.some((item) => item.key === params.filter) ? String(params.filter) : "all"
+  const localizedOrderFilters: OrderFilter[] = [
+    { key: "all", label: t.filterAll },
+    { key: "new", label: t.filterNew },
+    { key: "waiting-payment", label: t.filterWaitingPayment },
+    { key: "paid", label: t.filterPaid },
+    { key: "done", label: t.filterDone },
+    { key: "refund", label: t.filterRefund },
+    { key: "cancelled", label: t.filterCancelled },
+  ]
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -173,7 +186,7 @@ export default async function MerchantOrdersPage({
 
   const { data: merchant } = await adminSupabase.from("merchants").select("id").eq("user_id", user.id).single()
 
-  if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
+  if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
 
   const { data: packageRows, error: packageError } = await adminSupabase
     .from("packages")
@@ -198,20 +211,20 @@ export default async function MerchantOrdersPage({
   const bookings = allBookings.filter((booking) => isMatchingFilter(booking, activeFilter))
 
   const summaryCards = [
-    { label: "Total Pesanan", value: allBookings.length },
+    { label: t.totalOrders, value: allBookings.length },
     {
-      label: "Menunggu Pembayaran",
+      label: t.waitingPayment,
       value: allBookings.filter((booking) => normalizeStatus(booking.payment_status) === "pending").length,
     },
     {
-      label: "Dana Ditahan Escrow",
+      label: t.escrowHeld,
       value: allBookings.filter((booking) => {
         const escrowStatus = normalizeStatus(booking.escrow_status)
         return escrowStatus === "held" || escrowStatus === "partial_hold"
       }).length,
     },
     {
-      label: "Siap Payout",
+      label: t.readyPayout,
       value: allBookings.filter((booking) =>
         ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(normalizeStatus(booking.escrow_status)),
       ).length,
@@ -220,23 +233,23 @@ export default async function MerchantOrdersPage({
 
   const heroStats = [
     {
-      label: "Pesanan Baru",
+      label: t.newOrders,
       value: allBookings.filter((booking) => normalizeStatus(booking.booking_status) === "pending").length,
-      note: "Butuh respons merchant secepatnya.",
+      note: t.newOrdersNote,
     },
     {
-      label: "Booking Terbayar",
+      label: t.paidBookings,
       value: allBookings.filter((booking) => {
         const paymentStatus = normalizeStatus(booking.payment_status)
         const tripStatus = normalizeStatus(booking.booking_status)
         return paymentStatus === "paid" || tripStatus === "confirmed" || booking.escrow_status === "held"
       }).length,
-      note: "Siap diproses ke layanan berikutnya.",
+      note: t.paidBookingsNote,
     },
     {
-      label: "Pickup Aktif",
+      label: t.activePickup,
       value: allBookings.filter((booking) => Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at).length,
-      note: "Merchant sudah tiba dan menunggu customer naik.",
+      note: t.activePickupNote,
     },
   ]
 
@@ -246,13 +259,13 @@ export default async function MerchantOrdersPage({
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.65fr)_420px] lg:px-10 lg:py-10">
           <div>
             <span className="inline-flex rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-50">
-              Merchant Orders
+              {t.heroBadge}
             </span>
             <h1 className="mt-4 max-w-3xl text-3xl font-semibold leading-tight md:text-5xl">
-              Satu command center untuk booking, escrow, dan pickup progress.
+              {t.heroTitle}
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-orange-50/92 md:text-base">
-              Pantau pesanan baru, booking terbayar, status escrow Red Feng, dan konfirmasi meeting point tanpa berpindah dashboard.
+              {t.heroDescription}
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
@@ -295,27 +308,27 @@ export default async function MerchantOrdersPage({
         <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div>
             <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-700">
-              Order Filters
+              {t.orderFilters}
             </span>
-            <h2 className="mt-4 text-2xl font-semibold text-slate-950">Kelola pipeline pesanan merchant</h2>
+            <h2 className="mt-4 text-2xl font-semibold text-slate-950">{t.pipelineTitle}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-              Gunakan filter untuk fokus ke booking baru, pembayaran, atau status perjalanan yang membutuhkan tindakan berikutnya.
+              {t.pipelineDescription}
             </p>
           </div>
           <div className="grid gap-3 rounded-[28px] border border-orange-100 bg-[linear-gradient(180deg,#fffaf5_0%,#fff4ea_100%)] p-5 xl:w-[320px]">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Escrow Held</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t.escrowHeld}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{summaryCards[2]?.value ?? 0}</p>
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">Ready Payout</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t.readyPayout}</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{summaryCards[3]?.value ?? 0}</p>
             </div>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          {orderFilters.map((filter) => {
+          {localizedOrderFilters.map((filter) => {
             const active = filter.key === activeFilter
             return (
               <Link
@@ -334,10 +347,10 @@ export default async function MerchantOrdersPage({
         </div>
 
         {error || packageError ? (
-          <div className="mt-6 rounded-[24px] border border-red-200 bg-red-50 p-4 text-red-700">Gagal memuat data pesanan.</div>
+          <div className="mt-6 rounded-[24px] border border-red-200 bg-red-50 p-4 text-red-700">{t.loadError}</div>
         ) : bookings.length === 0 ? (
           <div className="mt-6 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#fffaf5_0%,#f8fafc_100%)] p-5 text-slate-600">
-            Belum ada data pada kategori ini.
+            {t.emptyState}
           </div>
         ) : (
           <div className="mt-6 space-y-5">
@@ -451,4 +464,95 @@ export default async function MerchantOrdersPage({
       </section>
     </div>
   )
+}
+
+function getOrdersText(locale: Locale) {
+  const dict = {
+    id: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      totalOrders: "Total Pesanan",
+      waitingPayment: "Menunggu Pembayaran",
+      escrowHeld: "Dana Ditahan Escrow",
+      readyPayout: "Siap Payout",
+      newOrders: "Pesanan Baru",
+      newOrdersNote: "Butuh respons merchant secepatnya.",
+      paidBookings: "Booking Terbayar",
+      paidBookingsNote: "Siap diproses ke layanan berikutnya.",
+      activePickup: "Pickup Aktif",
+      activePickupNote: "Merchant sudah tiba dan menunggu customer naik.",
+      heroBadge: "Merchant Orders",
+      heroTitle: "Satu command center untuk booking, escrow, dan pickup progress.",
+      heroDescription: "Pantau pesanan baru, booking terbayar, status escrow Red Feng, dan konfirmasi meeting point tanpa berpindah dashboard.",
+      orderFilters: "Order Filters",
+      pipelineTitle: "Kelola pipeline pesanan merchant",
+      pipelineDescription: "Gunakan filter untuk fokus ke booking baru, pembayaran, atau status perjalanan yang membutuhkan tindakan berikutnya.",
+      filterAll: "Semua Pesanan",
+      filterNew: "Pesanan Baru",
+      filterWaitingPayment: "Menunggu Pembayaran",
+      filterPaid: "Terbayar",
+      filterDone: "Selesai",
+      filterRefund: "Refund",
+      filterCancelled: "Dibatalkan",
+      loadError: "Gagal memuat data pesanan.",
+      emptyState: "Belum ada data pada kategori ini.",
+    },
+    en: {
+      merchantMissing: "Merchant data not found.",
+      totalOrders: "Total Orders",
+      waitingPayment: "Awaiting Payment",
+      escrowHeld: "Escrow Held",
+      readyPayout: "Ready for Payout",
+      newOrders: "New Orders",
+      newOrdersNote: "Needs merchant response as soon as possible.",
+      paidBookings: "Paid Bookings",
+      paidBookingsNote: "Ready for the next service stage.",
+      activePickup: "Active Pickup",
+      activePickupNote: "Merchant has arrived and is waiting for the customer.",
+      heroBadge: "Merchant Orders",
+      heroTitle: "One command center for bookings, escrow, and pickup progress.",
+      heroDescription: "Monitor new orders, paid bookings, Red Feng escrow status, and meeting-point confirmations without switching dashboards.",
+      orderFilters: "Order Filters",
+      pipelineTitle: "Manage the merchant order pipeline",
+      pipelineDescription: "Use filters to focus on new bookings, payments, or trip statuses that need the next action.",
+      filterAll: "All Orders",
+      filterNew: "New Orders",
+      filterWaitingPayment: "Awaiting Payment",
+      filterPaid: "Paid",
+      filterDone: "Completed",
+      filterRefund: "Refund",
+      filterCancelled: "Cancelled",
+      loadError: "Failed to load order data.",
+      emptyState: "There is no data in this category yet.",
+    },
+    zh: {
+      merchantMissing: "未找到商家数据。",
+      totalOrders: "订单总数",
+      waitingPayment: "等待付款",
+      escrowHeld: "托管冻结资金",
+      readyPayout: "待结算",
+      newOrders: "新订单",
+      newOrdersNote: "需要商家尽快响应。",
+      paidBookings: "已付款预订",
+      paidBookingsNote: "已准备进入下一阶段服务。",
+      activePickup: "进行中的接送",
+      activePickupNote: "商家已到达并正在等待客户上车。",
+      heroBadge: "商家订单",
+      heroTitle: "在一个工作台中统一处理预订、托管与接送进度。",
+      heroDescription: "无需切换页面即可查看新订单、已付款预订、Red Feng 托管状态以及集合点确认进度。",
+      orderFilters: "订单筛选",
+      pipelineTitle: "管理商家订单流程",
+      pipelineDescription: "使用筛选快速聚焦需要下一步处理的新预订、付款状态或行程状态。",
+      filterAll: "全部订单",
+      filterNew: "新订单",
+      filterWaitingPayment: "等待付款",
+      filterPaid: "已付款",
+      filterDone: "已完成",
+      filterRefund: "退款",
+      filterCancelled: "已取消",
+      loadError: "加载订单数据失败。",
+      emptyState: "该分类下暂时没有数据。",
+    },
+  } satisfies Record<Locale, Record<string, string>>
+
+  return dict[locale]
 }

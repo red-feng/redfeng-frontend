@@ -1,5 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
 type StatsBookingRow = {
@@ -9,6 +11,40 @@ type StatsBookingRow = {
   payment_status: string | null
   booking_status: string | null
   package_id: string | null
+}
+
+function getStatisticsText(locale: Locale) {
+  const dict = {
+    id: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      heroBadge: "Merchant Statistics",
+      heroTitle: "Statistik performa merchant yang bisa langsung dipakai.",
+      heroDescription: "Pantau revenue, funnel traffic ke booking, kesehatan pembayaran, performa paket, dan kualitas customer experience dalam satu dashboard analytics.",
+      managePackages: "Kelola paket",
+      openOrders: "Buka pesanan",
+      loadError: "Gagal memuat statistik merchant.",
+    },
+    en: {
+      merchantMissing: "Merchant data not found.",
+      heroBadge: "Merchant Statistics",
+      heroTitle: "Merchant performance statistics you can use right away.",
+      heroDescription: "Monitor revenue, traffic-to-booking funnel, payment health, package performance, and customer experience quality in one analytics dashboard.",
+      managePackages: "Manage packages",
+      openOrders: "Open orders",
+      loadError: "Failed to load merchant statistics.",
+    },
+    zh: {
+      merchantMissing: "未找到商家数据。",
+      heroBadge: "商家统计",
+      heroTitle: "可直接使用的商家表现统计。",
+      heroDescription: "在一个分析面板中查看营收、流量到预订漏斗、付款健康度、套餐表现以及客户体验质量。",
+      managePackages: "管理套餐",
+      openOrders: "查看订单",
+      loadError: "加载商家统计失败。",
+    },
+  } satisfies Record<Locale, Record<string, string>>
+
+  return dict[locale]
 }
 
 type PackageRow = {
@@ -136,6 +172,8 @@ export default async function MerchantStatisticsPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const params = (await searchParams) || {}
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getStatisticsText(locale)
   const selectedPeriod = resolvePeriod(params.period)
   const selectedPeriodMeta = periodOptions.find((option) => option.key === selectedPeriod) || periodOptions[1]
   const previousEndDate = new Date()
@@ -155,7 +193,7 @@ export default async function MerchantStatisticsPage({
     .single()
 
   if (!merchant) {
-    return <div className="p-10">Data merchant tidak ditemukan.</div>
+    return <div className="p-10">{t.merchantMissing}</div>
   }
 
   const [
@@ -400,14 +438,13 @@ export default async function MerchantStatisticsPage({
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Merchant Statistics
+                {t.heroBadge}
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Statistik performa merchant yang bisa langsung dipakai.
+                {t.heroTitle}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
-                Pantau revenue, funnel traffic ke booking, kesehatan pembayaran, performa paket, dan
-                kualitas customer experience dalam satu dashboard analytics.
+                {t.heroDescription}
               </p>
             </div>
 
@@ -445,13 +482,13 @@ export default async function MerchantStatisticsPage({
                     href="/merchant/paket"
                     className="rounded-[18px] border border-white/18 bg-white/10 px-4 py-3 text-sm font-medium text-orange-50 transition hover:bg-white/15"
                   >
-                    Kelola paket
+                     {t.managePackages}
                   </Link>
                   <Link
                     href="/merchant/pesanan"
                     className="rounded-[18px] border border-white/18 bg-white/10 px-4 py-3 text-sm font-medium text-orange-50 transition hover:bg-white/15"
                   >
-                    Buka pesanan
+                     {t.openOrders}
                   </Link>
                 </div>
               </div>
@@ -461,7 +498,7 @@ export default async function MerchantStatisticsPage({
 
         {error ? (
           <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-red-700">
-            Gagal memuat statistik merchant.
+              {t.loadError}
           </div>
         ) : (
           <>

@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { type Locale, normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
 type PayoutBookingRow = {
@@ -17,6 +19,34 @@ type PayoutBookingRow = {
   merchant_arrived_at: string | null
   merchant_picked_up_at: string | null
   customer_picked_up_at: string | null
+}
+
+function getPayoutText(locale: Locale) {
+  const dict = {
+    id: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      heroBadge: "Wallet & Payout",
+      heroTitle: "Kontrol saldo merchant dan ritme pencairan dalam workspace yang lebih profesional.",
+      heroDescription: "Pantau escrow, dana siap payout, request yang sedang diproses, dan riwayat pencairan tanpa kehilangan konteks operasional booking merchant.",
+      loadError: "Gagal memuat data saldo merchant.",
+    },
+    en: {
+      merchantMissing: "Merchant data not found.",
+      heroBadge: "Wallet & Payout",
+      heroTitle: "Control merchant balance and payout rhythm in a more professional workspace.",
+      heroDescription: "Monitor escrow, funds ready for payout, requests being processed, and payout history without losing merchant booking context.",
+      loadError: "Failed to load merchant balance data.",
+    },
+    zh: {
+      merchantMissing: "未找到商家数据。",
+      heroBadge: "钱包与结算",
+      heroTitle: "以更专业的方式掌控商家余额与结算节奏。",
+      heroDescription: "查看托管资金、待结算金额、处理中请求以及历史打款记录，同时保留完整的商家订单运营上下文。",
+      loadError: "加载商家余额数据失败。",
+    },
+  } satisfies Record<Locale, Record<string, string>>
+
+  return dict[locale]
 }
 
 type PayoutRequestRow = {
@@ -109,6 +139,8 @@ export default async function MerchantSaldoPayoutPage({
   searchParams: Promise<{ success?: string; error?: string }>
 }) {
   const params = await searchParams
+  const locale = normalizeLocale(await getCurrentLocale())
+  const t = getPayoutText(locale)
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
   const {
@@ -123,7 +155,7 @@ export default async function MerchantSaldoPayoutPage({
     .eq("user_id", user.id)
     .single()
 
-  if (!merchant) return <div className="p-10">Data merchant tidak ditemukan.</div>
+  if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
 
   const { data: merchantPackages, error: packagesError } = await adminSupabase
     .from("packages")
@@ -219,14 +251,13 @@ export default async function MerchantSaldoPayoutPage({
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_440px] lg:px-10 lg:py-10">
           <div>
             <div className="inline-flex rounded-full border border-white/25 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-white/90">
-              Wallet & Payout
+              {t.heroBadge}
             </div>
             <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white md:text-5xl">
-              Kontrol saldo merchant dan ritme pencairan dalam workspace yang lebih profesional.
+              {t.heroTitle}
             </h1>
             <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 md:text-base">
-              Pantau escrow, dana siap payout, request yang sedang diproses, dan riwayat pencairan tanpa
-              kehilangan konteks operasional booking merchant.
+              {t.heroDescription}
             </p>
           </div>
 
@@ -264,7 +295,7 @@ export default async function MerchantSaldoPayoutPage({
 
       {error ? (
         <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
-          Gagal memuat data saldo merchant.
+          {t.loadError}
         </div>
       ) : (
         <>
