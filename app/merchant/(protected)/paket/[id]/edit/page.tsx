@@ -348,6 +348,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           <EditStep2Details
             packageId={id}
             defaultLanguage={pkg.default_language || "id"}
+            publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
             uiLocale={uiLocale}
             initialTranslations={translations}
             mapEmbed={details.map_embed || ""}
@@ -369,6 +370,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
             packageId={id}
             initialDays={initialItineraryDays}
             defaultLanguage={pkg.default_language || "id"}
+            publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
             uiLocale={uiLocale}
           />
         )}

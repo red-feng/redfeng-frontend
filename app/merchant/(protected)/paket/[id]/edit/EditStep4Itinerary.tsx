@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { updatePackageStep4 } from "../../actions"
 import { formatPickupTimeInput, parseStoredPickupTime } from "@/lib/time/pickupTime"
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
 
 const LANGS = merchantWizardLanguageOptions.map((language) => ({
   code: language.code,
@@ -30,6 +31,7 @@ export default function EditStep4Itinerary({
   packageId,
   initialDays,
   defaultLanguage = "id",
+  publishedLanguages,
   uiLocale = "id",
 }: {
   packageId: string
@@ -42,10 +44,12 @@ export default function EditStep4Itinerary({
     }>
   }>
   defaultLanguage?: string
+  publishedLanguages: string[]
   uiLocale?: string
 }) {
   const t = getMerchantWizardText(normalizeLocale(uiLocale))
-  const [activeLang, setActiveLang] = useState<Locale>(normalizeLocale(defaultLanguage))
+  const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
+  const [activeLang, setActiveLang] = useState<Locale>(normalizedDefaultLanguage)
   const [days, setDays] = useState<DayType[]>(
     initialDays.length > 0
       ? initialDays.map((day) => ({
@@ -84,6 +88,45 @@ export default function EditStep4Itinerary({
         ],
   )
   const [expandedDayIndex, setExpandedDayIndex] = useState(0)
+  const manualOverridesRef = useRef<Set<string>>(
+    new Set(
+      initialDays.flatMap((day, dayIndex) => {
+        const dayKeys = (["id", "en", "zh"] as Locale[])
+          .filter((language) => language !== normalizedDefaultLanguage)
+          .flatMap((language) => {
+            const keys: string[] = []
+            if (day.translations[language]?.title?.trim()) keys.push(`day:${dayIndex}:title:${language}`)
+            if (day.translations[language]?.description?.trim()) keys.push(`day:${dayIndex}:description:${language}`)
+            return keys
+          })
+
+        const routeKeys = day.routes.flatMap((route, routeIndex) =>
+          (["id", "en", "zh"] as Locale[])
+            .filter((language) => language !== normalizedDefaultLanguage)
+            .flatMap((language) =>
+              route.translations[language]?.trim() ? [`route:${dayIndex}:${routeIndex}:${language}`] : [],
+            ),
+        )
+
+        return [...dayKeys, ...routeKeys]
+      }),
+    ),
+  )
+  const translationTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const targetLanguages = useMemo(
+    () =>
+      LANGS.map((lang) => lang.code).filter(
+        (lang): lang is Locale => lang !== normalizedDefaultLanguage && publishedLanguages.includes(lang),
+      ),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
+
+  useEffect(() => {
+    const timers = translationTimersRef.current
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer))
+    }
+  }, [])
 
   const addDay = () => {
     setDays((prev) => {
@@ -147,6 +190,57 @@ export default function EditStep4Itinerary({
     })
   }
 
+  const scheduleDayAutoTranslate = (dayIndex: number, field: "title" | "description", value: string) => {
+    const timerKey = `day:${dayIndex}:${field}:${normalizedDefaultLanguage}`
+    if (translationTimersRef.current[timerKey]) {
+      clearTimeout(translationTimersRef.current[timerKey])
+    }
+
+    if (!value.trim()) {
+      setDays((prev) => {
+        const updated = [...prev]
+        for (const language of targetLanguages) {
+          const manualKey = `day:${dayIndex}:${field}:${language}`
+          if (!manualOverridesRef.current.has(manualKey)) {
+            updated[dayIndex].translations[language] = {
+              ...updated[dayIndex].translations[language],
+              [field]: "",
+            }
+          }
+        }
+        return updated
+      })
+      return
+    }
+
+    translationTimersRef.current[timerKey] = setTimeout(async () => {
+      try {
+        const translations = await requestMerchantAutoTranslations({
+          text: value,
+          sourceLanguage: normalizedDefaultLanguage,
+          targetLanguages,
+        })
+
+        setDays((prev) => {
+          const updated = [...prev]
+          for (const language of targetLanguages) {
+            const translatedValue = translations[language]
+            const manualKey = `day:${dayIndex}:${field}:${language}`
+            if (!manualOverridesRef.current.has(manualKey) && typeof translatedValue === "string") {
+              updated[dayIndex].translations[language] = {
+                ...updated[dayIndex].translations[language],
+                [field]: translatedValue,
+              }
+            }
+          }
+          return updated
+        })
+      } catch (error) {
+        console.error("edit step4 day auto translate error:", error)
+      }
+    }, 700)
+  }
+
   const updateDayTranslation = (dayIndex: number, field: "title" | "description", value: string) => {
     setDays((prev) => {
       const updated = [...prev]
@@ -156,6 +250,13 @@ export default function EditStep4Itinerary({
       }
       return updated
     })
+
+    if (activeLang !== normalizedDefaultLanguage) {
+      manualOverridesRef.current.add(`day:${dayIndex}:${field}:${activeLang}`)
+      return
+    }
+
+    scheduleDayAutoTranslate(dayIndex, field, value)
   }
 
   const updateRouteField = (dayIndex: number, routeIndex: number, field: "pickupTime" | "pickupPeriod", value: string) => {
@@ -169,12 +270,64 @@ export default function EditStep4Itinerary({
     })
   }
 
+  const scheduleRouteAutoTranslate = (dayIndex: number, routeIndex: number, value: string) => {
+    const timerKey = `route:${dayIndex}:${routeIndex}:${normalizedDefaultLanguage}`
+    if (translationTimersRef.current[timerKey]) {
+      clearTimeout(translationTimersRef.current[timerKey])
+    }
+
+    if (!value.trim()) {
+      setDays((prev) => {
+        const updated = [...prev]
+        for (const language of targetLanguages) {
+          const manualKey = `route:${dayIndex}:${routeIndex}:${language}`
+          if (!manualOverridesRef.current.has(manualKey)) {
+            updated[dayIndex].routes[routeIndex].translations[language] = ""
+          }
+        }
+        return updated
+      })
+      return
+    }
+
+    translationTimersRef.current[timerKey] = setTimeout(async () => {
+      try {
+        const translations = await requestMerchantAutoTranslations({
+          text: value,
+          sourceLanguage: normalizedDefaultLanguage,
+          targetLanguages,
+        })
+
+        setDays((prev) => {
+          const updated = [...prev]
+          for (const language of targetLanguages) {
+            const translatedValue = translations[language]
+            const manualKey = `route:${dayIndex}:${routeIndex}:${language}`
+            if (!manualOverridesRef.current.has(manualKey) && typeof translatedValue === "string") {
+              updated[dayIndex].routes[routeIndex].translations[language] = translatedValue
+            }
+          }
+          return updated
+        })
+      } catch (error) {
+        console.error("edit step4 route auto translate error:", error)
+      }
+    }, 700)
+  }
+
   const updateRouteTranslation = (dayIndex: number, routeIndex: number, value: string) => {
     setDays((prev) => {
       const updated = [...prev]
       updated[dayIndex].routes[routeIndex].translations[activeLang] = value
       return updated
     })
+
+    if (activeLang !== normalizedDefaultLanguage) {
+      manualOverridesRef.current.add(`route:${dayIndex}:${routeIndex}:${activeLang}`)
+      return
+    }
+
+    scheduleRouteAutoTranslate(dayIndex, routeIndex, value)
   }
 
   return (

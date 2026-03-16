@@ -24,15 +24,37 @@ export default async function WizardPage({
   const packageId = resolvedSearchParams.id ?? null
   const errorMessage = resolvedSearchParams.error ?? null
   let defaultLanguage = "id"
+  let publishedLanguages = ["id"]
 
   if ((step === "2" || step === "3" || step === "4" || step === "5") && packageId) {
-    const { data: pkg } = await supabase
+    let pkg:
+      | {
+          default_language: string | null
+          published_languages?: string[] | null
+        }
+      | null = null
+
+    const packageWithPublished = await supabase
       .from("packages")
-      .select("default_language")
+      .select("default_language, published_languages")
       .eq("id", packageId)
       .maybeSingle()
 
+    if (packageWithPublished.error?.message?.includes("published_languages")) {
+      const legacyPackage = await supabase
+        .from("packages")
+        .select("default_language")
+        .eq("id", packageId)
+        .maybeSingle()
+      pkg = legacyPackage.data
+    } else {
+      pkg = packageWithPublished.data
+    }
+
     defaultLanguage = pkg?.default_language || "id"
+    publishedLanguages = pkg?.published_languages?.length
+      ? pkg.published_languages
+      : [defaultLanguage]
   }
 
   return (
@@ -46,13 +68,23 @@ export default async function WizardPage({
         <Step1Basic countries={countries || []} uiLocale={uiLocale} />
       )}
       {step === "2" && (
-        <Step2Details packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
+        <Step2Details
+          packageId={packageId}
+          defaultLanguage={defaultLanguage}
+          publishedLanguages={publishedLanguages}
+          uiLocale={uiLocale}
+        />
       )}
       {step === "3" && (
         <Step3Facilities packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
       )}
       {step === "4" && (
-        <Step4Itinerary packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
+        <Step4Itinerary
+          packageId={packageId}
+          defaultLanguage={defaultLanguage}
+          publishedLanguages={publishedLanguages}
+          uiLocale={uiLocale}
+        />
       )}
       {step === "5" && (
         <Step5Review packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { updatePackageStep2 } from "../../actions"
-import { normalizeLocale } from "@/lib/i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
+import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
 
 const LANGS = [
   { code: "id", label: "Indonesia" },
@@ -24,24 +25,137 @@ type TranslationValues = {
   highlights: string
 }
 
+type TranslationField = keyof TranslationValues
+
+const EMPTY_VALUES: TranslationValues = {
+  about_tour: "",
+  service_standard: "",
+  include: "",
+  exclude: "",
+  preparation: "",
+  terms_conditions: "",
+  meeting_point: "",
+  highlights: "",
+}
+
 export default function EditStep2Details({
   packageId,
   defaultLanguage,
+  publishedLanguages,
   initialTranslations,
   mapEmbed,
   uiLocale = "id",
 }: {
   packageId: string
   defaultLanguage: string
+  publishedLanguages: string[]
   initialTranslations: Record<string, TranslationValues>
   mapEmbed: string
   uiLocale?: string
 }) {
   const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
+  const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const [activeLang, setActiveLang] = useState<LangCode>(
-    (LANGS.find((lang) => lang.code === defaultLanguage)?.code || "id") as LangCode,
+    (LANGS.find((lang) => lang.code === normalizedDefaultLanguage)?.code || "id") as LangCode,
   )
+  const [translationValues, setTranslationValues] = useState<Record<LangCode, TranslationValues>>(() => ({
+    id: initialTranslations.id || { ...EMPTY_VALUES },
+    en: initialTranslations.en || { ...EMPTY_VALUES },
+    zh: initialTranslations.zh || { ...EMPTY_VALUES },
+  }))
+  const manualOverridesRef = useRef<Set<string>>(
+    new Set(
+      (["id", "en", "zh"] as LangCode[]).flatMap((language) => {
+        if (language === normalizedDefaultLanguage) return []
+        const values = initialTranslations[language]
+        if (!values) return []
+        return (Object.keys(values) as TranslationField[])
+          .filter((field) => values[field]?.trim())
+          .map((field) => `${language}:${field}`)
+      }),
+    ),
+  )
+  const translationTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+  const targetLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions
+        .map((lang) => lang.code)
+        .filter(
+          (lang): lang is Locale =>
+            lang !== normalizedDefaultLanguage && publishedLanguages.includes(lang),
+        ),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
+
+  useEffect(() => {
+    const timers = translationTimersRef.current
+    return () => {
+      Object.values(timers).forEach((timer) => clearTimeout(timer))
+    }
+  }, [])
+
+  const scheduleAutoTranslate = (field: TranslationField, sourceValue: string) => {
+    const timerKey = `${field}:${normalizedDefaultLanguage}`
+    if (translationTimersRef.current[timerKey]) {
+      clearTimeout(translationTimersRef.current[timerKey])
+    }
+
+    if (!sourceValue.trim()) {
+      setTranslationValues((prev) => {
+        const next = { ...prev }
+        for (const language of targetLanguages) {
+          const manualKey = `${language}:${field}`
+          if (!manualOverridesRef.current.has(manualKey)) {
+            next[language] = { ...next[language], [field]: "" }
+          }
+        }
+        return next
+      })
+      return
+    }
+
+    translationTimersRef.current[timerKey] = setTimeout(async () => {
+      try {
+        const translations = await requestMerchantAutoTranslations({
+          text: sourceValue,
+          sourceLanguage: normalizedDefaultLanguage,
+          targetLanguages,
+        })
+
+        setTranslationValues((prev) => {
+          const next = { ...prev }
+          for (const language of targetLanguages) {
+            const translatedValue = translations[language]
+            const manualKey = `${language}:${field}`
+            if (!manualOverridesRef.current.has(manualKey) && typeof translatedValue === "string") {
+              next[language] = { ...next[language], [field]: translatedValue }
+            }
+          }
+          return next
+        })
+      } catch (error) {
+        console.error("edit step2 auto translate error:", error)
+      }
+    }, 700)
+  }
+
+  const updateTranslationField = (language: LangCode, field: TranslationField, value: string) => {
+    setTranslationValues((prev) => ({
+      ...prev,
+      [language]: {
+        ...prev[language],
+        [field]: value,
+      },
+    }))
+
+    if (language !== normalizedDefaultLanguage) {
+      manualOverridesRef.current.add(`${language}:${field}`)
+      return
+    }
+
+    scheduleAutoTranslate(field, value)
+  }
 
   return (
     <form action={updatePackageStep2} className="space-y-8">
@@ -70,16 +184,7 @@ export default function EditStep2Details({
         </div>
 
         {merchantWizardLanguageOptions.map((lang) => {
-              const values = initialTranslations[lang.code] || {
-                about_tour: "",
-                service_standard: "",
-                include: "",
-                exclude: "",
-                preparation: "",
-                terms_conditions: "",
-                meeting_point: "",
-                highlights: "",
-              }
+              const values = translationValues[lang.code] || { ...EMPTY_VALUES }
 
           return (
             <div key={lang.code} className={activeLang === lang.code ? "space-y-6" : "hidden"}>
@@ -91,9 +196,10 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.aboutTour}</label>
                 <textarea
                   name={`about_tour_${lang.code}`}
-                  defaultValue={values.about_tour}
+                  value={values.about_tour}
+                  onChange={(event) => updateTranslationField(lang.code, "about_tour", event.target.value)}
                   className="h-36 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
-                  required={lang.code === defaultLanguage}
+                  required={lang.code === normalizedDefaultLanguage}
                 />
               </div>
 
@@ -101,7 +207,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.serviceStandard}</label>
                 <textarea
                   name={`service_standard_${lang.code}`}
-                  defaultValue={values.service_standard}
+                  value={values.service_standard}
+                  onChange={(event) => updateTranslationField(lang.code, "service_standard", event.target.value)}
                   className="h-28 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -110,7 +217,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.include}</label>
                 <textarea
                   name={`include_${lang.code}`}
-                  defaultValue={values.include}
+                  value={values.include}
+                  onChange={(event) => updateTranslationField(lang.code, "include", event.target.value)}
                   className="h-28 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -119,7 +227,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.exclude}</label>
                 <textarea
                   name={`exclude_${lang.code}`}
-                  defaultValue={values.exclude}
+                  value={values.exclude}
+                  onChange={(event) => updateTranslationField(lang.code, "exclude", event.target.value)}
                   className="h-28 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -128,7 +237,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.preparation}</label>
                 <textarea
                   name={`preparation_${lang.code}`}
-                  defaultValue={values.preparation}
+                  value={values.preparation}
+                  onChange={(event) => updateTranslationField(lang.code, "preparation", event.target.value)}
                   className="h-28 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -137,7 +247,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.meetingPoint}</label>
                 <input
                   name={`meeting_point_${lang.code}`}
-                  defaultValue={values.meeting_point}
+                  value={values.meeting_point}
+                  onChange={(event) => updateTranslationField(lang.code, "meeting_point", event.target.value)}
                   className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -146,7 +257,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.highlights}</label>
                 <input
                   name={`highlights_${lang.code}`}
-                  defaultValue={values.highlights}
+                  value={values.highlights}
+                  onChange={(event) => updateTranslationField(lang.code, "highlights", event.target.value)}
                   className="w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
@@ -155,7 +267,8 @@ export default function EditStep2Details({
                 <label className="mb-2 block font-medium text-slate-800">{t.termsConditions}</label>
                 <textarea
                   name={`terms_conditions_${lang.code}`}
-                  defaultValue={values.terms_conditions}
+                  value={values.terms_conditions}
+                  onChange={(event) => updateTranslationField(lang.code, "terms_conditions", event.target.value)}
                   className="h-28 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
                 />
               </div>
