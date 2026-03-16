@@ -1,59 +1,43 @@
 export type PickupPeriod = "AM" | "PM"
 
 export function formatPickupTimeInput(value: string) {
-  const normalized = value.replace(/:/g, ".").replace(/[^\d.]/g, "")
+  const sanitized = value.replace(/[^\d:]/g, "")
 
-  if (!normalized) return ""
+  if (!sanitized) return ""
 
-  const hasSeparator = normalized.includes(".")
-
-  if (hasSeparator) {
-    const [rawHour = "", ...rest] = normalized.split(".")
-    const rawMinutes = rest.join("")
+  if (sanitized.includes(":")) {
+    const [rawHour = "", rawMinute = ""] = sanitized.split(":", 2)
     const hourDigits = rawHour.replace(/\D/g, "").slice(0, 2)
+    const minuteDigits = rawMinute.replace(/\D/g, "").slice(0, 2)
 
     if (!hourDigits) return ""
 
     const hour = Number(hourDigits)
-    if (!Number.isInteger(hour) || hour < 1) return ""
+    if (!Number.isInteger(hour) || hour < 1 || hour > 12) return hourDigits[0] && hourDigits[0] !== "0" ? hourDigits[0] : ""
 
-    let safeHour = hourDigits
-    if (hourDigits.length === 2) {
-      if (hour >= 10 && hour <= 12) {
-        safeHour = String(hour)
-      } else if (hourDigits[0] !== "0") {
-        safeHour = hourDigits[0]
-      } else {
-        return ""
-      }
-    }
-
-    const minuteDigits = rawMinutes.replace(/\D/g, "").slice(0, 2)
-    const hourDisplay = String(Number(safeHour))
-
-    if (!minuteDigits) return `${hourDisplay}:`
-    return `${hourDisplay}:${minuteDigits}`
+    return `${String(hour)}:${minuteDigits}`
   }
 
-  const digits = normalized.replace(/\D/g, "").slice(0, 4)
+  const digits = sanitized.replace(/\D/g, "").slice(0, 4)
 
   if (!digits) return ""
-
-  if (digits.length === 1) {
-    if (digits === "0") return ""
-    return `${digits}:`
-  }
+  if (digits.length === 1) return digits === "0" ? "" : digits
 
   if (digits.length === 2) {
-    const hour = Number(digits)
-    if (hour >= 1 && hour <= 12) return `${hour}:`
-    return digits[0] === "0" ? "" : `${digits[0]}:`
+    const twoDigitHour = Number(digits)
+    if (twoDigitHour >= 10 && twoDigitHour <= 12) return digits
+    return digits[0] === "0" ? "" : digits[0]
   }
 
   if (digits.length === 3) {
-    const hour = Number(digits[0])
-    if (hour < 1 || hour > 9) return ""
-    return `${hour}:${digits.slice(1)}`
+    const twoDigitHour = Number(digits.slice(0, 2))
+    if (twoDigitHour >= 10 && twoDigitHour <= 12) {
+      return `${twoDigitHour}:${digits.slice(2)}`
+    }
+
+    const oneDigitHour = Number(digits[0])
+    if (oneDigitHour < 1 || oneDigitHour > 9) return ""
+    return `${oneDigitHour}:${digits.slice(1)}`
   }
 
   const twoDigitHour = Number(digits.slice(0, 2))
@@ -61,7 +45,9 @@ export function formatPickupTimeInput(value: string) {
     return `${twoDigitHour}:${digits.slice(2)}`
   }
 
-  return formatPickupTimeInput(digits.slice(0, 3))
+  const oneDigitHour = Number(digits[0])
+  if (oneDigitHour < 1 || oneDigitHour > 9) return ""
+  return `${oneDigitHour}:${digits.slice(1, 3)}`
 }
 
 export function normalizePickupTimeForStorage(rawTime: string, rawPeriod: string) {

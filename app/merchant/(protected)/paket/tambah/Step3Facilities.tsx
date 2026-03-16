@@ -53,16 +53,26 @@ export default function Step3Facilities({
     fetchFacilities()
   }, [])
 
-  if (!packageId) {
-    return <p className="text-red-500">{t.packageIdMissing}</p>
-  }
+  const uniqueFacilities = useMemo(() => {
+    const seen = new Set<string>()
+    return facilities.filter((facility) => {
+      const key = `${facility.category || "Lainnya"}::${facility.name.trim().toLowerCase()}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [facilities])
 
-  const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
+  const groupedFacilities = uniqueFacilities.reduce<Record<string, Facility[]>>((acc, facility) => {
     const category = facility.category || "Lainnya"
     if (!acc[category]) acc[category] = []
     acc[category].push(facility)
     return acc
   }, {})
+
+  if (!packageId) {
+    return <p className="text-red-500">{t.packageIdMissing}</p>
+  }
 
  
   return (

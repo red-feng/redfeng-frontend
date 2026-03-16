@@ -40,7 +40,17 @@ export default function EditStep3Facilities({
     [defaultLanguage, publishedLanguages],
   )
 
-  const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
+  const uniqueFacilities = useMemo(() => {
+    const seen = new Set<string>()
+    return facilities.filter((facility) => {
+      const key = `${facility.category || "Lainnya"}::${facility.name.trim().toLowerCase()}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [facilities])
+
+  const groupedFacilities = uniqueFacilities.reduce<Record<string, Facility[]>>((acc, facility) => {
     const category = facility.category || "Lainnya"
     if (!acc[category]) acc[category] = []
     acc[category].push(facility)
