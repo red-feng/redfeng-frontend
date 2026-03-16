@@ -21,12 +21,12 @@ export function formatPickupTimeInput(value: string) {
   const digits = sanitized.replace(/\D/g, "").slice(0, 4)
 
   if (!digits) return ""
-  if (digits.length === 1) return digits === "0" ? "" : digits
+  if (digits.length === 1) return digits === "0" ? "" : `${digits}:`
 
   if (digits.length === 2) {
     const twoDigitHour = Number(digits)
-    if (twoDigitHour >= 10 && twoDigitHour <= 12) return digits
-    return digits[0] === "0" ? "" : digits[0]
+    if (twoDigitHour >= 10 && twoDigitHour <= 12) return `${digits}:`
+    return digits[0] === "0" ? "" : `${digits[0]}:${digits[1]}`
   }
 
   if (digits.length === 3) {
