@@ -55,21 +55,13 @@ function countJourneyPhase(bookings: BookingRow[], phase: "dp" | "paid" | "picku
   }).length
 }
 
-const merchantMenus = [
-  { label: "Kelola Paket", href: "/merchant/paket" },
-  { label: "Pesanan", href: "/merchant/pesanan" },
-  { label: "Chat Customer", href: "/merchant/chat" },
-  { label: "Kalender Booking", href: "/merchant/kalender-booking" },
-  { label: "Statistik", href: "/merchant/statistik" },
-  { label: "Saldo & Payout", href: "/merchant/saldo-payout" },
-  { label: "Review", href: "/merchant/review" },
-  { label: "Profil Merchant", href: "/merchant/profil" },
-]
+export const dynamic = "force-dynamic"
 
 export default async function MerchantDashboardPage() {
   const supabase = await createClient()
   const locale = await getCurrentLocale()
-  const t = getMerchantShellText(locale).dashboard
+  const shellText = getMerchantShellText(locale)
+  const t = shellText.dashboard
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -135,6 +127,15 @@ export default async function MerchantDashboardPage() {
     { label: t.rating, value: averageRating, note: `${reviews.length} ${t.customerReviews}` },
   ]
 
+  const merchantToolBadge =
+    locale === "en" ? "Merchant Tools" : locale === "zh" ? "商家工具" : "Merchant Tools"
+  const merchantToolTitle =
+    locale === "en"
+      ? "Merchant operations area"
+      : locale === "zh"
+        ? "商家运营区域"
+        : "Area operasional merchant"
+
   const menuMeta: Record<string, string> = {
     "Kelola Paket": `${activePackages} aktif • ${pendingPackages} pending review`,
     Pesanan: `${totalBookings} total booking`,
@@ -145,6 +146,127 @@ export default async function MerchantDashboardPage() {
     Review: reviews.length > 0 ? `${reviews.length} ulasan masuk` : "Rating dan komentar customer",
     "Profil Merchant": merchant.company_name || "Profil bisnis merchant",
   }
+  void menuMeta
+
+  const merchantToolDescription =
+    locale === "en"
+      ? "Quick access to every merchant operations area for listing quality, bookings, and customer service."
+      : locale === "zh"
+        ? "快速进入商家各个运营区域，持续管理套餐质量、预订与客户服务。"
+        : "Akses cepat ke seluruh area operasional merchant untuk menjaga kualitas listing, booking, dan layanan customer."
+  const businessSnapshotBadge =
+    locale === "en" ? "Business Snapshot" : locale === "zh" ? "业务概览" : "Business Snapshot"
+  const recommendedNextMoveLabel =
+    locale === "en" ? "Recommended next move" : locale === "zh" ? "下一步建议" : "Recommended next move"
+  const missingBrandName =
+    locale === "en"
+      ? "Merchant has not set a brand name yet"
+      : locale === "zh"
+        ? "商家尚未设置品牌名称"
+        : "Merchant belum memiliki brand name"
+  const completeMerchantProfile =
+    locale === "en" ? "Complete the merchant profile" : locale === "zh" ? "请完善商家资料" : "Lengkapi profil merchant"
+  const noRatingYet =
+    locale === "en" ? "No rating yet" : locale === "zh" ? "暂无评分" : "Belum ada rating"
+  const dashboardTitleFallback =
+    locale === "en" ? "Merchant Dashboard" : locale === "zh" ? "商家仪表盘" : "Merchant Dashboard"
+  const merchantMenus = [
+    {
+      key: "packages",
+      label: shellText.nav.packages,
+      href: "/merchant/paket",
+      note:
+        locale === "en"
+          ? `${activePackages} active • ${pendingPackages} pending review`
+          : locale === "zh"
+            ? `${activePackages} 个已上架 • ${pendingPackages} 个待审核`
+            : `${activePackages} aktif • ${pendingPackages} pending review`,
+    },
+    {
+      key: "orders",
+      label: shellText.nav.orders,
+      href: "/merchant/pesanan",
+      note:
+        locale === "en"
+          ? `${totalBookings} total bookings`
+          : locale === "zh"
+            ? `${totalBookings} 笔订单`
+            : `${totalBookings} total booking`,
+    },
+    {
+      key: "chat",
+      label: locale === "en" ? "Customer Chat" : locale === "zh" ? "客户聊天" : "Chat Customer",
+      href: "/merchant/chat",
+      note:
+        unreadChats > 0
+          ? locale === "en"
+            ? `${unreadChats} new chats`
+            : locale === "zh"
+              ? `${unreadChats} 条新消息`
+              : `${unreadChats} chat baru`
+          : locale === "en"
+            ? "Customer inbox"
+            : locale === "zh"
+              ? "客户收件箱"
+              : "Inbox customer",
+    },
+    {
+      key: "calendar",
+      label: locale === "en" ? "Booking Calendar" : locale === "zh" ? "预订日历" : "Kalender Booking",
+      href: "/merchant/kalender-booking",
+      note:
+        locale === "en"
+          ? "Trip schedules and participant capacity"
+          : locale === "zh"
+            ? "行程排期与参与人数容量"
+            : "Jadwal trip dan kapasitas peserta",
+    },
+    {
+      key: "statistics",
+      label: shellText.nav.statistics,
+      href: "/merchant/statistik",
+      note:
+        locale === "en"
+          ? "Revenue, top packages, and conversion"
+          : locale === "zh"
+            ? "营收、热门套餐与转化率"
+            : "Revenue, top paket, conversion",
+    },
+    {
+      key: "payout",
+      label: shellText.nav.payout,
+      href: "/merchant/saldo-payout",
+      note:
+        locale === "en"
+          ? "Available balance and pending payouts"
+          : locale === "zh"
+            ? "可用余额与待结算款项"
+            : "Saldo tersedia dan pending payout",
+    },
+    {
+      key: "review",
+      label: shellText.nav.review,
+      href: "/merchant/review",
+      note:
+        reviews.length > 0
+          ? locale === "en"
+            ? `${reviews.length} incoming reviews`
+            : locale === "zh"
+              ? `${reviews.length} 条评价`
+              : `${reviews.length} ulasan masuk`
+          : locale === "en"
+            ? "Ratings and customer comments"
+            : locale === "zh"
+              ? "评分与客户评论"
+              : "Rating dan komentar customer",
+    },
+    {
+      key: "profile",
+      label: locale === "en" ? "Merchant Profile" : locale === "zh" ? "商家资料" : "Profil Merchant",
+      href: "/merchant/profil",
+      note: merchant.company_name || completeMerchantProfile,
+    },
+  ]
 
   const quickSignals = [
     { label: t.newChats, value: String(unreadChats), tone: "from-orange-500 to-amber-400" },
@@ -166,6 +288,37 @@ export default async function MerchantDashboardPage() {
     { label: t.paidOut, value: countJourneyPhase(bookings, "paid_out"), tone: "border-violet-200 bg-violet-50 text-violet-700" },
   ]
 
+  const nextMoveTitle =
+    pendingPackages > 0
+      ? locale === "en"
+        ? "Finish the package reviews that are still pending."
+        : locale === "zh"
+          ? "请先完成仍在待审核中的套餐。"
+          : "Selesaikan review paket yang masih pending."
+      : draftPackages > 0
+        ? locale === "en"
+          ? "Complete your draft packages so they can be submitted."
+          : locale === "zh"
+            ? "请先完善草稿套餐，再提交审核。"
+            : "Lengkapi draft paket agar bisa diajukan."
+        : countJourneyPhase(bookings, "pickup") > 0
+          ? locale === "en"
+            ? "Focus on bookings that are currently waiting for pickup."
+            : locale === "zh"
+              ? "请优先处理当前等待接送的订单。"
+              : "Fokus pada booking yang sedang menunggu pickup."
+          : locale === "en"
+            ? "Focus on booking optimization and customer response speed."
+            : locale === "zh"
+              ? "请专注于优化预订转化与客户响应速度。"
+              : "Fokus pada optimasi booking dan respons customer."
+  const nextMoveDescription =
+    locale === "en"
+      ? "Merchants now see the same operational phases used by customers, admin, finance, and invoice verification."
+      : locale === "zh"
+        ? "商家现在看到的运营阶段，已与客户、管理员、财务和发票核验页面保持一致。"
+        : "Merchant sekarang melihat fase operasional yang sama persis dengan customer, admin, finance, dan halaman verifikasi invoice."
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -176,7 +329,7 @@ export default async function MerchantDashboardPage() {
                 {t.heroBadge}
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                {merchant.brand_name || merchant.company_name || "Merchant Dashboard"}
+                {merchant.brand_name || merchant.company_name || dashboardTitleFallback}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
                 {t.heroDescription}
@@ -245,14 +398,13 @@ export default async function MerchantDashboardPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                  Merchant Tools
+                  {merchantToolBadge}
                 </span>
                 <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-                  Area operasional merchant
+                  {merchantToolTitle}
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Akses cepat ke seluruh area operasional merchant untuk menjaga kualitas listing, booking,
-                  dan layanan customer.
+                  {merchantToolDescription}
                 </p>
               </div>
             </div>
@@ -267,9 +419,9 @@ export default async function MerchantDashboardPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-lg font-semibold text-slate-950">{menu.label}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{menuMeta[menu.label]}</p>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{menu.note}</p>
                     </div>
-                    {menu.label === "Chat Customer" && unreadChats > 0 ? (
+                    {menu.key === "chat" && unreadChats > 0 ? (
                       <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
                         {unreadChats}
                       </span>
@@ -285,44 +437,37 @@ export default async function MerchantDashboardPage() {
           <aside className="space-y-6">
             <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
               <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                Business Snapshot
+                {businessSnapshotBadge}
               </span>
               <div className="mt-5 space-y-4">
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Brand</p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
-                    {merchant.brand_name || merchant.company_name || "Merchant belum memiliki brand name"}
+                    {merchant.brand_name || merchant.company_name || missingBrandName}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Company</p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
-                    {merchant.company_name || "Lengkapi profil merchant"}
+                    {merchant.company_name || completeMerchantProfile}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Customer Rating</p>
                   <p className="mt-2 text-sm font-medium text-slate-900">
-                    {averageRating === "-" ? "Belum ada rating" : `${averageRating} / 5`}
+                    {averageRating === "-" ? noRatingYet : `${averageRating} / 5`}
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Recommended next move</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{recommendedNextMoveLabel}</p>
               <p className="mt-4 text-lg font-semibold text-slate-950">
-                {pendingPackages > 0
-                  ? "Selesaikan review paket yang masih pending."
-                  : draftPackages > 0
-                    ? "Lengkapi draft paket agar bisa diajukan."
-                    : countJourneyPhase(bookings, "pickup") > 0
-                      ? "Fokus pada booking yang sedang menunggu pickup."
-                      : "Fokus pada optimasi booking dan respons customer."}
+                {nextMoveTitle}
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Merchant sekarang melihat fase operasional yang sama persis dengan customer, admin,
-                finance, dan halaman verifikasi invoice.
+                {nextMoveDescription}
               </p>
             </div>
           </aside>

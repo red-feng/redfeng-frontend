@@ -4,6 +4,8 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
+export const dynamic = "force-dynamic"
+
 type StatsBookingRow = {
   id: string
   created_at: string | null
@@ -354,6 +356,48 @@ export default async function MerchantStatisticsPage({
   const selectedPeriod = resolvePeriod(params.period)
   const selectedPeriodMeta = periodOptions.find((option) => option.key === selectedPeriod) || periodOptions[1]
   const selectedPeriodLabel = periodLabels[selectedPeriodMeta.key]
+  const getRevenueNote = () =>
+    locale === "en"
+      ? `${revenueBookings.length} ${t.booking.toLowerCase()} generated revenue in ${selectedPeriodLabel}`
+      : locale === "zh"
+        ? `${selectedPeriodLabel} 内有 ${revenueBookings.length} 笔${t.booking}产生了营收`
+        : `${revenueBookings.length} ${t.booking.toLowerCase()} menghasilkan revenue dalam ${selectedPeriodLabel}`
+  const getBookingsNote = () =>
+    locale === "en"
+      ? `${confirmedTripCount} confirmed/completed bookings`
+      : locale === "zh"
+        ? `${confirmedTripCount} 笔已确认/已完成预订`
+        : `${confirmedTripCount} booking confirmed/completed`
+  const getConversionNote = () =>
+    locale === "en"
+      ? `${totalBookings} bookings from ${totalVisitors} total package views`
+      : locale === "zh"
+        ? `${totalVisitors} 次套餐浏览带来 ${totalBookings} 笔预订`
+        : `${totalBookings} booking dari ${totalVisitors} total view paket`
+  const getLowConversionPackageNote = () =>
+    lowConversionHighViewPackage
+      ? locale === "en"
+        ? `${lowConversionHighViewPackage.title} has high traffic but has not produced bookings yet. Review pricing, photos, itinerary, and package CTA.`
+        : locale === "zh"
+          ? `${lowConversionHighViewPackage.title} 浏览量较高，但尚未产生预订。请检查价格、图片、行程与套餐 CTA。`
+          : `${lowConversionHighViewPackage.title} punya trafik tinggi tetapi belum menghasilkan booking. Periksa harga, foto, itinerary, dan CTA paket.`
+      : t.optimizeHighViewPackagesFallback
+  const getPendingPaymentsNote = () =>
+    pendingPaymentCount > 0
+      ? locale === "en"
+        ? `${pendingPaymentCount} bookings are still pending or DP paid. Follow up so the funnel does not leak.`
+        : locale === "zh"
+          ? `仍有 ${pendingPaymentCount} 笔预订处于待付款或已付定金状态。请及时跟进，避免转化流失。`
+          : `${pendingPaymentCount} booking masih pending atau dp paid. Follow up agar funnel tidak bocor.`
+      : t.reducePendingPaymentsFallback
+  const getRatingActionNote = () =>
+    filteredReviews.length > 0
+      ? locale === "en"
+        ? `Your current average rating is ${averageRating.toFixed(1)}. Focus on trip experience quality and fast customer response.`
+        : locale === "zh"
+          ? `当前平均评分为 ${averageRating.toFixed(1)}。请重点提升行程体验与客户响应速度。`
+          : `Rating rata-rata saat ini ${averageRating.toFixed(1)}. Fokus pada pengalaman trip dan respons cepat ke customer.`
+      : t.maintainMerchantRatingFallback
   const previousEndDate = new Date()
   previousEndDate.setDate(previousEndDate.getDate() - selectedPeriodMeta.days)
   const supabase = await createClient()
@@ -569,17 +613,17 @@ export default async function MerchantStatisticsPage({
     {
       value: formatMoney(totalRevenue),
       label: t.totalRevenue,
-      note: `${revenueBookings.length} ${t.booking.toLowerCase()} menghasilkan revenue dalam ${selectedPeriodLabel}`,
+      note: getRevenueNote(),
     },
     {
       label: t.totalBookings,
       value: String(totalBookings),
-      note: `${confirmedTripCount} booking confirmed/completed`,
+      note: getBookingsNote(),
     },
     {
       label: t.conversionRate,
       value: formatPercent(conversionRate),
-      note: `${totalBookings} booking dari ${totalVisitors} total view paket`,
+      note: getConversionNote(),
     },
     {
       label: t.averageOrderValue,
@@ -633,8 +677,11 @@ export default async function MerchantStatisticsPage({
                     {merchant.brand_name || merchant.company_name || "Merchant"}
                 </p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
-                  Statistik periode {selectedPeriodMeta.label.toLowerCase()} ini dihitung dari booking, package
-                  views, dan review yang terkait langsung dengan merchant Anda.
+                  {locale === "en"
+                    ? `Statistics for this ${selectedPeriodLabel.toLowerCase()} period are calculated from bookings, package views, and reviews directly related to your merchant.`
+                    : locale === "zh"
+                      ? `当前 ${selectedPeriodLabel} 周期的统计数据，基于与您商家直接相关的预订、套餐浏览与评价计算。`
+                      : `Statistik periode ${selectedPeriodLabel.toLowerCase()} ini dihitung dari booking, package views, dan review yang terkait langsung dengan merchant Anda.`}
                 </p>
               </div>
 
@@ -904,25 +951,19 @@ export default async function MerchantStatisticsPage({
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">{t.optimizeHighViewPackages}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    {lowConversionHighViewPackage
-                      ? `${lowConversionHighViewPackage.title} punya trafik tinggi tetapi belum menghasilkan booking. Periksa harga, foto, itinerary, dan CTA paket.`
-                      : t.optimizeHighViewPackagesFallback}
+                    {getLowConversionPackageNote()}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">{t.reducePendingPayments}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    {pendingPaymentCount > 0
-                      ? `${pendingPaymentCount} booking masih pending atau dp paid. Follow up agar funnel tidak bocor.`
-                      : t.reducePendingPaymentsFallback}
+                    {getPendingPaymentsNote()}
                   </p>
                 </div>
                 <div className="rounded-[22px] border border-orange-100 bg-white p-5">
                   <p className="text-sm font-semibold text-slate-950">{t.maintainMerchantRating}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    {filteredReviews.length > 0
-                      ? `Rating rata-rata saat ini ${averageRating.toFixed(1)}. Fokus pada pengalaman trip dan respons cepat ke customer.`
-                      : t.maintainMerchantRatingFallback}
+                    {getRatingActionNote()}
                   </p>
                 </div>
               </div>

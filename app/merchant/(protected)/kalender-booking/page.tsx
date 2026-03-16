@@ -4,6 +4,8 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
+export const dynamic = "force-dynamic"
+
 type BookingCalendarRow = {
   id: string
   booking_code: string | null

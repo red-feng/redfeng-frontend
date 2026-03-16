@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { markMerchantArrived, markMerchantGo } from "./actions"
 
+export const dynamic = "force-dynamic"
+
 type BookingRow = {
   id: string
   package_id: string | null

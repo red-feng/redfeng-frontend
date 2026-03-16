@@ -3,6 +3,8 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 
+export const dynamic = "force-dynamic"
+
 type MerchantReviewRow = {
   id: string
   rating: number | null
