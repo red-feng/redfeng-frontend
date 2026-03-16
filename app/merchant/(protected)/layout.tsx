@@ -1,11 +1,28 @@
 import Image from "next/image"
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { createClient } from "@/lib/supabase/server"
+
+function normalizeStatus(value: string | null) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
+  if (!timestamp) return false
+  if (!seenAt) return true
+  return timestamp > seenAt
+}
+
+function latestTimestamp(values: Array<string | null | undefined>) {
+  return values.filter(Boolean).sort().at(-1) || null
+}
 
 export default async function MerchantLayout({
   children,
@@ -13,19 +30,10 @@ export default async function MerchantLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
+  const cookieStore = cookies()
   const locale = await getCurrentLocale()
   const t = getMerchantShellText(locale)
-  const merchantNav = [
-    { href: "/merchant/dashboard", label: t.nav.dashboard },
-    { href: "/merchant/paket", label: t.nav.packages },
-    { href: "/merchant/pesanan", label: t.nav.orders },
-    { href: "/merchant/statistik", label: t.nav.statistics },
-    { href: "/merchant/chat", label: t.nav.chat },
-    { href: "/merchant/kalender-booking", label: t.nav.calendar },
-    { href: "/merchant/saldo-payout", label: t.nav.payout },
-    { href: "/merchant/review", label: t.nav.review },
-    { href: "/merchant/profil", label: t.nav.profile },
-  ]
 
   const {
     data: { user },
@@ -51,7 +59,7 @@ export default async function MerchantLayout({
 
   const { data: merchant } = await supabase
     .from("merchants")
-    .select("verification_status, onboarding_completed, brand_name, company_name, city, province")
+    .select("id, verification_status, onboarding_completed, brand_name, company_name, city, province")
     .eq("user_id", user.id)
     .single()
 
@@ -81,9 +89,131 @@ export default async function MerchantLayout({
 
   const merchantLabel = merchant.brand_name || merchant.company_name || "Merchant"
   const locationLabel = [merchant.city, merchant.province].filter(Boolean).join(", ") || "Indonesia"
+  const seenPackagesAt = cookieStore.get("merchant_nav_seen_packages")?.value
+  const seenOrdersAt = cookieStore.get("merchant_nav_seen_orders")?.value
+  const seenCalendarAt = cookieStore.get("merchant_nav_seen_calendar")?.value
+  const seenPayoutAt = cookieStore.get("merchant_nav_seen_payout")?.value
+  const seenReviewAt = cookieStore.get("merchant_nav_seen_review")?.value
+  const todayJakarta = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+  const tomorrowJakartaDate = new Date()
+  tomorrowJakartaDate.setDate(tomorrowJakartaDate.getDate() + 1)
+  const tomorrowJakarta = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(tomorrowJakartaDate)
+
+  const [packageResult, chatRoomsResult, reviewResult] = await Promise.all([
+    adminSupabase
+      .from("packages")
+      .select("id, status, reviewed_at")
+      .eq("merchant_id", merchant.id),
+    adminSupabase
+      .from("package_chat_rooms")
+      .select("id, last_message_at, last_message_sender_id, merchant_last_read_at")
+      .eq("merchant_user_id", user.id)
+      .order("updated_at", { ascending: false }),
+    adminSupabase
+      .from("package_reviews")
+      .select("id, created_at, packages!inner(merchant_id)")
+      .eq("packages.merchant_id", merchant.id)
+      .order("created_at", { ascending: false }),
+  ])
+
+  const merchantPackages = (packageResult.data as Array<{ id: string; status: string | null; reviewed_at: string | null }> | null) || []
+  const packageIds = merchantPackages.map((pkg) => pkg.id)
+  const packageBadgeCount = merchantPackages.filter((pkg) => {
+    const status = normalizeStatus(pkg.status)
+    if (!["approved", "rejected"].includes(status)) return false
+    return isNewerThan(pkg.reviewed_at, seenPackagesAt)
+  }).length
+
+  const bookingsResult = packageIds.length
+    ? await adminSupabase
+        .from("bookings")
+        .select("id, created_at, pickup_date, booking_status, payment_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+        .in("package_id", packageIds)
+    : { data: [] as Array<{ id: string; created_at: string | null; pickup_date: string | null; booking_status: string | null; payment_status: string | null; escrow_status: string | null; merchant_arrived_at: string | null; merchant_picked_up_at: string | null; customer_picked_up_at: string | null }> }
+
+  const bookings =
+    (bookingsResult.data as Array<{
+      id: string
+      created_at: string | null
+      pickup_date: string | null
+      booking_status: string | null
+      payment_status: string | null
+      escrow_status: string | null
+      merchant_arrived_at: string | null
+      merchant_picked_up_at: string | null
+      customer_picked_up_at: string | null
+    }> | null) || []
+
+  const orderBadgeCount = bookings.filter(
+    (booking) => normalizeStatus(booking.booking_status) === "pending" && isNewerThan(booking.created_at, seenOrdersAt),
+  ).length
+
+  const calendarBadgeCount =
+    seenCalendarAt && seenCalendarAt.slice(0, 10) === todayJakarta
+      ? 0
+      : bookings.filter((booking) => booking.pickup_date === tomorrowJakarta).length
+
+  const payoutBadgeCount = bookings.filter((booking) => {
+    const eligible =
+      normalizeStatus(booking.payment_status) === "paid" &&
+      ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(
+        normalizeStatus(booking.escrow_status),
+      )
+    if (!eligible) return false
+
+    return isNewerThan(
+      latestTimestamp([
+        booking.customer_picked_up_at,
+        booking.merchant_picked_up_at,
+        booking.merchant_arrived_at,
+        booking.created_at,
+      ]),
+      seenPayoutAt,
+    )
+  }).length
+
+  const chatBadgeCount = (((chatRoomsResult.data as Array<{
+    id: string
+    last_message_at: string | null
+    last_message_sender_id: string | null
+    merchant_last_read_at: string | null
+  }> | null) || []).filter((room) => {
+    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
+    if (!room.last_message_at) return false
+    if (!room.merchant_last_read_at) return true
+    return room.last_message_at > room.merchant_last_read_at
+  })).length
+
+  const reviewBadgeCount =
+    ((reviewResult.data as Array<{ id: string; created_at: string | null }> | null) || []).filter((review) =>
+      isNewerThan(review.created_at, seenReviewAt),
+    ).length
+
+  const merchantNav = [
+    { href: "/merchant/dashboard", label: t.nav.dashboard, badgeCount: 0 },
+    { href: "/merchant/paket", label: t.nav.packages, badgeCount: packageBadgeCount },
+    { href: "/merchant/pesanan", label: t.nav.orders, badgeCount: orderBadgeCount },
+    { href: "/merchant/statistik", label: t.nav.statistics, badgeCount: 0 },
+    { href: "/merchant/chat", label: t.nav.chat, badgeCount: chatBadgeCount },
+    { href: "/merchant/kalender-booking", label: t.nav.calendar, badgeCount: calendarBadgeCount },
+    { href: "/merchant/saldo-payout", label: t.nav.payout, badgeCount: payoutBadgeCount },
+    { href: "/merchant/review", label: t.nav.review, badgeCount: reviewBadgeCount },
+    { href: "/merchant/profil", label: t.nav.profile, badgeCount: 0 },
+  ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
+      <MerchantNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1480px] px-6 py-4 md:px-8 xl:px-10">
           <div className="flex flex-col gap-4">
@@ -144,9 +274,14 @@ export default async function MerchantLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                   >
                     {item.label}
+                    {item.badgeCount > 0 && (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                        {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                      </span>
+                    )}
                   </Link>
                 ))}
               </div>
