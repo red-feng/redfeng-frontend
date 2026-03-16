@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
 import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
@@ -63,12 +63,44 @@ export default function Step1Basic({
     })
   }
 
+  const translateTitleForTargets = useCallback(async (targets: Locale[]) => {
+    const sourceValue = titleValues[normalizedDefaultLanguage]
+    const pendingTargets = targets.filter(
+      (language) => !manualTitleOverridesRef.current.has(language) && !titleValues[language]?.trim(),
+    )
+
+    if (!sourceValue.trim() || pendingTargets.length === 0) return
+
+    try {
+      const translations = await requestMerchantAutoTranslations({
+        text: sourceValue,
+        sourceLanguage: normalizedDefaultLanguage,
+        targetLanguages: pendingTargets,
+      })
+
+      setTitleValues((prev) => {
+        const next = { ...prev }
+        for (const language of pendingTargets) {
+          if (!manualTitleOverridesRef.current.has(language) && typeof translations[language] === "string") {
+            next[language] = prev[language] || translations[language] || ""
+          }
+        }
+        return next
+      })
+    } catch (error) {
+      console.error("step1 publish language auto translate error:", error)
+    }
+  }, [normalizedDefaultLanguage, titleValues])
+
   const onTogglePublishedLanguage = (code: string, checked: boolean) => {
     if (code === defaultLanguage) return
     setPublishedLanguages((prev) => {
       if (checked) return [...prev, code]
       return prev.filter((item) => item !== code)
     })
+    if (checked) {
+      void translateTitleForTargets([normalizeLocale(code)])
+    }
   }
 
   const scheduleTitleAutoTranslate = (sourceValue: string, sourceLanguage: Locale) => {
@@ -120,30 +152,12 @@ export default function Step1Basic({
 
     if (!sourceValue.trim() || pendingTargets.length === 0) return
 
-    const timer = setTimeout(async () => {
-      try {
-        const translations = await requestMerchantAutoTranslations({
-          text: sourceValue,
-          sourceLanguage: normalizedDefaultLanguage,
-          targetLanguages: pendingTargets,
-        })
-
-        setTitleValues((prev) => {
-          const next = { ...prev }
-          for (const language of pendingTargets) {
-            if (!manualTitleOverridesRef.current.has(language) && typeof translations[language] === "string") {
-              next[language] = prev[language] || translations[language] || ""
-            }
-          }
-          return next
-        })
-      } catch (error) {
-        console.error("step1 title publish auto translate error:", error)
-      }
+    const timer = setTimeout(() => {
+      void translateTitleForTargets(pendingTargets)
     }, 250)
 
     return () => clearTimeout(timer)
-  }, [normalizedDefaultLanguage, titleTargetLanguages, titleValues])
+  }, [normalizedDefaultLanguage, titleTargetLanguages, titleValues, translateTitleForTargets])
 
   const updateTitleValue = (language: Locale, value: string) => {
     setTitleValues((prev) => ({
