@@ -567,7 +567,6 @@ export default async function MerchantStatisticsPage({
   const maxRevenue = Math.max(...monthBuckets.map((bucket) => bucket.revenue), 1)
   const metricCards = [
     {
-      label: "Total revenue",
       value: formatMoney(totalRevenue),
       label: t.totalRevenue,
       note: `${revenueBookings.length} ${t.booking.toLowerCase()} menghasilkan revenue dalam ${selectedPeriodLabel}`,
