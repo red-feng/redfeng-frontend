@@ -132,6 +132,39 @@ export default function EditStep1Basic({
     }, 700)
   }
 
+  useEffect(() => {
+    const sourceValue = titleValues[normalizedDefaultLanguage]
+    const pendingTargets = titleTargetLanguages.filter(
+      (language) => !manualTitleOverridesRef.current.has(language) && !titleValues[language]?.trim(),
+    )
+
+    if (!sourceValue.trim() || pendingTargets.length === 0) return
+
+    const timer = setTimeout(async () => {
+      try {
+        const translations = await requestMerchantAutoTranslations({
+          text: sourceValue,
+          sourceLanguage: normalizedDefaultLanguage,
+          targetLanguages: pendingTargets,
+        })
+
+        setTitleValues((prev) => {
+          const next = { ...prev }
+          for (const language of pendingTargets) {
+            if (!manualTitleOverridesRef.current.has(language) && typeof translations[language] === "string") {
+              next[language] = prev[language] || translations[language] || ""
+            }
+          }
+          return next
+        })
+      } catch (error) {
+        console.error("edit step1 title publish auto translate error:", error)
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [normalizedDefaultLanguage, titleTargetLanguages, titleValues])
+
   const updateTitleValue = (language: Locale, value: string) => {
     setTitleValues((prev) => ({
       ...prev,

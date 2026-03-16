@@ -81,10 +81,6 @@ export default function Step4Itinerary({
     }
   }, [])
 
-  if (!packageId) {
-    return <p className="text-red-500">{t.packageIdMissing}</p>
-  }
-
   const addDay = () => {
     setDays((prev) => {
       const nextIndex = prev.length
@@ -254,6 +250,100 @@ export default function Step4Itinerary({
     }, 700)
   }
 
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const dayTasks = days.flatMap((day, dayIndex) =>
+          (["title", "description"] as const).map(async (field) => {
+            const sourceValue = day.translations[normalizedDefaultLanguage][field]
+            const pendingTargets = targetLanguages.filter(
+              (language) =>
+                !manualOverridesRef.current.has(`day:${dayIndex}:${field}:${language}`) &&
+                !day.translations[language][field]?.trim(),
+            )
+
+            if (!sourceValue.trim() || pendingTargets.length === 0) return null
+
+            const translations = await requestMerchantAutoTranslations({
+              text: sourceValue,
+              sourceLanguage: normalizedDefaultLanguage,
+              targetLanguages: pendingTargets,
+            })
+
+            return { dayIndex, field, pendingTargets, translations }
+          }),
+        )
+
+        const routeTasks = days.flatMap((day, dayIndex) =>
+          day.routes.map(async (route, routeIndex) => {
+            const sourceValue = route.translations[normalizedDefaultLanguage]
+            const pendingTargets = targetLanguages.filter(
+              (language) =>
+                !manualOverridesRef.current.has(`route:${dayIndex}:${routeIndex}:${language}`) &&
+                !route.translations[language]?.trim(),
+            )
+
+            if (!sourceValue.trim() || pendingTargets.length === 0) return null
+
+            const translations = await requestMerchantAutoTranslations({
+              text: sourceValue,
+              sourceLanguage: normalizedDefaultLanguage,
+              targetLanguages: pendingTargets,
+            })
+
+            return { dayIndex, routeIndex, pendingTargets, translations }
+          }),
+        )
+
+        const [dayResults, routeResults] = await Promise.all([
+          Promise.all(dayTasks),
+          Promise.all(routeTasks),
+        ])
+
+        setDays((prev) => {
+          const updated = [...prev]
+
+          for (const result of dayResults) {
+            if (!result) continue
+            for (const language of result.pendingTargets) {
+              const translatedValue = result.translations[language]
+              if (
+                !manualOverridesRef.current.has(`day:${result.dayIndex}:${result.field}:${language}`) &&
+                typeof translatedValue === "string"
+              ) {
+                updated[result.dayIndex].translations[language] = {
+                  ...updated[result.dayIndex].translations[language],
+                  [result.field]:
+                    updated[result.dayIndex].translations[language][result.field] || translatedValue,
+                }
+              }
+            }
+          }
+
+          for (const result of routeResults) {
+            if (!result) continue
+            for (const language of result.pendingTargets) {
+              const translatedValue = result.translations[language]
+              if (
+                !manualOverridesRef.current.has(`route:${result.dayIndex}:${result.routeIndex}:${language}`) &&
+                typeof translatedValue === "string"
+              ) {
+                updated[result.dayIndex].routes[result.routeIndex].translations[language] =
+                  updated[result.dayIndex].routes[result.routeIndex].translations[language] || translatedValue
+              }
+            }
+          }
+
+          return updated
+        })
+      } catch (error) {
+        console.error("step4 publish auto translate error:", error)
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [days, normalizedDefaultLanguage, targetLanguages])
+
   const updateRouteTranslation = (dayIndex: number, routeIndex: number, value: string) => {
     setDays((prev) => {
       const updated = [...prev]
@@ -267,6 +357,10 @@ export default function Step4Itinerary({
     }
 
     scheduleRouteAutoTranslate(dayIndex, routeIndex, value)
+  }
+
+  if (!packageId) {
+    return <p className="text-red-500">{t.packageIdMissing}</p>
   }
 
   return (

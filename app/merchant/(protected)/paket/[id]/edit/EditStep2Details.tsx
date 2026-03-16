@@ -140,6 +140,54 @@ export default function EditStep2Details({
     }, 700)
   }
 
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        const tasks = (Object.keys(EMPTY_VALUES) as TranslationField[]).map(async (field) => {
+          const sourceValue = translationValues[normalizedDefaultLanguage][field]
+          const pendingTargets = targetLanguages.filter(
+            (language) =>
+              !manualOverridesRef.current.has(`${language}:${field}`) &&
+              !translationValues[language][field]?.trim(),
+          )
+
+          if (!sourceValue.trim() || pendingTargets.length === 0) return null
+
+          const translations = await requestMerchantAutoTranslations({
+            text: sourceValue,
+            sourceLanguage: normalizedDefaultLanguage,
+            targetLanguages: pendingTargets,
+          })
+
+          return { field, pendingTargets, translations }
+        })
+
+        const results = await Promise.all(tasks)
+
+        setTranslationValues((prev) => {
+          const next = { ...prev }
+          for (const result of results) {
+            if (!result) continue
+            for (const language of result.pendingTargets) {
+              const translatedValue = result.translations[language]
+              if (!manualOverridesRef.current.has(`${language}:${result.field}`) && typeof translatedValue === "string") {
+                next[language] = {
+                  ...next[language],
+                  [result.field]: next[language][result.field] || translatedValue,
+                }
+              }
+            }
+          }
+          return next
+        })
+      } catch (error) {
+        console.error("edit step2 publish auto translate error:", error)
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [normalizedDefaultLanguage, targetLanguages, translationValues])
+
   const updateTranslationField = (language: LangCode, field: TranslationField, value: string) => {
     setTranslationValues((prev) => ({
       ...prev,
