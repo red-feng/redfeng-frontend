@@ -48,6 +48,7 @@ export default function EditStep1Basic({
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
   const [titleValues, setTitleValues] = useState<Record<Locale, string>>(initialData.titles)
+  const [isRetranslatingTitle, setIsRetranslatingTitle] = useState(false)
   const manualTitleOverridesRef = useRef<Set<Locale>>(
     new Set(
       (["id", "en", "zh"] as Locale[]).filter(
@@ -193,6 +194,31 @@ export default function EditStep1Basic({
     scheduleTitleAutoTranslate(value, language)
   }
 
+  const retranslateTitle = useCallback(async (language: Locale) => {
+    const sourceValue = titleValues[normalizedDefaultLanguage]
+    if (language === normalizedDefaultLanguage || !publishedLanguages.includes(language) || !sourceValue.trim()) return
+
+    setIsRetranslatingTitle(true)
+    try {
+      const translations = await requestMerchantAutoTranslations({
+        text: sourceValue,
+        sourceLanguage: normalizedDefaultLanguage,
+        targetLanguages: [language],
+      })
+
+      if (typeof translations[language] === "string") {
+        setTitleValues((prev) => ({
+          ...prev,
+          [language]: translations[language] || "",
+        }))
+      }
+    } catch (error) {
+      console.error("edit step1 retranslate title error:", error)
+    } finally {
+      setIsRetranslatingTitle(false)
+    }
+  }, [normalizedDefaultLanguage, publishedLanguages, titleValues])
+
   return (
     <form action={updatePackageStep1} className="space-y-6">
       <input type="hidden" name="package_id" value={packageId} />
@@ -219,6 +245,18 @@ export default function EditStep1Basic({
             </div>
             {merchantWizardLanguageOptions.map((language) => (
               <div key={language.code} className={activeTitleLang === language.code ? "block" : "hidden"}>
+                {language.code !== normalizedDefaultLanguage && publishedLanguages.includes(language.code) && (
+                  <div className="mb-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void retranslateTitle(language.code)}
+                      disabled={isRetranslatingTitle}
+                      className="rounded-lg border border-orange-200 px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isRetranslatingTitle ? (t.retranslateInProgress || "Translating...") : (t.retranslate || "Retranslate")}
+                    </button>
+                  </div>
+                )}
                 <input
                   name={`title_${language.code}`}
                   value={titleValues[language.code]}

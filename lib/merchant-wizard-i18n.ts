@@ -80,6 +80,8 @@ type MerchantWizardDictionary = {
   reviewSubmitInfoBody: string
   reviewPendingNotice: string
   reviewSubmitButton: string
+  retranslate?: string
+  retranslateInProgress?: string
 }
 
 export const merchantWizardLanguageOptions: Array<{ code: Locale; label: string }> = [
@@ -169,6 +171,8 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     reviewSubmitInfoBody: "Paket tidak bisa diedit sampai proses review selesai.",
     reviewPendingNotice: "Pastikan seluruh data sudah benar sebelum melakukan submit. Setelah submit, status paket akan berubah menjadi Pending.",
     reviewSubmitButton: "Submit untuk Review",
+    retranslate: "Terjemahkan ulang",
+    retranslateInProgress: "Menerjemahkan...",
   },
   en: {
     createPackageTitle: "Create New Package",
@@ -250,6 +254,8 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     reviewSubmitInfoBody: "The package cannot be edited until the review process is complete.",
     reviewPendingNotice: "Please make sure all data is correct before submitting. After submission, the package status will change to Pending.",
     reviewSubmitButton: "Submit for Review",
+    retranslate: "Retranslate",
+    retranslateInProgress: "Translating...",
   },
   zh: {
     createPackageTitle: "创建新套餐",

@@ -64,6 +64,7 @@ export default function EditStep2Details({
     en: initialTranslations.en || { ...EMPTY_VALUES },
     zh: initialTranslations.zh || { ...EMPTY_VALUES },
   }))
+  const [isRetranslatingLanguage, setIsRetranslatingLanguage] = useState<LangCode | null>(null)
   const manualOverridesRef = useRef<Set<string>>(
     new Set(
       (["id", "en", "zh"] as LangCode[]).flatMap((language) => {
@@ -205,6 +206,40 @@ export default function EditStep2Details({
     scheduleAutoTranslate(field, value)
   }
 
+  const retranslateLanguage = async (language: LangCode) => {
+    if (language === normalizedDefaultLanguage || !publishedLanguages.includes(language)) return
+
+    setIsRetranslatingLanguage(language)
+    try {
+      const tasks = (Object.keys(EMPTY_VALUES) as TranslationField[]).map(async (field) => {
+        const sourceValue = translationValues[normalizedDefaultLanguage][field]
+        if (!sourceValue.trim()) return { field, value: "" }
+
+        const translations = await requestMerchantAutoTranslations({
+          text: sourceValue,
+          sourceLanguage: normalizedDefaultLanguage,
+          targetLanguages: [language],
+        })
+
+        return { field, value: translations[language] || "" }
+      })
+
+      const results = await Promise.all(tasks)
+
+      setTranslationValues((prev) => ({
+        ...prev,
+        [language]: results.reduce(
+          (acc, result) => ({ ...acc, [result.field]: result.value }),
+          { ...prev[language] },
+        ),
+      }))
+    } catch (error) {
+      console.error("edit step2 retranslate language error:", error)
+    } finally {
+      setIsRetranslatingLanguage(null)
+    }
+  }
+
   return (
     <form action={updatePackageStep2} className="space-y-8">
       <input type="hidden" name="package_id" value={packageId} />
@@ -237,7 +272,23 @@ export default function EditStep2Details({
           return (
             <div key={lang.code} className={activeLang === lang.code ? "space-y-6" : "hidden"}>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                {t.contentLanguage}: <strong>{lang.label}</strong> ({lang.code})
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span>
+                    {t.contentLanguage}: <strong>{lang.label}</strong> ({lang.code})
+                  </span>
+                  {lang.code !== normalizedDefaultLanguage && publishedLanguages.includes(lang.code) && (
+                    <button
+                      type="button"
+                      onClick={() => void retranslateLanguage(lang.code)}
+                      disabled={isRetranslatingLanguage === lang.code}
+                      className="rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {isRetranslatingLanguage === lang.code
+                        ? (t.retranslateInProgress || "Translating...")
+                        : (t.retranslate || "Retranslate")}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div>
