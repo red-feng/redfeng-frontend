@@ -47,7 +47,6 @@ export default async function MerchantProfilePage() {
   const addressLabel = [merchant?.address, merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"
   const metricCards = [
     {
-      label: "Nama bisnis",
       label: t.businessName,
       value: merchant?.company_name || "-",
       note: t.businessNameNote,
