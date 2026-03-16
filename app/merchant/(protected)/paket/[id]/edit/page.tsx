@@ -102,6 +102,14 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     return <div className="p-10">Paket tidak ditemukan atau tidak bisa diakses.</div>
   }
 
+  if (pkg.status === "pending" || pkg.status === "rejected") {
+    return (
+      <div className="p-10">
+        Paket harus ditarik ke draft terlebih dahulu sebelum bisa diedit.
+      </div>
+    )
+  }
+
   const wizardLocale = normalizeLocale(uiLocale)
   const wizardText = getMerchantWizardText(wizardLocale)
 

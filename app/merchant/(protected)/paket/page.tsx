@@ -275,7 +275,7 @@ export default async function MerchantPackagePage({
                     <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(pkg.price_adult)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {pkg.status === "pending" && (
+                    {(pkg.status === "pending" || pkg.status === "rejected") && (
                       <form action={pullPackageToDraft}>
                         <input type="hidden" name="package_id" value={pkg.id} />
                         <input type="hidden" name="return_status" value={activeStatus} />
@@ -313,12 +313,14 @@ export default async function MerchantPackagePage({
                         </button>
                       </form>
                     )}
-                    <Link
-                      href={`/merchant/paket/${pkg.id}/edit`}
-                      className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
-                    >
-                      {t.editPackage}
-                    </Link>
+                    {pkg.status !== "pending" && pkg.status !== "rejected" && (
+                      <Link
+                        href={`/merchant/paket/${pkg.id}/edit`}
+                        className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                      >
+                        {t.editPackage}
+                      </Link>
+                    )}
                     <form action={deletePackage}>
                       <input type="hidden" name="package_id" value={pkg.id} />
                       <input type="hidden" name="return_status" value={activeStatus} />

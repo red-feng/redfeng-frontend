@@ -180,6 +180,20 @@ async function markPackagePending(adminSupabase: ReturnType<typeof createAdminCl
   }
 }
 
+async function markPackageDraft(adminSupabase: ReturnType<typeof createAdminClient>, packageId: string) {
+  const { error } = await adminSupabase
+    .from("packages")
+    .update({
+      status: "draft",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", packageId)
+
+  if (error) {
+    throw new Error(`Gagal memperbarui status paket: ${error.message}`)
+  }
+}
+
 export async function updatePackageStep1(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
 
@@ -208,7 +222,7 @@ export async function updatePackageStep1(formData: FormData) {
       price_child: Number(formData.get("price_child") || 0),
       default_language: defaultLanguage,
       published_languages: publishedLanguages,
-      status: "pending",
+      status: "draft",
       rejection_reason: null,
       reviewed_at: null,
       updated_at: new Date().toISOString(),
@@ -395,7 +409,7 @@ export async function updatePackageStep2(formData: FormData) {
       }
     }
 
-    await markPackagePending(adminSupabase, packageId)
+    await markPackageDraft(adminSupabase, packageId)
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
   } catch (error) {
@@ -434,7 +448,7 @@ export async function updatePackageStep3(formData: FormData) {
       }
     }
 
-    await markPackagePending(adminSupabase, packageId)
+    await markPackageDraft(adminSupabase, packageId)
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
   } catch (error) {
@@ -822,8 +836,8 @@ export async function pullPackageToDraft(formData: FormData) {
 
     const { adminSupabase, pkg } = await getOwnedMerchantPackage(packageId)
 
-    if (pkg.status !== "pending") {
-      throw new Error("Hanya paket yang sedang pending review yang bisa ditarik ke draft.")
+    if (pkg.status !== "pending" && pkg.status !== "rejected") {
+      throw new Error("Hanya paket yang sedang pending review atau ditolak admin yang bisa ditarik ke draft.")
     }
 
     const { error } = await adminSupabase
