@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { saveFacilities } from "./actions"
 import Image from "next/image"
@@ -18,10 +18,12 @@ type Facility = {
 export default function Step3Facilities({
   packageId,
   defaultLanguage = "id",
+  publishedLanguages,
   uiLocale = "id",
 }: {
   packageId: string | null
   defaultLanguage?: string
+  publishedLanguages: string[]
   uiLocale?: string
 }) {
   const [facilities, setFacilities] = useState<Facility[]>([])
@@ -29,6 +31,13 @@ export default function Step3Facilities({
     (merchantWizardLanguageOptions.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
   )
   const t = getMerchantWizardText(uiLocale as Locale)
+  const visibleLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions.filter(
+        (lang) => lang.code === defaultLanguage || publishedLanguages.includes(lang.code),
+      ),
+    [defaultLanguage, publishedLanguages],
+  )
 
   useEffect(() => {
     const fetchFacilities = async () => {
@@ -107,7 +116,7 @@ export default function Step3Facilities({
                   {t.facilitiesLanguageHint}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {merchantWizardLanguageOptions.map((lang) => (
+                  {visibleLanguages.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"

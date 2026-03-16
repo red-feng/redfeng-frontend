@@ -74,6 +74,10 @@ export default function Step4Itinerary({
       ),
     [normalizedDefaultLanguage, publishedLanguages],
   )
+  const visibleLanguages = useMemo(
+    () => LANGS.filter((lang) => lang.code === normalizedDefaultLanguage || publishedLanguages.includes(lang.code)),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
 
   useEffect(() => {
     const timers = translationTimersRef.current
@@ -81,6 +85,12 @@ export default function Step4Itinerary({
       Object.values(timers).forEach((timer) => clearTimeout(timer))
     }
   }, [])
+
+  useEffect(() => {
+    if (!visibleLanguages.some((lang) => lang.code === activeLang)) {
+      setActiveLang(normalizedDefaultLanguage)
+    }
+  }, [activeLang, normalizedDefaultLanguage, visibleLanguages])
 
   const addDay = () => {
     setDays((prev) => {
@@ -471,7 +481,7 @@ export default function Step4Itinerary({
                   )}
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {LANGS.map((lang) => (
+                  {visibleLanguages.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"

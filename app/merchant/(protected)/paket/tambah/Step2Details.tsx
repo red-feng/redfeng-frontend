@@ -78,6 +78,13 @@ export default function Step2Details({
         ),
     [normalizedDefaultLanguage, publishedLanguages],
   )
+  const visibleLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions.filter(
+        (lang) => lang.code === normalizedDefaultLanguage || publishedLanguages.includes(lang.code),
+      ),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
 
   useEffect(() => {
     const timers = translationTimersRef.current
@@ -85,6 +92,12 @@ export default function Step2Details({
       Object.values(timers).forEach((timer) => clearTimeout(timer))
     }
   }, [])
+
+  useEffect(() => {
+    if (!visibleLanguages.some((lang) => lang.code === activeLang)) {
+      setActiveLang(normalizedDefaultLanguage)
+    }
+  }, [activeLang, normalizedDefaultLanguage, visibleLanguages])
 
   const validateSelectedFiles = (files: FileList | null): boolean => {
     if (!files || files.length === 0) {
@@ -308,7 +321,7 @@ export default function Step2Details({
 
               <div>
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {merchantWizardLanguageOptions.map((lang) => (
+                  {visibleLanguages.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
@@ -324,7 +337,7 @@ export default function Step2Details({
                   ))}
                 </div>
 
-                {merchantWizardLanguageOptions.map((lang) => (
+                {visibleLanguages.map((lang) => (
                   <div
                     key={lang.code}
                     className={activeLang === lang.code ? "space-y-6" : "hidden"}

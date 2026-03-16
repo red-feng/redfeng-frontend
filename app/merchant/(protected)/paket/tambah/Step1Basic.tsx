@@ -47,6 +47,13 @@ export default function Step1Basic({
         ),
     [normalizedDefaultLanguage, publishedLanguages],
   )
+  const visibleLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions.filter(
+        (language) => language.code === normalizedDefaultLanguage || publishedLanguages.includes(language.code),
+      ),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
 
   useEffect(() => {
     const timer = titleTranslationTimerRef.current
@@ -54,6 +61,12 @@ export default function Step1Basic({
       if (timer) clearTimeout(timer)
     }
   }, [])
+
+  useEffect(() => {
+    if (!visibleLanguages.some((language) => language.code === activeTitleLang)) {
+      setActiveTitleLang(normalizedDefaultLanguage)
+    }
+  }, [activeTitleLang, normalizedDefaultLanguage, visibleLanguages])
 
   const onDefaultLanguageChange = (nextDefault: string) => {
     setDefaultLanguage(nextDefault)
@@ -249,7 +262,7 @@ export default function Step1Basic({
       {t.packageName}
     </label>
     <div className="flex flex-wrap gap-2">
-      {merchantWizardLanguageOptions.map((language) => (
+      {visibleLanguages.map((language) => (
         <button
           key={language.code}
           type="button"
@@ -264,7 +277,7 @@ export default function Step1Basic({
         </button>
       ))}
     </div>
-    {merchantWizardLanguageOptions.map((language) => (
+    {visibleLanguages.map((language) => (
       <div key={language.code} className={activeTitleLang === language.code ? "block" : "hidden"}>
         {language.code !== normalizedDefaultLanguage && publishedLanguages.includes(language.code) && (
           <div className="mb-2 flex justify-end">

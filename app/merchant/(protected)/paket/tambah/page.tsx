@@ -76,7 +76,12 @@ export default async function WizardPage({
         />
       )}
       {step === "3" && (
-        <Step3Facilities packageId={packageId} defaultLanguage={defaultLanguage} uiLocale={uiLocale} />
+        <Step3Facilities
+          packageId={packageId}
+          defaultLanguage={defaultLanguage}
+          publishedLanguages={publishedLanguages}
+          uiLocale={uiLocale}
+        />
       )}
       {step === "4" && (
         <Step4Itinerary

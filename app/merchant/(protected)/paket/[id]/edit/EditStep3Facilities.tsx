@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { getFacilityIcon } from "@/lib/facility-icons"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import type { Locale } from "@/lib/i18n"
@@ -18,18 +18,27 @@ export default function EditStep3Facilities({
   facilities,
   selectedFacilityIds,
   defaultLanguage = "id",
+  publishedLanguages,
   uiLocale = "id",
 }: {
   packageId: string
   facilities: Facility[]
   selectedFacilityIds: string[]
   defaultLanguage?: string
+  publishedLanguages: string[]
   uiLocale?: string
 }) {
   const [activeLanguage, setActiveLanguage] = useState<Locale>(
     (merchantWizardLanguageOptions.find((lang) => lang.code === defaultLanguage)?.code || "id") as Locale,
   )
   const t = getMerchantWizardText(uiLocale as Locale)
+  const visibleLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions.filter(
+        (lang) => lang.code === defaultLanguage || publishedLanguages.includes(lang.code),
+      ),
+    [defaultLanguage, publishedLanguages],
+  )
 
   const groupedFacilities = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
     const category = facility.category || "Lainnya"
@@ -48,7 +57,7 @@ export default function EditStep3Facilities({
             {t.facilitiesLanguageHint}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {merchantWizardLanguageOptions.map((lang) => (
+            {visibleLanguages.map((lang) => (
               <button
                 key={lang.code}
                 type="button"
