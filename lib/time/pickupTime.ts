@@ -1,7 +1,41 @@
 export type PickupPeriod = "AM" | "PM"
 
 export function formatPickupTimeInput(value: string) {
-  const digits = value.replace(/\D/g, "").slice(0, 4)
+  const normalized = value.replace(/:/g, ".").replace(/[^\d.]/g, "")
+
+  if (!normalized) return ""
+
+  const hasSeparator = normalized.includes(".")
+
+  if (hasSeparator) {
+    const [rawHour = "", ...rest] = normalized.split(".")
+    const rawMinutes = rest.join("")
+    const hourDigits = rawHour.replace(/\D/g, "").slice(0, 2)
+
+    if (!hourDigits) return ""
+
+    const hour = Number(hourDigits)
+    if (!Number.isInteger(hour) || hour < 1) return ""
+
+    let safeHour = hourDigits
+    if (hourDigits.length === 2) {
+      if (hour >= 10 && hour <= 12) {
+        safeHour = String(hour)
+      } else if (hourDigits[0] !== "0") {
+        safeHour = hourDigits[0]
+      } else {
+        return ""
+      }
+    }
+
+    const minuteDigits = rawMinutes.replace(/\D/g, "").slice(0, 2)
+    const hourDisplay = String(Number(safeHour))
+
+    if (!minuteDigits) return `${hourDisplay}.`
+    return `${hourDisplay}.${minuteDigits}`
+  }
+
+  const digits = normalized.replace(/\D/g, "").slice(0, 4)
 
   if (!digits) return ""
 
