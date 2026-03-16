@@ -46,7 +46,51 @@ type MerchantShellDictionary = {
     fullyPaid: string
     awaitingPickup: string
     readyForFinance: string
-    paidOut: string
+      paidOut: string
+    }
+  packages: {
+    merchantMissing: string
+    addPackage: string
+    draftPackages: string
+    activePackages: string
+    inactivePackages: string
+    pendingPackages: string
+    rejectedPackages: string
+    heroBadge: string
+    heroTitle: string
+    heroDescription: string
+    activePackageStat: string
+    activePackageNote: string
+    pendingReviewStat: string
+    pendingReviewNote: string
+    draftRejectedStat: string
+    draftRejectedNote: string
+    totalPackages: string
+    active: string
+    draft: string
+    packageWorkflow: string
+    workflowTitle: string
+    workflowDescription: string
+    quickSummary: string
+    rejected: string
+    loadError: string
+    emptyState: string
+    untitledPackage: string
+    adminReason: string
+    rejectedWithoutNote: string
+    rejectedHelp: string
+    reviewStatus: string
+    underReview: string
+    submitDate: string
+    pendingHelp: string
+    adultPrice: string
+    pullToDraft: string
+    activatePackage: string
+    deactivatePackage: string
+    editPackage: string
+    deletePackage: string
+    viewPackage: string
+    pendingReviewStatus: string
   }
 }
 
@@ -99,6 +143,50 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       readyForFinance: "Ready for Finance",
       paidOut: "Paid Out",
     },
+    packages: {
+      merchantMissing: "Data merchant tidak ditemukan.",
+      addPackage: "Tambah Paket",
+      draftPackages: "Draft Paket",
+      activePackages: "Paket Aktif",
+      inactivePackages: "Paket Nonaktif",
+      pendingPackages: "Paket Pending Review",
+      rejectedPackages: "Paket Ditolak",
+      heroBadge: "Merchant Packages",
+      heroTitle: "Atur seluruh siklus paket merchant dari draft sampai live.",
+      heroDescription: "Pantau kesehatan listing, status review admin, dan tindakan cepat untuk mengaktifkan, merevisi, atau menonaktifkan paket.",
+      activePackageStat: "Paket Aktif",
+      activePackageNote: "Sudah live untuk customer.",
+      pendingReviewStat: "Pending Review",
+      pendingReviewNote: "Sedang dinilai admin.",
+      draftRejectedStat: "Draft & Ditolak",
+      draftRejectedNote: "Butuh perapihan lanjutan.",
+      totalPackages: "Total Paket",
+      active: "Aktif",
+      draft: "Draft",
+      packageWorkflow: "Package Workflow",
+      workflowTitle: "Kelola pipeline paket merchant",
+      workflowDescription: "Pilih kategori listing yang ingin Anda kerjakan, lalu lanjutkan dengan edit, aktivasi, atau submit ulang sesuai status masing-masing paket.",
+      quickSummary: "Quick Summary",
+      rejected: "Ditolak",
+      loadError: "Gagal memuat data paket merchant.",
+      emptyState: "Belum ada paket pada kategori ini.",
+      untitledPackage: "Paket tanpa judul",
+      adminReason: "Alasan Admin",
+      rejectedWithoutNote: "Paket ditolak tanpa catatan tambahan dari admin.",
+      rejectedHelp: "Perbaiki paket lewat tombol edit, lalu kirim ulang ke review admin. Paket yang ditolak tidak bisa langsung diaktifkan.",
+      reviewStatus: "Status Review",
+      underReview: "Sedang direview admin",
+      submitDate: "Tanggal submit",
+      pendingHelp: "Paket belum tampil ke customer selama proses review. Tarik ke draft jika Anda ingin membatalkan review dan melanjutkan revisi.",
+      adultPrice: "Harga Dewasa",
+      pullToDraft: "Tarik ke Draft",
+      activatePackage: "Aktifkan Paket",
+      deactivatePackage: "Nonaktifkan Paket",
+      editPackage: "Edit Paket",
+      deletePackage: "Hapus Paket",
+      viewPackage: "Lihat Paket",
+      pendingReviewStatus: "Pending Review",
+    },
   },
   en: {
     suiteBadge: "Merchant Suite",
@@ -148,6 +236,50 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       readyForFinance: "Ready for Finance",
       paidOut: "Paid Out",
     },
+    packages: {
+      merchantMissing: "Merchant data not found.",
+      addPackage: "Add Package",
+      draftPackages: "Draft Packages",
+      activePackages: "Active Packages",
+      inactivePackages: "Inactive Packages",
+      pendingPackages: "Pending Review Packages",
+      rejectedPackages: "Rejected Packages",
+      heroBadge: "Merchant Packages",
+      heroTitle: "Manage the full merchant package lifecycle from draft to live.",
+      heroDescription: "Monitor listing health, admin review status, and quick actions to activate, revise, or deactivate packages.",
+      activePackageStat: "Active Packages",
+      activePackageNote: "Already live for customers.",
+      pendingReviewStat: "Pending Review",
+      pendingReviewNote: "Currently reviewed by admin.",
+      draftRejectedStat: "Draft & Rejected",
+      draftRejectedNote: "Needs further cleanup.",
+      totalPackages: "Total Packages",
+      active: "Active",
+      draft: "Draft",
+      packageWorkflow: "Package Workflow",
+      workflowTitle: "Manage the merchant package pipeline",
+      workflowDescription: "Choose the listing category you want to work on, then continue by editing, activating, or resubmitting based on each package status.",
+      quickSummary: "Quick Summary",
+      rejected: "Rejected",
+      loadError: "Failed to load merchant package data.",
+      emptyState: "There are no packages in this category yet.",
+      untitledPackage: "Untitled package",
+      adminReason: "Admin Reason",
+      rejectedWithoutNote: "Package was rejected without additional notes from the admin.",
+      rejectedHelp: "Revise the package using the edit button, then resubmit it for admin review. Rejected packages cannot be activated directly.",
+      reviewStatus: "Review Status",
+      underReview: "Currently under admin review",
+      submitDate: "Submission date",
+      pendingHelp: "The package is not visible to customers during the review process. Move it back to draft if you want to cancel the review and continue revising.",
+      adultPrice: "Adult Price",
+      pullToDraft: "Move to Draft",
+      activatePackage: "Activate Package",
+      deactivatePackage: "Deactivate Package",
+      editPackage: "Edit Package",
+      deletePackage: "Delete Package",
+      viewPackage: "View Package",
+      pendingReviewStatus: "Pending Review",
+    },
   },
   zh: {
     suiteBadge: "商家套件",
@@ -196,6 +328,50 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       awaitingPickup: "等待接送",
       readyForFinance: "待财务处理",
       paidOut: "已结算",
+    },
+    packages: {
+      merchantMissing: "未找到商家数据。",
+      addPackage: "添加套餐",
+      draftPackages: "草稿套餐",
+      activePackages: "已上架套餐",
+      inactivePackages: "未启用套餐",
+      pendingPackages: "待审核套餐",
+      rejectedPackages: "被拒绝套餐",
+      heroBadge: "商家套餐",
+      heroTitle: "从草稿到上架，统一管理商家套餐的完整生命周期。",
+      heroDescription: "查看套餐状态、管理员审核进度，以及启用、修改或停用套餐的快捷操作。",
+      activePackageStat: "已上架套餐",
+      activePackageNote: "客户已经可以看到。",
+      pendingReviewStat: "待审核",
+      pendingReviewNote: "管理员正在审核中。",
+      draftRejectedStat: "草稿与被拒绝",
+      draftRejectedNote: "还需要进一步整理。",
+      totalPackages: "套餐总数",
+      active: "已上架",
+      draft: "草稿",
+      packageWorkflow: "套餐流程",
+      workflowTitle: "管理商家套餐流程",
+      workflowDescription: "选择您要处理的套餐分类，然后根据每个套餐的状态继续编辑、启用或重新提交审核。",
+      quickSummary: "快速摘要",
+      rejected: "已拒绝",
+      loadError: "加载商家套餐数据失败。",
+      emptyState: "该分类下还没有套餐。",
+      untitledPackage: "未命名套餐",
+      adminReason: "管理员原因",
+      rejectedWithoutNote: "管理员拒绝了该套餐，但没有附加说明。",
+      rejectedHelp: "请通过编辑按钮修改套餐，然后重新提交管理员审核。被拒绝的套餐不能直接启用。",
+      reviewStatus: "审核状态",
+      underReview: "管理员正在审核",
+      submitDate: "提交日期",
+      pendingHelp: "审核期间，客户看不到该套餐。如果您想取消审核并继续修改，请先拉回草稿。",
+      adultPrice: "成人价格",
+      pullToDraft: "拉回草稿",
+      activatePackage: "启用套餐",
+      deactivatePackage: "停用套餐",
+      editPackage: "编辑套餐",
+      deletePackage: "删除套餐",
+      viewPackage: "查看套餐",
+      pendingReviewStatus: "待审核",
     },
   },
 }
