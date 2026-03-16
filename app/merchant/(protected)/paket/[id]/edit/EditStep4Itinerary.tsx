@@ -589,8 +589,7 @@ export default function EditStep4Itinerary({
                         onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
                         inputMode="numeric"
                         maxLength={5}
-                        pattern="^(?:[1-9]|1[0-2])\\.[0-5][0-9]$"
-                        title={t.timeFormatHint}
+                        placeholder="1.30"
                         className="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                       />
                       <select
