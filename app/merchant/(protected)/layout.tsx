@@ -31,7 +31,7 @@ export default async function MerchantLayout({
 }) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const locale = await getCurrentLocale()
   const t = getMerchantShellText(locale)
 
