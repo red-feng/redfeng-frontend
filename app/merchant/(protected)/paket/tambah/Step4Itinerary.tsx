@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import { saveItinerary } from "./actions"
-import { formatPickupTimeInput } from "@/lib/time/pickupTime"
+import { buildPickupTime, normalizePickupHourInput, normalizePickupMinuteInput } from "@/lib/time/pickupTime"
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
@@ -17,7 +17,8 @@ type RouteTranslation = Record<Locale, string>
 type DayTranslation = Record<Locale, { title: string; description: string }>
 
 type RouteType = {
-  pickupTime: string
+  pickupHour: string
+  pickupMinute: string
   pickupPeriod: "AM" | "PM"
   translations: RouteTranslation
 }
@@ -30,7 +31,8 @@ type DayType = {
 
 function createEmptyRoute(): RouteType {
   return {
-    pickupTime: "",
+    pickupHour: "",
+    pickupMinute: "",
     pickupPeriod: "AM",
     translations: { id: "", en: "", zh: "" },
   }
@@ -205,12 +207,22 @@ export default function Step4Itinerary({
     scheduleDayAutoTranslate(dayIndex, field, value)
   }
 
-  const updateRouteField = (dayIndex: number, routeIndex: number, field: "pickupTime" | "pickupPeriod", value: string) => {
+  const updateRouteField = (
+    dayIndex: number,
+    routeIndex: number,
+    field: "pickupHour" | "pickupMinute" | "pickupPeriod",
+    value: string,
+  ) => {
     setDays((prev) => {
       const updated = [...prev]
       updated[dayIndex].routes[routeIndex] = {
         ...updated[dayIndex].routes[routeIndex],
-        [field]: field === "pickupTime" ? formatPickupTimeInput(value) : value,
+        [field]:
+          field === "pickupHour"
+            ? normalizePickupHourInput(value)
+            : field === "pickupMinute"
+              ? normalizePickupMinuteInput(value)
+              : value,
       }
       return updated
     })
@@ -562,14 +574,24 @@ export default function Step4Itinerary({
                             <div className="flex gap-2">
                               <input
                                 type="text"
-                                name="pickup_time[]"
-                                value={route.pickupTime}
-                                onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
+                                value={route.pickupHour}
+                                onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupHour", event.target.value)}
                                 inputMode="numeric"
-                                maxLength={5}
-                                placeholder="1:30"
-                                className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                                maxLength={2}
+                                placeholder="12"
+                                className="w-full rounded-lg border p-3 text-center outline-none focus:ring-2 focus:ring-orange-400"
                               />
+                              <span className="flex items-center text-lg font-semibold text-slate-500">:</span>
+                              <input
+                                type="text"
+                                value={route.pickupMinute}
+                                onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupMinute", event.target.value)}
+                                inputMode="numeric"
+                                maxLength={2}
+                                placeholder="00"
+                                className="w-full rounded-lg border p-3 text-center outline-none focus:ring-2 focus:ring-orange-400"
+                              />
+                              <input type="hidden" name="pickup_time[]" value={buildPickupTime(route.pickupHour, route.pickupMinute)} />
                               <select
                                 name="pickup_period[]"
                                 value={route.pickupPeriod}

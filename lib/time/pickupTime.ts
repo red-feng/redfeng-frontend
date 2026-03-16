@@ -1,53 +1,39 @@
 export type PickupPeriod = "AM" | "PM"
 
-export function formatPickupTimeInput(value: string) {
-  const sanitized = value.replace(/[^\d:]/g, "")
-
-  if (!sanitized) return ""
-
-  if (sanitized.includes(":")) {
-    const [rawHour = "", rawMinute = ""] = sanitized.split(":", 2)
-    const hourDigits = rawHour.replace(/\D/g, "").slice(0, 2)
-    const minuteDigits = rawMinute.replace(/\D/g, "").slice(0, 2)
-
-    if (!hourDigits) return ""
-
-    const hour = Number(hourDigits)
-    if (!Number.isInteger(hour) || hour < 1 || hour > 12) return hourDigits[0] && hourDigits[0] !== "0" ? hourDigits[0] : ""
-
-    return `${String(hour)}:${minuteDigits}`
-  }
-
-  const digits = sanitized.replace(/\D/g, "").slice(0, 4)
-
+export function normalizePickupHourInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 2)
   if (!digits) return ""
-  if (digits.length === 1) return digits === "0" ? "" : `${digits}:`
 
-  if (digits.length === 2) {
-    const twoDigitHour = Number(digits)
-    if (twoDigitHour >= 10 && twoDigitHour <= 12) return `${digits}:`
-    return digits[0] === "0" ? "" : `${digits[0]}:${digits[1]}`
+  if (digits.length === 1) {
+    return digits === "0" ? "" : digits
   }
 
-  if (digits.length === 3) {
-    const twoDigitHour = Number(digits.slice(0, 2))
-    if (twoDigitHour >= 10 && twoDigitHour <= 12) {
-      return `${twoDigitHour}:${digits.slice(2)}`
-    }
+  const hour = Number(digits)
+  if (hour >= 1 && hour <= 12) return String(hour)
+  if (digits[0] === "0") return ""
+  return digits[0]
+}
 
-    const oneDigitHour = Number(digits[0])
-    if (oneDigitHour < 1 || oneDigitHour > 9) return ""
-    return `${oneDigitHour}:${digits.slice(1)}`
+export function normalizePickupMinuteInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 2)
+  if (!digits) return ""
+
+  if (digits.length === 1) {
+    return digits
   }
 
-  const twoDigitHour = Number(digits.slice(0, 2))
-  if (twoDigitHour >= 10 && twoDigitHour <= 12) {
-    return `${twoDigitHour}:${digits.slice(2)}`
-  }
+  const minute = Number(digits)
+  if (minute >= 0 && minute <= 59) return digits
+  return digits[0]
+}
 
-  const oneDigitHour = Number(digits[0])
-  if (oneDigitHour < 1 || oneDigitHour > 9) return ""
-  return `${oneDigitHour}:${digits.slice(1, 3)}`
+export function buildPickupTime(hour: string, minute: string) {
+  const normalizedHour = normalizePickupHourInput(hour)
+  const normalizedMinute = normalizePickupMinuteInput(minute)
+
+  if (!normalizedHour) return ""
+  if (!normalizedMinute) return `${normalizedHour}:`
+  return `${normalizedHour}:${normalizedMinute.padStart(2, "0")}`
 }
 
 export function normalizePickupTimeForStorage(rawTime: string, rawPeriod: string) {
@@ -69,13 +55,14 @@ export function normalizePickupTimeForStorage(rawTime: string, rawPeriod: string
   return `${hour}.${match[2]} ${period}`
 }
 
-export function parseStoredPickupTime(value: string): { pickupTime: string; pickupPeriod: PickupPeriod } {
+export function parseStoredPickupTime(value: string): { pickupHour: string; pickupMinute: string; pickupPeriod: PickupPeriod } {
   const normalized = value.trim().toUpperCase().replace(/\s+/g, " ")
   const match = normalized.match(/^(\d{1,2})[:.](\d{2})(?:\s*(AM|PM))?$/)
 
   if (!match) {
     return {
-      pickupTime: "",
+      pickupHour: "",
+      pickupMinute: "",
       pickupPeriod: "AM",
     }
   }
@@ -90,7 +77,8 @@ export function parseStoredPickupTime(value: string): { pickupTime: string; pick
   }
 
   return {
-    pickupTime: `${hour}:${minute}`,
+    pickupHour: String(hour),
+    pickupMinute: minute,
     pickupPeriod: period,
   }
 }
