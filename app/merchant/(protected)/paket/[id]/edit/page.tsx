@@ -108,7 +108,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
     adminSupabase
       .from("package_translations")
-      .select("language_code, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
+      .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
       .eq("package_id", id),
     adminSupabase
       .from("package_details")
@@ -135,21 +135,23 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   ])
 
   const translations = Object.fromEntries(
-    ((translationsResult.data || []) as Array<{
-      language_code: string | null
-      about_tour: string | null
-      service_standard: string | null
-      include: string | null
+      ((translationsResult.data || []) as Array<{
+        language_code: string | null
+        title: string | null
+        about_tour: string | null
+        service_standard: string | null
+        include: string | null
         exclude: string | null
         preparation: string | null
         terms_conditions: string | null
         meeting_point: string | null
         highlights: string | null
       }>).map((item) => [
-      item.language_code || "id",
-      {
-        about_tour: item.about_tour || "",
-        service_standard: item.service_standard || "",
+        item.language_code || "id",
+        {
+          title: item.title || "",
+          about_tour: item.about_tour || "",
+          service_standard: item.service_standard || "",
         include: item.include || "",
         exclude: item.exclude || "",
         preparation: item.preparation || "",
@@ -164,9 +166,10 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const tags = ((tagsResult.data || []) as Array<{ tag: string | null }>).map((item) => item.tag).filter(Boolean).join(", ")
   for (const lang of ["id", "en", "zh"]) {
     if (!translations[lang]) {
-      translations[lang] = {
-        about_tour: "",
-        service_standard: "",
+        translations[lang] = {
+          title: "",
+          about_tour: "",
+          service_standard: "",
         include: "",
         exclude: "",
         preparation: "",
@@ -340,6 +343,11 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
               price_child: pkg.price_child ?? 0,
               default_language: pkg.default_language || "id",
               published_languages: pkg.published_languages || [pkg.default_language || "id"],
+              titles: {
+                id: translations.id?.title || (pkg.default_language === "id" ? pkg.title || "" : ""),
+                en: translations.en?.title || (pkg.default_language === "en" ? pkg.title || "" : ""),
+                zh: translations.zh?.title || (pkg.default_language === "zh" ? pkg.title || "" : ""),
+              },
             }}
           />
         )}

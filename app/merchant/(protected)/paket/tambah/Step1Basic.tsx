@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { createPackage } from "./actions"
 import Image from "next/image"
 import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
-import { normalizeLocale } from "@/lib/i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
 
 type Country = {
   id: string
@@ -24,11 +25,38 @@ export default function Step1Basic({
   const [defaultLanguage, setDefaultLanguage] = useState("id")
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(["id"])
   const [travelStyle, setTravelStyle] = useState("")
+  const [activeTitleLang, setActiveTitleLang] = useState<Locale>("id")
+  const [titleValues, setTitleValues] = useState<Record<Locale, string>>({
+    id: "",
+    en: "",
+    zh: "",
+  })
+  const manualTitleOverridesRef = useRef<Set<Locale>>(new Set())
+  const titleTranslationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
+  const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
+  const titleTargetLanguages = useMemo(
+    () =>
+      merchantWizardLanguageOptions
+        .map((language) => language.code)
+        .filter(
+          (language): language is Locale =>
+            language !== normalizedDefaultLanguage && publishedLanguages.includes(language),
+        ),
+    [normalizedDefaultLanguage, publishedLanguages],
+  )
+
+  useEffect(() => {
+    const timer = titleTranslationTimerRef.current
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 
   const onDefaultLanguageChange = (nextDefault: string) => {
     setDefaultLanguage(nextDefault)
+    setActiveTitleLang(normalizeLocale(nextDefault))
     setPublishedLanguages((prev) => {
       if (prev.includes(nextDefault)) return prev
       return [...prev, nextDefault]
@@ -41,6 +69,61 @@ export default function Step1Basic({
       if (checked) return [...prev, code]
       return prev.filter((item) => item !== code)
     })
+  }
+
+  const scheduleTitleAutoTranslate = (sourceValue: string, sourceLanguage: Locale) => {
+    if (titleTranslationTimerRef.current) {
+      clearTimeout(titleTranslationTimerRef.current)
+    }
+
+    if (!sourceValue.trim()) {
+      setTitleValues((prev) => {
+        const next = { ...prev }
+        for (const language of titleTargetLanguages) {
+          if (!manualTitleOverridesRef.current.has(language)) {
+            next[language] = ""
+          }
+        }
+        return next
+      })
+      return
+    }
+
+    titleTranslationTimerRef.current = setTimeout(async () => {
+      try {
+        const translations = await requestMerchantAutoTranslations({
+          text: sourceValue,
+          sourceLanguage,
+          targetLanguages: titleTargetLanguages,
+        })
+
+        setTitleValues((prev) => {
+          const next = { ...prev }
+          for (const language of titleTargetLanguages) {
+            if (!manualTitleOverridesRef.current.has(language) && typeof translations[language] === "string") {
+              next[language] = translations[language] || ""
+            }
+          }
+          return next
+        })
+      } catch (error) {
+        console.error("step1 title auto translate error:", error)
+      }
+    }, 700)
+  }
+
+  const updateTitleValue = (language: Locale, value: string) => {
+    setTitleValues((prev) => ({
+      ...prev,
+      [language]: value,
+    }))
+
+    if (language !== normalizedDefaultLanguage) {
+      manualTitleOverridesRef.current.add(language)
+      return
+    }
+
+    scheduleTitleAutoTranslate(value, language)
   }
 
   return (
@@ -88,12 +171,39 @@ export default function Step1Basic({
              <div className="grid grid-cols-2 gap-4">
 
   {/* NAMA PAKET */}
-  <input
-    name="title"
-    placeholder={t.packageNamePlaceholder}
-    className="border rounded-lg p-3 w-full col-span-2 outline-none focus:ring-2 focus:ring-blue-400"
-    required
-  />
+  <div className="col-span-2 space-y-3">
+    <label className="block text-sm font-semibold text-slate-700">
+      {t.packageName}
+    </label>
+    <div className="flex flex-wrap gap-2">
+      {merchantWizardLanguageOptions.map((language) => (
+        <button
+          key={language.code}
+          type="button"
+          onClick={() => setActiveTitleLang(language.code)}
+          className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+            activeTitleLang === language.code
+              ? "bg-orange-500 text-white"
+              : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+          }`}
+        >
+          {language.label}
+        </button>
+      ))}
+    </div>
+    {merchantWizardLanguageOptions.map((language) => (
+      <div key={language.code} className={activeTitleLang === language.code ? "block" : "hidden"}>
+        <input
+          name={`title_${language.code}`}
+          value={titleValues[language.code]}
+          onChange={(event) => updateTitleValue(language.code, event.target.value)}
+          placeholder={t.packageNamePlaceholder}
+          className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+          required={language.code === normalizedDefaultLanguage}
+        />
+      </div>
+    ))}
+  </div>
 
   {/* TRAVEL STYLE */}
   <select

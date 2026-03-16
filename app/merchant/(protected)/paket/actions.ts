@@ -9,6 +9,23 @@ import { redirect } from "next/navigation"
 const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
+function getTranslatedTitles(formData: FormData, defaultLanguage: string) {
+  const normalizedDefaultLanguage = normalizePublishedLanguages([], defaultLanguage)[0]
+  const titles = SUPPORTED_LANGUAGES.reduce(
+    (acc, code) => {
+      acc[code] = String(formData.get(`title_${code}`) || "").trim()
+      return acc
+    },
+    {} as Record<SupportedLanguage, string>,
+  )
+
+  if (!titles[normalizedDefaultLanguage]) {
+    throw new Error("Nama paket wajib diisi untuk bahasa default.")
+  }
+
+  return titles
+}
+
 function getItineraryTranslations(formData: FormData) {
   return SUPPORTED_LANGUAGES.reduce(
     (acc, code) => {
@@ -144,9 +161,11 @@ export async function updatePackageStep1(formData: FormData) {
 
     const defaultLanguage = String(formData.get("default_language") || "id")
     const publishedLanguages = normalizePublishedLanguages(formData.getAll("publish_languages[]"), defaultLanguage)
+    const titles = getTranslatedTitles(formData, defaultLanguage)
+    const defaultTitle = titles[defaultLanguage as SupportedLanguage]
 
     const payload = {
-      title: String(formData.get("title") || "").trim(),
+      title: defaultTitle,
       travel_style: String(formData.get("travel_style") || "").trim(),
       departure_date: normalizeDepartureDate(formData.get("travel_style"), formData.get("departure_date")),
       origin_country_id: String(formData.get("origin_country_id") || "").trim(),
@@ -187,6 +206,20 @@ export async function updatePackageStep1(formData: FormData) {
       throw new Error(`Gagal menyimpan basic info: ${updateResult.error.message}`)
     }
 
+    const titleTranslationRows = publishedLanguages.map((code) => ({
+      package_id: packageId,
+      language_code: code,
+      title: titles[code] || defaultTitle,
+    }))
+
+    const { error: translationError } = await adminSupabase
+      .from("package_translations")
+      .upsert(titleTranslationRows, { onConflict: "package_id,language_code" })
+
+    if (translationError) {
+      throw new Error(`Gagal menyimpan judul multibahasa: ${translationError.message}`)
+    }
+
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
   } catch (error) {
@@ -208,11 +241,12 @@ export async function updatePackageStep2(formData: FormData) {
       default_language: string | null
       title: string | null
       published_languages?: string[] | null
+      package_translations?: Array<{ language_code: string | null; title: string | null }> | null
     } | null = null
 
     const pkgWithPublished = await adminSupabase
       .from("packages")
-      .select("default_language, title, published_languages")
+      .select("default_language, title, published_languages, package_translations(language_code, title)")
       .eq("id", packageId)
       .single()
 
@@ -228,6 +262,7 @@ export async function updatePackageStep2(formData: FormData) {
         default_language: string | null
         title: string | null
         published_languages?: string[] | null
+        package_translations?: Array<{ language_code: string | null; title: string | null }> | null
       } | null
     }
 
@@ -238,6 +273,12 @@ export async function updatePackageStep2(formData: FormData) {
       (pkg.published_languages || []) as FormDataEntryValue[],
       defaultLanguage,
     )
+    const existingTitles = Object.fromEntries(
+      ((pkg.package_translations || []) as Array<{ language_code: string | null; title: string | null }>).map((item) => [
+        item.language_code || "id",
+        item.title || "",
+      ]),
+    ) as Partial<Record<SupportedLanguage, string>>
 
     const translationRows = SUPPORTED_LANGUAGES
       .map((code) => {
@@ -263,7 +304,7 @@ export async function updatePackageStep2(formData: FormData) {
         return {
           package_id: packageId,
           language_code: code,
-          title: pkg.title,
+          title: existingTitles[code] || pkg.title,
           about_tour: aboutTour || null,
           service_standard: serviceStandard || null,
           include: include || null,

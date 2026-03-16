@@ -15,6 +15,23 @@ const MAX_GALLERY_BYTES = 18 * 1024 * 1024
 const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
 type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
+function getTranslatedTitles(formData: FormData, defaultLanguage: string) {
+  const normalizedDefaultLanguage = normalizePublishedLanguages([], defaultLanguage)[0]
+  const titles = SUPPORTED_LANGUAGES.reduce(
+    (acc, code) => {
+      acc[code] = String(formData.get(`title_${code}`) || "").trim()
+      return acc
+    },
+    {} as Record<SupportedLanguage, string>,
+  )
+
+  if (!titles[normalizedDefaultLanguage]) {
+    throw new Error("Nama paket wajib diisi untuk bahasa default.")
+  }
+
+  return titles
+}
+
 function getItineraryTranslations(formData: FormData) {
   return SUPPORTED_LANGUAGES.reduce(
     (acc, code) => {
@@ -130,10 +147,11 @@ export async function createPackage(formData: FormData) {
       throw new Error("Data merchant tidak ditemukan.")
     }
 
-    const title = (formData.get("title") as string)?.trim()
+    const defaultLanguage = (formData.get("default_language") as string) || "id"
+    const titles = getTranslatedTitles(formData, defaultLanguage)
+    const title = titles[defaultLanguage as SupportedLanguage]
     if (!title) throw new Error("Nama paket wajib diisi.")
 
-    const defaultLanguage = (formData.get("default_language") as string) || "id"
     const publishedLanguages = normalizePublishedLanguages(
       formData.getAll("publish_languages[]"),
       defaultLanguage
@@ -208,6 +226,22 @@ export async function createPackage(formData: FormData) {
       throw new Error(`Gagal menyimpan paket: ${error.message}`)
     }
 
+    const titleTranslationRows = publishedLanguages.map((code) => ({
+      package_id: data.id,
+      language_code: code,
+      title: titles[code] || title,
+    }))
+
+    const { error: translationError } = await supabase
+      .from("package_translations")
+      .upsert(titleTranslationRows, {
+        onConflict: "package_id,language_code",
+      })
+
+    if (translationError) {
+      throw new Error(`Gagal menyimpan judul multibahasa: ${translationError.message}`)
+    }
+
     nextPath = wizardPath("2", data.id)
   } catch (error) {
     console.error("createPackage error:", error)
@@ -267,11 +301,12 @@ export async function savePackageDetails(formData: FormData) {
       default_language: string | null
       title: string | null
       published_languages?: string[] | null
+      package_translations?: Array<{ language_code: string | null; title: string | null }> | null
     } | null = null
 
     const pkgWithPublished = await supabase
       .from("packages")
-      .select("default_language, title, published_languages")
+      .select("default_language, title, published_languages, package_translations(language_code, title)")
       .eq("id", packageId)
       .single()
 
@@ -287,6 +322,7 @@ export async function savePackageDetails(formData: FormData) {
         default_language: string | null
         title: string | null
         published_languages?: string[] | null
+        package_translations?: Array<{ language_code: string | null; title: string | null }> | null
       } | null
     }
 
@@ -297,6 +333,12 @@ export async function savePackageDetails(formData: FormData) {
       (pkg.published_languages || []) as FormDataEntryValue[],
       defaultLanguage
     )
+    const existingTitles = Object.fromEntries(
+      ((pkg.package_translations || []) as Array<{ language_code: string | null; title: string | null }>).map((item) => [
+        item.language_code || "id",
+        item.title || "",
+      ]),
+    ) as Partial<Record<SupportedLanguage, string>>
 
     const translationRows = languageCodes
       .map((code) => {
@@ -331,7 +373,7 @@ export async function savePackageDetails(formData: FormData) {
           return {
             package_id: packageId,
             language_code: code,
-            title: pkg.title,
+            title: existingTitles[code] || pkg.title,
             about_tour: defaultAboutTour || null,
             service_standard: defaultServiceStandard || null,
             include: defaultInclude || null,
@@ -346,7 +388,7 @@ export async function savePackageDetails(formData: FormData) {
         return {
           package_id: packageId,
           language_code: code,
-          title: pkg.title,
+          title: existingTitles[code] || pkg.title,
           about_tour: aboutTour || null,
           service_standard: serviceStandard || null,
           include: include || null,
