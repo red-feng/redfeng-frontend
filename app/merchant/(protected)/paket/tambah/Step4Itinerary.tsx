@@ -557,7 +557,7 @@ export default function Step4Itinerary({
                                 onChange={(event) => updateRouteField(dayIndex, routeIndex, "pickupTime", event.target.value)}
                                 inputMode="numeric"
                                 maxLength={5}
-                                placeholder="1.30"
+                                placeholder="1:30"
                                 className="w-full rounded-lg border p-3 outline-none focus:ring-2 focus:ring-orange-400"
                               />
                               <select

@@ -31,8 +31,8 @@ export function formatPickupTimeInput(value: string) {
     const minuteDigits = rawMinutes.replace(/\D/g, "").slice(0, 2)
     const hourDisplay = String(Number(safeHour))
 
-    if (!minuteDigits) return `${hourDisplay}.`
-    return `${hourDisplay}.${minuteDigits}`
+    if (!minuteDigits) return `${hourDisplay}:`
+    return `${hourDisplay}:${minuteDigits}`
   }
 
   const digits = normalized.replace(/\D/g, "").slice(0, 4)
@@ -41,24 +41,24 @@ export function formatPickupTimeInput(value: string) {
 
   if (digits.length === 1) {
     if (digits === "0") return ""
-    return digits
+    return `${digits}:`
   }
 
   if (digits.length === 2) {
     const hour = Number(digits)
-    if (hour >= 1 && hour <= 12) return String(hour)
-    return digits[0] === "0" ? "" : digits[0]
+    if (hour >= 1 && hour <= 12) return `${hour}:`
+    return digits[0] === "0" ? "" : `${digits[0]}:`
   }
 
   if (digits.length === 3) {
     const hour = Number(digits[0])
     if (hour < 1 || hour > 9) return ""
-    return `${hour}.${digits.slice(1)}`
+    return `${hour}:${digits.slice(1)}`
   }
 
   const twoDigitHour = Number(digits.slice(0, 2))
   if (twoDigitHour >= 10 && twoDigitHour <= 12) {
-    return `${twoDigitHour}.${digits.slice(2)}`
+    return `${twoDigitHour}:${digits.slice(2)}`
   }
 
   return formatPickupTimeInput(digits.slice(0, 3))
@@ -70,14 +70,14 @@ export function normalizePickupTimeForStorage(rawTime: string, rawPeriod: string
   const match = normalized.match(/^(\d{1,2})\.(\d{2})$/)
 
   if (!match) {
-    throw new Error("Format jam itinerary harus seperti 11.30 AM atau 1.30 PM.")
+    throw new Error("Format jam itinerary harus seperti 11:30 AM atau 1:30 PM.")
   }
 
   const hour = Number(match[1])
   const minute = Number(match[2])
 
   if (!Number.isInteger(hour) || hour < 1 || hour > 12 || minute < 0 || minute > 59) {
-    throw new Error("Jam itinerary harus memakai format 12 jam, misalnya 11.30 AM atau 1.30 PM.")
+    throw new Error("Jam itinerary harus memakai format 12 jam, misalnya 11:30 AM atau 1:30 PM.")
   }
 
   return `${hour}.${match[2]} ${period}`
@@ -104,7 +104,7 @@ export function parseStoredPickupTime(value: string): { pickupTime: string; pick
   }
 
   return {
-    pickupTime: `${hour}.${minute}`,
+    pickupTime: `${hour}:${minute}`,
     pickupPeriod: period,
   }
 }
