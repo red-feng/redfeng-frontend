@@ -26,10 +26,12 @@ export default function TranslationTabs({
   translations,
   defaultLanguage,
   fallbackTitle,
+  publishedLanguages = [],
 }: {
   translations: TranslationItem[]
   defaultLanguage: string | null
   fallbackTitle: string | null
+  publishedLanguages?: string[] | null
 }) {
   const [activeIndex, setActiveIndex] = useState(0)
   const activeTranslation = translations[activeIndex] || null
@@ -52,8 +54,22 @@ export default function TranslationTabs({
                 : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
             }`}
           >
-            {getLanguageLabel(translation.language_code)}
-            {translation.language_code === defaultLanguage ? " - Default" : ""}
+            <span>{getLanguageLabel(translation.language_code)}</span>
+            {translation.language_code === defaultLanguage && (
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                activeIndex === index ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              }`}>
+                default
+              </span>
+            )}
+            {translation.language_code !== defaultLanguage &&
+              publishedLanguages?.includes(translation.language_code || "") && (
+                <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                  activeIndex === index ? "bg-white/20 text-white" : "bg-orange-50 text-orange-600"
+                }`}>
+                  published
+                </span>
+              )}
           </button>
         ))}
       </div>

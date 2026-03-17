@@ -1,7 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { approvePackage, rejectPackage } from "./actions"
 import Image from "next/image"
-import { getFacilityLabel } from "@/lib/facility-labels"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
 
@@ -113,6 +112,10 @@ export default async function Page({
     .single()
 
   const countryIds = [pkg.origin_country_id, pkg.destination_country_id].filter(Boolean)
+  const availableLanguageCodes =
+    Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
+      ? [...new Set([pkg.default_language || "id", ...pkg.published_languages])]
+      : [pkg.default_language || "id"]
   let countries: CountryRow[] = []
   if (countryIds.length > 0) {
     const { data } = await supabase
@@ -180,31 +183,33 @@ export default async function Page({
           .from("package_itinerary_day_translations")
           .select("itinerary_day_id, language_code, day_title")
           .in("itinerary_day_id", itineraryDayIds)
-          .eq("language_code", pkg.default_language || "id")
+          .in("language_code", availableLanguageCodes)
       : Promise.resolve({ data: [], error: null }),
     itineraryRouteIds.length > 0
       ? supabase
           .from("package_itinerary_route_translations")
           .select("itinerary_route_id, language_code, route, description")
           .in("itinerary_route_id", itineraryRouteIds)
-          .eq("language_code", pkg.default_language || "id")
+          .in("language_code", availableLanguageCodes)
       : Promise.resolve({ data: [], error: null }),
   ])
 
   const itineraryDayTranslationMap = new Map(
     ((itineraryDayTranslationResult.data || []) as Array<{
       itinerary_day_id: string | null
+      language_code: string | null
       day_title: string | null
-    }>).map((item) => [item.itinerary_day_id || "", item.day_title || ""]),
+    }>).map((item) => [`${item.itinerary_day_id || ""}:${item.language_code || ""}`, item.day_title || ""]),
   )
 
   const itineraryRouteTranslationMap = new Map(
     ((itineraryRouteTranslationResult.data || []) as Array<{
       itinerary_route_id: string | null
+      language_code: string | null
       route: string | null
       description: string | null
     }>).map((item) => [
-      item.itinerary_route_id || "",
+      `${item.itinerary_route_id || ""}:${item.language_code || ""}`,
       {
         route: item.route || "",
         description: item.description || "",
@@ -309,10 +314,11 @@ export default async function Page({
                 highlights: translation.highlights || null,
               }))}
               defaultLanguage={pkg.default_language}
+              publishedLanguages={availableLanguageCodes}
               fallbackTitle={pkg.title}
               facilities={facilities.map((facility) => ({
                 id: facility.facility_id,
-                label: getFacilityLabel(getFacilityName(facility.facilities), "id"),
+                rawName: getFacilityName(facility.facilities),
               }))}
               tags={tags.map((tag) => ({
                 id: tag.id,
@@ -321,13 +327,32 @@ export default async function Page({
               itineraryDays={itineraryDays.map((day) => ({
                 id: day.id,
                 day_number: day.day_number,
-                title: itineraryDayTranslationMap.get(day.id) || day.day_title,
-                routes: day.package_itinerary_routes.map((route) => ({
-                  id: route.id,
-                  pickup_time: route.pickup_time,
-                  route: itineraryRouteTranslationMap.get(route.id)?.route || route.route || "-",
-                  description: itineraryRouteTranslationMap.get(route.id)?.description || route.description || "-",
-                })),
+                translations: Object.fromEntries(
+                  availableLanguageCodes.map((languageCode) => [
+                    languageCode,
+                    {
+                      title:
+                        itineraryDayTranslationMap.get(`${day.id}:${languageCode}`) ||
+                        itineraryDayTranslationMap.get(`${day.id}:${pkg.default_language || "id"}`) ||
+                        day.day_title ||
+                        null,
+                      routes: day.package_itinerary_routes.map((route) => ({
+                        id: route.id,
+                        pickup_time: route.pickup_time,
+                        route:
+                          itineraryRouteTranslationMap.get(`${route.id}:${languageCode}`)?.route ||
+                          itineraryRouteTranslationMap.get(`${route.id}:${pkg.default_language || "id"}`)?.route ||
+                          route.route ||
+                          "-",
+                        description:
+                          itineraryRouteTranslationMap.get(`${route.id}:${languageCode}`)?.description ||
+                          itineraryRouteTranslationMap.get(`${route.id}:${pkg.default_language || "id"}`)?.description ||
+                          route.description ||
+                          "-",
+                      })),
+                    },
+                  ]),
+                ),
               }))}
             />
           </main>

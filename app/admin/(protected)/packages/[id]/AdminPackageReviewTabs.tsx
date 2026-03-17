@@ -1,7 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import TranslationTabs from "./TranslationTabs"
+import { getFacilityLabel } from "@/lib/facility-labels"
+import type { Locale } from "@/lib/i18n"
 
 type TranslationRow = {
   language_code: string | null
@@ -18,7 +19,7 @@ type TranslationRow = {
 
 type FacilityItem = {
   id: string
-  label: string
+  rawName: string
 }
 
 type TagItem = {
@@ -36,8 +37,13 @@ type ItineraryRouteItem = {
 type ItineraryDayItem = {
   id: string
   day_number: number
-  title: string | null
-  routes: ItineraryRouteItem[]
+  translations: Record<
+    string,
+    {
+      title: string | null
+      routes: ItineraryRouteItem[]
+    }
+  >
 }
 
 type DetailContent = {
@@ -53,15 +59,26 @@ type DetailContent = {
   map_embed: string | null
 }
 
-type ReviewTabKey = "detail" | "facilities" | "tags" | "itinerary" | "translator"
+type ReviewTabKey = "detail" | "facilities" | "tags" | "itinerary"
 
 const TAB_ITEMS: Array<{ key: ReviewTabKey; label: string }> = [
   { key: "detail", label: "Detail Konten" },
   { key: "facilities", label: "Fasilitas" },
   { key: "tags", label: "Tag / Sorotan" },
   { key: "itinerary", label: "Itinerary" },
-  { key: "translator", label: "Penerjemah" },
 ]
+
+function getLanguageLabel(code: string | null): string {
+  if (code === "id") return "Indonesia"
+  if (code === "en") return "English"
+  if (code === "zh") return "Chinese"
+  return code || "-"
+}
+
+function toLocale(code: string | null | undefined): Locale {
+  if (code === "en" || code === "zh") return code
+  return "id"
+}
 
 function DetailBlock({ title, value }: { title: string; value: string | null | undefined }) {
   return (
@@ -72,10 +89,59 @@ function DetailBlock({ title, value }: { title: string; value: string | null | u
   )
 }
 
+function LanguageTabs({
+  languages,
+  defaultLanguage,
+  activeLanguage,
+  onChange,
+}: {
+  languages: string[]
+  defaultLanguage: string | null
+  activeLanguage: string
+  onChange: (language: string) => void
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {languages.map((language) => {
+        const isActive = activeLanguage === language
+        return (
+          <button
+            key={language}
+            type="button"
+            onClick={() => onChange(language)}
+            className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+              isActive
+                ? "bg-slate-900 text-white"
+                : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+            }`}
+          >
+            <span>{getLanguageLabel(language)}</span>
+            {language === defaultLanguage && (
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              }`}>
+                default
+              </span>
+            )}
+            {language !== defaultLanguage && (
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                isActive ? "bg-white/20 text-white" : "bg-orange-50 text-orange-600"
+              }`}>
+                published
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function AdminPackageReviewTabs({
   detailContent,
   translations,
   defaultLanguage,
+  publishedLanguages,
   fallbackTitle,
   facilities,
   tags,
@@ -84,17 +150,45 @@ export default function AdminPackageReviewTabs({
   detailContent: DetailContent
   translations: TranslationRow[]
   defaultLanguage: string | null
+  publishedLanguages: string[]
   fallbackTitle: string | null
   facilities: FacilityItem[]
   tags: TagItem[]
   itineraryDays: ItineraryDayItem[]
 }) {
   const [activeTab, setActiveTab] = useState<ReviewTabKey>("detail")
+  const [activeLanguage, setActiveLanguage] = useState<string>(defaultLanguage || publishedLanguages[0] || "id")
 
-  const hasTranslatedHighlights = useMemo(
-    () => translations.some((translation) => Boolean(translation.highlights)),
-    [translations],
+  const availableLanguages = useMemo(
+    () => [...new Set([defaultLanguage || "id", ...publishedLanguages])],
+    [defaultLanguage, publishedLanguages],
   )
+
+  const activeTranslation = useMemo(
+    () =>
+      translations.find((translation) => translation.language_code === activeLanguage) ||
+      translations.find((translation) => translation.language_code === defaultLanguage) ||
+      translations[0] ||
+      null,
+    [activeLanguage, defaultLanguage, translations],
+  )
+
+  const itineraryForLanguage = useMemo(() => {
+    return itineraryDays.map((day) => ({
+      id: day.id,
+      day_number: day.day_number,
+      title:
+        day.translations[activeLanguage]?.title ||
+        day.translations[defaultLanguage || "id"]?.title ||
+        null,
+      routes:
+        day.translations[activeLanguage]?.routes ||
+        day.translations[defaultLanguage || "id"]?.routes ||
+        [],
+    }))
+  }, [activeLanguage, defaultLanguage, itineraryDays])
+
+  const activeLocale = toLocale(activeLanguage)
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -115,17 +209,35 @@ export default function AdminPackageReviewTabs({
         ))}
       </div>
 
+      <div className="mt-5">
+        <LanguageTabs
+          languages={availableLanguages}
+          defaultLanguage={defaultLanguage}
+          activeLanguage={activeLanguage}
+          onChange={setActiveLanguage}
+        />
+      </div>
+
       {activeTab === "detail" && (
         <div className="mt-5 space-y-5">
-          <DetailBlock title="Judul Paket" value={detailContent.title} />
-          <DetailBlock title="Info Tentang Tour" value={detailContent.about_tour} />
-          <DetailBlock title="Meeting Point" value={detailContent.meeting_point} />
-          <DetailBlock title="Standar Layanan Merchant" value={detailContent.service_standard} />
-          <DetailBlock title="Yang Termasuk" value={detailContent.include} />
-          <DetailBlock title="Yang Tidak Termasuk" value={detailContent.exclude} />
-          <DetailBlock title="Tag / Sorotan" value={detailContent.highlights} />
-          <DetailBlock title="Peralatan & Dokumen yang Disiapkan Peserta" value={detailContent.preparation} />
-          <DetailBlock title="Syarat & Ketentuan saat di Lokasi" value={detailContent.terms_conditions} />
+          <DetailBlock title="Judul Paket" value={activeTranslation?.title || fallbackTitle || detailContent.title} />
+          <DetailBlock title="Info Tentang Tour" value={activeTranslation?.about_tour || detailContent.about_tour} />
+          <DetailBlock title="Meeting Point" value={activeTranslation?.meeting_point || detailContent.meeting_point} />
+          <DetailBlock
+            title="Standar Layanan Merchant"
+            value={activeTranslation?.service_standard || detailContent.service_standard}
+          />
+          <DetailBlock title="Yang Termasuk" value={activeTranslation?.include || detailContent.include} />
+          <DetailBlock title="Yang Tidak Termasuk" value={activeTranslation?.exclude || detailContent.exclude} />
+          <DetailBlock title="Tag / Sorotan" value={activeTranslation?.highlights || detailContent.highlights} />
+          <DetailBlock
+            title="Peralatan & Dokumen yang Disiapkan Peserta"
+            value={activeTranslation?.preparation || detailContent.preparation}
+          />
+          <DetailBlock
+            title="Syarat & Ketentuan saat di Lokasi"
+            value={activeTranslation?.terms_conditions || detailContent.terms_conditions}
+          />
 
           {detailContent.map_embed && (
             <div>
@@ -147,7 +259,7 @@ export default function AdminPackageReviewTabs({
               key={facility.id}
               className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
             >
-              {facility.label}
+              {getFacilityLabel(facility.rawName, activeLocale)}
             </span>
           ))}
         </div>
@@ -155,6 +267,13 @@ export default function AdminPackageReviewTabs({
 
       {activeTab === "tags" && (
         <div className="mt-5 space-y-5">
+          <div>
+            <h3 className="mb-2 text-sm font-semibold text-slate-900">Sorotan Bahasa {getLanguageLabel(activeLanguage)}</h3>
+            <p className="whitespace-pre-line text-sm leading-7 text-slate-700">
+              {activeTranslation?.highlights || "-"}
+            </p>
+          </div>
+
           <div>
             <h3 className="mb-2 text-sm font-semibold text-slate-900">Tag Paket</h3>
             <div className="flex flex-wrap gap-2">
@@ -169,19 +288,13 @@ export default function AdminPackageReviewTabs({
               ))}
             </div>
           </div>
-
-          {hasTranslatedHighlights && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-              Sorotan hasil terjemahan merchant tersedia di tab <strong>Penerjemah</strong>.
-            </div>
-          )}
         </div>
       )}
 
       {activeTab === "itinerary" && (
         <div className="mt-5 space-y-5">
-          {itineraryDays.length === 0 && <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>}
-          {itineraryDays.map((day) => (
+          {itineraryForLanguage.length === 0 && <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>}
+          {itineraryForLanguage.map((day) => (
             <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <h3 className="text-base font-semibold text-slate-900">
                 Hari {day.day_number}
@@ -198,19 +311,6 @@ export default function AdminPackageReviewTabs({
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {activeTab === "translator" && (
-        <div className="mt-5 space-y-4">
-          <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">
-            Isi review admin merupakan cerminan langsung dari paket yang diunggah merchant pada setiap bahasa.
-          </div>
-          <TranslationTabs
-            translations={translations}
-            defaultLanguage={defaultLanguage}
-            fallbackTitle={fallbackTitle}
-          />
         </div>
       )}
     </section>
