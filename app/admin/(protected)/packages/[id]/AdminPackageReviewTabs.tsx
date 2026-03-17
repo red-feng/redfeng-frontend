@@ -101,7 +101,7 @@ function LanguageTabs({
   onChange: (language: string) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-3">
       {languages.map((language) => {
         const isActive = activeLanguage === language
         return (
@@ -109,18 +109,18 @@ function LanguageTabs({
             key={language}
             type="button"
             onClick={() => onChange(language)}
-            className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+            className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
               isActive
-                ? "border-slate-900 bg-slate-900 text-white shadow-sm"
-                : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                ? "border-orange-200 bg-[linear-gradient(135deg,#fff1e7_0%,#ffe7d5_100%)] text-orange-700 shadow-[0_10px_24px_rgba(249,115,22,0.16)]"
+                : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-orange-200 hover:bg-orange-50/70 hover:text-orange-600"
             }`}
           >
-            <span>{getLanguageLabel(language)}</span>
+            <span className="leading-none">{getLanguageLabel(language)}</span>
             {language === defaultLanguage && (
               <span
                 className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
                   isActive
-                    ? "border-white/30 bg-white/15 text-white"
+                    ? "border-orange-300 bg-white/75 text-orange-700"
                     : "border-emerald-200 bg-emerald-50 text-emerald-700"
                 }`}
               >
@@ -131,7 +131,7 @@ function LanguageTabs({
               <span
                 className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
                   isActive
-                    ? "border-white/30 bg-white/15 text-white"
+                    ? "border-orange-300 bg-white/75 text-orange-700"
                     : "border-sky-200 bg-sky-50 text-sky-700"
                 }`}
               >
