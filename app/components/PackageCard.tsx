@@ -1,10 +1,15 @@
 import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
+import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
 
 type PackageCardTranslation = {
+  language_code?: string | null
   title: string | null
   description: string | null
+  currency?: string | null
+  price_adult?: number | null
+  price_child?: number | null
 }
 
 type PackageCardData = {
@@ -17,16 +22,26 @@ type PackageCardData = {
   minimal_peserta: number | null
   travel_style: string | null
   price_adult: number | null
+  price_child?: number | null
+  default_language?: string | null
+  published_languages?: string[] | null
   package_translations?: PackageCardTranslation[] | null
 }
 
 export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; locale: Locale }) {
-  const translation = pkg.package_translations?.[0]
+  const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
   const t = dictionaries[locale].packageCard
   const imageSrc = pkg.cover_image || "/placeholder.png"
   const imageAlt = translation?.title || "Package image"
-  const priceAdult = pkg.price_adult ?? 0
-  const currency = pkg.currency || "IDR"
+  const pricing = resolveLocalizedPackagePricing({
+    locale,
+    defaultLanguage: pkg.default_language,
+    publishedLanguages: pkg.published_languages,
+    baseCurrency: pkg.currency,
+    baseAdultPrice: pkg.price_adult,
+    baseChildPrice: pkg.price_child,
+    translations: pkg.package_translations,
+  })
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
 
@@ -99,11 +114,11 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       <div className="w-[240px] border-l bg-gray-50 p-6 flex flex-col justify-between items-end">
         <div className="text-right">
           <div className="text-sm text-gray-500 line-through">
-            {currency} {(priceAdult * 1.2).toLocaleString()}
+            {formatPackageMoney(pricing.priceAdult * 1.2, pricing.currency, locale)}
           </div>
 
           <div className="text-2xl font-bold text-orange-600">
-            {currency} {priceAdult.toLocaleString()}
+            {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
           </div>
 
           <div className="text-xs text-gray-500">

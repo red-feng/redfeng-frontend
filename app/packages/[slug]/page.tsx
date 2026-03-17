@@ -10,6 +10,7 @@ import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
+import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
 import { parseHighlights } from "@/lib/packages/highlights"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
@@ -80,12 +81,6 @@ function safeDecode(value: string): string {
   } catch {
     return value
   }
-}
-
-function formatMoney(value: number | null, currency: string | null): string {
-  const safeValue = value ?? 0
-  const safeCurrency = currency || "IDR"
-  return `${safeCurrency} ${safeValue.toLocaleString("id-ID")}`
 }
 
 function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
@@ -290,7 +285,7 @@ export default async function PaketPage({
 
   const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
+    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
     .eq("package_id", pkg.id)
     .in(
       "language_code",
@@ -309,15 +304,21 @@ export default async function PaketPage({
     terms_conditions: string | null
     meeting_point: string | null
     highlights: string | null
+    currency: string | null
+    price_adult: number | null
+    price_child: number | null
   }>
 
-  const translationPriority = [activeLocale, defaultLocale, "id"]
-  const translation =
-    translationPriority
-      .map((code) => translations.find((row) => row.language_code === code))
-      .find(Boolean) ||
-    translations[0] ||
-    null
+  const translation = resolvePackageTranslation(translations, activeLocale, pkg.default_language, pkg.published_languages)
+  const localizedPricing = resolveLocalizedPackagePricing({
+    locale: activeLocale,
+    defaultLanguage: pkg.default_language,
+    publishedLanguages: pkg.published_languages,
+    baseCurrency: pkg.currency,
+    baseAdultPrice: pkg.price_adult,
+    baseChildPrice: pkg.price_child,
+    translations,
+  })
 
   const { data: detail } = await supabase
     .from("package_details")
@@ -511,14 +512,14 @@ export default async function PaketPage({
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-300/40">
               <h2 className="text-xl font-semibold text-slate-900">{t.bookingTour}</h2>
-              <p className="mt-2 text-3xl font-bold text-orange-600">{formatMoney(pkg.price_adult, pkg.currency)}</p>
+              <p className="mt-2 text-3xl font-bold text-orange-600">{formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}</p>
               <div className="mt-4 space-y-2 text-sm text-slate-700">
                 <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
                 <p>{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
                 {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
                   <p>Tanggal keberangkatan: {pkg.departure_date}</p>
                 )}
-                <p>{t.childPrice}: {formatMoney(pkg.price_child, pkg.currency)}</p>
+                <p>{t.childPrice}: {formatPackageMoney(localizedPricing.priceChild, localizedPricing.currency, activeLocale)}</p>
               </div>
               <Link
                 href={`/checkout/${encodeURIComponent(pkg.slug)}`}

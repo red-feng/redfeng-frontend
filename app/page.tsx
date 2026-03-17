@@ -7,7 +7,8 @@ import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
-import { dictionaries } from "@/lib/i18n"
+import { dictionaries, type Locale } from "@/lib/i18n"
+import { resolveLocalizedPackagePricing } from "@/lib/package-pricing"
 
 
 export const dynamic = "force-dynamic"
@@ -24,14 +25,17 @@ type PackageListItem = {
   minimal_peserta: number | null
   travel_style: string | null
   price_adult: number | null
+  price_child?: number | null
+  default_language?: string | null
+  published_languages?: string[] | null
   package_facilities?: { facility_id: string }[] | null
-  package_translations?: { title: string | null; description: string | null }[] | null
+  package_translations?: { language_code?: string | null; title: string | null; description: string | null; currency?: string | null; price_adult?: number | null; price_child?: number | null }[] | null
 }
 
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
-}): Promise<PackageListItem[]> {
+}, locale: Locale = "id"): Promise<PackageListItem[]> {
   const supabase = await createClient()
 
   const toParamString = (value: string | string[] | undefined): string =>
@@ -71,11 +75,6 @@ if (searchParams?.departure_date) {
     query = query.gte("duration", 8)
   }
 }
-  // FILTER PRICE
-  if (searchParams?.max_price) {
-    query = query.lte("price_adult", Number(searchParams.max_price))
-  }
-
   // FILTER FACILITIES
   if (hasFacilityFilter) {
     const selectedFacilityKeys = facilitiesParam
@@ -153,7 +152,18 @@ if (searchParams?.departure_date) {
   if (searchParams?.max_price) {
     const max = Number(searchParams.max_price)
     if (!Number.isNaN(max)) {
-      filtered = filtered.filter((pkg) => (pkg.price_adult ?? 0) <= max)
+      filtered = filtered.filter((pkg) => {
+        const pricing = resolveLocalizedPackagePricing({
+          locale,
+          defaultLanguage: pkg.default_language,
+          publishedLanguages: pkg.published_languages,
+          baseCurrency: pkg.currency,
+          baseAdultPrice: pkg.price_adult,
+          baseChildPrice: pkg.price_child,
+          translations: pkg.package_translations,
+        })
+        return pricing.priceAdult <= max
+      })
     }
   }
 
@@ -193,7 +203,7 @@ export default async function HomePage({
   const locale = await getCurrentLocale()
   const t = dictionaries[locale]
 
-  const packages = await getPackages(resolvedSearchParams)
+  const packages = await getPackages(resolvedSearchParams, locale)
   const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase

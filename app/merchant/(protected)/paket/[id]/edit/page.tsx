@@ -116,7 +116,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
     adminSupabase
       .from("package_translations")
-      .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
+      .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
       .eq("package_id", id),
     adminSupabase
       .from("package_details")
@@ -154,6 +154,9 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         terms_conditions: string | null
         meeting_point: string | null
         highlights: string | null
+        currency: string | null
+        price_adult: number | null
+        price_child: number | null
       }>).map((item) => [
         item.language_code || "id",
         {
@@ -166,6 +169,9 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         terms_conditions: item.terms_conditions || "",
         meeting_point: item.meeting_point || "",
         highlights: item.highlights || "",
+        currency: item.currency || pkg?.currency || "IDR",
+        price_adult: item.price_adult ?? pkg?.price_adult ?? 0,
+        price_child: item.price_child ?? pkg?.price_child ?? 0,
       },
     ]),
   )
@@ -184,6 +190,9 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         terms_conditions: "",
         meeting_point: "",
         highlights: "",
+        currency: pkg.currency || "IDR",
+        price_adult: pkg.price_adult ?? 0,
+        price_child: pkg.price_child ?? 0,
       }
     }
     if (!translations[lang].meeting_point) translations[lang].meeting_point = details.meeting_point || ""
@@ -355,6 +364,23 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
                 id: translations.id?.title || (pkg.default_language === "id" ? pkg.title || "" : ""),
                 en: translations.en?.title || (pkg.default_language === "en" ? pkg.title || "" : ""),
                 zh: translations.zh?.title || (pkg.default_language === "zh" ? pkg.title || "" : ""),
+              },
+              pricing: {
+                id: {
+                  currency: translations.id?.currency || pkg.currency || "IDR",
+                  price_adult: translations.id?.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.id?.price_child ?? pkg.price_child ?? 0,
+                },
+                en: {
+                  currency: translations.en?.currency || pkg.currency || "USD",
+                  price_adult: translations.en?.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.en?.price_child ?? pkg.price_child ?? 0,
+                },
+                zh: {
+                  currency: translations.zh?.currency || pkg.currency || "CNY",
+                  price_adult: translations.zh?.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.zh?.price_child ?? pkg.price_child ?? 0,
+                },
               },
             }}
           />

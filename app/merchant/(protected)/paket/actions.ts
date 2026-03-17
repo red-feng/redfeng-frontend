@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { normalizePackageCurrency } from "@/lib/package-pricing"
 import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
@@ -24,6 +25,47 @@ function getTranslatedTitles(formData: FormData, defaultLanguage: string) {
   }
 
   return titles
+}
+
+function getLocalizedPricing(formData: FormData, publishedLanguages: SupportedLanguage[], defaultLanguage: string) {
+  const normalizedDefaultLanguage = normalizePublishedLanguages([], defaultLanguage)[0]
+  const defaultCurrency = normalizePackageCurrency(
+    String(formData.get(`currency_${normalizedDefaultLanguage}`) || formData.get("currency") || "IDR"),
+  )
+  const defaultAdultPrice = Number(
+    String(formData.get(`price_adult_${normalizedDefaultLanguage}`) || formData.get("price_adult") || "0").replace(/[^\d]/g, ""),
+  )
+  const defaultChildPrice = Number(
+    String(formData.get(`price_child_${normalizedDefaultLanguage}`) || formData.get("price_child") || "0").replace(/[^\d]/g, ""),
+  )
+
+  return SUPPORTED_LANGUAGES.reduce(
+    (acc, code) => {
+      const rawCurrency = String(formData.get(`currency_${code}`) || "").trim()
+      const rawAdultPrice = String(formData.get(`price_adult_${code}`) || "").replace(/[^\d]/g, "")
+      const rawChildPrice = String(formData.get(`price_child_${code}`) || "").replace(/[^\d]/g, "")
+      const isPublished = publishedLanguages.includes(code)
+      const isDefault = code === normalizedDefaultLanguage
+
+      if (!isPublished && !isDefault) {
+        acc[code] = {
+          currency: defaultCurrency,
+          price_adult: defaultAdultPrice,
+          price_child: defaultChildPrice,
+        }
+        return acc
+      }
+
+      acc[code] = {
+        currency: normalizePackageCurrency(rawCurrency || defaultCurrency),
+        price_adult: Number(rawAdultPrice || defaultAdultPrice || 0),
+        price_child: Number(rawChildPrice || defaultChildPrice || 0),
+      }
+
+      return acc
+    },
+    {} as Record<SupportedLanguage, { currency: string; price_adult: number; price_child: number }>,
+  )
 }
 
 function getItineraryTranslations(formData: FormData) {
@@ -205,6 +247,7 @@ export async function updatePackageStep1(formData: FormData) {
     const defaultLanguage = String(formData.get("default_language") || "id")
     const publishedLanguages = normalizePublishedLanguages(formData.getAll("publish_languages[]"), defaultLanguage)
     const titles = getTranslatedTitles(formData, defaultLanguage)
+    const pricing = getLocalizedPricing(formData, publishedLanguages, defaultLanguage)
     const defaultTitle = titles[defaultLanguage as SupportedLanguage]
 
     const payload = {
@@ -215,11 +258,11 @@ export async function updatePackageStep1(formData: FormData) {
       origin_province: String(formData.get("origin_province") || "").trim(),
       destination_country_id: String(formData.get("destination_country_id") || "").trim(),
       destination_province: String(formData.get("destination_province") || "").trim(),
-      currency: String(formData.get("currency") || "IDR").trim(),
+      currency: pricing[defaultLanguage as SupportedLanguage].currency,
       minimal_peserta: Number(formData.get("minimal_peserta") || 1),
       duration: Number(formData.get("duration_days") || 1),
-      price_adult: Number(formData.get("price_adult") || 0),
-      price_child: Number(formData.get("price_child") || 0),
+      price_adult: pricing[defaultLanguage as SupportedLanguage].price_adult,
+      price_child: pricing[defaultLanguage as SupportedLanguage].price_child,
       default_language: defaultLanguage,
       published_languages: publishedLanguages,
       status: "draft",
@@ -254,6 +297,9 @@ export async function updatePackageStep1(formData: FormData) {
       package_id: packageId,
       language_code: code,
       title: titles[code] || defaultTitle,
+      currency: pricing[code].currency,
+      price_adult: pricing[code].price_adult,
+      price_child: pricing[code].price_child,
     }))
 
     const { error: translationError } = await adminSupabase
@@ -285,12 +331,18 @@ export async function updatePackageStep2(formData: FormData) {
       default_language: string | null
       title: string | null
       published_languages?: string[] | null
-      package_translations?: Array<{ language_code: string | null; title: string | null }> | null
+      package_translations?: Array<{
+        language_code: string | null
+        title: string | null
+        currency: string | null
+        price_adult: number | null
+        price_child: number | null
+      }> | null
     } | null = null
 
     const pkgWithPublished = await adminSupabase
       .from("packages")
-      .select("default_language, title, published_languages, package_translations(language_code, title)")
+      .select("default_language, title, published_languages, package_translations(language_code, title, currency, price_adult, price_child)")
       .eq("id", packageId)
       .single()
 
@@ -306,7 +358,13 @@ export async function updatePackageStep2(formData: FormData) {
         default_language: string | null
         title: string | null
         published_languages?: string[] | null
-        package_translations?: Array<{ language_code: string | null; title: string | null }> | null
+        package_translations?: Array<{
+          language_code: string | null
+          title: string | null
+          currency: string | null
+          price_adult: number | null
+          price_child: number | null
+        }> | null
       } | null
     }
 
@@ -318,11 +376,27 @@ export async function updatePackageStep2(formData: FormData) {
       defaultLanguage,
     )
     const existingTitles = Object.fromEntries(
-      ((pkg.package_translations || []) as Array<{ language_code: string | null; title: string | null }>).map((item) => [
+      ((pkg.package_translations || []) as Array<{
+        language_code: string | null
+        title: string | null
+        currency: string | null
+        price_adult: number | null
+        price_child: number | null
+      }>).map((item) => [
         item.language_code || "id",
-        item.title || "",
+        {
+          title: item.title || "",
+          currency: item.currency || null,
+          price_adult: item.price_adult,
+          price_child: item.price_child,
+        },
       ]),
-    ) as Partial<Record<SupportedLanguage, string>>
+    ) as Partial<Record<SupportedLanguage, {
+      title: string
+      currency: string | null
+      price_adult: number | null
+      price_child: number | null
+    }>>
 
     const translationRows = SUPPORTED_LANGUAGES
       .map((code) => {
@@ -348,7 +422,7 @@ export async function updatePackageStep2(formData: FormData) {
         return {
           package_id: packageId,
           language_code: code,
-          title: existingTitles[code] || pkg.title,
+          title: existingTitles[code]?.title || pkg.title,
           about_tour: aboutTour || null,
           service_standard: serviceStandard || null,
           include: include || null,
@@ -357,6 +431,9 @@ export async function updatePackageStep2(formData: FormData) {
           terms_conditions: termsConditions || null,
           meeting_point: meetingPoint || null,
           highlights: highlights || null,
+          currency: existingTitles[code]?.currency,
+          price_adult: existingTitles[code]?.price_adult,
+          price_child: existingTitles[code]?.price_child,
         }
       })
       .filter(Boolean)

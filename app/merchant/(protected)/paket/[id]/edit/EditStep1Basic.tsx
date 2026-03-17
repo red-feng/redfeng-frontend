@@ -6,6 +6,7 @@ import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
+import { normalizePackageCurrency, normalizePackagePriceInput, packageCurrencyOptions } from "@/lib/package-pricing"
 
 type Country = {
   id: string
@@ -28,6 +29,7 @@ type Step1InitialData = {
   default_language: string
   published_languages: string[]
   titles: Record<Locale, string>
+  pricing: Record<Locale, { currency: string; price_adult: number; price_child: number }>
 }
 
 export default function EditStep1Basic({
@@ -44,10 +46,28 @@ export default function EditStep1Basic({
   const [defaultLanguage, setDefaultLanguage] = useState(initialData.default_language || "id")
   const [travelStyle, setTravelStyle] = useState(initialData.travel_style || "")
   const [activeTitleLang, setActiveTitleLang] = useState<Locale>(normalizeLocale(initialData.default_language || "id"))
+  const [activePricingLang, setActivePricingLang] = useState<Locale>(normalizeLocale(initialData.default_language || "id"))
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
   const [titleValues, setTitleValues] = useState<Record<Locale, string>>(initialData.titles)
+  const [pricingValues, setPricingValues] = useState<Record<Locale, { currency: string; price_adult: string; price_child: string }>>({
+    id: {
+      currency: normalizePackageCurrency(initialData.pricing.id?.currency),
+      price_adult: String(initialData.pricing.id?.price_adult ?? ""),
+      price_child: String(initialData.pricing.id?.price_child ?? ""),
+    },
+    en: {
+      currency: normalizePackageCurrency(initialData.pricing.en?.currency || "USD"),
+      price_adult: String(initialData.pricing.en?.price_adult ?? ""),
+      price_child: String(initialData.pricing.en?.price_child ?? ""),
+    },
+    zh: {
+      currency: normalizePackageCurrency(initialData.pricing.zh?.currency || "CNY"),
+      price_adult: String(initialData.pricing.zh?.price_adult ?? ""),
+      price_child: String(initialData.pricing.zh?.price_child ?? ""),
+    },
+  })
   const [isRetranslatingTitle, setIsRetranslatingTitle] = useState(false)
   const manualTitleOverridesRef = useRef<Set<Locale>>(
     new Set(
@@ -91,10 +111,37 @@ export default function EditStep1Basic({
     }
   }, [activeTitleLang, normalizedDefaultLanguage, visibleLanguages])
 
+  useEffect(() => {
+    if (!visibleLanguages.some((language) => language.code === activePricingLang)) {
+      setActivePricingLang(normalizedDefaultLanguage)
+    }
+  }, [activePricingLang, normalizedDefaultLanguage, visibleLanguages])
+
+  const copyPricingFromLanguage = useCallback((source: Locale, target: Locale) => {
+    setPricingValues((prev) => {
+      const sourcePricing = prev[source]
+      const targetPricing = prev[target]
+      if (!sourcePricing || !targetPricing) return prev
+      if (targetPricing.price_adult || targetPricing.price_child) return prev
+
+      return {
+        ...prev,
+        [target]: {
+          currency: targetPricing.currency || sourcePricing.currency,
+          price_adult: sourcePricing.price_adult,
+          price_child: sourcePricing.price_child,
+        },
+      }
+    })
+  }, [])
+
   const onDefaultLanguageChange = (nextDefault: string) => {
+    const nextLocale = normalizeLocale(nextDefault)
     setDefaultLanguage(nextDefault)
-    setActiveTitleLang(normalizeLocale(nextDefault))
+    setActiveTitleLang(nextLocale)
+    setActivePricingLang(nextLocale)
     setPublishedLanguages((prev) => (prev.includes(nextDefault) ? prev : [...prev, nextDefault]))
+    copyPricingFromLanguage(normalizedDefaultLanguage, nextLocale)
   }
 
   const translateTitleForTargets = useCallback(async (targets: Locale[]) => {
@@ -133,8 +180,23 @@ export default function EditStep1Basic({
       return prev.filter((item) => item !== code)
     })
     if (checked) {
-      void translateTitleForTargets([normalizeLocale(code)])
+      const nextLocale = normalizeLocale(code)
+      void translateTitleForTargets([nextLocale])
+      copyPricingFromLanguage(normalizedDefaultLanguage, nextLocale)
     }
+  }
+
+  const updatePricingValue = (language: Locale, field: "currency" | "price_adult" | "price_child", value: string) => {
+    setPricingValues((prev) => ({
+      ...prev,
+      [language]: {
+        ...prev[language],
+        [field]:
+          field === "currency"
+            ? normalizePackageCurrency(value)
+            : normalizePackagePriceInput(value),
+      },
+    }))
   }
 
   const scheduleTitleAutoTranslate = (sourceValue: string, sourceLanguage: Locale) => {
@@ -362,19 +424,6 @@ export default function EditStep1Basic({
         </div>
 
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
-          <select
-            name="currency"
-            defaultValue={initialData.currency || "IDR"}
-            className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-          >
-            <option value="IDR">IDR</option>
-            <option value="USD">USD</option>
-            <option value="CNY">CNY</option>
-          </select>
-        </div>
-
-        <div>
           <label className="mb-2 block text-sm font-medium text-slate-700">
             {getParticipantFieldLabel(travelStyle, locale)}
           </label>
@@ -422,29 +471,68 @@ export default function EditStep1Basic({
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
-          <input
-            name="price_adult"
-            type="number"
-            min="0"
-            defaultValue={initialData.price_adult}
-            placeholder={t.adultPricePlaceholder}
-            className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
-          <input
-            name="price_child"
-            type="number"
-            min="0"
-            defaultValue={initialData.price_child}
-            placeholder={t.childPricePlaceholder}
-            className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-          />
+        <div className="md:col-span-2 space-y-3">
+          <label className="block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
+          <div className="flex flex-wrap gap-2">
+            {visibleLanguages.map((language) => (
+              <button
+                key={language.code}
+                type="button"
+                onClick={() => setActivePricingLang(language.code)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                  activePricingLang === language.code
+                    ? "bg-orange-500 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {language.label}
+              </button>
+            ))}
+          </div>
+          {visibleLanguages.map((language) => (
+            <div
+              key={language.code}
+              className={activePricingLang === language.code ? "grid grid-cols-1 gap-4 md:grid-cols-3" : "hidden"}
+            >
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
+                <select
+                  name={`currency_${language.code}`}
+                  value={pricingValues[language.code].currency}
+                  onChange={(event) => updatePricingValue(language.code, "currency", event.target.value)}
+                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                >
+                  {packageCurrencyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
+                <input
+                  name={`price_adult_${language.code}`}
+                  inputMode="numeric"
+                  value={pricingValues[language.code].price_adult}
+                  onChange={(event) => updatePricingValue(language.code, "price_adult", event.target.value)}
+                  placeholder={t.adultPricePlaceholder}
+                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
+                <input
+                  name={`price_child_${language.code}`}
+                  inputMode="numeric"
+                  value={pricingValues[language.code].price_child}
+                  onChange={(event) => updatePricingValue(language.code, "price_child", event.target.value)}
+                  placeholder={t.childPricePlaceholder}
+                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className="md:col-span-2">
