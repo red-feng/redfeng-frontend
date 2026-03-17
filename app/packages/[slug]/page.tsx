@@ -7,10 +7,11 @@ import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
+import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, normalizeLocale, type Locale } from "@/lib/i18n"
-import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
+import { formatPackageMoney, resolvePackageTranslation } from "@/lib/package-pricing"
 import { parseHighlights } from "@/lib/packages/highlights"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
@@ -310,14 +311,13 @@ export default async function PaketPage({
   }>
 
   const translation = resolvePackageTranslation(translations, activeLocale, pkg.default_language, pkg.published_languages)
-  const localizedPricing = resolveLocalizedPackagePricing({
+  const localizedPricing = await getLiveLocalizedPackagePricing({
     locale: activeLocale,
     defaultLanguage: pkg.default_language,
     publishedLanguages: pkg.published_languages,
     baseCurrency: pkg.currency,
     baseAdultPrice: pkg.price_adult,
     baseChildPrice: pkg.price_child,
-    translations,
   })
 
   const { data: detail } = await supabase

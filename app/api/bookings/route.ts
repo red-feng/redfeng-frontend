@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { defaultFinanceSettings } from "@/lib/finance/settings"
-import { convertCurrencyAmount } from "@/lib/currency-rates"
-import { resolveLocalizedPackagePricing } from "@/lib/package-pricing"
+import { convertCurrencyAmount, getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
@@ -65,23 +64,22 @@ export async function POST(req: Request) {
     }
 
     const activeLocale = normalizeLocale(locale)
-    const localizedPricing = resolveLocalizedPackagePricing({
+    const localizedPricing = await getLiveLocalizedPackagePricing({
       locale: activeLocale,
       defaultLanguage: packagePricing.default_language,
       publishedLanguages: packagePricing.published_languages,
       baseCurrency: packagePricing.currency,
       baseAdultPrice: packagePricing.price_adult,
       baseChildPrice: packagePricing.price_child,
-      translations: packagePricing.package_translations,
     })
     const adultPriceCharge = await convertCurrencyAmount({
-      amount: localizedPricing.priceAdult,
-      fromCurrency: localizedPricing.currency,
+      amount: Number(packagePricing.price_adult || 0),
+      fromCurrency: packagePricing.currency || "IDR",
       toCurrency: "IDR",
     })
     const childPriceCharge = await convertCurrencyAmount({
-      amount: localizedPricing.priceChild,
-      fromCurrency: localizedPricing.currency,
+      amount: Number(packagePricing.price_child || 0),
+      fromCurrency: packagePricing.currency || "IDR",
       toCurrency: "IDR",
     })
 

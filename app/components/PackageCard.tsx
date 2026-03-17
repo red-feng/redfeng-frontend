@@ -26,6 +26,11 @@ type PackageCardData = {
   default_language?: string | null
   published_languages?: string[] | null
   package_translations?: PackageCardTranslation[] | null
+  livePricing?: {
+    currency: string
+    priceAdult: number
+    priceChild: number
+  } | null
 }
 
 export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; locale: Locale }) {
@@ -42,6 +47,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
     baseChildPrice: pkg.price_child,
     translations: pkg.package_translations,
   })
+  const displayPricing = pkg.livePricing || pricing
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
 
@@ -114,11 +120,11 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       <div className="w-[240px] border-l bg-gray-50 p-6 flex flex-col justify-between items-end">
         <div className="text-right">
           <div className="text-sm text-gray-500 line-through">
-            {formatPackageMoney(pricing.priceAdult * 1.2, pricing.currency, locale)}
+            {formatPackageMoney(displayPricing.priceAdult * 1.2, displayPricing.currency, locale)}
           </div>
 
           <div className="text-2xl font-bold text-orange-600">
-            {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
+            {formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}
           </div>
 
           <div className="text-xs text-gray-500">

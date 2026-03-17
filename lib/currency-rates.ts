@@ -1,5 +1,5 @@
 import { buildLocalizedPricingFromBase, localeCurrencyMap, normalizePackageCurrency, type CurrencyRateMap } from "@/lib/package-pricing"
-import { normalizeLocale } from "@/lib/i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 
 type LatestRatesResponse = {
   amount?: number
@@ -87,6 +87,47 @@ export async function buildAutoLocalizedPricing(input: {
     rates,
     date,
     pricing,
+  }
+}
+
+export async function getLiveLocalizedPackagePricing(input: {
+  locale: Locale
+  defaultLanguage?: string | null
+  publishedLanguages?: string[] | null
+  baseCurrency?: string | null
+  baseAdultPrice?: number | null
+  baseChildPrice?: number | null
+}) {
+  const defaultLocale = normalizeLocale(input.defaultLanguage)
+  const allowedLocales = new Set<Locale>([
+    defaultLocale,
+    ...((input.publishedLanguages || []).map((language) => normalizeLocale(language))),
+  ])
+  const activeLocale = allowedLocales.has(input.locale) ? input.locale : defaultLocale
+  const currency = localeCurrencyMap[activeLocale]
+  const normalizedBaseCurrency = normalizePackageCurrency(input.baseCurrency)
+  const baseAdultPrice = Number(input.baseAdultPrice || 0)
+  const baseChildPrice = Number(input.baseChildPrice || 0)
+
+  if (normalizedBaseCurrency === currency) {
+    return {
+      locale: activeLocale,
+      currency,
+      priceAdult: Math.round(baseAdultPrice),
+      priceChild: Math.round(baseChildPrice),
+      exchangeDate: null as string | null,
+    }
+  }
+
+  const { rates, date } = await fetchLatestCurrencyRates(normalizedBaseCurrency)
+  const rate = Number(rates[currency] || 0)
+
+  return {
+    locale: activeLocale,
+    currency,
+    priceAdult: Math.round(baseAdultPrice * rate),
+    priceChild: Math.round(baseChildPrice * rate),
+    exchangeDate: date,
   }
 }
 

@@ -6,9 +6,9 @@ import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
+import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { resolveLocalizedPackagePricing } from "@/lib/package-pricing"
 
 
 export const dynamic = "force-dynamic"
@@ -30,6 +30,11 @@ type PackageListItem = {
   published_languages?: string[] | null
   package_facilities?: { facility_id: string }[] | null
   package_translations?: { language_code?: string | null; title: string | null; description: string | null; currency?: string | null; price_adult?: number | null; price_child?: number | null }[] | null
+  livePricing?: {
+    currency: string
+    priceAdult: number
+    priceChild: number
+  }
 }
 
 
@@ -127,6 +132,25 @@ if (searchParams?.departure_date) {
 
   let filtered = (data as PackageListItem[] | null) || []
 
+  const withLivePricing = await Promise.all(
+    filtered.map(async (pkg) => {
+      const livePricing = await getLiveLocalizedPackagePricing({
+        locale,
+        defaultLanguage: pkg.default_language,
+        publishedLanguages: pkg.published_languages,
+        baseCurrency: pkg.currency,
+        baseAdultPrice: pkg.price_adult,
+        baseChildPrice: pkg.price_child,
+      })
+
+      return {
+        ...pkg,
+        livePricing,
+      }
+    }),
+  )
+  filtered = withLivePricing
+
   if (filtered.length > 0) {
     const merchantIds = [...new Set(filtered.map((pkg) => pkg.merchant_id).filter(Boolean))]
 
@@ -153,16 +177,7 @@ if (searchParams?.departure_date) {
     const max = Number(searchParams.max_price)
     if (!Number.isNaN(max)) {
       filtered = filtered.filter((pkg) => {
-        const pricing = resolveLocalizedPackagePricing({
-          locale,
-          defaultLanguage: pkg.default_language,
-          publishedLanguages: pkg.published_languages,
-          baseCurrency: pkg.currency,
-          baseAdultPrice: pkg.price_adult,
-          baseChildPrice: pkg.price_child,
-          translations: pkg.package_translations,
-        })
-        return pricing.priceAdult <= max
+        return Number((pkg as PackageListItem & { livePricing?: { priceAdult: number } }).livePricing?.priceAdult || 0) <= max
       })
     }
   }

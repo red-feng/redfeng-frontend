@@ -1,9 +1,10 @@
 import CheckoutClient from "./CheckoutClient"
 import { defaultFinanceSettings } from "@/lib/finance/settings"
 import { convertCurrencyAmount } from "@/lib/currency-rates"
+import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
+import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
@@ -102,23 +103,22 @@ export default async function CheckoutPage({
     pkg.default_language,
     pkg.published_languages,
   )
-  const localizedPricing = resolveLocalizedPackagePricing({
+  const localizedPricing = await getLiveLocalizedPackagePricing({
     locale: locale as Locale,
     defaultLanguage: pkg.default_language,
     publishedLanguages: pkg.published_languages,
     baseCurrency: pkg.currency,
     baseAdultPrice: pkg.price_adult,
     baseChildPrice: pkg.price_child,
-    translations: pkg.package_translations,
   })
   const paymentAdultPrice = await convertCurrencyAmount({
-    amount: localizedPricing.priceAdult,
-    fromCurrency: localizedPricing.currency,
+    amount: Number(pkg.price_adult || 0),
+    fromCurrency: pkg.currency || "IDR",
     toCurrency: "IDR",
   })
   const paymentChildPrice = await convertCurrencyAmount({
-    amount: localizedPricing.priceChild,
-    fromCurrency: localizedPricing.currency,
+    amount: Number(pkg.price_child || 0),
+    fromCurrency: pkg.currency || "IDR",
     toCurrency: "IDR",
   })
 
