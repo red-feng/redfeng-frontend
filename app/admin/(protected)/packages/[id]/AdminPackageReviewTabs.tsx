@@ -117,15 +117,19 @@ function LanguageTabs({
           >
             <span>{getLanguageLabel(language)}</span>
             {language === defaultLanguage && (
-              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+              <span className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                isActive
+                  ? "border-white/30 bg-white/15 text-white"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700"
               }`}>
                 default
               </span>
             )}
             {language !== defaultLanguage && (
-              <span className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                isActive ? "bg-white/20 text-white" : "bg-orange-50 text-orange-600"
+              <span className={`ml-2 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+                isActive
+                  ? "border-white/30 bg-white/15 text-white"
+                  : "border-sky-200 bg-sky-50 text-sky-700"
               }`}>
                 published
               </span>
