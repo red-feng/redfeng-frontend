@@ -62,10 +62,10 @@ function formatMoney(value: number | null, currency: string | null): string {
 }
 
 function statusClass(status: string | null): string {
-  if (status === "approved") return "bg-emerald-100 text-emerald-700 border-emerald-200"
-  if (status === "rejected") return "bg-rose-100 text-rose-700 border-rose-200"
-  if (status === "pending") return "bg-amber-100 text-amber-700 border-amber-200"
-  return "bg-slate-100 text-slate-700 border-slate-200"
+  if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-700"
+  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
 }
 
 function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
@@ -87,6 +87,15 @@ function formatStatusLabel(status: string | null): string {
   if (status === "draft") return "Draft"
   if (status === "inactive") return "Nonaktif"
   return status || "Tidak diketahui"
+}
+
+function statusSummary(status: string | null): string {
+  if (status === "approved") return "Paket sudah lolos review dan siap tayang ke customer."
+  if (status === "rejected") return "Paket memerlukan revisi merchant sebelum diajukan ulang."
+  if (status === "pending") return "Seluruh isi paket sedang menunggu validasi admin."
+  if (status === "draft") return "Paket masih disusun merchant dan belum siap direview."
+  if (status === "inactive") return "Paket tersimpan tetapi belum aktif untuk customer."
+  return "Status paket belum memiliki ringkasan."
 }
 
 export default async function Page({
@@ -116,6 +125,7 @@ export default async function Page({
     Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
       ? [...new Set([pkg.default_language || "id", ...pkg.published_languages])]
       : [pkg.default_language || "id"]
+
   let countries: CountryRow[] = []
   if (countryIds.length > 0) {
     const { data } = await supabase
@@ -128,7 +138,9 @@ export default async function Page({
 
   const { data: translationRows } = await supabase
     .from("package_translations")
-    .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights")
+    .select(
+      "language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights",
+    )
     .eq("package_id", id)
   const translations = (translationRows as TranslationRow[] | null) || []
   const sortedTranslations = [...translations].sort((a, b) => {
@@ -226,58 +238,98 @@ export default async function Page({
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-              Tinjauan Paket Admin
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-900">
-              {primaryTranslation?.title || pkg.title}
-            </h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Merchant: {merchant?.company_name || "-"} • ID Paket: {pkg.id}
-            </p>
+        <div className="mb-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-8 py-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
+                  Tinjauan Paket Admin
+                </p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                  {primaryTranslation?.title || pkg.title}
+                </h1>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Merchant: {merchant?.company_name || "-"} | ID Paket: {pkg.id}
+                </p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{statusSummary(pkg.status)}</p>
+              </div>
+
+              <div className="flex flex-col items-start gap-3">
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(pkg.status)}`}>
+                  {formatStatusLabel(pkg.status)}
+                </span>
+                <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    Bahasa Review
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-slate-900">{publishedLanguageLabels}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(pkg.status)}`}>
-            {formatStatusLabel(pkg.status)}
-          </span>
+
+          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Harga Dewasa</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">{formatMoney(pkg.price_adult, pkg.currency)}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Harga Anak</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">{formatMoney(pkg.price_child, pkg.currency)}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Durasi</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">{pkg.duration || 0} hari</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Minimal Peserta</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">{pkg.minimal_peserta || 0} orang</p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_360px]">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_360px]">
           <main className="space-y-6">
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <Image
-                src={coverImage}
-                alt="cover"
-                width={1600}
-                height={900}
-                unoptimized
-                className="h-[360px] w-full object-cover"
-              />
-              <div className="grid gap-4 border-t border-slate-200 p-5 sm:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Harga Dewasa</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMoney(pkg.price_adult, pkg.currency)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Harga Anak</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{formatMoney(pkg.price_child, pkg.currency)}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Durasi</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{pkg.duration || 0} hari</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Minimal Peserta</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900">{pkg.minimal_peserta || 0} orang</p>
+              <div className="relative">
+                <Image
+                  src={coverImage}
+                  alt="cover"
+                  width={1600}
+                  height={900}
+                  unoptimized
+                  className="h-[360px] w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-slate-950/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <div className="max-w-2xl">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">Hero Preview</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                      {primaryTranslation?.title || pkg.title}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-white/85">
+                      {countryMap.get(pkg.origin_country_id) || "-"} - {pkg.origin_province || "-"} menuju{" "}
+                      {countryMap.get(pkg.destination_country_id) || "-"} - {pkg.destination_province || "-"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </section>
 
             {galleryImages.length > 0 && (
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-900">Galeri</h2>
-                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Galeri</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Pastikan foto utama dan pendukung merepresentasikan paket secara konsisten.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                    {galleryImages.length} foto
+                  </span>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
                   {galleryImages.map((image) => (
                     <Image
                       key={image.id}
@@ -286,7 +338,7 @@ export default async function Page({
                       width={800}
                       height={600}
                       unoptimized
-                      className="h-36 w-full rounded-xl object-cover"
+                      className="h-40 w-full rounded-2xl object-cover"
                     />
                   ))}
                 </div>
@@ -357,69 +409,87 @@ export default async function Page({
             />
           </main>
 
-          <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
-            <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Keputusan Admin</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Verifikasi detail paket sebelum disetujui atau ditolak.
-              </p>
+          <aside className="space-y-6 xl:sticky xl:top-6 xl:h-fit">
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4">
+                <h2 className="text-base font-semibold text-slate-900">Keputusan Admin</h2>
+                <p className="mt-1 text-sm text-slate-500">Verifikasi detail paket sebelum disetujui atau ditolak.</p>
+              </div>
 
-              <form
-                className="mt-4"
-                action={async () => {
-                  "use server"
-                  await approvePackage(id)
-                }}
-              >
-                <button className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                  Setujui Paket
-                </button>
-              </form>
+              <div className="p-5">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">Aksi Aman</p>
+                  <p className="mt-1 text-sm text-emerald-900">
+                    Setujui hanya jika konten, media, dan versi bahasa sudah konsisten.
+                  </p>
+                </div>
 
-              <form
-                className="mt-3"
-                action={async (formData) => {
-                  "use server"
-                  const reason = formData.get("reason") as string
-                  await rejectPackage(id, reason)
-                }}
-              >
-                <textarea
-                  name="reason"
-                  placeholder="Alasan penolakan..."
-                  required
-                  className="h-28 w-full rounded-lg border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
-                />
-                <button className="mt-2 w-full rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
-                  Tolak Paket
-                </button>
-              </form>
+                <form
+                  className="mt-4"
+                  action={async () => {
+                    "use server"
+                    await approvePackage(id)
+                  }}
+                >
+                  <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                    Setujui Paket
+                  </button>
+                </form>
+
+                <form
+                  className="mt-4"
+                  action={async (formData) => {
+                    "use server"
+                    const reason = formData.get("reason") as string
+                    await rejectPackage(id, reason)
+                  }}
+                >
+                  <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Catatan Revisi
+                  </label>
+                  <textarea
+                    name="reason"
+                    placeholder="Tuliskan alasan penolakan atau revisi yang perlu dilakukan merchant."
+                    required
+                    className="mt-2 h-32 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm outline-none ring-orange-500 transition focus:bg-white focus:ring-2"
+                  />
+                  <button className="mt-3 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                    Tolak Paket
+                  </button>
+                </form>
+              </div>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Ringkasan Cepat</h2>
-              <dl className="mt-4 space-y-3 text-sm">
-                <div>
-                  <dt className="text-slate-500">Gaya Perjalanan</dt>
-                  <dd className="font-medium text-slate-900">{formatTravelStyleLabel(pkg.travel_style)}</dd>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-900">Ringkasan Cepat</h2>
+                <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Overview
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-slate-500">Ringkasan inti paket untuk pengecekan cepat sebelum mengambil keputusan.</p>
+              <dl className="mt-4 space-y-4 text-sm">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Gaya Perjalanan</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{formatTravelStyleLabel(pkg.travel_style)}</dd>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Bahasa Default</dt>
-                  <dd className="font-medium text-slate-900">{getLanguageLabel(pkg.default_language)}</dd>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Bahasa Default</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{getLanguageLabel(pkg.default_language)}</dd>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Bahasa Tersedia</dt>
-                  <dd className="font-medium text-slate-900">{publishedLanguageLabels}</dd>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Bahasa Tersedia</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{publishedLanguageLabels}</dd>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Keberangkatan</dt>
-                  <dd className="font-medium text-slate-900">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Keberangkatan</dt>
+                  <dd className="mt-1 font-medium text-slate-900">
                     {countryMap.get(pkg.origin_country_id) || "-"} - {pkg.origin_province || "-"}
                   </dd>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Tujuan</dt>
-                  <dd className="font-medium text-slate-900">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tujuan</dt>
+                  <dd className="mt-1 font-medium text-slate-900">
                     {countryMap.get(pkg.destination_country_id) || "-"} - {pkg.destination_province || "-"}
                   </dd>
                 </div>
