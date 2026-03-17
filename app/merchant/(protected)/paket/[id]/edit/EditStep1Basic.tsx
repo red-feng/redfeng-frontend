@@ -6,7 +6,7 @@ import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
-import { localeCurrencyMap, normalizePackageCurrency, normalizePackagePriceInput, packageCurrencyOptions } from "@/lib/package-pricing"
+import { formatPackageMoney, localeCurrencyMap, normalizePackageCurrency, normalizePackagePriceInput, packageCurrencyOptions } from "@/lib/package-pricing"
 
 type Country = {
   id: string
@@ -627,10 +627,24 @@ export default function EditStep1Basic({
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
                       <p>
-                        {pricingText.adult}: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_adult || "0"}</span>
+                        {pricingText.adult}:{" "}
+                        <span className="font-semibold text-slate-900">
+                          {formatPackageMoney(
+                            Number(pricingValues[language.code].price_adult || 0),
+                            pricingValues[language.code].currency || localeCurrencyMap[language.code],
+                            locale,
+                          )}
+                        </span>
                       </p>
                       <p>
-                        {pricingText.child}: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_child || "0"}</span>
+                        {pricingText.child}:{" "}
+                        <span className="font-semibold text-slate-900">
+                          {formatPackageMoney(
+                            Number(pricingValues[language.code].price_child || 0),
+                            pricingValues[language.code].currency || localeCurrencyMap[language.code],
+                            locale,
+                          )}
+                        </span>
                       </p>
                       <p className="pt-1 text-xs text-slate-500">
                         {isDefaultPricingLanguage
