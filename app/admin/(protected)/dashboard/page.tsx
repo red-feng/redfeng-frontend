@@ -1,27 +1,6 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const adminMenus = [
-  {
-    label: "Merchant Approvals",
-    href: "/admin/merchants",
-    description: "Review merchant yang sudah submit onboarding dan dokumen.",
-    tone: "from-amber-500 to-orange-500",
-  },
-  {
-    label: "Package Approvals",
-    href: "/admin/packages",
-    description: "Validasi paket yang siap tayang ke customer.",
-    tone: "from-sky-500 to-cyan-500",
-  },
-  {
-    label: "Booking Handoff",
-    href: "/admin/bookings",
-    description: "Validasi flow pickup lalu kirim booking lunas ke finance.",
-    tone: "from-emerald-500 to-lime-500",
-  },
-]
-
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
@@ -51,6 +30,29 @@ export default async function AdminDashboard() {
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
   const financeReadyCount = bookings.filter((item) => normalizeStatus(item.booking_status) === "awaiting_admin_handoff").length
+  const adminMenus = [
+    {
+      label: "Merchant Approvals",
+      href: "/admin/merchants",
+      description: "Review merchant yang sudah submit onboarding dan dokumen.",
+      tone: "from-amber-500 to-orange-500",
+      badgeCount: pendingMerchants,
+    },
+    {
+      label: "Package Approvals",
+      href: "/admin/packages",
+      description: "Validasi paket yang siap tayang ke customer.",
+      tone: "from-sky-500 to-cyan-500",
+      badgeCount: pendingPackages,
+    },
+    {
+      label: "Booking Handoff",
+      href: "/admin/bookings",
+      description: "Validasi flow pickup lalu kirim booking lunas ke finance.",
+      tone: "from-emerald-500 to-lime-500",
+      badgeCount: financeReadyCount,
+    },
+  ]
 
   const metricCards = [
     {
@@ -147,6 +149,11 @@ export default async function AdminDashboard() {
                   <div className={`inline-flex rounded-full bg-gradient-to-r ${menu.tone} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white`}>
                     Open queue
                   </div>
+                  {menu.badgeCount > 0 && (
+                    <div className="mt-4 inline-flex min-w-8 items-center justify-center rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white">
+                      {menu.badgeCount > 99 ? "99+" : menu.badgeCount}
+                    </div>
+                  )}
                   <h3 className="mt-4 text-xl font-semibold text-slate-950">{menu.label}</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{menu.description}</p>
                   <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
