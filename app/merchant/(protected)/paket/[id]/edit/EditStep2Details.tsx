@@ -38,6 +38,19 @@ const EMPTY_VALUES: TranslationValues = {
   highlights: "",
 }
 
+function normalizeTranslationValues(input?: Partial<TranslationValues> | null): TranslationValues {
+  return {
+    about_tour: String(input?.about_tour || ""),
+    service_standard: String(input?.service_standard || ""),
+    include: String(input?.include || ""),
+    exclude: String(input?.exclude || ""),
+    preparation: String(input?.preparation || ""),
+    terms_conditions: String(input?.terms_conditions || ""),
+    meeting_point: String(input?.meeting_point || ""),
+    highlights: String(input?.highlights || ""),
+  }
+}
+
 export default function EditStep2Details({
   packageId,
   defaultLanguage,
@@ -49,7 +62,7 @@ export default function EditStep2Details({
   packageId: string
   defaultLanguage: string
   publishedLanguages: string[]
-  initialTranslations: Record<string, TranslationValues>
+  initialTranslations: Record<string, Partial<TranslationValues>>
   mapEmbed: string
   uiLocale?: string
 }) {
@@ -60,16 +73,16 @@ export default function EditStep2Details({
     (LANGS.find((lang) => lang.code === normalizedDefaultLanguage)?.code || "id") as LangCode,
   )
   const [translationValues, setTranslationValues] = useState<Record<LangCode, TranslationValues>>(() => ({
-    id: initialTranslations.id || { ...EMPTY_VALUES },
-    en: initialTranslations.en || { ...EMPTY_VALUES },
-    zh: initialTranslations.zh || { ...EMPTY_VALUES },
+    id: normalizeTranslationValues(initialTranslations.id),
+    en: normalizeTranslationValues(initialTranslations.en),
+    zh: normalizeTranslationValues(initialTranslations.zh),
   }))
   const [isRetranslatingLanguage, setIsRetranslatingLanguage] = useState<LangCode | null>(null)
   const manualOverridesRef = useRef<Set<string>>(
     new Set(
-      (["id", "en", "zh"] as LangCode[]).flatMap((language) => {
+        (["id", "en", "zh"] as LangCode[]).flatMap((language) => {
         if (language === normalizedDefaultLanguage) return []
-        const values = initialTranslations[language]
+        const values = normalizeTranslationValues(initialTranslations[language])
         if (!values) return []
         return (Object.keys(values) as TranslationField[])
           .filter((field) => values[field]?.trim())
