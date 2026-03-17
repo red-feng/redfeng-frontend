@@ -3,6 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
+import { getCurrentLocale } from "@/lib/locale"
+import { normalizeLocale } from "@/lib/i18n"
+import { formatPackageMoney } from "@/lib/package-pricing"
 
 type BookingRow = {
   id: string
@@ -11,6 +14,8 @@ type BookingRow = {
   customer_email?: string | null
   pickup_date: string | null
   total_amount: number | null
+  display_currency?: string | null
+  display_subtotal_amount?: number | null
   payment_status: string | null
   booking_status: string | null
   escrow_status: string | null
@@ -94,6 +99,7 @@ function getTimelineStatus(booking: BookingRow) {
 export default async function CustomerDashboardPage() {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
+  const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -106,7 +112,7 @@ export default async function CustomerDashboardPage() {
   const adminBookingsResult = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, customer_email, pickup_date, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      "id, package_id, booking_code, customer_email, pickup_date, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
     )
     .eq("customer_email", user.email)
 
@@ -119,7 +125,7 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_email, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_code, customer_email, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -366,6 +372,12 @@ export default async function CustomerDashboardPage() {
                         <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total Transaksi</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</p>
+                          {booking.display_currency && (
+                            <p className="mt-2 text-xs text-slate-500">
+                              Harga sesuai bahasa customer:{" "}
+                              {formatPackageMoney(booking.display_subtotal_amount, booking.display_currency, locale)}
+                            </p>
+                          )}
                         </div>
                         <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Pickup</p>

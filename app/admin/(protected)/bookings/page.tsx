@@ -1,4 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
+import { formatPackageMoney } from "@/lib/package-pricing"
 import { handoffBookingToFinance } from "./actions"
 
 type BookingRow = {
@@ -7,6 +10,8 @@ type BookingRow = {
   booking_code: string | null
   customer_name: string | null
   pickup_date: string | null
+  display_currency?: string | null
+  display_subtotal_amount?: number | null
   subtotal_amount: number | null
   customer_admin_fee_amount: number | null
   customer_tax_amount: number | null
@@ -127,11 +132,12 @@ export default async function AdminBookingsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
+  const locale = normalizeLocale(await getCurrentLocale())
 
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, customer_name, pickup_date, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, package_id, booking_code, customer_name, pickup_date, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .order("created_at", { ascending: false })
 
@@ -243,6 +249,12 @@ export default async function AdminBookingsPage({
                         <p className="mt-2 text-sm text-slate-600">
                           {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}
                         </p>
+                        {booking.display_currency && (
+                          <p className="mt-2 text-xs text-slate-500">
+                            Harga sesuai bahasa customer:{" "}
+                            {formatPackageMoney(booking.display_subtotal_amount, booking.display_currency, locale)}
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs font-semibold">
                         <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>

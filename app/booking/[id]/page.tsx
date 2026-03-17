@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server"
 import ReviewForm from "./ReviewForm"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp, submitPackageReview } from "./actions"
+import { getCurrentLocale } from "@/lib/locale"
+import { formatPackageMoney } from "@/lib/package-pricing"
+import { normalizeLocale } from "@/lib/i18n"
 
 export const dynamic = "force-dynamic"
 
@@ -21,6 +24,11 @@ type BookingDetailRow = {
   customer_admin_fee_amount?: number | null
   customer_tax_amount?: number | null
   final_payment_amount?: number | null
+  display_currency?: string | null
+  display_subtotal_amount?: number | null
+  display_price_adult?: number | null
+  display_price_child?: number | null
+  exchange_rate_date?: string | null
   booking_status: string | null
   payment_status: string | null
   package_id: string | null
@@ -100,11 +108,16 @@ function resolveJourneyPhase(booking: BookingDetailRow) {
   return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
 }
 
+function formatIdr(value: number | null | undefined) {
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
   const authSupabase = await createClient()
   const adminSupabase = createAdminClient()
+  const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
   } = await authSupabase.auth.getUser()
@@ -115,7 +128,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -181,7 +194,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Total</p>
             <p className="mt-2 text-2xl font-bold text-slate-900">
-              Rp {Number(booking.total_amount ?? 0).toLocaleString("id-ID")}
+              {formatIdr(booking.total_amount)}
             </p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -202,28 +215,63 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Subtotal Paket</p>
             <p className="mt-2 text-xl font-bold text-slate-900">
-              Rp {Number(booking.subtotal_amount ?? 0).toLocaleString("id-ID")}
+              {formatIdr(booking.subtotal_amount)}
             </p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Admin Fee</p>
             <p className="mt-2 text-xl font-bold text-slate-900">
-              Rp {Number(booking.customer_admin_fee_amount ?? 0).toLocaleString("id-ID")}
+              {formatIdr(booking.customer_admin_fee_amount)}
             </p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Pajak</p>
             <p className="mt-2 text-xl font-bold text-slate-900">
-              Rp {Number(booking.customer_tax_amount ?? 0).toLocaleString("id-ID")}
+              {formatIdr(booking.customer_tax_amount)}
             </p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Sisa Pelunasan</p>
             <p className="mt-2 text-xl font-bold text-slate-900">
-              Rp {Number(booking.final_payment_amount ?? 0).toLocaleString("id-ID")}
+              {formatIdr(booking.final_payment_amount)}
             </p>
           </div>
         </section>
+
+        {(booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date) && (
+          <section className="mt-6 rounded-[28px] border border-blue-100 bg-blue-50 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">Ringkasan Harga Sesuai Bahasa Anda</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Tampilan harga paket mengikuti bahasa yang Anda pilih saat checkout. Pembayaran tetap diproses dalam IDR.
+            </p>
+            <div className="mt-5 grid gap-4 md:grid-cols-4">
+              <div className="rounded-[20px] border border-blue-100 bg-white p-4">
+                <p className="text-sm text-slate-500">Harga Dewasa</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {formatPackageMoney(booking.display_price_adult, booking.display_currency, locale)}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-blue-100 bg-white p-4">
+                <p className="text-sm text-slate-500">Harga Anak</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {formatPackageMoney(booking.display_price_child, booking.display_currency, locale)}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-blue-100 bg-white p-4">
+                <p className="text-sm text-slate-500">Subtotal Display</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {formatPackageMoney(booking.display_subtotal_amount, booking.display_currency, locale)}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-blue-100 bg-white p-4">
+                <p className="text-sm text-slate-500">Tanggal Kurs</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">
+                  {booking.exchange_rate_date || "-"}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Detail Booking</h2>

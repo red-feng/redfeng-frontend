@@ -13,6 +13,14 @@ export type PackagePricingTranslation = {
   price_child?: number | null
 }
 
+export const localeCurrencyMap: Record<Locale, string> = {
+  id: "IDR",
+  en: "USD",
+  zh: "CNY",
+}
+
+export type CurrencyRateMap = Record<string, number>
+
 type ResolvePackagePricingInput = {
   locale: Locale
   defaultLanguage: string | null | undefined
@@ -33,6 +41,44 @@ export function normalizePackageCurrency(value: string | null | undefined): stri
 
 export function normalizePackagePriceInput(value: string): string {
   return value.replace(/[^\d]/g, "")
+}
+
+export function roundConvertedPrice(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return 0
+  return Math.round(value)
+}
+
+export function convertPriceAmount(amount: number, rate: number): number {
+  if (!Number.isFinite(amount) || !Number.isFinite(rate)) return 0
+  return roundConvertedPrice(amount * rate)
+}
+
+export function buildLocalizedPricingFromBase(
+  baseCurrency: string,
+  baseAdultPrice: number,
+  baseChildPrice: number,
+  rates: CurrencyRateMap,
+) {
+  const normalizedBaseCurrency = normalizePackageCurrency(baseCurrency)
+
+  return (Object.keys(localeCurrencyMap) as Locale[]).reduce(
+    (acc, locale) => {
+      const targetCurrency = localeCurrencyMap[locale]
+      const rate =
+        normalizedBaseCurrency === targetCurrency
+          ? 1
+          : rates[targetCurrency] || 0
+
+      acc[locale] = {
+        currency: targetCurrency,
+        price_adult: convertPriceAmount(baseAdultPrice, rate),
+        price_child: convertPriceAmount(baseChildPrice, rate),
+      }
+
+      return acc
+    },
+    {} as Record<Locale, { currency: string; price_adult: number; price_child: number }>,
+  )
 }
 
 export function resolvePackageTranslation<T extends { language_code?: string | null }>(

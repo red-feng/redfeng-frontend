@@ -6,7 +6,7 @@ import { getParticipantFieldLabel, isQuotaTravelStyle, travelStyleOptions } from
 import { getMerchantWizardText, merchantWizardLanguageOptions } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { requestMerchantAutoTranslations } from "@/lib/merchant-auto-translation-client"
-import { normalizePackageCurrency, normalizePackagePriceInput, packageCurrencyOptions } from "@/lib/package-pricing"
+import { localeCurrencyMap, normalizePackageCurrency, normalizePackagePriceInput, packageCurrencyOptions } from "@/lib/package-pricing"
 
 type Country = {
   id: string
@@ -46,11 +46,13 @@ export default function EditStep1Basic({
   const [defaultLanguage, setDefaultLanguage] = useState(initialData.default_language || "id")
   const [travelStyle, setTravelStyle] = useState(initialData.travel_style || "")
   const [activeTitleLang, setActiveTitleLang] = useState<Locale>(normalizeLocale(initialData.default_language || "id"))
-  const [activePricingLang, setActivePricingLang] = useState<Locale>(normalizeLocale(initialData.default_language || "id"))
   const [publishedLanguages, setPublishedLanguages] = useState<string[]>(
     initialData.published_languages.length > 0 ? initialData.published_languages : [initialData.default_language || "id"],
   )
   const [titleValues, setTitleValues] = useState<Record<Locale, string>>(initialData.titles)
+  const [baseCurrency, setBaseCurrency] = useState(normalizePackageCurrency(initialData.currency || initialData.pricing[normalizeLocale(initialData.default_language || "id")]?.currency || "IDR"))
+  const [baseAdultPrice, setBaseAdultPrice] = useState(String(initialData.price_adult ?? initialData.pricing[normalizeLocale(initialData.default_language || "id")]?.price_adult ?? ""))
+  const [baseChildPrice, setBaseChildPrice] = useState(String(initialData.price_child ?? initialData.pricing[normalizeLocale(initialData.default_language || "id")]?.price_child ?? ""))
   const [pricingValues, setPricingValues] = useState<Record<Locale, { currency: string; price_adult: string; price_child: string }>>({
     id: {
       currency: normalizePackageCurrency(initialData.pricing.id?.currency),
@@ -68,6 +70,7 @@ export default function EditStep1Basic({
       price_child: String(initialData.pricing.zh?.price_child ?? ""),
     },
   })
+  const [ratesTimestamp, setRatesTimestamp] = useState<string | null>(null)
   const [isRetranslatingTitle, setIsRetranslatingTitle] = useState(false)
   const manualTitleOverridesRef = useRef<Set<Locale>>(
     new Set(
@@ -112,36 +115,65 @@ export default function EditStep1Basic({
   }, [activeTitleLang, normalizedDefaultLanguage, visibleLanguages])
 
   useEffect(() => {
-    if (!visibleLanguages.some((language) => language.code === activePricingLang)) {
-      setActivePricingLang(normalizedDefaultLanguage)
-    }
-  }, [activePricingLang, normalizedDefaultLanguage, visibleLanguages])
+    const controller = new AbortController()
+    const adultPrice = Number(baseAdultPrice || 0)
+    const childPrice = Number(baseChildPrice || 0)
 
-  const copyPricingFromLanguage = useCallback((source: Locale, target: Locale) => {
-    setPricingValues((prev) => {
-      const sourcePricing = prev[source]
-      const targetPricing = prev[target]
-      if (!sourcePricing || !targetPricing) return prev
-      if (targetPricing.price_adult || targetPricing.price_child) return prev
+    const syncPricingPreview = async () => {
+      try {
+        const params = new URLSearchParams({
+          baseLanguage: normalizedDefaultLanguage,
+          baseCurrency,
+          adultPrice: String(adultPrice),
+          childPrice: String(childPrice),
+        })
+        const response = await fetch(`/api/currency-rates?${params.toString()}`, {
+          signal: controller.signal,
+          cache: "no-store",
+        })
+        if (!response.ok) return
 
-      return {
-        ...prev,
-        [target]: {
-          currency: targetPricing.currency || sourcePricing.currency,
-          price_adult: sourcePricing.price_adult,
-          price_child: sourcePricing.price_child,
-        },
+        const payload = (await response.json()) as {
+          date?: string | null
+          pricing?: Record<Locale, { currency: string; price_adult: number; price_child: number }>
+        }
+
+        if (!payload.pricing) return
+
+        setPricingValues({
+          id: {
+            currency: payload.pricing.id?.currency || localeCurrencyMap.id,
+            price_adult: String(payload.pricing.id?.price_adult ?? 0),
+            price_child: String(payload.pricing.id?.price_child ?? 0),
+          },
+          en: {
+            currency: payload.pricing.en?.currency || localeCurrencyMap.en,
+            price_adult: String(payload.pricing.en?.price_adult ?? 0),
+            price_child: String(payload.pricing.en?.price_child ?? 0),
+          },
+          zh: {
+            currency: payload.pricing.zh?.currency || localeCurrencyMap.zh,
+            price_adult: String(payload.pricing.zh?.price_adult ?? 0),
+            price_child: String(payload.pricing.zh?.price_child ?? 0),
+          },
+        })
+        setRatesTimestamp(payload.date || null)
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("edit sync pricing preview error:", error)
+        }
       }
-    })
-  }, [])
+    }
+
+    void syncPricingPreview()
+
+    return () => controller.abort()
+  }, [baseAdultPrice, baseChildPrice, baseCurrency, normalizedDefaultLanguage])
 
   const onDefaultLanguageChange = (nextDefault: string) => {
-    const nextLocale = normalizeLocale(nextDefault)
     setDefaultLanguage(nextDefault)
-    setActiveTitleLang(nextLocale)
-    setActivePricingLang(nextLocale)
+    setActiveTitleLang(normalizeLocale(nextDefault))
     setPublishedLanguages((prev) => (prev.includes(nextDefault) ? prev : [...prev, nextDefault]))
-    copyPricingFromLanguage(normalizedDefaultLanguage, nextLocale)
   }
 
   const translateTitleForTargets = useCallback(async (targets: Locale[]) => {
@@ -180,23 +212,8 @@ export default function EditStep1Basic({
       return prev.filter((item) => item !== code)
     })
     if (checked) {
-      const nextLocale = normalizeLocale(code)
-      void translateTitleForTargets([nextLocale])
-      copyPricingFromLanguage(normalizedDefaultLanguage, nextLocale)
+      void translateTitleForTargets([normalizeLocale(code)])
     }
-  }
-
-  const updatePricingValue = (language: Locale, field: "currency" | "price_adult" | "price_child", value: string) => {
-    setPricingValues((prev) => ({
-      ...prev,
-      [language]: {
-        ...prev[language],
-        [field]:
-          field === "currency"
-            ? normalizePackageCurrency(value)
-            : normalizePackagePriceInput(value),
-      },
-    }))
   }
 
   const scheduleTitleAutoTranslate = (sourceValue: string, sourceLanguage: Locale) => {
@@ -472,67 +489,87 @@ export default function EditStep1Basic({
         </div>
 
         <div className="md:col-span-2 space-y-3">
-          <label className="block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
-          <div className="flex flex-wrap gap-2">
-            {visibleLanguages.map((language) => (
-              <button
-                key={language.code}
-                type="button"
-                onClick={() => setActivePricingLang(language.code)}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
-                  activePricingLang === language.code
-                    ? "bg-orange-500 text-white"
-                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
+              <select
+                name="base_currency"
+                value={baseCurrency}
+                onChange={(event) => setBaseCurrency(normalizePackageCurrency(event.target.value))}
+                className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
               >
-                {language.label}
-              </button>
-            ))}
-          </div>
-          {visibleLanguages.map((language) => (
-            <div
-              key={language.code}
-              className={activePricingLang === language.code ? "grid grid-cols-1 gap-4 md:grid-cols-3" : "hidden"}
-            >
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
-                <select
-                  name={`currency_${language.code}`}
-                  value={pricingValues[language.code].currency}
-                  onChange={(event) => updatePricingValue(language.code, "currency", event.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-                >
-                  {packageCurrencyOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
-                <input
-                  name={`price_adult_${language.code}`}
-                  inputMode="numeric"
-                  value={pricingValues[language.code].price_adult}
-                  onChange={(event) => updatePricingValue(language.code, "price_adult", event.target.value)}
-                  placeholder={t.adultPricePlaceholder}
-                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
-                <input
-                  name={`price_child_${language.code}`}
-                  inputMode="numeric"
-                  value={pricingValues[language.code].price_child}
-                  onChange={(event) => updatePricingValue(language.code, "price_child", event.target.value)}
-                  placeholder={t.childPricePlaceholder}
-                  className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-                />
-              </div>
+                {packageCurrencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          ))}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
+              <input
+                name="base_price_adult"
+                inputMode="numeric"
+                value={baseAdultPrice}
+                onChange={(event) => setBaseAdultPrice(normalizePackagePriceInput(event.target.value))}
+                placeholder={t.adultPricePlaceholder}
+                className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
+              <input
+                name="base_price_child"
+                inputMode="numeric"
+                value={baseChildPrice}
+                onChange={(event) => setBaseChildPrice(normalizePackagePriceInput(event.target.value))}
+                placeholder={t.childPricePlaceholder}
+                className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-slate-700">Auto currency per bahasa publish</p>
+              {ratesTimestamp && (
+                <p className="text-xs text-slate-500">Kurs terbaru: {ratesTimestamp}</p>
+              )}
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              {visibleLanguages.map((language) => {
+                const isDefaultPricingLanguage = language.code === normalizedDefaultLanguage
+                return (
+                  <div key={language.code} className="rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-800">{language.label}</p>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-600">
+                        {pricingValues[language.code].currency || localeCurrencyMap[language.code]}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm text-slate-600">
+                      <p>
+                        Dewasa: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_adult || "0"}</span>
+                      </p>
+                      <p>
+                        Anak: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_child || "0"}</span>
+                      </p>
+                      <p className="pt-1 text-xs text-slate-500">
+                        {isDefaultPricingLanguage ? "Harga sumber utama." : "Nilai ini terisi otomatis dari kurs terbaru."}
+                      </p>
+                    </div>
+                    <input type="hidden" name={`currency_${language.code}`} value={pricingValues[language.code].currency || localeCurrencyMap[language.code]} />
+                    {!isDefaultPricingLanguage && (
+                      <>
+                        <input type="hidden" name={`price_adult_${language.code}`} value={pricingValues[language.code].price_adult || "0"} />
+                        <input type="hidden" name={`price_child_${language.code}`} value={pricingValues[language.code].price_child || "0"} />
+                      </>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="md:col-span-2">

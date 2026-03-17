@@ -1,4 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
+import { formatPackageMoney } from "@/lib/package-pricing"
 import { updatePayoutStatus } from "./actions"
 
 type PayoutRow = {
@@ -34,6 +37,8 @@ type BookingLiteRow = {
   booking_code: string | null
   customer_name: string | null
   booking_status: string | null
+  display_currency?: string | null
+  display_subtotal_amount?: number | null
   subtotal_amount: number | null
   customer_admin_fee_amount: number | null
   customer_tax_amount: number | null
@@ -115,6 +120,7 @@ export default async function FinancePayoutsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
+  const locale = normalizeLocale(await getCurrentLocale())
 
   const { data: payoutsData, error } = await adminSupabase
     .from("payout_requests")
@@ -138,7 +144,7 @@ export default async function FinancePayoutsPage({
     bookingIds.length > 0
       ? await adminSupabase
           .from("bookings")
-          .select("id, booking_code, customer_name, booking_status, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, total_amount, final_payment_amount")
+          .select("id, booking_code, customer_name, booking_status, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, total_amount, final_payment_amount")
           .in("id", bookingIds)
       : { data: [] as BookingLiteRow[] }
   const bookingMap = new Map(((bookingsData as BookingLiteRow[] | null) || []).map((booking) => [booking.id, booking]))
@@ -296,6 +302,16 @@ export default async function FinancePayoutsPage({
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Total customer</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(booking?.total_amount || 0))}</p>
+                          {booking?.display_currency && (
+                            <p className="mt-2 text-xs text-slate-500">
+                              Harga sesuai bahasa customer:{" "}
+                              {formatPackageMoney(
+                                booking.display_subtotal_amount,
+                                booking.display_currency,
+                                locale,
+                              )}
+                            </p>
+                          )}
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Subtotal paket</p>

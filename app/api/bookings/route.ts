@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { defaultFinanceSettings } from "@/lib/finance/settings"
+import { convertCurrencyAmount } from "@/lib/currency-rates"
+import { resolveLocalizedPackagePricing } from "@/lib/package-pricing"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
+import { normalizeLocale } from "@/lib/i18n"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -32,6 +35,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const {
       package_id,
+      locale,
       pickup_date,
       adult_count,
       child_count,
@@ -47,7 +51,7 @@ export async function POST(req: Request) {
 
     const { data: packagePricing } = await supabase
       .from("packages")
-      .select("price_adult, price_child, travel_style, minimal_peserta, departure_date")
+      .select("price_adult, price_child, currency, travel_style, minimal_peserta, departure_date, default_language, published_languages, package_translations(language_code, currency, price_adult, price_child)")
       .eq("id", package_id)
       .single()
 
@@ -59,6 +63,27 @@ export async function POST(req: Request) {
     if (requestedParticipants <= 0) {
       return NextResponse.json({ error: "Jumlah peserta tidak valid" }, { status: 400 })
     }
+
+    const activeLocale = normalizeLocale(locale)
+    const localizedPricing = resolveLocalizedPackagePricing({
+      locale: activeLocale,
+      defaultLanguage: packagePricing.default_language,
+      publishedLanguages: packagePricing.published_languages,
+      baseCurrency: packagePricing.currency,
+      baseAdultPrice: packagePricing.price_adult,
+      baseChildPrice: packagePricing.price_child,
+      translations: packagePricing.package_translations,
+    })
+    const adultPriceCharge = await convertCurrencyAmount({
+      amount: localizedPricing.priceAdult,
+      fromCurrency: localizedPricing.currency,
+      toCurrency: "IDR",
+    })
+    const childPriceCharge = await convertCurrencyAmount({
+      amount: localizedPricing.priceChild,
+      fromCurrency: localizedPricing.currency,
+      toCurrency: "IDR",
+    })
 
     if (isQuotaTravelStyle(packagePricing.travel_style)) {
       if (!packagePricing.departure_date) {
@@ -132,8 +157,8 @@ export async function POST(req: Request) {
       settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
     )
     const subtotalAmount =
-      Number(packagePricing.price_adult || 0) * Number(adult_count || 0) +
-      Number(packagePricing.price_child || 0) * Number(child_count || 0)
+      Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
+      Number(childPriceCharge.amount || 0) * Number(child_count || 0)
     const customerAdminFeeAmount = Math.round(subtotalAmount * (customerAdminFeePercent / 100))
     const customerTaxAmount = Math.round((subtotalAmount + customerAdminFeeAmount) * (customerTaxPercent / 100))
     const totalAmount = subtotalAmount + customerAdminFeeAmount + customerTaxAmount
@@ -174,6 +199,13 @@ export async function POST(req: Request) {
         customer_email,
         customer_phone,
         expiry_time: expiry.toISOString(),
+        display_currency: localizedPricing.currency,
+        display_subtotal_amount:
+          Number(localizedPricing.priceAdult || 0) * Number(adult_count || 0) +
+          Number(localizedPricing.priceChild || 0) * Number(child_count || 0),
+        display_price_adult: Number(localizedPricing.priceAdult || 0),
+        display_price_child: Number(localizedPricing.priceChild || 0),
+        exchange_rate_date: adultPriceCharge.date || childPriceCharge.date,
         subtotal_amount: subtotalAmount,
         customer_admin_fee_amount: customerAdminFeeAmount,
         customer_tax_amount: customerTaxAmount,

@@ -1,7 +1,9 @@
 import CheckoutClient from "./CheckoutClient"
 import { defaultFinanceSettings } from "@/lib/finance/settings"
+import { convertCurrencyAmount } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
@@ -30,6 +32,15 @@ type PackageCheckoutRow = {
   minimal_peserta: number | null
   travel_style: string | null
   cover_image: string | null
+  default_language?: string | null
+  published_languages?: string[] | null
+  package_translations?: Array<{
+    language_code?: string | null
+    title: string | null
+    currency?: string | null
+    price_adult?: number | null
+    price_child?: number | null
+  }> | null
 }
 
 export default async function CheckoutPage({
@@ -54,7 +65,7 @@ export default async function CheckoutPage({
   for (const candidate of slugCandidates) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
+        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)")
         .eq("slug", candidate)
       .eq("status", "approved")
       .maybeSingle()
@@ -71,7 +82,7 @@ export default async function CheckoutPage({
     if (suffix) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image")
+        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)")
         .ilike("slug", `%${suffix}`)
         .eq("status", "approved")
         .limit(1)
@@ -84,6 +95,32 @@ export default async function CheckoutPage({
   if (!pkg) {
     return <div className="p-10">{t.packageNotFound}</div>
   }
+
+  const localizedTranslation = resolvePackageTranslation(
+    pkg.package_translations,
+    locale as Locale,
+    pkg.default_language,
+    pkg.published_languages,
+  )
+  const localizedPricing = resolveLocalizedPackagePricing({
+    locale: locale as Locale,
+    defaultLanguage: pkg.default_language,
+    publishedLanguages: pkg.published_languages,
+    baseCurrency: pkg.currency,
+    baseAdultPrice: pkg.price_adult,
+    baseChildPrice: pkg.price_child,
+    translations: pkg.package_translations,
+  })
+  const paymentAdultPrice = await convertCurrencyAmount({
+    amount: localizedPricing.priceAdult,
+    fromCurrency: localizedPricing.currency,
+    toCurrency: "IDR",
+  })
+  const paymentChildPrice = await convertCurrencyAmount({
+    amount: localizedPricing.priceChild,
+    fromCurrency: localizedPricing.currency,
+    toCurrency: "IDR",
+  })
 
   const settingsResult = await ((supabase
     .from("finance_settings")
@@ -108,5 +145,23 @@ export default async function CheckoutPage({
     ),
   }
 
-  return <CheckoutClient data={pkg} locale={locale as Locale} financeSettings={financeSettings} />
+  return (
+    <CheckoutClient
+      data={{
+        ...pkg,
+        title: localizedTranslation?.title || pkg.title,
+        price_adult: localizedPricing.priceAdult,
+        price_child: localizedPricing.priceChild,
+        currency: localizedPricing.currency,
+      }}
+      locale={locale as Locale}
+      financeSettings={financeSettings}
+      paymentPricing={{
+        currency: "IDR",
+        adultPrice: paymentAdultPrice.amount,
+        childPrice: paymentChildPrice.amount,
+        exchangeDate: paymentAdultPrice.date || paymentChildPrice.date,
+      }}
+    />
+  )
 }

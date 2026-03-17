@@ -1,6 +1,8 @@
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
+import { normalizeLocale } from "@/lib/i18n"
+import { formatPackageMoney } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 export const dynamic = "force-dynamic"
@@ -19,6 +21,11 @@ type BookingVerificationRow = {
   customer_admin_fee_amount: number | null
   customer_tax_amount: number | null
   final_payment_amount: number | null
+  display_currency?: string | null
+  display_subtotal_amount?: number | null
+  display_price_adult?: number | null
+  display_price_child?: number | null
+  exchange_rate_date?: string | null
   booking_status: string | null
   payment_status: string | null
   escrow_status: string | null
@@ -159,7 +166,7 @@ function maskName(value: string | null) {
 async function getBookingForVerification(bookingId: string) {
   const supabase = createAdminClient()
 
-  const baseQuery = "id, booking_code, customer_name, pickup_date, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, booking_status, payment_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, package_id, created_at"
+  const baseQuery = "id, booking_code, customer_name, pickup_date, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, package_id, created_at"
 
   let booking: BookingVerificationRow | null = null
 
@@ -210,6 +217,7 @@ async function getBookingForVerification(bookingId: string) {
 
 export default async function VerificationPage({ searchParams }: VerificationPageProps) {
   const locale = await getCurrentLocale()
+  const normalizedLocale = normalizeLocale(locale)
   const resolvedSearchParams = (await searchParams) || {}
   const bookingId = (resolvedSearchParams.booking_id || "").trim()
   const verification = bookingId ? await getBookingForVerification(bookingId) : null
@@ -409,6 +417,37 @@ export default async function VerificationPage({ searchParams }: VerificationPag
                       Sisa pelunasan: {formatMoney(verification.booking.final_payment_amount)}
                     </p>
                   </div>
+                  {verification.booking.display_currency && (
+                    <div className="rounded-[22px] border border-sky-200 bg-sky-50 px-5 py-4">
+                      <p className="text-xs uppercase tracking-[0.22em] text-sky-600">Harga sesuai bahasa customer</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {formatPackageMoney(
+                          verification.booking.display_subtotal_amount,
+                          verification.booking.display_currency,
+                          normalizedLocale,
+                        )}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Adult:{" "}
+                        {formatPackageMoney(
+                          verification.booking.display_price_adult,
+                          verification.booking.display_currency,
+                          normalizedLocale,
+                        )}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Child:{" "}
+                        {formatPackageMoney(
+                          verification.booking.display_price_child,
+                          verification.booking.display_currency,
+                          normalizedLocale,
+                        )}
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Kurs: {verification.booking.exchange_rate_date || "-"}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>

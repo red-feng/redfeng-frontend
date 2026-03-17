@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { formatPackageMoney } from "@/lib/package-pricing"
 import { getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
 type CheckoutPackageData = {
@@ -26,14 +27,23 @@ type CheckoutFinanceSettings = {
   customerTaxPercent: number
 }
 
+type CheckoutPaymentPricing = {
+  currency: string
+  adultPrice: number
+  childPrice: number
+  exchangeDate: string | null
+}
+
 export default function CheckoutClient({
   data,
   locale = "id",
   financeSettings,
+  paymentPricing,
 }: {
   data: CheckoutPackageData
   locale?: Locale
   financeSettings: CheckoutFinanceSettings
+  paymentPricing: CheckoutPaymentPricing
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -55,9 +65,15 @@ export default function CheckoutClient({
 
   const adultPrice = data.price_adult ?? 0
   const childPrice = data.price_child ?? 0
-  const subtotal = useMemo(
+  const localizedSubtotal = useMemo(
     () => adultPrice * adultCount + childPrice * childCount,
     [adultCount, adultPrice, childCount, childPrice],
+  )
+  const paymentAdultPrice = paymentPricing.adultPrice ?? 0
+  const paymentChildPrice = paymentPricing.childPrice ?? 0
+  const subtotal = useMemo(
+    () => paymentAdultPrice * adultCount + paymentChildPrice * childCount,
+    [adultCount, childCount, paymentAdultPrice, paymentChildPrice],
   )
   const adminFee = Math.round(subtotal * (financeSettings.customerAdminFeePercent / 100))
   const ppn = Math.round((subtotal + adminFee) * (financeSettings.customerTaxPercent / 100))
@@ -111,6 +127,7 @@ export default function CheckoutClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           package_id: data.id,
+          locale,
           pickup_date: effectivePickupDate,
           adult_count: adultCount,
           child_count: childCount,
@@ -275,11 +292,11 @@ export default function CheckoutClient({
               <div className="mt-4 space-y-3 text-sm text-slate-600">
                 <div className="flex items-center justify-between">
                   <span>Harga dewasa</span>
-                  <span className="font-semibold text-slate-900">{data.currency || "IDR"} {adultPrice.toLocaleString("id-ID")}</span>
+                  <span className="font-semibold text-slate-900">{formatPackageMoney(adultPrice, data.currency, locale)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Harga anak</span>
-                  <span className="font-semibold text-slate-900">{data.currency || "IDR"} {childPrice.toLocaleString("id-ID")}</span>
+                  <span className="font-semibold text-slate-900">{formatPackageMoney(childPrice, data.currency, locale)}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>Durasi</span>
@@ -296,8 +313,16 @@ export default function CheckoutClient({
                   </div>
                 )}
                 <div className="border-t border-slate-200 pt-3">
+                  <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50 p-3 text-xs text-blue-800">
+                    Pembayaran diproses dalam {paymentPricing.currency}. Harga paket mengikuti bahasa pilihan Anda, lalu dikonversi ke IDR saat checkout.
+                    {paymentPricing.exchangeDate ? ` Kurs acuan: ${paymentPricing.exchangeDate}.` : ""}
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span>Subtotal</span>
+                    <span>Subtotal paket ({data.currency || "IDR"})</span>
+                    <span className="font-semibold text-slate-900">{formatPackageMoney(localizedSubtotal, data.currency, locale)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Subtotal pembayaran</span>
                     <span className="font-semibold text-slate-900">Rp {subtotal.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">

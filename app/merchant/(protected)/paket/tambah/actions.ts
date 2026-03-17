@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { buildAutoLocalizedPricing } from "@/lib/currency-rates"
 import { normalizePackageCurrency } from "@/lib/package-pricing"
 import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { redirect } from "next/navigation"
@@ -33,41 +34,35 @@ function getTranslatedTitles(formData: FormData, defaultLanguage: string) {
   return titles
 }
 
-function getLocalizedPricing(formData: FormData, publishedLanguages: SupportedLanguage[], defaultLanguage: string) {
+async function getLocalizedPricing(formData: FormData, publishedLanguages: SupportedLanguage[], defaultLanguage: string) {
   const normalizedDefaultLanguage = normalizePublishedLanguages([], defaultLanguage)[0]
   const defaultCurrency = normalizePackageCurrency(
-    String(formData.get(`currency_${normalizedDefaultLanguage}`) || formData.get("currency") || "IDR"),
+    String(formData.get("base_currency") || formData.get(`currency_${normalizedDefaultLanguage}`) || formData.get("currency") || "IDR"),
   )
   const defaultAdultPrice = Number(
-    String(formData.get(`price_adult_${normalizedDefaultLanguage}`) || formData.get("price_adult") || "0").replace(/[^\d]/g, ""),
+    String(formData.get("base_price_adult") || formData.get(`price_adult_${normalizedDefaultLanguage}`) || formData.get("price_adult") || "0").replace(/[^\d]/g, ""),
   )
   const defaultChildPrice = Number(
-    String(formData.get(`price_child_${normalizedDefaultLanguage}`) || formData.get("price_child") || "0").replace(/[^\d]/g, ""),
+    String(formData.get("base_price_child") || formData.get(`price_child_${normalizedDefaultLanguage}`) || formData.get("price_child") || "0").replace(/[^\d]/g, ""),
   )
+  const localized = await buildAutoLocalizedPricing({
+    baseLanguage: defaultLanguage,
+    baseCurrency: defaultCurrency,
+    baseAdultPrice: defaultAdultPrice,
+    baseChildPrice: defaultChildPrice,
+  })
 
   return SUPPORTED_LANGUAGES.reduce(
     (acc, code) => {
-      const rawCurrency = String(formData.get(`currency_${code}`) || "").trim()
-      const rawAdultPrice = String(formData.get(`price_adult_${code}`) || "").replace(/[^\d]/g, "")
-      const rawChildPrice = String(formData.get(`price_child_${code}`) || "").replace(/[^\d]/g, "")
       const isPublished = publishedLanguages.includes(code)
       const isDefault = code === normalizedDefaultLanguage
 
       if (!isPublished && !isDefault) {
-        acc[code] = {
-          currency: defaultCurrency,
-          price_adult: defaultAdultPrice,
-          price_child: defaultChildPrice,
-        }
+        acc[code] = localized.pricing[code]
         return acc
       }
 
-      acc[code] = {
-        currency: normalizePackageCurrency(rawCurrency || defaultCurrency),
-        price_adult: Number(rawAdultPrice || defaultAdultPrice || 0),
-        price_child: Number(rawChildPrice || defaultChildPrice || 0),
-      }
-
+      acc[code] = localized.pricing[code]
       return acc
     },
     {} as Record<SupportedLanguage, { currency: string; price_adult: number; price_child: number }>,
@@ -215,7 +210,7 @@ export async function createPackage(formData: FormData) {
       formData.getAll("publish_languages[]"),
       defaultLanguage
     )
-    const pricing = getLocalizedPricing(formData, publishedLanguages, defaultLanguage)
+    const pricing = await getLocalizedPricing(formData, publishedLanguages, defaultLanguage)
     const slugBase = slugifyTitle(title)
     const slug = `${slugBase || "paket"}-${crypto.randomUUID().slice(0, 6)}`
 
