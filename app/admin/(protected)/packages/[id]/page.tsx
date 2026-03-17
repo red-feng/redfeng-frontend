@@ -3,7 +3,7 @@ import { approvePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
-import TranslationTabs from "./TranslationTabs"
+import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
 
 type CountryRow = {
   id: string
@@ -288,103 +288,48 @@ export default async function Page({
               </section>
             )}
 
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Detail Konten</h2>
-              <div className="mt-5 space-y-5">
-                <TranslationTabs
-                  translations={sortedTranslations.map((translation) => ({
-                    ...translation,
-                    meeting_point: translation.meeting_point || detail?.meeting_point || null,
-                    highlights: translation.highlights || null,
-                  }))}
-                  defaultLanguage={pkg.default_language}
-                  fallbackTitle={pkg.title}
-                />
-
-                {sortedTranslations.every((translation) => !translation.highlights) && (
-                  <div>
-                    <h3 className="mb-1 text-sm font-semibold text-slate-900">Tag / Sorotan Lama</h3>
-                    <p className="text-sm text-slate-700">
-                      {tags.length > 0 ? tags.map((tag) => tag.tag).join(", ") : "-"}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {detail?.map_embed && (
-                <div className="mt-6">
-                  <h3 className="mb-2 text-sm font-semibold text-slate-900">Preview Peta Titik Penjemputan</h3>
-                  <div
-                    className="overflow-hidden rounded-xl border border-slate-200"
-                    dangerouslySetInnerHTML={{ __html: detail.map_embed }}
-                  />
-                </div>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Fasilitas</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {facilities.length === 0 && (
-                  <span className="text-sm text-slate-500">Tidak ada fasilitas.</span>
-                )}
-                {facilities.map((facility) => (
-                  <span
-                    key={facility.facility_id}
-                    className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
-                  >
-                    {getFacilityLabel(getFacilityName(facility.facilities), "id")}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Tag / Sorotan</h2>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {tags.length === 0 && <span className="text-sm text-slate-500">Tidak ada tag.</span>}
-                {tags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="rounded-full bg-slate-900 px-3 py-1 text-sm font-medium text-white"
-                  >
-                    {tag.tag}
-                  </span>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900">Itinerary</h2>
-              <div className="mt-5 space-y-5">
-                {itineraryDays.length === 0 && (
-                  <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>
-                )}
-                {itineraryDays.map((day) => (
-                  <div key={day.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h3 className="text-base font-semibold text-slate-900">
-                      Hari {day.day_number}
-                      {(itineraryDayTranslationMap.get(day.id) || day.day_title)
-                        ? ` - ${itineraryDayTranslationMap.get(day.id) || day.day_title}`
-                        : ""}
-                    </h3>
-                    <div className="mt-3 space-y-3">
-                      {day.package_itinerary_routes.map((route) => (
-                        <div key={route.id} className="rounded-lg border border-slate-200 bg-white p-3">
-                          <p className="text-sm font-semibold text-slate-900">{route.pickup_time || "-"}</p>
-                          <p className="mt-1 text-sm text-slate-700">
-                            {itineraryRouteTranslationMap.get(route.id)?.route || route.route || "-"}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {itineraryRouteTranslationMap.get(route.id)?.description || route.description || "-"}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+            <AdminPackageReviewTabs
+              detailContent={{
+                title: primaryTranslation?.title || pkg.title || "-",
+                about_tour: primaryTranslation?.about_tour || null,
+                meeting_point: primaryTranslation?.meeting_point || detail?.meeting_point || null,
+                service_standard: primaryTranslation?.service_standard || null,
+                include: primaryTranslation?.include || null,
+                exclude: primaryTranslation?.exclude || null,
+                highlights:
+                  primaryTranslation?.highlights ||
+                  (tags.length > 0 ? tags.map((tag) => tag.tag).join(", ") : null),
+                preparation: primaryTranslation?.preparation || null,
+                terms_conditions: primaryTranslation?.terms_conditions || null,
+                map_embed: detail?.map_embed || null,
+              }}
+              translations={sortedTranslations.map((translation) => ({
+                ...translation,
+                meeting_point: translation.meeting_point || detail?.meeting_point || null,
+                highlights: translation.highlights || null,
+              }))}
+              defaultLanguage={pkg.default_language}
+              fallbackTitle={pkg.title}
+              facilities={facilities.map((facility) => ({
+                id: facility.facility_id,
+                label: getFacilityLabel(getFacilityName(facility.facilities), "id"),
+              }))}
+              tags={tags.map((tag) => ({
+                id: tag.id,
+                label: tag.tag,
+              }))}
+              itineraryDays={itineraryDays.map((day) => ({
+                id: day.id,
+                day_number: day.day_number,
+                title: itineraryDayTranslationMap.get(day.id) || day.day_title,
+                routes: day.package_itinerary_routes.map((route) => ({
+                  id: route.id,
+                  pickup_time: route.pickup_time,
+                  route: itineraryRouteTranslationMap.get(route.id)?.route || route.route || "-",
+                  description: itineraryRouteTranslationMap.get(route.id)?.description || route.description || "-",
+                })),
+              }))}
+            />
           </main>
 
           <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
