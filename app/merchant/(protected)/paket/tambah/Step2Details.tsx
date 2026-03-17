@@ -46,6 +46,21 @@ function createEmptyTranslationValues(): TranslationValues {
   }
 }
 
+function normalizeTranslationEntry(
+  input?: Partial<Record<TranslationField, string>> | null,
+): Record<TranslationField, string> {
+  return {
+    about_tour: String(input?.about_tour || ""),
+    service_standard: String(input?.service_standard || ""),
+    include: String(input?.include || ""),
+    exclude: String(input?.exclude || ""),
+    preparation: String(input?.preparation || ""),
+    meeting_point: String(input?.meeting_point || ""),
+    highlights: String(input?.highlights || ""),
+    terms_conditions: String(input?.terms_conditions || ""),
+  }
+}
+
 export default function Step2Details({
   packageId,
   defaultLanguage,
@@ -64,7 +79,14 @@ export default function Step2Details({
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === normalizedDefaultLanguage)?.code || "id") as LangCode
   )
-  const [translationValues, setTranslationValues] = useState<TranslationValues>(() => createEmptyTranslationValues())
+  const [translationValues, setTranslationValues] = useState<TranslationValues>(() => {
+    const initial = createEmptyTranslationValues()
+    return {
+      id: normalizeTranslationEntry(initial.id),
+      en: normalizeTranslationEntry(initial.en),
+      zh: normalizeTranslationEntry(initial.zh),
+    }
+  })
   const [isRetranslatingLanguage, setIsRetranslatingLanguage] = useState<LangCode | null>(null)
   const manualOverridesRef = useRef<Set<string>>(new Set())
   const translationTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
