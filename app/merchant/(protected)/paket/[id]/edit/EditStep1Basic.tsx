@@ -317,6 +317,53 @@ export default function EditStep1Basic({
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
+          <label className="mb-2 block text-sm font-medium text-slate-700">{t.defaultLanguage}</label>
+          <select
+            name="default_language"
+            value={defaultLanguage}
+            onChange={(event) => onDefaultLanguageChange(event.target.value)}
+            className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
+            required
+          >
+            {merchantWizardLanguageOptions.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="md:col-span-2">
+          <p className="mb-2 text-sm font-medium text-slate-700">{t.publishLanguage}</p>
+          <p className="mb-3 text-xs text-slate-500">{t.publishLanguageHint}</p>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {merchantWizardLanguageOptions.map((language) => {
+              const checked = publishedLanguages.includes(language.code)
+              const isDefault = language.code === defaultLanguage
+              return (
+                <label
+                  key={language.code}
+                  className="flex items-center gap-2 rounded-xl border border-slate-300 p-3 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="publish_languages[]"
+                    value={language.code}
+                    checked={checked}
+                    disabled={isDefault}
+                    onChange={(event) => onTogglePublishedLanguage(language.code, event.target.checked)}
+                  />
+                  <span>{language.label}</span>
+                  {isDefault && (
+                    <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{t.defaultBadge}</span>
+                  )}
+                </label>
+              )
+            })}
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
           <label className="mb-2 block text-sm font-medium text-slate-700">{t.packageName}</label>
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
@@ -572,52 +619,6 @@ export default function EditStep1Basic({
           </div>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="mb-2 block text-sm font-medium text-slate-700">{t.defaultLanguage}</label>
-          <select
-            name="default_language"
-            value={defaultLanguage}
-            onChange={(event) => onDefaultLanguageChange(event.target.value)}
-            className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
-            required
-          >
-            {merchantWizardLanguageOptions.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="md:col-span-2">
-          <p className="mb-2 text-sm font-medium text-slate-700">{t.publishLanguage}</p>
-          <p className="mb-3 text-xs text-slate-500">{t.publishLanguageHint}</p>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-            {merchantWizardLanguageOptions.map((language) => {
-              const checked = publishedLanguages.includes(language.code)
-              const isDefault = language.code === defaultLanguage
-              return (
-                <label
-                  key={language.code}
-                  className="flex items-center gap-2 rounded-xl border border-slate-300 p-3 text-sm"
-                >
-                  <input
-                    type="checkbox"
-                    name="publish_languages[]"
-                    value={language.code}
-                    checked={checked}
-                    disabled={isDefault}
-                    onChange={(event) => onTogglePublishedLanguage(language.code, event.target.checked)}
-                  />
-                  <span>{language.label}</span>
-                  {isDefault && (
-                    <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{t.defaultBadge}</span>
-                  )}
-                </label>
-              )
-            })}
-          </div>
-        </div>
       </div>
 
       <div className="flex justify-end pt-4">

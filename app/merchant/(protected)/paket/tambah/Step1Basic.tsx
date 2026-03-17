@@ -322,6 +322,59 @@ export default function Step1Basic({
 
              <div className="grid grid-cols-2 gap-4">
 
+  {/* DEFAULT LANGUAGE */}
+  <div className="col-span-2">
+    <p className="mb-2 text-sm font-semibold text-slate-700">{t.defaultLanguage}</p>
+    <select
+      name="default_language"
+      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
+      value={defaultLanguage}
+      onChange={(e) => onDefaultLanguageChange(e.target.value)}
+      required
+    >
+      {merchantWizardLanguageOptions.map((language) => (
+        <option key={language.code} value={language.code}>
+          {language.label}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div className="col-span-2">
+    <p className="mb-2 text-sm font-semibold text-slate-700">{t.publishLanguage}</p>
+    <p className="mb-3 text-xs text-slate-500">
+      {t.publishLanguageHint}
+    </p>
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      {merchantWizardLanguageOptions.map((language) => {
+        const checked = publishedLanguages.includes(language.code)
+        const isDefault = language.code === defaultLanguage
+
+        return (
+          <label
+            key={language.code}
+            className="flex items-center gap-2 rounded-lg border border-slate-300 p-2 text-sm"
+          >
+            <input
+              type="checkbox"
+              name="publish_languages[]"
+              value={language.code}
+              checked={checked}
+              disabled={isDefault}
+              onChange={(e) => onTogglePublishedLanguage(language.code, e.target.checked)}
+            />
+            <span>{language.label}</span>
+            {isDefault && (
+              <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                {t.defaultBadge}
+              </span>
+            )}
+          </label>
+        )
+      })}
+    </div>
+  </div>
+
   {/* NAMA PAKET */}
   <div className="col-span-2 space-y-3">
     <label className="block text-sm font-semibold text-slate-700">
@@ -574,59 +627,6 @@ export default function Step1Basic({
           )
         })}
       </div>
-    </div>
-  </div>
-
-  {/* DEFAULT LANGUAGE */}
-  <div className="col-span-2">
-    <p className="mb-2 text-sm font-semibold text-slate-700">{t.defaultLanguage}</p>
-    <select
-      name="default_language"
-      className="border rounded-lg p-3 w-full outline-none focus:ring-2 focus:ring-blue-400"
-      value={defaultLanguage}
-      onChange={(e) => onDefaultLanguageChange(e.target.value)}
-      required
-    >
-          {merchantWizardLanguageOptions.map((language) => (
-            <option key={language.code} value={language.code}>
-              {language.label}
-            </option>
-          ))}
-          </select>
-  </div>
-
-  <div className="col-span-2">
-    <p className="mb-2 text-sm font-semibold text-slate-700">{t.publishLanguage}</p>
-    <p className="mb-3 text-xs text-slate-500">
-      {t.publishLanguageHint}
-    </p>
-    <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-      {merchantWizardLanguageOptions.map((language) => {
-        const checked = publishedLanguages.includes(language.code)
-        const isDefault = language.code === defaultLanguage
-
-        return (
-          <label
-            key={language.code}
-            className="flex items-center gap-2 rounded-lg border border-slate-300 p-2 text-sm"
-          >
-            <input
-              type="checkbox"
-              name="publish_languages[]"
-              value={language.code}
-              checked={checked}
-              disabled={isDefault}
-              onChange={(e) => onTogglePublishedLanguage(language.code, e.target.checked)}
-            />
-            <span>{language.label}</span>
-            {isDefault && (
-              <span className="ml-auto rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
-                {t.defaultBadge}
-              </span>
-            )}
-          </label>
-        )
-      })}
     </div>
   </div>
 
