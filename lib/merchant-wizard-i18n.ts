@@ -34,6 +34,12 @@ type MerchantWizardDictionary = {
   adultPricePlaceholder: string
   childPrice: string
   childPricePlaceholder: string
+  autoCurrencyTitle?: string
+  latestRateLabel?: string
+  pricingAdultLabel?: string
+  pricingChildLabel?: string
+  pricingSourcePrimary?: string
+  pricingSourceAuto?: string
   defaultLanguage: string
   publishLanguage: string
   publishLanguageHint: string
@@ -125,6 +131,12 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     adultPricePlaceholder: "Harga Dewasa",
     childPrice: "Harga Anak",
     childPricePlaceholder: "Harga Anak",
+    autoCurrencyTitle: "Auto currency per bahasa publish",
+    latestRateLabel: "Kurs terbaru",
+    pricingAdultLabel: "Dewasa",
+    pricingChildLabel: "Anak",
+    pricingSourcePrimary: "Harga sumber utama.",
+    pricingSourceAuto: "Nilai ini terisi otomatis dari kurs terbaru.",
     defaultLanguage: "Bahasa Default Merchant",
     publishLanguage: "Bahasa Publish",
     publishLanguageHint: "Paket akan tampil di pilihan bahasa yang dicentang.",
@@ -208,6 +220,12 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     adultPricePlaceholder: "Adult Price",
     childPrice: "Child Price",
     childPricePlaceholder: "Child Price",
+    autoCurrencyTitle: "Auto currency by published language",
+    latestRateLabel: "Latest rate",
+    pricingAdultLabel: "Adult",
+    pricingChildLabel: "Child",
+    pricingSourcePrimary: "Primary source price.",
+    pricingSourceAuto: "This value is filled automatically from the latest exchange rate.",
     defaultLanguage: "Merchant Default Language",
     publishLanguage: "Publish Languages",
     publishLanguageHint: "The package will appear in the checked language options.",

@@ -82,6 +82,33 @@ export default function EditStep1Basic({
   const titleTranslationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
+  const pricingText =
+    locale === "en"
+      ? {
+          title: "Auto currency by published language",
+          latestRate: "Latest rate",
+          adult: "Adult",
+          child: "Child",
+          primary: "Primary source price.",
+          auto: "This value is filled automatically from the latest exchange rate.",
+        }
+      : locale === "zh"
+        ? {
+            title: "按发布语言自动换算货币",
+            latestRate: "最新汇率",
+            adult: "成人",
+            child: "儿童",
+            primary: "主要来源价格。",
+            auto: "此数值会根据最新汇率自动填充。",
+          }
+        : {
+            title: "Auto currency per bahasa publish",
+            latestRate: "Kurs terbaru",
+            adult: "Dewasa",
+            child: "Anak",
+            primary: "Harga sumber utama.",
+            auto: "Nilai ini terisi otomatis dari kurs terbaru.",
+          }
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const titleTargetLanguages = useMemo(
     () =>
@@ -578,9 +605,13 @@ export default function EditStep1Basic({
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-700">Auto currency per bahasa publish</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {pricingText.title}
+              </p>
               {ratesTimestamp && (
-                <p className="text-xs text-slate-500">Kurs terbaru: {ratesTimestamp}</p>
+                <p className="text-xs text-slate-500">
+                  {pricingText.latestRate}: {ratesTimestamp}
+                </p>
               )}
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -596,13 +627,15 @@ export default function EditStep1Basic({
                     </div>
                     <div className="space-y-1 text-sm text-slate-600">
                       <p>
-                        Dewasa: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_adult || "0"}</span>
+                        {pricingText.adult}: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_adult || "0"}</span>
                       </p>
                       <p>
-                        Anak: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_child || "0"}</span>
+                        {pricingText.child}: <span className="font-semibold text-slate-900">{pricingValues[language.code].price_child || "0"}</span>
                       </p>
                       <p className="pt-1 text-xs text-slate-500">
-                        {isDefaultPricingLanguage ? "Harga sumber utama." : "Nilai ini terisi otomatis dari kurs terbaru."}
+                        {isDefaultPricingLanguage
+                          ? pricingText.primary
+                          : pricingText.auto}
                       </p>
                     </div>
                     <input type="hidden" name={`currency_${language.code}`} value={pricingValues[language.code].currency || localeCurrencyMap[language.code]} />
