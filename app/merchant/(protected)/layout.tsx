@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
@@ -269,22 +270,7 @@ export default async function MerchantLayout({
             </div>
 
             <nav className="overflow-x-auto pb-1">
-              <div className="flex min-w-max gap-2">
-                {merchantNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                  >
-                    {item.label}
-                    {item.badgeCount > 0 && (
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                        {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
+              <MerchantNavLinks items={merchantNav} />
             </nav>
           </div>
         </div>
