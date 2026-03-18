@@ -419,6 +419,10 @@ export default async function PaketPage({
 
   const displayTitle = translation?.title || pkg.title || "Detail Paket"
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
+  const highlightTags =
+    parseHighlights(translation?.highlights).length > 0
+      ? parseHighlights(translation?.highlights)
+      : tags.map((tag) => tag.tag).slice(0, 4)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
@@ -426,25 +430,61 @@ export default async function PaketPage({
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-          <h1 className="text-2xl font-semibold text-slate-900 md:text-3xl">{displayTitle}</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
-            {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            <span className="rounded-full bg-orange-100 px-3 py-1 font-semibold text-orange-700">
-              {formatTravelStyleLabel(pkg.travel_style)}
-            </span>
-            <span className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700">
-              {t.language} {pkg.default_language || "-"}
-            </span>
+        <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
+          <div className="relative px-5 py-6 md:px-8 md:py-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_26%)]" />
+            <div className="relative">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">Signature Journey</p>
+                  <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-5xl">{displayTitle}</h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+                    {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
+                    {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-orange-100 bg-white/85 px-5 py-4 shadow-sm backdrop-blur">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.bookingTour}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-orange-600">
+                    {formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {participantLabel}: {pkg.minimal_peserta || 0} {t.people}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 font-semibold text-orange-700">
+                  {formatTravelStyleLabel(pkg.travel_style)}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700">
+                  {t.language} {pkg.default_language || "-"}
+                </span>
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700">
+                  {pkg.duration || 0} {t.day}
+                </span>
+              </div>
+
+              {highlightTags.length > 0 && (
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {highlightTags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="rounded-full border border-white/80 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm backdrop-blur"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_340px]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_360px]">
           <div className="space-y-6">
-            <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+            <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-5">
               {galleryImages.length > 0 ? (
                 <Gallery images={galleryImages} />
               ) : (
@@ -454,7 +494,7 @@ export default async function PaketPage({
                   width={1600}
                   height={900}
                   unoptimized
-                  className="h-[260px] w-full rounded-xl object-cover md:h-[500px]"
+                  className="h-[320px] w-full rounded-[28px] object-cover md:h-[620px]"
                 />
               )}
             </section>
@@ -510,23 +550,32 @@ export default async function PaketPage({
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-            <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-lg shadow-slate-300/40">
-              <h2 className="text-xl font-semibold text-slate-900">{t.bookingTour}</h2>
-              <p className="mt-2 text-3xl font-bold text-orange-600">{formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}</p>
-              <div className="mt-4 space-y-2 text-sm text-slate-700">
-                <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
-                <p>{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
-                {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
-                  <p>Tanggal keberangkatan: {pkg.departure_date}</p>
-                )}
-                <p>{t.childPrice}: {formatPackageMoney(localizedPricing.priceChild, localizedPricing.currency, activeLocale)}</p>
+            <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
+              <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">{t.bookingTour}</p>
+                <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                  {formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  {t.childPrice}: {formatPackageMoney(localizedPricing.priceChild, localizedPricing.currency, activeLocale)}
+                </p>
               </div>
-              <Link
-                href={`/checkout/${encodeURIComponent(pkg.slug)}`}
-                className="mt-5 block w-full rounded-[20px] bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800"
-              >
-                {t.bookingNow}
-              </Link>
+
+              <div className="space-y-3 p-5 text-sm text-slate-700">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
+                  <p className="mt-2">{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
+                  {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
+                    <p className="mt-2">Tanggal keberangkatan: {pkg.departure_date}</p>
+                  )}
+                </div>
+                <Link
+                  href={`/checkout/${encodeURIComponent(pkg.slug)}`}
+                  className="block w-full rounded-[22px] bg-[linear-gradient(135deg,#fb923c_0%,#f97316_100%)] px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_16px_30px_rgba(249,115,22,0.28)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(249,115,22,0.34)]"
+                >
+                  {t.bookingNow}
+                </Link>
+              </div>
             </section>
             <SidebarActions
               packageId={pkg.id}
