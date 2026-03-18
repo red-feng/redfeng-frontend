@@ -109,16 +109,16 @@ export default function PackageTabs({
 
         {activeTab === "about" && (
           <div className="grid gap-4 text-sm leading-7 text-slate-700 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:col-span-2">
+            <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,#fffdfb_0%,#fff7ed_100%)] p-6 md:col-span-2">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.aboutTour}</h3>
-              <p className="whitespace-pre-line">{data.aboutTour || "-"}</p>
+              <p className="whitespace-pre-line text-[15px] leading-8 text-slate-700">{data.aboutTour || "-"}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.meetingPoint}</h3>
               <p className="whitespace-pre-line">{data.meetingPoint || "-"}</p>
             </div>
             {data.tags.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.highlights}</h3>
                 <div className="flex flex-wrap gap-2">
                   {data.tags.map((tag) => (
@@ -133,10 +133,10 @@ export default function PackageTabs({
               </div>
             )}
             {data.mapEmbed && (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:col-span-2">
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 md:col-span-2">
                 <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.map}</h3>
                 <div
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                  className="overflow-hidden rounded-[24px] border border-slate-200 bg-white"
                   dangerouslySetInnerHTML={{ __html: data.mapEmbed }}
                 />
               </div>
@@ -153,7 +153,7 @@ export default function PackageTabs({
               {data.facilities.map((facility) => (
                 <span
                   key={facility.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-700 shadow-sm"
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700 shadow-sm"
                 >
                   <span>{getFacilityIcon(facility.name)}</span>
                   {facility.name}
@@ -165,15 +165,15 @@ export default function PackageTabs({
 
         {activeTab === "service" && (
           <div className="grid gap-4 text-sm leading-7 text-slate-700 md:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.service}</h3>
               <p className="whitespace-pre-line">{data.serviceStandard || "-"}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.include}</h3>
               <p className="whitespace-pre-line">{data.include || "-"}</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-5 md:col-span-2">
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-5 md:col-span-2">
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.exclude}</h3>
               <p className="whitespace-pre-line">{data.exclude || "-"}</p>
             </div>
@@ -186,21 +186,27 @@ export default function PackageTabs({
               <p className="text-sm text-slate-500">{t.noItinerary}</p>
             )}
             {data.itineraryDays.map((day) => (
-              <div key={day.id} className="overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/70">
-                <div className="border-b border-slate-200 bg-white px-5 py-4">
+              <div key={day.id} className="overflow-hidden rounded-[28px] border border-slate-200 bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] shadow-sm">
+                <div className="border-b border-slate-200 bg-white/90 px-5 py-4">
                   <h3 className="text-base font-semibold text-slate-900">
                   {t.dayLabel} {day.day_number}{day.day_title ? ` - ${day.day_title}` : ""}
                   </h3>
                 </div>
-                <div className="space-y-3 p-4">
+                <div className="space-y-4 p-4 md:p-5">
                   {day.routes.length === 0 && (
                     <p className="text-sm text-slate-500">{t.noRoute}</p>
                   )}
                   {day.routes.map((route) => (
-                    <div key={route.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">{route.pickup_time || "-"}</p>
-                      <p className="mt-2 text-sm font-semibold text-slate-900">{route.route || "-"}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{route.description || "-"}</p>
+                    <div key={route.id} className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-5">
+                        <div className="shrink-0 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-orange-600">
+                          {route.pickup_time || "-"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">{route.route || "-"}</p>
+                          <p className="mt-2 text-sm leading-7 text-slate-600">{route.description || "-"}</p>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -425,14 +425,14 @@ export default async function PaketPage({
       : tags.map((tag) => tag.tag).slice(0, 4)
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)]">
       <PackageViewTracker packageId={pkg.id} />
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
         <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
           <div className="relative px-5 py-6 md:px-8 md:py-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_26%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(255,247,237,0.92)_100%)]" />
             <div className="relative">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-3xl">
@@ -478,6 +478,31 @@ export default async function PaketPage({
                   ))}
                 </div>
               )}
+
+              <div className="mt-6 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Curated Route</p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
+                    {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} to{" "}
+                    {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Trip Format</p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
+                    {formatTravelStyleLabel(pkg.travel_style)} with {pkg.duration || 0} {t.day}
+                  </p>
+                </div>
+                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Booking Detail</p>
+                  <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
+                    {participantLabel}: {pkg.minimal_peserta || 0} {t.people}
+                  </p>
+                  {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
+                    <p className="mt-1 text-sm leading-6 text-slate-600">Departure: {pkg.departure_date}</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -552,7 +577,15 @@ export default async function PaketPage({
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
             <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
               <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">{t.bookingTour}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">{t.bookingTour}</p>
+                    <p className="mt-1 text-sm text-slate-500">Premium booking summary</p>
+                  </div>
+                  <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700">
+                    Instant
+                  </span>
+                </div>
                 <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
                   {formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}
                 </p>
@@ -568,6 +601,10 @@ export default async function PaketPage({
                   {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
                     <p className="mt-2">Tanggal keberangkatan: {pkg.departure_date}</p>
                   )}
+                </div>
+                <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-4 text-slate-700">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-600">Why guests love this</p>
+                  <p className="mt-2 leading-6">Curated itinerary, clear facilities, and a polished booking flow in your selected language.</p>
                 </div>
                 <Link
                   href={`/checkout/${encodeURIComponent(pkg.slug)}`}

@@ -29,7 +29,7 @@ export default function SidebarActions({
   return (
     <>
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
-        <div className="rounded-2xl border border-orange-100 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-4">
+        <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-4 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Useful Info</p>
           <h3 className="mt-2 text-lg font-semibold text-slate-900">{tDetail.otherInfo}</h3>
         </div>
@@ -37,20 +37,20 @@ export default function SidebarActions({
           <button
             type="button"
             onClick={() => setActiveModal("equipment")}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-700 transition hover:border-orange-200 hover:bg-orange-50/60"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
           >
             {tSidebar.personalDocs}
           </button>
           <button
             type="button"
             onClick={() => setActiveModal("terms")}
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-700 transition hover:border-orange-200 hover:bg-orange-50/60"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
           >
             {tSidebar.terms}
           </button>
           <Link
             href={`/chat?package_id=${packageId}`}
-            className="block w-full rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-700 transition hover:border-orange-200 hover:bg-orange-50/60"
+            className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
           >
             {tDetail.chat}
           </Link>

@@ -30,15 +30,15 @@ export default function Gallery({ images }: { images: GalleryImage[] }) {
   if (!images || images.length === 0) return null
 
   return (
-    <div className="space-y-4">
-      <div className="relative overflow-hidden rounded-[28px] border border-white/40 bg-white/50 shadow-[0_20px_60px_rgba(15,23,42,0.10)]">
+    <div className="space-y-5">
+      <div className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/50 shadow-[0_28px_90px_rgba(15,23,42,0.14)]">
         <img
           src={images[current].image_url}
           alt={`Gallery image ${current + 1}`}
-          className="h-[320px] w-full object-cover md:h-[620px]"
+          className="h-[360px] w-full object-cover md:h-[680px]"
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-white/10" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(15,23,42,0.08)_38%,rgba(15,23,42,0.58)_100%)]" />
 
         <div className="absolute left-5 top-5 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
           Featured Gallery
@@ -46,6 +46,15 @@ export default function Gallery({ images }: { images: GalleryImage[] }) {
 
         <div className="absolute bottom-5 right-5 rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
           {current + 1} / {images.length}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+          <div className="max-w-2xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">Visual Journey</p>
+            <p className="mt-2 text-lg font-medium leading-7 text-white md:text-2xl">
+              Discover the atmosphere, scenery, and signature moments waiting across this itinerary.
+            </p>
+          </div>
         </div>
 
         {images.length > 1 && (
@@ -77,10 +86,10 @@ export default function Gallery({ images }: { images: GalleryImage[] }) {
               key={img.id}
               type="button"
               onClick={() => setCurrent(index)}
-              className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
+              className={`overflow-hidden rounded-[20px] border bg-white shadow-sm transition ${
                 index === current
                   ? "border-orange-300 ring-2 ring-orange-200"
-                  : "border-slate-200 hover:-translate-y-0.5 hover:border-orange-200"
+                  : "border-slate-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
               }`}
             >
               <img
