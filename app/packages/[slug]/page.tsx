@@ -495,7 +495,7 @@ export default async function PaketPage({
 
               <div className="mt-5 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 font-semibold text-orange-700">
-                  {formatTravelStyleLabel(pkg.travel_style)}
+                  {formatTravelStyleLabel(pkg.travel_style, activeLocale)}
                 </span>
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700">
                   {t.language} {pkg.default_language || "-"}
@@ -529,7 +529,7 @@ export default async function PaketPage({
                 <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.tripTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
-                    {formatTravelStyleLabel(pkg.travel_style)} {luxuryCopy.withWord ? `${luxuryCopy.withWord} ` : ""}{pkg.duration || 0} {t.day}
+                    {formatTravelStyleLabel(pkg.travel_style, activeLocale)} {luxuryCopy.withWord ? `${luxuryCopy.withWord} ` : ""}{pkg.duration || 0} {t.day}
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">

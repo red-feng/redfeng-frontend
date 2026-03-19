@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
+import { formatTravelStyleLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
 export default function SearchBar({ locale }: { locale: Locale }) {
   const router = useRouter()
@@ -14,6 +14,11 @@ export default function SearchBar({ locale }: { locale: Locale }) {
   const [style, setStyle] = useState(searchParams.get("style") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
   const [departureDate, setDepartureDate] = useState(searchParams.get("departure_date") || "")
+  const countryLabels = {
+    indonesia: locale === "zh" ? "印度尼西亚" : locale === "en" ? "Indonesia" : "Indonesia",
+    japan: locale === "zh" ? "日本" : locale === "en" ? "Japan" : "Jepang",
+    singapore: locale === "zh" ? "新加坡" : locale === "en" ? "Singapore" : "Singapura",
+  }
 
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
@@ -59,9 +64,9 @@ export default function SearchBar({ locale }: { locale: Locale }) {
             className="border rounded-xl px-4 py-3 w-[240px]"
           >
             <option value="">{t.allCountries}</option>
-            <option value="indonesia">Indonesia</option>
-            <option value="japan">Japan</option>
-            <option value="singapore">Singapore</option>
+            <option value="indonesia">{countryLabels.indonesia}</option>
+            <option value="japan">{countryLabels.japan}</option>
+            <option value="singapore">{countryLabels.singapore}</option>
           </select>
         </label>
 
@@ -83,7 +88,7 @@ export default function SearchBar({ locale }: { locale: Locale }) {
             <option value="">{t.allStyles}</option>
             {travelStyleOptions.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {formatTravelStyleLabel(option.value, locale)}
               </option>
             ))}
           </select>

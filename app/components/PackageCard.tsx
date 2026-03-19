@@ -50,6 +50,8 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const displayPricing = pkg.livePricing || pricing
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
+  const departureLabel =
+    locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
 
   return (
     <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition flex overflow-hidden">
@@ -79,14 +81,14 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
         <div className="mb-3 flex flex-wrap gap-2 text-xs">
           <span className="rounded-full bg-orange-50 px-3 py-1 font-medium text-orange-700">
-            {formatTravelStyleLabel(pkg.travel_style)}
+            {formatTravelStyleLabel(pkg.travel_style, locale)}
           </span>
           <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
             {participantLabel}: {pkg.minimal_peserta || 0}
           </span>
           {hasFixedDeparture && pkg.departure_date && (
             <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
-              Tanggal keberangkatan: {pkg.departure_date}
+              {departureLabel}: {pkg.departure_date}
             </span>
           )}
         </div>

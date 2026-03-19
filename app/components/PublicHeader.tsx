@@ -20,8 +20,12 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
   const availableLocales = languageOptions && languageOptions.length > 0
     ? languageOptions
     : (["id", "en", "zh"] as Locale[])
+  const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
+  const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
+  const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
+  const adminLabel = locale === "zh" ? "管理后台" : locale === "en" ? "Admin" : "Admin"
   const [accountHref, setAccountHref] = useState("/login")
-  const [accountLabel, setAccountLabel] = useState("Login")
+  const [accountLabel, setAccountLabel] = useState(guestLoginLabel)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
@@ -32,7 +36,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
 
       if (!session?.user) {
         setAccountHref("/login")
-        setAccountLabel("Login")
+        setAccountLabel(guestLoginLabel)
         setIsAuthenticated(false)
         return
       }
@@ -43,7 +47,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
     }
 
     syncSession()
-  }, [supabase, t.account])
+  }, [guestLoginLabel, supabase, t.account])
 
   const changeLocale = async (nextLocale: Locale) => {
     await fetch("/api/locale", {
@@ -96,7 +100,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
               href="/staff"
               className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 transition hover:text-orange-600 lg:inline-flex"
             >
-              Admin
+              {adminLabel}
             </Link>
             <button type="button" className="text-slate-600 hover:text-orange-600" aria-label="Search">
               <svg viewBox="0 0 24 24" className="h-[22px] w-[22px] fill-none stroke-current stroke-2">
@@ -109,7 +113,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
                 href="/register"
                 className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-orange-300 hover:text-orange-600"
               >
-                Register
+                {registerLabel}
               </Link>
             )}
             <Link
@@ -119,7 +123,10 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
               {accountLabel}
             </Link>
             {isAuthenticated && (
-              <SignOutButton className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600" />
+              <SignOutButton
+                label={signOutLabel}
+                className="rounded-md border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-600"
+              />
             )}
           </div>
         </div>
