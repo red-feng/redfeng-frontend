@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -21,6 +21,7 @@ type PackageCardData = {
   departure_date: string | null
   minimal_peserta: number | null
   travel_style: string | null
+  duration?: number | null
   price_adult: number | null
   price_child?: number | null
   default_language?: string | null
@@ -34,8 +35,8 @@ type PackageCardData = {
 }
 
 export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; locale: Locale }) {
-  const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
   const t = dictionaries[locale].packageCard
+  const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
   const imageSrc = pkg.cover_image || "/placeholder.png"
   const imageAlt = translation?.title || "Package image"
   const pricing = resolveLocalizedPackagePricing({
@@ -50,93 +51,82 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const displayPricing = pkg.livePricing || pricing
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
-  const departureLabel =
-    locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
+  const departureLabel = locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
+  const durationLabel = locale === "zh" ? "时长" : locale === "en" ? "Duration" : "Durasi"
+  const childPriceLabel = locale === "zh" ? "儿童价格" : locale === "en" ? "Child price" : "Harga anak"
+  const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
+  const hasDescription = Boolean(translation?.description?.trim())
+  const hasChildPrice = Number(displayPricing.priceChild || 0) > 0
+  const dayLabel = locale === "zh" ? "天" : locale === "en" ? "days" : "hari"
+  const availableLabel = locale === "zh" ? "可预订" : locale === "en" ? "Available now" : "Tersedia sekarang"
+
+  const infoChips = [
+    pkg.travel_style
+      ? {
+          key: "style",
+          className: "bg-orange-50 text-orange-700",
+          label: formatTravelStyleLabel(pkg.travel_style, locale),
+        }
+      : null,
+    {
+      key: "participants",
+      className: "bg-slate-100 text-slate-700",
+      label: `${participantLabel}: ${pkg.minimal_peserta || 0}`,
+    },
+    pkg.duration
+      ? {
+          key: "duration",
+          className: "bg-amber-50 text-amber-700",
+          label: `${durationLabel}: ${pkg.duration} ${dayLabel}`,
+        }
+      : null,
+    hasFixedDeparture && pkg.departure_date
+      ? {
+          key: "departure",
+          className: "bg-blue-50 text-blue-700",
+          label: `${departureLabel}: ${pkg.departure_date}`,
+        }
+      : null,
+  ].filter(Boolean) as Array<{ key: string; className: string; label: string }>
 
   return (
-    <div className="bg-white rounded-2xl border shadow-sm hover:shadow-md transition flex overflow-hidden">
-      {/* IMAGE */}
-      <div className="w-[280px] h-[220px] relative shrink-0">
-        <img
-          src={imageSrc}
-          alt={imageAlt}
-          className="w-full h-full object-cover"
-        />
-
-        {/* Promo Badge */}
-        <div className="absolute top-3 left-3 bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-          {t.specialDeal}
+    <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)]">
+      <div className="relative h-[220px] w-[280px] shrink-0">
+        <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
+        <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm backdrop-blur">
+          {availableLabel}
         </div>
       </div>
 
-      {/* DETAIL */}
       <div className="flex-1 p-6">
-        <h2 className="text-lg font-semibold mb-1">
-          {translation?.title}
-        </h2>
+        <h2 className="mb-2 text-[28px] font-semibold leading-tight text-slate-950">{translation?.title}</h2>
 
-        <div className="text-sm text-gray-500 mb-2">
-          {t.location}: {pkg.city}, {pkg.country}
-        </div>
+        {locationText && <p className="mb-4 text-sm text-slate-500">{t.location}: {locationText}</p>}
 
-        <div className="mb-3 flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-orange-50 px-3 py-1 font-medium text-orange-700">
-            {formatTravelStyleLabel(pkg.travel_style, locale)}
-          </span>
-          <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-            {participantLabel}: {pkg.minimal_peserta || 0}
-          </span>
-          {hasFixedDeparture && pkg.departure_date && (
-            <span className="rounded-full bg-blue-50 px-3 py-1 font-medium text-blue-700">
-              {departureLabel}: {pkg.departure_date}
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          {infoChips.map((chip) => (
+            <span key={chip.key} className={`rounded-full px-3 py-1.5 font-medium ${chip.className}`}>
+              {chip.label}
             </span>
-          )}
+          ))}
         </div>
 
-        {/* Rating */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
-            8.4
-          </div>
-          <span className="text-sm text-gray-600">
-            {t.excellent}
-          </span>
-        </div>
-
-        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-          {translation?.description}
-        </p>
-
-        {/* Tags */}
-        <div className="flex gap-2 flex-wrap text-xs">
-          <span className="bg-gray-100 px-2 py-1 rounded">
-            {t.freeCancellation}
-          </span>
-          <span className="bg-gray-100 px-2 py-1 rounded">
-            {t.breakfastIncluded}
-          </span>
-        </div>
+        {hasDescription && <p className="line-clamp-3 text-sm leading-7 text-slate-600">{translation?.description}</p>}
       </div>
 
-      {/* PRICE */}
-      <div className="w-[240px] border-l bg-gray-50 p-6 flex flex-col justify-between items-end">
+      <div className="flex w-[260px] flex-col justify-between border-l border-slate-200 bg-slate-50/70 p-6">
         <div className="text-right">
-          <div className="text-sm text-gray-500 line-through">
-            {formatPackageMoney(displayPricing.priceAdult * 1.2, displayPricing.currency, locale)}
-          </div>
-
-          <div className="text-2xl font-bold text-orange-600">
-            {formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}
-          </div>
-
-          <div className="text-xs text-gray-500">
-            {t.taxesIncluded}
-          </div>
+          <div className="text-2xl font-bold text-orange-600">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
+          {hasChildPrice && (
+            <div className="mt-2 text-sm text-slate-500">
+              {childPriceLabel}: {formatPackageMoney(displayPricing.priceChild, displayPricing.currency, locale)}
+            </div>
+          )}
         </div>
 
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-xl text-center transition"
+          className="mt-6 w-full rounded-2xl bg-orange-500 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
         >
           {t.choosePackage}
         </Link>
