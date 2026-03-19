@@ -37,6 +37,34 @@ type PackageListItem = {
   }
 }
 
+async function getAvailableCountries(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data: packagesData, error } = await supabase
+    .from("packages")
+    .select("country, merchant_id")
+    .eq("status", "approved")
+
+  if (error || !packagesData) return []
+
+  const merchantIds = [...new Set(packagesData.map((pkg) => pkg.merchant_id).filter(Boolean))]
+  if (merchantIds.length === 0) return []
+
+  const { data: merchantRows } = await supabase
+    .from("merchants")
+    .select("id")
+    .in("id", merchantIds)
+    .eq("verification_status", "approved")
+
+  const activeMerchantIds = new Set((merchantRows || []).map((merchant) => merchant.id))
+
+  return [...new Set(
+    packagesData
+      .filter((pkg) => pkg.merchant_id && activeMerchantIds.has(pkg.merchant_id))
+      .map((pkg) => (pkg.country || "").trim())
+      .filter(Boolean),
+  )].sort((a, b) => a.localeCompare(b))
+}
+
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
@@ -218,7 +246,10 @@ export default async function HomePage({
   const locale = await getCurrentLocale()
   const t = dictionaries[locale]
 
-  const packages = await getPackages(resolvedSearchParams, locale)
+  const [packages, countries] = await Promise.all([
+    getPackages(resolvedSearchParams, locale),
+    getAvailableCountries(),
+  ])
   const supabase = await createClient()
 
   const { data: facilitiesData } = await supabase
@@ -244,7 +275,7 @@ export default async function HomePage({
   <div className="bg-gray-100 min-h-screen">
     <PublicHeader locale={locale} />
 
-    <SearchBar locale={locale} />
+    <SearchBar locale={locale} countries={countries} />
 
     <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
 
