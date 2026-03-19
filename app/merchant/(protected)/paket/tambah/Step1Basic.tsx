@@ -72,7 +72,31 @@ export default function Step1Basic({
             child: "Anak",
             primary: "Harga sumber utama.",
             auto: "Nilai ini terisi otomatis dari kurs terbaru.",
+          };
+  const mediaText =
+    locale === "en"
+      ? {
+          coverTitle: "Cover image",
+          coverHint: "Any image size can be uploaded, but customer pages use a landscape frame. Best result: 16:9 ratio, min 1600x900.",
+          cropHint: "The system keeps layout safe, but very tall or very wide images may be cropped on cards and package detail pages.",
+          cardPreview: "Homepage card preview",
+          detailPreview: "Package detail preview",
+        }
+      : locale === "zh"
+        ? {
+            coverTitle: "封面图片",
+            coverHint: "可上传任意尺寸图片，但客户页面会使用横向画框。建议比例 16:9，最低 1600x900。",
+            cropHint: "系统会保证版面安全，但过高或过宽的图片在首页卡片和详情页中可能会被裁切。",
+            cardPreview: "首页卡片预览",
+            detailPreview: "详情页预览",
           }
+        : {
+            coverTitle: "Gambar cover",
+            coverHint: "Merchant bisa upload ukuran apa pun, tetapi halaman customer memakai frame landscape. Hasil terbaik: rasio 16:9, minimal 1600x900.",
+            cropHint: "Layout akan tetap aman, tetapi gambar yang terlalu tinggi atau terlalu lebar bisa terpotong di card halaman utama dan halaman detail paket.",
+            cardPreview: "Preview card halaman utama",
+            detailPreview: "Preview halaman detail paket",
+          };
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const titleTargetLanguages = useMemo(
     () =>
@@ -677,13 +701,49 @@ export default function Step1Basic({
     </div>
   </div>
 
-</div>
-<input
-  type="file"
-  name="cover_image"
-  accept="image/*"
-  required
-/>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">{mediaText.coverTitle}</label>
+                    <input
+                      type="file"
+                      name="cover_image"
+                      accept="image/*"
+                      required
+                      className="w-full rounded-2xl border border-slate-300 bg-white p-4"
+                    />
+                    <p className="mt-2 text-xs leading-6 text-slate-500">{mediaText.coverHint}</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-500">{mediaText.cropHint}</p>
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {mediaText.cardPreview}
+                      </p>
+                      <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#fed7aa_0%,#fdba74_100%)]">
+                        <div className="h-24 w-full bg-[linear-gradient(135deg,rgba(255,255,255,0.12)_0%,rgba(15,23,42,0.08)_100%)]" />
+                        <div className="space-y-2 p-3">
+                          <div className="h-3 w-3/4 rounded-full bg-slate-200" />
+                          <div className="h-2.5 w-1/2 rounded-full bg-slate-100" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {mediaText.detailPreview}
+                      </p>
+                      <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#fdba74_0%,#fb923c_100%)]">
+                        <div className="h-28 w-full bg-[linear-gradient(135deg,rgba(255,255,255,0.10)_0%,rgba(15,23,42,0.10)_100%)]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              </div>
+
               <div className="flex justify-center pt-6">
                 <button
                   type="submit"

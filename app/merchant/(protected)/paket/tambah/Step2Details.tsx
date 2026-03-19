@@ -100,6 +100,30 @@ export default function Step2Details({
         ),
     [normalizedDefaultLanguage, publishedLanguages],
   )
+  const galleryGuidance =
+    locale === "en"
+      ? {
+          title: "Gallery display guide",
+          hint: "Gallery images can be any size, but customer pages will crop them into a landscape frame. Best result: 16:9 or 4:3 with the subject centered.",
+          cardLabel: "Thumbnail crop",
+          heroLabel: "Detail gallery crop",
+          crop: "Important edges may be cut if the image is too tall or too wide.",
+        }
+      : locale === "zh"
+        ? {
+            title: "画廊展示说明",
+            hint: "可上传任意尺寸图片，但客户页面会裁切为横向画框。建议使用 16:9 或 4:3，并将主体放在中央。",
+            cardLabel: "缩略图裁切",
+            heroLabel: "详情图库裁切",
+            crop: "如果图片过高或过宽，边缘内容可能会被裁掉。",
+          }
+        : {
+            title: "Panduan tampilan galeri",
+            hint: "Gallery bisa upload ukuran apa pun, tetapi halaman customer akan memotong ke frame landscape. Hasil terbaik: 16:9 atau 4:3 dengan objek utama di tengah.",
+            cardLabel: "Crop thumbnail",
+            heroLabel: "Crop gallery detail",
+            crop: "Bagian tepi gambar bisa terpotong jika gambar terlalu tinggi atau terlalu lebar.",
+          }
   const visibleLanguages = useMemo(
     () =>
       merchantWizardLanguageOptions.filter(
@@ -476,18 +500,44 @@ export default function Step2Details({
                 />
               </div>
 
-              <div>
-                <label className="mb-2 block font-medium">{t.galleryImages}</label>
-                <input
-                  type="file"
-                  name="gallery_images"
-                  multiple
-                  accept="image/*"
-                  onChange={handleGalleryChange}
-                  className="w-full rounded-lg border p-4"
-                />
-                <p className="mt-2 text-xs text-gray-500">{t.galleryLimitHint}</p>
-                {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+                  <div>
+                    <label className="mb-2 block font-medium">{t.galleryImages}</label>
+                    <input
+                      type="file"
+                      name="gallery_images"
+                      multiple
+                      accept="image/*"
+                      onChange={handleGalleryChange}
+                      className="w-full rounded-lg border bg-white p-4"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">{t.galleryLimitHint}</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-500">{galleryGuidance.hint}</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-500">{galleryGuidance.crop}</p>
+                    {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+                  </div>
+
+                  <div className="grid gap-3">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {galleryGuidance.cardLabel}
+                      </p>
+                      <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#fde68a_0%,#fdba74_100%)]">
+                        <div className="h-20 w-full bg-[linear-gradient(135deg,rgba(255,255,255,0.10)_0%,rgba(15,23,42,0.08)_100%)]" />
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {galleryGuidance.heroLabel}
+                      </p>
+                      <div className="mt-2 overflow-hidden rounded-xl border border-slate-200 bg-[linear-gradient(135deg,#fdba74_0%,#fb923c_100%)]">
+                        <div className="h-28 w-full bg-[linear-gradient(135deg,rgba(255,255,255,0.10)_0%,rgba(15,23,42,0.10)_100%)]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-center pt-6">
