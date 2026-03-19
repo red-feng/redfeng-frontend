@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
@@ -26,6 +26,8 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
   const [accountHref, setAccountHref] = useState("/login")
   const [accountLabel, setAccountLabel] = useState(guestLoginLabel)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
+  const languageMenuRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const syncSession = async () => {
@@ -48,7 +50,19 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
     syncSession()
   }, [guestLoginLabel, supabase, t.account])
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) {
+        setIsLanguageOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [])
+
   const changeLocale = async (nextLocale: Locale) => {
+    setIsLanguageOpen(false)
     await fetch("/api/locale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -78,9 +92,16 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
             <a href="https://redfeng.co/kemitraan_tour/" className="hover:text-orange-600">{t.partnerTour}</a>
             <Link href="/verifikasi-invoice" className="hover:text-orange-600">{t.verifyInvoice}</Link>
             <a href="https://redfeng.co/bantuan/" className="hover:text-orange-600">{t.help}</a>
-            <details className="relative">
-              <summary className="list-none cursor-pointer hover:text-orange-600">{t.language}</summary>
-              <div className="absolute right-0 z-20 mt-2 w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+            <div ref={languageMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setIsLanguageOpen((current) => !current)}
+                className="cursor-pointer hover:text-orange-600"
+              >
+                {t.language}
+              </button>
+              {isLanguageOpen && (
+                <div className="absolute right-0 z-20 mt-2 w-40 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
                 {availableLocales.includes("id") && (
                   <button type="button" onClick={() => changeLocale("id")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langId}</button>
                 )}
@@ -90,8 +111,9 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
                 {availableLocales.includes("zh") && (
                   <button type="button" onClick={() => changeLocale("zh")} className="block w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-100">{t.langZh}</button>
                 )}
-              </div>
-            </details>
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="flex items-center gap-5">
