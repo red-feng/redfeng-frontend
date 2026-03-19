@@ -1,4 +1,5 @@
-﻿import Link from "next/link"
+﻿import Image from "next/image"
+import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -54,6 +55,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const departureLabel = locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
   const durationLabel = locale === "zh" ? "时长" : locale === "en" ? "Duration" : "Durasi"
   const childPriceLabel = locale === "zh" ? "儿童价格" : locale === "en" ? "Child price" : "Harga anak"
+  const taxNotice = locale === "zh" ? "未含税费" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
   const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
   const hasDescription = Boolean(translation?.description?.trim())
   const hasChildPrice = Number(displayPricing.priceChild || 0) > 0
@@ -92,7 +94,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   return (
     <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)]">
       <div className="relative h-[220px] w-[280px] shrink-0">
-        <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
+        <Image src={imageSrc} alt={imageAlt} fill sizes="280px" className="object-cover" />
         <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm backdrop-blur">
           {availableLabel}
         </div>
@@ -117,6 +119,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       <div className="flex w-[260px] flex-col justify-between border-l border-slate-200 bg-slate-50/70 p-6">
         <div className="text-right">
           <div className="text-2xl font-bold text-orange-600">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
+          <div className="mt-1 text-xs font-medium text-slate-500">{taxNotice}</div>
           {hasChildPrice && (
             <div className="mt-2 text-sm text-slate-500">
               {childPriceLabel}: {formatPackageMoney(displayPricing.priceChild, displayPricing.currency, locale)}
