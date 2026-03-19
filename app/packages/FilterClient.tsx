@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
@@ -26,7 +26,7 @@ export default function FilterClient({
     Number(searchParams.get("max_price")) || 100000000
   )
 
-    const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
     searchParams.get("facilities")?.split(",").filter(Boolean) || []
   )
   const isFirstPriceRender = useRef(true)
@@ -82,12 +82,30 @@ export default function FilterClient({
     },
     {}
   )
+  const groupedEntries = Object.entries(grouped)
+  const defaultOpenCategories = useMemo(() => {
+    const activeCategories = groupedEntries
+      .filter(([, items]) => items.some((item) => selectedFacilities.includes(item.id)))
+      .map(([category]) => category)
+
+    if (activeCategories.length > 0) return activeCategories
+    return groupedEntries.length > 0 ? [groupedEntries[0][0]] : []
+  }, [groupedEntries, selectedFacilities])
+  const [openCategories, setOpenCategories] = useState<string[]>(defaultOpenCategories)
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories((current) =>
+      current.includes(category)
+        ? current.filter((item) => item !== category)
+        : [...current, category],
+    )
+  }
 
   return (
-    <div className="space-y-6 sticky top-6">
+    <div className="sticky top-6 space-y-6">
 
-      <div>
-        <label className="font-semibold">{t.priceRange}</label>
+      <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <label className="text-sm font-semibold text-slate-900">{t.priceRange}</label>
 
         <input
           type="range"
@@ -96,40 +114,60 @@ export default function FilterClient({
           step="100000"
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
-          className="w-full"
+          className="mt-4 w-full"
         />
 
-        <div className="flex justify-between text-sm">
+        <div className="mt-3 flex justify-between text-sm text-slate-600">
           <span>Rp 0</span>
           <span>Rp {maxPrice.toLocaleString()}</span>
         </div>
       </div>
 
-      {Object.entries(grouped).map(([category, items]) => (
-        <div key={category}>
-          <h4 className="font-semibold mb-2">{getFacilityCategoryLabel(category, locale)}</h4>
+      <div className="space-y-3">
+        {groupedEntries.map(([category, items]) => {
+          const isOpen = openCategories.includes(category)
 
-          {items.map((f) => (
-            <label key={f.id} className="flex items-center gap-2 mb-1">
-              <input
-                type="checkbox"
-                value={f.id}
-                checked={selectedFacilities.includes(f.id)}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                      setSelectedFacilities([...selectedFacilities, f.id])
-                  } else {
-                    setSelectedFacilities(
-                      selectedFacilities.filter((id) => id !== f.id)
-                    )
-                  }
-                }}
-              />
-              {getFacilityLabel(f.name, locale)}
-            </label>
-          ))}
-        </div>
-      ))}
+          return (
+            <div key={category} className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
+              <button
+                type="button"
+                onClick={() => toggleCategory(category)}
+                className="flex w-full items-center justify-between px-4 py-4 text-left"
+              >
+                <span className="text-sm font-semibold text-slate-900">
+                  {getFacilityCategoryLabel(category, locale)}
+                </span>
+                <span className={`text-sm text-slate-400 transition ${isOpen ? "rotate-180" : ""}`}>⌄</span>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-slate-100 px-4 pb-4 pt-2">
+                  <div className="space-y-2">
+                    {items.map((f) => (
+                      <label key={f.id} className="flex items-start gap-3 rounded-xl px-1 py-1 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          value={f.id}
+                          checked={selectedFacilities.includes(f.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedFacilities([...selectedFacilities, f.id])
+                            } else {
+                              setSelectedFacilities(selectedFacilities.filter((id) => id !== f.id))
+                            }
+                          }}
+                          className="mt-1 rounded border-slate-300"
+                        />
+                        <span>{getFacilityLabel(f.name, locale)}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
