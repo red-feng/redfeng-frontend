@@ -23,7 +23,6 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
   const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
   const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
   const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
-  const adminLabel = locale === "zh" ? "管理后台" : locale === "en" ? "Admin" : "Admin"
   const [accountHref, setAccountHref] = useState("/login")
   const [accountLabel, setAccountLabel] = useState(guestLoginLabel)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -96,12 +95,6 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
           </nav>
 
           <div className="flex items-center gap-5">
-            <Link
-              href="/staff"
-              className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-slate-400 transition hover:text-orange-600 lg:inline-flex"
-            >
-              {adminLabel}
-            </Link>
             <button type="button" className="text-slate-600 hover:text-orange-600" aria-label="Search">
               <svg viewBox="0 0 24 24" className="h-[22px] w-[22px] fill-none stroke-current stroke-2">
                 <circle cx="11" cy="11" r="7" />
