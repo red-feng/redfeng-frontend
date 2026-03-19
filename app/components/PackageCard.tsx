@@ -1,5 +1,4 @@
-﻿import Image from "next/image"
-import Link from "next/link"
+﻿import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -40,7 +39,6 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
   const imageSrc = pkg.cover_image || "/placeholder.png"
   const imageAlt = translation?.title || "Package image"
-  const imageLoader = ({ src }: { src: string }) => src
   const pricing = resolveLocalizedPackagePricing({
     locale,
     defaultLanguage: pkg.default_language,
@@ -95,15 +93,8 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   return (
     <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)]">
       <div className="relative h-[220px] w-[280px] shrink-0">
-        <Image
-          loader={imageLoader}
-          unoptimized
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          sizes="280px"
-          className="object-cover"
-        />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
         <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm backdrop-blur">
           {availableLabel}
         </div>
