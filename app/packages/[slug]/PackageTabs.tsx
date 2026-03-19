@@ -58,6 +58,8 @@ export default function PackageTabs({
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>("about")
   const t = dictionaries[locale].tabs
+  const sectionLabel =
+    locale === "en" ? "Package Experience" : locale === "zh" ? "套餐体验" : "Pengalaman Paket"
 
   const activeTabLabel = useMemo(
     () => {
@@ -74,7 +76,7 @@ export default function PackageTabs({
       <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#fff7ed_100%)] p-4 md:p-5">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Package Experience</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{sectionLabel}</p>
             <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">{activeTabLabel}</h2>
           </div>
           <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">

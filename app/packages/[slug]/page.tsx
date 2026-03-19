@@ -283,6 +283,45 @@ export default async function PaketPage({
     : allowedLocales[0] || normalizeLocale(pkg.default_language)
   const t = dictionaries[activeLocale].detail
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, activeLocale)
+  const luxuryCopy =
+    activeLocale === "en"
+      ? {
+          heroEyebrow: "Signature Journey",
+          routeTitle: "Curated Route",
+          tripTitle: "Trip Format",
+          bookingTitle: "Booking Detail",
+          departure: "Departure",
+          bookingSummary: "Premium booking summary",
+          instant: "Instant",
+          whyTitle: "Why guests love this",
+          whyBody: "Curated itinerary, clear facilities, and a polished booking flow in your selected language.",
+          withWord: "with",
+        }
+      : activeLocale === "zh"
+        ? {
+            heroEyebrow: "甄选旅程",
+            routeTitle: "精选路线",
+            tripTitle: "行程形式",
+            bookingTitle: "预订信息",
+            departure: "出发日期",
+            bookingSummary: "高级预订摘要",
+            instant: "即时",
+            whyTitle: "旅客喜爱它的原因",
+            whyBody: "精选行程、清晰设施说明，以及符合您所选语言的顺畅预订流程。",
+            withWord: "",
+          }
+        : {
+            heroEyebrow: "Perjalanan Pilihan",
+            routeTitle: "Rute Pilihan",
+            tripTitle: "Format Perjalanan",
+            bookingTitle: "Detail Booking",
+            departure: "Tanggal keberangkatan",
+            bookingSummary: "Ringkasan booking premium",
+            instant: "Instan",
+            whyTitle: "Kenapa tamu menyukainya",
+            whyBody: "Itinerary terkurasi, fasilitas jelas, dan alur booking yang rapi sesuai bahasa pilihan customer.",
+            withWord: "dengan",
+          }
 
   const { data: translationRows } = await supabase
     .from("package_translations")
@@ -436,7 +475,7 @@ export default async function PaketPage({
             <div className="relative">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="max-w-3xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">Signature Journey</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">{luxuryCopy.heroEyebrow}</p>
                   <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-5xl">{displayTitle}</h1>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
                     {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
@@ -481,25 +520,25 @@ export default async function PaketPage({
 
               <div className="mt-6 grid gap-3 md:grid-cols-3">
                 <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Curated Route</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.routeTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
-                    {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} to{" "}
+                    {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
                     {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Trip Format</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.tripTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
-                    {formatTravelStyleLabel(pkg.travel_style)} with {pkg.duration || 0} {t.day}
+                    {formatTravelStyleLabel(pkg.travel_style)} {luxuryCopy.withWord ? `${luxuryCopy.withWord} ` : ""}{pkg.duration || 0} {t.day}
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Booking Detail</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.bookingTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
                     {participantLabel}: {pkg.minimal_peserta || 0} {t.people}
                   </p>
                   {isQuotaTravelStyle(pkg.travel_style) && pkg.departure_date && (
-                    <p className="mt-1 text-sm leading-6 text-slate-600">Departure: {pkg.departure_date}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">{luxuryCopy.departure}: {pkg.departure_date}</p>
                   )}
                 </div>
               </div>
@@ -511,7 +550,7 @@ export default async function PaketPage({
           <div className="space-y-6">
             <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-5">
               {galleryImages.length > 0 ? (
-                <Gallery images={galleryImages} />
+                <Gallery images={galleryImages} locale={activeLocale} />
               ) : (
                 <Image
                   src={coverImage}
@@ -580,10 +619,10 @@ export default async function PaketPage({
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">{t.bookingTour}</p>
-                    <p className="mt-1 text-sm text-slate-500">Premium booking summary</p>
+                    <p className="mt-1 text-sm text-slate-500">{luxuryCopy.bookingSummary}</p>
                   </div>
                   <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700">
-                    Instant
+                    {luxuryCopy.instant}
                   </span>
                 </div>
                 <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
@@ -603,8 +642,8 @@ export default async function PaketPage({
                   )}
                 </div>
                 <div className="rounded-2xl border border-orange-100 bg-orange-50/60 p-4 text-slate-700">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-600">Why guests love this</p>
-                  <p className="mt-2 leading-6">Curated itinerary, clear facilities, and a polished booking flow in your selected language.</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-600">{luxuryCopy.whyTitle}</p>
+                  <p className="mt-2 leading-6">{luxuryCopy.whyBody}</p>
                 </div>
                 <Link
                   href={`/checkout/${encodeURIComponent(pkg.slug)}`}
