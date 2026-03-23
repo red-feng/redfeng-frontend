@@ -248,6 +248,7 @@ export default async function ChatPage({
 
   const messages = (messagesData as ChatMessageRow[] | null) || []
   const activePackageForRoom = activeRoom ? packageMap.get(activeRoom.package_id) : null
+  const draftPackageId = activePackageForRoom?.id || activePackage?.id || packageId
 
   const unreadCount = rooms.filter((room) => {
     if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
@@ -377,6 +378,7 @@ export default async function ChatPage({
 
             <form action={sendChatMessage} className="border-t border-slate-200 bg-white p-4">
               <input type="hidden" name="room_id" value={activeRoomId} />
+              <input type="hidden" name="package_id" value={draftPackageId} />
               <div className="flex gap-3">
                 <textarea
                   name="message"
@@ -386,7 +388,7 @@ export default async function ChatPage({
                 />
                 <button
                   type="submit"
-                  disabled={!activeRoomId}
+                  disabled={!activeRoomId && !draftPackageId}
                   className="self-end rounded-[20px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {t.send}

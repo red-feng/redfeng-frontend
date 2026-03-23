@@ -8,15 +8,13 @@ export async function sendChatMessage(formData: FormData) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
 
-  const roomId = String(formData.get("room_id") || "")
+  let roomId = String(formData.get("room_id") || "")
+  const packageId = String(formData.get("package_id") || "")
   const message = String(formData.get("message") || "").trim()
 
-  if (!roomId) {
-    redirect("/chat?error=Ruang chat tidak ditemukan.")
-  }
-
   if (!message) {
-    redirect(`/chat?room_id=${roomId}&error=Pesan tidak boleh kosong.`)
+    const target = roomId ? `/chat?room_id=${roomId}` : packageId ? `/chat?package_id=${packageId}` : "/chat"
+    redirect(`${target}&error=Pesan tidak boleh kosong.`)
   }
 
   const {
@@ -25,6 +23,77 @@ export async function sendChatMessage(formData: FormData) {
 
   if (!user) {
     redirect("/login")
+  }
+
+  if (!roomId) {
+    if (!packageId) {
+      redirect("/chat?error=Ruang chat tidak ditemukan.")
+    }
+
+    const { data: pkg, error: packageError } = await adminSupabase
+      .from("packages")
+      .select("id, merchant_id")
+      .eq("id", packageId)
+      .single()
+
+    if (packageError || !pkg?.merchant_id) {
+      redirect(`/chat?package_id=${packageId}&error=Package tidak valid untuk chat.`)
+    }
+
+    const { data: merchantOwner, error: merchantError } = await adminSupabase
+      .from("merchants")
+      .select("user_id")
+      .eq("id", pkg.merchant_id)
+      .single()
+
+    if (merchantError || !merchantOwner?.user_id) {
+      redirect(`/chat?package_id=${packageId}&error=Merchant belum siap menerima chat.`)
+    }
+
+    const { data: existingRoom } = await adminSupabase
+      .from("package_chat_rooms")
+      .select("id")
+      .eq("package_id", packageId)
+      .eq("customer_id", user.id)
+      .eq("merchant_user_id", merchantOwner.user_id)
+      .maybeSingle()
+
+    if (existingRoom?.id) {
+      roomId = existingRoom.id
+    } else {
+      const nowIso = new Date().toISOString()
+      let { data: newRoom, error: createRoomError } = await adminSupabase
+        .from("package_chat_rooms")
+        .insert({
+          package_id: packageId,
+          customer_id: user.id,
+          merchant_user_id: merchantOwner.user_id,
+          customer_last_read_at: nowIso,
+        })
+        .select("id")
+        .single()
+
+      if (createRoomError && createRoomError.message.includes("customer_last_read_at")) {
+        const fallbackRoom = await adminSupabase
+          .from("package_chat_rooms")
+          .insert({
+            package_id: packageId,
+            customer_id: user.id,
+            merchant_user_id: merchantOwner.user_id,
+          })
+          .select("id")
+          .single()
+        newRoom = fallbackRoom.data
+        createRoomError = fallbackRoom.error
+      }
+
+      if (createRoomError || !newRoom?.id) {
+        const errorText = createRoomError?.message || "Ruang chat tidak dapat dibuat."
+        redirect(`/chat?package_id=${packageId}&error=${encodeURIComponent(errorText)}`)
+      }
+
+      roomId = newRoom.id
+    }
   }
 
   const { data: room, error: roomError } = await adminSupabase
