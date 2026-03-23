@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buildAutoLocalizedPricing } from "@/lib/currency-rates"
+import { purgePackageRecords } from "@/lib/package-delete"
 import { normalizePackageCurrency } from "@/lib/package-pricing"
 import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { revalidatePath } from "next/cache"
@@ -773,68 +774,7 @@ export async function deletePackage(formData: FormData) {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
 
     const { adminSupabase } = await getOwnedMerchantPackage(packageId)
-
-    const { count: bookingCount, error: bookingError } = await adminSupabase
-      .from("bookings")
-      .select("id", { count: "exact", head: true })
-      .eq("package_id", packageId)
-
-    if (bookingError) {
-      throw new Error(`Gagal memeriksa booking paket: ${bookingError.message}`)
-    }
-
-    if ((bookingCount || 0) > 0) {
-      throw new Error("Paket tidak bisa dihapus karena sudah memiliki booking customer.")
-    }
-
-    const { data: itineraryDays, error: itineraryError } = await adminSupabase
-      .from("package_itinerary_days")
-      .select("id")
-      .eq("package_id", packageId)
-
-    if (itineraryError) {
-      throw new Error(`Gagal memuat itinerary paket: ${itineraryError.message}`)
-    }
-
-    const itineraryDayIds = (itineraryDays || []).map((item) => item.id)
-
-    if (itineraryDayIds.length > 0) {
-      const { error: deleteRoutesError } = await adminSupabase
-        .from("package_itinerary_routes")
-        .delete()
-        .in("itinerary_day_id", itineraryDayIds)
-
-      if (deleteRoutesError) {
-        throw new Error(`Gagal menghapus itinerary routes: ${deleteRoutesError.message}`)
-      }
-    }
-
-    const deleteSteps = [
-      adminSupabase.from("package_images").delete().eq("package_id", packageId),
-      adminSupabase.from("package_facilities").delete().eq("package_id", packageId),
-      adminSupabase.from("package_tags").delete().eq("package_id", packageId),
-      adminSupabase.from("package_translations").delete().eq("package_id", packageId),
-      adminSupabase.from("package_details").delete().eq("package_id", packageId),
-      adminSupabase.from("package_itinerary_days").delete().eq("package_id", packageId),
-    ]
-
-    for (const step of deleteSteps) {
-      const { error } = await step
-      if (error) {
-        throw new Error(`Gagal membersihkan data paket: ${error.message}`)
-      }
-    }
-
-    const { error: deletePackageError } = await adminSupabase
-      .from("packages")
-      .delete()
-      .eq("id", packageId)
-
-    if (deletePackageError) {
-      throw new Error(`Gagal menghapus paket: ${deletePackageError.message}`)
-    }
-
-    revalidatePath("/merchant/paket")
+    await purgePackageRecords(adminSupabase, packageId)
   } catch (error) {
     const errorPath =
       returnStatus
