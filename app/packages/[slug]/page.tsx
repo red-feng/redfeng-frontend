@@ -262,17 +262,6 @@ export default async function PaketPage({
 
   if (error || !pkg) return notFound()
 
-  if (!pkg.merchant_id) return notFound()
-
-  const { data: merchantRow, error: merchantError } = await supabase
-    .from("merchants")
-    .select("id")
-    .eq("id", pkg.merchant_id)
-    .eq("verification_status", "approved")
-    .maybeSingle()
-
-  if (merchantError || !merchantRow) return notFound()
-
   const defaultLocale = toSupportedLocale(pkg.default_language) || "id"
   const allowedLocalesRaw = (pkg.published_languages || [])
     .map((lang) => toSupportedLocale(lang))

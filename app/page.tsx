@@ -47,25 +47,13 @@ async function getAvailableCountries(): Promise<string[]> {
   const supabase = await createClient()
   const { data: packagesData, error } = await supabase
     .from("packages")
-    .select("country, merchant_id")
+    .select("country")
     .eq("status", "approved")
 
   if (error || !packagesData) return []
 
-  const merchantIds = [...new Set(packagesData.map((pkg) => pkg.merchant_id).filter(Boolean))]
-  if (merchantIds.length === 0) return []
-
-  const { data: merchantRows } = await supabase
-    .from("merchants")
-    .select("id")
-    .in("id", merchantIds)
-    .eq("verification_status", "approved")
-
-  const activeMerchantIds = new Set((merchantRows || []).map((merchant) => merchant.id))
-
   return [...new Set(
     packagesData
-      .filter((pkg) => pkg.merchant_id && activeMerchantIds.has(pkg.merchant_id))
       .map((pkg) => (pkg.country || "").trim())
       .filter(Boolean),
   )].sort((a, b) => a.localeCompare(b))
@@ -184,28 +172,6 @@ if (searchParams?.departure_date) {
     }),
   )
   filtered = withLivePricing
-
-  if (filtered.length > 0) {
-    const merchantIds = [...new Set(filtered.map((pkg) => pkg.merchant_id).filter(Boolean))]
-
-    if (merchantIds.length > 0) {
-      const { data: merchantRows, error: merchantError } = await supabase
-        .from("merchants")
-        .select("id")
-        .in("id", merchantIds)
-        .eq("verification_status", "approved")
-
-      if (merchantError) {
-        console.log("MERCHANT FILTER ERROR:", merchantError)
-        return []
-      }
-
-      const activeMerchantIds = new Set((merchantRows || []).map((merchant) => merchant.id))
-      filtered = filtered.filter((pkg) => pkg.merchant_id && activeMerchantIds.has(pkg.merchant_id))
-    } else {
-      filtered = []
-    }
-  }
 
   if (!options?.ignoreMaxPrice && searchParams?.max_price) {
     const localeMaxPrice = localePriceRangeMap[locale]
