@@ -24,9 +24,11 @@ export default function FilterClient({
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = dictionaries[locale].filter
+  const parsedInitialMaxPrice = Number(searchParams.get("max_price")) || maxAvailablePrice
+  const initialMaxPrice = Math.min(parsedInitialMaxPrice, maxAvailablePrice)
 
   const [maxPrice, setMaxPrice] = useState<number>(
-    Number(searchParams.get("max_price")) || maxAvailablePrice
+    initialMaxPrice
   )
 
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
@@ -43,12 +45,10 @@ export default function FilterClient({
         ? "Current max price"
         : "Maksimum harga saat ini"
   const sliderStep = useMemo(() => {
-    if (maxAvailablePrice <= 1000) return 10
-    if (maxAvailablePrice <= 10000) return 100
-    if (maxAvailablePrice <= 100000) return 1000
-    if (maxAvailablePrice <= 1000000) return 10000
+    if (priceCurrency === "USD") return 10
+    if (priceCurrency === "CNY") return 100
     return 100000
-  }, [maxAvailablePrice])
+  }, [priceCurrency])
 
   // AUTO FILTER PRICE
   useEffect(() => {
