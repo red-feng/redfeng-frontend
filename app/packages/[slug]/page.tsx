@@ -263,6 +263,19 @@ export default async function PaketPage({
   if (error || !pkg) return notFound()
 
   const defaultLocale = toSupportedLocale(pkg.default_language) || "id"
+  if (!pkg.merchant_id) return notFound()
+
+  const { data: merchantRow, error: merchantError } = await supabase
+    .from("merchants")
+    .select("id, verification_status, onboarding_completed")
+    .eq("id", pkg.merchant_id)
+    .maybeSingle()
+
+  const merchantStatus = String(merchantRow?.verification_status || "").trim().toLowerCase()
+  const merchantAllowed = Boolean(merchantRow?.id) && merchantStatus === "approved" && Boolean(merchantRow?.onboarding_completed)
+
+  if (merchantError || !merchantAllowed) return notFound()
+
   const allowedLocalesRaw = (pkg.published_languages || [])
     .map((lang) => toSupportedLocale(lang))
     .filter((lang): lang is Locale => Boolean(lang))

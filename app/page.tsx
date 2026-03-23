@@ -43,17 +43,38 @@ type PackageListItem = {
   }
 }
 
+async function getPublicMerchantIds(): Promise<Set<string>> {
+  const supabase = await createClient()
+  const { data: merchantRows, error } = await supabase
+    .from("merchants")
+    .select("id, verification_status, onboarding_completed")
+
+  if (error || !merchantRows) return new Set()
+
+  return new Set(
+    merchantRows
+      .filter((merchant) => {
+        const status = String(merchant.verification_status || "").trim().toLowerCase()
+        return status === "approved" && Boolean(merchant.onboarding_completed)
+      })
+      .map((merchant) => merchant.id),
+  )
+}
+
 async function getAvailableCountries(): Promise<string[]> {
   const supabase = await createClient()
+  const publicMerchantIds = await getPublicMerchantIds()
+  if (publicMerchantIds.size === 0) return []
   const { data: packagesData, error } = await supabase
     .from("packages")
-    .select("country")
+    .select("country, merchant_id")
     .eq("status", "approved")
 
   if (error || !packagesData) return []
 
   return [...new Set(
     packagesData
+      .filter((pkg) => pkg.merchant_id && publicMerchantIds.has(pkg.merchant_id))
       .map((pkg) => (pkg.country || "").trim())
       .filter(Boolean),
   )].sort((a, b) => a.localeCompare(b))
@@ -64,6 +85,11 @@ async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
 }, locale: Locale = "id", options?: { ignoreMaxPrice?: boolean }): Promise<PackageListItem[]> {
   const supabase = await createClient()
+  const publicMerchantIds = await getPublicMerchantIds()
+
+  if (publicMerchantIds.size === 0) {
+    return []
+  }
 
   const toParamString = (value: string | string[] | undefined): string =>
     Array.isArray(value) ? value.join(",") : value || ""
@@ -153,6 +179,7 @@ if (searchParams?.departure_date) {
   }
 
   let filtered = (data as PackageListItem[] | null) || []
+  filtered = filtered.filter((pkg) => pkg.merchant_id && publicMerchantIds.has(pkg.merchant_id))
 
   const withLivePricing = await Promise.all(
     filtered.map(async (pkg) => {
