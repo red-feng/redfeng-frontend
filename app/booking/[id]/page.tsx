@@ -297,6 +297,23 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </span>
             </div>
           </div>
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <a
+              href={`/chat?booking_id=${booking.id}`}
+              className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+            >
+              Chat Sesudah Booking
+            </a>
+            {booking.package_id && (
+              <a
+                href={`/chat?package_id=${booking.package_id}`}
+                className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+              >
+                Lihat Chat Sebelum Booking
+              </a>
+            )}
+          </div>
         </section>
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">

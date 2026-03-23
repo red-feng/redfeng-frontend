@@ -11,6 +11,7 @@ type ChatRoomRow = {
   package_id: string
   customer_id: string
   merchant_user_id: string
+  booking_id?: string | null
   updated_at: string | null
   last_message_at?: string | null
   last_message_sender_id?: string | null
@@ -37,13 +38,14 @@ export const dynamic = "force-dynamic"
 export default async function ChatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ room_id?: string; package_id?: string; error?: string }>
+  searchParams: Promise<{ room_id?: string; package_id?: string; booking_id?: string; error?: string }>
 }) {
   const params = await searchParams
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].chat
   const roomId = params.room_id || ""
   const packageId = params.package_id || ""
+  const bookingId = params.booking_id || ""
   const errorMessage = params.error || ""
 
   const supabase = await createClient()
@@ -66,8 +68,48 @@ export default async function ChatPage({
 
   let activeRoomId = roomId
   let activePackage: PackageRow | null = null
+  const chatMode = bookingId ? "post" : "pre"
 
-  if (!isMerchant && packageId) {
+  if (!isMerchant && bookingId) {
+    const { data: booking } = await adminSupabase
+      .from("bookings")
+      .select("id, package_id, customer_email")
+      .eq("id", bookingId)
+      .single()
+
+    if (booking?.package_id && user.email && booking.customer_email === user.email) {
+      const { data: pkg } = await adminSupabase
+        .from("packages")
+        .select("id, title, slug, merchant_id")
+        .eq("id", booking.package_id)
+        .single()
+      activePackage = (pkg as PackageRow | null) || null
+
+      if (activePackage?.merchant_id) {
+        const { data: merchantOwner } = await adminSupabase
+          .from("merchants")
+          .select("user_id")
+          .eq("id", activePackage.merchant_id)
+          .single()
+
+        if (merchantOwner?.user_id) {
+          const { data: existingRoom } = await adminSupabase
+            .from("package_chat_rooms")
+            .select("id")
+            .eq("booking_id", bookingId)
+            .eq("customer_id", user.id)
+            .eq("merchant_user_id", merchantOwner.user_id)
+            .maybeSingle()
+
+          if (existingRoom?.id) {
+            activeRoomId = existingRoom.id
+          }
+        }
+      }
+    }
+  }
+
+  if (!isMerchant && packageId && !bookingId) {
     const { data: pkg } = await adminSupabase
       .from("packages")
       .select("id, title, slug, merchant_id")
@@ -89,6 +131,7 @@ export default async function ChatPage({
           .eq("package_id", packageId)
           .eq("customer_id", user.id)
           .eq("merchant_user_id", merchantOwner.user_id)
+          .is("booking_id", null)
           .maybeSingle()
 
         if (existingRoom?.id) {
@@ -155,22 +198,26 @@ export default async function ChatPage({
   const roomQuery = adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at",
     )
     .order("updated_at", { ascending: false })
 
   const roomResult = isMerchant
     ? await roomQuery.eq("merchant_user_id", user.id)
-    : await roomQuery.eq("customer_id", user.id)
+    : chatMode === "post"
+      ? await roomQuery.eq("customer_id", user.id).not("booking_id", "is", null)
+      : await roomQuery.eq("customer_id", user.id).is("booking_id", null)
 
   if (roomResult.error && roomResult.error.message.includes("last_message")) {
     const fallbackQuery = adminSupabase
       .from("package_chat_rooms")
-      .select("id, package_id, customer_id, merchant_user_id, updated_at")
+      .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at")
       .order("updated_at", { ascending: false })
     const fallbackResult = isMerchant
       ? await fallbackQuery.eq("merchant_user_id", user.id)
-      : await fallbackQuery.eq("customer_id", user.id)
+      : chatMode === "post"
+        ? await fallbackQuery.eq("customer_id", user.id).not("booking_id", "is", null)
+        : await fallbackQuery.eq("customer_id", user.id).is("booking_id", null)
     roomsData = fallbackResult.data as ChatRoomRow[] | null
     roomsError = fallbackResult.error
   } else {
@@ -249,6 +296,7 @@ export default async function ChatPage({
   const messages = (messagesData as ChatMessageRow[] | null) || []
   const activePackageForRoom = activeRoom ? packageMap.get(activeRoom.package_id) : null
   const draftPackageId = activePackageForRoom?.id || activePackage?.id || packageId
+  const draftBookingId = activeRoom?.booking_id || bookingId
 
   const unreadCount = rooms.filter((room) => {
     if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
@@ -311,7 +359,11 @@ export default async function ChatPage({
                   return (
                     <Link
                       key={room.id}
-                      href={`/chat?room_id=${room.id}`}
+                      href={
+                        room.booking_id
+                          ? `/chat?booking_id=${room.booking_id}&room_id=${room.id}`
+                          : `/chat?room_id=${room.id}`
+                      }
                       className={`block rounded-[20px] border px-4 py-3 text-sm transition ${
                         room.id === activeRoomId
                           ? "border-orange-300 bg-orange-50 text-orange-700"
@@ -379,6 +431,7 @@ export default async function ChatPage({
             <form action={sendChatMessage} className="border-t border-slate-200 bg-white p-4">
               <input type="hidden" name="room_id" value={activeRoomId} />
               <input type="hidden" name="package_id" value={draftPackageId} />
+              <input type="hidden" name="booking_id" value={draftBookingId} />
               <div className="flex gap-3">
                 <textarea
                   name="message"
@@ -388,7 +441,7 @@ export default async function ChatPage({
                 />
                 <button
                   type="submit"
-                  disabled={!activeRoomId && !draftPackageId}
+                  disabled={!activeRoomId && !draftPackageId && !draftBookingId}
                   className="self-end rounded-[20px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {t.send}

@@ -238,46 +238,71 @@ export async function POST(req: Request) {
         .maybeSingle()
 
       if (merchantOwner?.user_id) {
-        const { data: existingRoom } = await supabase
+        const { data: existingPostRoom } = await supabase
           .from("package_chat_rooms")
           .select("id")
-          .eq("package_id", package_id)
+          .eq("booking_id", booking.id)
           .eq("customer_id", user.id)
           .eq("merchant_user_id", merchantOwner.user_id)
           .maybeSingle()
 
-        if (existingRoom?.id) {
-          const { error: linkError } = await supabase
+        if (!existingPostRoom?.id) {
+          const { data: preBookingRoom } = await supabase
             .from("package_chat_rooms")
-            .update({
-              booking_id: booking.id,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", existingRoom.id)
+            .select("id")
+            .eq("package_id", package_id)
+            .eq("customer_id", user.id)
+            .eq("merchant_user_id", merchantOwner.user_id)
+            .is("booking_id", null)
+            .maybeSingle()
 
-          if (linkError && !linkError.message.includes("booking_id")) {
-            console.error("Gagal link chat room ke booking:", linkError.message)
-          }
-        } else {
-          const { error: createRoomError } = await supabase
+          let { error: createRoomError } = await supabase
             .from("package_chat_rooms")
             .insert({
               package_id,
               customer_id: user.id,
               merchant_user_id: merchantOwner.user_id,
               booking_id: booking.id,
+              source_room_id: preBookingRoom?.id || null,
             })
+
+          if (createRoomError && createRoomError.message.includes("source_room_id")) {
+            const fallbackCreate = await supabase.from("package_chat_rooms").insert({
+              package_id,
+              customer_id: user.id,
+              merchant_user_id: merchantOwner.user_id,
+              booking_id: booking.id,
+            })
+            createRoomError = fallbackCreate.error
+          }
 
           if (createRoomError) {
             if (createRoomError.message.includes("booking_id")) {
-              await supabase.from("package_chat_rooms").insert({
-                package_id,
-                customer_id: user.id,
-                merchant_user_id: merchantOwner.user_id,
-              })
+              console.error("Chat post-booking butuh migration terbaru:", createRoomError.message)
             } else {
               console.error("Gagal membuat chat room booking:", createRoomError.message)
             }
+          }
+        }
+        const { data: existingRoom } = await supabase
+          .from("package_chat_rooms")
+          .select("id")
+          .eq("package_id", package_id)
+          .eq("customer_id", user.id)
+          .eq("merchant_user_id", merchantOwner.user_id)
+          .is("booking_id", null)
+          .maybeSingle()
+
+        if (existingRoom?.id) {
+          const { error: linkError } = await supabase
+            .from("package_chat_rooms")
+            .update({
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingRoom.id)
+
+          if (linkError) {
+            console.error("Gagal refresh room pre-booking:", linkError.message)
           }
         }
       }

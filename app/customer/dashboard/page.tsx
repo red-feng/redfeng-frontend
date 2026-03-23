@@ -392,6 +392,12 @@ export default async function CustomerDashboardPage() {
                         >
                           Lihat Detail Booking
                         </Link>
+                        <Link
+                          href={`/chat?booking_id=${booking.id}`}
+                          className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+                        >
+                          Chat Sesudah Booking
+                        </Link>
                         {canConfirmPickup && (
                           <form action={confirmCustomerPickedUp}>
                             <input type="hidden" name="booking_id" value={booking.id} />
