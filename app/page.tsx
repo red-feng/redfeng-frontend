@@ -68,7 +68,7 @@ async function getAvailableCountries(): Promise<string[]> {
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
-}, locale: Locale = "id"): Promise<PackageListItem[]> {
+}, locale: Locale = "id", options?: { ignoreMaxPrice?: boolean }): Promise<PackageListItem[]> {
   const supabase = await createClient()
 
   const toParamString = (value: string | string[] | undefined): string =>
@@ -201,7 +201,7 @@ if (searchParams?.departure_date) {
     }
   }
 
-  if (searchParams?.max_price) {
+  if (!options?.ignoreMaxPrice && searchParams?.max_price) {
     const max = Number(searchParams.max_price)
     if (!Number.isNaN(max)) {
       filtered = filtered.filter((pkg) => {
@@ -243,11 +243,15 @@ export default async function HomePage({
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
+  const currentMaxPriceParam = Array.isArray(resolvedSearchParams.max_price)
+    ? resolvedSearchParams.max_price[0] || ""
+    : resolvedSearchParams.max_price || ""
   const locale = await getCurrentLocale()
   const t = dictionaries[locale]
 
-  const [packages, countries] = await Promise.all([
+  const [packages, packagesForPriceRange, countries] = await Promise.all([
     getPackages(resolvedSearchParams, locale),
+    getPackages(resolvedSearchParams, locale, { ignoreMaxPrice: true }),
     getAvailableCountries(),
   ])
   const supabase = await createClient()
@@ -270,6 +274,15 @@ export default async function HomePage({
     }
   }
   const facilities = Array.from(facilitiesMap.values())
+  const availablePrices = packagesForPriceRange
+    .map((pkg) => Number(pkg.livePricing?.priceAdult || 0))
+    .filter((value) => Number.isFinite(value) && value > 0)
+  const minAvailablePrice = availablePrices.length > 0 ? Math.min(...availablePrices) : 0
+  const rawMaxAvailablePrice = availablePrices.length > 0 ? Math.max(...availablePrices) : 0
+  const maxAvailablePrice =
+    rawMaxAvailablePrice > 0
+      ? Math.max(rawMaxAvailablePrice, Number(currentMaxPriceParam || 0))
+      : Math.max(Number(currentMaxPriceParam || 0), 0)
 
   return (
   <div className="bg-gray-100 min-h-screen">
@@ -283,7 +296,13 @@ export default async function HomePage({
       <aside className="w-[280px] shrink-0">
         <div className="sticky top-24 space-y-4">
           <Suspense fallback={<div>Loading filter...</div>}>
-            <FilterClient facilities={facilities} locale={locale} />
+            <FilterClient
+              key={`${locale}:${currentMaxPriceParam}:${minAvailablePrice}:${maxAvailablePrice}`}
+              facilities={facilities}
+              locale={locale}
+              minAvailablePrice={minAvailablePrice}
+              maxAvailablePrice={maxAvailablePrice}
+            />
           </Suspense>
         </div>
       </aside>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
+import { formatPackageMoney, localeCurrencyMap } from "@/lib/package-pricing"
 
 type Facility = {
   id: string
@@ -14,16 +15,20 @@ type Facility = {
 export default function FilterClient({
   facilities,
   locale,
+  minAvailablePrice,
+  maxAvailablePrice,
 }: {
   facilities: Facility[]
   locale: Locale
+  minAvailablePrice: number
+  maxAvailablePrice: number
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = dictionaries[locale].filter
 
   const [maxPrice, setMaxPrice] = useState<number>(
-    Number(searchParams.get("max_price")) || 100000000
+    Number(searchParams.get("max_price")) || maxAvailablePrice
   )
 
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(
@@ -31,6 +36,14 @@ export default function FilterClient({
   )
   const isFirstPriceRender = useRef(true)
   const isFirstFacilitiesRender = useRef(true)
+  const priceCurrency = localeCurrencyMap[locale]
+  const sliderStep = useMemo(() => {
+    if (maxAvailablePrice <= 1000) return 10
+    if (maxAvailablePrice <= 10000) return 100
+    if (maxAvailablePrice <= 100000) return 1000
+    if (maxAvailablePrice <= 1000000) return 10000
+    return 100000
+  }, [maxAvailablePrice])
 
   // AUTO FILTER PRICE
   useEffect(() => {
@@ -109,17 +122,17 @@ export default function FilterClient({
 
         <input
           type="range"
-          min="0"
-          max="100000000"
-          step="100000"
+          min={minAvailablePrice}
+          max={maxAvailablePrice}
+          step={sliderStep}
           value={maxPrice}
           onChange={(e) => setMaxPrice(Number(e.target.value))}
           className="mt-4 w-full"
         />
 
         <div className="mt-3 flex justify-between text-sm text-slate-600">
-          <span>Rp 0</span>
-          <span>Rp {maxPrice.toLocaleString()}</span>
+          <span>{formatPackageMoney(minAvailablePrice, priceCurrency, locale)}</span>
+          <span>{formatPackageMoney(maxPrice, priceCurrency, locale)}</span>
         </div>
       </div>
 
