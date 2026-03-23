@@ -1,36 +1,19 @@
 "use server"
 
-import { createAdminClient } from "@/lib/supabase/admin"
+import { approvePackageById, deletePackageById, rejectPackageById } from "../actions"
 import { redirect } from "next/navigation"
 
 export async function approvePackage(packageId: string) {
-  const supabase = createAdminClient()
-
-  await supabase
-    .from("packages")
-    .update({
-      status: "approved",
-      reviewed_at: new Date(),
-    })
-    .eq("id", packageId)
-
-  redirect("/admin/packages")
+  await approvePackageById(packageId)
+  redirect("/admin/packages?success=Paket%20berhasil%20disetujui")
 }
 
-export async function rejectPackage(
-  packageId: string,
-  reason: string
-) {
-  const supabase = createAdminClient()
+export async function rejectPackage(packageId: string, reason: string) {
+  await rejectPackageById(packageId, reason)
+  redirect("/admin/packages?success=Paket%20berhasil%20ditolak")
+}
 
-  await supabase
-    .from("packages")
-    .update({
-      status: "rejected",
-      rejection_reason: reason,
-      reviewed_at: new Date(),
-    })
-    .eq("id", packageId)
-
-  redirect("/admin/packages")
+export async function deletePackage(packageId: string) {
+  await deletePackageById(packageId)
+  redirect("/admin/packages?success=Paket%20berhasil%20dihapus%20permanen")
 }

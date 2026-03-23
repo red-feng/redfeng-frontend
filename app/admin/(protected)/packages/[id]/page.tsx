@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
-import { approvePackage, rejectPackage } from "./actions"
+import { approvePackage, deletePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
@@ -455,6 +455,18 @@ export default async function Page({
                   />
                   <button className="mt-3 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
                     Tolak Paket
+                  </button>
+                </form>
+
+                <form
+                  className="mt-4"
+                  action={async () => {
+                    "use server"
+                    await deletePackage(id)
+                  }}
+                >
+                  <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    Hapus Permanen dari Database
                   </button>
                 </form>
               </div>
