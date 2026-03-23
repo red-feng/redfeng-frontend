@@ -277,7 +277,6 @@ export default async function HomePage({
   const availablePrices = packagesForPriceRange
     .map((pkg) => Number(pkg.livePricing?.priceAdult || 0))
     .filter((value) => Number.isFinite(value) && value > 0)
-  const minAvailablePrice = availablePrices.length > 0 ? Math.min(...availablePrices) : 0
   const rawMaxAvailablePrice = availablePrices.length > 0 ? Math.max(...availablePrices) : 0
   const maxAvailablePrice =
     rawMaxAvailablePrice > 0
@@ -297,10 +296,9 @@ export default async function HomePage({
         <div className="sticky top-24 space-y-4">
           <Suspense fallback={<div>Loading filter...</div>}>
             <FilterClient
-              key={`${locale}:${currentMaxPriceParam}:${minAvailablePrice}:${maxAvailablePrice}`}
+              key={`${locale}:${currentMaxPriceParam}:${maxAvailablePrice}`}
               facilities={facilities}
               locale={locale}
-              minAvailablePrice={minAvailablePrice}
               maxAvailablePrice={maxAvailablePrice}
             />
           </Suspense>

@@ -15,12 +15,10 @@ type Facility = {
 export default function FilterClient({
   facilities,
   locale,
-  minAvailablePrice,
   maxAvailablePrice,
 }: {
   facilities: Facility[]
   locale: Locale
-  minAvailablePrice: number
   maxAvailablePrice: number
 }) {
   const router = useRouter()
@@ -37,6 +35,13 @@ export default function FilterClient({
   const isFirstPriceRender = useRef(true)
   const isFirstFacilitiesRender = useRef(true)
   const priceCurrency = localeCurrencyMap[locale]
+  const sliderMin = 0
+  const selectedPriceLabel =
+    locale === "zh"
+      ? "当前最高价格"
+      : locale === "en"
+        ? "Current max price"
+        : "Maksimum harga saat ini"
   const sliderStep = useMemo(() => {
     if (maxAvailablePrice <= 1000) return 10
     if (maxAvailablePrice <= 10000) return 100
@@ -122,7 +127,7 @@ export default function FilterClient({
 
         <input
           type="range"
-          min={minAvailablePrice}
+          min={sliderMin}
           max={maxAvailablePrice}
           step={sliderStep}
           value={maxPrice}
@@ -131,8 +136,12 @@ export default function FilterClient({
         />
 
         <div className="mt-3 flex justify-between text-sm text-slate-600">
-          <span>{formatPackageMoney(minAvailablePrice, priceCurrency, locale)}</span>
-          <span>{formatPackageMoney(maxPrice, priceCurrency, locale)}</span>
+          <span>{formatPackageMoney(sliderMin, priceCurrency, locale)}</span>
+          <span>{formatPackageMoney(maxAvailablePrice, priceCurrency, locale)}</span>
+        </div>
+
+        <div className="mt-2 text-xs font-medium text-slate-500">
+          {selectedPriceLabel}: {formatPackageMoney(maxPrice, priceCurrency, locale)}
         </div>
       </div>
 
