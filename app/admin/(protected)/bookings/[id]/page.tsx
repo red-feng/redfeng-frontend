@@ -227,6 +227,9 @@ export default async function AdminBookingDetailPage({
   const attentionReasons = deriveAttentionReasons(booking)
   const productLabel = booking.package_id ? "Paket Tour" : "Pesawat"
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
+  const auditLogHref = `/admin/audit-log?target=booking&q=${encodeURIComponent(booking.id)}`
+  const postBookingChatHref = `/chat?booking_id=${encodeURIComponent(booking.id)}`
+  const preBookingChatHref = booking.package_id ? `/chat?package_id=${encodeURIComponent(booking.package_id)}` : null
   const timeline = [
     {
       label: "Merchant Arrived",
@@ -286,6 +289,81 @@ export default async function AdminBookingDetailPage({
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pickup Date</p>
             <p className="mt-3 text-2xl font-semibold text-slate-950">{formatDate(booking.pickup_date)}</p>
+          </div>
+        </section>
+
+        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Quick actions</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pindah cepat ke area terkait booking ini</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <Link
+              href={auditLogHref}
+              className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Audit Log</p>
+              <p className="mt-3 text-lg font-semibold text-slate-950">Jejak admin booking ini</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Lihat handoff dan aksi admin yang pernah tercatat.</p>
+            </Link>
+
+            <Link
+              href={postBookingChatHref}
+              className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Post-booking chat</p>
+              <p className="mt-3 text-lg font-semibold text-slate-950">Buka chat sesudah booking</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Masuk ke percakapan yang terkait langsung dengan booking ini.</p>
+            </Link>
+
+            {preBookingChatHref ? (
+              <Link
+                href={preBookingChatHref}
+                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pre-booking chat</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">Buka chat sebelum booking</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Lihat konteks diskusi package sebelum transaksi dibuat.</p>
+              </Link>
+            ) : (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Pre-booking chat</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">Belum tersedia</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Shortcut ini muncul untuk booking yang terhubung ke package.</p>
+              </div>
+            )}
+
+            {merchant?.id ? (
+              <Link
+                href={`/admin/merchants/${merchant.id}`}
+                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Merchant workspace</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">{merchantName}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Masuk ke semua paket dan konteks merchant dari booking ini.</p>
+              </Link>
+            ) : (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Merchant workspace</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">Belum tersedia</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Merchant belum terhubung atau data package tidak ditemukan.</p>
+              </div>
+            )}
+
+            {pkg?.id ? (
+              <Link
+                href={`/admin/packages/${pkg.id}`}
+                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Package detail</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">{pkg.title || "Package terkait"}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Buka detail package untuk validasi harga dan konteks produk.</p>
+              </Link>
+            ) : (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Package detail</p>
+                <p className="mt-3 text-lg font-semibold text-slate-900">Belum tersedia</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Shortcut ini akan aktif saat booking sudah terhubung ke package.</p>
+              </div>
+            )}
           </div>
         </section>
 
