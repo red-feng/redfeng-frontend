@@ -4,11 +4,34 @@ import { getOptionalEnv } from "@/lib/env"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminAuditLog } from "@/lib/admin-audit"
 
 function revalidateMerchantPages() {
   revalidatePath("/admin/merchants")
   revalidatePath("/merchant/dashboard")
   revalidatePath("/merchant/login")
+}
+
+async function getAdminActor() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error("Sesi admin tidak ditemukan.")
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+    throw new Error("Akses admin tidak valid.")
+  }
+
+  return {
+    id: user.id,
+    role: profile.role,
+  }
 }
 
 async function sendMerchantDecisionEmail({
@@ -73,6 +96,7 @@ export async function approveMerchant(formData: FormData) {
   if (!merchantId) return
 
   const supabaseAdmin = createAdminClient()
+  const actor = await getAdminActor()
 
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
@@ -105,6 +129,19 @@ export async function approveMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "merchant",
+    targetId: merchantId,
+    action: "approve",
+    summary: `Merchant ${merchantId} disetujui admin`,
+    metadata: {
+      status: "approved",
+      brandName: merchant?.brand_name ?? null,
+    },
+  })
 }
 
 export async function rejectMerchant(formData: FormData) {
@@ -114,6 +151,7 @@ export async function rejectMerchant(formData: FormData) {
   if (!merchantId || !reason) return
 
   const supabaseAdmin = createAdminClient()
+  const actor = await getAdminActor()
 
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
@@ -146,6 +184,20 @@ export async function rejectMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "merchant",
+    targetId: merchantId,
+    action: "reject",
+    summary: `Merchant ${merchantId} ditolak admin`,
+    metadata: {
+      status: "rejected",
+      reason,
+      brandName: merchant?.brand_name ?? null,
+    },
+  })
 }
 
 export async function deactivateMerchant(formData: FormData) {
@@ -155,6 +207,7 @@ export async function deactivateMerchant(formData: FormData) {
   if (!merchantId) return
 
   const supabaseAdmin = createAdminClient()
+  const actor = await getAdminActor()
 
   const { error } = await supabaseAdmin
     .from("merchants")
@@ -171,6 +224,19 @@ export async function deactivateMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "merchant",
+    targetId: merchantId,
+    action: "deactivate",
+    summary: `Merchant ${merchantId} dinonaktifkan sementara`,
+    metadata: {
+      status: "inactive",
+      reason: reason || "Merchant dinonaktifkan sementara oleh admin.",
+    },
+  })
 }
 
 export async function reactivateMerchant(formData: FormData) {
@@ -178,6 +244,7 @@ export async function reactivateMerchant(formData: FormData) {
   if (!merchantId) return
 
   const supabaseAdmin = createAdminClient()
+  const actor = await getAdminActor()
 
   const { error } = await supabaseAdmin
     .from("merchants")
@@ -195,6 +262,18 @@ export async function reactivateMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "merchant",
+    targetId: merchantId,
+    action: "reactivate",
+    summary: `Merchant ${merchantId} diaktifkan kembali`,
+    metadata: {
+      status: "approved",
+    },
+  })
 }
 
 export async function deleteMerchant(formData: FormData) {
@@ -204,6 +283,7 @@ export async function deleteMerchant(formData: FormData) {
   if (!merchantId || !reason) return
 
   const supabaseAdmin = createAdminClient()
+  const actor = await getAdminActor()
 
   const { error } = await supabaseAdmin
     .from("merchants")
@@ -220,4 +300,17 @@ export async function deleteMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "merchant",
+    targetId: merchantId,
+    action: "delete",
+    summary: `Merchant ${merchantId} ditandai deleted`,
+    metadata: {
+      status: "deleted",
+      reason,
+    },
+  })
 }

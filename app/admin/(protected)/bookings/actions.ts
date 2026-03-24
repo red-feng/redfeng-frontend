@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { calculateMerchantPayout, defaultFinanceSettings } from "@/lib/finance/settings"
+import { createAdminAuditLog } from "@/lib/admin-audit"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -25,7 +26,10 @@ async function ensureAdmin() {
     redirect("/admin/login")
   }
 
-  return user
+  return {
+    user,
+    role: profile.role,
+  }
 }
 
 function backToBookings(message: string, type: "success" | "error"): never {
@@ -33,7 +37,7 @@ function backToBookings(message: string, type: "success" | "error"): never {
 }
 
 export async function handoffBookingToFinance(formData: FormData) {
-  await ensureAdmin()
+  const adminActor = await ensureAdmin()
 
   const bookingId = String(formData.get("booking_id") || "")
   if (!bookingId) {
@@ -161,6 +165,22 @@ export async function handoffBookingToFinance(formData: FormData) {
   if (updateError) {
     backToBookings(updateError.message, "error")
   }
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: booking.id,
+    action: "handoff_to_finance",
+    summary: `Booking ${booking.booking_code || booking.id} dikirim ke finance`,
+    metadata: {
+      bookingCode: booking.booking_code,
+      payoutAmount: payout.netAmount,
+      grossAmount: payout.grossAmount,
+      merchantId: merchant.id,
+      source: "admin_handoff",
+    },
+  })
 
   backToBookings("Booking berhasil dikirim ke finance dan sekarang berstatus Ready for Finance", "success")
 }

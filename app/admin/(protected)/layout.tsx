@@ -42,6 +42,8 @@ export default async function AdminProtectedLayout({
     redirect("/admin/login")
   }
 
+  const isSuperadmin = profile.role === "superadmin"
+
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
       .from("merchants")
@@ -69,54 +71,55 @@ export default async function AdminProtectedLayout({
       label: "Paket Tour",
       children: [
         { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/merchants", label: "Merchant", badgeCount: pendingMerchants },
-        { href: "/admin/packages", label: "Review Queue", badgeCount: pendingPackages },
-        { href: "/admin/bookings?product=paket-tour", label: "Bookings", badgeCount: financeReadyCount },
+        { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants },
+        { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
+        { href: "/admin/bookings?product=paket-tour", label: "Booking Center", badgeCount: financeReadyCount },
       ],
     },
     {
       label: "Pesawat",
       children: [
         { href: "/admin/pesawat", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=pesawat", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=pesawat", label: "Booking Center", badgeCount: 0 },
       ],
     },
     {
       label: "Hotel",
       children: [
         { href: "/admin/hotel", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=hotel", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=hotel", label: "Booking Center", badgeCount: 0 },
       ],
     },
     {
       label: "Bus & Travel",
       children: [
         { href: "/admin/bus-travel", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=bus-travel", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=bus-travel", label: "Booking Center", badgeCount: 0 },
       ],
     },
     {
       label: "Kereta Api",
       children: [
         { href: "/admin/kereta-api", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kereta-api", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=kereta-api", label: "Booking Center", badgeCount: 0 },
       ],
     },
     {
       label: "Kapal Laut",
       children: [
         { href: "/admin/kapal-laut", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kapal-laut", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=kapal-laut", label: "Booking Center", badgeCount: 0 },
       ],
     },
     {
       label: "Kapal Pesiar",
       children: [
         { href: "/admin/kapal-pesiar", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kapal-pesiar", label: "Bookings", badgeCount: 0 },
+        { href: "/admin/bookings?product=kapal-pesiar", label: "Booking Center", badgeCount: 0 },
       ],
     },
     { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
+    { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
   ]
 
   return (
@@ -131,6 +134,23 @@ export default async function AdminProtectedLayout({
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">Dashboard admin internal Red Feng</p>
                 <p className="text-xs text-slate-500">Area approval merchant, paket, dan booking operasional</p>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
+                    isSuperadmin
+                      ? "border border-violet-200 bg-violet-50 text-violet-700"
+                      : "border border-sky-200 bg-sky-50 text-sky-700"
+                  }`}>
+                    {isSuperadmin ? "Superadmin" : "Admin"}
+                  </span>
+                  {isSuperadmin && (
+                    <a
+                      href="/finance/admin-users"
+                      className="inline-flex rounded-full border border-[#ecd9c2] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    >
+                      Internal Accounts
+                    </a>
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <SignOutButton

@@ -22,13 +22,13 @@ export default async function AdminPackageTourWorkspacePage() {
 
   const workstreams = [
     {
-      label: "Merchant",
+      label: "Merchant Directory",
       value: pendingMerchants,
       note: "Approval merchant tour dan partner yang sudah submit onboarding.",
       href: "/admin/merchants",
     },
     {
-      label: "Review Queue",
+      label: "Package Review",
       value: pendingPackages,
       note: "Paket tour yang menunggu validasi admin.",
       href: "/admin/packages",

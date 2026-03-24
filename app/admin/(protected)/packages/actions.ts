@@ -4,6 +4,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { purgePackageRecords } from "@/lib/package-delete"
+import { createClient } from "@/lib/supabase/server"
+import { createAdminAuditLog } from "@/lib/admin-audit"
 
 function backToPackages(type: "success" | "error", message: string) {
   redirect(`/admin/packages?${type}=${encodeURIComponent(message)}`)
@@ -16,12 +18,34 @@ function getPackageIds(formData: FormData) {
     .filter(Boolean)
 }
 
+async function getAdminActor() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error("Sesi admin tidak ditemukan.")
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+    throw new Error("Akses admin tidak valid.")
+  }
+
+  return {
+    id: user.id,
+    role: profile.role,
+  }
+}
+
 export async function approvePackageById(packageId: string) {
   if (!packageId) {
     throw new Error("Package ID tidak ditemukan.")
   }
 
   const supabase = createAdminClient()
+  const actor = await getAdminActor()
 
   const { error } = await supabase
     .from("packages")
@@ -39,6 +63,18 @@ export async function approvePackageById(packageId: string) {
   revalidatePath("/")
   revalidatePath("/admin/dashboard")
   revalidatePath("/admin/packages")
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "package",
+    targetId: packageId,
+    action: "approve",
+    summary: `Package ${packageId} disetujui admin`,
+    metadata: {
+      status: "approved",
+    },
+  })
 }
 
 export async function rejectPackageById(packageId: string, reason: string) {
@@ -47,6 +83,7 @@ export async function rejectPackageById(packageId: string, reason: string) {
   }
 
   const supabase = createAdminClient()
+  const actor = await getAdminActor()
 
   const { error } = await supabase
     .from("packages")
@@ -63,11 +100,36 @@ export async function rejectPackageById(packageId: string, reason: string) {
 
   revalidatePath("/admin/dashboard")
   revalidatePath("/admin/packages")
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "package",
+    targetId: packageId,
+    action: "reject",
+    summary: `Package ${packageId} ditolak admin`,
+    metadata: {
+      status: "rejected",
+      reason: reason.trim(),
+    },
+  })
 }
 
 export async function deletePackageById(packageId: string) {
   const supabase = createAdminClient()
+  const actor = await getAdminActor()
   await purgePackageRecords(supabase, packageId)
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "package",
+    targetId: packageId,
+    action: "delete",
+    summary: `Package ${packageId} dihapus permanen`,
+    metadata: {
+      mode: "permanent_delete",
+    },
+  })
 }
 
 export async function approvePackage(formData: FormData) {

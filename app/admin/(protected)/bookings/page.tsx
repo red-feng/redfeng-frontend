@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
@@ -10,6 +11,7 @@ type BookingRow = {
   booking_code: string | null
   customer_name: string | null
   pickup_date: string | null
+  created_at: string | null
   display_currency?: string | null
   display_subtotal_amount?: number | null
   subtotal_amount: number | null
@@ -34,6 +36,8 @@ type ProductFilter =
   | "kereta-api"
   | "kapal-laut"
   | "kapal-pesiar"
+
+type QueueFilter = "all" | "needs-attention" | "ready" | "in-finance"
 
 type PackageRow = {
   id: string
@@ -152,25 +156,49 @@ function normalizeProductFilter(value: string | undefined): ProductFilter {
   return "all"
 }
 
+function normalizeQueueFilter(value: string | undefined): QueueFilter {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (normalized === "needs-attention" || normalized === "ready" || normalized === "in-finance") {
+    return normalized
+  }
+
+  return "all"
+}
+
 function deriveBookingProduct(booking: BookingRow): Exclude<ProductFilter, "all"> {
   if (booking.package_id) return "paket-tour"
   return "pesawat"
 }
 
+function isNeedsAttentionBooking(booking: BookingRow) {
+  const paid = normalizeStatus(booking.payment_status) === "paid"
+  const inFinance = normalizeStatus(booking.booking_status) === "finance_review"
+  return !inFinance && (!paid || !booking.merchant_arrived_at || !booking.customer_picked_up_at || !booking.merchant_picked_up_at)
+}
+
+function buildHref(product: ProductFilter, queue: QueueFilter) {
+  const params = new URLSearchParams()
+  if (product !== "all") params.set("product", product)
+  if (queue !== "all") params.set("queue", queue)
+  const query = params.toString()
+  return query ? `/admin/bookings?${query}` : "/admin/bookings"
+}
+
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; error?: string; product?: string }>
+  searchParams: Promise<{ success?: string; error?: string; product?: string; queue?: string }>
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const activeProduct = normalizeProductFilter(params.product)
+  const activeQueue = normalizeQueueFilter(params.queue)
 
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, customer_name, pickup_date, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, package_id, booking_code, customer_name, pickup_date, created_at, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .order("created_at", { ascending: false })
 
@@ -188,16 +216,25 @@ export default async function AdminBookingsPage({
   const incompleteBookings = bookings.filter(
     (booking) => !hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
   )
-  const filteredBookings =
+
+  const productScopedBookings =
     activeProduct === "all"
       ? validBookings
       : validBookings.filter((booking) => deriveBookingProduct(booking) === activeProduct)
-  const filteredReadyForAdmin = filteredBookings.filter(
-    (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff",
-  )
+
+  const filteredBookings = productScopedBookings.filter((booking) => {
+    if (activeQueue === "needs-attention") return isNeedsAttentionBooking(booking)
+    if (activeQueue === "ready") return canHandoffToFinance(booking)
+    if (activeQueue === "in-finance") return normalizeStatus(booking.booking_status) === "finance_review"
+    return true
+  })
+
+  const filteredReadyForAdmin = filteredBookings.filter((booking) => canHandoffToFinance(booking))
   const filteredInFinance = filteredBookings.filter(
     (booking) => normalizeStatus(booking.booking_status) === "finance_review",
   )
+  const needsAttentionCount = productScopedBookings.filter((booking) => isNeedsAttentionBooking(booking)).length
+
   const productFilters: Array<{ value: ProductFilter; label: string }> = [
     { value: "all", label: "Semua Produk" },
     { value: "paket-tour", label: "Paket Tour" },
@@ -207,6 +244,16 @@ export default async function AdminBookingsPage({
     { value: "kereta-api", label: "Kereta Api" },
     { value: "kapal-laut", label: "Kapal Laut" },
     { value: "kapal-pesiar", label: "Kapal Pesiar" },
+  ]
+  const queueFilters: Array<{ value: QueueFilter; label: string; count: number }> = [
+    { value: "all", label: "Semua Queue", count: productScopedBookings.length },
+    { value: "needs-attention", label: "Needs Attention", count: needsAttentionCount },
+    { value: "ready", label: "Ready for Finance", count: productScopedBookings.filter((booking) => canHandoffToFinance(booking)).length },
+    {
+      value: "in-finance",
+      label: "In Finance",
+      count: productScopedBookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review").length,
+    },
   ]
 
   return (
@@ -220,7 +267,7 @@ export default async function AdminBookingsPage({
             Booking Center untuk monitoring dan handoff booking lintas produk.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
-            Semua booking customer dikumpulkan di sini sebagai pusat kontrol lintas produk. Admin bisa memfilter per channel, memantau status operasional, lalu mengirim booking yang siap ke finance.
+            Semua booking customer dikumpulkan di sini sebagai pusat kontrol lintas produk. Admin bisa memfilter per channel, memantau status operasional, melihat queue yang butuh perhatian cepat, lalu mengirim booking yang siap ke finance.
           </p>
         </section>
 
@@ -238,23 +285,21 @@ export default async function AdminBookingsPage({
 
         {incompleteBookings.length > 0 && (
           <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
-            {incompleteBookings.length} booking lama / belum lengkap disembunyikan dari queue admin karena data paket
-            atau nominalnya belum sinkron.
+            {incompleteBookings.length} booking lama / belum lengkap disembunyikan dari queue admin karena data paket atau nominalnya belum sinkron.
           </div>
         )}
 
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center tetap gabungan, bisa dipilah per produk</h2>
           <div className="mt-5 flex flex-wrap gap-2">
             {productFilters.map((filter) => {
-              const href = filter.value === "all" ? "/admin/bookings" : `/admin/bookings?product=${filter.value}`
               const isActive = activeProduct === filter.value
 
               return (
-                <a
+                <Link
                   key={filter.value}
-                  href={href}
+                  href={buildHref(filter.value, activeQueue)}
                   className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -262,9 +307,73 @@ export default async function AdminBookingsPage({
                   }`}
                 >
                   {filter.label}
-                </a>
+                </Link>
               )
             })}
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue yang harus dicek lebih dulu</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <Link
+                href={buildHref(activeProduct, "needs-attention")}
+                className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Needs Attention</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{needsAttentionCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang belum siap handoff atau status operasionalnya masih macet.</p>
+              </Link>
+              <Link
+                href={buildHref(activeProduct, "ready")}
+                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ready for Finance</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">
+                  {productScopedBookings.filter((booking) => canHandoffToFinance(booking)).length}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang sudah lunas dan urutan pickup sudah lengkap.</p>
+              </Link>
+              <Link
+                href={buildHref(activeProduct, "in-finance")}
+                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">In Finance</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">
+                  {productScopedBookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review").length}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang sudah keluar dari admin dan sedang diproses finance.</p>
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue filter</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pilih mode kerja admin</h2>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {queueFilters.map((filter) => {
+                const isActive = activeQueue === filter.value
+
+                return (
+                  <Link
+                    key={filter.value}
+                    href={buildHref(activeProduct, filter.value)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      isActive
+                        ? "border-orange-200 bg-[#fff7ef] text-orange-600"
+                        : "border-[#ecd9c2] bg-white text-slate-700 hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                      {filter.count > 99 ? "99+" : filter.count}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
         </section>
 
@@ -298,7 +407,7 @@ export default async function AdminBookingsPage({
             </div>
           ) : filteredBookings.length === 0 ? (
             <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
-              Belum ada data booking yang lengkap untuk filter produk ini.
+              Belum ada data booking yang lengkap untuk kombinasi filter ini.
             </div>
           ) : (
             <div className="mt-6 space-y-4">
@@ -318,13 +427,11 @@ export default async function AdminBookingsPage({
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
                           {booking.booking_code || booking.id}
                         </p>
-                        <h3 className="mt-2 text-xl font-semibold text-slate-950">
-                          {packageTitle}
-                        </h3>
-                        <p className="mt-2 text-sm text-slate-600">
+                        <h3 className="mt-2 text-xl font-semibold text-slate-950">{packageTitle}</h3>
                         <p className="mt-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-700">
                           {productLabel}
                         </p>
+                        <p className="mt-2 text-sm text-slate-600">
                           {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}
                         </p>
                         {booking.display_currency && (

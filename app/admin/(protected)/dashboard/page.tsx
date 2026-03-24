@@ -5,43 +5,93 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function daysSince(value: string | null | undefined) {
+  if (!value) return 0
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return 0
+  const diff = Date.now() - parsed.getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24))
+}
+
 export default async function AdminDashboard() {
   const adminSupabase = createAdminClient()
 
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
       .from("merchants")
-      .select("id", { count: "exact", head: true })
+      .select("id, created_at")
       .eq("verification_status", "pending"),
     adminSupabase
       .from("packages")
-      .select("id, status")
+      .select("id, status, created_at")
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, booking_status")
+      .select("id, booking_status, created_at")
       .order("created_at", { ascending: false }),
   ])
 
-  const pendingMerchants = merchantResult.count || 0
-  const packages = packageResult.data || []
-  const bookings = bookingResult.data || []
+  const pendingMerchantsData = (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
+  const packages = (packageResult.data as Array<{ id: string; status: string | null; created_at: string | null }> | null) || []
+  const bookings = (bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null }> | null) || []
+  const pendingMerchants = pendingMerchantsData.length
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
   const financeReadyCount = bookings.filter((item) => normalizeStatus(item.booking_status) === "awaiting_admin_handoff").length
+  const merchantOverdueCount = pendingMerchantsData.filter((merchant) => daysSince(merchant.created_at) >= 3).length
+  const packageOverdueCount = packages.filter(
+    (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
+  ).length
+  const bookingStalledCount = bookings.filter(
+    (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" && daysSince(booking.created_at) >= 1,
+  ).length
+  const needsAttentionCards = [
+    {
+      label: "Merchant overdue",
+      value: merchantOverdueCount,
+      note: "Merchant pending 3 hari atau lebih.",
+    },
+    {
+      label: "Package overdue",
+      value: packageOverdueCount,
+      note: "Package review yang belum disentuh 3 hari atau lebih.",
+    },
+    {
+      label: "Booking stalled",
+      value: bookingStalledCount,
+      note: "Booking siap handoff 1 hari atau lebih.",
+    },
+  ]
+  const slaCards = [
+    {
+      label: "Merchant SLA",
+      value: `${pendingMerchants - merchantOverdueCount} within SLA`,
+      note: "Target review merchant di bawah 3 hari.",
+    },
+    {
+      label: "Package SLA",
+      value: `${pendingPackages - packageOverdueCount} within SLA`,
+      note: "Target review package di bawah 3 hari.",
+    },
+    {
+      label: "Booking SLA",
+      value: `${financeReadyCount - bookingStalledCount} within SLA`,
+      note: "Target handoff booking di bawah 1 hari.",
+    },
+  ]
   const packageTourMenus = [
     {
-      label: "Merchant Approvals",
+      label: "Merchant Directory",
       href: "/admin/merchants",
-      description: "Review merchant yang sudah submit onboarding dan dokumen.",
+      description: "Direktori merchant untuk approval, pengecekan dokumen, dan kontrol status merchant tour.",
       tone: "from-amber-500 to-orange-500",
       badgeCount: pendingMerchants,
     },
     {
-      label: "Review Queue",
+      label: "Package Review",
       href: "/admin/packages",
-      description: "Queue cepat untuk paket yang benar-benar menunggu review admin.",
+      description: "Antrian review paket yang benar-benar menunggu validasi admin.",
       tone: "from-sky-500 to-cyan-500",
       badgeCount: pendingPackages,
     },
@@ -178,6 +228,36 @@ export default async function AdminDashboard() {
               <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
             </div>
           ))}
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-2">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Antrian yang perlu perhatian cepat</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {needsAttentionCards.map((card) => (
+                <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">SLA Monitor</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Target respons operasional admin</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {slaCards.map((card) => (
+                <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                  <p className="mt-3 text-xl font-semibold text-slate-950">{card.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
