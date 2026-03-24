@@ -118,7 +118,7 @@ export default async function AdminPackagesPage({
         <div className="mt-6 space-y-4">
           {!packages.length ? (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500 shadow-sm">
-              Belum ada paket merchant.
+              Belum ada paket yang menunggu review.
             </div>
           ) : null}
 

@@ -66,7 +66,7 @@ export default async function AdminProtectedLayout({
   const adminNav = [
     { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/admin/merchants", label: "Merchants", badgeCount: pendingMerchants },
-    { href: "/admin/packages", label: "Packages", badgeCount: pendingPackages },
+    { href: "/admin/packages", label: "Review Queue", badgeCount: pendingPackages },
     { href: "/admin/bookings", label: "Bookings", badgeCount: financeReadyCount },
   ]
 

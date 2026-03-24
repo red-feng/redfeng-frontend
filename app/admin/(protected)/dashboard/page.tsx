@@ -39,9 +39,9 @@ export default async function AdminDashboard() {
       badgeCount: pendingMerchants,
     },
     {
-      label: "Package Approvals",
+      label: "Review Queue",
       href: "/admin/packages",
-      description: "Validasi paket yang siap tayang ke customer.",
+      description: "Queue cepat untuk paket yang benar-benar menunggu review admin.",
       tone: "from-sky-500 to-cyan-500",
       badgeCount: pendingPackages,
     },
@@ -61,9 +61,9 @@ export default async function AdminDashboard() {
       note: "Partner menunggu approval admin.",
     },
     {
-      label: "Package pending",
+      label: "Review queue",
       value: String(pendingPackages),
-      note: "Paket perlu dicek sebelum live.",
+      note: "Paket yang masih menunggu keputusan admin.",
     },
     {
       label: "Package approved",
