@@ -48,9 +48,9 @@ export default async function AdminDashboard() {
   ]
   const bookingMenus = [
     {
-      label: "Booking Handoff",
+      label: "Booking Center",
       href: "/admin/bookings",
-      description: "Validasi flow pickup lalu kirim booking lunas ke finance.",
+      description: "Pusat kontrol booking lintas produk untuk validasi operasional dan handoff ke finance.",
       tone: "from-emerald-500 to-lime-500",
       badgeCount: financeReadyCount,
     },
@@ -248,7 +248,7 @@ export default async function AdminDashboard() {
           <div className="grid gap-6">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking lintas produk</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Menu booking tetap terpisah</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center tetap terpisah</h2>
               <div className="mt-5 grid gap-4">
                 {bookingMenus.map((menu) => (
                   <Link

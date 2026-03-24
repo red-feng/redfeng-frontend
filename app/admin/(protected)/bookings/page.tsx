@@ -214,13 +214,13 @@ export default async function AdminBookingsPage({
       <div className="mx-auto max-w-7xl space-y-8">
         <section className="rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)]">
           <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-            Admin Booking Control
+            Booking Center
           </p>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Admin memvalidasi alur pickup lalu handoff payout ke finance.
+            Booking Center untuk monitoring dan handoff booking lintas produk.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
-            Setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go, admin mengirim booking ke finance untuk proses transfer. Halaman ini menjadi pusat booking lintas produk.
+            Semua booking customer dikumpulkan di sini sebagai pusat kontrol lintas produk. Admin bisa memfilter per channel, memantau status operasional, lalu mengirim booking yang siap ke finance.
           </p>
         </section>
 
@@ -244,8 +244,8 @@ export default async function AdminBookingsPage({
         )}
 
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking tetap gabungan, bisa dipilah per produk</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center tetap gabungan, bisa dipilah per produk</h2>
           <div className="mt-5 flex flex-wrap gap-2">
             {productFilters.map((filter) => {
               const href = filter.value === "all" ? "/admin/bookings" : `/admin/bookings?product=${filter.value}`
@@ -285,10 +285,10 @@ export default async function AdminBookingsPage({
 
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin handoff queue</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Validasi booking ke finance</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Validasi booking sebelum handoff ke finance</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Admin hanya mengirim booking yang sudah lunas dan seluruh urutan pickup selesai.
+              Booking Center hanya mengirim booking yang sudah lunas dan seluruh urutan pickup selesai.
             </p>
           </div>
 

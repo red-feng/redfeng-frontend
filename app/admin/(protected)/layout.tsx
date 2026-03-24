@@ -116,7 +116,7 @@ export default async function AdminProtectedLayout({
         { href: "/admin/bookings?product=kapal-pesiar", label: "Bookings", badgeCount: 0 },
       ],
     },
-    { href: "/admin/bookings", label: "Bookings", badgeCount: financeReadyCount },
+    { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
   ]
 
   return (

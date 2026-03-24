@@ -34,9 +34,9 @@ export default async function AdminPackageTourWorkspacePage() {
       href: "/admin/packages",
     },
     {
-      label: "Bookings",
+      label: "Booking Center",
       value: 0,
-      note: "Booking lintas produk tetap dipusatkan di halaman booking admin.",
+      note: "Booking lintas produk tetap dipusatkan di Booking Center admin.",
       href: "/admin/bookings?product=paket-tour",
     },
   ]
