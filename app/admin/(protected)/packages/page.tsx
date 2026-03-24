@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 
 type PackageRow = {
@@ -55,6 +56,15 @@ export default async function AdminPackagesPage({
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const supabase = createAdminClient()
+  const authSupabase = await createClient()
+
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await authSupabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null as { role?: string | null } | null }
+  const isSuperadmin = currentProfile?.role === "superadmin"
 
   const { data: packagesData } = await supabase
     .from("packages")
@@ -201,12 +211,18 @@ export default async function AdminPackagesPage({
                   </button>
                 </form>
 
-                <form action={deletePackage}>
-                  <input type="hidden" name="packageId" value={pkg.id} />
-                  <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
-                    Hapus permanen dari database
-                  </button>
-                </form>
+                {isSuperadmin ? (
+                  <form action={deletePackage}>
+                    <input type="hidden" name="packageId" value={pkg.id} />
+                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                      Hapus permanen dari database
+                    </button>
+                  </form>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                    Penghapusan permanen hanya tersedia untuk superadmin.
+                  </div>
+                )}
               </div>
             </div>
           ))}

@@ -39,6 +39,12 @@ async function getAdminActor() {
   }
 }
 
+function assertSuperadmin(role: string) {
+  if (role !== "superadmin") {
+    throw new Error("Hanya superadmin yang dapat menghapus package secara permanen.")
+  }
+}
+
 export async function approvePackageById(packageId: string) {
   if (!packageId) {
     throw new Error("Package ID tidak ditemukan.")
@@ -118,6 +124,7 @@ export async function rejectPackageById(packageId: string, reason: string) {
 export async function deletePackageById(packageId: string) {
   const supabase = createAdminClient()
   const actor = await getAdminActor()
+  assertSuperadmin(actor.role)
   await purgePackageRecords(supabase, packageId)
   await createAdminAuditLog({
     actorId: actor.id,

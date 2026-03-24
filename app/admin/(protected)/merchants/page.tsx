@@ -99,6 +99,14 @@ export default async function AdminMerchantsPage({
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null as { role?: string | null } | null }
+  const isSuperadmin = currentProfile?.role === "superadmin"
+
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
     supabase
       .from("merchants")
@@ -639,7 +647,7 @@ export default async function AdminMerchantsPage({
                         </div>
                       ) : null}
 
-                      {merchant.verification_status !== "deleted" ? (
+                      {merchant.verification_status !== "deleted" && isSuperadmin ? (
                         <div className="flex h-full flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
                             Hapus merchant
@@ -659,6 +667,17 @@ export default async function AdminMerchantsPage({
                               Hapus merchant
                             </button>
                           </form>
+                        </div>
+                      ) : null}
+
+                      {merchant.verification_status !== "deleted" && !isSuperadmin ? (
+                        <div className="flex h-full flex-col rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-600">
+                            Delete protected
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            Penghapusan merchant dikunci untuk superadmin agar histori booking dan handoff tetap aman.
+                          </p>
                         </div>
                       ) : null}
                     </div>

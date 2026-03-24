@@ -34,6 +34,12 @@ async function getAdminActor() {
   }
 }
 
+function assertSuperadmin(role: string) {
+  if (role !== "superadmin") {
+    throw new Error("Hanya superadmin yang dapat menghapus merchant.")
+  }
+}
+
 async function sendMerchantDecisionEmail({
   email,
   brandName,
@@ -284,6 +290,7 @@ export async function deleteMerchant(formData: FormData) {
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
+  assertSuperadmin(actor.role)
 
   const { error } = await supabaseAdmin
     .from("merchants")

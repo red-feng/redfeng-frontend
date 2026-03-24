@@ -38,6 +38,7 @@ type ProductFilter =
   | "kapal-pesiar"
 
 type QueueFilter = "all" | "needs-attention" | "ready" | "in-finance"
+type AttentionFocus = "all" | "payment" | "pickup" | "overdue" | "aging-ready"
 
 type PackageRow = {
   id: string
@@ -57,6 +58,14 @@ function formatDate(value: string | null) {
     month: "short",
     year: "numeric",
   })
+}
+
+function daysSince(value: string | null | undefined) {
+  if (!value) return 0
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return 0
+  const diff = Date.now() - parsed.getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
 function formatMoney(value: number | null) {
@@ -126,6 +135,75 @@ function canHandoffToFinance(booking: BookingRow) {
   )
 }
 
+function isPickupFlowIncomplete(booking: BookingRow) {
+  return !booking.merchant_arrived_at || !booking.customer_picked_up_at || !booking.merchant_picked_up_at
+}
+
+function isOverduePickup(booking: BookingRow) {
+  if (!booking.pickup_date) return false
+  const pickupDate = new Date(booking.pickup_date)
+  if (Number.isNaN(pickupDate.getTime())) return false
+  return pickupDate.getTime() < Date.now() && isPickupFlowIncomplete(booking)
+}
+
+function isReadyAgingBooking(booking: BookingRow) {
+  return canHandoffToFinance(booking) && daysSince(booking.created_at) >= 1
+}
+
+function deriveAttentionReasons(booking: BookingRow) {
+  const reasons: Array<{ key: Exclude<AttentionFocus, "all">; label: string; note: string }> = []
+
+  if (normalizeStatus(booking.payment_status) !== "paid") {
+    reasons.push({
+      key: "payment",
+      label: "Payment belum lunas",
+      note: "Booking belum bisa handoff karena status payment masih belum Fully Paid.",
+    })
+  }
+
+  if (normalizeStatus(booking.payment_status) === "paid" && isPickupFlowIncomplete(booking)) {
+    reasons.push({
+      key: "pickup",
+      label: "Urutan pickup belum lengkap",
+      note: "Admin masih menunggu Arrived, Picked Up, atau Go selesai.",
+    })
+  }
+
+  if (isOverduePickup(booking)) {
+    reasons.push({
+      key: "overdue",
+      label: "Pickup date lewat jadwal",
+      note: "Tanggal pickup sudah lewat tetapi flow operasional masih belum lengkap.",
+    })
+  }
+
+  if (isReadyAgingBooking(booking)) {
+    reasons.push({
+      key: "aging-ready",
+      label: "Siap handoff tapi belum dikirim",
+      note: "Booking sudah memenuhi syarat, tetapi belum masuk ke Finance dalam 1 hari terakhir.",
+    })
+  }
+
+  return reasons
+}
+
+function deriveActionNow(booking: BookingRow) {
+  if (normalizeStatus(booking.payment_status) !== "paid") {
+    return "Follow up pembayaran customer sampai status booking Fully Paid."
+  }
+  if (isOverduePickup(booking)) {
+    return "Hubungi merchant atau tim ops untuk cek kenapa flow pickup belum selesai meski tanggal sudah lewat."
+  }
+  if (isPickupFlowIncomplete(booking)) {
+    return "Pastikan merchant update milestone Arrived, Picked Up, dan Go secara lengkap."
+  }
+  if (isReadyAgingBooking(booking)) {
+    return "Booking ini sudah siap. Admin sebaiknya kirim ke Finance agar antrean tidak menumpuk."
+  }
+  return "Lanjutkan validasi booking sesuai status operasional terbaru."
+}
+
 function hasCompleteAdminData(booking: BookingRow, packageTitle: string | null | undefined) {
   return Boolean(
     packageTitle &&
@@ -165,21 +243,33 @@ function normalizeQueueFilter(value: string | undefined): QueueFilter {
   return "all"
 }
 
+function normalizeAttentionFocus(value: string | undefined): AttentionFocus {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (normalized === "payment" || normalized === "pickup" || normalized === "overdue" || normalized === "aging-ready") {
+    return normalized
+  }
+  return "all"
+}
+
 function deriveBookingProduct(booking: BookingRow): Exclude<ProductFilter, "all"> {
   if (booking.package_id) return "paket-tour"
   return "pesawat"
 }
 
 function isNeedsAttentionBooking(booking: BookingRow) {
-  const paid = normalizeStatus(booking.payment_status) === "paid"
-  const inFinance = normalizeStatus(booking.booking_status) === "finance_review"
-  return !inFinance && (!paid || !booking.merchant_arrived_at || !booking.customer_picked_up_at || !booking.merchant_picked_up_at)
+  return normalizeStatus(booking.booking_status) !== "finance_review" && deriveAttentionReasons(booking).length > 0
 }
 
-function buildHref(product: ProductFilter, queue: QueueFilter) {
+function matchesAttentionFocus(booking: BookingRow, focus: AttentionFocus) {
+  if (focus === "all") return true
+  return deriveAttentionReasons(booking).some((reason) => reason.key === focus)
+}
+
+function buildHref(product: ProductFilter, queue: QueueFilter, focus: AttentionFocus) {
   const params = new URLSearchParams()
   if (product !== "all") params.set("product", product)
   if (queue !== "all") params.set("queue", queue)
+  if (focus !== "all") params.set("focus", focus)
   const query = params.toString()
   return query ? `/admin/bookings?${query}` : "/admin/bookings"
 }
@@ -187,13 +277,14 @@ function buildHref(product: ProductFilter, queue: QueueFilter) {
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; error?: string; product?: string; queue?: string }>
+  searchParams: Promise<{ success?: string; error?: string; product?: string; queue?: string; focus?: string }>
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const activeProduct = normalizeProductFilter(params.product)
   const activeQueue = normalizeQueueFilter(params.queue)
+  const activeFocus = normalizeAttentionFocus(params.focus)
 
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
@@ -223,7 +314,7 @@ export default async function AdminBookingsPage({
       : validBookings.filter((booking) => deriveBookingProduct(booking) === activeProduct)
 
   const filteredBookings = productScopedBookings.filter((booking) => {
-    if (activeQueue === "needs-attention") return isNeedsAttentionBooking(booking)
+    if (activeQueue === "needs-attention") return isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, activeFocus)
     if (activeQueue === "ready") return canHandoffToFinance(booking)
     if (activeQueue === "in-finance") return normalizeStatus(booking.booking_status) === "finance_review"
     return true
@@ -234,6 +325,24 @@ export default async function AdminBookingsPage({
     (booking) => normalizeStatus(booking.booking_status) === "finance_review",
   )
   const needsAttentionCount = productScopedBookings.filter((booking) => isNeedsAttentionBooking(booking)).length
+  const paymentAttentionCount = productScopedBookings.filter(
+    (booking) => isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, "payment"),
+  ).length
+  const pickupAttentionCount = productScopedBookings.filter(
+    (booking) => isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, "pickup"),
+  ).length
+  const overdueAttentionCount = productScopedBookings.filter(
+    (booking) => isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, "overdue"),
+  ).length
+  const agingReadyCount = productScopedBookings.filter((booking) => matchesAttentionFocus(booking, "aging-ready")).length
+
+  const attentionFocusFilters: Array<{ value: AttentionFocus; label: string; count: number }> = [
+    { value: "all", label: "Semua blocker", count: needsAttentionCount },
+    { value: "payment", label: "Payment", count: paymentAttentionCount },
+    { value: "pickup", label: "Pickup", count: pickupAttentionCount },
+    { value: "overdue", label: "Overdue", count: overdueAttentionCount },
+    { value: "aging-ready", label: "Ready aging", count: agingReadyCount },
+  ]
 
   const productFilters: Array<{ value: ProductFilter; label: string }> = [
     { value: "all", label: "Semua Produk" },
@@ -299,7 +408,7 @@ export default async function AdminBookingsPage({
               return (
                 <Link
                   key={filter.value}
-                  href={buildHref(filter.value, activeQueue)}
+                  href={buildHref(filter.value, activeQueue, activeFocus)}
                   className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -319,7 +428,7 @@ export default async function AdminBookingsPage({
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue yang harus dicek lebih dulu</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               <Link
-                href={buildHref(activeProduct, "needs-attention")}
+                href={buildHref(activeProduct, "needs-attention", activeFocus)}
                 className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Needs Attention</p>
@@ -327,7 +436,7 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang belum siap handoff atau status operasionalnya masih macet.</p>
               </Link>
               <Link
-                href={buildHref(activeProduct, "ready")}
+                href={buildHref(activeProduct, "ready", "all")}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ready for Finance</p>
@@ -337,7 +446,7 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang sudah lunas dan urutan pickup sudah lengkap.</p>
               </Link>
               <Link
-                href={buildHref(activeProduct, "in-finance")}
+                href={buildHref(activeProduct, "in-finance", "all")}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">In Finance</p>
@@ -359,7 +468,7 @@ export default async function AdminBookingsPage({
                 return (
                   <Link
                     key={filter.value}
-                    href={buildHref(activeProduct, filter.value)}
+                    href={buildHref(activeProduct, filter.value, filter.value === "needs-attention" ? activeFocus : "all")}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -376,6 +485,66 @@ export default async function AdminBookingsPage({
             </div>
           </div>
         </section>
+
+        {activeQueue === "needs-attention" && (
+          <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Actionable focus</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pilah blocker berdasarkan jenis masalah</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Fokus ini membantu admin memecah antrian berdasarkan penyebab booking tertahan, jadi follow up harian bisa lebih terarah.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {attentionFocusFilters.map((filter) => {
+                const isActive = activeFocus === filter.value
+
+                return (
+                  <Link
+                    key={filter.value}
+                    href={buildHref(activeProduct, "needs-attention", filter.value)}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                      isActive
+                        ? "border-orange-200 bg-[#fff7ef] text-orange-600"
+                        : "border-[#ecd9c2] bg-white text-slate-700 hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    }`}
+                  >
+                    {filter.label}
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                      {filter.count > 99 ? "99+" : filter.count}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Payment follow up</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{paymentAttentionCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking belum Fully Paid sehingga belum boleh masuk ke finance.</p>
+              </div>
+              <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pickup incomplete</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{pickupAttentionCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Milestone Arrived, Picked Up, atau Go masih belum lengkap.</p>
+              </div>
+              <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Overdue pickup</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{overdueAttentionCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Tanggal pickup sudah lewat, tetapi flow operasional masih tertahan.</p>
+              </div>
+              <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ready aging</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{agingReadyCount}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking siap handoff lebih dari 1 hari tetapi belum dikirim ke finance.</p>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
@@ -416,6 +585,8 @@ export default async function AdminBookingsPage({
                 const phase = journeyPhase(booking)
                 const packageTitle = packageMap.get(booking.package_id || "") || "-"
                 const productLabel = productFilters.find((item) => item.value === deriveBookingProduct(booking))?.label || "Produk"
+                const attentionReasons = deriveAttentionReasons(booking)
+                const actionNow = deriveActionNow(booking)
 
                 return (
                   <article
@@ -465,6 +636,35 @@ export default async function AdminBookingsPage({
                         Go: {booking.merchant_picked_up_at ? "Selesai" : "Menunggu"}
                       </div>
                     </div>
+
+                    {attentionReasons.length > 0 && (
+                      <div className="mt-4 rounded-[24px] border border-orange-200 bg-orange-50/70 p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-600">Needs attention detail</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {attentionReasons.map((reason) => (
+                            <span
+                              key={`${booking.id}-${reason.key}`}
+                              className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-700"
+                            >
+                              {reason.label}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_0.85fr]">
+                          <div className="space-y-2">
+                            {attentionReasons.map((reason) => (
+                              <p key={`${booking.id}-${reason.key}-note`} className="text-sm leading-6 text-slate-700">
+                                {reason.note}
+                              </p>
+                            ))}
+                          </div>
+                          <div className="rounded-[18px] border border-white bg-white p-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Action now</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-700">{actionNow}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="mt-4 grid gap-3 md:grid-cols-4">
                       <div className="rounded-[20px] border border-white bg-white p-4">

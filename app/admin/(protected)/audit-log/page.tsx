@@ -15,6 +15,13 @@ type AdminActionLogRow = {
 
 type FilterTarget = "all" | "merchant" | "package" | "booking"
 type FilterAction = "all" | "approve" | "reject" | "deactivate" | "reactivate" | "delete" | "handoff_to_finance"
+type SearchParams = {
+  target?: string
+  action?: string
+  q?: string
+  from?: string
+  to?: string
+}
 
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "-"
@@ -59,10 +66,35 @@ function normalizeActionFilter(value: string | undefined): FilterAction {
   return "all"
 }
 
-function buildHref(target: FilterTarget, action: FilterAction) {
+function normalizeDateInput(value: string | undefined) {
+  const normalized = String(value || "").trim()
+  if (!normalized) return ""
+  const parsed = new Date(normalized)
+  if (Number.isNaN(parsed.getTime())) return ""
+  return normalized
+}
+
+function buildDateRange(from: string, to: string) {
+  const fromValue = from ? new Date(`${from}T00:00:00.000Z`).toISOString() : ""
+  const toValue = to ? new Date(`${to}T23:59:59.999Z`).toISOString() : ""
+  return { fromValue, toValue }
+}
+
+function formatMetadataValue(value: unknown) {
+  if (value === null || value === undefined) return "-"
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value)
+  }
+  return JSON.stringify(value)
+}
+
+function buildHref(target: FilterTarget, action: FilterAction, q: string, from: string, to: string) {
   const params = new URLSearchParams()
   if (target !== "all") params.set("target", target)
   if (action !== "all") params.set("action", action)
+  if (q) params.set("q", q)
+  if (from) params.set("from", from)
+  if (to) params.set("to", to)
   const query = params.toString()
   return query ? `/admin/audit-log?${query}` : "/admin/audit-log"
 }
@@ -70,18 +102,32 @@ function buildHref(target: FilterTarget, action: FilterAction) {
 export default async function AdminAuditLogPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ target?: string; action?: string }>
+  searchParams?: Promise<SearchParams>
 }) {
   const params = (await searchParams) || {}
   const activeTarget = normalizeTargetFilter(params.target)
   const activeAction = normalizeActionFilter(params.action)
+  const searchQuery = String(params.q || "").trim()
+  const dateFrom = normalizeDateInput(params.from)
+  const dateTo = normalizeDateInput(params.to)
+  const { fromValue, toValue } = buildDateRange(dateFrom, dateTo)
   const adminSupabase = createAdminClient()
+
+  let actorIdsFromSearch: string[] = []
+  if (searchQuery) {
+    const { data: actorProfilesBySearch } = await adminSupabase
+      .from("profiles")
+      .select("id")
+      .ilike("username", `%${searchQuery}%`)
+      .limit(25)
+    actorIdsFromSearch = ((actorProfilesBySearch as Array<{ id: string }> | null) || []).map((item) => item.id)
+  }
 
   let logsQuery = adminSupabase
     .from("admin_action_logs")
     .select("id, actor_id, actor_role, target_type, target_id, action, summary, metadata, created_at")
     .order("created_at", { ascending: false })
-    .limit(50)
+    .limit(80)
 
   if (activeTarget !== "all") {
     logsQuery = logsQuery.eq("target_type", activeTarget)
@@ -89,6 +135,22 @@ export default async function AdminAuditLogPage({
 
   if (activeAction !== "all") {
     logsQuery = logsQuery.eq("action", activeAction)
+  }
+
+  if (fromValue) {
+    logsQuery = logsQuery.gte("created_at", fromValue)
+  }
+
+  if (toValue) {
+    logsQuery = logsQuery.lte("created_at", toValue)
+  }
+
+  if (searchQuery) {
+    const escapedQuery = searchQuery.replace(/,/g, " ")
+    const actorFilter = actorIdsFromSearch.length ? `,actor_id.in.(${actorIdsFromSearch.join(",")})` : ""
+    logsQuery = logsQuery.or(
+      `summary.ilike.%${escapedQuery}%,target_id.ilike.%${escapedQuery}%,actor_id.ilike.%${escapedQuery}%${actorFilter}`,
+    )
   }
 
   const { data: actionLogs } = await logsQuery
@@ -152,7 +214,7 @@ export default async function AdminAuditLogPage({
                   return (
                     <Link
                       key={filter.value}
-                      href={buildHref(filter.value, activeAction)}
+                      href={buildHref(filter.value, activeAction, searchQuery, dateFrom, dateTo)}
                       className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         isActive
                           ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -174,7 +236,7 @@ export default async function AdminAuditLogPage({
                   return (
                     <Link
                       key={filter.value}
-                      href={buildHref(activeTarget, filter.value)}
+                      href={buildHref(activeTarget, filter.value, searchQuery, dateFrom, dateTo)}
                       className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         isActive
                           ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -187,11 +249,58 @@ export default async function AdminAuditLogPage({
                 })}
               </div>
             </div>
+
+            <form className="mt-6 grid gap-4 sm:grid-cols-2">
+              <input type="hidden" name="target" value={activeTarget === "all" ? "" : activeTarget} />
+              <input type="hidden" name="action" value={activeAction === "all" ? "" : activeAction} />
+              <div className="sm:col-span-2">
+                <label className="text-sm font-semibold text-slate-800">Cari actor, target ID, atau ringkasan</label>
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={searchQuery}
+                  placeholder="Username actor, booking ID, package ID, merchant ID, atau ringkasan aksi"
+                  className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-800">Dari tanggal</label>
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={dateFrom}
+                  className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-slate-800">Sampai tanggal</label>
+                <input
+                  type="date"
+                  name="to"
+                  defaultValue={dateTo}
+                  className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+              </div>
+              <div className="sm:col-span-2 flex flex-wrap gap-3">
+                <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
+                  Terapkan filter
+                </button>
+                <Link
+                  href="/admin/audit-log"
+                  className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+                >
+                  Reset
+                </Link>
+              </div>
+            </form>
           </div>
 
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Unified admin logs</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jejak actor admin terbaru</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-600">
+              Gunakan pencarian, filter target, action, dan tanggal untuk menelusuri keputusan yang relevan tanpa membuka tiap modul satu per satu.
+            </p>
             <div className="mt-5 space-y-3">
               {recentLogs.length === 0 ? (
                 <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
@@ -219,6 +328,21 @@ export default async function AdminAuditLogPage({
                         Actor: {actor?.username || log.actor_id || "-"} | Target: {log.target_id}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">{formatDateTime(log.created_at)}</p>
+                      {log.metadata && Object.keys(log.metadata).length ? (
+                        <details className="mt-3 rounded-[18px] border border-[#efe1cf] bg-white px-4 py-3">
+                          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            Metadata detail
+                          </summary>
+                          <div className="mt-3 grid gap-2">
+                            {Object.entries(log.metadata).map(([key, value]) => (
+                              <div key={key} className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-2">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{titleCase(key)}</p>
+                                <p className="mt-1 break-all text-sm text-slate-700">{formatMetadataValue(value)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      ) : null}
                     </div>
                   )
                 })
