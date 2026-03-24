@@ -1,8 +1,8 @@
-import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
+import AdminNavLinks from "@/app/components/AdminNavLinks"
 
 function normalizeStatus(value: string | null) {
   return String(value || "").trim().toLowerCase()
@@ -65,8 +65,57 @@ export default async function AdminProtectedLayout({
 
   const adminNav = [
     { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
-    { href: "/admin/merchants", label: "Merchants", badgeCount: pendingMerchants },
-    { href: "/admin/packages", label: "Review Queue", badgeCount: pendingPackages },
+    {
+      label: "Paket Tour",
+      children: [
+        { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/merchants", label: "Merchant", badgeCount: pendingMerchants },
+        { href: "/admin/packages", label: "Review Queue", badgeCount: pendingPackages },
+        { href: "/admin/bookings?product=paket-tour", label: "Bookings", badgeCount: financeReadyCount },
+      ],
+    },
+    {
+      label: "Pesawat",
+      children: [
+        { href: "/admin/pesawat", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=pesawat", label: "Bookings", badgeCount: 0 },
+      ],
+    },
+    {
+      label: "Hotel",
+      children: [
+        { href: "/admin/hotel", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=hotel", label: "Bookings", badgeCount: 0 },
+      ],
+    },
+    {
+      label: "Bus & Travel",
+      children: [
+        { href: "/admin/bus-travel", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=bus-travel", label: "Bookings", badgeCount: 0 },
+      ],
+    },
+    {
+      label: "Kereta Api",
+      children: [
+        { href: "/admin/kereta-api", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=kereta-api", label: "Bookings", badgeCount: 0 },
+      ],
+    },
+    {
+      label: "Kapal Laut",
+      children: [
+        { href: "/admin/kapal-laut", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=kapal-laut", label: "Bookings", badgeCount: 0 },
+      ],
+    },
+    {
+      label: "Kapal Pesiar",
+      children: [
+        { href: "/admin/kapal-pesiar", label: "Workspace", badgeCount: 0 },
+        { href: "/admin/bookings?product=kapal-pesiar", label: "Bookings", badgeCount: 0 },
+      ],
+    },
     { href: "/admin/bookings", label: "Bookings", badgeCount: financeReadyCount },
   ]
 
@@ -91,22 +140,7 @@ export default async function AdminProtectedLayout({
               </div>
             </div>
             <nav className="overflow-x-auto pb-1">
-              <div className="flex min-w-max gap-2">
-                {adminNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                  >
-                    {item.label}
-                    {item.badgeCount > 0 && (
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                        {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
+              <AdminNavLinks items={adminNav} />
             </nav>
           </div>
         </div>

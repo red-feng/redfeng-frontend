@@ -25,6 +25,16 @@ type BookingRow = {
   merchant_picked_up_at: string | null
 }
 
+type ProductFilter =
+  | "all"
+  | "paket-tour"
+  | "pesawat"
+  | "hotel"
+  | "bus-travel"
+  | "kereta-api"
+  | "kapal-laut"
+  | "kapal-pesiar"
+
 type PackageRow = {
   id: string
   title: string | null
@@ -125,14 +135,37 @@ function hasCompleteAdminData(booking: BookingRow, packageTitle: string | null |
   )
 }
 
+function normalizeProductFilter(value: string | undefined): ProductFilter {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (
+    normalized === "paket-tour" ||
+    normalized === "pesawat" ||
+    normalized === "hotel" ||
+    normalized === "bus-travel" ||
+    normalized === "kereta-api" ||
+    normalized === "kapal-laut" ||
+    normalized === "kapal-pesiar"
+  ) {
+    return normalized
+  }
+
+  return "all"
+}
+
+function deriveBookingProduct(booking: BookingRow): Exclude<ProductFilter, "all"> {
+  if (booking.package_id) return "paket-tour"
+  return "pesawat"
+}
+
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string; error?: string }>
+  searchParams: Promise<{ success?: string; error?: string; product?: string }>
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
+  const activeProduct = normalizeProductFilter(params.product)
 
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
@@ -155,10 +188,26 @@ export default async function AdminBookingsPage({
   const incompleteBookings = bookings.filter(
     (booking) => !hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
   )
-  const readyForAdmin = validBookings.filter(
+  const filteredBookings =
+    activeProduct === "all"
+      ? validBookings
+      : validBookings.filter((booking) => deriveBookingProduct(booking) === activeProduct)
+  const filteredReadyForAdmin = filteredBookings.filter(
     (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff",
   )
-  const inFinance = validBookings.filter((booking) => normalizeStatus(booking.booking_status) === "finance_review")
+  const filteredInFinance = filteredBookings.filter(
+    (booking) => normalizeStatus(booking.booking_status) === "finance_review",
+  )
+  const productFilters: Array<{ value: ProductFilter; label: string }> = [
+    { value: "all", label: "Semua Produk" },
+    { value: "paket-tour", label: "Paket Tour" },
+    { value: "pesawat", label: "Pesawat" },
+    { value: "hotel", label: "Hotel" },
+    { value: "bus-travel", label: "Bus & Travel" },
+    { value: "kereta-api", label: "Kereta Api" },
+    { value: "kapal-laut", label: "Kapal Laut" },
+    { value: "kapal-pesiar", label: "Kapal Pesiar" },
+  ]
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -171,7 +220,7 @@ export default async function AdminBookingsPage({
             Admin memvalidasi alur pickup lalu handoff payout ke finance.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
-            Setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go, admin mengirim booking ke finance untuk proses transfer.
+            Setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go, admin mengirim booking ke finance untuk proses transfer. Halaman ini menjadi pusat booking lintas produk.
           </p>
         </section>
 
@@ -194,18 +243,43 @@ export default async function AdminBookingsPage({
           </div>
         )}
 
+        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking tetap gabungan, bisa dipilah per produk</h2>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {productFilters.map((filter) => {
+              const href = filter.value === "all" ? "/admin/bookings" : `/admin/bookings?product=${filter.value}`
+              const isActive = activeProduct === filter.value
+
+              return (
+                <a
+                  key={filter.value}
+                  href={href}
+                  className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    isActive
+                      ? "border-orange-200 bg-[#fff7ef] text-orange-600"
+                      : "border-[#ecd9c2] bg-white text-slate-700 hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                  }`}
+                >
+                  {filter.label}
+                </a>
+              )
+            })}
+          </div>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-3">
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Total booking</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{validBookings.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredBookings.length}</p>
           </div>
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Siap handoff</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{readyForAdmin.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredReadyForAdmin.length}</p>
           </div>
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Sedang di finance</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{inFinance.length}</p>
+            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredInFinance.length}</p>
           </div>
         </section>
 
@@ -222,16 +296,17 @@ export default async function AdminBookingsPage({
             <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
               Gagal memuat data booking.
             </div>
-          ) : validBookings.length === 0 ? (
+          ) : filteredBookings.length === 0 ? (
             <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
-              Belum ada data booking yang lengkap untuk diproses admin.
+              Belum ada data booking yang lengkap untuk filter produk ini.
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              {validBookings.map((booking) => {
+              {filteredBookings.map((booking) => {
                 const ready = canHandoffToFinance(booking)
                 const phase = journeyPhase(booking)
                 const packageTitle = packageMap.get(booking.package_id || "") || "-"
+                const productLabel = productFilters.find((item) => item.value === deriveBookingProduct(booking))?.label || "Produk"
 
                 return (
                   <article
@@ -247,6 +322,9 @@ export default async function AdminBookingsPage({
                           {packageTitle}
                         </h3>
                         <p className="mt-2 text-sm text-slate-600">
+                        <p className="mt-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-700">
+                          {productLabel}
+                        </p>
                           {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}
                         </p>
                         {booking.display_currency && (

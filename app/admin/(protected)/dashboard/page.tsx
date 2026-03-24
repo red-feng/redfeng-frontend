@@ -30,7 +30,7 @@ export default async function AdminDashboard() {
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
   const financeReadyCount = bookings.filter((item) => normalizeStatus(item.booking_status) === "awaiting_admin_handoff").length
-  const adminMenus = [
+  const packageTourMenus = [
     {
       label: "Merchant Approvals",
       href: "/admin/merchants",
@@ -45,12 +45,65 @@ export default async function AdminDashboard() {
       tone: "from-sky-500 to-cyan-500",
       badgeCount: pendingPackages,
     },
+  ]
+  const bookingMenus = [
     {
       label: "Booking Handoff",
       href: "/admin/bookings",
       description: "Validasi flow pickup lalu kirim booking lunas ke finance.",
       tone: "from-emerald-500 to-lime-500",
       badgeCount: financeReadyCount,
+    },
+  ]
+  const productChannels = [
+    {
+      id: "paket-tour",
+      label: "Paket Tour",
+      href: "/admin/paket-tour",
+      status: "Aktif",
+      description: "Seluruh menu admin yang ada sekarang untuk merchant dan review paket masuk ke channel ini.",
+    },
+    {
+      id: "pesawat",
+      label: "Pesawat",
+      href: "/admin/pesawat",
+      status: "Segera hadir",
+      description: "Disiapkan untuk operasional dan review tiket pesawat di dashboard admin.",
+    },
+    {
+      id: "hotel",
+      label: "Hotel",
+      href: "/admin/hotel",
+      status: "Segera hadir",
+      description: "Tempat future workflow hotel, inventory, dan approval operasional hotel.",
+    },
+    {
+      id: "bus-travel",
+      label: "Bus & Travel",
+      href: "/admin/bus-travel",
+      status: "Segera hadir",
+      description: "Area admin untuk produk bus dan travel akan ditempatkan di modul ini.",
+    },
+    {
+      id: "kereta-api",
+      label: "Kereta Api",
+      href: "/admin/kereta-api",
+      status: "Segera hadir",
+      description: "Modul admin kereta api disiapkan terpisah dari paket tour.",
+    },
+    {
+      id: "kapal-laut",
+      label: "Kapal Laut",
+      href: "/admin/kapal-laut",
+      status: "Segera hadir",
+      description: "Workflow tiket kapal laut nantinya bisa dikelola dari channel ini.",
+    },
+    {
+      id: "kapal-pesiar",
+      label: "Kapal Pesiar",
+      href: "/admin/kapal-pesiar",
+      status: "Segera hadir",
+      description: "Channel khusus cruise atau kapal pesiar untuk admin Red Feng.",
     },
   ]
 
@@ -87,10 +140,10 @@ export default async function AdminDashboard() {
                 Admin Control Center
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Approval merchant, package, dan handoff booking dalam satu workspace admin.
+                Dashboard admin multi-produk dengan Paket Tour sebagai workspace utama saat ini.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Dashboard ini merangkum antrean approval utama Red Feng dan handoff booking yang sudah selesai pickup ke finance.
+                Semua workflow merchant dan review yang aktif saat ini dipusatkan di Paket Tour, sementara booking tetap dipisah karena akan menampung transaksi lintas produk.
               </p>
             </div>
 
@@ -127,20 +180,48 @@ export default async function AdminDashboard() {
           ))}
         </section>
 
+        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Product menu</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kanal produk admin</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Paket Tour menjadi rumah untuk menu merchant dan review saat ini. Booking tetap terpisah agar bisa menampung booking dari pesawat, hotel, bus, kereta, kapal laut, dan kapal pesiar.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {productChannels.map((channel) => (
+              <Link
+                key={channel.id}
+                href={channel.href}
+                className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+              >
+                <div className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-600">
+                  {channel.status}
+                </div>
+                <h3 className="mt-4 text-xl font-semibold text-slate-950">{channel.label}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{channel.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div id="paket-tour" className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin workstreams</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Approval queue utama</h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Paket Tour</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Workspace Paket Tour</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Masuk ke area review merchant/package atau validasi booking yang siap di-handoff ke finance.
+                  Semua menu admin yang aktif sekarang selain booking dikumpulkan di sini agar struktur multi-produk tetap rapi.
                 </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              {adminMenus.map((menu) => (
+              {packageTourMenus.map((menu) => (
                 <Link
                   key={menu.label}
                   href={menu.href}
@@ -165,6 +246,34 @@ export default async function AdminDashboard() {
           </div>
 
           <div className="grid gap-6">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking lintas produk</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Menu booking tetap terpisah</h2>
+              <div className="mt-5 grid gap-4">
+                {bookingMenus.map((menu) => (
+                  <Link
+                    key={menu.label}
+                    href={menu.href}
+                    className="group overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                  >
+                    <div className={`inline-flex rounded-full bg-gradient-to-r ${menu.tone} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white`}>
+                      Open queue
+                    </div>
+                    {menu.badgeCount > 0 && (
+                      <div className="mt-4 inline-flex min-w-8 items-center justify-center rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white">
+                        {menu.badgeCount > 99 ? "99+" : menu.badgeCount}
+                      </div>
+                    )}
+                    <h3 className="mt-4 text-xl font-semibold text-slate-950">{menu.label}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{menu.description}</p>
+                    <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
+                      Buka area kerja -&gt;
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team split</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Admin dan finance terpisah</h2>
