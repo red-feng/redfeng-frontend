@@ -14,6 +14,7 @@ type PackageCardTranslation = {
 
 type PackageCardData = {
   slug: string
+  title?: string | null
   cover_image: string | null
   city: string | null
   country: string | null
@@ -37,8 +38,13 @@ type PackageCardData = {
 export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; locale: Locale }) {
   const t = dictionaries[locale].packageCard
   const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
+  const fallbackTitleFromSlug = decodeURIComponent(pkg.slug || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  const displayTitle = translation?.title?.trim() || pkg.title?.trim() || fallbackTitleFromSlug || "Untitled package"
   const imageSrc = pkg.cover_image || "/placeholder.png"
-  const imageAlt = translation?.title || "Package image"
+  const imageAlt = displayTitle || "Package image"
   const pricing = resolveLocalizedPackagePricing({
     locale,
     defaultLanguage: pkg.default_language,
@@ -101,7 +107,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       </div>
 
       <div className="flex-1 p-6">
-        <h2 className="mb-2 text-[28px] font-semibold leading-tight text-slate-950">{translation?.title}</h2>
+        <h2 className="mb-2 text-[28px] font-semibold leading-tight text-slate-950">{displayTitle}</h2>
 
         {locationText && <p className="mb-4 text-sm text-slate-500">{t.location}: {locationText}</p>}
 
