@@ -45,6 +45,8 @@ type Dictionary = {
   }
   filter: {
     priceRange: string
+    perPackage: string
+    reset: string
   }
   packageCard: {
     specialDeal: string
@@ -195,6 +197,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     filter: {
       priceRange: "Price Range",
+      perPackage: "Per paket",
+      reset: "Reset",
     },
     packageCard: {
       specialDeal: "Special Deal",
@@ -339,7 +343,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       topPopularity: "Top popularity",
       lowestPrice: "Lowest price",
     },
-    filter: { priceRange: "Price Range" },
+    filter: {
+      priceRange: "Price Range",
+      perPackage: "Per package",
+      reset: "Reset",
+    },
     packageCard: {
       specialDeal: "Special Deal",
       location: "Location",
@@ -483,7 +491,11 @@ export const dictionaries: Record<Locale, Dictionary> = {
       topPopularity: "最高人气",
       lowestPrice: "最低价格",
     },
-    filter: { priceRange: "价格范围" },
+    filter: {
+      priceRange: "价格范围",
+      perPackage: "每个套餐",
+      reset: "重置",
+    },
     packageCard: {
       specialDeal: "特惠",
       location: "地点",

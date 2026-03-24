@@ -1,14 +1,11 @@
-import FilterClient from "@/app/packages/FilterClient"
 import { createClient } from "@/lib/supabase/server"
-import { Suspense } from "react"
-import PackageCard from "@/app/components/PackageCard"
-import SortBar from "@/app/components/SortBar"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
-import { dictionaries, type Locale } from "@/lib/i18n"
+import { type Locale } from "@/lib/i18n"
+import HomeResultsClient from "@/app/HomeResultsClient"
 
 const localePriceRangeMap: Record<Locale, number> = {
   id: 100000000,
@@ -83,7 +80,7 @@ async function getAvailableCountries(): Promise<string[]> {
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
-}, locale: Locale = "id", options?: { ignoreMaxPrice?: boolean }): Promise<PackageListItem[]> {
+}, locale: Locale = "id"): Promise<PackageListItem[]> {
   const supabase = await createClient()
   const publicMerchantIds = await getPublicMerchantIds()
 
@@ -200,16 +197,6 @@ if (searchParams?.departure_date) {
   )
   filtered = withLivePricing
 
-  if (!options?.ignoreMaxPrice && searchParams?.max_price) {
-    const localeMaxPrice = localePriceRangeMap[locale]
-    const max = Math.min(Number(searchParams.max_price), localeMaxPrice)
-    if (!Number.isNaN(max)) {
-      filtered = filtered.filter((pkg) => {
-        return Number((pkg as PackageListItem & { livePricing?: { priceAdult: number } }).livePricing?.priceAdult || 0) <= max
-      })
-    }
-  }
-
   if (hasFacilityFilter) {
     const selected = new Set(
       facilitiesParam
@@ -243,17 +230,8 @@ export default async function HomePage({
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
-  const currentMaxPriceParam = Array.isArray(resolvedSearchParams.max_price)
-    ? resolvedSearchParams.max_price[0] || ""
-    : resolvedSearchParams.max_price || ""
   const locale = await getCurrentLocale()
-  const t = dictionaries[locale]
   const localeMaxPrice = localePriceRangeMap[locale]
-  const parsedMaxPrice = Number(currentMaxPriceParam || 0)
-  const effectiveMaxPrice =
-    parsedMaxPrice > 0
-      ? Math.min(parsedMaxPrice, localeMaxPrice)
-      : localeMaxPrice
 
   const [packages, countries] = await Promise.all([
     getPackages(resolvedSearchParams, locale),
@@ -279,45 +257,26 @@ export default async function HomePage({
     }
   }
   const facilities = Array.from(facilitiesMap.values())
+  const facilityIdToKey = new Map(
+    (facilitiesData ?? []).map((facility) => [facility.id, normalizeFacilityName(facility.name)]),
+  )
+  const packagesWithFacilityKeys = packages.map((pkg) => ({
+    ...pkg,
+    facilityKeys: (pkg.package_facilities || [])
+      .map((facility) => facilityIdToKey.get(facility.facility_id) || "")
+      .filter(Boolean),
+  }))
+
   return (
-  <div className="bg-gray-100 min-h-screen">
-    <PublicHeader locale={locale} />
-
-    <SearchBar locale={locale} countries={countries} />
-
-    <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
-
-      {/* SIDEBAR */}
-      <aside className="w-[280px] shrink-0">
-        <div className="sticky top-24 space-y-4">
-          <Suspense fallback={<div>Loading filter...</div>}>
-            <FilterClient
-              key={`${locale}:${effectiveMaxPrice}`}
-              facilities={facilities}
-              locale={locale}
-              maxAvailablePrice={localeMaxPrice}
-            />
-          </Suspense>
-        </div>
-      </aside>
-
-      {/* LIST AREA */}
-      <main className="flex-1">
-
-        <SortBar total={packages.length} locale={locale} />
-
-        <div className="flex flex-col gap-6">
-          {packages.length === 0 ? (
-            <p>{t.home.noPackages}</p>
-          ) : (
-            packages.map((pkg) => (
-              <PackageCard key={pkg.id} pkg={pkg} locale={locale} />
-            ))
-          )}
-        </div>
-
-      </main>
+    <div className="bg-gray-100 min-h-screen">
+      <PublicHeader locale={locale} />
+      <SearchBar locale={locale} countries={countries} />
+      <HomeResultsClient
+        facilities={facilities}
+        locale={locale}
+        maxAvailablePrice={localeMaxPrice}
+        packages={packagesWithFacilityKeys}
+      />
     </div>
-  </div>
-)
+  )
 }
