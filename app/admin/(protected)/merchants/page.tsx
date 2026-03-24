@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import Link from "next/link"
 import {
   approveMerchant,
   deactivateMerchant,
@@ -82,7 +83,20 @@ function getStatusLabel(status: string | null) {
   return status || "Tidak diketahui"
 }
 
-export default async function AdminMerchantsPage() {
+function normalizeText(value: string | null) {
+  return (value || "").trim().toLowerCase()
+}
+
+export default async function AdminMerchantsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string }>
+}) {
+  const resolvedSearchParams = (await searchParams) || {}
+  const searchQuery = (resolvedSearchParams.q || "").trim().toLowerCase()
+  const cityFilter = (resolvedSearchParams.city || "").trim().toLowerCase()
+  const queueFilter = (resolvedSearchParams.queue || "all").trim().toLowerCase()
+  const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
   const supabase = await createClient()
 
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
@@ -101,6 +115,90 @@ export default async function AdminMerchantsPage() {
   const pending = (pendingMerchants || []) as MerchantRow[]
   const managed = (managedMerchants || []) as MerchantRow[]
   const activeMerchants = managed.filter((merchant) => merchant.verification_status === "approved")
+  const allMerchantIds = [...new Set([...pending, ...managed].map((merchant) => merchant.id))]
+  const { data: packagesData } = allMerchantIds.length
+    ? await supabase.from("packages").select("merchant_id, status").in("merchant_id", allMerchantIds)
+    : { data: [] as Array<{ merchant_id: string | null; status: string | null }> }
+  const packageStatsMap = new Map<
+    string,
+    { total: number; pending: number; approved: number; rejected: number; draft: number; inactive: number }
+  >()
+
+  for (const item of (packagesData as Array<{ merchant_id: string | null; status: string | null }> | null) || []) {
+    if (!item.merchant_id) continue
+    const current = packageStatsMap.get(item.merchant_id) || {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      inactive: 0,
+    }
+    current.total += 1
+    if (item.status === "pending") current.pending += 1
+    if (item.status === "approved") current.approved += 1
+    if (item.status === "rejected") current.rejected += 1
+    if (item.status === "draft") current.draft += 1
+    if (item.status === "inactive") current.inactive += 1
+    packageStatsMap.set(item.merchant_id, current)
+  }
+
+  const allCities = [...new Set([...pending, ...managed].map((merchant) => merchant.city).filter(Boolean))]
+    .map((item) => String(item))
+    .sort((a, b) => a.localeCompare(b))
+
+  function matchesMerchant(merchant: MerchantRow) {
+    const stats = packageStatsMap.get(merchant.id) || {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      draft: 0,
+      inactive: 0,
+    }
+
+    const matchesSearch =
+      !searchQuery ||
+      [
+        normalizeText(merchant.brand_name),
+        normalizeText(merchant.company_name),
+        normalizeText(merchant.email),
+        merchant.id.toLowerCase(),
+      ].some((value) => value.includes(searchQuery))
+
+    const matchesCity =
+      !cityFilter ||
+      normalizeText(merchant.city) === cityFilter ||
+      normalizeText(merchant.province) === cityFilter
+
+    const matchesQueue =
+      queueFilter === "all" ||
+      (queueFilter === "with_pending" && stats.pending > 0) ||
+      (queueFilter === "without_pending" && stats.pending === 0)
+
+    return matchesSearch && matchesCity && matchesQueue
+  }
+
+  function sortMerchants(a: MerchantRow, b: MerchantRow) {
+    const statsA = packageStatsMap.get(a.id) || { total: 0, pending: 0 }
+    const statsB = packageStatsMap.get(b.id) || { total: 0, pending: 0 }
+
+    if (sortMode === "total_desc") {
+      if (statsB.total !== statsA.total) return statsB.total - statsA.total
+    } else if (sortMode === "newest") {
+      const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+      const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+      if (timeB !== timeA) return timeB - timeA
+    } else {
+      if (statsB.pending !== statsA.pending) return statsB.pending - statsA.pending
+      if (statsB.total !== statsA.total) return statsB.total - statsA.total
+    }
+
+    return (a.brand_name || a.company_name || "").localeCompare(b.brand_name || b.company_name || "")
+  }
+
+  const filteredPending = pending.filter(matchesMerchant).sort(sortMerchants)
+  const filteredManaged = managed.filter(matchesMerchant).sort(sortMerchants)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -132,28 +230,97 @@ export default async function AdminMerchantsPage() {
           </div>
         </section>
 
+        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+          <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_220px_auto]">
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Cari merchant</label>
+              <input
+                type="text"
+                name="q"
+                defaultValue={resolvedSearchParams.q || ""}
+                placeholder="Nama brand, company, email, atau merchant ID"
+                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+              />
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Kota</label>
+              <select
+                name="city"
+                defaultValue={resolvedSearchParams.city || ""}
+                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+              >
+                <option value="">Semua kota</option>
+                {allCities.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Queue paket</label>
+              <select
+                name="queue"
+                defaultValue={queueFilter}
+                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+              >
+                <option value="all">Semua merchant</option>
+                <option value="with_pending">Punya paket pending</option>
+                <option value="without_pending">Tanpa paket pending</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Urutkan</label>
+              <select
+                name="sort"
+                defaultValue={sortMode}
+                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+              >
+                <option value="pending_desc">Pending terbanyak</option>
+                <option value="total_desc">Total paket terbanyak</option>
+                <option value="newest">Merchant terbaru</option>
+              </select>
+            </div>
+
+            <div className="flex items-end gap-3">
+              <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
+                Terapkan
+              </button>
+              <Link
+                href="/admin/merchants"
+                className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+              >
+                Reset
+              </Link>
+            </div>
+          </form>
+        </section>
+
         <section className="space-y-5">
           <div className="flex items-end justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-600">Pending approvals</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Antrian merchant baru</h2>
             </div>
-            <p className="text-sm text-slate-500">Hanya merchant `pending` yang muncul di area approval.</p>
+            <p className="text-sm text-slate-500">{filteredPending.length} merchant cocok dengan filter saat ini.</p>
           </div>
 
-          {!pending.length ? (
+          {!filteredPending.length ? (
             <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-orange-100 text-orange-700">
                 <span className="text-2xl font-semibold">OK</span>
               </div>
-              <h2 className="mt-5 text-2xl font-semibold text-slate-950">Tidak ada merchant pending</h2>
+              <h2 className="mt-5 text-2xl font-semibold text-slate-950">Tidak ada merchant pending yang cocok</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Semua pengajuan merchant yang selesai onboarding sudah diproses atau belum ada pengajuan baru.
+                Coba ubah kata kunci, kota, atau filter queue untuk melihat merchant lain.
               </p>
             </section>
           ) : (
             <section className="grid gap-6">
-              {pending.map((merchant) => (
+              {filteredPending.map((merchant) => (
                 <article
                   key={merchant.id}
                   className="overflow-hidden rounded-[30px] border border-orange-100 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
@@ -254,6 +421,49 @@ export default async function AdminMerchantsPage() {
                           </div>
                         </div>
                       </div>
+
+                      <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Konteks paket merchant</p>
+                            <p className="mt-2 text-sm text-slate-700">
+                              Admin bisa langsung masuk ke workspace paket merchant ini agar review tidak bercampur dengan merchant lain.
+                            </p>
+                          </div>
+                          <Link
+                            href={`/admin/merchants/${merchant.id}`}
+                            className="inline-flex items-center justify-center rounded-[18px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                          >
+                            Lihat paket merchant
+                          </Link>
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                          {(() => {
+                            const stats = packageStatsMap.get(merchant.id) || {
+                              total: 0,
+                              pending: 0,
+                              approved: 0,
+                              rejected: 0,
+                              draft: 0,
+                              inactive: 0,
+                            }
+                            const items = [
+                              { label: "Total", value: stats.total },
+                              { label: "Pending", value: stats.pending },
+                              { label: "Approved", value: stats.approved },
+                              { label: "Rejected", value: stats.rejected },
+                              { label: "Draft", value: stats.draft },
+                              { label: "Inactive", value: stats.inactive },
+                            ]
+                            return items.map((item) => (
+                              <div key={item.label} className="rounded-[18px] border border-slate-200 bg-slate-50/80 p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                                <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
+                              </div>
+                            ))
+                          })()}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid gap-5 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] p-7">
@@ -312,16 +522,16 @@ export default async function AdminMerchantsPage() {
             </p>
           </div>
 
-          {!managed.length ? (
+          {!filteredManaged.length ? (
             <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
               <h2 className="text-2xl font-semibold text-slate-950">Belum ada merchant aktif</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Merchant yang sudah approved akan muncul di sini untuk kontrol operasional admin.
+                Tidak ada merchant managed yang cocok dengan filter saat ini.
               </p>
             </section>
           ) : (
             <section className="grid gap-6">
-              {managed.map((merchant) => (
+              {filteredManaged.map((merchant) => (
                 <article
                   key={merchant.id}
                   className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
@@ -349,6 +559,47 @@ export default async function AdminMerchantsPage() {
                           Catatan admin: {merchant.rejection_reason}
                         </div>
                       ) : null}
+
+                      <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Merchant package workspace</p>
+                            <p className="mt-2 text-sm text-slate-600">Masuk ke detail merchant untuk melihat seluruh paket tanpa tercampur merchant lain.</p>
+                          </div>
+                          <Link
+                            href={`/admin/merchants/${merchant.id}`}
+                            className="inline-flex items-center justify-center rounded-[18px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                          >
+                            Buka paket merchant
+                          </Link>
+                        </div>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                          {(() => {
+                            const stats = packageStatsMap.get(merchant.id) || {
+                              total: 0,
+                              pending: 0,
+                              approved: 0,
+                              rejected: 0,
+                              draft: 0,
+                              inactive: 0,
+                            }
+                            const items = [
+                              { label: "Total", value: stats.total },
+                              { label: "Pending", value: stats.pending },
+                              { label: "Approved", value: stats.approved },
+                              { label: "Rejected", value: stats.rejected },
+                              { label: "Draft", value: stats.draft },
+                              { label: "Inactive", value: stats.inactive },
+                            ]
+                            return items.map((item) => (
+                              <div key={item.label} className="rounded-[18px] border border-white bg-white p-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                                <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
+                              </div>
+                            ))
+                          })()}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid gap-4 lg:min-w-[360px]">

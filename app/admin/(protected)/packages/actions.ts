@@ -9,6 +9,13 @@ function backToPackages(type: "success" | "error", message: string) {
   redirect(`/admin/packages?${type}=${encodeURIComponent(message)}`)
 }
 
+function getPackageIds(formData: FormData) {
+  return formData
+    .getAll("packageIds")
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+}
+
 export async function approvePackageById(packageId: string) {
   if (!packageId) {
     throw new Error("Package ID tidak ditemukan.")
@@ -95,4 +102,61 @@ export async function deletePackage(formData: FormData) {
   }
 
   backToPackages("success", "Paket berhasil dihapus permanen")
+}
+
+export async function bulkApprovePackages(formData: FormData) {
+  try {
+    const packageIds = getPackageIds(formData)
+    if (!packageIds.length) {
+      throw new Error("Pilih minimal satu paket.")
+    }
+
+    for (const packageId of packageIds) {
+      await approvePackageById(packageId)
+    }
+  } catch (error) {
+    backToPackages("error", error instanceof Error ? error.message : "Gagal approve paket massal")
+  }
+
+  backToPackages("success", "Paket terpilih berhasil disetujui")
+}
+
+export async function bulkRejectPackages(formData: FormData) {
+  try {
+    const packageIds = getPackageIds(formData)
+    const reason = String(formData.get("reason") || "").trim()
+
+    if (!packageIds.length) {
+      throw new Error("Pilih minimal satu paket.")
+    }
+
+    if (!reason) {
+      throw new Error("Alasan penolakan wajib diisi untuk bulk reject.")
+    }
+
+    for (const packageId of packageIds) {
+      await rejectPackageById(packageId, reason)
+    }
+  } catch (error) {
+    backToPackages("error", error instanceof Error ? error.message : "Gagal reject paket massal")
+  }
+
+  backToPackages("success", "Paket terpilih berhasil ditolak")
+}
+
+export async function bulkDeletePackages(formData: FormData) {
+  try {
+    const packageIds = getPackageIds(formData)
+    if (!packageIds.length) {
+      throw new Error("Pilih minimal satu paket.")
+    }
+
+    for (const packageId of packageIds) {
+      await deletePackageById(packageId)
+    }
+  } catch (error) {
+    backToPackages("error", error instanceof Error ? error.message : "Gagal hapus paket massal")
+  }
+
+  backToPackages("success", "Paket terpilih berhasil dihapus permanen")
 }

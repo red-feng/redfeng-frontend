@@ -59,6 +59,7 @@ export default async function AdminPackagesPage({
   const { data: packagesData } = await supabase
     .from("packages")
     .select("id, merchant_id, title, status, price_adult, currency, created_at, reviewed_at, rejection_reason")
+    .eq("status", "pending")
     .order("created_at", { ascending: false })
 
   const packages = (packagesData as PackageRow[] | null) || []
@@ -75,9 +76,7 @@ export default async function AdminPackagesPage({
     ]),
   )
 
-  const pendingCount = packages.filter((pkg) => pkg.status === "pending").length
-  const approvedCount = packages.filter((pkg) => pkg.status === "approved").length
-  const rejectedCount = packages.filter((pkg) => pkg.status === "rejected").length
+  const pendingCount = packages.length
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -85,25 +84,21 @@ export default async function AdminPackagesPage({
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-8 py-7">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Admin Package Control</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Semua paket merchant</h1>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Global pending queue</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Admin dapat melihat seluruh paket merchant, baik yang lama maupun yang baru, lalu menghapus paket secara permanen
-              beserta data turunannya agar tidak tersisa di database.
+              Halaman ini khusus untuk paket yang benar-benar menunggu review admin. Untuk melihat semua paket satu merchant secara rapi,
+              masuk lewat merchant directory lalu buka workspace paket merchant tersebut.
             </p>
           </div>
 
-          <div className="grid gap-4 px-8 py-5 sm:grid-cols-3">
+          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pending</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingCount}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Approved</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{approvedCount}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Rejected</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{rejectedCount}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Arah kerja</p>
+              <p className="mt-2 text-sm font-medium leading-6 text-slate-900">Review cepat di sini, audit lengkap per merchant di Merchant Directory.</p>
             </div>
           </div>
         </div>
@@ -142,6 +137,14 @@ export default async function AdminPackagesPage({
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
                         Merchant: {pkg.merchant_id ? merchantMap.get(pkg.merchant_id) || pkg.merchant_id : "-"}
                       </span>
+                      {pkg.merchant_id ? (
+                        <Link
+                          href={`/admin/merchants/${pkg.merchant_id}`}
+                          className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                        >
+                          Buka workspace merchant
+                        </Link>
+                      ) : null}
                     </div>
 
                     <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{pkg.title || "Tanpa judul"}</h2>
