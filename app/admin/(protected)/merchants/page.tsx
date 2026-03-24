@@ -602,20 +602,20 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="grid gap-4 lg:min-w-[360px]">
+                    <div className="grid gap-4 lg:min-w-[360px] sm:grid-cols-2">
                       {merchant.verification_status === "approved" ? (
-                        <div className="rounded-[24px] border border-amber-200 bg-amber-50/80 p-5">
+                        <div className="flex h-full flex-col rounded-[24px] border border-amber-200 bg-amber-50/80 p-5">
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
                             Nonaktif sementara
                           </p>
-                          <form action={deactivateMerchant} className="mt-4 space-y-4">
+                          <form action={deactivateMerchant} className="mt-4 flex h-full flex-col space-y-4">
                             <input type="hidden" name="merchantId" value={merchant.id} />
                             <textarea
                               name="reason"
                               placeholder="Alasan nonaktif sementara, opsional..."
                               className="min-h-[96px] w-full rounded-[18px] border border-amber-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
                             />
-                            <button className="inline-flex items-center gap-2 rounded-[18px] bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600">
+                            <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600">
                               Nonaktif sementara
                             </button>
                           </form>
@@ -623,16 +623,16 @@ export default async function AdminMerchantsPage({
                       ) : null}
 
                       {merchant.verification_status === "inactive" ? (
-                        <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
+                        <div className="flex h-full flex-col rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
                             Aktifkan kembali
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
                             Merchant akan kembali bisa login dan mengakses workspace merchant.
                           </p>
-                          <form action={reactivateMerchant} className="mt-4">
+                          <form action={reactivateMerchant} className="mt-auto pt-4">
                             <input type="hidden" name="merchantId" value={merchant.id} />
-                            <button className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                            <button className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                               Aktifkan merchant
                             </button>
                           </form>
@@ -640,14 +640,14 @@ export default async function AdminMerchantsPage({
                       ) : null}
 
                       {merchant.verification_status !== "deleted" ? (
-                        <div className="rounded-[24px] border border-red-200 bg-red-50/80 p-5">
+                        <div className="flex h-full flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
                             Hapus merchant
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
                             Gunakan hanya jika merchant harus dicabut permanen dari akses sistem.
                           </p>
-                          <form action={deleteMerchant} className="mt-4 space-y-4">
+                          <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
                             <input type="hidden" name="merchantId" value={merchant.id} />
                             <textarea
                               name="reason"
@@ -655,7 +655,7 @@ export default async function AdminMerchantsPage({
                               required
                               className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                             />
-                            <button className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+                            <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
                               Hapus merchant
                             </button>
                           </form>
