@@ -208,8 +208,11 @@ export default async function AdminDashboard() {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <div id="paket-tour" className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="grid gap-6 xl:grid-cols-2">
+          <div
+            id="paket-tour"
+            className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7"
+          >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Paket Tour</p>
@@ -245,36 +248,64 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid gap-6">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking lintas produk</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center tetap terpisah</h2>
-              <div className="mt-5 grid gap-4">
-                {bookingMenus.map((menu) => (
-                  <Link
-                    key={menu.label}
-                    href={menu.href}
-                    className="group overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                  >
-                    <div className={`inline-flex rounded-full bg-gradient-to-r ${menu.tone} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white`}>
-                      Open queue
-                    </div>
-                    {menu.badgeCount > 0 && (
-                      <div className="mt-4 inline-flex min-w-8 items-center justify-center rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white">
-                        {menu.badgeCount > 99 ? "99+" : menu.badgeCount}
-                      </div>
-                    )}
-                    <h3 className="mt-4 text-xl font-semibold text-slate-950">{menu.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{menu.description}</p>
-                    <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
-                      Buka area kerja -&gt;
-                    </div>
-                  </Link>
-                ))}
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking lintas produk</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Booking Center menjadi pusat monitoring semua transaksi lintas produk, lalu admin bisa masuk ke channel yang relevan atau langsung melanjutkan handoff ke finance.
+                </p>
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="mt-6 grid gap-4">
+              {bookingMenus.map((menu) => (
+                <Link
+                  key={menu.label}
+                  href={menu.href}
+                  className="group overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                >
+                  <div className={`inline-flex rounded-full bg-gradient-to-r ${menu.tone} px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white`}>
+                    Open queue
+                  </div>
+                  {menu.badgeCount > 0 && (
+                    <div className="mt-4 inline-flex min-w-8 items-center justify-center rounded-full bg-orange-500 px-2.5 py-1 text-xs font-semibold text-white">
+                      {menu.badgeCount > 99 ? "99+" : menu.badgeCount}
+                    </div>
+                  )}
+                  <h3 className="mt-4 text-xl font-semibold text-slate-950">{menu.label}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{menu.description}</p>
+                  <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
+                    Buka area kerja -&gt;
+                  </div>
+                </Link>
+              ))}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Peran utama</p>
+                  <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                    <p>Booking Center menggabungkan semua booking customer dari tiap channel produk.</p>
+                    <p>Admin memantau status operasional, filter per produk, lalu mengirim booking yang siap ke finance.</p>
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Alur kerja</p>
+                  <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                    <p>1. Booking masuk ke Booking Center.</p>
+                    <p>2. Admin filter berdasarkan produk bila dibutuhkan.</p>
+                    <p>3. Setelah valid, booking di-handoff ke finance.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team split</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Admin dan finance terpisah</h2>
               <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
@@ -282,17 +313,16 @@ export default async function AdminDashboard() {
                 <p>Dashboard finance berdiri sendiri di `/finance/dashboard` untuk setting payout dan transfer merchant.</p>
                 <p>Admin tidak mengeksekusi transfer dana, hanya mengirim booking ke finance.</p>
               </div>
-            </div>
+          </div>
 
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ops note</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pembagian area kerja</h2>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Admin fokus pada approval merchant, package, dan validasi urutan Arrived, Picked up, Go.</p>
-                <p>2. Setelah flow pickup lengkap, admin kirim booking ke finance.</p>
-                <p>3. Finance menentukan komisi, biaya transfer, dan menjalankan payout merchant.</p>
-                <p>4. Dashboard admin tidak mengeksekusi transfer dana.</p>
-              </div>
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ops note</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pembagian area kerja</h2>
+            <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+              <p>1. Admin fokus pada approval merchant, package, dan validasi urutan Arrived, Picked up, Go.</p>
+              <p>2. Setelah flow pickup lengkap, admin kirim booking ke finance.</p>
+              <p>3. Finance menentukan komisi, biaya transfer, dan menjalankan payout merchant.</p>
+              <p>4. Dashboard admin tidak mengeksekusi transfer dana.</p>
             </div>
           </div>
         </section>
