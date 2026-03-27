@@ -590,7 +590,7 @@ export default async function AdminMerchantsPage({
                   key={merchant.id}
                   className="rounded-[26px] border border-[#ece3d7] bg-[#fffdfa] p-6 shadow-[0_16px_44px_rgba(15,23,42,0.05)]"
                 >
-                  <div className="flex flex-wrap items-start justify-between gap-6">
+                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_272px] lg:items-start">
                     <div className="min-w-0 flex-1 space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
                         <h3 className="text-2xl font-semibold text-slate-950">
@@ -627,12 +627,20 @@ export default async function AdminMerchantsPage({
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Merchant package workspace</p>
                             <p className="mt-2 text-sm text-slate-600">Masuk ke detail merchant untuk melihat seluruh paket tanpa tercampur merchant lain.</p>
                           </div>
-                          <Link
-                            href={`/admin/merchants/${merchant.id}`}
-                            className="inline-flex items-center justify-center rounded-[16px] border border-[#f2dcc1] bg-[#fff7ef] px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50"
-                          >
-                            Buka paket merchant
-                          </Link>
+                          <div className="flex flex-wrap gap-3">
+                            <Link
+                              href={`/admin/merchants/${merchant.id}/profile`}
+                              className="inline-flex items-center justify-center rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
+                            >
+                              Profil merchant
+                            </Link>
+                            <Link
+                              href={`/admin/merchants/${merchant.id}`}
+                              className="inline-flex items-center justify-center rounded-[16px] border border-[#f2dcc1] bg-[#fff7ef] px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50"
+                            >
+                              Buka paket merchant
+                            </Link>
+                          </div>
                         </div>
                         <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
                           {(() => {
@@ -663,7 +671,7 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="flex w-full max-w-[340px] flex-col gap-3">
+                    <div className="flex w-full flex-col gap-3 lg:w-[272px]">
                       {merchant.verification_status === "approved" ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
