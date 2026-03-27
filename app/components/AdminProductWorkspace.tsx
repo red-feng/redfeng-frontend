@@ -21,7 +21,7 @@ export default function AdminProductWorkspace({
   primaryActionLabel,
   secondaryActionHref,
   secondaryActionLabel,
-  preparedModules = ["Workspace", "Booking Center", "Operational queue", "Supplier / inventory"],
+  preparedModules = ["Workspace", "Booking shortcut", "Operational queue", "Supplier / inventory"],
 }: AdminProductWorkspaceProps) {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -43,7 +43,8 @@ export default function AdminProductWorkspace({
             <p className="mt-3 text-sm leading-7 text-slate-600">
               Struktur submenu {productLabel} sudah disiapkan. Saat modul operasional produk ini mulai aktif,
               halaman ini bisa diisi queue review, supplier management, inventory, jadwal, dan aturan operasional
-              khusus produk terkait.
+              khusus produk terkait. Booking produknya tetap dibuka lewat shortcut ke Booking Center agar pusat transaksi
+              tetap satu.
             </p>
             {statusNote && <p className="mt-3 text-sm leading-7 text-slate-500">{statusNote}</p>}
             <div className="mt-5 flex flex-wrap gap-2">

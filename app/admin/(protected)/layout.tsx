@@ -73,50 +73,31 @@ export default async function AdminProtectedLayout({
         { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
         { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants },
         { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
-        { href: "/admin/bookings?product=paket-tour", label: "Booking Center", badgeCount: financeReadyCount },
       ],
     },
     {
       label: "Pesawat",
-      children: [
-        { href: "/admin/pesawat", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=pesawat", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/pesawat", label: "Workspace", badgeCount: 0 }],
     },
     {
       label: "Hotel",
-      children: [
-        { href: "/admin/hotel", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=hotel", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/hotel", label: "Workspace", badgeCount: 0 }],
     },
     {
       label: "Bus & Travel",
-      children: [
-        { href: "/admin/bus-travel", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=bus-travel", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/bus-travel", label: "Workspace", badgeCount: 0 }],
     },
     {
       label: "Kereta Api",
-      children: [
-        { href: "/admin/kereta-api", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kereta-api", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/kereta-api", label: "Workspace", badgeCount: 0 }],
     },
     {
       label: "Kapal Laut",
-      children: [
-        { href: "/admin/kapal-laut", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kapal-laut", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/kapal-laut", label: "Workspace", badgeCount: 0 }],
     },
     {
       label: "Kapal Pesiar",
-      children: [
-        { href: "/admin/kapal-pesiar", label: "Workspace", badgeCount: 0 },
-        { href: "/admin/bookings?product=kapal-pesiar", label: "Booking Center", badgeCount: 0 },
-      ],
+      children: [{ href: "/admin/kapal-pesiar", label: "Workspace", badgeCount: 0 }],
     },
     { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
     { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
