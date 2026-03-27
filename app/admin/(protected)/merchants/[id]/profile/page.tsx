@@ -22,6 +22,9 @@ type MerchantProfileRow = {
   npwp_company: string | null
   nib: string | null
   logo_url: string | null
+  ktp_file_url: string | null
+  npwp_file_url: string | null
+  nib_file_url: string | null
   verification_status: string | null
   onboarding_completed: boolean | null
 }
@@ -36,6 +39,39 @@ function maskAccount(value: string | null) {
   return `${"*".repeat(Math.max(value.length - 4, 0))}${value.slice(-4)}`
 }
 
+function AdminDocumentCard({
+  label,
+  href,
+}: {
+  label: string
+  href: string | null
+}) {
+  const available = Boolean(href)
+
+  return (
+    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf4] p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">{label}</p>
+      <p className={`mt-3 text-sm font-medium ${available ? "text-emerald-700" : "text-slate-500"}`}>
+        {available ? "Tersedia" : "Belum upload"}
+      </p>
+      {available ? (
+        <a
+          href={href || "#"}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-flex rounded-[16px] border border-[#f2dcc1] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50"
+        >
+          Lihat dokumen
+        </a>
+      ) : (
+        <div className="mt-4 inline-flex rounded-[16px] border border-dashed border-slate-200 bg-white px-4 py-3 text-sm text-slate-400">
+          Belum tersedia
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default async function AdminMerchantProfilePage({
   params,
 }: {
@@ -46,7 +82,7 @@ export default async function AdminMerchantProfilePage({
   const { data } = await adminSupabase
     .from("merchants")
     .select(
-      "id, brand_name, company_name, email, address, city, province, pic_name, pic_position, bank_name, bank_branch, bank_account_holder, bank_account_number, npwp_personal, npwp_company, nib, logo_url, verification_status, onboarding_completed",
+      "id, brand_name, company_name, email, address, city, province, pic_name, pic_position, bank_name, bank_branch, bank_account_holder, bank_account_number, npwp_personal, npwp_company, nib, logo_url, ktp_file_url, npwp_file_url, nib_file_url, verification_status, onboarding_completed",
     )
     .eq("id", id)
     .maybeSingle()
@@ -189,6 +225,20 @@ export default async function AdminMerchantProfilePage({
                   <p className="text-sm text-slate-500">Nomor rekening</p>
                   <p className="mt-2 font-medium text-slate-950">{maskAccount(merchant.bank_account_number)}</p>
                 </div>
+              </div>
+            </section>
+
+            <section className="rounded-[28px] border border-[#efe1cf] bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Merchant documents</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Dokumen merchant</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Admin dapat memeriksa dokumen yang diunggah merchant saat registrasi tanpa perlu masuk ke portal merchant.
+              </p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <AdminDocumentCard label="KTP" href={merchant.ktp_file_url} />
+                <AdminDocumentCard label="NPWP" href={merchant.npwp_file_url} />
+                <AdminDocumentCard label="NIB" href={merchant.nib_file_url} />
+                <AdminDocumentCard label="Logo" href={merchant.logo_url} />
               </div>
             </section>
           </div>
