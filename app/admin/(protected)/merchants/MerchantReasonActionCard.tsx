@@ -55,8 +55,6 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
       <div className={`flex h-full flex-col overflow-hidden rounded-[24px] border ${copy.cardClass}`}>
         <div className={`border-b px-5 py-4 ${copy.headerClass}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
-          <h4 className="mt-2 text-base font-semibold text-slate-950">{copy.title}</h4>
-          <p className="mt-2 text-sm leading-6 text-slate-600">{copy.description}</p>
         </div>
         <div className="flex h-full flex-col px-5 pb-5 pt-4">
           <button
