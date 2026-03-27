@@ -588,10 +588,10 @@ export default async function AdminMerchantsPage({
               {filteredManaged.map((merchant) => (
                 <article
                   key={merchant.id}
-                  className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
+                  className="rounded-[26px] border border-[#ece3d7] bg-[#fffdfa] p-6 shadow-[0_16px_44px_rgba(15,23,42,0.05)]"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-6">
-                    <div className="space-y-4">
+                    <div className="min-w-0 flex-1 space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
                         <h3 className="text-2xl font-semibold text-slate-950">
                           {merchant.brand_name || merchant.company_name || "Merchant tanpa nama"}
@@ -602,27 +602,34 @@ export default async function AdminMerchantsPage({
                           {getStatusLabel(merchant.verification_status)}
                         </span>
                       </div>
-                      <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-                        <p>Email: <span className="font-medium text-slate-800">{fieldValue(merchant.email)}</span></p>
-                        <p>Company: <span className="font-medium text-slate-800">{fieldValue(merchant.company_name)}</span></p>
-                        <p>NIB: <span className="font-medium text-slate-800">{fieldValue(merchant.nib)}</span></p>
-                        <p>NPWP Badan Usaha: <span className="font-medium text-slate-800">{fieldValue(merchant.npwp_company)}</span></p>
+                      <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        {[
+                          { label: "Email", value: fieldValue(merchant.email) },
+                          { label: "Company", value: fieldValue(merchant.company_name) },
+                          { label: "NIB", value: fieldValue(merchant.nib) },
+                          { label: "NPWP Badan Usaha", value: fieldValue(merchant.npwp_company) },
+                        ].map((item) => (
+                          <div key={item.label} className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
+                            <p className="mt-2 text-sm font-medium text-slate-800">{item.value}</p>
+                          </div>
+                        ))}
                       </div>
                       {merchant.rejection_reason ? (
-                        <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                        <div className="rounded-[18px] border border-[#efe3d5] bg-[#fff7ef] px-4 py-3 text-sm text-slate-600">
                           Catatan admin: {merchant.rejection_reason}
                         </div>
                       ) : null}
 
-                      <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="rounded-[20px] border border-[#efe3d5] bg-white px-4 py-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f2e8dd] pb-4">
                           <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Merchant package workspace</p>
                             <p className="mt-2 text-sm text-slate-600">Masuk ke detail merchant untuk melihat seluruh paket tanpa tercampur merchant lain.</p>
                           </div>
                           <Link
                             href={`/admin/merchants/${merchant.id}`}
-                            className="inline-flex items-center justify-center rounded-[18px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                            className="inline-flex items-center justify-center rounded-[16px] border border-[#f2dcc1] bg-[#fff7ef] px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50"
                           >
                             Buka paket merchant
                           </Link>
@@ -646,8 +653,8 @@ export default async function AdminMerchantsPage({
                               { label: "Inactive", value: stats.inactive },
                             ]
                             return items.map((item) => (
-                              <div key={item.label} className="rounded-[18px] border border-white bg-white p-3">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                              <div key={item.label} className="rounded-[16px] border border-[#f0e6da] bg-[#fffaf4] p-3">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
                                 <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
                               </div>
                             ))
@@ -656,22 +663,22 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="grid gap-4 lg:min-w-[390px] sm:grid-cols-2">
+                    <div className="flex w-full max-w-[340px] flex-col gap-3">
                       {merchant.verification_status === "approved" ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
 
                       {merchant.verification_status === "inactive" ? (
-                        <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-emerald-200/70 bg-[linear-gradient(180deg,#f7fff8_0%,#e9fff0_100%)] shadow-[0_18px_50px_rgba(16,185,129,0.12)]">
-                          <div className="border-b border-emerald-200/70 px-5 py-4">
+                        <div className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
+                          <div className="border-b border-[#f3e4d2] px-5 py-4">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-700">Restore Access</p>
-                            <h4 className="mt-2 text-lg font-semibold text-slate-950">Aktifkan kembali</h4>
+                            <h4 className="mt-2 text-base font-semibold text-slate-950">Aktifkan kembali</h4>
                             <p className="mt-2 text-sm leading-6 text-slate-600">
                               Merchant akan kembali bisa login dan melanjutkan operasional di workspace merchant.
                             </p>
                           </div>
                           <div className="flex h-full flex-col px-5 pb-5 pt-4">
-                            <div className="rounded-[22px] border border-emerald-200/80 bg-white/90 p-4">
+                            <div className="rounded-[18px] border border-[#f3e4d2] bg-[#fffaf4] p-4">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Access impact</p>
                               <p className="mt-3 text-sm leading-7 text-slate-600">
                                 Merchant kembali aktif tanpa mengubah histori booking, payout, atau package review sebelumnya.

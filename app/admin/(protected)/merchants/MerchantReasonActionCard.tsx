@@ -18,10 +18,9 @@ const COPY = {
     buttonLabel: "Nonaktifkan merchant",
     modalTitle: "Nonaktifkan merchant sementara",
     modalDescription: "Tambahkan alasan internal jika perlu, lalu lanjutkan pemblokiran akses merchant.",
-    cardClass:
-      "border-amber-200/70 bg-[linear-gradient(180deg,#fff9ef_0%,#fff4d8_100%)] shadow-[0_18px_50px_rgba(245,158,11,0.12)]",
-    headerClass: "border-amber-200/70 text-amber-700",
-    panelClass: "border-amber-200/80",
+    cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
+    headerClass: "border-[#f3e4d2] text-amber-700",
+    panelClass: "border-[#f3e4d2]",
     textareaClass: "border-amber-200 focus:border-amber-400 focus:ring-amber-100",
     buttonClass:
       "bg-[linear-gradient(135deg,#f59e0b_0%,#f97316_100%)] shadow-[0_14px_30px_rgba(245,158,11,0.24)] hover:brightness-105",
@@ -35,10 +34,9 @@ const COPY = {
     buttonLabel: "Hapus akses merchant",
     modalTitle: "Hapus akses merchant",
     modalDescription: "Isi alasan penghapusan lalu lanjutkan soft delete merchant ini dari akses sistem.",
-    cardClass:
-      "border-rose-200/70 bg-[linear-gradient(180deg,#fff7f7_0%,#ffe8e8_100%)] shadow-[0_18px_50px_rgba(225,29,72,0.12)]",
-    headerClass: "border-rose-200/70 text-rose-700",
-    panelClass: "border-rose-200/80",
+    cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
+    headerClass: "border-[#f3e4d2] text-rose-700",
+    panelClass: "border-[#f3e4d2]",
     textareaClass: "border-rose-200 focus:border-rose-400 focus:ring-rose-100",
     buttonClass:
       "bg-[linear-gradient(135deg,#e11d48_0%,#dc2626_100%)] shadow-[0_14px_30px_rgba(225,29,72,0.24)] hover:brightness-105",
@@ -54,16 +52,16 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
 
   return (
     <>
-      <div className={`flex h-full flex-col overflow-hidden rounded-[28px] border ${copy.cardClass}`}>
+      <div className={`flex h-full flex-col overflow-hidden rounded-[24px] border ${copy.cardClass}`}>
         <div className={`border-b px-5 py-4 ${copy.headerClass}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
-          <h4 className="mt-2 text-lg font-semibold text-slate-950">{copy.title}</h4>
+          <h4 className="mt-2 text-base font-semibold text-slate-950">{copy.title}</h4>
           <p className="mt-2 text-sm leading-6 text-slate-600">{copy.description}</p>
         </div>
         <div className="flex h-full flex-col px-5 pb-5 pt-4">
-          <div className={`rounded-[22px] border bg-white/90 p-4 ${copy.panelClass}`}>
+          <div className={`rounded-[18px] border bg-[#fffaf4] p-4 ${copy.panelClass}`}>
             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.noteLabel}</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="mt-2 text-sm leading-7 text-slate-600">
               Klik tombol di bawah untuk membuka pop-up alasan sebelum action dijalankan.
             </p>
           </div>
