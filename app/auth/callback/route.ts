@@ -27,9 +27,15 @@ export async function GET(request: Request) {
           id: user.id,
           role: "customer",
         })
+        return NextResponse.redirect(new URL(safeNext, origin))
       }
 
-      return NextResponse.redirect(new URL(safeNext, origin))
+      if (profile.role === "customer") {
+        return NextResponse.redirect(new URL(safeNext, origin))
+      }
+
+      await supabase.auth.signOut()
+      return NextResponse.redirect(new URL("/login?error=Portal%20ini%20khusus%20untuk%20customer.", origin))
     }
   }
 

@@ -18,6 +18,27 @@ export default async function CustomerLayout({
     redirect("/login?next=/customer/dashboard")
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle()
+
+  if (!profile) {
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      role: "customer",
+    })
+  } else if (profile.role === "merchant") {
+    redirect("/merchant/login")
+  } else if (profile.role === "admin" || profile.role === "superadmin") {
+    redirect("/admin/login")
+  } else if (profile.role === "finance") {
+    redirect("/finance/login")
+  } else if (profile.role !== "customer") {
+    redirect("/login")
+  }
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">

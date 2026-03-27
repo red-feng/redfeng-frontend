@@ -17,7 +17,7 @@ const providerConfig: Array<{
     provider: "google",
     enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_GOOGLE !== "false",
     className:
-      "flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] disabled:cursor-not-allowed disabled:opacity-70",
+      "flex w-full items-center justify-center gap-3 rounded-[20px] border border-[#ecd9c2] bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-[0_16px_36px_rgba(148,64,14,0.08)] transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-[#fffaf4] hover:shadow-[0_20px_44px_rgba(148,64,14,0.14)] disabled:cursor-not-allowed disabled:opacity-70",
   },
   {
     provider: "facebook",
@@ -97,33 +97,130 @@ function getSafeNextFromLocation() {
   return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard";
 }
 
+function getSafeErrorFromLocation() {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("error") || "";
+}
+
+function getCustomerModeCopy(locale: Locale, mode: Mode) {
+  if (locale === "en") {
+    return mode === "login"
+      ? {
+          switchLabel: "Sign in",
+          heroTitle: "Sign in to continue your trip planning.",
+          heroCopy: "Access bookings, faster checkout, and your travel details from one customer account.",
+          cardEyebrow: "Customer Sign In",
+          cardTitle: "Welcome back",
+          cardSubtitle: "Continue with Google or Facebook to open your Red Feng customer account.",
+          helperTitle: "Customer account benefits",
+          helperItems: [
+            "Track your bookings in one dashboard",
+            "Continue checkout without re-entering the same details",
+            "Keep your trip history connected to one account",
+          ],
+        }
+      : {
+          switchLabel: "Register",
+          heroTitle: "Create your customer account before checkout.",
+          heroCopy: "Register once to make future bookings faster and keep all your travel activity in one place.",
+          cardEyebrow: "Customer Register",
+          cardTitle: "Create your account",
+          cardSubtitle: "Use Google or Facebook to register a Red Feng customer account in a few seconds.",
+          helperTitle: "Why register first",
+          helperItems: [
+            "Save your traveler identity for the next booking",
+            "Keep payment and booking progress in one account",
+            "Use one account across Red Feng customer pages",
+          ],
+        }
+  }
+
+  if (locale === "zh") {
+    return mode === "login"
+      ? {
+          switchLabel: "登录",
+          heroTitle: "登录后继续规划您的旅程。",
+          heroCopy: "使用一个客户账户查看订单、更快结账，并统一管理您的出行资料。",
+          cardEyebrow: "客户登录",
+          cardTitle: "欢迎回来",
+          cardSubtitle: "使用 Google 或 Facebook 继续登录您的 Red Feng 客户账户。",
+          helperTitle: "客户账户权益",
+          helperItems: [
+            "在一个面板中查看所有订单",
+            "结账时无需重复填写相同信息",
+            "将您的出行记录保存在同一个账户中",
+          ],
+        }
+      : {
+          switchLabel: "注册",
+          heroTitle: "在结账前先创建您的客户账户。",
+          heroCopy: "注册一次，即可让下一次预订更快，并将所有出行活动保存在同一个地方。",
+          cardEyebrow: "客户注册",
+          cardTitle: "创建账户",
+          cardSubtitle: "使用 Google 或 Facebook，几秒钟内注册 Red Feng 客户账户。",
+          helperTitle: "为什么先注册",
+          helperItems: [
+            "保存旅客资料，方便下次预订",
+            "把付款和订单进度集中在一个账户中",
+            "在 Red Feng 客户页面使用同一个账户",
+          ],
+        }
+  }
+
+  return mode === "login"
+    ? {
+        switchLabel: "Masuk",
+        heroTitle: "Masuk untuk melanjutkan rencana perjalanan Anda.",
+        heroCopy: "Akses booking, checkout lebih cepat, dan detail perjalanan dari satu akun customer.",
+        cardEyebrow: "Customer Login",
+        cardTitle: "Selamat datang kembali",
+        cardSubtitle: "Lanjutkan dengan Google atau Facebook untuk membuka akun customer Red Feng Anda.",
+        helperTitle: "Keuntungan akun customer",
+        helperItems: [
+          "Pantau semua booking dalam satu dashboard",
+          "Checkout lebih cepat tanpa isi data berulang",
+          "Riwayat perjalanan tetap tersimpan di satu akun",
+        ],
+      }
+    : {
+        switchLabel: "Daftar",
+        heroTitle: "Buat akun customer sebelum checkout.",
+        heroCopy: "Daftar sekali untuk mempercepat booking berikutnya dan menyimpan seluruh aktivitas perjalanan Anda di satu tempat.",
+        cardEyebrow: "Customer Register",
+        cardTitle: "Buat akun Anda",
+        cardSubtitle: "Gunakan Google atau Facebook untuk mendaftarkan akun customer Red Feng dalam beberapa detik.",
+        helperTitle: "Kenapa daftar dulu",
+        helperItems: [
+          "Simpan identitas traveler untuk booking berikutnya",
+          "Satukan progress pembayaran dan booking dalam satu akun",
+          "Pakai satu akun customer di seluruh halaman Red Feng",
+        ],
+      }
+}
+
 export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const supabase = createClient();
   const [locale] = useState<Locale>(() => getLocaleFromCookie());
   const [safeNext] = useState(getSafeNextFromLocation);
+  const [searchError] = useState(getSafeErrorFromLocation);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const enabledProviders = providerConfig.filter((item) => item.enabled);
 
   const t = getLoginDictionary(locale);
+  const modeCopy = getCustomerModeCopy(locale, mode);
   const footerHref = mode === "login" ? "/register" : "/login";
   const footerLead = mode === "login" ? t.registerCta : t.loginCta;
   const footerLabel = mode === "login" ? t.registerLink : t.loginLink;
-  const eyebrow = useMemo(
-    () => (mode === "login" ? t.title : footerLabel === t.loginLink ? "Daftar Cepat" : t.title),
-    [footerLabel, mode, t.title, t.loginLink],
+  const authError = errorMsg || searchError;
+  const modeTabs = useMemo(
+    () => [
+      { href: `/login${safeNext !== "/customer/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录" ? modeCopy.switchLabel : t.loginLink, active: mode === "login" },
+      { href: `/register${safeNext !== "/customer/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: mode === "register" ? modeCopy.switchLabel : t.registerLink, active: mode === "register" },
+    ],
+    [mode, modeCopy.switchLabel, safeNext, t.loginLink, t.registerLink],
   );
-  const showcaseTitle =
-    mode === "login" ? "Akses perjalanan premium dalam satu akun" : "Buat akun untuk booking lebih cepat";
-  const showcaseCopy =
-    mode === "login"
-      ? "Masuk sekali untuk melanjutkan checkout, melihat booking, dan terhubung ke pengalaman Red Feng di website utama."
-      : "Daftar dengan akun sosial untuk menyimpan detail traveler, memantau booking, dan mempermudah transaksi berikutnya.";
-  const trustItems = [
-    "Kurasi paket dan merchant terverifikasi",
-    "Checkout cepat untuk perjalanan privat dan grup",
-    "Sinkron dengan akun customer Red Feng",
-  ];
+  const trustItems = modeCopy.helperItems;
 
   const handleProviderAuth = async (provider: AuthProvider) => {
     setLoadingProvider(provider);
@@ -148,66 +245,65 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6f3ee] px-4 py-8 md:px-6 md:py-10">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.22),_transparent_30%),radial-gradient(circle_at_bottom_right,_rgba(194,65,12,0.18),_transparent_24%),linear-gradient(180deg,#fbf7f1_0%,#f4efe8_100%)]" />
-      <div className="absolute left-[-8rem] top-20 h-72 w-72 rounded-full bg-orange-200/40 blur-3xl" />
-      <div className="absolute bottom-10 right-[-6rem] h-80 w-80 rounded-full bg-amber-100/70 blur-3xl" />
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f6f0e8_100%)] px-4 py-10 text-slate-950 sm:px-6 lg:px-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.24),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(124,45,18,0.1),transparent_24%)]" />
 
-      <div className="relative mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl overflow-hidden rounded-[36px] border border-white/70 bg-white shadow-[0_30px_120px_rgba(95,45,12,0.14)] lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="relative overflow-hidden bg-[linear-gradient(155deg,#a84316_0%,#d86118_28%,#ef7f1a_55%,#f6b14f_100%)] px-7 py-8 text-white md:px-10 md:py-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.16),_transparent_26%),radial-gradient(circle_at_bottom_left,_rgba(124,45,18,0.34),_transparent_32%)]" />
+      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl overflow-hidden rounded-[36px] border border-orange-200/60 bg-white shadow-[0_32px_110px_rgba(146,64,14,0.16)] lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative overflow-hidden bg-[linear-gradient(145deg,#7c2d12_0%,#c2410c_36%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white sm:px-10 lg:px-12 lg:py-14">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.12),transparent_30%)]" />
           <div className="relative flex h-full flex-col">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
-                  Red Feng
+                  Red Feng Customer
                 </p>
                 <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight md:text-5xl">
-                  {showcaseTitle}
+                  {modeCopy.heroTitle}
                 </h2>
               </div>
-              <div className="hidden rounded-[28px] border border-white/20 bg-white/12 px-5 py-4 text-right shadow-[0_16px_50px_rgba(124,45,18,0.2)] backdrop-blur md:block">
-                <div className="text-xs uppercase tracking-[0.22em] text-orange-50/75">Preferred sign-in</div>
-                <div className="mt-2 text-2xl font-semibold">Social OAuth</div>
+              <div className="hidden rounded-[24px] border border-white/20 bg-white/10 px-5 py-4 backdrop-blur md:block">
+                <div className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Customer Portal</div>
+                <div className="mt-2 text-2xl font-semibold">{modeCopy.switchLabel}</div>
               </div>
             </div>
 
-            <p className="mt-6 max-w-xl text-sm leading-7 text-orange-50/88 md:text-base">
-              {showcaseCopy}
+            <p className="mt-8 max-w-2xl text-base leading-8 text-orange-50/92 sm:text-lg">
+              {modeCopy.heroCopy}
             </p>
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+            <div className="relative mt-10 grid gap-4 xl:grid-cols-3">
+              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Booking flow</p>
                 <p className="mt-3 text-3xl font-semibold">1x</p>
                 <p className="mt-2 text-sm text-orange-50/85">
-                  Satu akun untuk checkout, dashboard, dan sinkron ke website utama.
+                  Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.
                 </p>
               </div>
-              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Support</p>
                 <p className="mt-3 text-3xl font-semibold">24/7</p>
                 <p className="mt-2 text-sm text-orange-50/85">
                   Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.
                 </p>
               </div>
-              <div className="rounded-[26px] border border-white/16 bg-white/12 p-5 backdrop-blur">
+              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
                 <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Trust layer</p>
                 <p className="mt-3 text-3xl font-semibold">OTA</p>
                 <p className="mt-2 text-sm text-orange-50/85">
-                  Pengalaman login dibuat lebih rapi, aman, dan konsisten seperti platform travel besar.
+                  Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 rounded-[30px] border border-white/18 bg-[linear-gradient(180deg,rgba(255,255,255,0.17),rgba(255,255,255,0.09))] p-6 shadow-[0_18px_70px_rgba(124,45,18,0.22)] backdrop-blur">
+            <div className="relative mt-auto pt-10">
+              <div className="rounded-[30px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">
-                    Why customers use Red Feng
+                  <p className="text-xs font-semibold uppercase tracking-[0.34em] text-orange-100/80">
+                    {modeCopy.helperTitle}
                   </p>
                   <p className="mt-2 text-xl font-semibold">
-                    Premium travel, checkout discipline, cleaner account access.
+                    Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.
                   </p>
                 </div>
                 <div className="grid h-20 w-20 place-items-center rounded-[26px] border border-white/20 bg-white/12 text-center text-sm font-semibold leading-tight text-white">
@@ -231,17 +327,34 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
                 ))}
               </div>
             </div>
+            </div>
           </div>
         </section>
 
-        <section className="relative flex items-center bg-[linear-gradient(180deg,#fffdfa_0%,#fff7ef_100%)] px-5 py-8 md:px-8 lg:px-10">
-          <div className="w-full">
-            <div className="mx-auto max-w-md rounded-[32px] border border-[#f1e4d5] bg-white/95 p-7 shadow-[0_22px_60px_rgba(95,45,12,0.08)] backdrop-blur">
-              <div className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700">
-                {eyebrow}
+        <section className="flex items-center bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] px-6 py-10 sm:px-10 lg:px-12">
+          <div className="mx-auto w-full max-w-xl">
+            <div className="rounded-[32px] border border-orange-100 bg-white p-8 shadow-[0_24px_70px_rgba(148,64,14,0.08)] sm:p-10">
+              <div className="flex flex-wrap items-center gap-2 rounded-[22px] border border-orange-100 bg-[#fff8f1] p-2">
+                {modeTabs.map((tab) => (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={`inline-flex flex-1 items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
+                      tab.active
+                        ? "bg-white text-orange-700 shadow-[0_10px_24px_rgba(148,64,14,0.08)]"
+                        : "text-slate-600 hover:bg-white hover:text-orange-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
               </div>
-              <h1 className="mt-5 text-3xl font-semibold leading-tight text-slate-950">{t.title}</h1>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{t.subtitle}</p>
+
+              <div className="mt-6 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700">
+                {modeCopy.cardEyebrow}
+              </div>
+              <h1 className="mt-5 text-3xl font-semibold leading-tight text-slate-950">{modeCopy.cardTitle}</h1>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{modeCopy.cardSubtitle}</p>
 
               <div className="mt-8 space-y-3">
                 {enabledProviders.map((item) => (
@@ -267,23 +380,27 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
               </div>
 
               <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#fff9f2_0%,#fffdf9_100%)] px-5 py-4 text-sm leading-7 text-slate-600">
-                {t.autoCreateHint}
+                {mode === "login"
+                  ? t.autoCreateHint
+                  : "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini."}
               </div>
 
-              {errorMsg ? (
+              {authError ? (
                 <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {errorMsg}
+                  {authError}
                 </div>
               ) : null}
 
-              <div className="mt-5">
-                <Link
-                  href="/forgot-password?next=/login"
-                  className="text-sm font-medium text-orange-700 hover:text-orange-800"
-                >
-                  Lupa password?
-                </Link>
-              </div>
+              {mode === "login" ? (
+                <div className="mt-5">
+                  <Link
+                    href="/forgot-password?next=/login"
+                    className="text-sm font-medium text-orange-700 hover:text-orange-800"
+                  >
+                    Lupa password?
+                  </Link>
+                </div>
+              ) : null}
 
               <p className="mt-6 text-xs leading-6 text-slate-500">
                 {t.termsLead}{" "}
