@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { formatCustomerCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
@@ -106,6 +107,7 @@ export default async function CustomerDashboardPage() {
 
   if (!user) return null
   if (!user.email) return null
+  const customerCode = formatCustomerCode(user.id)
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null
@@ -271,6 +273,9 @@ export default async function CustomerDashboardPage() {
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
                   Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.
                 </p>
+                <div className="mt-4 inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-50">
+                  {customerCode}
+                </div>
               </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">

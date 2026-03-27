@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import {
@@ -140,6 +141,9 @@ export default async function FinanceAdminUsersPage({
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Email finance</p>
                           <h3 className="mt-2 text-xl font-semibold text-slate-950">{profile.email || "(tanpa email)"}</h3>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+                            {formatFinanceCode(profile.id)}
+                          </p>
                           <p className="mt-2 text-xs text-slate-500">ID akun: {profile.id}</p>
                         </div>
                         <div className="flex flex-col gap-3 md:min-w-[260px]">
@@ -238,6 +242,9 @@ export default async function FinanceAdminUsersPage({
                       <div>
                         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Username admin</p>
                         <h3 className="mt-2 text-xl font-semibold text-slate-950">{profile.username || "(tanpa username)"}</h3>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+                          {formatAdminCode(profile.id)}
+                        </p>
                         <p className="mt-2 text-xs text-slate-500">ID akun: {profile.id}</p>
                       </div>
                       <div className="flex flex-col gap-3 md:min-w-[260px]">

@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import { formatCustomerCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 
@@ -39,6 +40,8 @@ export default async function CustomerLayout({
     redirect("/login")
   }
 
+  const customerCode = formatCustomerCode(user.id)
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
@@ -60,6 +63,7 @@ export default async function CustomerLayout({
                 Customer Space
               </p>
               <p className="mt-2 text-sm font-semibold text-slate-950">Dashboard customer Red Feng</p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">{customerCode}</p>
               <p className="text-xs text-slate-500">Area booking, pembayaran, dan status perjalanan</p>
             </div>
           </div>

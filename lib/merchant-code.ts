@@ -1,12 +1,28 @@
-export function formatMerchantCode(merchantId: string | null | undefined) {
-  const normalized = String(merchantId || "")
+function formatIdentityCode(prefix: string, rawId: string | null | undefined, fallback: string) {
+  const normalized = String(rawId || "")
     .replace(/[^a-zA-Z0-9]/g, "")
     .toUpperCase()
 
-  if (!normalized) return "RFM-UNASSIGNED"
+  if (!normalized) return fallback
 
   const chunkA = normalized.slice(0, 6) || "000000"
   const chunkB = normalized.slice(-6) || "000000"
 
-  return `RFM-${chunkA}-${chunkB}`
+  return `${prefix}-${chunkA}-${chunkB}`
+}
+
+export function formatMerchantCode(merchantId: string | null | undefined) {
+  return formatIdentityCode("RFM", merchantId, "RFM-UNASSIGNED")
+}
+
+export function formatCustomerCode(customerId: string | null | undefined) {
+  return formatIdentityCode("RFC", customerId, "RFC-GUEST")
+}
+
+export function formatAdminCode(adminId: string | null | undefined) {
+  return formatIdentityCode("RFA", adminId, "RFA-UNASSIGNED")
+}
+
+export function formatFinanceCode(financeId: string | null | undefined) {
+  return formatIdentityCode("RFF", financeId, "RFF-UNASSIGNED")
 }

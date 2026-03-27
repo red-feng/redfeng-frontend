@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { formatAdminCode } from "@/lib/merchant-code"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
@@ -43,6 +44,7 @@ export default async function AdminProtectedLayout({
   }
 
   const isSuperadmin = profile.role === "superadmin"
+  const adminCode = formatAdminCode(user.id)
 
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
@@ -116,6 +118,9 @@ export default async function AdminProtectedLayout({
                 <p className="mt-1 text-sm font-semibold text-slate-950">Dashboard admin internal Red Feng</p>
                 <p className="text-xs text-slate-500">Area approval merchant, paket, dan booking operasional</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                    {adminCode}
+                  </span>
                   <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
                     isSuperadmin
                       ? "border border-violet-200 bg-violet-50 text-violet-700"
