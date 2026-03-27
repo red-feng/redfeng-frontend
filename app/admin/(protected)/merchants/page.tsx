@@ -106,6 +106,7 @@ export default async function AdminMerchantsPage({
   const queueFilter = (resolvedSearchParams.queue || "all").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
     supabase
       .from("merchants")
@@ -154,14 +155,14 @@ export default async function AdminMerchantsPage({
     .map((item) => String(item))
     .sort((a, b) => a.localeCompare(b))
 
-  const { data: merchantProfilesData } = await supabase
+  const { data: merchantProfilesData } = await adminSupabase
     .from("profiles")
     .select("id, role, created_at")
     .eq("role", "merchant")
 
   const merchantProfileIds = [...new Set(((merchantProfilesData as Array<{ id: string; role: string | null; created_at: string | null }> | null) || []).map((profile) => profile.id))]
   const { data: linkedMerchantRows } = merchantProfileIds.length
-    ? await supabase.from("merchants").select("id, user_id").in("user_id", merchantProfileIds)
+    ? await adminSupabase.from("merchants").select("id, user_id").in("user_id", merchantProfileIds)
     : { data: [] as Array<{ id: string; user_id: string | null }> }
   const linkedMerchantUserIds = new Set(
     (((linkedMerchantRows as Array<{ id: string; user_id: string | null }> | null) || []) as Array<{ id: string; user_id: string | null }>)
@@ -176,7 +177,7 @@ export default async function AdminMerchantsPage({
   }>).filter((profile) => !linkedMerchantUserIds.has(profile.id))
 
   const { data: authUsersData, error: authUsersError } = orphanMerchantProfilesRaw.length
-    ? await createAdminClient().auth.admin.listUsers({ page: 1, perPage: 1000 })
+    ? await adminSupabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
     : { data: { users: [] as Array<{ id: string; email?: string | null; created_at?: string | null }> }, error: null }
 
   if (authUsersError) {
