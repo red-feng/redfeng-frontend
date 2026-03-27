@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import Link from "next/link"
 import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
@@ -107,6 +108,13 @@ export default async function AdminMerchantsPage({
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
     supabase
       .from("merchants")
@@ -521,41 +529,49 @@ export default async function AdminMerchantsPage({
                     </div>
 
                     <div className="grid gap-5 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] p-7">
-                      <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
-                          Approve merchant
-                        </p>
-                        <p className="mt-3 text-sm leading-7 text-slate-700">
-                          Setujui merchant jika data bisnis dan dokumen sudah sesuai standar internal Red Feng.
-                        </p>
-                        <form action={approveMerchant} className="mt-5">
-                          <input type="hidden" name="merchantId" value={merchant.id} />
-                          <button className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
-                            Approve merchant
-                          </button>
-                        </form>
-                      </div>
+                      {canExecuteAdminOps ? (
+                        <>
+                          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">
+                              Approve merchant
+                            </p>
+                            <p className="mt-3 text-sm leading-7 text-slate-700">
+                              Setujui merchant jika data bisnis dan dokumen sudah sesuai standar internal Red Feng.
+                            </p>
+                            <form action={approveMerchant} className="mt-5">
+                              <input type="hidden" name="merchantId" value={merchant.id} />
+                              <button className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
+                                Approve merchant
+                              </button>
+                            </form>
+                          </div>
 
-                      <div className="rounded-[24px] border border-red-200 bg-red-50/80 p-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
-                          Reject merchant
-                        </p>
-                        <p className="mt-3 text-sm leading-7 text-slate-700">
-                          Berikan alasan yang jelas agar merchant dapat memperbaiki dan mengajukan ulang.
-                        </p>
-                        <form action={rejectMerchant} className="mt-5 space-y-4">
-                          <input type="hidden" name="merchantId" value={merchant.id} />
-                          <textarea
-                            name="reason"
-                            placeholder="Tuliskan alasan penolakan dengan jelas..."
-                            required
-                            className="min-h-[132px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                          />
-                          <button className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,38,38,0.22)] transition hover:bg-red-700">
-                            Reject merchant
-                          </button>
-                        </form>
-                      </div>
+                          <div className="rounded-[24px] border border-red-200 bg-red-50/80 p-5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
+                              Reject merchant
+                            </p>
+                            <p className="mt-3 text-sm leading-7 text-slate-700">
+                              Berikan alasan yang jelas agar merchant dapat memperbaiki dan mengajukan ulang.
+                            </p>
+                            <form action={rejectMerchant} className="mt-5 space-y-4">
+                              <input type="hidden" name="merchantId" value={merchant.id} />
+                              <textarea
+                                name="reason"
+                                placeholder="Tuliskan alasan penolakan dengan jelas..."
+                                required
+                                className="min-h-[132px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                              />
+                              <button className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,38,38,0.22)] transition hover:bg-red-700">
+                                Reject merchant
+                              </button>
+                            </form>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
+                          Operations Manager dapat memonitor dokumen dan konteks review merchant, tetapi approve / reject tetap dijalankan admin operasional.
+                        </div>
+                      )}
                     </div>
                   </div>
                 </article>
@@ -672,11 +688,11 @@ export default async function AdminMerchantsPage({
                     </div>
 
                     <div className="flex w-full flex-col gap-3 lg:w-[272px] lg:pt-[58px]">
-                      {merchant.verification_status === "approved" ? (
+                      {merchant.verification_status === "approved" && canExecuteAdminOps ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
 
-                      {merchant.verification_status === "inactive" ? (
+                      {merchant.verification_status === "inactive" && canExecuteAdminOps ? (
                         <div className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
                           <div className="border-b border-[#f3e4d2] px-5 py-4">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-700">Restore Access</p>
@@ -702,8 +718,13 @@ export default async function AdminMerchantsPage({
                         </div>
                       ) : null}
 
-                      {merchant.verification_status !== "deleted" ? (
+                      {merchant.verification_status !== "deleted" && canExecuteAdminOps ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="delete" />
+                      ) : null}
+                      {!canExecuteAdminOps ? (
+                        <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
+                          Operations Manager hanya memonitor status merchant. Nonaktif, aktifkan kembali, dan hapus akses tetap dijalankan admin operasional.
+                        </div>
                       ) : null}
                     </div>
                   </div>
@@ -755,24 +776,32 @@ export default async function AdminMerchantsPage({
                     </div>
 
                     <div className="flex h-full min-w-[320px] flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
-                        Hapus akses merchant
-                      </p>
-                      <p className="mt-3 text-sm leading-7 text-slate-700">
-                        Action ini akan mengubah role akun ini dari `merchant` menjadi `customer` karena data merchant-nya tidak ada.
-                      </p>
-                      <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
-                        <input type="hidden" name="profileId" value={profile.id} />
-                        <textarea
-                          name="reason"
-                          placeholder="Alasan pencabutan akses merchant..."
-                          required
-                          className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
-                        />
-                        <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
-                          Hapus akses merchant
-                        </button>
-                      </form>
+                      {canExecuteAdminOps ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
+                            Hapus akses merchant
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-700">
+                            Action ini akan mengubah role akun ini dari `merchant` menjadi `customer` karena data merchant-nya tidak ada.
+                          </p>
+                          <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
+                            <input type="hidden" name="profileId" value={profile.id} />
+                            <textarea
+                              name="reason"
+                              placeholder="Alasan pencabutan akses merchant..."
+                              required
+                              className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                            />
+                            <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+                              Hapus akses merchant
+                            </button>
+                          </form>
+                        </>
+                      ) : (
+                        <div className="text-sm leading-7 text-sky-700">
+                          Operations Manager dapat menandai anomali role merchant, tetapi pencabutan akses tetap dijalankan admin operasional.
+                        </div>
+                      )}
                     </div>
                   </div>
                 </article>

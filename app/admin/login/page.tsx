@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
+import { isAdminPortalRole } from "@/lib/internal-roles"
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -61,13 +62,13 @@ export default function AdminLogin() {
       return
     }
 
-    if (profile.role === "admin" || profile.role === "superadmin") {
+    if (isAdminPortalRole(profile.role)) {
       router.push("/admin/dashboard")
       setLoading(false)
       return
     }
 
-    setError("Portal ini khusus untuk admin dan superadmin.")
+    setError("Portal ini khusus untuk admin, operations manager, dan superadmin.")
     await supabase.auth.signOut()
     setLoading(false)
   }
@@ -93,7 +94,7 @@ export default function AdminLogin() {
               {[
                 "Merchant approvals dan revisi dokumen",
                 "Monitoring booking, paket, dan kualitas listing",
-                "Akses internal untuk admin dan superadmin saja",
+                "Akses internal untuk admin, operations manager, dan superadmin",
               ].map((item) => (
                 <div
                   key={item}
@@ -123,7 +124,7 @@ export default function AdminLogin() {
                     Masuk ke admin dashboard
                   </h2>
                   <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan username admin internal yang dibuat oleh tim finance.
+                    Gunakan username internal yang dibuat oleh operations manager atau superadmin.
                   </p>
                 </div>
                 <Link
@@ -177,7 +178,7 @@ export default function AdminLogin() {
                   />
                   <div className="flex justify-end">
                     <span className="text-sm font-medium text-orange-700">
-                      Reset password dikelola oleh tim finance.
+                      Reset password dikelola oleh operations manager atau superadmin.
                     </span>
                   </div>
                 </div>

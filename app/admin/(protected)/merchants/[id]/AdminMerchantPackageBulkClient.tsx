@@ -51,8 +51,10 @@ function formatDate(value: string | null) {
 
 export default function AdminMerchantPackageBulkClient({
   packages,
+  readOnly = false,
 }: {
   packages: PackageRow[]
+  readOnly?: boolean
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
@@ -95,54 +97,62 @@ export default function AdminMerchantPackageBulkClient({
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={selectAll}
-            disabled={!packages.length || allSelected}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Pilih semua di tab ini
-          </button>
-          <button
-            type="button"
-            onClick={clearSelection}
-            disabled={!selectedIds.length}
-            className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Kosongkan pilihan
-          </button>
-        </div>
+        {readOnly ? (
+          <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
+            Operations Manager dapat memonitor pilihan bulk dan kesehatan antrean paket merchant, tetapi eksekusi bulk review tetap dijalankan admin operasional.
+          </div>
+        ) : (
+          <>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={selectAll}
+                disabled={!packages.length || allSelected}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Pilih semua di tab ini
+              </button>
+              <button
+                type="button"
+                onClick={clearSelection}
+                disabled={!selectedIds.length}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Kosongkan pilihan
+              </button>
+            </div>
 
-        <textarea
-          name="reason"
-          placeholder="Alasan revisi untuk bulk reject"
-          className="mt-4 h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-        />
+            <textarea
+              name="reason"
+              placeholder="Alasan revisi untuk bulk reject"
+              className="mt-4 h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+            />
 
-        <div className="mt-4 flex flex-wrap gap-3">
-          <button
-            formAction={bulkApprovePackages}
-            disabled={!selectedIds.length}
-            className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Setujui paket terpilih
-          </button>
-          <button
-            formAction={bulkRejectPackages}
-            disabled={!selectedIds.length}
-            className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Tolak paket terpilih
-          </button>
-          <button
-            formAction={bulkDeletePackages}
-            disabled={!selectedIds.length}
-            className="rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Hapus permanen paket terpilih
-          </button>
-        </div>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                formAction={bulkApprovePackages}
+                disabled={!selectedIds.length}
+                className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Setujui paket terpilih
+              </button>
+              <button
+                formAction={bulkRejectPackages}
+                disabled={!selectedIds.length}
+                className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Tolak paket terpilih
+              </button>
+              <button
+                formAction={bulkDeletePackages}
+                disabled={!selectedIds.length}
+                className="rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Hapus permanen paket terpilih
+              </button>
+            </div>
+          </>
+        )}
       </form>
 
       {packages.map((pkg) => {
@@ -161,6 +171,7 @@ export default function AdminMerchantPackageBulkClient({
                     type="checkbox"
                     checked={isSelected}
                     onChange={() => togglePackage(pkg.id)}
+                    disabled={readOnly}
                     className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400"
                   />
                   Pilih paket
@@ -203,32 +214,40 @@ export default function AdminMerchantPackageBulkClient({
                 Review detail paket
               </Link>
 
-              <form action={approvePackage}>
-                <input type="hidden" name="packageId" value={pkg.id} />
-                <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                  Setujui paket
-                </button>
-              </form>
+              {readOnly ? (
+                <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
+                  Operations Manager hanya membaca detail paket merchant ini. Aksi review tetap dijalankan admin operasional.
+                </div>
+              ) : (
+                <>
+                  <form action={approvePackage}>
+                    <input type="hidden" name="packageId" value={pkg.id} />
+                    <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                      Setujui paket
+                    </button>
+                  </form>
 
-              <form action={rejectPackage} className="space-y-3">
-                <input type="hidden" name="packageId" value={pkg.id} />
-                <textarea
-                  name="reason"
-                  placeholder="Alasan penolakan atau revisi paket"
-                  required
-                  className="h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                />
-                <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                  Tolak paket
-                </button>
-              </form>
+                  <form action={rejectPackage} className="space-y-3">
+                    <input type="hidden" name="packageId" value={pkg.id} />
+                    <textarea
+                      name="reason"
+                      placeholder="Alasan penolakan atau revisi paket"
+                      required
+                      className="h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                    <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                      Tolak paket
+                    </button>
+                  </form>
 
-              <form action={deletePackage}>
-                <input type="hidden" name="packageId" value={pkg.id} />
-                <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
-                  Hapus permanen dari database
-                </button>
-              </form>
+                  <form action={deletePackage}>
+                    <input type="hidden" name="packageId" value={pkg.id} />
+                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                      Hapus permanen dari database
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         )

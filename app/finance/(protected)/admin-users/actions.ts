@@ -3,7 +3,18 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { buildInternalAdminEmail, isValidInternalUsername, normalizeInternalUsername } from "@/lib/internal-auth"
+import {
+  buildInternalAdminEmail,
+  buildInternalFinanceEmail,
+  isValidInternalUsername,
+  normalizeInternalUsername,
+} from "@/lib/internal-auth"
+import {
+  isAdminPortalRole,
+  isAdminManagedRole,
+  isFinanceManagedRole,
+  isFinancePortalRole,
+} from "@/lib/internal-roles"
 
 async function getInternalManagerRole() {
   const supabase = await createClient()
@@ -12,37 +23,68 @@ async function getInternalManagerRole() {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/finance/login")
+    redirect("/admin/login")
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["finance", "superadmin"].includes(profile.role)) {
-    redirect("/finance/login")
+  if (!profile || (!isAdminPortalRole(profile.role) && !isFinancePortalRole(profile.role))) {
+    redirect("/admin/login")
   }
 
   return profile.role
 }
 
+async function ensureFinanceAccountOperator() {
+  const role = await getInternalManagerRole()
+  if (!["operations_manager", "superadmin"].includes(role)) {
+    backToAdminUsers("Hanya operations manager atau superadmin yang dapat mengelola akun operasional.", "error")
+  }
+  return role
+}
+
+function resolveReturnTo(formData: FormData, fallbackPath: string) {
+  const returnTo = String(formData.get("return_to") || "").trim()
+  return returnTo.startsWith("/") ? returnTo : fallbackPath
+}
+
+function redirectWithMessage(path: string, message: string, type: "success" | "error"): never {
+  redirect(`${path}?${type}=${encodeURIComponent(message)}`)
+}
+
 function backToAdminUsers(message: string, type: "success" | "error"): never {
-  redirect(`/finance/admin-users?${type}=${encodeURIComponent(message)}`)
+  redirectWithMessage("/finance/admin-users", message, type)
 }
 
 export async function createAdminAccount(formData: FormData) {
-  await getInternalManagerRole()
+  const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
+  const actorRole = await ensureFinanceAccountOperator()
 
   const username = normalizeInternalUsername(String(formData.get("username") || ""))
   const password = String(formData.get("password") || "")
+  const requestedRole = String(formData.get("role") || "admin").trim().toLowerCase()
 
   if (!username || !password) {
-    backToAdminUsers("Username dan password wajib diisi", "error")
+    redirectWithMessage(returnTo, "Username dan password wajib diisi", "error")
+  }
+
+  if (!isAdminManagedRole(requestedRole)) {
+    redirectWithMessage(returnTo, "Role akun operasional tidak valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && requestedRole !== "admin") {
+    redirectWithMessage(returnTo, "Hanya superadmin yang dapat membuat operations manager.", "error")
   }
 
   if (!isValidInternalUsername(username)) {
-    backToAdminUsers("Username admin harus 3-32 karakter dan hanya boleh berisi huruf kecil, angka, titik, garis bawah, atau dash", "error")
+    redirectWithMessage(
+      returnTo,
+      "Username admin harus 3-32 karakter dan hanya boleh berisi huruf kecil, angka, titik, garis bawah, atau dash",
+      "error",
+    )
   }
 
   if (password.length < 8) {
-    backToAdminUsers("Password admin minimal 8 karakter", "error")
+    redirectWithMessage(returnTo, "Password admin minimal 8 karakter", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -55,70 +97,87 @@ export async function createAdminAccount(formData: FormData) {
     .maybeSingle()
 
   if (existingProfile) {
-    backToAdminUsers("Username admin sudah dipakai", "error")
+    redirectWithMessage(returnTo, "Username admin sudah dipakai", "error")
   }
 
   const { data: createdUser, error: createError } = await adminSupabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
-    user_metadata: {
-      internal_username: username,
-      account_type: "admin",
-    },
-  })
+      email_confirm: true,
+      user_metadata: {
+        internal_username: username,
+        account_type: requestedRole,
+      },
+    })
 
   if (createError || !createdUser.user) {
-    backToAdminUsers(createError?.message || "Gagal membuat akun admin", "error")
+    redirectWithMessage(returnTo, createError?.message || "Gagal membuat akun admin", "error")
   }
 
   const { error: profileError } = await adminSupabase.from("profiles").upsert({
     id: createdUser.user.id,
-    role: "admin",
+    role: requestedRole,
     username,
   })
 
   if (profileError) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
-    backToAdminUsers(profileError.message, "error")
+    redirectWithMessage(returnTo, profileError.message, "error")
   }
 
-  backToAdminUsers(`Akun admin ${username} berhasil dibuat`, "success")
+  const roleLabel = requestedRole === "operations_manager" ? "operations manager" : "admin"
+  redirectWithMessage(returnTo, `Akun ${roleLabel} ${username} berhasil dibuat`, "success")
 }
 
 export async function resetAdminPassword(formData: FormData) {
-  await getInternalManagerRole()
+  const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
+  const actorRole = await ensureFinanceAccountOperator()
 
   const adminId = String(formData.get("adminId") || "")
   const password = String(formData.get("password") || "")
 
   if (!adminId || !password) {
-    backToAdminUsers("Akun admin dan password baru wajib diisi", "error")
+    redirectWithMessage(returnTo, "Akun admin dan password baru wajib diisi", "error")
   }
 
   if (password.length < 8) {
-    backToAdminUsers("Password baru admin minimal 8 karakter", "error")
+    redirectWithMessage(returnTo, "Password baru admin minimal 8 karakter", "error")
   }
 
   const adminSupabase = createAdminClient()
+  const { data: targetProfile } = await adminSupabase
+    .from("profiles")
+    .select("role")
+    .eq("id", adminId)
+    .maybeSingle()
+
+  if (!targetProfile || !isAdminManagedRole(targetProfile.role)) {
+    redirectWithMessage(returnTo, "Akun yang dipilih bukan akun operasional yang valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && targetProfile.role !== "admin") {
+    redirectWithMessage(returnTo, "Operations manager hanya dapat reset password admin team.", "error")
+  }
+
   const { error } = await adminSupabase.auth.admin.updateUserById(adminId, {
     password,
   })
 
   if (error) {
-    backToAdminUsers(error.message, "error")
+    redirectWithMessage(returnTo, error.message, "error")
   }
 
-  backToAdminUsers("Password admin berhasil diperbarui", "success")
+  redirectWithMessage(returnTo, "Password admin berhasil diperbarui", "success")
 }
 
 export async function deleteAdminAccount(formData: FormData) {
-  await getInternalManagerRole()
+  const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
+  const actorRole = await ensureFinanceAccountOperator()
 
   const adminId = String(formData.get("adminId") || "")
 
   if (!adminId) {
-    backToAdminUsers("Akun admin tidak valid", "error")
+    redirectWithMessage(returnTo, "Akun admin tidak valid", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -129,106 +188,117 @@ export async function deleteAdminAccount(formData: FormData) {
     .eq("id", adminId)
     .maybeSingle()
 
-  if (!targetProfile || targetProfile.role !== "admin") {
-    backToAdminUsers("Akun yang dipilih bukan admin biasa", "error")
+  if (!targetProfile || !isAdminManagedRole(targetProfile.role)) {
+    redirectWithMessage(returnTo, "Akun yang dipilih bukan akun operasional yang valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && targetProfile.role !== "admin") {
+    redirectWithMessage(returnTo, "Operations manager hanya dapat menghapus akun admin team.", "error")
   }
 
   await adminSupabase.from("profiles").delete().eq("id", adminId)
   const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(adminId)
 
   if (deleteError) {
-    backToAdminUsers(deleteError.message, "error")
+    redirectWithMessage(returnTo, deleteError.message, "error")
   }
 
-  backToAdminUsers(`Akun admin ${targetProfile.username || adminId} berhasil dihapus`, "success")
-}
-
-async function ensureSuperadmin() {
-  const role = await getInternalManagerRole()
-  if (role !== "superadmin") {
-    backToAdminUsers("Hanya superadmin yang dapat mengelola akun finance", "error")
-  }
+  const roleLabel = targetProfile.role === "operations_manager" ? "operations manager" : "admin"
+  redirectWithMessage(returnTo, `Akun ${roleLabel} ${targetProfile.username || adminId} berhasil dihapus`, "success")
 }
 
 export async function createFinanceAccount(formData: FormData) {
-  await ensureSuperadmin()
-
-  const email = String(formData.get("email") || "").trim().toLowerCase()
-  const password = String(formData.get("password") || "")
-
-  if (!email || !password) {
-    backToAdminUsers("Email dan password akun finance wajib diisi", "error")
+  const returnTo = resolveReturnTo(formData, "/finance/admin-users")
+  const actorRole = await getInternalManagerRole()
+  if (!["finance_manager", "superadmin"].includes(actorRole)) {
+    redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
   }
 
-  if (!email.includes("@")) {
-    backToAdminUsers("Email akun finance tidak valid", "error")
+  const username = normalizeInternalUsername(String(formData.get("username") || ""))
+  const password = String(formData.get("password") || "")
+  const requestedRole = String(formData.get("role") || "finance").trim().toLowerCase()
+
+  if (!username || !password) {
+    redirectWithMessage(returnTo, "Username dan password akun finance wajib diisi", "error")
+  }
+
+  if (!isFinanceManagedRole(requestedRole)) {
+    redirectWithMessage(returnTo, "Role akun finance tidak valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && requestedRole !== "finance") {
+    redirectWithMessage(returnTo, "Hanya superadmin yang dapat membuat finance manager.", "error")
+  }
+
+  if (!isValidInternalUsername(username)) {
+    redirectWithMessage(
+      returnTo,
+      "Username finance harus 3-32 karakter dan hanya boleh berisi huruf kecil, angka, titik, garis bawah, atau dash",
+      "error",
+    )
   }
 
   if (password.length < 8) {
-    backToAdminUsers("Password akun finance minimal 8 karakter", "error")
+    redirectWithMessage(returnTo, "Password akun finance minimal 8 karakter", "error")
   }
 
   const adminSupabase = createAdminClient()
+  const email = buildInternalFinanceEmail(username)
+  const { data: existingProfile } = await adminSupabase
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle()
+
+  if (existingProfile) {
+    redirectWithMessage(returnTo, "Username finance sudah dipakai", "error")
+  }
+
   const { data: createdUser, error: createError } = await adminSupabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
-    user_metadata: {
-      account_type: "finance",
-    },
-  })
+      email_confirm: true,
+      user_metadata: {
+        internal_username: username,
+        account_type: requestedRole,
+      },
+    })
 
   if (createError || !createdUser.user) {
-    backToAdminUsers(createError?.message || "Gagal membuat akun finance", "error")
+    redirectWithMessage(returnTo, createError?.message || "Gagal membuat akun finance", "error")
   }
 
   const { error: profileError } = await adminSupabase.from("profiles").upsert({
     id: createdUser.user.id,
-    role: "finance",
-    username: null,
+    role: requestedRole,
+    username,
   })
 
   if (profileError) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
-    backToAdminUsers(profileError.message, "error")
+    redirectWithMessage(returnTo, profileError.message, "error")
   }
 
-  backToAdminUsers(`Akun finance ${email} berhasil dibuat`, "success")
+  const roleLabel = requestedRole === "finance_manager" ? "finance manager" : "finance"
+  redirectWithMessage(returnTo, `Akun ${roleLabel} ${username} berhasil dibuat`, "success")
 }
 
 export async function resetFinancePassword(formData: FormData) {
-  await ensureSuperadmin()
+  const returnTo = resolveReturnTo(formData, "/finance/admin-users")
+  const actorRole = await getInternalManagerRole()
+  if (!["finance_manager", "superadmin"].includes(actorRole)) {
+    redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
+  }
 
   const financeId = String(formData.get("financeId") || "")
   const password = String(formData.get("password") || "")
 
   if (!financeId || !password) {
-    backToAdminUsers("Akun finance dan password baru wajib diisi", "error")
+    redirectWithMessage(returnTo, "Akun finance dan password baru wajib diisi", "error")
   }
 
   if (password.length < 8) {
-    backToAdminUsers("Password baru finance minimal 8 karakter", "error")
-  }
-
-  const adminSupabase = createAdminClient()
-  const { error } = await adminSupabase.auth.admin.updateUserById(financeId, {
-    password,
-  })
-
-  if (error) {
-    backToAdminUsers(error.message, "error")
-  }
-
-  backToAdminUsers("Password finance berhasil diperbarui", "success")
-}
-
-export async function deleteFinanceAccount(formData: FormData) {
-  await ensureSuperadmin()
-
-  const financeId = String(formData.get("financeId") || "")
-
-  if (!financeId) {
-    backToAdminUsers("Akun finance tidak valid", "error")
+    redirectWithMessage(returnTo, "Password baru finance minimal 8 karakter", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -238,16 +308,60 @@ export async function deleteFinanceAccount(formData: FormData) {
     .eq("id", financeId)
     .maybeSingle()
 
-  if (!targetProfile || targetProfile.role !== "finance") {
-    backToAdminUsers("Akun yang dipilih bukan finance", "error")
+  if (!targetProfile || !isFinanceManagedRole(targetProfile.role)) {
+    redirectWithMessage(returnTo, "Akun yang dipilih bukan akun finance yang valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && targetProfile.role !== "finance") {
+    redirectWithMessage(returnTo, "Finance manager hanya dapat reset password finance team.", "error")
+  }
+
+  const { error } = await adminSupabase.auth.admin.updateUserById(financeId, {
+    password,
+  })
+
+  if (error) {
+    redirectWithMessage(returnTo, error.message, "error")
+  }
+
+  redirectWithMessage(returnTo, "Password finance berhasil diperbarui", "success")
+}
+
+export async function deleteFinanceAccount(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/finance/admin-users")
+  const actorRole = await getInternalManagerRole()
+  if (!["finance_manager", "superadmin"].includes(actorRole)) {
+    redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
+  }
+
+  const financeId = String(formData.get("financeId") || "")
+
+  if (!financeId) {
+    redirectWithMessage(returnTo, "Akun finance tidak valid", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: targetProfile } = await adminSupabase
+    .from("profiles")
+    .select("role")
+    .eq("id", financeId)
+    .maybeSingle()
+
+  if (!targetProfile || !isFinanceManagedRole(targetProfile.role)) {
+    redirectWithMessage(returnTo, "Akun yang dipilih bukan akun finance yang valid", "error")
+  }
+
+  if (actorRole !== "superadmin" && targetProfile.role !== "finance") {
+    redirectWithMessage(returnTo, "Finance manager hanya dapat menghapus akun finance team.", "error")
   }
 
   await adminSupabase.from("profiles").delete().eq("id", financeId)
   const { error: deleteError } = await adminSupabase.auth.admin.deleteUser(financeId)
 
   if (deleteError) {
-    backToAdminUsers(deleteError.message, "error")
+    redirectWithMessage(returnTo, deleteError.message, "error")
   }
 
-  backToAdminUsers("Akun finance berhasil dihapus", "success")
+  const roleLabel = targetProfile.role === "finance_manager" ? "finance manager" : "finance"
+  redirectWithMessage(returnTo, `Akun ${roleLabel} berhasil dihapus`, "success")
 }

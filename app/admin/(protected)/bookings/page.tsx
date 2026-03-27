@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { handoffBookingToFinance } from "./actions"
 
@@ -299,7 +301,15 @@ export default async function AdminBookingsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
+  const supabase = await createClient()
   const locale = normalizeLocale(await getCurrentLocale())
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
   const activeProduct = normalizeProductFilter(params.product)
   const activeQueue = normalizeQueueFilter(params.queue)
   const activeFocus = normalizeAttentionFocus(params.focus)
@@ -820,16 +830,22 @@ export default async function AdminBookingsPage({
                       >
                         Buka detail booking
                       </Link>
-                      <form action={handoffBookingToFinance}>
-                        <input type="hidden" name="booking_id" value={booking.id} />
-                        <button
-                          type="submit"
-                          disabled={!ready}
-                          className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                        >
-                          Kirim ke Finance
-                        </button>
-                      </form>
+                      {canExecuteAdminOps ? (
+                        <form action={handoffBookingToFinance}>
+                          <input type="hidden" name="booking_id" value={booking.id} />
+                          <button
+                            type="submit"
+                            disabled={!ready}
+                            className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                          >
+                            Kirim ke Finance
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                          Operations Manager hanya monitor kesiapan handoff.
+                        </span>
+                      )}
                       {!ready && (
                         <span className="rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
                           Menunggu lunas dan urutan pickup lengkap

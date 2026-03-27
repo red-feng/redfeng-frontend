@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
@@ -105,6 +107,14 @@ export default async function Page({
 }) {
   const { id } = await params
   const supabase = createAdminClient()
+  const authSupabase = await createClient()
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await authSupabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
 
   const { data: pkg } = await supabase
     .from("packages")
@@ -424,51 +434,65 @@ export default async function Page({
                   </p>
                 </div>
 
-                <form
-                  className="mt-4"
-                  action={async () => {
-                    "use server"
-                    await approvePackage(id)
-                  }}
-                >
-                  <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                    Setujui Paket
-                  </button>
-                </form>
+                {canExecuteAdminOps ? (
+                  <>
+                    <form
+                      className="mt-4"
+                      action={async () => {
+                        "use server"
+                        await approvePackage(id)
+                      }}
+                    >
+                      <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                        Setujui Paket
+                      </button>
+                    </form>
 
-                <form
-                  className="mt-4"
-                  action={async (formData) => {
-                    "use server"
-                    const reason = formData.get("reason") as string
-                    await rejectPackage(id, reason)
-                  }}
-                >
-                  <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Catatan Revisi
-                  </label>
-                  <textarea
-                    name="reason"
-                    placeholder="Tuliskan alasan penolakan atau revisi yang perlu dilakukan merchant."
-                    required
-                    className="mt-2 h-32 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm outline-none ring-orange-500 transition focus:bg-white focus:ring-2"
-                  />
-                  <button className="mt-3 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                    Tolak Paket
-                  </button>
-                </form>
+                    <form
+                      className="mt-4"
+                      action={async (formData) => {
+                        "use server"
+                        const reason = formData.get("reason") as string
+                        await rejectPackage(id, reason)
+                      }}
+                    >
+                      <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        Catatan Revisi
+                      </label>
+                      <textarea
+                        name="reason"
+                        placeholder="Tuliskan alasan penolakan atau revisi yang perlu dilakukan merchant."
+                        required
+                        className="mt-2 h-32 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm outline-none ring-orange-500 transition focus:bg-white focus:ring-2"
+                      />
+                      <button className="mt-3 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                        Tolak Paket
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
+                    Operations Manager hanya memonitor detail paket dan outcome review, tanpa mengeksekusi approve / reject.
+                  </div>
+                )}
 
-                <form
-                  className="mt-4"
-                  action={async () => {
-                    "use server"
-                    await deletePackage(id)
-                  }}
-                >
-                  <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
-                    Hapus Permanen dari Database
-                  </button>
-                </form>
+                {currentProfile?.role === "superadmin" ? (
+                  <form
+                    className="mt-4"
+                    action={async () => {
+                      "use server"
+                      await deletePackage(id)
+                    }}
+                  >
+                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                      Hapus Permanen dari Database
+                    </button>
+                  </form>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">
+                    Penghapusan permanen hanya tersedia untuk superadmin.
+                  </div>
+                )}
               </div>
             </section>
 

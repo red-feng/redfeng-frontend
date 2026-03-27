@@ -1,5 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
+import { isFinanceExecutionRole } from "@/lib/internal-roles"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
@@ -121,7 +123,16 @@ export default async function FinancePayoutsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
+  const supabase = await createClient()
   const locale = normalizeLocale(await getCurrentLocale())
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteTransferFlow = isFinanceExecutionRole(currentProfile?.role)
+  const isFinanceManager = currentProfile?.role === "finance_manager"
 
   const { data: payoutsData, error } = await adminSupabase
     .from("payout_requests")
@@ -392,26 +403,30 @@ export default async function FinancePayoutsPage({
                             </button>
                           </form>
 
-                          <form action={updatePayoutStatus} className="rounded-[24px] border border-sky-200 bg-sky-50/80 p-5">
-                            <input type="hidden" name="payoutId" value={payout.id} />
-                            <input type="hidden" name="nextStatus" value="processing" />
-                            <button className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
-                              Mark processing
-                            </button>
-                          </form>
+                          {canExecuteTransferFlow ? (
+                            <form action={updatePayoutStatus} className="rounded-[24px] border border-sky-200 bg-sky-50/80 p-5">
+                              <input type="hidden" name="payoutId" value={payout.id} />
+                              <input type="hidden" name="nextStatus" value="processing" />
+                              <button className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
+                                Mark processing
+                              </button>
+                            </form>
+                          ) : null}
 
-                          <form action={updatePayoutStatus} className="rounded-[24px] border border-violet-200 bg-violet-50/80 p-5 space-y-4">
-                            <input type="hidden" name="payoutId" value={payout.id} />
-                            <input type="hidden" name="nextStatus" value="paid" />
-                            <textarea
-                              name="note"
-                              placeholder="Opsional: catatan transfer / referensi payout"
-                              className="min-h-[110px] w-full rounded-[18px] border border-violet-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
-                            />
-                            <button className="rounded-[18px] bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(124,58,237,0.22)] transition hover:bg-violet-700">
-                              Mark paid
-                            </button>
-                          </form>
+                          {canExecuteTransferFlow ? (
+                            <form action={updatePayoutStatus} className="rounded-[24px] border border-violet-200 bg-violet-50/80 p-5 space-y-4">
+                              <input type="hidden" name="payoutId" value={payout.id} />
+                              <input type="hidden" name="nextStatus" value="paid" />
+                              <textarea
+                                name="note"
+                                placeholder="Opsional: catatan transfer / referensi payout"
+                                className="min-h-[110px] w-full rounded-[18px] border border-violet-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
+                              />
+                              <button className="rounded-[18px] bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(124,58,237,0.22)] transition hover:bg-violet-700">
+                                Mark paid
+                              </button>
+                            </form>
+                          ) : null}
 
                           <form action={updatePayoutStatus} className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-5 space-y-4">
                             <input type="hidden" name="payoutId" value={payout.id} />
@@ -425,6 +440,11 @@ export default async function FinancePayoutsPage({
                               Reject payout
                             </button>
                           </form>
+                          {isFinanceManager ? (
+                            <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
+                              Finance Manager hanya memegang approval / reject. Perubahan ke tahap processing dan paid tetap dijalankan finance eksekusi atau superadmin.
+                            </div>
+                          ) : null}
                         </div>
                       )}
 

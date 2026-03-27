@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { isFinanceApprovalRole, isFinanceExecutionRole, isFinancePortalRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -25,7 +26,7 @@ async function ensureFinance() {
     .eq("id", user.id)
     .single()
 
-  if (!profile || !["finance", "superadmin"].includes(profile.role)) {
+  if (!profile || !isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
   }
 
@@ -53,6 +54,14 @@ export async function updatePayoutStatus(formData: FormData) {
   const allowedStatuses = new Set(["approved", "processing", "paid", "rejected"])
   if (!allowedStatuses.has(nextStatus)) {
     backToPayouts("Status payout tidak dikenali", "error")
+  }
+
+  if ((nextStatus === "approved" || nextStatus === "rejected") && !isFinanceApprovalRole(actor.role)) {
+    backToPayouts("Role finance ini tidak punya akses approval payout", "error")
+  }
+
+  if ((nextStatus === "processing" || nextStatus === "paid") && !isFinanceExecutionRole(actor.role)) {
+    backToPayouts("Hanya finance eksekusi atau superadmin yang boleh menandai processing / paid", "error")
   }
 
   if (nextStatus === "rejected" && !note) {

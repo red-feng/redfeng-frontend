@@ -9,3 +9,14 @@ export function isValidInternalUsername(value: string) {
 export function buildInternalAdminEmail(username: string) {
   return `${normalizeInternalUsername(username)}@admin.redfeng.internal`
 }
+
+export function buildInternalFinanceEmail(username: string) {
+  return `${normalizeInternalUsername(username)}@finance.redfeng.internal`
+}
+
+export function resolveInternalLoginCandidates(usernameOrEmail: string) {
+  const normalized = normalizeInternalUsername(usernameOrEmail)
+  if (!normalized) return []
+  if (normalized.includes("@")) return [normalized]
+  return [buildInternalAdminEmail(normalized), buildInternalFinanceEmail(normalized)]
+}

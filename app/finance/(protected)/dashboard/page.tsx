@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
@@ -11,6 +12,14 @@ function normalizeStatus(value: string | null) {
 
 export default async function FinanceDashboardPage() {
   const adminSupabase = createAdminClient()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null }
+  const isFinanceManager = currentProfile?.role === "finance_manager"
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
@@ -38,6 +47,236 @@ export default async function FinanceDashboardPage() {
       return status === "pending" || status === "approved" || status === "processing"
     })
     .reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const currentTime = new Date().getTime()
+  const rejectedCount = payouts.filter((item) => normalizeStatus(item.status) === "rejected").length
+  const agedPendingCount = payouts.filter((item) => {
+    const status = normalizeStatus(item.status)
+    if (!["pending", "approved", "processing"].includes(status)) return false
+    const requestedAt = item.requested_at ? new Date(item.requested_at) : null
+    if (!requestedAt || Number.isNaN(requestedAt.getTime())) return false
+    return currentTime - requestedAt.getTime() >= 2 * 24 * 60 * 60 * 1000
+  }).length
+
+  const financeActionLogs = isFinanceManager
+    ? (
+        (await adminSupabase
+          .from("admin_action_logs")
+          .select("id, actor_id, actor_role, action, summary, created_at")
+          .in("actor_role", ["finance", "finance_manager"])
+          .order("created_at", { ascending: false })
+          .limit(120)).data as Array<{
+          id: string
+          actor_id: string | null
+          actor_role: string | null
+          action: string
+          summary: string
+          created_at: string | null
+        }> | null
+      ) || []
+    : []
+
+  const financeRoleProfiles = isFinanceManager
+    ? (
+        (await adminSupabase
+          .from("profiles")
+          .select("id, role")
+          .in("role", ["finance", "finance_manager"])).data as Array<{ id: string; role: string | null }> | null
+      ) || []
+    : []
+
+  const financeUsersRaw = isFinanceManager ? await adminSupabase.auth.admin.listUsers() : { data: { users: [] as Array<{ id: string; email?: string | null }> } }
+  const financeRoleMap = new Map(financeRoleProfiles.map((profile) => [profile.id, profile.role]))
+  const financeProfileIds = new Set(financeRoleProfiles.map((profile) => profile.id))
+  const financeUsers = (financeUsersRaw.data.users || []).filter((authUser) => financeProfileIds.has(authUser.id))
+  const financePerformance = financeUsers
+    .map((authUser) => {
+      const logs = financeActionLogs.filter((log) => log.actor_id === authUser.id)
+      return {
+        id: authUser.id,
+        email: authUser.email || "(tanpa email)",
+        role: financeRoleMap.get(authUser.id) || "finance",
+        totalActions: logs.length,
+        approved: logs.filter((log) => log.action === "finance_approve_payout").length,
+        processing: logs.filter((log) => log.action === "finance_mark_processing").length,
+        paid: logs.filter((log) => log.action === "finance_mark_paid").length,
+        rejected: logs.filter((log) => log.action === "finance_reject_payout").length,
+        lastActionAt: logs[0]?.created_at || null,
+      }
+    })
+    .sort((a, b) => b.totalActions - a.totalActions || a.email.localeCompare(b.email))
+
+  if (isFinanceManager) {
+    const managerMetricCards = [
+      { label: "Payout pending", value: String(pendingCount), note: "Request payout yang belum diambil keputusan final." },
+      { label: "Payout aging", value: String(agedPendingCount), note: "Payout pending/processing yang berumur 2 hari atau lebih." },
+      { label: "Rejected", value: String(rejectedCount), note: "Payout yang dikembalikan atau ditolak finance." },
+      { label: "Outstanding", value: formatMoney(pendingTotal), note: "Nominal yang masih belum keluar dari finance queue." },
+    ]
+
+    return (
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
+              <div className="max-w-3xl">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                  Finance Manager
+                </span>
+                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                  Pantau queue payout, aging, dan performa tim finance dari satu dashboard.
+                </h1>
+                <p className="mt-4 text-base leading-8 text-orange-50/90">
+                  Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="/finance/payouts"
+                    className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+                  >
+                    Buka Payout Queue
+                  </Link>
+                  <Link
+                    href="/admin/audit-log"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Buka Audit Log
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Finance pulse</p>
+                <div className="mt-5 grid gap-4">
+                  <div>
+                    <p className="text-sm text-orange-50/80">Outstanding</p>
+                    <p className="mt-1 text-2xl font-semibold text-white">{formatMoney(pendingTotal)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Queue aging</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{agedPendingCount}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Rejected</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{rejectedCount}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {managerMetricCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance team performance</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kinerja tim finance</h2>
+              <div className="mt-6 space-y-4">
+                {financePerformance.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada aktivitas finance yang tercatat.
+                  </div>
+                ) : (
+                  financePerformance.map((item) => (
+                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance actor</p>
+                          <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.email}</h3>
+                          <p className="mt-2 text-xs text-slate-500">{String(item.role).replaceAll("_", " ")}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3 text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">{item.totalActions}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Approve</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.approved}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Processing</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.processing}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Paid</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.paid}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rejected</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.rejected}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-xs text-slate-500">
+                        Aksi terakhir: {item.lastActionAt ? new Date(item.lastActionAt).toLocaleString("id-ID") : "-"}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-6">
+              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager focus</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas finance manager</h2>
+                <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                  <p>1. Menjaga payout aging tetap rendah dan outstanding tidak menumpuk terlalu lama.</p>
+                  <p>2. Melihat apakah team finance bergerak seimbang di approve, processing, paid, dan rejected.</p>
+                  <p>3. Menggunakan Audit Log untuk investigasi keputusan transfer atau payout yang macet.</p>
+                </div>
+              </div>
+
+              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue access</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur kerja utama</h2>
+                <div className="mt-5 grid gap-4">
+                  {[
+                    {
+                      href: "/finance/payouts",
+                      label: "Payout Queue",
+                      description: "Pantau seluruh payout aktif, aging, dan status transfer.",
+                    },
+                    {
+                      href: "/admin/bookings",
+                      label: "Booking Center",
+                      description: "Lihat jalur booking yang sudah di-handoff dari admin.",
+                    },
+                    {
+                      href: "/admin/audit-log",
+                      label: "Audit Log",
+                      description: "Cek histori keputusan finance dan handoff lintas tim.",
+                    },
+                  ].map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                    >
+                      <h3 className="text-xl font-semibold text-slate-950">{item.label}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                      <div className="mt-5 text-sm font-semibold text-orange-600">Buka area kerja -&gt;</div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    )
+  }
 
   const metricCards = [
     { label: "Booking dari admin", value: String(bookings.filter((item) => normalizeStatus(item.booking_status) === "finance_review").length), note: "Booking yang sudah di-handoff admin ke finance." },

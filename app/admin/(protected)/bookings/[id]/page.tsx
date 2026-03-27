@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { handoffBookingToFinance } from "../actions"
 import { addBookingAdminNote, reopenBookingAdminNote, resolveBookingAdminNote } from "./actions"
@@ -280,7 +282,15 @@ export default async function AdminBookingDetailPage({
   const { id } = await params
   const resolvedSearchParams = (await searchParams) || {}
   const adminSupabase = createAdminClient()
+  const supabase = await createClient()
   const locale = normalizeLocale(await getCurrentLocale())
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
@@ -603,16 +613,22 @@ export default async function AdminBookingDetailPage({
               ) : null}
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <form action={handoffBookingToFinance}>
-                <input type="hidden" name="booking_id" value={booking.id} />
-                <button
-                  type="submit"
-                  disabled={!ready}
-                  className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  Kirim ke Finance
-                </button>
-              </form>
+              {canExecuteAdminOps ? (
+                <form action={handoffBookingToFinance}>
+                  <input type="hidden" name="booking_id" value={booking.id} />
+                  <button
+                    type="submit"
+                    disabled={!ready}
+                    className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Kirim ke Finance
+                  </button>
+                </form>
+              ) : (
+                <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-700">
+                  Operations Manager hanya memonitor readiness dan tidak mengirim handoff langsung.
+                </div>
+              )}
               {!ready ? (
                 <span className="rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
                   Handoff terkunci sampai payment lunas dan urutan pickup lengkap.
@@ -716,43 +732,49 @@ export default async function AdminBookingDetailPage({
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Catatan ini hanya untuk tim internal dan tidak tampil ke customer atau merchant.
             </p>
-            <form action={addBookingAdminNote} className="mt-6 space-y-4">
-              <input type="hidden" name="booking_id" value={booking.id} />
-              <input type="hidden" name="note_status" value={noteStatusFilter} />
-              <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
-              <input type="hidden" name="note_pin" value={notePinFilter} />
-              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
-                <div>
-                  <label className="text-sm font-semibold text-slate-800">Kategori note</label>
-                  <select
-                    name="note_type"
-                    defaultValue="general"
-                    className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                  >
-                    <option value="general">General</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="follow_up_merchant">Follow Up Merchant</option>
-                    <option value="follow_up_payment">Follow Up Payment</option>
-                    <option value="finance_issue">Finance Issue</option>
-                  </select>
+            {canExecuteAdminOps ? (
+              <form action={addBookingAdminNote} className="mt-6 space-y-4">
+                <input type="hidden" name="booking_id" value={booking.id} />
+                <input type="hidden" name="note_status" value={noteStatusFilter} />
+                <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
+                <input type="hidden" name="note_pin" value={notePinFilter} />
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-800">Kategori note</label>
+                    <select
+                      name="note_type"
+                      defaultValue="general"
+                      className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                    >
+                      <option value="general">General</option>
+                      <option value="urgent">Urgent</option>
+                      <option value="follow_up_merchant">Follow Up Merchant</option>
+                      <option value="follow_up_payment">Follow Up Payment</option>
+                      <option value="finance_issue">Finance Issue</option>
+                    </select>
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex w-full items-center gap-3 rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                      <input type="checkbox" name="is_pinned" value="true" className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400" />
+                      Pin note ini di atas
+                    </label>
+                  </div>
                 </div>
-                <div className="flex items-end">
-                  <label className="flex w-full items-center gap-3 rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700">
-                    <input type="checkbox" name="is_pinned" value="true" className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400" />
-                    Pin note ini di atas
-                  </label>
-                </div>
+                <textarea
+                  name="note"
+                  placeholder="Tulis catatan follow up, konteks issue, atau keputusan operasional internal..."
+                  required
+                  className="min-h-[180px] w-full rounded-[22px] border border-slate-300 bg-white px-4 py-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+                <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
+                  Simpan catatan internal
+                </button>
+              </form>
+            ) : (
+              <div className="mt-6 rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-4 text-sm leading-7 text-sky-700">
+                Operations Manager dapat membaca histori note, tetapi penambahan dan perubahan note tetap dijalankan oleh admin operasional.
               </div>
-              <textarea
-                name="note"
-                placeholder="Tulis catatan follow up, konteks issue, atau keputusan operasional internal..."
-                required
-                className="min-h-[180px] w-full rounded-[22px] border border-slate-300 bg-white px-4 py-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-              />
-              <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
-                Simpan catatan internal
-              </button>
-            </form>
+            )}
           </div>
 
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
@@ -895,7 +917,7 @@ export default async function AdminBookingDetailPage({
                           Diselesaikan oleh {resolver?.username || item.resolved_by_id || "-"} pada {formatDateTime(item.resolved_at)}
                         </p>
                       ) : null}
-                      {!item.is_resolved ? (
+                      {!item.is_resolved && canExecuteAdminOps ? (
                         <form action={resolveBookingAdminNote} className="mt-4">
                           <input type="hidden" name="booking_id" value={booking.id} />
                           <input type="hidden" name="note_id" value={item.id} />
@@ -936,16 +958,18 @@ export default async function AdminBookingDetailPage({
                         <p className="mt-2 text-xs text-slate-500">
                           Dibuat {formatDateTime(item.created_at)} | diselesaikan oleh {resolver?.username || item.resolved_by_id || "-"} pada {formatDateTime(item.resolved_at)}
                         </p>
-                        <form action={reopenBookingAdminNote} className="mt-4">
-                          <input type="hidden" name="booking_id" value={booking.id} />
-                          <input type="hidden" name="note_id" value={item.id} />
-                          <input type="hidden" name="note_status" value={noteStatusFilter} />
-                          <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
-                          <input type="hidden" name="note_pin" value={notePinFilter} />
-                          <button className="inline-flex items-center justify-center rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100">
-                            Buka lagi note ini
-                          </button>
-                        </form>
+                        {canExecuteAdminOps ? (
+                          <form action={reopenBookingAdminNote} className="mt-4">
+                            <input type="hidden" name="booking_id" value={booking.id} />
+                            <input type="hidden" name="note_id" value={item.id} />
+                            <input type="hidden" name="note_status" value={noteStatusFilter} />
+                            <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
+                            <input type="hidden" name="note_pin" value={notePinFilter} />
+                            <button className="inline-flex items-center justify-center rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100">
+                              Buka lagi note ini
+                            </button>
+                          </form>
+                        ) : null}
                       </div>
                     )
                   })}

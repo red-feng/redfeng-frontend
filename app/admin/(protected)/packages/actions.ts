@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import { purgePackageRecords } from "@/lib/package-delete"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminAuditLog } from "@/lib/admin-audit"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 
 function backToPackages(type: "success" | "error", message: string) {
   redirect(`/admin/packages?${type}=${encodeURIComponent(message)}`)
@@ -29,7 +30,7 @@ async function getAdminActor() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  if (!profile || !isAdminExecutionRole(profile.role)) {
     throw new Error("Akses admin tidak valid.")
   }
 

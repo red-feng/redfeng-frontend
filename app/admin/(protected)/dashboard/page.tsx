@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
+import { getRoleLabel } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
@@ -46,6 +47,7 @@ export default async function AdminDashboard() {
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null }
   const isSuperadmin = currentProfile?.role === "superadmin"
+  const isOperationsManager = currentProfile?.role === "operations_manager"
 
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
@@ -190,19 +192,23 @@ export default async function AdminDashboard() {
     ? (
         (await adminSupabase
           .from("profiles")
-          .select("id, username")
-          .eq("role", "admin")
-          .order("username", { ascending: true })).data as Array<{ id: string; username: string | null }> | null
+          .select("id, username, role")
+          .in("role", ["admin", "operations_manager"])
+          .order("username", { ascending: true })).data as Array<{ id: string; username: string | null; role: string | null }> | null
       ) || []
     : []
 
   const financeRoleProfiles = isSuperadmin
     ? (
-        (await adminSupabase.from("profiles").select("id").eq("role", "finance")).data as Array<{ id: string }> | null
+        (await adminSupabase
+          .from("profiles")
+          .select("id, role")
+          .in("role", ["finance", "finance_manager"])).data as Array<{ id: string; role: string | null }> | null
       ) || []
     : []
 
   const financeUsersRaw = isSuperadmin ? await adminSupabase.auth.admin.listUsers() : { data: { users: [] as Array<{ id: string; email?: string | null }> } }
+  const financeRoleMap = new Map(financeRoleProfiles.map((profile) => [profile.id, profile.role]))
   const financeProfileIds = new Set(financeRoleProfiles.map((profile) => profile.id))
   const financeProfiles = (financeUsersRaw.data.users || [])
     .filter((authUser) => financeProfileIds.has(authUser.id))
@@ -212,12 +218,12 @@ export default async function AdminDashboard() {
     {
       label: "Finance accounts",
       value: String(financeProfiles.length),
-      note: "Semua akun finance yang aktif di layer internal.",
+      note: "Semua akun finance dan finance manager yang aktif di layer internal.",
     },
     {
       label: "Admin accounts",
       value: String(adminProfiles.length),
-      note: "Semua akun admin operasional yang terhubung ke workspace yang sama.",
+      note: "Semua akun admin dan operations manager yang terhubung ke workspace yang sama.",
     },
     {
       label: "Merchant pending",
@@ -259,6 +265,7 @@ export default async function AdminDashboard() {
         id: profile.id,
         username: profile.username || "(tanpa username)",
         code: formatAdminCode(profile.id),
+        role: profile.role || "admin",
         totalActions: logs.length,
         merchantActions: logs.filter((log) => log.target_type === "merchant").length,
         packageActions: logs.filter((log) => log.target_type === "package").length,
@@ -275,6 +282,7 @@ export default async function AdminDashboard() {
         id: profile.id,
         email: profile.email || "(tanpa email)",
         code: formatFinanceCode(profile.id),
+        role: financeRoleMap.get(profile.id) || "finance",
         totalActions: logs.length,
         approved: logs.filter((log) => log.action === "finance_approve_payout").length,
         processing: logs.filter((log) => log.action === "finance_mark_processing").length,
@@ -294,6 +302,162 @@ export default async function AdminDashboard() {
       actorCode: adminActor ? formatAdminCode(adminActor.id) : financeActor ? formatFinanceCode(financeActor.id) : "-",
     }
   })
+
+  if (isOperationsManager) {
+    const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
+
+    return (
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
+              <div className="max-w-3xl">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                  Operations Manager
+                </span>
+                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                  Monitor SLA, backlog, dan ritme kerja tim operasional Red Feng.
+                </h1>
+                <p className="mt-4 text-base leading-8 text-orange-50/90">
+                  Dashboard ini dirancang untuk operations manager agar cepat melihat antrian yang menumpuk, area yang mulai overdue, dan jalur tindak lanjut untuk merchant, package, serta Booking Center.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="/admin/merchants"
+                    className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+                  >
+                    Buka Merchant Directory
+                  </Link>
+                  <Link
+                    href="/admin/packages"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Buka Package Review
+                  </Link>
+                  <Link
+                    href="/admin/bookings"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Buka Booking Center
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Operations pulse</p>
+                <div className="mt-5 grid gap-4">
+                  <div>
+                    <p className="text-sm text-orange-50/80">Total backlog</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{operationalLoad}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Overdue items</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">
+                      {merchantOverdueCount + packageOverdueCount + bookingStalledCount}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Ready for finance</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{financeReadyCount}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {metricCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Area yang harus disentuh lebih dulu</h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {needsAttentionCards.map((card) => (
+                  <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">SLA Monitor</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kesehatan respons tim operasional</h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {slaCards.map((card) => (
+                  <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                    <p className="mt-3 text-xl font-semibold text-slate-950">{card.value}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operational control lanes</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur pengawasan operations manager</h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {[
+                  {
+                    href: "/admin/merchants",
+                    label: "Merchant Directory",
+                    description: "Review onboarding merchant yang pending atau bermasalah.",
+                  },
+                  {
+                    href: "/admin/packages",
+                    label: "Package Review",
+                    description: "Pantau antrean paket, rejection, dan kualitas listing.",
+                  },
+                  {
+                    href: "/admin/bookings",
+                    label: "Booking Center",
+                    description: "Lihat booking stalled, ready aging, dan queue lintas produk.",
+                  },
+                ].map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                  >
+                    <h3 className="text-xl font-semibold text-slate-950">{item.label}</h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                    <div className="mt-5 text-sm font-semibold text-orange-600">Buka area kerja -&gt;</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager note</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Fokus utama operations manager</h2>
+              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                <p>1. Menjaga backlog merchant, package, dan booking tidak menumpuk di atas SLA.</p>
+                <p>2. Mengarahkan admin ke queue yang paling urgent tanpa harus memegang seluruh kontrol superadmin.</p>
+                <p>3. Memantau kualitas flow handoff ke finance agar booking siap transfer tidak macet.</p>
+                <p>4. Menggunakan Audit Log untuk review pola kerja tim dan investigasi keputusan operasional.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    )
+  }
 
   if (isSuperadmin) {
     return (
@@ -393,6 +557,7 @@ export default async function AdminDashboard() {
                       <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
                         {formatFinanceCode(profile.id)}
                       </p>
+                      <p className="mt-2 text-xs text-slate-500">{getRoleLabel(financeRoleMap.get(profile.id) || "finance")}</p>
                     </div>
                   ))
                 )}
@@ -405,7 +570,7 @@ export default async function AdminDashboard() {
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin network</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Semua akun admin</h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Semua admin operasional terhubung ke data yang sama, sehingga superadmin bisa memantau kapasitas tim dari satu dashboard.
+                    Semua admin operasional dan operations manager terhubung ke data yang sama, sehingga superadmin bisa memantau kapasitas tim dari satu dashboard.
                   </p>
                 </div>
                 <Link href="/finance/admin-users" className="text-sm font-semibold text-orange-600">
@@ -499,6 +664,7 @@ export default async function AdminDashboard() {
                           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Admin actor</p>
                           <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.username}</h3>
                           <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{item.code}</p>
+                          <p className="mt-2 text-xs text-slate-500">{getRoleLabel(item.role)}</p>
                         </div>
                         <div className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3 text-right">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
@@ -542,6 +708,7 @@ export default async function AdminDashboard() {
                           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance actor</p>
                           <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.email}</h3>
                           <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{item.code}</p>
+                          <p className="mt-2 text-xs text-slate-500">{getRoleLabel(item.role)}</p>
                         </div>
                         <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] px-4 py-3 text-right">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>

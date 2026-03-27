@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 
 type PackageRow = {
@@ -65,6 +66,7 @@ export default async function AdminPackagesPage({
     ? await authSupabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null as { role?: string | null } | null }
   const isSuperadmin = currentProfile?.role === "superadmin"
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
 
   const { data: packagesData } = await supabase
     .from("packages")
@@ -191,25 +193,33 @@ export default async function AdminPackagesPage({
                   Review detail paket
                 </Link>
 
-                <form action={approvePackage}>
-                  <input type="hidden" name="packageId" value={pkg.id} />
-                  <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                    Setujui paket
-                  </button>
-                </form>
+                {canExecuteAdminOps ? (
+                  <>
+                    <form action={approvePackage}>
+                      <input type="hidden" name="packageId" value={pkg.id} />
+                      <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                        Setujui paket
+                      </button>
+                    </form>
 
-                <form action={rejectPackage} className="space-y-3">
-                  <input type="hidden" name="packageId" value={pkg.id} />
-                  <textarea
-                    name="reason"
-                    placeholder="Alasan penolakan atau revisi paket"
-                    required
-                    className="h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                  />
-                  <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                    Tolak paket
-                  </button>
-                </form>
+                    <form action={rejectPackage} className="space-y-3">
+                      <input type="hidden" name="packageId" value={pkg.id} />
+                      <textarea
+                        name="reason"
+                        placeholder="Alasan penolakan atau revisi paket"
+                        required
+                        className="h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                      />
+                      <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                        Tolak paket
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
+                    Operations Manager hanya memonitor kualitas review paket dan tidak mengeksekusi approve / reject.
+                  </div>
+                )}
 
                 {isSuperadmin ? (
                   <form action={deletePackage}>

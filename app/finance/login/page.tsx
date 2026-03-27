@@ -5,12 +5,14 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
+import { resolveInternalLoginCandidates, normalizeInternalUsername } from "@/lib/internal-auth"
+import { isFinancePortalRole } from "@/lib/internal-roles"
 
 export default function FinanceLogin() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -19,17 +21,29 @@ export default function FinanceLogin() {
     setLoading(true)
     setError("")
 
-    const normalizedEmail = email.trim().toLowerCase()
-    if (!normalizedEmail || !password) {
-      setError("Email dan password wajib diisi.")
+    const normalizedUsername = normalizeInternalUsername(username)
+    if (!normalizedUsername || !password) {
+      setError("Username dan password wajib diisi.")
       setLoading(false)
       return
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    })
+    const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
+    let data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"] | null = null
+    let error: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["error"] | null = null
+
+    for (const candidate of loginCandidates) {
+      const attempt = await supabase.auth.signInWithPassword({
+        email: candidate,
+        password,
+      })
+      if (attempt.data.user) {
+        data = attempt.data
+        error = null
+        break
+      }
+      error = attempt.error
+    }
 
     if (error) {
       setError(error.message)
@@ -37,7 +51,7 @@ export default function FinanceLogin() {
       return
     }
 
-    if (!data.user) {
+    if (!data?.user) {
       setError("Sesi finance tidak ditemukan. Coba login ulang.")
       setLoading(false)
       return
@@ -56,13 +70,13 @@ export default function FinanceLogin() {
       return
     }
 
-    if (profile.role === "finance" || profile.role === "superadmin") {
+    if (isFinancePortalRole(profile.role)) {
       router.push("/finance/dashboard")
       setLoading(false)
       return
     }
 
-    setError("Portal ini khusus untuk finance dan superadmin.")
+    setError("Portal ini khusus untuk finance, finance manager, dan superadmin.")
     await supabase.auth.signOut()
     setLoading(false)
   }
@@ -88,7 +102,7 @@ export default function FinanceLogin() {
               {[
                 "Payout approval dan kontrol status transfer",
                 "Monitoring nominal outstanding dan paid",
-                "Akses internal untuk finance dan superadmin saja",
+                "Akses internal untuk finance, finance manager, dan superadmin",
               ].map((item) => (
                 <div
                   key={item}
@@ -117,8 +131,8 @@ export default function FinanceLogin() {
                   <h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                     Masuk ke finance dashboard
                   </h2>
-                  <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan akun internal yang memiliki role finance atau superadmin.
+                    <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
+                    Gunakan username internal yang dibuat oleh finance manager atau superadmin.
                   </p>
                 </div>
                 <Link
@@ -139,19 +153,19 @@ export default function FinanceLogin() {
               <div className="mt-8 space-y-6">
                 <div className="space-y-3">
                   <label
-                    htmlFor="finance-email"
+                    htmlFor="finance-username"
                     className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500"
                   >
-                    Email finance
+                    Username finance
                   </label>
                   <input
-                    id="finance-email"
-                    type="email"
-                    autoComplete="email"
+                    id="finance-username"
+                    type="text"
+                    autoComplete="username"
                     className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                    placeholder="finance@redfeng.co"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="mis: finance.tim"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
 
@@ -171,12 +185,12 @@ export default function FinanceLogin() {
                     onChange={setPassword}
                   />
                   <div className="flex justify-end">
-                    <Link
-                      href="/forgot-password?next=/finance/login"
-                      className="text-sm font-medium text-orange-700 transition hover:text-orange-800"
-                    >
-                      Lupa password?
-                    </Link>
+                      <Link
+                        href="/forgot-password?next=/finance/login"
+                        className="text-sm font-medium text-orange-700 transition hover:text-orange-800"
+                      >
+                        Reset lewat manager
+                      </Link>
                   </div>
                 </div>
 

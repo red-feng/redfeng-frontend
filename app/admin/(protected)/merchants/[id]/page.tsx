@@ -2,6 +2,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 import AdminMerchantPackageBulkClient from "./AdminMerchantPackageBulkClient"
 
 type PackageRow = {
@@ -37,6 +39,14 @@ export default async function AdminMerchantPackagesPage({
   const query = (resolvedSearchParams.q || "").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "created_desc").trim().toLowerCase()
   const supabase = createAdminClient()
+  const authSupabase = await createClient()
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await authSupabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
 
   const { data: merchant } = await supabase
     .from("merchants")
@@ -223,7 +233,7 @@ export default async function AdminMerchantPackagesPage({
                 Tidak ada paket pada tab ini.
               </div>
             ) : (
-              <AdminMerchantPackageBulkClient packages={filteredPackages} />
+              <AdminMerchantPackageBulkClient packages={filteredPackages} readOnly={!canExecuteAdminOps} />
             )}
           </div>
         </div>

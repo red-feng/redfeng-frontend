@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getWordPressSharedSecret, hashSsoToken } from "@/lib/sso/wordpress"
+import { isInternalRole } from "@/lib/internal-roles"
 
 export const dynamic = "force-dynamic"
 
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       .eq("id", ssoToken.user_id)
       .maybeSingle()
 
-    if (profile?.role === "admin" || profile?.role === "finance" || profile?.role === "superadmin") {
+    if (isInternalRole(profile?.role)) {
       return NextResponse.json({ error: "Role tidak diizinkan untuk SSO customer" }, { status: 403 })
     }
 

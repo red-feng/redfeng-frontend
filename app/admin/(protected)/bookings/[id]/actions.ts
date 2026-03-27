@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createAdminAuditLog } from "@/lib/admin-audit"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 
 async function ensureAdmin() {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ async function ensureAdmin() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  if (!profile || !isAdminExecutionRole(profile.role)) {
     redirect("/admin/login")
   }
 

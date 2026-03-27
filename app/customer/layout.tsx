@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { formatCustomerCode } from "@/lib/merchant-code"
+import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 
@@ -32,9 +33,9 @@ export default async function CustomerLayout({
     })
   } else if (profile.role === "merchant") {
     redirect("/merchant/login")
-  } else if (profile.role === "admin" || profile.role === "superadmin") {
+  } else if (isAdminPortalRole(profile.role)) {
     redirect("/admin/login")
-  } else if (profile.role === "finance") {
+  } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
   } else if (profile.role !== "customer") {
     redirect("/login")

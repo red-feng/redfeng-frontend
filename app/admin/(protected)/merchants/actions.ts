@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminAuditLog } from "@/lib/admin-audit"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 
 function revalidateMerchantPages() {
   revalidatePath("/admin/merchants")
@@ -24,7 +25,7 @@ async function getAdminActor() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  if (!profile || !isAdminExecutionRole(profile.role)) {
     throw new Error("Akses admin tidak valid.")
   }
 

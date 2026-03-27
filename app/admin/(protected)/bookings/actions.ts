@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { calculateMerchantPayout, defaultFinanceSettings } from "@/lib/finance/settings"
 import { createAdminAuditLog } from "@/lib/admin-audit"
+import { isAdminExecutionRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -22,7 +23,7 @@ async function ensureAdmin() {
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
-  if (!profile || !["admin", "superadmin"].includes(profile.role)) {
+  if (!profile || !isAdminExecutionRole(profile.role)) {
     redirect("/admin/login")
   }
 

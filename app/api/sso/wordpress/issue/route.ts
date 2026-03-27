@@ -7,6 +7,7 @@ import {
   hashSsoToken,
   sanitizeWordPressRedirectPath,
 } from "@/lib/sso/wordpress"
+import { isInternalRole } from "@/lib/internal-roles"
 
 export const dynamic = "force-dynamic"
 
@@ -48,7 +49,7 @@ export async function GET(request: Request) {
       profile = { role: "customer" }
     }
 
-    if (profile.role === "admin" || profile.role === "finance" || profile.role === "superadmin") {
+    if (isInternalRole(profile.role)) {
       return NextResponse.json({ error: "SSO WordPress hanya untuk customer" }, { status: 403 })
     }
 
