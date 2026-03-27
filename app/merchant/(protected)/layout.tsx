@@ -6,6 +6,7 @@ import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
@@ -89,6 +90,7 @@ export default async function MerchantLayout({
   }
 
   const merchantLabel = merchant.brand_name || merchant.company_name || "Merchant"
+  const merchantCode = formatMerchantCode(merchant.id)
   const locationLabel = [merchant.city, merchant.province].filter(Boolean).join(", ") || "Indonesia"
   const seenPackagesAt = cookieStore.get("merchant_nav_seen_packages")?.value
   const seenOrdersAt = cookieStore.get("merchant_nav_seen_orders")?.value
@@ -238,6 +240,7 @@ export default async function MerchantLayout({
                     {t.suiteBadge}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">{merchantCode}</p>
                   <p className="text-xs text-slate-500">{locationLabel}</p>
                 </div>
               </div>

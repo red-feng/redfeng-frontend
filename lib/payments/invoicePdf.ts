@@ -7,6 +7,7 @@ type InvoicePdfPayload = {
   packageTitle?: string | null
   pickupDateLabel?: string | null
   merchantName?: string | null
+  merchantCode?: string | null
   verificationUrl?: string | null
   paymentStatusLabel: string
   paymentTypeLabel: string
@@ -180,6 +181,7 @@ function buildInvoiceStream(payload: InvoicePdfPayload) {
   sections.push(pdfText(52, 630, `Package: ${payload.packageTitle || "-"}`, { size: 11, color: [0.35, 0.38, 0.44] }))
   sections.push(pdfText(52, 612, `Pickup Date: ${payload.pickupDateLabel || "-"}`, { size: 11, color: [0.35, 0.38, 0.44] }))
   sections.push(pdfText(52, 594, `Merchant: ${payload.merchantName || "-"}`, { size: 11, color: [0.35, 0.38, 0.44] }))
+  sections.push(pdfText(52, 576, `Merchant Code: ${payload.merchantCode || "-"}`, { size: 11, color: [0.35, 0.38, 0.44] }))
 
   sections.push(pdfText(332, 712, "Payment Details", { font: "F2", size: 11, color: [0.76, 0.34, 0.1] }))
   sections.push(pdfText(332, 688, `Status: ${payload.paymentStatusLabel}`, { font: "F2", size: 13 }))
@@ -187,7 +189,7 @@ function buildInvoiceStream(payload: InvoicePdfPayload) {
   sections.push(pdfText(332, 648, "All customer funds are held by Red Feng until release rules are completed.", { size: 10, color: [0.35, 0.38, 0.44] }))
   sections.push(pdfText(332, 630, `Verify URL: ${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}`, { size: 9, color: [0.35, 0.38, 0.44] }))
 
-  sections.push(pdfFilledRect(52, 560, 491, 42, [0.99, 0.97, 0.94], [0.92, 0.86, 0.8]))
+  sections.push(pdfFilledRect(52, 542, 491, 42, [0.99, 0.97, 0.94], [0.92, 0.86, 0.8]))
   sections.push(pdfText(68, 577, "Description", { font: "F2", size: 10, color: [0.36, 0.28, 0.2] }))
   sections.push(pdfText(500, 577, "Amount", { font: "F2", size: 10, color: [0.36, 0.28, 0.2] }))
 
@@ -197,7 +199,7 @@ function buildInvoiceStream(payload: InvoicePdfPayload) {
     { label: "Customer tax", amount: payload.taxAmount },
   ]
 
-  let rowTop = 560
+  let rowTop = 542
   for (const row of rows) {
     rowTop -= 44
     sections.push(pdfLine(52, rowTop, 543, rowTop))

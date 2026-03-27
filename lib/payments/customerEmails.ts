@@ -9,6 +9,7 @@ type PaymentEmailPayload = {
   packageTitle?: string | null
   pickupDateLabel?: string | null
   merchantName?: string | null
+  merchantCode?: string | null
   verificationUrl?: string | null
   totalAmount: number
   subtotalAmount?: number | null
@@ -44,6 +45,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
             packageTitle: payload.packageTitle || null,
             pickupDateLabel: payload.pickupDateLabel || null,
             merchantName: payload.merchantName || null,
+            merchantCode: payload.merchantCode || null,
             verificationUrl: payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/",
             paymentStatusLabel: payload.paymentStatusLabel,
             paymentTypeLabel: payload.paymentTypeLabel,
@@ -74,7 +76,8 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
           <p style="margin:0 0 8px;"><strong>Jenis pembayaran:</strong> ${payload.paymentTypeLabel}</p>
           <p style="margin:0 0 8px;"><strong>Nama paket:</strong> ${payload.packageTitle || "-"}</p>
           <p style="margin:0 0 8px;"><strong>Tanggal wisata:</strong> ${payload.pickupDateLabel || "-"}</p>
-          <p style="margin:0;"><strong>Merchant / operator:</strong> ${payload.merchantName || "-"}</p>
+          <p style="margin:0 0 8px;"><strong>Merchant / operator:</strong> ${payload.merchantName || "-"}</p>
+          <p style="margin:0;"><strong>Merchant code:</strong> ${payload.merchantCode || "-"}</p>
         </div>
 
         <div style="border:1px solid #fed7aa;border-radius:16px;padding:16px 18px;margin:0 0 18px;background:#fff7ed;">

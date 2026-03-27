@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 
 type MerchantRow = {
@@ -76,6 +77,7 @@ export default async function MerchantDashboardPage() {
 
   const merchant = merchantData as MerchantRow | null
   if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
+  const merchantCode = formatMerchantCode(merchant.id)
 
   const [{ data: packagesData }, { data: bookingsData }, { data: chatRoomsData }] = await Promise.all([
     supabase.from("packages").select("id, status").eq("merchant_id", merchant.id),
@@ -334,6 +336,14 @@ export default async function MerchantDashboardPage() {
               <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
                 {t.heroDescription}
               </p>
+              <div className="mt-5 inline-flex flex-wrap items-center gap-3 rounded-[20px] border border-white/16 bg-white/10 px-4 py-3 backdrop-blur">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-100/80">
+                  Merchant Code
+                </span>
+                <span className="rounded-full border border-white/18 bg-slate-950/20 px-3 py-1 text-sm font-semibold tracking-[0.24em] text-white">
+                  {merchantCode}
+                </span>
+              </div>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 {quickSignals.map((signal) => (
@@ -440,6 +450,10 @@ export default async function MerchantDashboardPage() {
                 {businessSnapshotBadge}
               </span>
               <div className="mt-5 space-y-4">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Merchant Code</p>
+                  <p className="mt-2 text-sm font-medium tracking-[0.18em] text-slate-900">{merchantCode}</p>
+                </div>
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Brand</p>
                   <p className="mt-2 text-sm font-medium text-slate-900">

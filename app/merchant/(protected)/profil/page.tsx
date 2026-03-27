@@ -1,9 +1,11 @@
 import Image from "next/image"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 
 type MerchantProfileRow = {
+  id: string
   company_name: string | null
   brand_name: string | null
   address: string | null
@@ -27,7 +29,11 @@ function maskedAccountNumber(value: string | null) {
 
 export default async function MerchantProfilePage() {
   const locale = normalizeLocale(await getCurrentLocale())
-  const t = getProfileText(locale)
+  const t = {
+    merchantCode: "Merchant code",
+    merchantCodeNote: "Premium merchant operational ID",
+    ...getProfileText(locale),
+  }
   const supabase = await createClient()
   const {
     data: { user },
@@ -38,12 +44,13 @@ export default async function MerchantProfilePage() {
   const { data, error } = await supabase
     .from("merchants")
     .select(
-      "company_name, brand_name, address, city, province, logo_url, bank_name, bank_account_number, bank_account_holder, bank_branch, npwp_personal, npwp_company, pic_name",
+      "id, company_name, brand_name, address, city, province, logo_url, bank_name, bank_account_number, bank_account_holder, bank_branch, npwp_personal, npwp_company, pic_name",
     )
     .eq("user_id", user.id)
     .single()
 
   const merchant = data as MerchantProfileRow | null
+  const merchantCode = formatMerchantCode(merchant?.id)
   const addressLabel = [merchant?.address, merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"
   const metricCards = [
     {
@@ -55,6 +62,11 @@ export default async function MerchantProfilePage() {
       label: t.brand,
       value: merchant?.brand_name || "-",
       note: t.brandNote,
+    },
+    {
+      label: t.merchantCode,
+      value: merchantCode,
+      note: t.merchantCodeNote,
     },
     {
       label: t.picContact,
@@ -90,6 +102,10 @@ export default async function MerchantProfilePage() {
               <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.brand}</p>
                 <p className="mt-2 text-lg font-semibold text-white">{merchant?.brand_name || merchant?.company_name || "-"}</p>
+              </div>
+              <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.merchantCode}</p>
+                <p className="mt-2 text-lg font-semibold text-white">{merchantCode}</p>
               </div>
               <div className="rounded-[20px] border border-white/20 bg-white/10 px-4 py-3">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/70">{t.pic}</p>
@@ -140,6 +156,9 @@ export default async function MerchantProfilePage() {
                   {merchant.brand_name || merchant.company_name || "-"}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">{merchant.company_name || "-"}</p>
+                <div className="mt-4 inline-flex rounded-full border border-[#f0ddc7] bg-[#fff3e6] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-orange-700">
+                  {merchantCode}
+                </div>
                 <div className="mt-5 w-full rounded-[22px] border border-[#efe3d1] bg-[#fffaf3] p-4 text-left">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.businessAddress}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-700">{addressLabel}</p>
@@ -230,6 +249,8 @@ function getProfileText(locale: Locale) {
       identitySnapshot: "Identity Snapshot",
       businessName: "Nama bisnis",
       businessNameNote: "Identitas legal merchant",
+      merchantCode: "Kode merchant",
+      merchantCodeNote: "ID operasional premium merchant",
       brand: "Brand",
       brandNote: "Nama yang tampil ke customer",
       pic: "PIC",
@@ -266,6 +287,8 @@ function getProfileText(locale: Locale) {
       identitySnapshot: "Identity Snapshot",
       businessName: "Business name",
       businessNameNote: "Merchant legal identity",
+      merchantCode: "Merchant code",
+      merchantCodeNote: "Premium merchant operational ID",
       brand: "Brand",
       brandNote: "Name shown to customers",
       pic: "PIC",

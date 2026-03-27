@@ -1,6 +1,7 @@
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { normalizeLocale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -203,7 +204,7 @@ async function getBookingForVerification(bookingId: string) {
   const { data: merchantRow } = packageRow?.merchant_id
     ? await supabase
         .from("merchants")
-        .select("brand_name, company_name")
+        .select("id, brand_name, company_name")
         .eq("id", packageRow.merchant_id)
         .maybeSingle()
     : { data: null }
@@ -212,6 +213,7 @@ async function getBookingForVerification(bookingId: string) {
     booking,
     packageRow,
     merchantName: merchantRow?.brand_name || merchantRow?.company_name || "-",
+    merchantCode: merchantRow?.id ? formatMerchantCode(merchantRow.id) : "-",
   }
 }
 
@@ -370,6 +372,7 @@ export default async function VerificationPage({ searchParams }: VerificationPag
                   <div>
                     <p className="text-sm text-slate-500">Merchant / Operator</p>
                     <p className="mt-2 font-medium text-slate-900">{verification.merchantName}</p>
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-orange-600">{verification.merchantCode}</p>
                   </div>
                   <div>
                     <p className="text-sm text-slate-500">Lokasi Paket</p>

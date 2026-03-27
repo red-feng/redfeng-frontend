@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
 import AdminMerchantPackageBulkClient from "./AdminMerchantPackageBulkClient"
 
@@ -85,6 +86,7 @@ export default async function AdminMerchantPackagesPage({
   }
 
   const merchantName = merchant.brand_name || merchant.company_name || merchant.id
+  const merchantCode = formatMerchantCode(merchant.id)
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -95,6 +97,7 @@ export default async function AdminMerchantPackagesPage({
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Merchant Package Workspace</p>
                 <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{merchantName}</h1>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-orange-600">{merchantCode}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Audit semua paket merchant dalam satu konteks agar admin tidak perlu membedakan paket merchant ini dengan merchant lain.
                 </p>
@@ -108,10 +111,14 @@ export default async function AdminMerchantPackagesPage({
             </div>
           </div>
 
-          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Email</p>
               <p className="mt-2 text-sm font-medium text-slate-900">{merchant.email || "-"}</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant Code</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">{merchantCode}</p>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Lokasi</p>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 
 function resolveOrder(orderId: string) {
@@ -144,6 +145,7 @@ export async function POST(req: Request) {
           packageTitle: packageRow?.title || null,
           pickupDateLabel: formatDateLabel(booking.pickup_date || null),
           merchantName: merchantRow?.brand_name || merchantRow?.company_name || null,
+          merchantCode: packageRow?.merchant_id ? formatMerchantCode(packageRow.merchant_id) : null,
           verificationUrl,
           totalAmount: amountPaid,
           subtotalAmount: Number(booking.subtotal_amount || 0),

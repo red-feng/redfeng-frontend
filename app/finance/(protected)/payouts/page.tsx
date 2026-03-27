@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { formatMerchantCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { updatePayoutStatus } from "./actions"
 
@@ -250,6 +251,7 @@ export default async function FinancePayoutsPage({
               const merchant = merchantMap.get(payout.merchant_id)
               const booking = payout.booking_id ? bookingMap.get(payout.booking_id) : null
               const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tanpa nama"
+              const merchantCode = formatMerchantCode(merchant?.id || payout.merchant_id)
               const isFinal = ["paid", "completed", "rejected"].includes(normalizeStatus(payout.status))
 
               return (
@@ -265,6 +267,7 @@ export default async function FinancePayoutsPage({
                             Payout request
                           </p>
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">{merchantName}</h2>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-orange-600">{merchantCode}</p>
                           <p className="mt-2 text-sm leading-7 text-slate-600">
                             {merchant?.email || "Email merchant belum tersedia"}
                           </p>
