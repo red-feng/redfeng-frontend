@@ -14,7 +14,7 @@ type AdminActionLogRow = {
 }
 
 type FilterTarget = "all" | "merchant" | "package" | "booking"
-type FilterAction = "all" | "approve" | "reject" | "deactivate" | "reactivate" | "delete" | "handoff_to_finance"
+type FilterAction = "all" | "approve" | "reject" | "deactivate" | "reactivate" | "delete" | "handoff_to_finance" | "note" | "note_resolved" | "note_reopened"
 type SearchParams = {
   target?: string
   action?: string
@@ -59,7 +59,10 @@ function normalizeActionFilter(value: string | undefined): FilterAction {
     normalized === "deactivate" ||
     normalized === "reactivate" ||
     normalized === "delete" ||
-    normalized === "handoff_to_finance"
+    normalized === "handoff_to_finance" ||
+    normalized === "note" ||
+    normalized === "note_resolved" ||
+    normalized === "note_reopened"
   ) {
     return normalized
   }
@@ -184,6 +187,9 @@ export default async function AdminAuditLogPage({
     { value: "reactivate", label: "Reactivate" },
     { value: "delete", label: "Delete" },
     { value: "handoff_to_finance", label: "Handoff to Finance" },
+    { value: "note", label: "Note" },
+    { value: "note_resolved", label: "Note Resolved" },
+    { value: "note_reopened", label: "Note Reopened" },
   ]
 
   return (

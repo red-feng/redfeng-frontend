@@ -5,6 +5,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { handoffBookingToFinance } from "../actions"
+import { addBookingAdminNote, reopenBookingAdminNote, resolveBookingAdminNote } from "./actions"
 
 export const dynamic = "force-dynamic"
 
@@ -62,6 +63,28 @@ type PayoutRow = {
   created_at: string | null
   note: string | null
 }
+
+type BookingAdminNoteRow = {
+  id: string
+  actor_id: string
+  note: string
+  note_type: string | null
+  is_pinned: boolean | null
+  is_resolved: boolean | null
+  resolved_at: string | null
+  resolved_by_id: string | null
+  created_at: string | null
+}
+
+type ProfileRow = {
+  id: string
+  username: string | null
+  role: string | null
+}
+
+type NoteStatusFilter = "all" | "active" | "done"
+type NoteTypeFilter = "all" | "general" | "urgent" | "follow_up_merchant" | "follow_up_payment" | "finance_issue"
+type NotePinFilter = "all" | "pinned"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -177,12 +200,85 @@ function deriveAttentionReasons(booking: BookingDetailRow) {
   return reasons
 }
 
+function noteTypeLabel(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "urgent") return "Urgent"
+  if (normalized === "follow_up_merchant") return "Follow Up Merchant"
+  if (normalized === "follow_up_payment") return "Follow Up Payment"
+  if (normalized === "finance_issue") return "Finance Issue"
+  return "General"
+}
+
+function noteTypeTone(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "urgent") return "border-rose-200 bg-rose-50 text-rose-700"
+  if (normalized === "follow_up_merchant") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "follow_up_payment") return "border-sky-200 bg-sky-50 text-sky-700"
+  if (normalized === "finance_issue") return "border-violet-200 bg-violet-50 text-violet-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function normalizeNoteStatusFilter(value: string | null | undefined): NoteStatusFilter {
+  const normalized = normalizeStatus(value || null)
+  if (normalized === "active" || normalized === "done") return normalized
+  return "all"
+}
+
+function normalizeNoteTypeFilter(value: string | null | undefined): NoteTypeFilter {
+  const normalized = normalizeStatus(value || null)
+  if (
+    normalized === "general" ||
+    normalized === "urgent" ||
+    normalized === "follow_up_merchant" ||
+    normalized === "follow_up_payment" ||
+    normalized === "finance_issue"
+  ) {
+    return normalized
+  }
+  return "all"
+}
+
+function normalizeNotePinFilter(value: string | null | undefined): NotePinFilter {
+  return normalizeStatus(value || null) === "pinned" ? "pinned" : "all"
+}
+
+function buildBookingDetailHref(
+  bookingId: string,
+  filters: {
+    noteStatus?: NoteStatusFilter
+    noteType?: NoteTypeFilter
+    notePin?: NotePinFilter
+    success?: string
+    error?: string
+  },
+) {
+  const params = new URLSearchParams()
+
+  if (filters.noteStatus && filters.noteStatus !== "all") params.set("note_status", filters.noteStatus)
+  if (filters.noteType && filters.noteType !== "all") params.set("note_type", filters.noteType)
+  if (filters.notePin && filters.notePin !== "all") params.set("note_pin", filters.notePin)
+  if (filters.success) params.set("success", filters.success)
+  if (filters.error) params.set("error", filters.error)
+
+  const query = params.toString()
+  return query ? `/admin/bookings/${bookingId}?${query}` : `/admin/bookings/${bookingId}`
+}
+
 export default async function AdminBookingDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{
+    success?: string
+    error?: string
+    note_status?: string
+    note_type?: string
+    note_pin?: string
+  }>
 }) {
   const { id } = await params
+  const resolvedSearchParams = (await searchParams) || {}
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
 
@@ -222,6 +318,30 @@ export default async function AdminBookingDetailPage({
     .limit(1)
     .maybeSingle<PayoutRow>()
 
+  const { data: adminNotesData } = await adminSupabase
+    .from("booking_admin_notes")
+    .select("id, actor_id, note, note_type, is_pinned, is_resolved, resolved_at, resolved_by_id, created_at")
+    .eq("booking_id", booking.id)
+    .order("is_resolved", { ascending: true })
+    .order("is_pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  const adminNotes = (adminNotesData as BookingAdminNoteRow[] | null) || []
+  const noteActorIds = [...new Set(adminNotes.flatMap((item) => [item.actor_id, item.resolved_by_id]).filter(Boolean))] as string[]
+  const { data: noteProfilesData } = noteActorIds.length
+    ? await adminSupabase.from("profiles").select("id, username, role").in("id", noteActorIds)
+    : { data: [] as ProfileRow[] }
+  const noteProfileMap = new Map(
+    (((noteProfilesData as ProfileRow[] | null) || []) as ProfileRow[]).map((profile) => [
+      profile.id,
+      {
+        username: profile.username || profile.id,
+        role: profile.role || "-",
+      },
+    ]),
+  )
+
   const phase = journeyPhase(booking)
   const ready = canHandoffToFinance(booking)
   const attentionReasons = deriveAttentionReasons(booking)
@@ -247,6 +367,51 @@ export default async function AdminBookingDetailPage({
       done: Boolean(booking.merchant_picked_up_at),
     },
   ]
+  const noteStatusFilter = normalizeNoteStatusFilter(resolvedSearchParams.note_status)
+  const noteTypeFilter = normalizeNoteTypeFilter(resolvedSearchParams.note_type)
+  const notePinFilter = normalizeNotePinFilter(resolvedSearchParams.note_pin)
+  const filteredNotes = adminNotes.filter((item) => {
+    if (noteStatusFilter === "active" && item.is_resolved) return false
+    if (noteStatusFilter === "done" && !item.is_resolved) return false
+    if (noteTypeFilter !== "all" && normalizeStatus(item.note_type) !== noteTypeFilter) return false
+    if (notePinFilter === "pinned" && !item.is_pinned) return false
+    return true
+  })
+  const activeNotes = filteredNotes.filter((item) => !item.is_resolved)
+  const resolvedNotes = filteredNotes.filter((item) => item.is_resolved)
+  const totalActiveNotes = adminNotes.filter((item) => !item.is_resolved).length
+  const totalResolvedNotes = adminNotes.filter((item) => item.is_resolved).length
+  const totalPinnedNotes = adminNotes.filter((item) => item.is_pinned).length
+  const noteStatusFilters: Array<{ value: NoteStatusFilter; label: string; count: number }> = [
+    { value: "all", label: "Semua", count: adminNotes.length },
+    { value: "active", label: "Aktif", count: totalActiveNotes },
+    { value: "done", label: "Done", count: totalResolvedNotes },
+  ]
+  const noteTypeFilters: Array<{ value: NoteTypeFilter; label: string; count: number }> = [
+    { value: "all", label: "Semua tag", count: adminNotes.length },
+    { value: "general", label: "General", count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "general").length },
+    { value: "urgent", label: "Urgent", count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "urgent").length },
+    {
+      value: "follow_up_merchant",
+      label: "Follow Up Merchant",
+      count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "follow_up_merchant").length,
+    },
+    {
+      value: "follow_up_payment",
+      label: "Follow Up Payment",
+      count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "follow_up_payment").length,
+    },
+    {
+      value: "finance_issue",
+      label: "Finance Issue",
+      count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "finance_issue").length,
+    },
+  ]
+  const notePinFilters: Array<{ value: NotePinFilter; label: string; count: number }> = [
+    { value: "all", label: "Semua pin", count: adminNotes.length },
+    { value: "pinned", label: "Pinned", count: totalPinnedNotes },
+  ]
+  const hasActiveNoteFilters = noteStatusFilter !== "all" || noteTypeFilter !== "all" || notePinFilter !== "all"
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -270,6 +435,18 @@ export default async function AdminBookingDetailPage({
             </Link>
           </div>
         </section>
+
+        {resolvedSearchParams.success ? (
+          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+            {resolvedSearchParams.success}
+          </div>
+        ) : null}
+
+        {resolvedSearchParams.error ? (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {resolvedSearchParams.error}
+          </div>
+        ) : null}
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
@@ -529,6 +706,252 @@ export default async function AdminBookingDetailPage({
               <p className="mt-2 text-sm text-slate-700">No. Rekening: {merchant?.bank_account_number || "-"}</p>
               <p className="mt-2 text-sm text-slate-700">Atas Nama: {merchant?.bank_account_holder || "-"}</p>
             </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Internal notes</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Tambahkan catatan operasional admin</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Catatan ini hanya untuk tim internal dan tidak tampil ke customer atau merchant.
+            </p>
+            <form action={addBookingAdminNote} className="mt-6 space-y-4">
+              <input type="hidden" name="booking_id" value={booking.id} />
+              <input type="hidden" name="note_status" value={noteStatusFilter} />
+              <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
+              <input type="hidden" name="note_pin" value={notePinFilter} />
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                <div>
+                  <label className="text-sm font-semibold text-slate-800">Kategori note</label>
+                  <select
+                    name="note_type"
+                    defaultValue="general"
+                    className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  >
+                    <option value="general">General</option>
+                    <option value="urgent">Urgent</option>
+                    <option value="follow_up_merchant">Follow Up Merchant</option>
+                    <option value="follow_up_payment">Follow Up Payment</option>
+                    <option value="finance_issue">Finance Issue</option>
+                  </select>
+                </div>
+                <div className="flex items-end">
+                  <label className="flex w-full items-center gap-3 rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-slate-700">
+                    <input type="checkbox" name="is_pinned" value="true" className="h-4 w-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400" />
+                    Pin note ini di atas
+                  </label>
+                </div>
+              </div>
+              <textarea
+                name="note"
+                placeholder="Tulis catatan follow up, konteks issue, atau keputusan operasional internal..."
+                required
+                className="min-h-[180px] w-full rounded-[22px] border border-slate-300 bg-white px-4 py-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+              />
+              <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
+                Simpan catatan internal
+              </button>
+            </form>
+          </div>
+
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent notes</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat catatan internal booking</h2>
+            <div className="mt-6 space-y-4 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Status note</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {noteStatusFilters.map((filter) => {
+                    const isActive = noteStatusFilter === filter.value
+                    return (
+                      <Link
+                        key={filter.value}
+                        href={buildBookingDetailHref(booking.id, {
+                          noteStatus: filter.value,
+                          noteType: noteTypeFilter,
+                          notePin: notePinFilter,
+                        })}
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                          isActive
+                            ? "border-orange-300 bg-orange-500 text-white shadow-[0_10px_24px_rgba(249,115,22,0.18)]"
+                            : "border-[#ead8c2] bg-white text-slate-700 hover:border-orange-200 hover:text-orange-700"
+                        }`}
+                      >
+                        {filter.label}
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}>
+                          {filter.count}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Tag note</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {noteTypeFilters.map((filter) => {
+                    const isActive = noteTypeFilter === filter.value
+                    return (
+                      <Link
+                        key={filter.value}
+                        href={buildBookingDetailHref(booking.id, {
+                          noteStatus: noteStatusFilter,
+                          noteType: filter.value,
+                          notePin: notePinFilter,
+                        })}
+                        className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                          isActive
+                            ? "border-slate-950 bg-slate-950 text-white"
+                            : "border-[#ead8c2] bg-white text-slate-700 hover:border-orange-200 hover:text-orange-700"
+                        }`}
+                      >
+                        {filter.label}
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] ${isActive ? "bg-white/10 text-white" : "bg-slate-100 text-slate-500"}`}>
+                          {filter.count}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pinned</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {notePinFilters.map((filter) => {
+                      const isActive = notePinFilter === filter.value
+                      return (
+                        <Link
+                          key={filter.value}
+                          href={buildBookingDetailHref(booking.id, {
+                            noteStatus: noteStatusFilter,
+                            noteType: noteTypeFilter,
+                            notePin: filter.value,
+                          })}
+                          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                            isActive
+                              ? "border-amber-300 bg-amber-500 text-white"
+                              : "border-[#ead8c2] bg-white text-slate-700 hover:border-orange-200 hover:text-orange-700"
+                          }`}
+                        >
+                          {filter.label}
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}>
+                            {filter.count}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+                {hasActiveNoteFilters ? (
+                  <Link
+                    href={buildBookingDetailHref(booking.id, {})}
+                    className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-700"
+                  >
+                    Reset filter note
+                  </Link>
+                ) : null}
+              </div>
+              <div className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                Menampilkan {filteredNotes.length} dari {adminNotes.length} note. Aktif {totalActiveNotes}, done {totalResolvedNotes}, pinned {totalPinnedNotes}.
+              </div>
+            </div>
+            <div className="mt-6 space-y-3">
+              {!adminNotes.length ? (
+                <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
+                  Belum ada catatan internal untuk booking ini.
+                </div>
+              ) : !filteredNotes.length ? (
+                <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 text-sm text-slate-600">
+                  Tidak ada note yang cocok dengan filter saat ini.
+                </div>
+              ) : (
+                activeNotes.map((item) => {
+                  const actor = noteProfileMap.get(item.actor_id)
+                  const resolver = item.resolved_by_id ? noteProfileMap.get(item.resolved_by_id) : null
+                  return (
+                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {item.is_pinned ? (
+                          <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-700">
+                            Pinned
+                          </span>
+                        ) : null}
+                        <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${noteTypeTone(item.note_type)}`}>
+                          {noteTypeLabel(item.note_type)}
+                        </span>
+                        <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                          {actor?.username || item.actor_id}
+                        </span>
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                          {titleCaseStatus(actor?.role || "-")}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{item.note}</p>
+                      <p className="mt-2 text-xs text-slate-500">{formatDateTime(item.created_at)}</p>
+                      {item.is_resolved ? (
+                        <p className="mt-2 text-xs text-emerald-700">
+                          Diselesaikan oleh {resolver?.username || item.resolved_by_id || "-"} pada {formatDateTime(item.resolved_at)}
+                        </p>
+                      ) : null}
+                      {!item.is_resolved ? (
+                        <form action={resolveBookingAdminNote} className="mt-4">
+                          <input type="hidden" name="booking_id" value={booking.id} />
+                          <input type="hidden" name="note_id" value={item.id} />
+                          <input type="hidden" name="note_status" value={noteStatusFilter} />
+                          <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
+                          <input type="hidden" name="note_pin" value={notePinFilter} />
+                          <button className="inline-flex items-center justify-center rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                            Tandai selesai
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+            {resolvedNotes.length ? (
+              <div className="mt-6">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-500">Resolved notes</p>
+                <div className="mt-3 space-y-3">
+                  {resolvedNotes.map((item) => {
+                    const actor = noteProfileMap.get(item.actor_id)
+                    const resolver = item.resolved_by_id ? noteProfileMap.get(item.resolved_by_id) : null
+                    return (
+                      <div key={`${item.id}-resolved`} className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                            Done
+                          </span>
+                          <span className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${noteTypeTone(item.note_type)}`}>
+                            {noteTypeLabel(item.note_type)}
+                          </span>
+                          <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            {actor?.username || item.actor_id}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm leading-7 text-slate-700">{item.note}</p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          Dibuat {formatDateTime(item.created_at)} | diselesaikan oleh {resolver?.username || item.resolved_by_id || "-"} pada {formatDateTime(item.resolved_at)}
+                        </p>
+                        <form action={reopenBookingAdminNote} className="mt-4">
+                          <input type="hidden" name="booking_id" value={booking.id} />
+                          <input type="hidden" name="note_id" value={item.id} />
+                          <input type="hidden" name="note_status" value={noteStatusFilter} />
+                          <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
+                          <input type="hidden" name="note_pin" value={notePinFilter} />
+                          <button className="inline-flex items-center justify-center rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:bg-orange-100">
+                            Buka lagi note ini
+                          </button>
+                        </form>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
           </div>
         </section>
       </div>
