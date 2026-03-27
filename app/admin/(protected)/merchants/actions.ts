@@ -34,12 +34,6 @@ async function getAdminActor() {
   }
 }
 
-function assertSuperadmin(role: string) {
-  if (role !== "superadmin") {
-    throw new Error("Hanya superadmin yang dapat menghapus merchant.")
-  }
-}
-
 async function sendMerchantDecisionEmail({
   email,
   brandName,
@@ -283,26 +277,88 @@ export async function reactivateMerchant(formData: FormData) {
 }
 
 export async function deleteMerchant(formData: FormData) {
-  const merchantId = formData.get("merchantId") as string
+  const merchantId = ((formData.get("merchantId") as string) || "").trim()
+  const profileId = ((formData.get("profileId") as string) || "").trim()
   const reason = ((formData.get("reason") as string) || "").trim()
 
-  if (!merchantId || !reason) return
+  if ((!merchantId && !profileId) || !reason) return
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
-  assertSuperadmin(actor.role)
 
-  const { error } = await supabaseAdmin
-    .from("merchants")
-    .update({
-      verification_status: "deleted",
-      rejection_reason: reason,
+  if (merchantId) {
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("id, user_id, verification_status")
+      .eq("id", merchantId)
+      .maybeSingle()
+
+    const { error } = await supabaseAdmin
+      .from("merchants")
+      .update({
+        verification_status: "deleted",
+        rejection_reason: reason,
+      })
+      .eq("id", merchantId)
+      .in("verification_status", ["approved", "inactive"])
+
+    if (error) {
+      console.error("Delete merchant error:", error)
+      return
+    }
+
+    revalidateMerchantPages()
+    revalidatePath(`/admin/merchants/${merchantId}`)
+
+    await createAdminAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      targetType: "merchant",
+      targetId: merchantId,
+      action: "delete",
+      summary: `Merchant ${merchantId} ditandai deleted`,
+      metadata: {
+        status: "deleted",
+        reason,
+        userId: merchant?.user_id ?? null,
+      },
     })
-    .eq("id", merchantId)
-    .in("verification_status", ["approved", "inactive"])
 
-  if (error) {
-    console.error("Delete merchant error:", error)
+    return
+  }
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, role")
+    .eq("id", profileId)
+    .maybeSingle()
+
+  if (profileError || !profile || profile.role !== "merchant") {
+    console.error("Delete orphan merchant profile error:", profileError)
+    return
+  }
+
+  const { data: relatedMerchant } = await supabaseAdmin
+    .from("merchants")
+    .select("id")
+    .eq("user_id", profileId)
+    .maybeSingle()
+
+  if (relatedMerchant?.id) {
+    console.error("Delete orphan merchant profile aborted: merchant row exists", relatedMerchant.id)
+    return
+  }
+
+  const { error: updateProfileError } = await supabaseAdmin
+    .from("profiles")
+    .update({
+      role: "customer",
+    })
+    .eq("id", profileId)
+    .eq("role", "merchant")
+
+  if (updateProfileError) {
+    console.error("Delete orphan merchant profile update error:", updateProfileError)
     return
   }
 
@@ -312,12 +368,13 @@ export async function deleteMerchant(formData: FormData) {
     actorId: actor.id,
     actorRole: actor.role,
     targetType: "merchant",
-    targetId: merchantId,
+    targetId: profileId,
     action: "delete",
-    summary: `Merchant ${merchantId} ditandai deleted`,
+    summary: `Role merchant tanpa data merchant dicabut untuk user ${profileId}`,
     metadata: {
       status: "deleted",
       reason,
+      fallbackTarget: "profile_only_merchant",
     },
   })
 }

@@ -1,3 +1,4 @@
+import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import {
@@ -35,6 +36,13 @@ type MerchantRow = {
   onboarding_completed: boolean | null
   verification_status: string | null
   rejection_reason: string | null
+  created_at: string | null
+}
+
+type OrphanMerchantProfileRow = {
+  id: string
+  role: string | null
+  email: string | null
   created_at: string | null
 }
 
@@ -98,15 +106,6 @@ export default async function AdminMerchantsPage({
   const queueFilter = (resolvedSearchParams.queue || "all").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
   const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  const { data: currentProfile } = user
-    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
-    : { data: null as { role?: string | null } | null }
-  const isSuperadmin = currentProfile?.role === "superadmin"
-
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
     supabase
       .from("merchants")
@@ -154,6 +153,52 @@ export default async function AdminMerchantsPage({
   const allCities = [...new Set([...pending, ...managed].map((merchant) => merchant.city).filter(Boolean))]
     .map((item) => String(item))
     .sort((a, b) => a.localeCompare(b))
+
+  const { data: merchantProfilesData } = await supabase
+    .from("profiles")
+    .select("id, role, created_at")
+    .eq("role", "merchant")
+
+  const merchantProfileIds = [...new Set(((merchantProfilesData as Array<{ id: string; role: string | null; created_at: string | null }> | null) || []).map((profile) => profile.id))]
+  const { data: linkedMerchantRows } = merchantProfileIds.length
+    ? await supabase.from("merchants").select("id, user_id").in("user_id", merchantProfileIds)
+    : { data: [] as Array<{ id: string; user_id: string | null }> }
+  const linkedMerchantUserIds = new Set(
+    (((linkedMerchantRows as Array<{ id: string; user_id: string | null }> | null) || []) as Array<{ id: string; user_id: string | null }>)
+      .map((item) => item.user_id)
+      .filter(Boolean),
+  )
+
+  const orphanMerchantProfilesRaw = (((merchantProfilesData as Array<{ id: string; role: string | null; created_at: string | null }> | null) || []) as Array<{
+    id: string
+    role: string | null
+    created_at: string | null
+  }>).filter((profile) => !linkedMerchantUserIds.has(profile.id))
+
+  const { data: authUsersData, error: authUsersError } = orphanMerchantProfilesRaw.length
+    ? await createAdminClient().auth.admin.listUsers({ page: 1, perPage: 1000 })
+    : { data: { users: [] as Array<{ id: string; email?: string | null; created_at?: string | null }> }, error: null }
+
+  if (authUsersError) {
+    console.error("Load auth users for orphan merchants error:", authUsersError)
+  }
+
+  const authUserMap = new Map(
+    (((authUsersData?.users as Array<{ id: string; email?: string | null; created_at?: string | null }> | undefined) || [])).map((userRow) => [
+      userRow.id,
+      {
+        email: userRow.email || null,
+        created_at: userRow.created_at || null,
+      },
+    ]),
+  )
+
+  const orphanMerchantProfiles: OrphanMerchantProfileRow[] = orphanMerchantProfilesRaw.map((profile) => ({
+    id: profile.id,
+    role: profile.role,
+    email: authUserMap.get(profile.id)?.email || null,
+    created_at: profile.created_at || authUserMap.get(profile.id)?.created_at || null,
+  }))
 
   function matchesMerchant(merchant: MerchantRow) {
     const stats = packageStatsMap.get(merchant.id) || {
@@ -647,7 +692,7 @@ export default async function AdminMerchantsPage({
                         </div>
                       ) : null}
 
-                      {merchant.verification_status !== "deleted" && isSuperadmin ? (
+                      {merchant.verification_status !== "deleted" ? (
                         <div className="flex h-full flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
                             Hapus merchant
@@ -669,17 +714,74 @@ export default async function AdminMerchantsPage({
                           </form>
                         </div>
                       ) : null}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </section>
+          )}
+        </section>
 
-                      {merchant.verification_status !== "deleted" && !isSuperadmin ? (
-                        <div className="flex h-full flex-col rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-600">
-                            Delete protected
-                          </p>
-                          <p className="mt-3 text-sm leading-7 text-slate-600">
-                            Penghapusan merchant dikunci untuk superadmin agar histori booking dan handoff tetap aman.
-                          </p>
-                        </div>
-                      ) : null}
+        <section className="space-y-5">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant anomalies</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Role merchant tanpa data merchant</h2>
+            </div>
+            <p className="max-w-2xl text-sm leading-7 text-slate-500">
+              Akun di bawah ini punya role `merchant` di profiles, tetapi belum memiliki row di tabel merchants.
+              Admin dapat mencabut akses merchant-nya langsung dari sini.
+            </p>
+          </div>
+
+          {!orphanMerchantProfiles.length ? (
+            <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+              <h2 className="text-2xl font-semibold text-slate-950">Tidak ada merchant tanpa profil merchant</h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Semua akun merchant saat ini sudah punya data merchant yang valid.
+              </p>
+            </section>
+          ) : (
+            <section className="grid gap-6">
+              {orphanMerchantProfiles.map((profile) => (
+                <article
+                  key={profile.id}
+                  className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-6">
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h3 className="text-2xl font-semibold text-slate-950">{fieldValue(profile.email)}</h3>
+                        <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
+                          Merchant tanpa row merchants
+                        </span>
+                      </div>
+                      <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+                        <p>Profile ID: <span className="font-medium text-slate-800">{profile.id}</span></p>
+                        <p>Role: <span className="font-medium text-slate-800">{fieldValue(profile.role)}</span></p>
+                        <p>Dibuat: <span className="font-medium text-slate-800">{profile.created_at ? new Date(profile.created_at).toLocaleString("id-ID") : "-"}</span></p>
+                      </div>
+                    </div>
+
+                    <div className="flex h-full min-w-[320px] flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
+                        Hapus akses merchant
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">
+                        Action ini akan mengubah role akun ini dari `merchant` menjadi `customer` karena data merchant-nya tidak ada.
+                      </p>
+                      <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
+                        <input type="hidden" name="profileId" value={profile.id} />
+                        <textarea
+                          name="reason"
+                          placeholder="Alasan pencabutan akses merchant..."
+                          required
+                          className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                        />
+                        <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+                          Hapus akses merchant
+                        </button>
+                      </form>
                     </div>
                   </div>
                 </article>
