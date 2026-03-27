@@ -1,12 +1,12 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
+import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
   approveMerchant,
-  deactivateMerchant,
-  deleteMerchant,
   reactivateMerchant,
   rejectMerchant,
+  deleteMerchant,
 } from "./actions"
 
 type MerchantRow = {
@@ -658,31 +658,7 @@ export default async function AdminMerchantsPage({
 
                     <div className="grid gap-4 lg:min-w-[390px] sm:grid-cols-2">
                       {merchant.verification_status === "approved" ? (
-                        <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-amber-200/70 bg-[linear-gradient(180deg,#fff9ef_0%,#fff4d8_100%)] shadow-[0_18px_50px_rgba(245,158,11,0.12)]">
-                          <div className="border-b border-amber-200/70 px-5 py-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-700">Temporary Block</p>
-                            <h4 className="mt-2 text-lg font-semibold text-slate-950">Nonaktif sementara</h4>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              Gunakan jika merchant perlu dihentikan sementara tanpa menghapus histori operasional.
-                            </p>
-                          </div>
-                          <form action={deactivateMerchant} className="mt-4 flex h-full flex-col space-y-4">
-                            <input type="hidden" name="merchantId" value={merchant.id} />
-                            <div className="flex h-full flex-col px-5 pb-5">
-                              <div className="rounded-[22px] border border-amber-200/80 bg-white/90 p-4">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Admin note</p>
-                                <textarea
-                                  name="reason"
-                                  placeholder="Alasan nonaktif sementara, opsional..."
-                                  className="mt-3 min-h-[104px] w-full rounded-[18px] border border-amber-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
-                                />
-                              </div>
-                              <button className="mt-4 inline-flex items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#f59e0b_0%,#f97316_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(245,158,11,0.24)] transition hover:brightness-105">
-                                Nonaktifkan merchant
-                              </button>
-                            </div>
-                          </form>
-                        </div>
+                        <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
 
                       {merchant.verification_status === "inactive" ? (
@@ -712,32 +688,7 @@ export default async function AdminMerchantsPage({
                       ) : null}
 
                       {merchant.verification_status !== "deleted" ? (
-                        <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-rose-200/70 bg-[linear-gradient(180deg,#fff7f7_0%,#ffe8e8_100%)] shadow-[0_18px_50px_rgba(225,29,72,0.12)]">
-                          <div className="border-b border-rose-200/70 px-5 py-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-rose-700">Access Removal</p>
-                            <h4 className="mt-2 text-lg font-semibold text-slate-950">Hapus merchant</h4>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              Gunakan hanya jika merchant harus dicabut permanen dari akses sistem tanpa menghapus histori transaksi.
-                            </p>
-                          </div>
-                          <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
-                            <input type="hidden" name="merchantId" value={merchant.id} />
-                            <div className="flex h-full flex-col px-5 pb-5">
-                              <div className="rounded-[22px] border border-rose-200/80 bg-white/90 p-4">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Deletion reason</p>
-                                <textarea
-                                  name="reason"
-                                  placeholder="Alasan penghapusan merchant..."
-                                  required
-                                  className="mt-3 min-h-[104px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                                />
-                              </div>
-                              <button className="mt-4 inline-flex items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#e11d48_0%,#dc2626_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(225,29,72,0.24)] transition hover:brightness-105">
-                                Hapus akses merchant
-                              </button>
-                            </div>
-                          </form>
-                        </div>
+                        <MerchantReasonActionCard merchantId={merchant.id} variant="delete" />
                       ) : null}
                     </div>
                   </div>
