@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-import { getRequiredEnv } from "@/lib/env"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(
   request: Request,
@@ -16,10 +15,7 @@ export async function GET(
       )
     }
 
-    const supabase = createClient(
-      getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-      getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-    )
+    const supabase = createAdminClient()
 
     const { data, error } = await supabase
       .from("packages")
@@ -30,10 +26,11 @@ export async function GET(
         description,
         price_adult,
         price_child,
-        thumbnail_url
+        cover_image,
+        merchant_id
       `)
       .eq("slug", slug)
-      .eq("status", "published")
+      .eq("status", "approved")
       .single()
 
     if (error || !data) {
@@ -43,7 +40,31 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(data)
+    const { data: merchant, error: merchantError } = await supabase
+      .from("merchants")
+      .select("id, verification_status, onboarding_completed")
+      .eq("id", data.merchant_id)
+      .maybeSingle()
+
+    const merchantStatus = String(merchant?.verification_status || "").trim().toLowerCase()
+    const merchantAllowed = Boolean(merchant?.id) && merchantStatus === "approved" && Boolean(merchant?.onboarding_completed)
+
+    if (merchantError || !merchantAllowed) {
+      return NextResponse.json(
+        { error: "Not found" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({
+      id: data.id,
+      title: data.title,
+      slug: data.slug,
+      description: data.description,
+      price_adult: data.price_adult,
+      price_child: data.price_child,
+      thumbnail_url: data.cover_image,
+    })
 
   } catch (error) {
     console.error("Package detail error:", error)

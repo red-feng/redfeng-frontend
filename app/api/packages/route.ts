@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
 import type { NextRequest } from "next/server"
-import { getRequiredEnv } from "@/lib/env"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function GET(request: NextRequest) {
-  const supabase = createClient(
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-  )
+  const supabase = createAdminClient()
 
   const { searchParams } = new URL(request.url)
 
@@ -30,17 +26,18 @@ export async function GET(request: NextRequest) {
       id,
       title,
       slug,
-      destination,
+      country,
       duration,
       price_adult,
-      thumbnail_url
+      cover_image,
+      merchant_id
     `,
       { count: "exact" }
     )
-    .eq("status", "published")
+    .eq("status", "approved")
 
   if (destination && destination !== "Semua") {
-    query = query.eq("destination", destination)
+    query = query.eq("country", destination)
   }
 
   if (duration && duration !== "Semua") {
@@ -78,16 +75,58 @@ export async function GET(request: NextRequest) {
     query = query.order("created_at", { ascending: false })
   }
 
-  const { data, error, count } = await query.range(from, to)
+  const { data, error } = await query.range(from, to)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  const merchantIds = [...new Set(((data || []) as Array<{ merchant_id: string | null }>).map((item) => item.merchant_id).filter(Boolean))]
+  const { data: merchantRows, error: merchantError } = merchantIds.length
+    ? await supabase
+        .from("merchants")
+        .select("id, verification_status, onboarding_completed")
+        .in("id", merchantIds)
+    : { data: [], error: null }
+
+  if (merchantError) {
+    return NextResponse.json({ error: merchantError.message }, { status: 500 })
+  }
+
+  const publicMerchantIds = new Set(
+    ((merchantRows || []) as Array<{ id: string; verification_status: string | null; onboarding_completed: boolean | null }>)
+      .filter((merchant) => {
+        const status = String(merchant.verification_status || "").trim().toLowerCase()
+        return status === "approved" && Boolean(merchant.onboarding_completed)
+      })
+      .map((merchant) => merchant.id),
+  )
+
+  const publicPackages = ((data || []) as Array<{
+    id: string
+    title: string | null
+    slug: string
+    country: string | null
+    duration: number | null
+    price_adult: number | null
+    cover_image: string | null
+    merchant_id: string | null
+  }>)
+    .filter((pkg) => pkg.merchant_id && publicMerchantIds.has(pkg.merchant_id))
+    .map((pkg) => ({
+      id: pkg.id,
+      title: pkg.title,
+      slug: pkg.slug,
+      destination: pkg.country,
+      duration: pkg.duration,
+      price_adult: pkg.price_adult,
+      thumbnail_url: pkg.cover_image,
+    }))
+
   return NextResponse.json({
-    data,
-    total: count,
+    data: publicPackages,
+    total: publicPackages.length,
     page,
-    totalPages: Math.ceil((count || 0) / limit),
+    totalPages: Math.ceil(publicPackages.length / limit),
   })
 }

@@ -56,25 +56,13 @@ export default function FinanceLogin() {
       return
     }
 
-    if (profile.role === "merchant") {
-      router.push("/merchant/dashboard")
-      setLoading(false)
-      return
-    }
-
-    if (profile.role === "admin") {
-      router.push("/admin/dashboard")
-      setLoading(false)
-      return
-    }
-
     if (profile.role === "finance" || profile.role === "superadmin") {
       router.push("/finance/dashboard")
       setLoading(false)
       return
     }
 
-    setError("Akun ini tidak memiliki akses ke area finance.")
+    setError("Portal ini khusus untuk finance dan superadmin.")
     await supabase.auth.signOut()
     setLoading(false)
   }

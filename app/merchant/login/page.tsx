@@ -82,7 +82,9 @@ export default function MerchantLogin() {
       .maybeSingle()
 
     if (!profile) {
-      router.push("/")
+      setError("Akun ini belum memiliki akses merchant.")
+      await supabase.auth.signOut()
+      setLoading(false)
       return
     }
 
@@ -108,12 +110,11 @@ export default function MerchantLogin() {
       }
 
       router.push("/merchant/dashboard")
-    } else if (profile.role === "finance") {
-      router.push("/finance/dashboard")
-    } else if (profile.role === "admin" || profile.role === "superadmin") {
-      router.push("/admin/dashboard")
     } else {
-      router.push("/")
+      setError("Portal ini khusus untuk merchant.")
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
     }
 
     setLoading(false)

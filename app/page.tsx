@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
@@ -41,7 +41,7 @@ type PackageListItem = {
 }
 
 async function getPublicMerchantIds(): Promise<Set<string>> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data: merchantRows, error } = await supabase
     .from("merchants")
     .select("id, verification_status, onboarding_completed")
@@ -59,7 +59,7 @@ async function getPublicMerchantIds(): Promise<Set<string>> {
 }
 
 async function getAvailableCountries(): Promise<string[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const publicMerchantIds = await getPublicMerchantIds()
   if (publicMerchantIds.size === 0) return []
   const { data: packagesData, error } = await supabase
@@ -81,7 +81,7 @@ async function getAvailableCountries(): Promise<string[]> {
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
 }, locale: Locale = "id"): Promise<PackageListItem[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const publicMerchantIds = await getPublicMerchantIds()
 
   if (publicMerchantIds.size === 0) {
@@ -237,7 +237,7 @@ export default async function HomePage({
     getPackages(resolvedSearchParams, locale),
     getAvailableCountries(),
   ])
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { data: facilitiesData } = await supabase
     .from("facilities")

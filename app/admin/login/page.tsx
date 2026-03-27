@@ -61,25 +61,13 @@ export default function AdminLogin() {
       return
     }
 
-    if (profile.role === "merchant") {
-      router.push("/merchant/dashboard")
-      setLoading(false)
-      return
-    }
-
-    if (profile.role === "finance") {
-      router.push("/finance/dashboard")
-      setLoading(false)
-      return
-    }
-
     if (profile.role === "admin" || profile.role === "superadmin") {
       router.push("/admin/dashboard")
       setLoading(false)
       return
     }
 
-    setError("Akun ini tidak memiliki akses ke area admin.")
+    setError("Portal ini khusus untuk admin dan superadmin.")
     await supabase.auth.signOut()
     setLoading(false)
   }
