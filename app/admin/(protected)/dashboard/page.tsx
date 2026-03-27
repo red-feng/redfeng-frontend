@@ -3,6 +3,7 @@ import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { getRoleLabel } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { submitOperationsManagerReport } from "./actions"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -36,9 +37,27 @@ function titleCase(value: string | null | undefined) {
     .join(" ")
 }
 
-export default async function AdminDashboard() {
+type ManagerReportRow = {
+  id: string
+  author_id: string
+  author_role: string | null
+  report_type: string | null
+  title: string
+  summary: string
+  blockers: string | null
+  next_steps: string | null
+  metric_snapshot: Record<string, unknown> | null
+  created_at: string | null
+}
+
+export default async function AdminDashboard({
+  searchParams,
+}: {
+  searchParams?: Promise<{ success?: string; error?: string }>
+}) {
   const adminSupabase = createAdminClient()
   const supabase = await createClient()
+  const params = (await searchParams) || {}
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -303,12 +322,40 @@ export default async function AdminDashboard() {
     }
   })
 
+  const managerReports = (
+    (await adminSupabase
+      .from("manager_reports")
+      .select("id, author_id, author_role, report_type, title, summary, blockers, next_steps, metric_snapshot, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12)).data as ManagerReportRow[] | null
+  ) || []
+
+  const operationsReports = managerReports.filter((report) => report.report_type === "operations")
+  const financeReports = managerReports.filter((report) => report.report_type === "finance")
+  const reportActorEntries: Array<[string, string]> = [
+    ...adminProfiles.map((profile): [string, string] => [profile.id, profile.username || formatAdminCode(profile.id)]),
+    ...financeProfiles.map((profile): [string, string] => [profile.id, profile.email || formatFinanceCode(profile.id)]),
+  ]
+  const reportActorMap = new Map<string, string>(reportActorEntries)
+
   if (isOperationsManager) {
     const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
 
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-8">
+          {params.success ? (
+            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+              {params.success}
+            </div>
+          ) : null}
+
+          {params.error ? (
+            <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+              {params.error}
+            </div>
+          ) : null}
+
           <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
               <div className="max-w-3xl">
@@ -454,6 +501,90 @@ export default async function AdminDashboard() {
               </div>
             </div>
           </section>
+
+          <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operasional ke superadmin</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Ringkas backlog, blocker utama, dan langkah berikutnya agar superadmin mendapat pembaruan resmi dari operations manager.
+              </p>
+              <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
+                <input
+                  type="hidden"
+                  name="metric_snapshot"
+                  value={JSON.stringify({
+                    pendingMerchants,
+                    pendingPackages,
+                    financeReadyCount,
+                    merchantOverdueCount,
+                    packageOverdueCount,
+                    bookingStalledCount,
+                  })}
+                />
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Judul laporan</label>
+                  <input
+                    name="title"
+                    type="text"
+                    required
+                    placeholder="mis: Laporan operasional mingguan"
+                    className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan utama</label>
+                  <textarea
+                    name="summary"
+                    required
+                    placeholder="Ringkas kondisi merchant, package, booking, dan poin pengawasan utama."
+                    className="min-h-[140px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Blocker utama</label>
+                  <textarea
+                    name="blockers"
+                    placeholder="Masukkan blocker paling penting bila ada."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Next steps</label>
+                  <textarea
+                    name="next_steps"
+                    placeholder="Tulis tindakan lanjut yang akan dijalankan tim operasional."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                  Kirim laporan ke superadmin
+                </button>
+              </form>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent reports</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat laporan operations manager</h2>
+              <div className="mt-6 space-y-4">
+                {!operationsReports.length ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada laporan operasional yang dikirim ke superadmin.
+                  </div>
+                ) : (
+                  operationsReports.slice(0, 4).map((report) => (
+                    <div key={report.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">
+                        {formatDateTime(report.created_at)}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-950">{report.title}</h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">{report.summary}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </main>
     )
@@ -463,6 +594,18 @@ export default async function AdminDashboard() {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-8">
+          {params.success ? (
+            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+              {params.success}
+            </div>
+          ) : null}
+
+          {params.error ? (
+            <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+              {params.error}
+            </div>
+          ) : null}
+
           <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_28%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_360px]">
               <div className="max-w-3xl">
@@ -737,6 +880,50 @@ export default async function AdminDashboard() {
                     </div>
                   ))
                 )}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager reports</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan terbaru manager ke superadmin</h2>
+              <div className="mt-6 grid gap-4">
+                {!operationsReports.length && !financeReports.length ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada laporan manager yang masuk.
+                  </div>
+                ) : (
+                  managerReports.slice(0, 6).map((report) => (
+                    <div key={report.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                          {titleCase(report.report_type)}
+                        </span>
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                          {titleCase(report.author_role)}
+                        </span>
+                      </div>
+                      <h3 className="mt-4 text-lg font-semibold text-slate-950">{report.title}</h3>
+                      <p className="mt-2 text-sm text-slate-500">
+                        {(reportActorMap.get(report.author_id) || report.author_id || "-") as string} | {formatDateTime(report.created_at)}
+                      </p>
+                      <p className="mt-4 text-sm leading-7 text-slate-600">{report.summary}</p>
+                      {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                      {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Reporting line</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Alur laporan manager</h2>
+              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                <p>1. Operations manager mengirim laporan backlog operasional, blocker, dan next steps ke superadmin.</p>
+                <p>2. Finance manager mengirim ringkasan outstanding payout, aging, dan isu keuangan ke superadmin.</p>
+                <p>3. Superadmin membaca laporan manager bersama performa tim dan audit log untuk keputusan lintas fungsi.</p>
               </div>
             </div>
           </section>
