@@ -1,5 +1,7 @@
 import Link from "next/link"
+import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -15,6 +17,15 @@ function daysSince(value: string | null | undefined) {
 
 export default async function AdminDashboard() {
   const adminSupabase = createAdminClient()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
+    : { data: null }
+  const isSuperadmin = currentProfile?.role === "superadmin"
 
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
@@ -154,6 +165,242 @@ export default async function AdminDashboard() {
       note: "Booking yang sudah siap dikirim admin ke finance.",
     },
   ]
+
+  const adminProfiles = isSuperadmin
+    ? (
+        (await adminSupabase
+          .from("profiles")
+          .select("id, username")
+          .eq("role", "admin")
+          .order("username", { ascending: true })).data as Array<{ id: string; username: string | null }> | null
+      ) || []
+    : []
+
+  const financeRoleProfiles = isSuperadmin
+    ? (
+        (await adminSupabase.from("profiles").select("id").eq("role", "finance")).data as Array<{ id: string }> | null
+      ) || []
+    : []
+
+  const financeUsersRaw = isSuperadmin ? await adminSupabase.auth.admin.listUsers() : { data: { users: [] as Array<{ id: string; email?: string | null }> } }
+  const financeProfileIds = new Set(financeRoleProfiles.map((profile) => profile.id))
+  const financeProfiles = (financeUsersRaw.data.users || [])
+    .filter((authUser) => financeProfileIds.has(authUser.id))
+    .sort((a, b) => (a.email || "").localeCompare(b.email || ""))
+
+  const superadminControlCards = [
+    {
+      label: "Finance accounts",
+      value: String(financeProfiles.length),
+      note: "Semua akun finance yang aktif di layer internal.",
+    },
+    {
+      label: "Admin accounts",
+      value: String(adminProfiles.length),
+      note: "Semua akun admin operasional yang terhubung ke workspace yang sama.",
+    },
+    {
+      label: "Merchant pending",
+      value: String(pendingMerchants),
+      note: "Queue merchant yang masih menunggu keputusan tim admin.",
+    },
+    {
+      label: "Finance handoff",
+      value: String(financeReadyCount),
+      note: "Booking siap handoff yang perlu dipantau lintas admin dan finance.",
+    },
+  ]
+
+  if (isSuperadmin) {
+    return (
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_28%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_360px]">
+              <div className="max-w-3xl">
+                <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                  Superadmin Command
+                </span>
+                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                  Dashboard superadmin untuk memantau semua admin, semua finance, dan health operasional Red Feng.
+                </h1>
+                <p className="mt-4 text-base leading-8 text-orange-50/90">
+                  Dari satu layar, superadmin bisa melihat kekuatan akun internal, queue operasional, dan jalur kontrol menuju Internal Accounts, Booking Center, serta Audit Log.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link
+                    href="/finance/admin-users"
+                    className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+                  >
+                    Kelola akun internal
+                  </Link>
+                  <Link
+                    href="/admin/bookings"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Buka Booking Center
+                  </Link>
+                  <Link
+                    href="/admin/audit-log"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Buka Audit Log
+                  </Link>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Control snapshot</p>
+                <div className="mt-5 grid gap-4">
+                  <div>
+                    <p className="text-sm text-orange-50/80">Finance accounts</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{financeProfiles.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Admin accounts</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{adminProfiles.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-orange-50/80">Pending ops items</p>
+                    <p className="mt-1 text-3xl font-semibold text-white">{pendingMerchants + pendingPackages + financeReadyCount}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {superadminControlCards.map((card) => (
+              <div
+                key={card.label}
+                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              >
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
+              </div>
+            ))}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance network</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Semua akun finance</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Superadmin memegang kontrol tertinggi untuk semua akun finance yang mengelola payout dan transfer merchant.
+                  </p>
+                </div>
+                <Link href="/finance/admin-users" className="text-sm font-semibold text-orange-600">
+                  Buka Internal Accounts
+                </Link>
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {financeProfiles.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada akun finance aktif.
+                  </div>
+                ) : (
+                  financeProfiles.map((profile) => (
+                    <div key={profile.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance account</p>
+                      <h3 className="mt-3 text-lg font-semibold text-slate-950">{profile.email || "(tanpa email)"}</h3>
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+                        {formatFinanceCode(profile.id)}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin network</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Semua akun admin</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Semua admin operasional terhubung ke data yang sama, sehingga superadmin bisa memantau kapasitas tim dari satu dashboard.
+                  </p>
+                </div>
+                <Link href="/finance/admin-users" className="text-sm font-semibold text-orange-600">
+                  Kelola akun
+                </Link>
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {adminProfiles.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada akun admin aktif.
+                  </div>
+                ) : (
+                  adminProfiles.map((profile) => (
+                    <div key={profile.id} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Admin account</p>
+                      <h3 className="mt-3 text-lg font-semibold text-slate-950">{profile.username || "(tanpa username)"}</h3>
+                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+                        {formatAdminCode(profile.id)}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue lintas tim yang perlu perhatian</h2>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                {needsAttentionCards.map((card) => (
+                  <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Superadmin lanes</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur kontrol cepat</h2>
+              <div className="mt-5 grid gap-4">
+                {[
+                  {
+                    label: "Internal Accounts",
+                    href: "/finance/admin-users",
+                    description: "Kelola seluruh akun finance dan admin dari satu panel.",
+                  },
+                  {
+                    label: "Booking Center",
+                    href: "/admin/bookings",
+                    description: "Pantau booking lintas produk dan kesiapan handoff ke finance.",
+                  },
+                  {
+                    label: "Audit Log",
+                    href: "/admin/audit-log",
+                    description: "Telusuri jejak aksi admin, superadmin, dan handoff operasional.",
+                  },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{item.label}</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
+                    <div className="mt-4 text-sm font-semibold text-orange-600">Buka area -&gt;</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
