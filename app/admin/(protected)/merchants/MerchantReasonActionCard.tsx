@@ -59,16 +59,10 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
           <p className="mt-2 text-sm leading-6 text-slate-600">{copy.description}</p>
         </div>
         <div className="flex h-full flex-col px-5 pb-5 pt-4">
-          <div className={`rounded-[18px] border bg-[#fffaf4] p-4 ${copy.panelClass}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.noteLabel}</p>
-            <p className="mt-2 text-sm leading-7 text-slate-600">
-              Klik tombol di bawah untuk membuka pop-up alasan sebelum action dijalankan.
-            </p>
-          </div>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className={`mt-4 inline-flex items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition ${copy.buttonClass}`}
+            className={`mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition ${copy.buttonClass}`}
           >
             {copy.buttonLabel}
           </button>
