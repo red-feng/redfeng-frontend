@@ -671,7 +671,7 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="flex w-full flex-col gap-3 lg:w-[272px]">
+                    <div className="flex w-full flex-col gap-3 lg:w-[272px] lg:pt-[58px]">
                       {merchant.verification_status === "approved" ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
