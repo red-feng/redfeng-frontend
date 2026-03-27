@@ -1,6 +1,24 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 
+function getCustomerPortalRoleError(role: string | null | undefined) {
+  const normalizedRole = String(role || "").trim().toLowerCase()
+
+  if (normalizedRole === "merchant") {
+    return "Akun Google ini terdaftar sebagai merchant. Gunakan portal merchant untuk melanjutkan."
+  }
+
+  if (normalizedRole === "finance") {
+    return "Akun Google ini terdaftar sebagai finance. Gunakan portal finance untuk melanjutkan."
+  }
+
+  if (normalizedRole === "admin" || normalizedRole === "superadmin") {
+    return "Akun Google ini terdaftar sebagai admin internal. Gunakan portal admin untuk melanjutkan."
+  }
+
+  return "Portal ini khusus untuk customer."
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
@@ -35,7 +53,9 @@ export async function GET(request: Request) {
       }
 
       await supabase.auth.signOut()
-      return NextResponse.redirect(new URL("/login?error=Portal%20ini%20khusus%20untuk%20customer.", origin))
+      return NextResponse.redirect(
+        new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(profile.role))}`, origin),
+      )
     }
   }
 
