@@ -15,6 +15,26 @@ function daysSince(value: string | null | undefined) {
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return value
+  return parsed.toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+}
+
+function titleCase(value: string | null | undefined) {
+  const normalized = String(value || "").trim()
+  if (!normalized) return "-"
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
 export default async function AdminDashboard() {
   const adminSupabase = createAdminClient()
   const supabase = await createClient()
@@ -211,6 +231,70 @@ export default async function AdminDashboard() {
     },
   ]
 
+  const teamActionLogs = isSuperadmin
+    ? (
+        (await adminSupabase
+          .from("admin_action_logs")
+          .select("id, actor_id, actor_role, target_type, action, summary, created_at")
+          .order("created_at", { ascending: false })
+          .limit(120)).data as Array<{
+          id: string
+          actor_id: string | null
+          actor_role: string | null
+          target_type: string | null
+          action: string
+          summary: string
+          created_at: string | null
+        }> | null
+      ) || []
+    : []
+
+  const adminActorMap = new Map(adminProfiles.map((profile) => [profile.id, profile]))
+  const financeActorMap = new Map(financeProfiles.map((profile) => [profile.id, profile]))
+
+  const adminPerformance = adminProfiles
+    .map((profile) => {
+      const logs = teamActionLogs.filter((log) => log.actor_id === profile.id)
+      return {
+        id: profile.id,
+        username: profile.username || "(tanpa username)",
+        code: formatAdminCode(profile.id),
+        totalActions: logs.length,
+        merchantActions: logs.filter((log) => log.target_type === "merchant").length,
+        packageActions: logs.filter((log) => log.target_type === "package").length,
+        bookingHandoffs: logs.filter((log) => log.action === "handoff_to_finance").length,
+        lastActionAt: logs[0]?.created_at || null,
+      }
+    })
+    .sort((a, b) => b.totalActions - a.totalActions || a.username.localeCompare(b.username))
+
+  const financePerformance = financeProfiles
+    .map((profile) => {
+      const logs = teamActionLogs.filter((log) => log.actor_id === profile.id)
+      return {
+        id: profile.id,
+        email: profile.email || "(tanpa email)",
+        code: formatFinanceCode(profile.id),
+        totalActions: logs.length,
+        approved: logs.filter((log) => log.action === "finance_approve_payout").length,
+        processing: logs.filter((log) => log.action === "finance_mark_processing").length,
+        paid: logs.filter((log) => log.action === "finance_mark_paid").length,
+        rejected: logs.filter((log) => log.action === "finance_reject_payout").length,
+        lastActionAt: logs[0]?.created_at || null,
+      }
+    })
+    .sort((a, b) => b.totalActions - a.totalActions || a.email.localeCompare(b.email))
+
+  const recentTeamActivity = teamActionLogs.slice(0, 12).map((log) => {
+    const adminActor = log.actor_id ? adminActorMap.get(log.actor_id) : null
+    const financeActor = log.actor_id ? financeActorMap.get(log.actor_id) : null
+    return {
+      ...log,
+      actorLabel: adminActor?.username || financeActor?.email || log.actor_id || "-",
+      actorCode: adminActor ? formatAdminCode(adminActor.id) : financeActor ? formatFinanceCode(financeActor.id) : "-",
+    }
+  })
+
   if (isSuperadmin) {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -395,6 +479,137 @@ export default async function AdminDashboard() {
                   </Link>
                 ))}
               </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin performance</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Review kinerja admin</h2>
+              <div className="mt-6 space-y-4">
+                {adminPerformance.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada aktivitas admin yang tercatat.
+                  </div>
+                ) : (
+                  adminPerformance.map((item) => (
+                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Admin actor</p>
+                          <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.username}</h3>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{item.code}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3 text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">{item.totalActions}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Merchant</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.merchantActions}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Package</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.packageActions}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Handoff</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.bookingHandoffs}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-xs text-slate-500">Aksi terakhir: {formatDateTime(item.lastActionAt)}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance performance</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Review kinerja finance</h2>
+              <div className="mt-6 space-y-4">
+                {financePerformance.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada aktivitas finance yang tercatat.
+                  </div>
+                ) : (
+                  financePerformance.map((item) => (
+                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance actor</p>
+                          <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.email}</h3>
+                          <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{item.code}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] px-4 py-3 text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">{item.totalActions}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Approve</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.approved}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Processing</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.processing}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Paid</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.paid}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-[#fffaf4] p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rejected</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.rejected}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-xs text-slate-500">Aksi terakhir: {formatDateTime(item.lastActionAt)}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent team activity</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aktivitas terbaru admin dan finance</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Gunakan panel ini untuk melihat siapa yang baru saja approve, handoff, memproses, atau menutup payout di sistem.
+                </p>
+              </div>
+              <Link href="/admin/audit-log" className="text-sm font-semibold text-orange-600">
+                Buka Audit Log
+              </Link>
+            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {recentTeamActivity.length === 0 ? (
+                <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                  Belum ada aktivitas tim yang tercatat.
+                </div>
+              ) : (
+                recentTeamActivity.map((item) => (
+                  <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                        {titleCase(item.actor_role)}
+                      </span>
+                      <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                        {titleCase(item.action)}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-lg font-semibold text-slate-950">{item.actorLabel}</h3>
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">{item.actorCode}</p>
+                    <p className="mt-4 text-sm leading-7 text-slate-600">{item.summary}</p>
+                    <p className="mt-4 text-xs text-slate-500">{formatDateTime(item.created_at)}</p>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </div>

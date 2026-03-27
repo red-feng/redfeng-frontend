@@ -1,6 +1,7 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { createAdminAuditLog } from "@/lib/admin-audit"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 
@@ -28,7 +29,10 @@ async function ensureFinance() {
     redirect("/finance/login")
   }
 
-  return user
+  return {
+    user,
+    role: profile.role,
+  }
 }
 
 function backToPayouts(message: string, type: "success" | "error"): never {
@@ -36,7 +40,7 @@ function backToPayouts(message: string, type: "success" | "error"): never {
 }
 
 export async function updatePayoutStatus(formData: FormData) {
-  await ensureFinance()
+  const actor = await ensureFinance()
 
   const payoutId = String(formData.get("payoutId") || "")
   const nextStatus = String(formData.get("nextStatus") || "")
@@ -124,6 +128,36 @@ export async function updatePayoutStatus(formData: FormData) {
       backToPayouts(bookingUpdateError.message, "error")
     }
   }
+
+  await createAdminAuditLog({
+    actorId: actor.user.id,
+    actorRole: actor.role,
+    targetType: "booking",
+    targetId: payout.booking_id || payout.id,
+    action:
+      nextStatus === "approved"
+        ? "finance_approve_payout"
+        : nextStatus === "processing"
+          ? "finance_mark_processing"
+          : nextStatus === "paid"
+            ? "finance_mark_paid"
+            : "finance_reject_payout",
+    summary:
+      nextStatus === "approved"
+        ? `Finance approve payout ${payout.id}`
+        : nextStatus === "processing"
+          ? `Finance tandai payout ${payout.id} sebagai processing`
+          : nextStatus === "paid"
+            ? `Finance tandai payout ${payout.id} sebagai paid`
+            : `Finance reject payout ${payout.id}`,
+    metadata: {
+      payoutId,
+      bookingId: payout.booking_id,
+      previousStatus: payout.status,
+      nextStatus,
+      note: note || null,
+    },
+  })
 
   const successMessage =
     nextStatus === "approved"
