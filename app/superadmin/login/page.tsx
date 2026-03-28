@@ -4,12 +4,10 @@ import Link from "next/link"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
-import { resolveInternalLoginCandidates, normalizeInternalUsername } from "@/lib/internal-auth"
-import { isFinancePortalRole } from "@/lib/internal-roles"
+import { buildInternalSuperadminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 
-export default function FinanceLogin() {
+export default function SuperadminLoginPage() {
   const supabase = createClient()
-
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
@@ -28,31 +26,13 @@ export default function FinanceLogin() {
 
     await supabase.auth.signOut()
 
-    const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
-    let data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"] | null = null
-    let error: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["error"] | null = null
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: buildInternalSuperadminEmail(normalizedUsername),
+      password,
+    })
 
-    for (const candidate of loginCandidates) {
-      const attempt = await supabase.auth.signInWithPassword({
-        email: candidate,
-        password,
-      })
-      if (attempt.data.user) {
-        data = attempt.data
-        error = null
-        break
-      }
-      error = attempt.error
-    }
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    if (!data?.user) {
-      setError("Sesi finance tidak ditemukan. Coba login ulang.")
+    if (signInError || !data.user) {
+      setError(signInError?.message || "Username atau password superadmin tidak valid.")
       setLoading(false)
       return
     }
@@ -63,66 +43,51 @@ export default function FinanceLogin() {
       .eq("id", data.user.id)
       .maybeSingle()
 
-    if (!profile) {
-      setError("Akun ini belum memiliki akses finance.")
+    if (profile?.role !== "superadmin") {
+      setError("Portal ini khusus untuk superadmin.")
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    if (profile.role === "superadmin") {
-      setError("Portal ini khusus untuk finance dan finance manager. Gunakan portal superadmin.")
-      await supabase.auth.signOut()
-      setLoading(false)
-      return
-    }
-
-    if (isFinancePortalRole(profile.role)) {
-      window.location.assign("/finance/dashboard")
-      setLoading(false)
-      return
-    }
-
-    setError("Portal ini khusus untuk finance dan finance manager.")
-    await supabase.auth.signOut()
-    setLoading(false)
+    window.location.assign("/superadmin/dashboard")
   }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f6f0e8_100%)] px-4 py-10 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl overflow-hidden rounded-[36px] border border-orange-200/60 bg-white shadow-[0_32px_110px_rgba(146,64,14,0.16)] lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative overflow-hidden bg-[linear-gradient(145deg,#7c2d12_0%,#c2410c_36%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white sm:px-10 lg:px-12 lg:py-14">
+        <section className="relative overflow-hidden bg-[linear-gradient(145deg,#431407_0%,#7c2d12_26%,#c2410c_62%,#fdba74_100%)] px-8 py-10 text-white sm:px-10 lg:px-12 lg:py-14">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.12),transparent_30%)]" />
           <div className="relative flex h-full flex-col">
             <span className="inline-flex w-fit rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-              Red Feng Finance
+              Red Feng Superadmin
             </span>
             <h1 className="mt-6 max-w-xl text-4xl font-semibold leading-tight sm:text-5xl">
-              Secure access untuk finance workspace Red Feng.
+              Executive control portal untuk pemegang akses tertinggi Red Feng.
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-orange-50/92">
-              Halaman ini khusus untuk tim internal yang menangani payout merchant, verifikasi pencairan,
-              dan monitoring arus dana payout.
+              Portal ini dikhususkan untuk superadmin yang mengawasi manager operasional, manager finance,
+              audit lintas tim, dan kesehatan sistem internal.
             </p>
 
             <div className="mt-10 grid gap-4">
               {[
-                "Payout approval dan kontrol status transfer",
-                "Monitoring nominal outstanding dan paid",
-                "Akses internal untuk finance dan finance manager",
+                "Kontrol eksekutif atas manager operasional dan manager finance",
+                "Monitoring audit lintas tim, backlog, dan handoff kritis",
+                "Pembuatan akun manager langsung dari executive dashboard",
               ].map((item) => (
                 <div
                   key={item}
                   className="rounded-[24px] border border-white/18 bg-white/10 px-5 py-4 text-sm leading-7 text-orange-50/90 backdrop-blur"
                 >
-                  <span className="mr-3 text-amber-200">●</span>
+                  <span className="mr-3 text-amber-200">•</span>
                   {item}
                 </div>
               ))}
             </div>
 
             <div className="mt-auto pt-10 text-sm text-orange-100/85">
-              Bukan tim finance? Gunakan portal admin, merchant, atau customer sesuai peran akun Anda.
+              Bukan superadmin? Gunakan portal admin, finance, merchant, atau customer sesuai peran akun Anda.
             </div>
           </div>
         </section>
@@ -133,13 +98,13 @@ export default function FinanceLogin() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-700">
-                    Finance Login
+                    Superadmin Login
                   </span>
                   <h2 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                    Masuk ke finance dashboard
+                    Masuk ke superadmin dashboard
                   </h2>
-                    <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan username internal yang dibuat oleh finance manager.
+                  <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
+                    Gunakan username superadmin internal untuk masuk ke executive control center.
                   </p>
                 </div>
                 <Link
@@ -160,17 +125,17 @@ export default function FinanceLogin() {
               <div className="mt-8 space-y-6">
                 <div className="space-y-3">
                   <label
-                    htmlFor="finance-username"
+                    htmlFor="superadmin-username"
                     className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500"
                   >
-                    Username finance
+                    Username superadmin
                   </label>
                   <input
-                    id="finance-username"
+                    id="superadmin-username"
                     type="text"
                     autoComplete="username"
                     className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                    placeholder="mis: finance.tim"
+                    placeholder="mis: owner"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                   />
@@ -178,35 +143,27 @@ export default function FinanceLogin() {
 
                 <div className="space-y-3">
                   <label
-                    htmlFor="finance-password"
+                    htmlFor="superadmin-password"
                     className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500"
                   >
                     Password
                   </label>
                   <PasswordField
-                    id="finance-password"
+                    id="superadmin-password"
                     autoComplete="current-password"
                     className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 pr-28 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                    placeholder="Masukkan password finance"
+                    placeholder="Masukkan password superadmin"
                     value={password}
                     onChange={setPassword}
                   />
-                  <div className="flex justify-end">
-                      <Link
-                        href="/forgot-password?next=/finance/login"
-                        className="text-sm font-medium text-orange-700 transition hover:text-orange-800"
-                      >
-                        Reset lewat manager
-                      </Link>
-                  </div>
                 </div>
 
                 <button
                   onClick={handleLogin}
                   disabled={loading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_42%,#fb923c_100%)] px-5 py-4 text-base font-semibold text-white shadow-[0_16px_36px_rgba(194,65,12,0.24)] transition hover:shadow-[0_20px_44px_rgba(194,65,12,0.3)] disabled:cursor-not-allowed disabled:opacity-70"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_42%,#fb923c_100%)] px-5 py-4 text-base font-semibold text-white shadow-[0_16px_36px_rgba(194,65,12,0.24)] transition hover:shadow-[0_20px_44px_rgba(194,65,12,0.3)] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loading ? "Memproses login..." : "Masuk ke finance dashboard"}
+                  {loading ? "Memproses login..." : "Masuk ke superadmin dashboard"}
                   <span aria-hidden="true">→</span>
                 </button>
               </div>

@@ -33,6 +33,8 @@ export default async function CustomerLayout({
     })
   } else if (profile.role === "merchant") {
     redirect("/merchant/login")
+  } else if (profile.role === "superadmin") {
+    redirect("/superadmin/login")
   } else if (isAdminPortalRole(profile.role)) {
     redirect("/admin/login")
   } else if (isFinancePortalRole(profile.role)) {

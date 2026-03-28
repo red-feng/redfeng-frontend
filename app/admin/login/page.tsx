@@ -68,13 +68,20 @@ export default function AdminLogin() {
       return
     }
 
+    if (profile.role === "superadmin") {
+      setError("Portal ini khusus untuk admin dan operations manager. Gunakan portal superadmin.")
+      await supabase.auth.signOut()
+      setLoading(false)
+      return
+    }
+
     if (isAdminPortalRole(profile.role)) {
       window.location.assign("/admin/dashboard")
       setLoading(false)
       return
     }
 
-    setError("Portal ini khusus untuk admin, operations manager, dan superadmin.")
+    setError("Portal ini khusus untuk admin dan operations manager.")
     await supabase.auth.signOut()
     setLoading(false)
   }
@@ -100,7 +107,7 @@ export default function AdminLogin() {
               {[
                 "Merchant approvals dan revisi dokumen",
                 "Monitoring booking, paket, dan kualitas listing",
-                "Akses internal untuk admin, operations manager, dan superadmin",
+                "Akses internal untuk admin dan operations manager",
               ].map((item) => (
                 <div
                   key={item}
@@ -130,7 +137,7 @@ export default function AdminLogin() {
                     Masuk ke admin dashboard
                   </h2>
                   <p className="mt-3 max-w-md text-sm leading-7 text-slate-600 sm:text-base">
-                    Gunakan username internal yang dibuat oleh operations manager atau superadmin.
+                    Gunakan username internal yang dibuat oleh operations manager.
                   </p>
                 </div>
                 <Link
@@ -184,7 +191,7 @@ export default function AdminLogin() {
                   />
                   <div className="flex justify-end">
                     <span className="text-sm font-medium text-orange-700">
-                      Reset password dikelola oleh operations manager atau superadmin.
+                      Reset password dikelola oleh operations manager.
                     </span>
                   </div>
                 </div>

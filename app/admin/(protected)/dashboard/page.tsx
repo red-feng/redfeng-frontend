@@ -1044,7 +1044,7 @@ export default async function AdminDashboard({
             <div className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <div className="grid gap-4">
                 <Link
-                  href="/admin/dashboard?view=operations-manager"
+                  href="/superadmin/operations-manager"
                   className="rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -1063,7 +1063,7 @@ export default async function AdminDashboard({
                 </Link>
 
                 <Link
-                  href="/finance/dashboard?view=finance-manager"
+                  href="/superadmin/finance-manager"
                   className="rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -1085,7 +1085,7 @@ export default async function AdminDashboard({
               <div className="grid gap-5 lg:grid-cols-2">
                 <form action={createAdminAccount} className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-6">
                   <input type="hidden" name="role" value="operations_manager" />
-                  <input type="hidden" name="return_to" value="/admin/dashboard" />
+                  <input type="hidden" name="return_to" value="/superadmin/dashboard" />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Create operations manager</p>
                   <h3 className="mt-3 text-xl font-semibold text-slate-950">Akun manager operasional</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -1125,7 +1125,7 @@ export default async function AdminDashboard({
 
                 <form action={createFinanceAccount} className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-6">
                   <input type="hidden" name="role" value="finance_manager" />
-                  <input type="hidden" name="return_to" value="/admin/dashboard" />
+                  <input type="hidden" name="return_to" value="/superadmin/dashboard" />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Create finance manager</p>
                   <h3 className="mt-3 text-xl font-semibold text-slate-950">Akun manager finance</h3>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
