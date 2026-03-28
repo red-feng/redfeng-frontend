@@ -1,8 +1,8 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { defaultFinanceSettings } from "@/lib/finance/settings"
-import { isFinanceExecutionRole } from "@/lib/internal-roles"
 import { saveFinanceSettings } from "./actions"
 
 export default async function FinanceSettingsPage({
@@ -16,10 +16,15 @@ export default async function FinanceSettingsPage({
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/finance/login")
+  }
+
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
-  const canEditSettings = isFinanceExecutionRole(currentProfile?.role)
+  const canEditSettings = ["finance_manager", "superadmin"].includes(currentProfile?.role || "")
   const settingsResult = await ((adminSupabase
     .from("finance_settings")
     .select(
@@ -131,7 +136,7 @@ export default async function FinanceSettingsPage({
               </button>
             ) : (
               <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
-                Finance Manager dapat memonitor parameter keuangan, tetapi perubahan setting hanya dilakukan oleh finance eksekusi atau superadmin.
+                Finance Settings dimiliki finance manager. Tim finance eksekusi tidak mengubah parameter ini, dan superadmin tetap memegang hak override.
               </div>
             )}
           </form>

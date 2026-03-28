@@ -49,12 +49,12 @@ export default async function FinanceProtectedLayout({
       ? [
           { href: "/finance/dashboard", label: "Dashboard" },
           { href: "/finance/payouts", label: "Payout Queue" },
+          { href: "/finance/settings", label: "Finance Settings" },
           { href: "/finance/team-accounts", label: "Team Accounts" },
         ]
       : [
           { href: "/finance/dashboard", label: "Dashboard" },
           { href: "/finance/payouts", label: "Payout Queue" },
-          { href: "/finance/settings", label: "Finance Settings" },
         ]
 
   return (

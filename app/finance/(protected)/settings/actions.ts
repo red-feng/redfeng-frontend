@@ -3,7 +3,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { isFinanceExecutionRole } from "@/lib/internal-roles"
 
 async function ensureFinance() {
   const supabase = await createClient()
@@ -16,7 +15,7 @@ async function ensureFinance() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !isFinanceExecutionRole(profile.role)) {
+  if (!profile || !["finance_manager", "superadmin"].includes(profile.role || "")) {
     redirect("/finance/login")
   }
 }

@@ -40,6 +40,7 @@ export default async function FinanceDashboardPage({
     : { data: null }
   const isFinanceManager = currentProfile?.role === "finance_manager"
   const isSuperadmin = currentProfile?.role === "superadmin"
+  const canManageFinanceSettings = isFinanceManager || isSuperadmin
   const showFinanceManagerView = isFinanceManager || (isSuperadmin && params.view === "finance-manager")
 
   const { data: payoutsData } = await adminSupabase
@@ -480,12 +481,14 @@ export default async function FinanceDashboardPage({
                 >
                   Buka Payout Queue
                 </Link>
-                <Link
-                  href="/finance/settings"
-                  className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                >
-                  Buka Finance Settings
-                </Link>
+                {canManageFinanceSettings ? (
+                  <Link
+                    href="/finance/settings"
+                    className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                  >
+                    Buka Finance Settings
+                  </Link>
+                ) : null}
               </div>
 
               <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
