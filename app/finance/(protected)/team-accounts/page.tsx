@@ -8,7 +8,7 @@ import {
   createFinanceAccount,
   deleteFinanceAccount,
   resetFinancePassword,
-} from "./actions"
+} from "./finance-actions"
 
 type SearchParams = Promise<{ success?: string; error?: string }>
 
