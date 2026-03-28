@@ -248,18 +248,6 @@ export default async function HomePage({
     if (normalizedRole === "superadmin") {
       redirect("/superadmin/dashboard")
     }
-
-    if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
-      redirect("/admin/dashboard")
-    }
-
-    if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
-      redirect("/finance/dashboard")
-    }
-
-    if (normalizedRole === "merchant") {
-      redirect("/merchant/dashboard")
-    }
   }
 
   const resolvedSearchParams = (await searchParams) || {}

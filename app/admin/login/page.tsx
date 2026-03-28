@@ -6,14 +6,25 @@ import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
+import { useSearchParams } from "next/navigation"
 
 export default function AdminLogin() {
   const supabase = createClient()
+  const searchParams = useSearchParams()
 
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const systemError = searchParams.get("error")
+  const systemErrorMessage =
+    systemError === "no-session"
+      ? "Sesi admin belum terbentuk. Coba login ulang."
+      : systemError === "no-profile"
+        ? "Akun internal ini belum memiliki profile admin yang valid."
+        : systemError?.startsWith("wrong-role:")
+          ? `Portal admin menerima role admin atau operations manager. Role terdeteksi: ${systemError.replace("wrong-role:", "")}.`
+          : ""
 
   const handleLogin = async () => {
     setLoading(true)
@@ -132,6 +143,12 @@ export default function AdminLogin() {
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
+
+              {systemErrorMessage ? (
+                <div className="mt-8 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {systemErrorMessage}
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="mt-8 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

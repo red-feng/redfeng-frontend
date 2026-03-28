@@ -23,7 +23,7 @@ export default async function AdminProtectedLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/admin/login")
+    redirect("/admin/login?error=no-session")
   }
 
   const { data: profile } = await supabase
@@ -33,7 +33,7 @@ export default async function AdminProtectedLayout({
     .single()
 
   if (!profile) {
-    redirect("/admin/login")
+    redirect("/admin/login?error=no-profile")
   }
 
   if (profile.role === "merchant") {
@@ -45,7 +45,7 @@ export default async function AdminProtectedLayout({
   }
 
   if (!isAdminPortalRole(profile.role)) {
-    redirect("/admin/login")
+    redirect(`/admin/login?error=${encodeURIComponent(`wrong-role:${String(profile.role || "unknown")}`)}`)
   }
 
   const isOperationsManager = profile.role === "operations_manager"
