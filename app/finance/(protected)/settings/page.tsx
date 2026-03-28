@@ -36,7 +36,9 @@ export default async function FinanceSettingsPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const canEditSettings = ["finance_manager", "superadmin"].includes(currentProfile?.role || "")
-  const settings = await getFinanceSettings(adminSupabase)
+  const settings = await getFinanceSettings(
+    adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
+  )
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
