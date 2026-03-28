@@ -3,6 +3,14 @@ import midtransClient from "midtrans-client"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { createClient as createServerClient } from "@/lib/supabase/server"
+import { normalizePaymentMethod } from "@/lib/finance/settings"
+
+function resolveEnabledPayments(paymentMethod: string | null | undefined) {
+  const normalizedMethod = normalizePaymentMethod(paymentMethod)
+  if (normalizedMethod === "qris") return ["qris"]
+  if (normalizedMethod === "credit_card") return ["credit_card"]
+  return ["bank_transfer"]
+}
 
 export async function POST(req: Request) {
   try {
@@ -57,6 +65,7 @@ export async function POST(req: Request) {
     const hasPaidDp = booking.payment_type === "dp" && booking.payment_status === "dp_paid"
     let amount = booking.total_amount
     let paymentType = booking.payment_type || "full"
+    const financePaymentMethod = normalizePaymentMethod(booking.payment_method)
 
     if (hasPaidDp) {
       paymentType = "full"
@@ -79,6 +88,7 @@ export async function POST(req: Request) {
     booking_id: booking.id,
     order_id: orderId,
     payment_type: paymentType,
+    finance_payment_method: financePaymentMethod,
     gross_amount: amount,
     transaction_status: "pending"
   })
@@ -103,6 +113,7 @@ if (paymentError) {
         order_id: orderId,
         gross_amount: amount
       },
+      enabled_payments: resolveEnabledPayments(financePaymentMethod),
       customer_details: {
         first_name: booking.customer_name,
         email: booking.customer_email,

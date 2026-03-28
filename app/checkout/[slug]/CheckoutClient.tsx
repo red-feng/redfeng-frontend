@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
+import { normalizePaymentMethod, resolveCustomerAdminFeePercent, type FinancePaymentMethod } from "@/lib/finance/settings"
 
 type CheckoutPackageData = {
   id: string
@@ -23,8 +24,8 @@ type CheckoutPackageData = {
 }
 
 type CheckoutFinanceSettings = {
-  customerAdminFeePercent: number
   customerTaxPercent: number
+  customerAdminFeeRules: Record<FinancePaymentMethod, number>
 }
 
 type CheckoutPaymentPricing = {
@@ -62,6 +63,7 @@ export default function CheckoutClient({
   const [pickupDate, setPickupDate] = useState("")
   const [adultCount, setAdultCount] = useState(1)
   const [childCount, setChildCount] = useState(0)
+  const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod>("bank_transfer")
 
   const adultPrice = data.price_adult ?? 0
   const childPrice = data.price_child ?? 0
@@ -75,9 +77,34 @@ export default function CheckoutClient({
     () => paymentAdultPrice * adultCount + paymentChildPrice * childCount,
     [adultCount, childCount, paymentAdultPrice, paymentChildPrice],
   )
-  const adminFee = Math.round(subtotal * (financeSettings.customerAdminFeePercent / 100))
+  const customerAdminFeePercent = resolveCustomerAdminFeePercent(paymentMethod, {
+    redfengCommissionPercent: 0,
+    customerAdminFeePercent: 0,
+    customerTaxPercent: financeSettings.customerTaxPercent,
+    merchantTransferFee: 0,
+    customerAdminFeeRules: financeSettings.customerAdminFeeRules,
+    merchantTransferFeeRules: { default: 0 },
+  })
+  const adminFee = Math.round(subtotal * (customerAdminFeePercent / 100))
   const ppn = Math.round((subtotal + adminFee) * (financeSettings.customerTaxPercent / 100))
   const total = subtotal + adminFee + ppn
+  const paymentMethodOptions: Array<{ value: FinancePaymentMethod; label: string; hint: string }> = [
+    {
+      value: "bank_transfer",
+      label: "Bank transfer",
+      hint: "Cocok untuk VA / transfer bank dan biasanya jadi jalur paling umum.",
+    },
+    {
+      value: "qris",
+      label: "QRIS",
+      hint: "Untuk customer yang ingin scan QR dan bayar cepat dari aplikasi bank / e-wallet.",
+    },
+    {
+      value: "credit_card",
+      label: "Kartu kredit",
+      hint: "Fee customer biasanya lebih tinggi karena biaya channel kartu.",
+    },
+  ]
 
   useEffect(() => {
     const checkSession = async () => {
@@ -134,6 +161,7 @@ export default function CheckoutClient({
           customer_name: nama,
           customer_email: email,
           customer_phone: phone,
+          payment_method: normalizePaymentMethod(paymentMethod),
         }),
       })
 
@@ -271,6 +299,55 @@ export default function CheckoutClient({
               />
             </div>
           </div>
+
+          <div className="mt-6">
+            <label className="mb-3 block text-sm font-medium text-slate-700">Metode pembayaran</label>
+            <div className="grid gap-3">
+              {paymentMethodOptions.map((option) => {
+                const optionFeePercent = resolveCustomerAdminFeePercent(option.value, {
+                  redfengCommissionPercent: 0,
+                  customerAdminFeePercent: 0,
+                  customerTaxPercent: financeSettings.customerTaxPercent,
+                  merchantTransferFee: 0,
+                  customerAdminFeeRules: financeSettings.customerAdminFeeRules,
+                  merchantTransferFeeRules: { default: 0 },
+                })
+
+                return (
+                  <label
+                    key={option.value}
+                    className={`cursor-pointer rounded-2xl border px-4 py-4 transition ${
+                      paymentMethod === option.value
+                        ? "border-orange-300 bg-orange-50"
+                        : "border-slate-200 bg-slate-50 hover:border-orange-200"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{option.label}</p>
+                        <p className="mt-1 text-xs leading-6 text-slate-500">{option.hint}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-400">Admin fee</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">{optionFeePercent}%</p>
+                      </div>
+                    </div>
+                    <input
+                      type="radio"
+                      name="payment_method"
+                      value={option.value}
+                      checked={paymentMethod === option.value}
+                      onChange={() => setPaymentMethod(option.value)}
+                      className="sr-only"
+                    />
+                  </label>
+                )
+              })}
+            </div>
+            <p className="mt-3 text-xs leading-6 text-slate-500">
+              Total customer akan dihitung mengikuti metode yang Anda pilih di sini, lalu sistem hanya membuka channel pembayaran yang sesuai.
+            </p>
+          </div>
         </section>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
@@ -326,7 +403,7 @@ export default function CheckoutClient({
                     <span className="font-semibold text-slate-900">Rp {subtotal.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span>Admin fee ({financeSettings.customerAdminFeePercent}%)</span>
+                    <span>Admin fee {paymentMethod === "credit_card" ? "kartu kredit" : paymentMethod === "qris" ? "QRIS" : "bank transfer"} ({customerAdminFeePercent}%)</span>
                     <span className="font-semibold text-slate-900">Rp {adminFee.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">

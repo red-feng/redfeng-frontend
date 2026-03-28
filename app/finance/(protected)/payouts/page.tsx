@@ -343,7 +343,7 @@ export default async function FinancePayoutsPage({
 
                       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Gross booking</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Basis payout paket</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(payout.gross_booking_amount || 0))}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">

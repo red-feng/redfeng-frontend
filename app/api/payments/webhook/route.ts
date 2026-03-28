@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       gross_amount,
       signature_key,
       transaction_status,
+      payment_type: gatewayPaymentMethod,
     } = body
 
     const serverKey = getRequiredEnv("MIDTRANS_SERVER_KEY")
@@ -73,7 +74,10 @@ export async function POST(req: Request) {
 
     await supabase
       .from("payments")
-      .update({ transaction_status })
+      .update({
+        transaction_status,
+        gateway_payment_method: gatewayPaymentMethod || null,
+      })
       .eq("booking_id", booking.id)
       .eq("order_id", order_id)
 
@@ -118,7 +122,13 @@ export async function POST(req: Request) {
               }
             })()
 
-      await supabase.from("bookings").update(bookingPatch).eq("id", booking.id)
+      await supabase
+        .from("bookings")
+        .update({
+          ...bookingPatch,
+          gateway_payment_method: gatewayPaymentMethod || null,
+        })
+        .eq("id", booking.id)
 
       const amountPaid =
         resolvedPaymentType === "dp"

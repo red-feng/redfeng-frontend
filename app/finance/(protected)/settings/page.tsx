@@ -2,8 +2,19 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { defaultFinanceSettings } from "@/lib/finance/settings"
+import { defaultFinanceSettings, getFinanceSettings } from "@/lib/finance/settings"
 import { saveFinanceSettings } from "./actions"
+
+const merchantTransferBanks = [
+  { key: "default", label: "Default / bank lain" },
+  { key: "bca", label: "BCA" },
+  { key: "bni", label: "BNI" },
+  { key: "bri", label: "BRI" },
+  { key: "mandiri", label: "Mandiri" },
+  { key: "permata", label: "Permata" },
+  { key: "cimb", label: "CIMB" },
+  { key: "bsi", label: "BSI" },
+] as const
 
 export default async function FinanceSettingsPage({
   searchParams,
@@ -25,36 +36,7 @@ export default async function FinanceSettingsPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const canEditSettings = ["finance_manager", "superadmin"].includes(currentProfile?.role || "")
-  const settingsResult = await ((adminSupabase
-    .from("finance_settings")
-    .select(
-      "redfeng_commission_percent, customer_admin_fee_percent, customer_tax_percent, merchant_transfer_fee",
-    )
-    .eq("id", "default")
-    .maybeSingle()) as unknown as Promise<{
-    data: {
-      redfeng_commission_percent?: number | string | null
-      customer_admin_fee_percent?: number | string | null
-      customer_tax_percent?: number | string | null
-      merchant_transfer_fee?: number | string | null
-    } | null
-    error: { message?: string } | null
-  }>)
-
-  const settings = {
-    redfengCommissionPercent: Number(
-      settingsResult.data?.redfeng_commission_percent ?? defaultFinanceSettings.redfengCommissionPercent,
-    ),
-    customerAdminFeePercent: Number(
-      settingsResult.data?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
-    ),
-    customerTaxPercent: Number(
-      settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
-    ),
-    merchantTransferFee: Number(
-      settingsResult.data?.merchant_transfer_fee ?? defaultFinanceSettings.merchantTransferFee,
-    ),
-  }
+  const settings = await getFinanceSettings(adminSupabase)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -95,13 +77,37 @@ export default async function FinanceSettingsPage({
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Admin fee customer (%)</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Admin fee customer bank transfer (%)</label>
               <input
-                name="customer_admin_fee_percent"
+                name="customer_admin_fee_bank_transfer_percent"
                 type="number"
                 min="0"
                 step="0.01"
-                defaultValue={settings.customerAdminFeePercent}
+                defaultValue={settings.customerAdminFeeRules.bank_transfer}
+                disabled={!canEditSettings}
+                className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Admin fee customer QRIS (%)</label>
+              <input
+                name="customer_admin_fee_qris_percent"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={settings.customerAdminFeeRules.qris}
+                disabled={!canEditSettings}
+                className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Admin fee customer kartu kredit (%)</label>
+              <input
+                name="customer_admin_fee_credit_card_percent"
+                type="number"
+                min="0"
+                step="0.01"
+                defaultValue={settings.customerAdminFeeRules.credit_card}
                 disabled={!canEditSettings}
                 className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
@@ -119,7 +125,7 @@ export default async function FinanceSettingsPage({
               />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Biaya transfer merchant (Rp)</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Biaya transfer merchant default (Rp)</label>
               <input
                 name="merchant_transfer_fee"
                 type="number"
@@ -129,6 +135,25 @@ export default async function FinanceSettingsPage({
                 disabled={!canEditSettings}
                 className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
+            </div>
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-[#fffaf4] p-5">
+              <p className="text-sm font-semibold text-slate-900">Biaya transfer per bank merchant</p>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                {merchantTransferBanks.map((bank) => (
+                  <div key={bank.key}>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">{bank.label}</label>
+                    <input
+                      name={`merchant_transfer_fee_${bank.key}`}
+                      type="number"
+                      min="0"
+                      step="1"
+                      defaultValue={settings.merchantTransferFeeRules[bank.key] ?? settings.merchantTransferFee}
+                      disabled={!canEditSettings}
+                      className="w-full rounded-[20px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
             {canEditSettings ? (
               <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -146,9 +171,15 @@ export default async function FinanceSettingsPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Current snapshot</p>
               <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <p>Komisi Red Feng: {settings.redfengCommissionPercent}%</p>
-                <p>Admin fee customer: {settings.customerAdminFeePercent}%</p>
+                <p>Admin fee customer bank transfer: {settings.customerAdminFeeRules.bank_transfer}%</p>
+                <p>Admin fee customer QRIS: {settings.customerAdminFeeRules.qris}%</p>
+                <p>Admin fee customer kartu kredit: {settings.customerAdminFeeRules.credit_card}%</p>
                 <p>Pajak customer: {settings.customerTaxPercent}%</p>
-                <p>Biaya transfer merchant: Rp {settings.merchantTransferFee.toLocaleString("id-ID")}</p>
+                <p>Biaya transfer merchant default: Rp {settings.merchantTransferFee.toLocaleString("id-ID")}</p>
+                <p>Transfer bank BCA: Rp {(settings.merchantTransferFeeRules.bca ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
+                <p>Transfer bank BNI: Rp {(settings.merchantTransferFeeRules.bni ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
+                <p>Transfer bank BRI: Rp {(settings.merchantTransferFeeRules.bri ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
+                <p>Transfer bank Mandiri: Rp {(settings.merchantTransferFeeRules.mandiri ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
               </div>
             </div>
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
@@ -156,7 +187,9 @@ export default async function FinanceSettingsPage({
               <p className="mt-3 text-sm leading-7 text-slate-600">
                 Jika migration belum dijalankan, sistem akan memakai default aman:
                 komisi {defaultFinanceSettings.redfengCommissionPercent}%,
-                admin fee {defaultFinanceSettings.customerAdminFeePercent}%,
+                admin fee bank transfer {defaultFinanceSettings.customerAdminFeeRules.bank_transfer}%,
+                admin fee QRIS {defaultFinanceSettings.customerAdminFeeRules.qris}%,
+                admin fee kartu kredit {defaultFinanceSettings.customerAdminFeeRules.credit_card}%,
                 pajak {defaultFinanceSettings.customerTaxPercent}%,
                 transfer Rp {defaultFinanceSettings.merchantTransferFee.toLocaleString("id-ID")}.
               </p>

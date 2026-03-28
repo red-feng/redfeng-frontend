@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { defaultFinanceSettings } from "@/lib/finance/settings"
+import { calculateBookingAmounts, getFinanceSettings, normalizePaymentMethod } from "@/lib/finance/settings"
 import { convertCurrencyAmount, getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
@@ -41,6 +41,7 @@ export async function POST(req: Request) {
       customer_name,
       customer_email,
       customer_phone,
+      payment_method,
     } = body
 
     const supabase = createClient(
@@ -136,31 +137,12 @@ export async function POST(req: Request) {
       }
     }
 
-    const settingsResult = await ((supabase
-      .from("finance_settings")
-      .select("customer_admin_fee_percent, customer_tax_percent")
-      .eq("id", "default")
-      .maybeSingle()) as unknown as Promise<{
-      data: {
-        customer_admin_fee_percent?: number | string | null
-        customer_tax_percent?: number | string | null
-      } | null
-      error: { message?: string } | null
-    }>)
-
-    const customerAdminFeePercent = Number(
-      settingsResult.data?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
-    )
-    const customerTaxPercent = Number(
-      settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
-    )
+    const financeSettings = await getFinanceSettings(supabase)
     const subtotalAmount =
       Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
       Number(childPriceCharge.amount || 0) * Number(child_count || 0)
-    const customerAdminFeeAmount = Math.round(subtotalAmount * (customerAdminFeePercent / 100))
-    const customerTaxAmount = Math.round((subtotalAmount + customerAdminFeeAmount) * (customerTaxPercent / 100))
-    const totalAmount = subtotalAmount + customerAdminFeeAmount + customerTaxAmount
-    const dpAmount = Math.round(totalAmount * 0.3)
+    const normalizedPaymentMethod = normalizePaymentMethod(payment_method)
+    const priceBreakdown = calculateBookingAmounts(subtotalAmount, normalizedPaymentMethod, financeSettings)
 
     const windowCheck = validateBookingWindow(pickup_date)
     if (!windowCheck.allowed) {
@@ -204,14 +186,15 @@ export async function POST(req: Request) {
         display_price_adult: Number(localizedPricing.priceAdult || 0),
         display_price_child: Number(localizedPricing.priceChild || 0),
         exchange_rate_date: adultPriceCharge.date || childPriceCharge.date,
-        subtotal_amount: subtotalAmount,
-        customer_admin_fee_amount: customerAdminFeeAmount,
-        customer_tax_amount: customerTaxAmount,
-        customer_admin_fee_percent: customerAdminFeePercent,
-        customer_tax_percent: customerTaxPercent,
-        total_amount: totalAmount,
-        final_payment_amount: Math.max(totalAmount - dpAmount, 0),
-        dp_amount: dpAmount,
+        subtotal_amount: priceBreakdown.subtotalAmount,
+        customer_admin_fee_amount: priceBreakdown.customerAdminFeeAmount,
+        customer_tax_amount: priceBreakdown.customerTaxAmount,
+        customer_admin_fee_percent: priceBreakdown.customerAdminFeePercent,
+        customer_tax_percent: priceBreakdown.customerTaxPercent,
+        total_amount: priceBreakdown.totalAmount,
+        final_payment_amount: priceBreakdown.finalPaymentAmount,
+        dp_amount: priceBreakdown.dpAmount,
+        payment_method: priceBreakdown.paymentMethod,
       })
       .eq("id", bookingData.id)
       .select()

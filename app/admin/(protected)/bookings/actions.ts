@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { calculateMerchantPayout, defaultFinanceSettings } from "@/lib/finance/settings"
+import { calculateMerchantPayout, getFinanceSettings, resolveCustomerAdminFeePercent } from "@/lib/finance/settings"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 
@@ -49,7 +49,7 @@ export async function handoffBookingToFinance(formData: FormData) {
   const { data: booking, error: bookingError } = await adminSupabase
     .from("bookings")
     .select(
-      "id, booking_code, package_id, total_amount, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, booking_status",
+      "id, booking_code, package_id, total_amount, subtotal_amount, payment_method, customer_tax_percent, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, booking_status",
     )
     .eq("id", bookingId)
     .single()
@@ -100,36 +100,15 @@ export async function handoffBookingToFinance(formData: FormData) {
     backToBookings("Rekening merchant belum tersedia", "error")
   }
 
-  const settingsResult = await ((adminSupabase
-    .from("finance_settings")
-    .select(
-      "redfeng_commission_percent, customer_admin_fee_percent, customer_tax_percent, merchant_transfer_fee",
-    )
-    .eq("id", "default")
-    .maybeSingle()) as unknown as Promise<{
-    data: {
-      redfeng_commission_percent?: number | string | null
-      customer_admin_fee_percent?: number | string | null
-      customer_tax_percent?: number | string | null
-      merchant_transfer_fee?: number | string | null
-    } | null
-    error: { message?: string } | null
-  }>)
-
-  const settingsRow = settingsResult.data
-  const settings = {
-    redfengCommissionPercent: Number(
-      settingsRow?.redfeng_commission_percent ?? defaultFinanceSettings.redfengCommissionPercent,
-    ),
-    customerAdminFeePercent: Number(
-      settingsRow?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
-    ),
-    customerTaxPercent: Number(settingsRow?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent),
-    merchantTransferFee: Number(
-      settingsRow?.merchant_transfer_fee ?? defaultFinanceSettings.merchantTransferFee,
-    ),
-  }
-  const payout = calculateMerchantPayout(Number(booking.total_amount || 0), settings)
+  const settings = await getFinanceSettings(
+    adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
+  )
+  const payout = calculateMerchantPayout(
+    Number(booking.subtotal_amount || 0),
+    settings,
+    merchant.bank_name,
+  )
+  const customerAdminFeePercent = resolveCustomerAdminFeePercent(booking.payment_method, settings)
 
   const payoutPayload: Record<string, unknown> = {
     merchant_id: merchant.id,
@@ -139,12 +118,12 @@ export async function handoffBookingToFinance(formData: FormData) {
     bank_account_number: merchant.bank_account_number,
     bank_account_holder: merchant.bank_account_holder,
     status: "pending",
-    note: `Auto handoff dari admin untuk booking ${booking.booking_code || booking.id}. Gross ${payout.grossAmount}, komisi ${payout.redfengCommissionAmount}, biaya transfer ${payout.merchantTransferFee}.`,
+    note: `Auto handoff dari admin untuk booking ${booking.booking_code || booking.id}. Basis payout subtotal paket ${payout.grossAmount}, komisi ${payout.redfengCommissionAmount}, biaya transfer ${payout.merchantTransferFee}.`,
     gross_booking_amount: payout.grossAmount,
     redfeng_commission_percent: payout.redfengCommissionPercent,
     redfeng_commission_amount: payout.redfengCommissionAmount,
-    customer_admin_fee_percent: payout.customerAdminFeePercent,
-    customer_tax_percent: payout.customerTaxPercent,
+    customer_admin_fee_percent: customerAdminFeePercent,
+    customer_tax_percent: Number(booking.customer_tax_percent || settings.customerTaxPercent),
     merchant_transfer_fee: payout.merchantTransferFee,
     source: "admin_handoff",
   }

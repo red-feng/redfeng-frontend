@@ -1,5 +1,5 @@
 import CheckoutClient from "./CheckoutClient"
-import { defaultFinanceSettings } from "@/lib/finance/settings"
+import { getFinanceSettings } from "@/lib/finance/settings"
 import { convertCurrencyAmount } from "@/lib/currency-rates"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
@@ -122,27 +122,10 @@ export default async function CheckoutPage({
     toCurrency: "IDR",
   })
 
-  const settingsResult = await ((supabase
-    .from("finance_settings")
-    .select(
-      "redfeng_commission_percent, customer_admin_fee_percent, customer_tax_percent, merchant_transfer_fee",
-    )
-    .eq("id", "default")
-    .maybeSingle()) as unknown as Promise<{
-    data: {
-      customer_admin_fee_percent?: number | string | null
-      customer_tax_percent?: number | string | null
-    } | null
-    error: { message?: string } | null
-  }>)
-
+  const settings = await getFinanceSettings(supabase)
   const financeSettings = {
-    customerAdminFeePercent: Number(
-      settingsResult.data?.customer_admin_fee_percent ?? defaultFinanceSettings.customerAdminFeePercent,
-    ),
-    customerTaxPercent: Number(
-      settingsResult.data?.customer_tax_percent ?? defaultFinanceSettings.customerTaxPercent,
-    ),
+    customerTaxPercent: settings.customerTaxPercent,
+    customerAdminFeeRules: settings.customerAdminFeeRules,
   }
 
   return (
