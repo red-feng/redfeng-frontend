@@ -6,17 +6,19 @@ import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
-import { useSearchParams } from "next/navigation"
 
 export default function AdminLogin() {
   const supabase = createClient()
-  const searchParams = useSearchParams()
 
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const systemError = searchParams.get("error")
+  const [systemError] = useState(() => {
+    if (typeof window === "undefined") return ""
+    const params = new URLSearchParams(window.location.search)
+    return params.get("error") || ""
+  })
   const systemErrorMessage =
     systemError === "no-session"
       ? "Sesi admin belum terbentuk. Coba login ulang."
