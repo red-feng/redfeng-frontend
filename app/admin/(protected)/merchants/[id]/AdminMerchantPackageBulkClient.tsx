@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
+import { toneClass } from "@/lib/status-tones"
 import {
   approvePackage,
   bulkApprovePackages,
@@ -23,12 +24,12 @@ type PackageRow = {
 }
 
 function statusTone(status: string | null) {
-  if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-700"
-  if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-700"
-  if (status === "draft") return "border-sky-200 bg-sky-50 text-sky-700"
-  if (status === "inactive") return "border-slate-200 bg-slate-100 text-slate-700"
-  return "border-slate-200 bg-slate-100 text-slate-600"
+  if (status === "approved") return toneClass("success", "bordered")
+  if (status === "pending") return toneClass("pending", "bordered")
+  if (status === "rejected") return toneClass("danger", "bordered")
+  if (status === "draft") return toneClass("progress", "bordered")
+  if (status === "inactive") return toneClass("neutral", "bordered")
+  return toneClass("neutral", "bordered")
 }
 
 function statusLabel(status: string | null) {

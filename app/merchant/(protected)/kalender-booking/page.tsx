@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 export const dynamic = "force-dynamic"
@@ -205,22 +206,18 @@ function formatDate(dateStr: string | null) {
   })
 }
 
-function normalizeStatus(value: string | null) {
-  return (value || "").trim().toLowerCase()
-}
-
 function badgeClass(value: string | null, type: "payment" | "trip") {
   const normalized = normalizeStatus(value)
   if (normalized === "paid" || normalized === "confirmed" || normalized === "completed") {
-    return "bg-emerald-50 text-emerald-700"
+    return toneClass("success")
   }
   if (normalized === "pending") {
-    return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
+    return type === "payment" ? getPaymentStatusTone(value) : toneClass("progress")
   }
   if (normalized === "cancelled" || normalized === "refund" || normalized === "rejected") {
-    return "bg-rose-50 text-rose-700"
+    return toneClass("danger")
   }
-  return "bg-slate-100 text-slate-700"
+  return toneClass("neutral")
 }
 
 function isOpenTripOrUmroh(pkg: MerchantPackageRow | null | undefined) {
@@ -325,15 +322,15 @@ export default async function MerchantBookingCalendarPage() {
 
   const getCapacityStatus = (entry: CalendarEntry) => {
     if (entry.capacityTarget === null || entry.remainingCapacity === null) {
-      return { label: t.privateFlexible, className: "bg-slate-100 text-slate-700" }
+      return { label: t.privateFlexible, className: toneClass("neutral") }
     }
     if (entry.remainingCapacity <= 0) {
-      return { label: t.full, className: "bg-rose-50 text-rose-700" }
+      return { label: t.full, className: toneClass("danger") }
     }
     if (entry.remainingCapacity <= Math.max(Math.ceil(entry.capacityTarget * 0.2), 2)) {
-      return { label: t.almostFull, className: "bg-amber-50 text-amber-700" }
+      return { label: t.almostFull, className: toneClass("pending") }
     }
-    return { label: t.available, className: "bg-emerald-50 text-emerald-700" }
+    return { label: t.available, className: toneClass("success") }
   }
 
   const metricCards = [

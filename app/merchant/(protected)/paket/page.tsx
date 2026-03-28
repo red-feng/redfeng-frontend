@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
+import { toneClass } from "@/lib/status-tones"
 import { createClient } from "@/lib/supabase/server"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import { deletePackage, pullPackageToDraft, togglePackageStatus } from "./actions"
@@ -33,11 +34,11 @@ function formatStatus(value: string | null, pendingReviewStatus: string, rejecte
 
 function statusClasses(value: string | null) {
   const status = (value || "").toLowerCase()
-  if (status === "approved") return "bg-emerald-50 text-emerald-700"
-  if (status === "pending") return "bg-amber-50 text-amber-700"
-  if (status === "rejected") return "bg-rose-50 text-rose-700"
-  if (status === "draft") return "bg-slate-100 text-slate-700"
-  return "bg-slate-100 text-slate-700"
+  if (status === "approved") return toneClass("success")
+  if (status === "pending") return toneClass("pending")
+  if (status === "rejected") return toneClass("danger")
+  if (status === "draft") return toneClass("neutral")
+  return toneClass("neutral")
 }
 
 function formatDate(value: string | null) {

@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { toneClass } from "@/lib/status-tones"
 import Link from "next/link"
 import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
@@ -79,10 +80,10 @@ function DocumentLink({
 }
 
 function getStatusBadge(status: string | null) {
-  if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  if (status === "inactive") return "border-amber-200 bg-amber-50 text-amber-700"
-  if (status === "deleted") return "border-red-200 bg-red-50 text-red-700"
-  return "border-slate-200 bg-slate-100 text-slate-600"
+  if (status === "approved") return toneClass("success", "bordered")
+  if (status === "inactive") return toneClass("pending", "bordered")
+  if (status === "deleted") return toneClass("danger", "bordered")
+  return toneClass("neutral", "bordered")
 }
 
 function getStatusLabel(status: string | null) {

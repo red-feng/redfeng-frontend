@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { toneClass } from "@/lib/status-tones"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
@@ -642,9 +643,9 @@ export default async function MerchantStatisticsPage({
   }
 
   const healthCards = [
-    { label: t.waitingPayment, value: String(pendingPaymentCount), tone: "text-amber-700" },
-    { label: t.confirmedTrips, value: String(confirmedTripCount), tone: "text-emerald-700" },
-    { label: t.cancelledBookings, value: String(cancelledBookingCount), tone: "text-rose-700" },
+    { label: t.waitingPayment, value: String(pendingPaymentCount), tone: toneClass("pending").split(" ").at(-1) || "text-amber-700" },
+    { label: t.confirmedTrips, value: String(confirmedTripCount), tone: toneClass("success").split(" ").at(-1) || "text-emerald-700" },
+    { label: t.cancelledBookings, value: String(cancelledBookingCount), tone: toneClass("danger").split(" ").at(-1) || "text-rose-700" },
     {
       label: t.customerRating,
       value: filteredReviews.length > 0 ? averageRating.toFixed(1) : "-",

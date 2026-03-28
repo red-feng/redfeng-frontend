@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { toneClass } from "@/lib/status-tones"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
@@ -64,10 +65,10 @@ function formatMoney(value: number | null, currency: string | null): string {
 }
 
 function statusClass(status: string | null): string {
-  if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-700"
-  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-700"
-  return "border-slate-200 bg-slate-100 text-slate-700"
+  if (status === "approved") return toneClass("success", "bordered")
+  if (status === "rejected") return toneClass("danger", "bordered")
+  if (status === "pending") return toneClass("pending", "bordered")
+  return toneClass("neutral", "bordered")
 }
 
 function getFacilityName(relation: PackageFacilityRow["facilities"]): string {
