@@ -51,6 +51,13 @@ function redirectWithMessage(path: string, message: string, type: "success" | "e
   redirect(`${path}?${type}=${encodeURIComponent(message)}`)
 }
 
+function formatAccountErrorMessage(message: string, requestedRole: string) {
+  if (message.includes("profiles_role_check")) {
+    return `Database role internal belum mengenali role ${requestedRole}. Jalankan migration profiles role terbaru terlebih dahulu.`
+  }
+  return message
+}
+
 function backToAdminUsers(message: string, type: "success" | "error"): never {
   redirectWithMessage("/finance/admin-users", message, type)
 }
@@ -122,7 +129,7 @@ export async function createAdminAccount(formData: FormData) {
 
   if (profileError) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
-    redirectWithMessage(returnTo, profileError.message, "error")
+    redirectWithMessage(returnTo, formatAccountErrorMessage(profileError.message, requestedRole), "error")
   }
 
   const roleLabel = requestedRole === "operations_manager" ? "operations manager" : "admin"
@@ -276,7 +283,7 @@ export async function createFinanceAccount(formData: FormData) {
 
   if (profileError) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
-    redirectWithMessage(returnTo, profileError.message, "error")
+    redirectWithMessage(returnTo, formatAccountErrorMessage(profileError.message, requestedRole), "error")
   }
 
   const roleLabel = requestedRole === "finance_manager" ? "finance manager" : "finance"

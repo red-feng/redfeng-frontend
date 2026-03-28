@@ -14,9 +14,17 @@ export function buildInternalFinanceEmail(username: string) {
   return `${normalizeInternalUsername(username)}@finance.redfeng.internal`
 }
 
+export function buildInternalSuperadminEmail(username: string) {
+  return `${normalizeInternalUsername(username)}@superadmin.redfeng.internal`
+}
+
 export function resolveInternalLoginCandidates(usernameOrEmail: string) {
   const normalized = normalizeInternalUsername(usernameOrEmail)
   if (!normalized) return []
   if (normalized.includes("@")) return [normalized]
-  return [buildInternalAdminEmail(normalized), buildInternalFinanceEmail(normalized)]
+  return [
+    buildInternalAdminEmail(normalized),
+    buildInternalFinanceEmail(normalized),
+    buildInternalSuperadminEmail(normalized),
+  ]
 }

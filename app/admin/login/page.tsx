@@ -5,7 +5,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
-import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
+import { normalizeInternalUsername, resolveInternalLoginCandidates } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
 
 export default function AdminLogin() {
@@ -28,23 +28,29 @@ export default function AdminLogin() {
       return
     }
 
-    const loginIdentifier = normalizedUsername.includes("@")
-      ? normalizedUsername
-      : buildInternalAdminEmail(normalizedUsername)
+    const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
+    let signedInUser: { id: string } | null = null
+    let lastErrorMessage = "Email atau password salah."
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: loginIdentifier,
-      password,
-    })
+    for (const loginIdentifier of loginCandidates) {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginIdentifier,
+        password,
+      })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
+      if (error || !data.user) {
+        if (error?.message) {
+          lastErrorMessage = error.message
+        }
+        continue
+      }
+
+      signedInUser = data.user
+      break
     }
 
-    if (!data.user) {
-      setError("Sesi admin tidak ditemukan. Coba login ulang.")
+    if (!signedInUser) {
+      setError(lastErrorMessage)
       setLoading(false)
       return
     }
@@ -52,7 +58,7 @@ export default function AdminLogin() {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", data.user.id)
+      .eq("id", signedInUser.id)
       .maybeSingle()
 
     if (!profile) {
