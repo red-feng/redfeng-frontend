@@ -57,9 +57,9 @@ export default async function SuperadminProtectedLayout({
     {
       label: "Internal Control",
       children: [
-        { href: "/admin/team-accounts", label: "Ops Team Accounts", badgeCount: 0 },
-        { href: "/finance/admin-users", label: "Finance Team Accounts", badgeCount: 0 },
-        { href: "/admin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: 0 },
+        { href: "/superadmin/team-accounts", label: "Ops Team Accounts", badgeCount: 0 },
+        { href: "/superadmin/finance-team-accounts", label: "Finance Team Accounts", badgeCount: 0 },
+        { href: "/superadmin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: 0 },
       ],
     },
     { href: "/admin/bookings", label: "Booking Center", badgeCount: 0 },

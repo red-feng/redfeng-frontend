@@ -39,6 +39,8 @@ export default async function FinanceAdminUsersPage({
 
   const adminSupabase = createAdminClient()
   const isSuperadmin = currentProfile.role === "superadmin"
+  const basePath = isSuperadmin ? "/superadmin/finance-team-accounts" : "/finance/admin-users"
+  const backHref = isSuperadmin ? "/superadmin/dashboard" : "/finance/dashboard"
 
   const { data: financeProfiles } = await adminSupabase
     .from("profiles")
@@ -82,7 +84,7 @@ export default async function FinanceAdminUsersPage({
               action={createFinanceAccount}
               className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
             >
-              <input type="hidden" name="return_to" value="/finance/admin-users" />
+              <input type="hidden" name="return_to" value={basePath} />
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create finance account</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
                 Buat akun finance baru
@@ -133,7 +135,7 @@ export default async function FinanceAdminUsersPage({
                 <p>2. Superadmin menerima laporan finance manager sebagai ringkasan resmi tim keuangan.</p>
                 <p>3. Finance team fokus eksekusi payout, sementara finance manager fokus quality control dan pelaporan.</p>
               </div>
-              <Link href="/finance/dashboard" className="mt-5 inline-flex text-sm font-semibold text-orange-600">
+              <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 Kembali ke finance dashboard
               </Link>
             </div>
@@ -163,7 +165,7 @@ export default async function FinanceAdminUsersPage({
                       <div className="flex flex-col gap-3 md:min-w-[260px]">
                         <form action={resetFinancePassword} className="space-y-3">
                           <input type="hidden" name="financeId" value={profile.id} />
-                          <input type="hidden" name="return_to" value="/finance/admin-users" />
+                          <input type="hidden" name="return_to" value={basePath} />
                           <input
                             name="password"
                             type="text"
@@ -178,7 +180,7 @@ export default async function FinanceAdminUsersPage({
                         </form>
                         <form action={deleteFinanceAccount}>
                           <input type="hidden" name="financeId" value={profile.id} />
-                          <input type="hidden" name="return_to" value="/finance/admin-users" />
+                          <input type="hidden" name="return_to" value={basePath} />
                           <button className="w-full rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                             Hapus akun finance
                           </button>

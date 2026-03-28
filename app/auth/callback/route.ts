@@ -13,7 +13,11 @@ function getCustomerPortalRoleError(role: string | null | undefined) {
     return "Akun Google ini terdaftar sebagai finance. Gunakan portal finance untuk melanjutkan."
   }
 
-  if (normalizedRole === "admin" || normalizedRole === "operations_manager" || normalizedRole === "superadmin") {
+  if (normalizedRole === "superadmin") {
+    return "Akun Google ini terdaftar sebagai superadmin. Gunakan portal superadmin untuk melanjutkan."
+  }
+
+  if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
     return "Akun Google ini terdaftar sebagai admin internal. Gunakan portal admin untuk melanjutkan."
   }
 
@@ -53,7 +57,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL(safeNext, origin))
       }
 
-      if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "merchant") {
+      if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "merchant" || profile.role === "superadmin") {
         await supabase.auth.signOut()
         return NextResponse.redirect(
           new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(profile.role))}`, origin),

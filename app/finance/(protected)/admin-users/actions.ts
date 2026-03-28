@@ -10,32 +10,36 @@ import {
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
 import {
-  isAdminPortalRole,
   isAdminManagedRole,
   isFinanceManagedRole,
-  isFinancePortalRole,
 } from "@/lib/internal-roles"
 
-async function getInternalManagerRole() {
+async function getInternalManagerRole(returnTo?: string) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const loginPath = returnTo?.startsWith("/superadmin")
+    ? "/superadmin/login"
+    : returnTo?.startsWith("/finance")
+      ? "/finance/login"
+      : "/admin/login"
+
   if (!user) {
-    redirect("/admin/login")
+    redirect(loginPath)
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || (!isAdminPortalRole(profile.role) && !isFinancePortalRole(profile.role))) {
-    redirect("/admin/login")
+  if (!profile || !["admin", "operations_manager", "finance", "finance_manager", "superadmin"].includes(profile.role || "")) {
+    redirect(loginPath)
   }
 
   return profile.role
 }
 
-async function ensureFinanceAccountOperator() {
-  const role = await getInternalManagerRole()
+async function ensureFinanceAccountOperator(returnTo?: string) {
+  const role = await getInternalManagerRole(returnTo)
   if (!["operations_manager", "superadmin"].includes(role)) {
     backToAdminUsers("Hanya operations manager atau superadmin yang dapat mengelola akun operasional.", "error")
   }
@@ -64,7 +68,7 @@ function backToAdminUsers(message: string, type: "success" | "error"): never {
 
 export async function createAdminAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
-  const actorRole = await ensureFinanceAccountOperator()
+  const actorRole = await ensureFinanceAccountOperator(returnTo)
 
   const username = normalizeInternalUsername(String(formData.get("username") || ""))
   const password = String(formData.get("password") || "")
@@ -138,7 +142,7 @@ export async function createAdminAccount(formData: FormData) {
 
 export async function resetAdminPassword(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
-  const actorRole = await ensureFinanceAccountOperator()
+  const actorRole = await ensureFinanceAccountOperator(returnTo)
 
   const adminId = String(formData.get("adminId") || "")
   const password = String(formData.get("password") || "")
@@ -179,7 +183,7 @@ export async function resetAdminPassword(formData: FormData) {
 
 export async function deleteAdminAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/team-accounts")
-  const actorRole = await ensureFinanceAccountOperator()
+  const actorRole = await ensureFinanceAccountOperator(returnTo)
 
   const adminId = String(formData.get("adminId") || "")
 
@@ -216,7 +220,7 @@ export async function deleteAdminAccount(formData: FormData) {
 
 export async function createFinanceAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/finance/admin-users")
-  const actorRole = await getInternalManagerRole()
+  const actorRole = await getInternalManagerRole(returnTo)
   if (!["finance_manager", "superadmin"].includes(actorRole)) {
     redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
   }
@@ -292,7 +296,7 @@ export async function createFinanceAccount(formData: FormData) {
 
 export async function resetFinancePassword(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/finance/admin-users")
-  const actorRole = await getInternalManagerRole()
+  const actorRole = await getInternalManagerRole(returnTo)
   if (!["finance_manager", "superadmin"].includes(actorRole)) {
     redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
   }
@@ -336,7 +340,7 @@ export async function resetFinancePassword(formData: FormData) {
 
 export async function deleteFinanceAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/finance/admin-users")
-  const actorRole = await getInternalManagerRole()
+  const actorRole = await getInternalManagerRole(returnTo)
   if (!["finance_manager", "superadmin"].includes(actorRole)) {
     redirectWithMessage(returnTo, "Hanya finance manager atau superadmin yang dapat mengelola akun finance.", "error")
   }

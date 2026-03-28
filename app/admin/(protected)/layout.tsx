@@ -40,11 +40,14 @@ export default async function AdminProtectedLayout({
     redirect("/merchant/dashboard")
   }
 
+  if (profile.role === "superadmin") {
+    redirect("/superadmin/dashboard")
+  }
+
   if (!isAdminPortalRole(profile.role)) {
     redirect("/admin/login")
   }
 
-  const isSuperadmin = profile.role === "superadmin"
   const isOperationsManager = profile.role === "operations_manager"
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
@@ -104,8 +107,6 @@ export default async function AdminProtectedLayout({
             { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
             { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants },
             { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
-            ...(isSuperadmin ? [{ href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 }] : []),
-            ...(isSuperadmin ? [{ href: "/admin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: 0 }] : []),
           ],
         },
         {
@@ -158,29 +159,9 @@ export default async function AdminProtectedLayout({
                   <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
                     {adminCode}
                   </span>
-                  <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
-                    isSuperadmin
-                      ? "border border-violet-200 bg-violet-50 text-violet-700"
-                      : "border border-sky-200 bg-sky-50 text-sky-700"
-                  }`}>
+                  <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-sky-700">
                     {roleLabel}
                   </span>
-                  {isSuperadmin && (
-                    <>
-                      <a
-                        href="/admin/team-accounts"
-                        className="inline-flex rounded-full border border-[#ecd9c2] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                      >
-                        Team Accounts
-                      </a>
-                      <a
-                        href="/admin/superadmin-accounts"
-                        className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-700 transition hover:border-violet-300 hover:bg-violet-100"
-                      >
-                        Superadmin Accounts
-                      </a>
-                    </>
-                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2">

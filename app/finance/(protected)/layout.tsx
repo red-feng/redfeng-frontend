@@ -34,12 +34,15 @@ export default async function FinanceProtectedLayout({
     redirect("/merchant/dashboard")
   }
 
+  if (profile.role === "superadmin") {
+    redirect("/superadmin/dashboard")
+  }
+
   if (!isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
   }
 
   const isFinanceManager = profile.role === "finance_manager"
-  const isSuperadmin = profile.role === "superadmin"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
   const financeNav = isFinanceManager
@@ -52,7 +55,7 @@ export default async function FinanceProtectedLayout({
         { href: "/finance/dashboard", label: "Dashboard" },
         { href: "/finance/payouts", label: "Payout Queue" },
         { href: "/finance/settings", label: "Finance Settings" },
-        ...(isSuperadmin ? [{ href: "/finance/admin-users", label: "Team Accounts" }] : []),
+        { href: "/finance/admin-users", label: "Team Accounts" },
       ]
 
   return (
@@ -77,13 +80,7 @@ export default async function FinanceProtectedLayout({
                   <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
                     {financeCode}
                   </span>
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
-                      isSuperadmin
-                        ? "border border-violet-200 bg-violet-50 text-violet-700"
-                        : "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    }`}
-                  >
+                  <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
                     {roleLabel}
                   </span>
                 </div>

@@ -1,6 +1,6 @@
-export const ADMIN_PORTAL_ROLES = ["admin", "operations_manager", "superadmin"] as const
-export const FINANCE_PORTAL_ROLES = ["finance", "finance_manager", "superadmin"] as const
-export const INTERNAL_ROLES = [...ADMIN_PORTAL_ROLES, "finance", "finance_manager"] as const
+export const ADMIN_PORTAL_ROLES = ["admin", "operations_manager"] as const
+export const FINANCE_PORTAL_ROLES = ["finance", "finance_manager"] as const
+export const INTERNAL_ROLES = [...ADMIN_PORTAL_ROLES, ...FINANCE_PORTAL_ROLES, "superadmin"] as const
 
 export type AdminPortalRole = (typeof ADMIN_PORTAL_ROLES)[number]
 export type FinancePortalRole = (typeof FINANCE_PORTAL_ROLES)[number]

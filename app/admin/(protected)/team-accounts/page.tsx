@@ -39,6 +39,8 @@ export default async function AdminTeamAccountsPage({
 
   const adminSupabase = createAdminClient()
   const isSuperadmin = currentProfile.role === "superadmin"
+  const basePath = isSuperadmin ? "/superadmin/team-accounts" : "/admin/team-accounts"
+  const backHref = isSuperadmin ? "/superadmin/dashboard" : "/admin/dashboard"
   const { data: adminProfiles } = await adminSupabase
     .from("profiles")
     .select("id, username, role")
@@ -81,7 +83,7 @@ export default async function AdminTeamAccountsPage({
               action={createAdminAccount}
               className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
             >
-              <input type="hidden" name="return_to" value="/admin/team-accounts" />
+              <input type="hidden" name="return_to" value={basePath} />
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create admin account</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
                 Buat akun operasional baru
@@ -132,7 +134,7 @@ export default async function AdminTeamAccountsPage({
                 <p>2. Superadmin membaca laporan tersebut sebagai ringkasan resmi kinerja merchant, package, dan booking.</p>
                 <p>3. Admin team tetap fokus eksekusi harian, sementara operations manager fokus quality control dan pelaporan.</p>
               </div>
-              <Link href="/admin/dashboard" className="mt-5 inline-flex text-sm font-semibold text-orange-600">
+              <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 Kembali ke admin dashboard
               </Link>
             </div>
@@ -162,7 +164,7 @@ export default async function AdminTeamAccountsPage({
                       <div className="flex flex-col gap-3 md:min-w-[260px]">
                         <form action={resetAdminPassword} className="space-y-3">
                           <input type="hidden" name="adminId" value={profile.id} />
-                          <input type="hidden" name="return_to" value="/admin/team-accounts" />
+                          <input type="hidden" name="return_to" value={basePath} />
                           <input
                             name="password"
                             type="text"
@@ -177,7 +179,7 @@ export default async function AdminTeamAccountsPage({
                         </form>
                         <form action={deleteAdminAccount}>
                           <input type="hidden" name="adminId" value={profile.id} />
-                          <input type="hidden" name="return_to" value="/admin/team-accounts" />
+                          <input type="hidden" name="return_to" value={basePath} />
                           <button className="w-full rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                             Hapus akun operasional
                           </button>
