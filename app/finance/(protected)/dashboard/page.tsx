@@ -11,6 +11,11 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function getMetricText(snapshot: Record<string, unknown> | null | undefined, key: string) {
+  const value = snapshot?.[key]
+  return typeof value === "string" ? value.trim() : ""
+}
+
 type ManagerReportRow = {
   id: string
   author_id: string
@@ -291,7 +296,7 @@ export default async function FinanceDashboardPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan finance ke superadmin</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Ringkas aging, outstanding, blocker payout, dan langkah keuangan berikutnya agar superadmin menerima pembaruan resmi dari finance manager.
+                Isi laporan finance secara lengkap agar superadmin bisa membaca kondisi payout, aging, posisi keuangan, risiko, dan kebutuhan keputusan tanpa mengejar detail tambahan.
               </p>
               <form action={submitFinanceManagerReport} className="mt-6 space-y-4">
                 <input
@@ -317,12 +322,55 @@ export default async function FinanceDashboardPage({
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan utama</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan eksekutif</label>
                   <textarea
                     name="summary"
                     required
-                    placeholder="Ringkas kondisi payout, outstanding, dan fokus keuangan tim."
+                    placeholder="Ringkas kondisi keuangan dan payout paling penting yang harus langsung dipahami superadmin."
                     className="min-h-[140px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status queue payout</label>
+                  <textarea
+                    name="payout_queue_status"
+                    required
+                    placeholder="Jelaskan kondisi payout pending, processing, rejected, dan antrean yang paling berat."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status aging dan outstanding</label>
+                  <textarea
+                    name="aging_status"
+                    required
+                    placeholder="Jelaskan payout aging, outstanding utama, dan area yang mulai macet."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Posisi keuangan dan ringkasan nominal</label>
+                  <textarea
+                    name="financial_position"
+                    required
+                    placeholder="Jelaskan outstanding nominal, payout paid, nominal tertahan, dan poin keuangan utama yang perlu diketahui superadmin."
+                    className="min-h-[130px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kualitas eksekusi tim finance</label>
+                  <textarea
+                    name="execution_quality"
+                    placeholder="Jelaskan distribusi approve, processing, paid, rejected, serta kualitas eksekusi tim finance."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Masalah transfer dan payout</label>
+                  <textarea
+                    name="transfer_issues"
+                    placeholder="Jelaskan kendala transfer, payout tertahan, mismatch data, atau isu rekonsiliasi yang perlu dicatat."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <div>
@@ -334,11 +382,29 @@ export default async function FinanceDashboardPage({
                   />
                 </div>
                 <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Risiko keuangan</label>
+                  <textarea
+                    name="financial_risks"
+                    required
+                    placeholder="Jelaskan risiko finansial, risiko payout, risiko cashflow, atau potensi komplain akibat keterlambatan finansial."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Next steps</label>
                   <textarea
                     name="next_steps"
                     placeholder="Tulis tindakan lanjut yang akan dijalankan tim finance."
                     className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kebutuhan keputusan dari superadmin</label>
+                  <textarea
+                    name="support_needed"
+                    required
+                    placeholder="Jelaskan keputusan, dukungan lintas tim, atau prioritas keuangan yang perlu ditegaskan superadmin."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -363,6 +429,33 @@ export default async function FinanceDashboardPage({
                       </p>
                       <h3 className="mt-2 text-lg font-semibold text-slate-950">{report.title}</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-600">{report.summary}</p>
+                      {getMetricText(report.metric_snapshot, "payoutQueueStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "payoutQueueStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "agingStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Aging:</span> {getMetricText(report.metric_snapshot, "agingStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "financialPosition") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Posisi keuangan:</span> {getMetricText(report.metric_snapshot, "financialPosition")}
+                        </p>
+                      ) : null}
+                      {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                      {getMetricText(report.metric_snapshot, "financialRisks") ? (
+                        <p className="mt-3 text-sm leading-7 text-amber-700">
+                          Risiko: {getMetricText(report.metric_snapshot, "financialRisks")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "supportNeeded") ? (
+                        <p className="mt-3 text-sm leading-7 text-sky-700">
+                          Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
+                        </p>
+                      ) : null}
+                      {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
                     </div>
                   ))
                 )}
