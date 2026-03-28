@@ -4,6 +4,7 @@ import { getRoleLabel } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { submitOperationsManagerReport } from "./actions"
+import { createAdminAccount, createFinanceAccount } from "@/app/finance/(protected)/admin-users/actions"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -53,7 +54,7 @@ type ManagerReportRow = {
 export default async function AdminDashboard({
   searchParams,
 }: {
-  searchParams?: Promise<{ success?: string; error?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string }>
 }) {
   const adminSupabase = createAdminClient()
   const supabase = await createClient()
@@ -67,6 +68,7 @@ export default async function AdminDashboard({
     : { data: null }
   const isSuperadmin = currentProfile?.role === "superadmin"
   const isOperationsManager = currentProfile?.role === "operations_manager"
+  const showOperationsManagerView = isOperationsManager || (isSuperadmin && params.view === "operations-manager")
 
   const [merchantResult, packageResult, bookingResult] = await Promise.all([
     adminSupabase
@@ -338,7 +340,7 @@ export default async function AdminDashboard({
   ]
   const reportActorMap = new Map<string, string>(reportActorEntries)
 
-  if (isOperationsManager) {
+  if (showOperationsManagerView) {
     const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
 
     return (
@@ -1020,6 +1022,100 @@ export default async function AdminDashboard({
             </div>
           ))}
         </section>
+
+        {isSuperadmin ? (
+          <section className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager access</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Masuk ke dashboard manager dari control center</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Gunakan shortcut ini untuk membuka tampilan kerja operations manager atau finance manager tanpa perlu keluar dari akun superadmin.
+              </p>
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <Link
+                  href="/admin/dashboard?view=operations-manager"
+                  className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manager preview</p>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-950">Dashboard Operations Manager</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Lihat fokus backlog, SLA, merchant review, package review, dan jalur Booking Center versi manager operasional.
+                  </p>
+                  <div className="mt-5 text-sm font-semibold text-orange-600">Buka dashboard manager -&gt;</div>
+                </Link>
+                <Link
+                  href="/finance/dashboard?view=finance-manager"
+                  className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
+                >
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manager preview</p>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-950">Dashboard Finance Manager</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Masuk ke tampilan payout aging, outstanding, performa team finance, dan laporan keuangan versi manager finance.
+                  </p>
+                  <div className="mt-5 text-sm font-semibold text-orange-600">Buka dashboard manager -&gt;</div>
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager account creation</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Buat akun manager langsung dari dashboard superadmin</h2>
+              <div className="mt-6 grid gap-5">
+                <form action={createAdminAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                  <input type="hidden" name="role" value="operations_manager" />
+                  <input type="hidden" name="return_to" value="/admin/dashboard" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Operations manager</p>
+                  <div className="mt-4 space-y-3">
+                    <input
+                      name="username"
+                      type="text"
+                      required
+                      placeholder="mis: ops.manager"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                    <input
+                      name="password"
+                      type="text"
+                      required
+                      minLength={8}
+                      placeholder="Password awal manager operasional"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                    <button className="w-full rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                      Buat akun operations manager
+                    </button>
+                  </div>
+                </form>
+
+                <form action={createFinanceAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                  <input type="hidden" name="role" value="finance_manager" />
+                  <input type="hidden" name="return_to" value="/admin/dashboard" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance manager</p>
+                  <div className="mt-4 space-y-3">
+                    <input
+                      name="username"
+                      type="text"
+                      required
+                      placeholder="mis: finance.manager"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                    <input
+                      name="password"
+                      type="text"
+                      required
+                      minLength={8}
+                      placeholder="Password awal manager finance"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    />
+                    <button className="w-full rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                      Buat akun finance manager
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <section className="grid gap-6 xl:grid-cols-2">
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">

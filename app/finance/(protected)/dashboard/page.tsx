@@ -27,7 +27,7 @@ type ManagerReportRow = {
 export default async function FinanceDashboardPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ success?: string; error?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string }>
 }) {
   const adminSupabase = createAdminClient()
   const supabase = await createClient()
@@ -39,6 +39,8 @@ export default async function FinanceDashboardPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null }
   const isFinanceManager = currentProfile?.role === "finance_manager"
+  const isSuperadmin = currentProfile?.role === "superadmin"
+  const showFinanceManagerView = isFinanceManager || (isSuperadmin && params.view === "finance-manager")
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
@@ -76,7 +78,7 @@ export default async function FinanceDashboardPage({
     return currentTime - requestedAt.getTime() >= 2 * 24 * 60 * 60 * 1000
   }).length
 
-  const financeActionLogs = isFinanceManager
+  const financeActionLogs = showFinanceManagerView
     ? (
         (await adminSupabase
           .from("admin_action_logs")
@@ -94,7 +96,7 @@ export default async function FinanceDashboardPage({
       ) || []
     : []
 
-  const financeRoleProfiles = isFinanceManager
+  const financeRoleProfiles = showFinanceManagerView
     ? (
         (await adminSupabase
           .from("profiles")
@@ -103,7 +105,7 @@ export default async function FinanceDashboardPage({
       ) || []
     : []
 
-  const financeUsersRaw = isFinanceManager ? await adminSupabase.auth.admin.listUsers() : { data: { users: [] as Array<{ id: string; email?: string | null }> } }
+  const financeUsersRaw = showFinanceManagerView ? await adminSupabase.auth.admin.listUsers() : { data: { users: [] as Array<{ id: string; email?: string | null }> } }
   const financeRoleMap = new Map(financeRoleProfiles.map((profile) => [profile.id, profile.role]))
   const financeProfileIds = new Set(financeRoleProfiles.map((profile) => profile.id))
   const financeUsers = (financeUsersRaw.data.users || []).filter((authUser) => financeProfileIds.has(authUser.id))
@@ -124,7 +126,7 @@ export default async function FinanceDashboardPage({
     })
     .sort((a, b) => b.totalActions - a.totalActions || a.email.localeCompare(b.email))
 
-  const financeReports = isFinanceManager
+  const financeReports = showFinanceManagerView
     ? (
         (await adminSupabase
           .from("manager_reports")
@@ -135,7 +137,7 @@ export default async function FinanceDashboardPage({
       ) || []
     : []
 
-  if (isFinanceManager) {
+  if (showFinanceManagerView) {
     const managerMetricCards = [
       { label: "Payout pending", value: String(pendingCount), note: "Request payout yang belum diambil keputusan final." },
       { label: "Payout aging", value: String(agedPendingCount), note: "Payout pending/processing yang berumur 2 hari atau lebih." },
