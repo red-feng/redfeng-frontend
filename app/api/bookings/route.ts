@@ -137,7 +137,9 @@ export async function POST(req: Request) {
       }
     }
 
-    const financeSettings = await getFinanceSettings(supabase)
+    const financeSettings = await getFinanceSettings(
+      supabase as unknown as Parameters<typeof getFinanceSettings>[0],
+    )
     const subtotalAmount =
       Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
       Number(childPriceCharge.amount || 0) * Number(child_count || 0)

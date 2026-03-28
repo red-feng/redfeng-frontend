@@ -122,7 +122,9 @@ export default async function CheckoutPage({
     toCurrency: "IDR",
   })
 
-  const settings = await getFinanceSettings(supabase)
+  const settings = await getFinanceSettings(
+    supabase as unknown as Parameters<typeof getFinanceSettings>[0],
+  )
   const financeSettings = {
     customerTaxPercent: settings.customerTaxPercent,
     customerAdminFeeRules: settings.customerAdminFeeRules,
