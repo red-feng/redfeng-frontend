@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
-import { normalizeInternalUsername, resolveInternalLoginCandidates } from "@/lib/internal-auth"
+import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
 
 export default function AdminLogin() {
@@ -28,29 +28,13 @@ export default function AdminLogin() {
 
     await supabase.auth.signOut()
 
-    const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
-    let signedInUser: { id: string } | null = null
-    let lastErrorMessage = "Email atau password salah."
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: buildInternalAdminEmail(normalizedUsername),
+      password,
+    })
 
-    for (const loginIdentifier of loginCandidates) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginIdentifier,
-        password,
-      })
-
-      if (error || !data.user) {
-        if (error?.message) {
-          lastErrorMessage = error.message
-        }
-        continue
-      }
-
-      signedInUser = data.user
-      break
-    }
-
-    if (!signedInUser) {
-      setError(lastErrorMessage)
+    if (signInError || !data.user) {
+      setError(signInError?.message || "Username atau password admin tidak valid.")
       setLoading(false)
       return
     }
@@ -58,7 +42,7 @@ export default function AdminLogin() {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", signedInUser.id)
+      .eq("id", data.user.id)
       .maybeSingle()
 
     if (!profile) {

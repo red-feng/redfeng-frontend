@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
-import { resolveInternalLoginCandidates, normalizeInternalUsername } from "@/lib/internal-auth"
+import { buildInternalFinanceEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isFinancePortalRole } from "@/lib/internal-roles"
 
 export default function FinanceLogin() {
@@ -28,31 +28,13 @@ export default function FinanceLogin() {
 
     await supabase.auth.signOut()
 
-    const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
-    let data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"] | null = null
-    let error: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["error"] | null = null
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: buildInternalFinanceEmail(normalizedUsername),
+      password,
+    })
 
-    for (const candidate of loginCandidates) {
-      const attempt = await supabase.auth.signInWithPassword({
-        email: candidate,
-        password,
-      })
-      if (attempt.data.user) {
-        data = attempt.data
-        error = null
-        break
-      }
-      error = attempt.error
-    }
-
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
-
-    if (!data?.user) {
-      setError("Sesi finance tidak ditemukan. Coba login ulang.")
+    if (error || !data?.user) {
+      setError(error?.message || "Username atau password finance tidak valid.")
       setLoading(false)
       return
     }
