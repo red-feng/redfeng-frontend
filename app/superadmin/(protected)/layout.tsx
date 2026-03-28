@@ -1,4 +1,3 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
@@ -87,12 +86,6 @@ export default async function SuperadminProtectedLayout({
                   <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-700">
                     Superadmin
                   </span>
-                  <Link
-                    href="/superadmin/dashboard"
-                    className="inline-flex rounded-full border border-[#ecd9c2] bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                  >
-                    Executive Dashboard
-                  </Link>
                 </div>
               </div>
               <SignOutButton

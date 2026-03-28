@@ -282,39 +282,6 @@ export default async function FinanceDashboardPage({
                 </div>
               </div>
 
-              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue access</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur kerja utama</h2>
-                <div className="mt-5 grid gap-4">
-                  {[
-                    {
-                      href: "/finance/payouts",
-                      label: "Payout Queue",
-                      description: "Pantau seluruh payout aktif, aging, dan status transfer.",
-                    },
-                    {
-                      href: "/admin/bookings",
-                      label: "Booking Center",
-                      description: "Lihat jalur booking yang sudah di-handoff dari admin.",
-                    },
-                    {
-                      href: "/admin/audit-log",
-                      label: "Audit Log",
-                      description: "Cek histori keputusan finance dan handoff lintas tim.",
-                    },
-                  ].map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                    >
-                      <h3 className="text-xl font-semibold text-slate-950">{item.label}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                      <div className="mt-5 text-sm font-semibold text-orange-600">Buka area kerja -&gt;</div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
             </div>
           </section>
 
@@ -467,59 +434,63 @@ export default async function FinanceDashboardPage({
         <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance workstreams</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Area payout approval</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance priorities</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas payout hari ini</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Masuk ke antrean payout merchant untuk approve, mark processing, atau menutup request sebagai paid.
+                Dashboard depan finance lebih berguna jika langsung menunjukkan fokus kerja hari ini, bukan mengulang menu navigasi yang sudah ada di header.
               </p>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <Link
-                href="/finance/payouts"
-                className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-              >
-                <div className="inline-flex rounded-full bg-gradient-to-r from-emerald-500 to-lime-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
-                  Open queue
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-slate-950">Payout Approvals</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Review request payout merchant berdasarkan status escrow dan proses transfer internal.
-                </p>
-                <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
-                  Buka area kerja -&gt;
-                </div>
-              </Link>
-              <Link
-                href="/finance/settings"
-                className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-              >
-                <div className="inline-flex rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
-                  Open settings
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-slate-950">Finance Settings</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Atur komisi Red Feng, admin fee customer, pajak, dan biaya transfer merchant.
-                </p>
-                <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
-                  Buka pengaturan -&gt;
-                </div>
-              </Link>
-              <Link
-                href="/finance/team-accounts"
-                className="group block overflow-hidden rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-              >
-                <div className="inline-flex rounded-full bg-gradient-to-r from-slate-700 to-slate-900 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white">
-                  Internal accounts
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-slate-950">Admin &amp; Finance Accounts</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Finance manager mengelola akun finance team, sedangkan superadmin mengelola struktur finance manager.
-                </p>
-                <div className="mt-5 text-sm font-semibold text-orange-600 transition group-hover:text-orange-700">
-                  Buka manajemen akun -&gt;
-                </div>
-              </Link>
+            <div className="mt-6 rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    label: "Payout pending",
+                    value: String(pendingCount),
+                    note: "Request yang belum diputuskan.",
+                  },
+                  {
+                    label: "Sedang diproses",
+                    value: String(processingCount),
+                    note: "Transfer yang masih berjalan.",
+                  },
+                  {
+                    label: "Aging 2+ hari",
+                    value: String(agedPendingCount),
+                    note: "Queue yang mulai butuh perhatian cepat.",
+                  },
+                  {
+                    label: "Outstanding",
+                    value: formatMoney(pendingTotal),
+                    note: "Nominal yang masih belum keluar.",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[22px] border border-[#efe1cf] bg-white p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{item.label}</p>
+                    <p className="mt-3 text-2xl font-semibold text-slate-950">{item.value}</p>
+                    <p className="mt-2 text-xs leading-6 text-slate-500">{item.note}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/finance/payouts"
+                  className="inline-flex items-center rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Buka Payout Queue
+                </Link>
+                <Link
+                  href="/finance/settings"
+                  className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                >
+                  Buka Finance Settings
+                </Link>
+              </div>
+
+              <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
+                Fokus utama tim finance di dashboard depan adalah membaca backlog dan segera masuk ke antrean payout. Manajemen akun finance tetap berada di jalur manager, bukan workspace eksekusi harian.
+              </div>
             </div>
           </div>
 

@@ -135,58 +135,6 @@ export default async function AdminDashboard({
       note: "Target handoff booking di bawah 1 hari.",
     },
   ]
-  const productChannels = [
-    {
-      id: "paket-tour",
-      label: "Paket Tour",
-      href: "/admin/paket-tour",
-      status: "Aktif",
-      description: "Seluruh menu admin yang ada sekarang untuk merchant dan review paket masuk ke channel ini.",
-    },
-    {
-      id: "pesawat",
-      label: "Pesawat",
-      href: "/admin/pesawat",
-      status: "Segera hadir",
-      description: "Disiapkan untuk operasional dan review tiket pesawat di dashboard admin.",
-    },
-    {
-      id: "hotel",
-      label: "Hotel",
-      href: "/admin/hotel",
-      status: "Segera hadir",
-      description: "Tempat future workflow hotel, inventory, dan approval operasional hotel.",
-    },
-    {
-      id: "bus-travel",
-      label: "Bus & Travel",
-      href: "/admin/bus-travel",
-      status: "Segera hadir",
-      description: "Area admin untuk produk bus dan travel akan ditempatkan di modul ini.",
-    },
-    {
-      id: "kereta-api",
-      label: "Kereta Api",
-      href: "/admin/kereta-api",
-      status: "Segera hadir",
-      description: "Modul admin kereta api disiapkan terpisah dari paket tour.",
-    },
-    {
-      id: "kapal-laut",
-      label: "Kapal Laut",
-      href: "/admin/kapal-laut",
-      status: "Segera hadir",
-      description: "Workflow tiket kapal laut nantinya bisa dikelola dari channel ini.",
-    },
-    {
-      id: "kapal-pesiar",
-      label: "Kapal Pesiar",
-      href: "/admin/kapal-pesiar",
-      status: "Segera hadir",
-      description: "Channel khusus cruise atau kapal pesiar untuk admin Red Feng.",
-    },
-  ]
-
   const metricCards = [
     {
       label: "Merchant pending",
@@ -460,40 +408,6 @@ export default async function AdminDashboard({
 
           <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operational control lanes</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur pengawasan operations manager</h2>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {[
-                  {
-                    href: "/admin/merchants",
-                    label: "Merchant Directory",
-                    description: "Review onboarding merchant yang pending atau bermasalah.",
-                  },
-                  {
-                    href: "/admin/packages",
-                    label: "Package Review",
-                    description: "Pantau antrean paket, rejection, dan kualitas listing.",
-                  },
-                  {
-                    href: "/admin/bookings",
-                    label: "Booking Center",
-                    description: "Lihat booking stalled, ready aging, dan queue lintas produk.",
-                  },
-                ].map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                  >
-                    <h3 className="text-xl font-semibold text-slate-950">{item.label}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-                    <div className="mt-5 text-sm font-semibold text-orange-600">Buka area kerja -&gt;</div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager note</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Fokus utama operations manager</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
@@ -751,58 +665,17 @@ export default async function AdminDashboard({
             </div>
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue lintas tim yang perlu perhatian</h2>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                {needsAttentionCards.map((card) => (
-                  <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Superadmin lanes</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Jalur kontrol cepat</h2>
-              <div className="mt-5 grid gap-4">
-                {[
-                  {
-                    label: "Ops Team Accounts",
-                    href: "/superadmin/team-accounts",
-                    description: "Kelola akun admin dan operations manager dari portal superadmin.",
-                  },
-                  {
-                    label: "Finance Team Accounts",
-                    href: "/superadmin/finance-team-accounts",
-                    description: "Kelola akun finance dan finance manager tanpa keluar dari portal superadmin.",
-                  },
-                  {
-                    label: "Booking Center",
-                    href: "/admin/bookings",
-                    description: "Pantau booking lintas produk dan kesiapan handoff ke finance.",
-                  },
-                  {
-                    label: "Audit Log",
-                    href: "/admin/audit-log",
-                    description: "Telusuri jejak aksi admin, superadmin, dan handoff operasional.",
-                  },
-                ].map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.href}
-                    className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{item.label}</p>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
-                    <div className="mt-4 text-sm font-semibold text-orange-600">Buka area -&gt;</div>
-                  </Link>
-                ))}
-              </div>
+          <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue lintas tim yang perlu perhatian</h2>
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {needsAttentionCards.map((card) => (
+                <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -1043,10 +916,10 @@ export default async function AdminDashboard({
               <div className="max-w-3xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager control deck</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                  Akses dashboard manager dan buat akun manager dari satu tempat
+                  Buat akun manager langsung dari dashboard superadmin
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Dari section ini superadmin bisa membuka tampilan manager operasional atau manager finance, lalu membuat akun manager baru tanpa pindah ke panel lain.
+                  Preview dashboard manager sudah tersedia di navigasi superadmin. Bagian ini difokuskan hanya untuk pembuatan akun manager baru.
                 </p>
               </div>
               <div className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3 text-sm leading-6 text-slate-600">
@@ -1055,48 +928,7 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-6 grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-              <div className="grid gap-4">
-                <Link
-                  href="/superadmin/operations-manager"
-                  className="rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manager preview</p>
-                      <h3 className="mt-3 text-xl font-semibold text-slate-950">Dashboard Operations Manager</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Lihat backlog merchant, package review, SLA, dan jalur Booking Center dari perspektif manager operasional.
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-                      Preview
-                    </span>
-                  </div>
-                  <div className="mt-5 text-sm font-semibold text-orange-600">Buka dashboard operations manager -&gt;</div>
-                </Link>
-
-                <Link
-                  href="/superadmin/finance-manager"
-                  className="rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manager preview</p>
-                      <h3 className="mt-3 text-xl font-semibold text-slate-950">Dashboard Finance Manager</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        Masuk ke tampilan payout aging, outstanding, performa finance team, dan laporan keuangan versi manager finance.
-                      </p>
-                    </div>
-                    <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-                      Preview
-                    </span>
-                  </div>
-                  <div className="mt-5 text-sm font-semibold text-orange-600">Buka dashboard finance manager -&gt;</div>
-                </Link>
-              </div>
-
-              <div className="grid gap-5 lg:grid-cols-2">
+            <div className="mt-6 grid gap-5 lg:grid-cols-2">
                 <form action={createAdminAccount} className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-6">
                   <input type="hidden" name="role" value="operations_manager" />
                   <input type="hidden" name="return_to" value="/superadmin/dashboard" />
@@ -1176,7 +1008,6 @@ export default async function AdminDashboard({
                     </button>
                   </div>
                 </form>
-              </div>
             </div>
           </section>
         ) : null}
@@ -1211,56 +1042,6 @@ export default async function AdminDashboard({
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Product menu</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kanal produk admin</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Paket Tour menjadi rumah untuk menu merchant dan review saat ini. Booking tetap terpisah agar bisa menampung booking dari pesawat, hotel, bus, kereta, kapal laut, dan kapal pesiar.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {productChannels.map((channel) => (
-              <Link
-                key={channel.id}
-                href={channel.href}
-                className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-[0_18px_38px_rgba(194,65,12,0.1)]"
-              >
-                <div className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-600">
-                  {channel.status}
-                </div>
-                <h3 className="mt-4 text-xl font-semibold text-slate-950">{channel.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{channel.description}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team split</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Admin dan finance terpisah</h2>
-              <div className="mt-5 space-y-4 text-sm leading-7 text-slate-600">
-                <p>Dashboard admin fokus ke approval merchant, package, dan validasi flow pickup booking.</p>
-                <p>Dashboard finance berdiri sendiri di `/finance/dashboard` untuk setting payout dan transfer merchant.</p>
-                <p>Admin tidak mengeksekusi transfer dana, hanya mengirim booking ke finance.</p>
-              </div>
-          </div>
-
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Ops note</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pembagian area kerja</h2>
-            <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-              <p>1. Admin fokus pada approval merchant, package, dan validasi urutan Arrived, Picked up, Go.</p>
-              <p>2. Setelah flow pickup lengkap, admin kirim booking ke finance.</p>
-              <p>3. Finance menentukan komisi, biaya transfer, dan menjalankan payout merchant.</p>
-              <p>4. Dashboard admin tidak mengeksekusi transfer dana.</p>
-            </div>
-          </div>
-        </section>
       </div>
     </main>
   )

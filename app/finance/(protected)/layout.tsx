@@ -55,7 +55,6 @@ export default async function FinanceProtectedLayout({
           { href: "/finance/dashboard", label: "Dashboard" },
           { href: "/finance/payouts", label: "Payout Queue" },
           { href: "/finance/settings", label: "Finance Settings" },
-          { href: "/finance/team-accounts", label: "Team Accounts" },
         ]
 
   return (
@@ -74,7 +73,7 @@ export default async function FinanceProtectedLayout({
                 <p className="text-xs text-slate-500">
                   {isFinanceManager
                     ? "Area monitoring payout aging, outstanding, dan ritme kerja tim finance"
-                    : "Area payout, fee, pengaturan dana, dan akun internal"}
+                    : "Area payout, fee, dan pengaturan dana internal"}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
