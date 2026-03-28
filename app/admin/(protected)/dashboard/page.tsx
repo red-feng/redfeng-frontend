@@ -870,55 +870,114 @@ export default async function AdminDashboard({
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager reports</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan terbaru manager ke superadmin</h2>
-              <div className="mt-6 grid gap-4">
-                {!operationsReports.length && !financeReports.length ? (
-                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
-                    Belum ada laporan manager yang masuk.
-                  </div>
-                ) : (
-                  managerReports.slice(0, 6).map((report) => (
-                    <div key={report.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-                          {titleCase(report.report_type)}
-                        </span>
-                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
-                          {titleCase(report.author_role)}
-                        </span>
-                      </div>
-                      <h3 className="mt-4 text-lg font-semibold text-slate-950">{report.title}</h3>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {(reportActorMap.get(report.author_id) || report.author_id || "-") as string} | {formatDateTime(report.created_at)}
-                      </p>
-                      <p className="mt-4 text-sm leading-7 text-slate-600">{report.summary}</p>
-                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "queueStatus") ? (
-                        <p className="mt-3 text-sm leading-7 text-slate-600">
-                          <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "queueStatus")}
-                        </p>
-                      ) : null}
-                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "slaStatus") ? (
-                        <p className="mt-3 text-sm leading-7 text-slate-600">
-                          <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
-                        </p>
-                      ) : null}
-                      {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
-                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "operationalRisks") ? (
-                        <p className="mt-3 text-sm leading-7 text-amber-700">
-                          Risiko: {getMetricText(report.metric_snapshot, "operationalRisks")}
-                        </p>
-                      ) : null}
-                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "supportNeeded") ? (
-                        <p className="mt-3 text-sm leading-7 text-sky-700">
-                          Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
-                        </p>
-                      ) : null}
-                      {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
+            <div className="grid gap-6">
+              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operations reports</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan operations manager</h2>
+                <div className="mt-6 grid gap-4">
+                  {!operationsReports.length ? (
+                    <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                      Belum ada laporan operations manager yang masuk.
                     </div>
-                  ))
-                )}
+                  ) : (
+                    operationsReports.slice(0, 3).map((report) => (
+                      <div key={report.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                            Operations
+                          </span>
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            {titleCase(report.author_role)}
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold text-slate-950">{report.title}</h3>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {(reportActorMap.get(report.author_id) || report.author_id || "-") as string} | {formatDateTime(report.created_at)}
+                        </p>
+                        <p className="mt-4 text-sm leading-7 text-slate-600">{report.summary}</p>
+                        {getMetricText(report.metric_snapshot, "queueStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "queueStatus")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "slaStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
+                          </p>
+                        ) : null}
+                        {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                        {getMetricText(report.metric_snapshot, "operationalRisks") ? (
+                          <p className="mt-3 text-sm leading-7 text-amber-700">
+                            Risiko: {getMetricText(report.metric_snapshot, "operationalRisks")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "supportNeeded") ? (
+                          <p className="mt-3 text-sm leading-7 text-sky-700">
+                            Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
+                          </p>
+                        ) : null}
+                        {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance reports</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan finance manager</h2>
+                <div className="mt-6 grid gap-4">
+                  {!financeReports.length ? (
+                    <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                      Belum ada laporan finance manager yang masuk.
+                    </div>
+                  ) : (
+                    financeReports.slice(0, 3).map((report) => (
+                      <div key={report.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                            Finance
+                          </span>
+                          <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">
+                            {titleCase(report.author_role)}
+                          </span>
+                        </div>
+                        <h3 className="mt-4 text-lg font-semibold text-slate-950">{report.title}</h3>
+                        <p className="mt-2 text-sm text-slate-500">
+                          {(reportActorMap.get(report.author_id) || report.author_id || "-") as string} | {formatDateTime(report.created_at)}
+                        </p>
+                        <p className="mt-4 text-sm leading-7 text-slate-600">{report.summary}</p>
+                        {getMetricText(report.metric_snapshot, "payoutQueueStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "payoutQueueStatus")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "agingStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Aging:</span> {getMetricText(report.metric_snapshot, "agingStatus")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "financialPosition") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Posisi keuangan:</span> {getMetricText(report.metric_snapshot, "financialPosition")}
+                          </p>
+                        ) : null}
+                        {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                        {getMetricText(report.metric_snapshot, "financialRisks") ? (
+                          <p className="mt-3 text-sm leading-7 text-amber-700">
+                            Risiko: {getMetricText(report.metric_snapshot, "financialRisks")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "supportNeeded") ? (
+                          <p className="mt-3 text-sm leading-7 text-sky-700">
+                            Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
+                          </p>
+                        ) : null}
+                        {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
