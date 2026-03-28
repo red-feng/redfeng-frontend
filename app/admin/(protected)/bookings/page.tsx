@@ -5,6 +5,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { handoffBookingToFinance } from "./actions"
 
 type BookingRow = {
@@ -55,10 +56,6 @@ type MerchantRow = {
   company_name: string | null
 }
 
-function normalizeStatus(value: string | null) {
-  return (value || "").trim().toLowerCase()
-}
-
 function formatDate(value: string | null) {
   if (!value) return "-"
   const parsed = new Date(value)
@@ -93,46 +90,36 @@ function titleCaseStatus(value: string | null) {
 }
 
 function paymentTone(status: string | null) {
-  const normalized = normalizeStatus(status)
-  if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  if (normalized === "dp_paid") return "border-amber-200 bg-amber-50 text-amber-700"
-  if (normalized === "cancelled") return "border-rose-200 bg-rose-50 text-rose-700"
-  return "border-slate-200 bg-slate-100 text-slate-700"
+  return getPaymentStatusTone(status, "bordered")
 }
 
 function escrowTone(status: string | null) {
-  const normalized = normalizeStatus(status)
-  if (normalized === "held" || normalized === "partial_hold") return "border-orange-200 bg-orange-50 text-orange-700"
-  if (normalized === "awaiting_admin_handoff" || normalized === "ready_for_payout") {
-    return "border-sky-200 bg-sky-50 text-sky-700"
-  }
-  if (normalized === "paid_out") return "border-violet-200 bg-violet-50 text-violet-700"
-  return "border-slate-200 bg-slate-100 text-slate-700"
+  return getEscrowStatusTone(status, "bordered")
 }
 
 function journeyPhase(booking: BookingRow) {
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
-    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
+    return { label: "Paid Out", tone: getJourneyStageTone("paid_out", "bordered") }
   }
   if (normalizeStatus(booking.booking_status) === "finance_review") {
-    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
+    return { label: "Ready for Finance", tone: getJourneyStageTone("ready_for_finance", "bordered") }
   }
   if (booking.merchant_picked_up_at) {
-    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: "Go Confirmed", tone: getJourneyStageTone("go_confirmed", "bordered") }
   }
   if (booking.customer_picked_up_at) {
-    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: "Picked Up", tone: getJourneyStageTone("picked_up", "bordered") }
   }
   if (booking.merchant_arrived_at) {
-    return { label: "Awaiting Pickup", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: "Awaiting Pickup", tone: getJourneyStageTone("awaiting_pickup", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "paid") {
-    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: "Fully Paid", tone: getJourneyStageTone("fully_paid", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: "DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
   }
-  return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
+  return { label: titleCaseStatus(booking.booking_status), tone: getJourneyStageTone("fallback", "bordered") }
 }
 
 function canHandoffToFinance(booking: BookingRow) {

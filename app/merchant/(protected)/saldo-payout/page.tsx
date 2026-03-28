@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { getPayoutRequestTone, normalizeStatus } from "@/lib/status-tones"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
@@ -205,10 +206,6 @@ function formatDate(dateStr: string | null) {
   })
 }
 
-function normalizeStatus(value: string | null) {
-  return (value || "").trim().toLowerCase()
-}
-
 function titleCaseStatus(value: string | null) {
   const normalized = normalizeStatus(value)
   if (!normalized) return "-"
@@ -221,17 +218,7 @@ function titleCaseStatus(value: string | null) {
 }
 
 function payoutStatusClass(value: string | null) {
-  const status = normalizeStatus(value)
-  if (status === "approved" || status === "paid" || status === "completed") {
-    return "bg-emerald-50 text-emerald-700"
-  }
-  if (status === "pending" || status === "processing") {
-    return "bg-amber-50 text-amber-700"
-  }
-  if (status === "rejected" || status === "cancelled") {
-    return "bg-rose-50 text-rose-700"
-  }
-  return "bg-slate-100 text-slate-700"
+  return getPayoutRequestTone(value)
 }
 
 function isAvailableBooking(booking: PayoutBookingRow) {

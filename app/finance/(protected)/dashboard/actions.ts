@@ -29,19 +29,35 @@ export async function submitFinanceManagerReport(formData: FormData) {
 
   const title = readText(formData, "title")
   const summary = readText(formData, "summary")
+  const customerTransactionSummary = readText(formData, "customer_transaction_summary")
+  const customerFundsStatus = readText(formData, "customer_funds_status")
   const payoutQueueStatus = readText(formData, "payout_queue_status")
   const agingStatus = readText(formData, "aging_status")
   const financialPosition = readText(formData, "financial_position")
+  const merchantObligationStatus = readText(formData, "merchant_obligation_status")
   const executionQuality = readText(formData, "execution_quality")
   const transferIssues = readText(formData, "transfer_issues")
+  const financialAnomalies = readText(formData, "financial_anomalies")
   const blockers = readText(formData, "blockers")
   const financialRisks = readText(formData, "financial_risks")
   const nextSteps = readText(formData, "next_steps")
+  const priorityCases = readText(formData, "priority_cases")
   const supportNeeded = readText(formData, "support_needed")
   const metricSnapshotRaw = String(formData.get("metric_snapshot") || "{}")
 
-  if (!title || !summary || !payoutQueueStatus || !agingStatus || !financialPosition || !financialRisks || !supportNeeded) {
-    backToDashboard("Judul, ringkasan eksekutif, status queue payout, aging, posisi keuangan, risiko, dan kebutuhan keputusan wajib diisi.", "error")
+  if (
+    !title ||
+    !summary ||
+    !customerTransactionSummary ||
+    !customerFundsStatus ||
+    !payoutQueueStatus ||
+    !agingStatus ||
+    !financialPosition ||
+    !merchantObligationStatus ||
+    !financialRisks ||
+    !supportNeeded
+  ) {
+    backToDashboard("Judul, ringkasan eksekutif, transaksi customer, status dana customer, queue payout, aging, posisi keuangan, kewajiban merchant, risiko, dan kebutuhan keputusan wajib diisi.", "error")
   }
 
   let metricSnapshot: Record<string, unknown> = {}
@@ -53,12 +69,17 @@ export async function submitFinanceManagerReport(formData: FormData) {
 
   metricSnapshot = {
     ...metricSnapshot,
+    customerTransactionSummary,
+    customerFundsStatus,
     payoutQueueStatus,
     agingStatus,
     financialPosition,
+    merchantObligationStatus,
     executionQuality: executionQuality || null,
     transferIssues: transferIssues || null,
+    financialAnomalies: financialAnomalies || null,
     financialRisks,
+    priorityCases: priorityCases || null,
     supportNeeded,
   }
 

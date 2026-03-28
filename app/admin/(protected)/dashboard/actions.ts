@@ -31,18 +31,21 @@ export async function submitOperationsManagerReport(formData: FormData) {
   const summary = readText(formData, "summary")
   const queueStatus = readText(formData, "queue_status")
   const slaStatus = readText(formData, "sla_status")
+  const customerTransactionSummary = readText(formData, "customer_transaction_summary")
+  const customerFundsStatus = readText(formData, "customer_funds_status")
   const decisionQuality = readText(formData, "decision_quality")
   const teamCapacity = readText(formData, "team_capacity")
   const escalations = readText(formData, "escalations")
   const financeHandoffStatus = readText(formData, "finance_handoff_status")
   const blockers = readText(formData, "blockers")
+  const transactionAnomalies = readText(formData, "transaction_anomalies")
   const operationalRisks = readText(formData, "operational_risks")
   const nextSteps = readText(formData, "next_steps")
   const supportNeeded = readText(formData, "support_needed")
   const metricSnapshotRaw = String(formData.get("metric_snapshot") || "{}")
 
-  if (!title || !summary || !queueStatus || !slaStatus || !escalations || !operationalRisks || !supportNeeded) {
-    backToDashboard("Judul, ringkasan eksekutif, status queue, status SLA, eskalasi, risiko, dan kebutuhan keputusan wajib diisi.", "error")
+  if (!title || !summary || !queueStatus || !slaStatus || !customerTransactionSummary || !customerFundsStatus || !escalations || !operationalRisks || !supportNeeded) {
+    backToDashboard("Judul, ringkasan eksekutif, status queue, status SLA, ringkasan transaksi customer, status dana customer, eskalasi, risiko, dan kebutuhan keputusan wajib diisi.", "error")
   }
 
   let metricSnapshot: Record<string, unknown> = {}
@@ -56,10 +59,13 @@ export async function submitOperationsManagerReport(formData: FormData) {
     ...metricSnapshot,
     queueStatus,
     slaStatus,
+    customerTransactionSummary,
+    customerFundsStatus,
     decisionQuality: decisionQuality || null,
     teamCapacity: teamCapacity || null,
     escalations,
     financeHandoffStatus: financeHandoffStatus || null,
+    transactionAnomalies: transactionAnomalies || null,
     operationalRisks,
     supportNeeded,
   }

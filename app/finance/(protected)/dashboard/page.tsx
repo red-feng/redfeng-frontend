@@ -16,6 +16,26 @@ function getMetricText(snapshot: Record<string, unknown> | null | undefined, key
   return typeof value === "string" ? value.trim() : ""
 }
 
+function ChartLegend({
+  items,
+}: {
+  items: Array<{ label: string; tone: string }>
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="inline-flex items-center gap-2 rounded-full border border-[#ead8c2] bg-[#fffaf4] px-3 py-1 text-[11px] font-medium text-slate-600"
+        >
+          <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 type ManagerReportRow = {
   id: string
   author_id: string
@@ -50,13 +70,13 @@ export default async function FinanceDashboardPage({
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
-    .select("id, amount, status, requested_at")
+    .select("id, amount, status, requested_at, gross_booking_amount, redfeng_commission_amount, merchant_transfer_fee")
     .order("requested_at", { ascending: false })
 
   const payouts = payoutsData || []
   const { data: bookingsData } = await adminSupabase
     .from("bookings")
-    .select("id, booking_status")
+    .select("id, booking_status, payment_status, payment_type, escrow_status, total_amount, subtotal_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
     .order("created_at", { ascending: false })
   const bookings = bookingsData || []
   const pendingCount = payouts.filter((item) => normalizeStatus(item.status) === "pending").length
@@ -83,6 +103,66 @@ export default async function FinanceDashboardPage({
     if (!requestedAt || Number.isNaN(requestedAt.getTime())) return false
     return currentTime - requestedAt.getTime() >= 2 * 24 * 60 * 60 * 1000
   }).length
+  const customerTransactionRows = bookings
+    .map((booking) => {
+      const paymentStatus = normalizeStatus(booking.payment_status)
+      const paymentType = normalizeStatus(booking.payment_type)
+      const totalAmount = Number(booking.total_amount || 0)
+      const subtotalAmount = Number(booking.subtotal_amount || 0)
+      const dpAmount = Number(booking.dp_amount || 0)
+      const finalPaymentAmount = Number(booking.final_payment_amount || 0)
+      const customerAdminFeeAmount = Number(booking.customer_admin_fee_amount || 0)
+      const customerTaxAmount = Number(booking.customer_tax_amount || 0)
+      const receivedAmount =
+        paymentStatus === "paid" ? totalAmount : paymentStatus === "dp_paid" ? dpAmount : 0
+      const receivedRatio = totalAmount > 0 ? Math.min(receivedAmount / totalAmount, 1) : 0
+
+      return {
+        bookingStatus: normalizeStatus(booking.booking_status),
+        escrowStatus: normalizeStatus(booking.escrow_status),
+        paymentStatus,
+        paymentType,
+        receivedAmount,
+        dpAmount,
+        finalPaymentAmount,
+        subtotalAmount,
+        customerAdminFeeCollected: Math.round(customerAdminFeeAmount * receivedRatio),
+        customerTaxCollected: Math.round(customerTaxAmount * receivedRatio),
+      }
+    })
+    .filter((item) => item.receivedAmount > 0)
+
+  const dpReceivedTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "dp_paid")
+    .reduce((sum, item) => sum + item.dpAmount, 0)
+  const finalSettlementTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "paid" && item.paymentType === "dp")
+    .reduce((sum, item) => sum + item.finalPaymentAmount, 0)
+  const fullPaymentTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "paid" && item.paymentType !== "dp")
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const grossCustomerTransactionTotal = dpReceivedTotal + finalSettlementTotal + fullPaymentTotal
+  const customerAdminFeeCollectedTotal = customerTransactionRows.reduce(
+    (sum, item) => sum + item.customerAdminFeeCollected,
+    0,
+  )
+  const customerTaxCollectedTotal = customerTransactionRows.reduce(
+    (sum, item) => sum + item.customerTaxCollected,
+    0,
+  )
+  const customerHeldFundsTotal = customerTransactionRows
+    .filter((item) => ["partial_hold", "held", "awaiting_admin_handoff", "finance_review", "payout_processing"].includes(item.escrowStatus))
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const financeReviewFundsTotal = customerTransactionRows
+    .filter((item) => ["finance_review", "payout_processing"].includes(item.escrowStatus))
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const paidOutFundsTotal = customerTransactionRows
+    .filter((item) => item.escrowStatus === "paid_out")
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const packageBaseSettledTotal = customerTransactionRows.reduce((sum, item) => sum + item.subtotalAmount, 0)
+  const merchantObligationTotal = payouts.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  const commissionProjectedTotal = payouts.reduce((sum, item) => sum + Number(item.redfeng_commission_amount || 0), 0)
+  const transferFeeProjectedTotal = payouts.reduce((sum, item) => sum + Number(item.merchant_transfer_fee || 0), 0)
 
   const financeActionLogs = showFinanceManagerView
     ? (
@@ -145,11 +225,30 @@ export default async function FinanceDashboardPage({
 
   if (showFinanceManagerView) {
     const managerMetricCards = [
-      { label: "Payout pending", value: String(pendingCount), note: "Request payout yang belum diambil keputusan final." },
+      { label: "Transaksi customer", value: formatMoney(grossCustomerTransactionTotal), note: "Total uang customer yang sudah masuk ke Red Feng." },
+      { label: "Dana tertahan", value: formatMoney(customerHeldFundsTotal), note: "Dana customer yang masih ada di escrow / belum selesai." },
       { label: "Payout aging", value: String(agedPendingCount), note: "Payout pending/processing yang berumur 2 hari atau lebih." },
-      { label: "Rejected", value: String(rejectedCount), note: "Payout yang dikembalikan atau ditolak finance." },
-      { label: "Outstanding", value: formatMoney(pendingTotal), note: "Nominal yang masih belum keluar dari finance queue." },
+      { label: "Outstanding", value: formatMoney(pendingTotal), note: "Nominal net payout yang masih belum keluar dari finance queue." },
     ]
+    const queueChartItems = [
+      { label: "Pending", value: pendingCount, tone: "bg-amber-400" },
+      { label: "Approved / Processing", value: processingCount, tone: "bg-sky-500" },
+      { label: "Paid", value: paidCount, tone: "bg-emerald-500" },
+      { label: "Rejected", value: rejectedCount, tone: "bg-rose-500" },
+    ]
+    const queueChartBase = queueChartItems.reduce((sum, item) => sum + item.value, 0) || 1
+    const customerFundsChartItems = [
+      { label: "Dana tertahan", value: customerHeldFundsTotal, tone: "bg-rose-500" },
+      { label: "Sudah di finance", value: financeReviewFundsTotal, tone: "bg-sky-500" },
+      { label: "Sudah paid out", value: paidOutFundsTotal, tone: "bg-emerald-500" },
+    ]
+    const customerFundsChartBase = Math.max(grossCustomerTransactionTotal, 1)
+    const customerMixItems = [
+      { label: "DP", value: dpReceivedTotal, tone: "bg-amber-400" },
+      { label: "Pelunasan", value: finalSettlementTotal, tone: "bg-sky-500" },
+      { label: "Full payment", value: fullPaymentTotal, tone: "bg-emerald-500" },
+    ]
+    const customerMixBase = Math.max(grossCustomerTransactionTotal, 1)
 
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -227,6 +326,126 @@ export default async function FinanceDashboardPage({
             ))}
           </section>
 
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Diagram Dana Customer</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Diagram arus dana customer</h2>
+              <ChartLegend
+                items={[
+                  { label: "Dana tertahan", tone: "bg-rose-500" },
+                  { label: "Masuk finance", tone: "bg-sky-500" },
+                  { label: "Sudah paid out", tone: "bg-emerald-500" },
+                ]}
+              />
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Bruto transaksi customer</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(grossCustomerTransactionTotal)}</p>
+                </div>
+                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Kewajiban payout merchant</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(merchantObligationTotal)}</p>
+                </div>
+              </div>
+              <div className="mt-6 space-y-4">
+                {customerFundsChartItems.map((item) => {
+                  const width = Math.max((item.value / customerFundsChartBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Admin fee terkumpul</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerAdminFeeCollectedTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Pajak customer</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerTaxCollectedTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Komisi projected</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(commissionProjectedTotal)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Grafik Queue Dan Komposisi</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Grafik queue dan komposisi transaksi</h2>
+              <ChartLegend
+                items={[
+                  { label: "Pending", tone: "bg-amber-400" },
+                  { label: "Approved / Processing", tone: "bg-sky-500" },
+                  { label: "Paid", tone: "bg-emerald-500" },
+                  { label: "Rejected", tone: "bg-rose-500" },
+                ]}
+              />
+              <div className="mt-6 space-y-4">
+                {queueChartItems.map((item) => {
+                  const width = Math.max((item.value / queueChartBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{item.value}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <ChartLegend
+                items={[
+                  { label: "DP", tone: "bg-amber-400" },
+                  { label: "Pelunasan", tone: "bg-sky-500" },
+                  { label: "Full payment", tone: "bg-emerald-500" },
+                ]}
+              />
+              <div className="mt-8 space-y-4">
+                {customerMixItems.map((item) => {
+                  const width = Math.max((item.value / customerMixBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Dasar paket settle</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(packageBaseSettledTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Transfer fee projected</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(transferFeeProjectedTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Dana paid out</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(paidOutFundsTotal)}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance team performance</p>
@@ -279,7 +498,7 @@ export default async function FinanceDashboardPage({
 
             <div className="grid gap-6">
               <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager focus</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Baca</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas finance manager</h2>
                 <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                   <p>1. Menjaga payout aging tetap rendah dan outstanding tidak menumpuk terlalu lama.</p>
@@ -293,8 +512,8 @@ export default async function FinanceDashboardPage({
 
           <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan finance ke superadmin</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Ke Superadmin</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan finance manager</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Isi laporan finance secara lengkap agar superadmin bisa membaca kondisi payout, aging, posisi keuangan, risiko, dan kebutuhan keputusan tanpa mengejar detail tambahan.
               </p>
@@ -309,6 +528,19 @@ export default async function FinanceDashboardPage({
                     rejectedCount,
                     agedPendingCount,
                     pendingTotal,
+                    grossCustomerTransactionTotal,
+                    dpReceivedTotal,
+                    finalSettlementTotal,
+                    fullPaymentTotal,
+                    customerHeldFundsTotal,
+                    financeReviewFundsTotal,
+                    paidOutFundsTotal,
+                    packageBaseSettledTotal,
+                    customerAdminFeeCollectedTotal,
+                    customerTaxCollectedTotal,
+                    merchantObligationTotal,
+                    commissionProjectedTotal,
+                    transferFeeProjectedTotal,
                   })}
                 />
                 <div>
@@ -328,6 +560,24 @@ export default async function FinanceDashboardPage({
                     required
                     placeholder="Ringkas kondisi keuangan dan payout paling penting yang harus langsung dipahami superadmin."
                     className="min-h-[140px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan transaksi customer</label>
+                  <textarea
+                    name="customer_transaction_summary"
+                    required
+                    placeholder="Jelaskan total transaksi customer, komposisi DP, pelunasan, full payment, dan pola pemasukan utama."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status dana customer</label>
+                  <textarea
+                    name="customer_funds_status"
+                    required
+                    placeholder="Jelaskan berapa dana masih held, sudah masuk finance review, sudah paid out, dan titik penumpukannya."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <div>
@@ -358,6 +608,15 @@ export default async function FinanceDashboardPage({
                   />
                 </div>
                 <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kewajiban merchant dan margin Red Feng</label>
+                  <textarea
+                    name="merchant_obligation_status"
+                    required
+                    placeholder="Jelaskan kewajiban payout merchant, komisi Red Feng, biaya transfer merchant, admin fee customer, dan pajak customer."
+                    className="min-h-[130px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Kualitas eksekusi tim finance</label>
                   <textarea
                     name="execution_quality"
@@ -371,6 +630,14 @@ export default async function FinanceDashboardPage({
                     name="transfer_issues"
                     placeholder="Jelaskan kendala transfer, payout tertahan, mismatch data, atau isu rekonsiliasi yang perlu dicatat."
                     className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Anomali finansial dan rekonsiliasi</label>
+                  <textarea
+                    name="financial_anomalies"
+                    placeholder="Jelaskan payment yang belum sinkron, payout mismatch, transfer tertahan, atau anomali rekonsiliasi."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <div>
@@ -399,6 +666,14 @@ export default async function FinanceDashboardPage({
                   />
                 </div>
                 <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kasus prioritas tinggi</label>
+                  <textarea
+                    name="priority_cases"
+                    placeholder="Tulis transaksi, payout, atau booking prioritas tinggi yang harus mendapat perhatian superadmin."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Kebutuhan keputusan dari superadmin</label>
                   <textarea
                     name="support_needed"
@@ -414,7 +689,7 @@ export default async function FinanceDashboardPage({
             </div>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent reports</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Riwayat Laporan</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat laporan finance manager</h2>
               <div className="mt-6 space-y-4">
                 {!financeReports.length ? (
@@ -439,15 +714,40 @@ export default async function FinanceDashboardPage({
                           <span className="font-semibold text-slate-900">Aging:</span> {getMetricText(report.metric_snapshot, "agingStatus")}
                         </p>
                       ) : null}
+                      {getMetricText(report.metric_snapshot, "customerTransactionSummary") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Transaksi customer:</span> {getMetricText(report.metric_snapshot, "customerTransactionSummary")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "customerFundsStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Status dana customer:</span> {getMetricText(report.metric_snapshot, "customerFundsStatus")}
+                        </p>
+                      ) : null}
                       {getMetricText(report.metric_snapshot, "financialPosition") ? (
                         <p className="mt-3 text-sm leading-7 text-slate-600">
                           <span className="font-semibold text-slate-900">Posisi keuangan:</span> {getMetricText(report.metric_snapshot, "financialPosition")}
                         </p>
                       ) : null}
+                      {getMetricText(report.metric_snapshot, "merchantObligationStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Kewajiban merchant & margin:</span> {getMetricText(report.metric_snapshot, "merchantObligationStatus")}
+                        </p>
+                      ) : null}
                       {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                      {getMetricText(report.metric_snapshot, "financialAnomalies") ? (
+                        <p className="mt-3 text-sm leading-7 text-amber-700">
+                          Anomali: {getMetricText(report.metric_snapshot, "financialAnomalies")}
+                        </p>
+                      ) : null}
                       {getMetricText(report.metric_snapshot, "financialRisks") ? (
                         <p className="mt-3 text-sm leading-7 text-amber-700">
                           Risiko: {getMetricText(report.metric_snapshot, "financialRisks")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "priorityCases") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          Kasus prioritas: {getMetricText(report.metric_snapshot, "priorityCases")}
                         </p>
                       ) : null}
                       {getMetricText(report.metric_snapshot, "supportNeeded") ? (

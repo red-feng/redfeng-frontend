@@ -39,9 +39,39 @@ function titleCase(value: string | null | undefined) {
     .join(" ")
 }
 
+function formatMoney(value: number | null | undefined) {
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
 function getMetricText(snapshot: Record<string, unknown> | null | undefined, key: string) {
   const value = snapshot?.[key]
   return typeof value === "string" ? value.trim() : ""
+}
+
+function getMetricNumber(snapshot: Record<string, unknown> | null | undefined, key: string) {
+  const value = snapshot?.[key]
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function ChartLegend({
+  items,
+}: {
+  items: Array<{ label: string; tone: string }>
+}) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {items.map((item) => (
+        <div
+          key={item.label}
+          className="inline-flex items-center gap-2 rounded-full border border-[#ead8c2] bg-[#fffaf4] px-3 py-1 text-[11px] font-medium text-slate-600"
+        >
+          <span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 type ManagerReportRow = {
@@ -87,13 +117,25 @@ export default async function AdminDashboard({
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, booking_status, created_at")
+      .select("id, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
   ])
 
   const pendingMerchantsData = (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
   const packages = (packageResult.data as Array<{ id: string; status: string | null; created_at: string | null }> | null) || []
-  const bookings = (bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null }> | null) || []
+  const bookings = (bookingResult.data as Array<{
+    id: string
+    booking_status: string | null
+    created_at: string | null
+    payment_status: string | null
+    payment_type: string | null
+    escrow_status: string | null
+    total_amount: number | null
+    dp_amount: number | null
+    final_payment_amount: number | null
+    customer_admin_fee_amount: number | null
+    customer_tax_amount: number | null
+  }> | null) || []
   const pendingMerchants = pendingMerchantsData.length
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
@@ -162,6 +204,62 @@ export default async function AdminDashboard({
       note: "Booking yang sudah siap dikirim admin ke finance.",
     },
   ]
+
+  const customerTransactionRows = bookings
+    .map((booking) => {
+      const paymentStatus = normalizeStatus(booking.payment_status)
+      const paymentType = normalizeStatus(booking.payment_type)
+      const totalAmount = Number(booking.total_amount || 0)
+      const dpAmount = Number(booking.dp_amount || 0)
+      const finalPaymentAmount = Number(booking.final_payment_amount || 0)
+      const receivedAmount =
+        paymentStatus === "paid" ? totalAmount : paymentStatus === "dp_paid" ? dpAmount : 0
+      const receivedRatio = totalAmount > 0 ? Math.min(receivedAmount / totalAmount, 1) : 0
+
+      return {
+        paymentStatus,
+        paymentType,
+        escrowStatus: normalizeStatus(booking.escrow_status),
+        bookingStatus: normalizeStatus(booking.booking_status),
+        receivedAmount,
+        dpAmount,
+        finalPaymentAmount,
+        customerAdminFeeCollected: Math.round(Number(booking.customer_admin_fee_amount || 0) * receivedRatio),
+        customerTaxCollected: Math.round(Number(booking.customer_tax_amount || 0) * receivedRatio),
+      }
+    })
+    .filter((item) => item.receivedAmount > 0)
+
+  const dpReceivedTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "dp_paid")
+    .reduce((sum, item) => sum + item.dpAmount, 0)
+  const finalSettlementTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "paid" && item.paymentType === "dp")
+    .reduce((sum, item) => sum + item.finalPaymentAmount, 0)
+  const fullPaymentTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "paid" && item.paymentType !== "dp")
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const grossCustomerTransactionTotal = dpReceivedTotal + finalSettlementTotal + fullPaymentTotal
+  const customerAdminFeeCollectedTotal = customerTransactionRows.reduce(
+    (sum, item) => sum + item.customerAdminFeeCollected,
+    0,
+  )
+  const customerTaxCollectedTotal = customerTransactionRows.reduce(
+    (sum, item) => sum + item.customerTaxCollected,
+    0,
+  )
+  const customerHeldFundsTotal = customerTransactionRows
+    .filter((item) => ["partial_hold", "held", "awaiting_admin_handoff", "finance_review", "payout_processing"].includes(item.escrowStatus))
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const customerReadyForFinanceFundsTotal = customerTransactionRows
+    .filter((item) => item.bookingStatus === "awaiting_admin_handoff")
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const customerOperationallyBlockedFundsTotal = customerTransactionRows
+    .filter((item) => item.paymentStatus === "paid" && !["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(item.bookingStatus))
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
+  const customerPaidOutFundsTotal = customerTransactionRows
+    .filter((item) => item.escrowStatus === "paid_out")
+    .reduce((sum, item) => sum + item.receivedAmount, 0)
 
   const adminProfiles = isSuperadmin
     ? (
@@ -288,6 +386,8 @@ export default async function AdminDashboard({
 
   const operationsReports = managerReports.filter((report) => report.report_type === "operations")
   const financeReports = managerReports.filter((report) => report.report_type === "finance")
+  const latestOperationsReport = operationsReports[0] || null
+  const latestFinanceReport = financeReports[0] || null
   const reportActorEntries: Array<[string, string]> = [
     ...adminProfiles.map((profile): [string, string] => [profile.id, profile.username || formatAdminCode(profile.id)]),
     ...financeProfiles.map((profile): [string, string] => [profile.id, profile.email || formatFinanceCode(profile.id)]),
@@ -296,6 +396,19 @@ export default async function AdminDashboard({
 
   if (showOperationsManagerView) {
     const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
+    const queueChartItems = [
+      { label: "Merchant pending", value: pendingMerchants, tone: "bg-amber-400" },
+      { label: "Package review", value: pendingPackages, tone: "bg-sky-500" },
+      { label: "Ready for finance", value: financeReadyCount, tone: "bg-emerald-500" },
+    ]
+    const queueChartBase = queueChartItems.reduce((sum, item) => sum + item.value, 0) || 1
+    const customerFundsChartItems = [
+      { label: "Dana tertahan", value: customerHeldFundsTotal, tone: "bg-rose-500" },
+      { label: "Siap ke finance", value: customerReadyForFinanceFundsTotal, tone: "bg-sky-500" },
+      { label: "Tertahan operasional", value: customerOperationallyBlockedFundsTotal, tone: "bg-rose-500" },
+      { label: "Sudah paid out", value: customerPaidOutFundsTotal, tone: "bg-emerald-500" },
+    ]
+    const customerFundsChartBase = Math.max(grossCustomerTransactionTotal, 1)
 
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
@@ -383,6 +496,116 @@ export default async function AdminDashboard({
 
           <section className="grid gap-6 xl:grid-cols-2">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Diagram Dana Customer</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Diagram transaksi dan dana customer</h2>
+              <ChartLegend
+                items={[
+                  { label: "DP", tone: "bg-amber-400" },
+                  { label: "Pelunasan", tone: "bg-sky-500" },
+                  { label: "Full payment", tone: "bg-emerald-500" },
+                ]}
+              />
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total transaksi customer</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(grossCustomerTransactionTotal)}</p>
+                </div>
+                <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Dana masih held</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(customerHeldFundsTotal)}</p>
+                </div>
+              </div>
+              <div className="mt-6 space-y-4">
+                {[
+                  { label: "DP diterima", value: dpReceivedTotal, tone: "bg-amber-400" },
+                  { label: "Pelunasan diterima", value: finalSettlementTotal, tone: "bg-sky-500" },
+                  { label: "Full payment", value: fullPaymentTotal, tone: "bg-emerald-500" },
+                ].map((item) => {
+                  const width = Math.max((item.value / customerFundsChartBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="mt-6 grid gap-4 md:grid-cols-3">
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Admin fee terkumpul</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerAdminFeeCollectedTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Pajak terkumpul</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerTaxCollectedTotal)}</p>
+                </div>
+                <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Ready for finance</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerReadyForFinanceFundsTotal)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Grafik Queue Dan Status Dana</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Grafik backlog dan status dana</h2>
+              <ChartLegend
+                items={[
+                  { label: "Merchant pending", tone: "bg-amber-400" },
+                  { label: "Package review", tone: "bg-sky-500" },
+                  { label: "Ready for finance", tone: "bg-emerald-500" },
+                ]}
+              />
+              <div className="mt-6 space-y-4">
+                {queueChartItems.map((item) => {
+                  const width = Math.max((item.value / queueChartBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{item.value}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <ChartLegend
+                items={[
+                  { label: "Dana tertahan", tone: "bg-rose-500" },
+                  { label: "Siap ke finance", tone: "bg-sky-500" },
+                  { label: "Tertahan operasional", tone: "bg-rose-500" },
+                  { label: "Sudah paid out", tone: "bg-emerald-500" },
+                ]}
+              />
+              <div className="mt-8 space-y-4">
+                {customerFundsChartItems.map((item) => {
+                  const width = Math.max((item.value / customerFundsChartBase) * 100, item.value > 0 ? 8 : 0)
+                  return (
+                    <div key={item.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-medium text-slate-700">{item.label}</span>
+                        <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                      </div>
+                      <div className="h-3 rounded-full bg-[#f4e7d6]">
+                        <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Area yang harus disentuh lebih dulu</h2>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -413,21 +636,24 @@ export default async function AdminDashboard({
 
           <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager note</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Fokus utama operations manager</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Laporan</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Hal wajib yang dilaporkan ke superadmin</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Menjaga backlog merchant, package, dan booking tidak menumpuk di atas SLA.</p>
-                <p>2. Mengarahkan admin ke queue yang paling urgent tanpa harus memegang seluruh kontrol superadmin.</p>
-                <p>3. Memantau kualitas flow handoff ke finance agar booking siap transfer tidak macet.</p>
-                <p>4. Menggunakan Audit Log untuk review pola kerja tim dan investigasi keputusan operasional.</p>
+                <p>1. Status queue merchant, package, dan booking yang sedang berjalan.</p>
+                <p>2. Kondisi SLA, backlog, overdue, dan titik kemacetan terbesar.</p>
+                <p>3. Ringkasan transaksi customer: DP, pelunasan, full payment, admin fee, dan pajak yang masuk.</p>
+                <p>4. Status dana customer: held, partial hold, siap handoff, tertahan operasional, dan paid out.</p>
+                <p>5. Kualitas keputusan tim admin serta anomali transaksi customer yang perlu investigasi.</p>
+                <p>6. Kapasitas tim, eskalasi kasus penting, dan kualitas handoff ke finance.</p>
+                <p>7. Blocker utama, risiko operasional, next steps, dan keputusan yang dibutuhkan dari superadmin.</p>
               </div>
             </div>
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operasional ke superadmin</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Ke Superadmin</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operations manager</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Isi laporan secara lengkap agar superadmin bisa membaca kondisi queue, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
               </p>
@@ -442,6 +668,16 @@ export default async function AdminDashboard({
                     merchantOverdueCount,
                     packageOverdueCount,
                     bookingStalledCount,
+                    dpReceivedTotal,
+                    finalSettlementTotal,
+                    fullPaymentTotal,
+                    grossCustomerTransactionTotal,
+                    customerAdminFeeCollectedTotal,
+                    customerTaxCollectedTotal,
+                    customerHeldFundsTotal,
+                    customerReadyForFinanceFundsTotal,
+                    customerOperationallyBlockedFundsTotal,
+                    customerPaidOutFundsTotal,
                   })}
                 />
                 <div>
@@ -482,10 +718,36 @@ export default async function AdminDashboard({
                   />
                 </div>
                 <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan transaksi customer</label>
+                  <textarea
+                    name="customer_transaction_summary"
+                    required
+                    placeholder="Jelaskan total transaksi customer, pola DP vs full payment, pelunasan yang masuk, serta fee dan pajak yang terkumpul dari sisi operasional."
+                    className="min-h-[130px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status dana customer di operasional</label>
+                  <textarea
+                    name="customer_funds_status"
+                    required
+                    placeholder="Jelaskan dana customer yang masih held, partial hold, siap handoff, tertahan karena flow operasional, dan yang sudah keluar ke payout."
+                    className="min-h-[130px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Kualitas keputusan tim admin</label>
                   <textarea
                     name="decision_quality"
                     placeholder="Jelaskan pola approve/reject, revisi berulang, atau kualitas keputusan yang perlu perhatian."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Anomali transaksi customer</label>
+                  <textarea
+                    name="transaction_anomalies"
+                    placeholder="Catat mismatch status payment, dana customer yang tertahan terlalu lama, booking paid tetapi flow pickup macet, atau kasus transaksi yang perlu investigasi."
                     className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
@@ -555,7 +817,7 @@ export default async function AdminDashboard({
             </div>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent reports</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Riwayat Laporan</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat laporan operations manager</h2>
               <div className="mt-6 space-y-4">
                 {!operationsReports.length ? (
@@ -578,6 +840,41 @@ export default async function AdminDashboard({
                       {getMetricText(report.metric_snapshot, "slaStatus") ? (
                         <p className="mt-3 text-sm leading-7 text-slate-600">
                           <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "customerTransactionSummary") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Transaksi customer:</span> {getMetricText(report.metric_snapshot, "customerTransactionSummary")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "customerFundsStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Status dana customer:</span> {getMetricText(report.metric_snapshot, "customerFundsStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "decisionQuality") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Kualitas keputusan:</span> {getMetricText(report.metric_snapshot, "decisionQuality")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "teamCapacity") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Kapasitas tim:</span> {getMetricText(report.metric_snapshot, "teamCapacity")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "escalations") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Eskalasi:</span> {getMetricText(report.metric_snapshot, "escalations")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "financeHandoffStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Handoff ke finance:</span> {getMetricText(report.metric_snapshot, "financeHandoffStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "transactionAnomalies") ? (
+                        <p className="mt-3 text-sm leading-7 text-amber-700">
+                          Anomali transaksi: {getMetricText(report.metric_snapshot, "transactionAnomalies")}
                         </p>
                       ) : null}
                       {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
@@ -870,9 +1167,255 @@ export default async function AdminDashboard({
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Diagram Dana Customer</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Diagram dana customer dari laporan operations manager</h2>
+              {!latestOperationsReport ? (
+                <div className="mt-6 rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                  Belum ada laporan operations manager yang bisa divisualkan.
+                </div>
+              ) : (
+                <div className="mt-6 space-y-5">
+                  <ChartLegend
+                    items={[
+                      { label: "DP", tone: "bg-amber-400" },
+                      { label: "Pelunasan", tone: "bg-sky-500" },
+                      { label: "Full payment", tone: "bg-emerald-500" },
+                    ]}
+                  />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total transaksi customer</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestOperationsReport.metric_snapshot, "grossCustomerTransactionTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Dana masih tertahan</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestOperationsReport.metric_snapshot, "customerHeldFundsTotal"))}
+                      </p>
+                    </div>
+                  </div>
+
+                  {[
+                    {
+                      label: "DP diterima",
+                      value: getMetricNumber(latestOperationsReport.metric_snapshot, "dpReceivedTotal"),
+                      tone: "bg-amber-400",
+                    },
+                    {
+                      label: "Pelunasan diterima",
+                      value: getMetricNumber(latestOperationsReport.metric_snapshot, "finalSettlementTotal"),
+                      tone: "bg-sky-500",
+                    },
+                    {
+                      label: "Full payment",
+                      value: getMetricNumber(latestOperationsReport.metric_snapshot, "fullPaymentTotal"),
+                      tone: "bg-emerald-500",
+                    },
+                  ].map((item) => {
+                    const totalBase = Math.max(getMetricNumber(latestOperationsReport.metric_snapshot, "grossCustomerTransactionTotal"), 1)
+                    const width = Math.max((item.value / totalBase) * 100, item.value > 0 ? 8 : 0)
+                    return (
+                      <div key={item.label}>
+                        <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700">{item.label}</span>
+                          <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                        </div>
+                        <div className="h-3 rounded-full bg-[#f4e7d6]">
+                          <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {[
+                      {
+                        label: "Ready for finance",
+                        value: getMetricNumber(latestOperationsReport.metric_snapshot, "customerReadyForFinanceFundsTotal"),
+                      },
+                      {
+                        label: "Tertahan operasional",
+                        value: getMetricNumber(latestOperationsReport.metric_snapshot, "customerOperationallyBlockedFundsTotal"),
+                      },
+                      {
+                        label: "Sudah paid out",
+                        value: getMetricNumber(latestOperationsReport.metric_snapshot, "customerPaidOutFundsTotal"),
+                      },
+                    ].map((item) => (
+                      <div key={item.label} className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{item.label}</p>
+                        <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(item.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Grafik Finance Manager</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Grafik queue dan dana finance manager</h2>
+              {!latestFinanceReport ? (
+                <div className="mt-6 rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                  Belum ada laporan finance manager yang bisa divisualkan.
+                </div>
+              ) : (
+                <div className="mt-6 space-y-5">
+                  <ChartLegend
+                    items={[
+                      { label: "Pending", tone: "bg-amber-400" },
+                      { label: "Processing", tone: "bg-sky-500" },
+                      { label: "Paid", tone: "bg-emerald-500" },
+                      { label: "Rejected", tone: "bg-rose-500" },
+                    ]}
+                  />
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Transaksi customer</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "grossCustomerTransactionTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Dana tertahan</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "customerHeldFundsTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Outstanding</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "pendingTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Aging 2+ hari</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-950">
+                        {getMetricNumber(latestFinanceReport.metric_snapshot, "agedPendingCount")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {[
+                    {
+                      label: "Pending",
+                      value: getMetricNumber(latestFinanceReport.metric_snapshot, "pendingCount"),
+                      tone: "bg-amber-400",
+                    },
+                    {
+                      label: "Processing",
+                      value: getMetricNumber(latestFinanceReport.metric_snapshot, "processingCount"),
+                      tone: "bg-sky-500",
+                    },
+                    {
+                      label: "Paid",
+                      value: getMetricNumber(latestFinanceReport.metric_snapshot, "paidCount"),
+                      tone: "bg-emerald-500",
+                    },
+                    {
+                      label: "Rejected",
+                      value: getMetricNumber(latestFinanceReport.metric_snapshot, "rejectedCount"),
+                      tone: "bg-rose-500",
+                    },
+                  ].map((item) => {
+                    const totalBase =
+                      getMetricNumber(latestFinanceReport.metric_snapshot, "pendingCount") +
+                      getMetricNumber(latestFinanceReport.metric_snapshot, "processingCount") +
+                      getMetricNumber(latestFinanceReport.metric_snapshot, "paidCount") +
+                      getMetricNumber(latestFinanceReport.metric_snapshot, "rejectedCount") || 1
+                    const width = Math.max((item.value / totalBase) * 100, item.value > 0 ? 8 : 0)
+                    return (
+                      <div key={item.label}>
+                        <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                          <span className="font-medium text-slate-700">{item.label}</span>
+                          <span className="font-semibold text-slate-950">{item.value}</span>
+                        </div>
+                        <div className="h-3 rounded-full bg-[#f4e7d6]">
+                          <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+
+                  <div className="pt-3">
+                    <p className="text-sm font-semibold text-slate-900">Ringkasan arus dana customer</p>
+                    <ChartLegend
+                      items={[
+                        { label: "Dana tertahan", tone: "bg-rose-500" },
+                        { label: "Masuk finance review", tone: "bg-sky-500" },
+                        { label: "Sudah paid out", tone: "bg-emerald-500" },
+                      ]}
+                    />
+                    <div className="mt-4 space-y-4">
+                      {[
+                        {
+                          label: "Dana tertahan",
+                          value: getMetricNumber(latestFinanceReport.metric_snapshot, "customerHeldFundsTotal"),
+                          tone: "bg-rose-500",
+                        },
+                        {
+                          label: "Masuk finance review",
+                          value: getMetricNumber(latestFinanceReport.metric_snapshot, "financeReviewFundsTotal"),
+                          tone: "bg-sky-500",
+                        },
+                        {
+                          label: "Sudah paid out",
+                          value: getMetricNumber(latestFinanceReport.metric_snapshot, "paidOutFundsTotal"),
+                          tone: "bg-emerald-500",
+                        },
+                      ].map((item) => {
+                        const totalBase = Math.max(
+                          getMetricNumber(latestFinanceReport.metric_snapshot, "grossCustomerTransactionTotal"),
+                          1,
+                        )
+                        const width = Math.max((item.value / totalBase) * 100, item.value > 0 ? 8 : 0)
+                        return (
+                          <div key={item.label}>
+                            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+                              <span className="font-medium text-slate-700">{item.label}</span>
+                              <span className="font-semibold text-slate-950">{formatMoney(item.value)}</span>
+                            </div>
+                            <div className="h-3 rounded-full bg-[#f4e7d6]">
+                              <div className={`h-3 rounded-full ${item.tone}`} style={{ width: `${width}%` }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-white p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Kewajiban merchant</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "merchantObligationTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-white p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Komisi projected</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "commissionProjectedTotal"))}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-[#efe1cf] bg-white p-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Transfer fee projected</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                        {formatMoney(getMetricNumber(latestFinanceReport.metric_snapshot, "transferFeeProjectedTotal"))}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-2">
             <div className="grid gap-6">
               <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operations reports</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Operations</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan operations manager</h2>
                 <div className="mt-6 grid gap-4">
                   {!operationsReports.length ? (
@@ -905,6 +1448,41 @@ export default async function AdminDashboard({
                             <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
                           </p>
                         ) : null}
+                        {getMetricText(report.metric_snapshot, "customerTransactionSummary") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Transaksi customer:</span> {getMetricText(report.metric_snapshot, "customerTransactionSummary")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "customerFundsStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Status dana customer:</span> {getMetricText(report.metric_snapshot, "customerFundsStatus")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "decisionQuality") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Kualitas keputusan:</span> {getMetricText(report.metric_snapshot, "decisionQuality")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "teamCapacity") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Kapasitas tim:</span> {getMetricText(report.metric_snapshot, "teamCapacity")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "escalations") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Eskalasi:</span> {getMetricText(report.metric_snapshot, "escalations")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "financeHandoffStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Handoff ke finance:</span> {getMetricText(report.metric_snapshot, "financeHandoffStatus")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "transactionAnomalies") ? (
+                          <p className="mt-3 text-sm leading-7 text-amber-700">
+                            Anomali transaksi: {getMetricText(report.metric_snapshot, "transactionAnomalies")}
+                          </p>
+                        ) : null}
                         {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
                         {getMetricText(report.metric_snapshot, "operationalRisks") ? (
                           <p className="mt-3 text-sm leading-7 text-amber-700">
@@ -924,7 +1502,7 @@ export default async function AdminDashboard({
               </div>
 
               <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance reports</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Finance</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Laporan finance manager</h2>
                 <div className="mt-6 grid gap-4">
                   {!financeReports.length ? (
@@ -957,15 +1535,40 @@ export default async function AdminDashboard({
                             <span className="font-semibold text-slate-900">Aging:</span> {getMetricText(report.metric_snapshot, "agingStatus")}
                           </p>
                         ) : null}
+                        {getMetricText(report.metric_snapshot, "customerTransactionSummary") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Transaksi customer:</span> {getMetricText(report.metric_snapshot, "customerTransactionSummary")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "customerFundsStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Status dana customer:</span> {getMetricText(report.metric_snapshot, "customerFundsStatus")}
+                          </p>
+                        ) : null}
                         {getMetricText(report.metric_snapshot, "financialPosition") ? (
                           <p className="mt-3 text-sm leading-7 text-slate-600">
                             <span className="font-semibold text-slate-900">Posisi keuangan:</span> {getMetricText(report.metric_snapshot, "financialPosition")}
                           </p>
                         ) : null}
+                        {getMetricText(report.metric_snapshot, "merchantObligationStatus") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            <span className="font-semibold text-slate-900">Kewajiban merchant & margin:</span> {getMetricText(report.metric_snapshot, "merchantObligationStatus")}
+                          </p>
+                        ) : null}
                         {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                        {getMetricText(report.metric_snapshot, "financialAnomalies") ? (
+                          <p className="mt-3 text-sm leading-7 text-amber-700">
+                            Anomali: {getMetricText(report.metric_snapshot, "financialAnomalies")}
+                          </p>
+                        ) : null}
                         {getMetricText(report.metric_snapshot, "financialRisks") ? (
                           <p className="mt-3 text-sm leading-7 text-amber-700">
                             Risiko: {getMetricText(report.metric_snapshot, "financialRisks")}
+                          </p>
+                        ) : null}
+                        {getMetricText(report.metric_snapshot, "priorityCases") ? (
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            Kasus prioritas: {getMetricText(report.metric_snapshot, "priorityCases")}
                           </p>
                         ) : null}
                         {getMetricText(report.metric_snapshot, "supportNeeded") ? (

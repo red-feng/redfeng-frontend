@@ -285,9 +285,9 @@ export default async function MerchantDashboardPage() {
   const journeyBadges = [
     { label: t.dpPaid, value: countJourneyPhase(bookings, "dp"), tone: "border-amber-200 bg-amber-50 text-amber-700" },
     { label: t.fullyPaid, value: countJourneyPhase(bookings, "paid"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
-    { label: t.awaitingPickup, value: countJourneyPhase(bookings, "pickup"), tone: "border-orange-200 bg-orange-50 text-orange-700" },
+    { label: t.awaitingPickup, value: countJourneyPhase(bookings, "pickup"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
     { label: t.readyForFinance, value: countJourneyPhase(bookings, "finance"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
-    { label: t.paidOut, value: countJourneyPhase(bookings, "paid_out"), tone: "border-violet-200 bg-violet-50 text-violet-700" },
+    { label: t.paidOut, value: countJourneyPhase(bookings, "paid_out"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
   ]
 
   const nextMoveTitle =

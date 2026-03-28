@@ -7,6 +7,7 @@ import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { normalizeLocale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { getEscrowStatusTone, getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
 
 type BookingRow = {
   id: string
@@ -29,10 +30,6 @@ type PackageRow = {
   id: string
   title: string | null
   slug: string | null
-}
-
-function normalizeStatus(value: string | null) {
-  return (value || "").trim().toLowerCase()
 }
 
 function titleCaseStatus(value: string | null) {
@@ -62,18 +59,17 @@ function formatDate(dateStr: string | null) {
 
 function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   const normalized = normalizeStatus(value)
-  if (
-    normalized === "paid" ||
-    normalized === "confirmed" ||
-    normalized === "awaiting_admin_handoff" ||
-    normalized === "finance_review" ||
-    normalized === "payout_completed" ||
-    normalized === "paid_out"
-  ) {
-    return "bg-emerald-50 text-emerald-700"
+  if (normalized === "paid" || normalized === "confirmed" || normalized === "paid_out") {
+    return toneClass("success")
   }
-  if (normalized === "pending" || normalized === "dp_paid" || normalized === "held" || normalized === "partial_hold") {
-    return type === "payment" ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
+  if (normalized === "awaiting_admin_handoff" || normalized === "finance_review" || normalized === "payout_completed") {
+    return toneClass("progress")
+  }
+  if (normalized === "held" || normalized === "partial_hold") {
+    return type === "escrow" ? getEscrowStatusTone(value) : toneClass("progress")
+  }
+  if (normalized === "pending" || normalized === "dp_paid") {
+    return type === "payment" ? getPaymentStatusTone(value) : toneClass("progress")
   }
   if (
     normalized === "merchant_arrived" ||
@@ -82,12 +78,12 @@ function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
     normalized === "finance_processing" ||
     normalized === "payout_processing"
   ) {
-    return "bg-violet-50 text-violet-700"
+    return toneClass("progress")
   }
   if (normalized === "cancelled" || normalized === "refund") {
-    return "bg-rose-50 text-rose-700"
+    return toneClass("danger")
   }
-  return "bg-slate-100 text-slate-700"
+  return toneClass("neutral")
 }
 
 function getTimelineStatus(booking: BookingRow) {
