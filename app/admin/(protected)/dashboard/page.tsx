@@ -39,6 +39,11 @@ function titleCase(value: string | null | undefined) {
     .join(" ")
 }
 
+function getMetricText(snapshot: Record<string, unknown> | null | undefined, key: string) {
+  const value = snapshot?.[key]
+  return typeof value === "string" ? value.trim() : ""
+}
+
 type ManagerReportRow = {
   id: string
   author_id: string
@@ -424,7 +429,7 @@ export default async function AdminDashboard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operasional ke superadmin</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Ringkas backlog, blocker utama, dan langkah berikutnya agar superadmin mendapat pembaruan resmi dari operations manager.
+                Isi laporan secara lengkap agar superadmin bisa membaca kondisi queue, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
               </p>
               <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
                 <input
@@ -450,12 +455,63 @@ export default async function AdminDashboard({
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan utama</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Ringkasan eksekutif</label>
                   <textarea
                     name="summary"
                     required
-                    placeholder="Ringkas kondisi merchant, package, booking, dan poin pengawasan utama."
+                    placeholder="Ringkas kondisi operasional paling penting yang harus langsung dipahami superadmin."
                     className="min-h-[140px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status queue operasional</label>
+                  <textarea
+                    name="queue_status"
+                    required
+                    placeholder="Jelaskan kondisi merchant pending, package review, booking ready handoff, dan area backlog yang paling berat."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status SLA</label>
+                  <textarea
+                    name="sla_status"
+                    required
+                    placeholder="Jelaskan area yang masih within SLA, area yang breach, dan penyebab keterlambatan utama."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kualitas keputusan tim admin</label>
+                  <textarea
+                    name="decision_quality"
+                    placeholder="Jelaskan pola approve/reject, revisi berulang, atau kualitas keputusan yang perlu perhatian."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kondisi kapasitas tim</label>
+                  <textarea
+                    name="team_capacity"
+                    placeholder="Jelaskan distribusi beban kerja admin, area overload, kebutuhan coaching, atau kebutuhan resource."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kasus penting dan eskalasi</label>
+                  <textarea
+                    name="escalations"
+                    required
+                    placeholder="Sebutkan merchant, package, booking, atau isu sensitif yang perlu diketahui atau diputuskan superadmin."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status handoff ke finance</label>
+                  <textarea
+                    name="finance_handoff_status"
+                    placeholder="Jelaskan kualitas handoff booking ke finance, antrean yang tertahan, atau hambatan koordinasi lintas tim."
+                    className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <div>
@@ -467,11 +523,29 @@ export default async function AdminDashboard({
                   />
                 </div>
                 <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Risiko operasional</label>
+                  <textarea
+                    name="operational_risks"
+                    required
+                    placeholder="Jelaskan risiko yang bisa berdampak ke customer, merchant, reputasi, atau kualitas operasi."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Next steps</label>
                   <textarea
                     name="next_steps"
                     placeholder="Tulis tindakan lanjut yang akan dijalankan tim operasional."
                     className="min-h-[110px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Kebutuhan keputusan dari superadmin</label>
+                  <textarea
+                    name="support_needed"
+                    required
+                    placeholder="Jelaskan keputusan, dukungan lintas tim, atau resource yang dibutuhkan dari superadmin."
+                    className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
                 <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -496,6 +570,28 @@ export default async function AdminDashboard({
                       </p>
                       <h3 className="mt-2 text-lg font-semibold text-slate-950">{report.title}</h3>
                       <p className="mt-2 text-sm leading-7 text-slate-600">{report.summary}</p>
+                      {getMetricText(report.metric_snapshot, "queueStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "queueStatus")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "slaStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
+                        </p>
+                      ) : null}
+                      {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                      {getMetricText(report.metric_snapshot, "operationalRisks") ? (
+                        <p className="mt-3 text-sm leading-7 text-amber-700">
+                          Risiko: {getMetricText(report.metric_snapshot, "operationalRisks")}
+                        </p>
+                      ) : null}
+                      {getMetricText(report.metric_snapshot, "supportNeeded") ? (
+                        <p className="mt-3 text-sm leading-7 text-sky-700">
+                          Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
+                        </p>
+                      ) : null}
+                      {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
                     </div>
                   ))
                 )}
@@ -798,7 +894,27 @@ export default async function AdminDashboard({
                         {(reportActorMap.get(report.author_id) || report.author_id || "-") as string} | {formatDateTime(report.created_at)}
                       </p>
                       <p className="mt-4 text-sm leading-7 text-slate-600">{report.summary}</p>
+                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "queueStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">Queue:</span> {getMetricText(report.metric_snapshot, "queueStatus")}
+                        </p>
+                      ) : null}
+                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "slaStatus") ? (
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          <span className="font-semibold text-slate-900">SLA:</span> {getMetricText(report.metric_snapshot, "slaStatus")}
+                        </p>
+                      ) : null}
                       {report.blockers ? <p className="mt-3 text-sm leading-7 text-rose-700">Blocker: {report.blockers}</p> : null}
+                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "operationalRisks") ? (
+                        <p className="mt-3 text-sm leading-7 text-amber-700">
+                          Risiko: {getMetricText(report.metric_snapshot, "operationalRisks")}
+                        </p>
+                      ) : null}
+                      {report.report_type === "operations" && getMetricText(report.metric_snapshot, "supportNeeded") ? (
+                        <p className="mt-3 text-sm leading-7 text-sky-700">
+                          Butuh keputusan: {getMetricText(report.metric_snapshot, "supportNeeded")}
+                        </p>
+                      ) : null}
                       {report.next_steps ? <p className="mt-3 text-sm leading-7 text-slate-600">Next steps: {report.next_steps}</p> : null}
                     </div>
                   ))
