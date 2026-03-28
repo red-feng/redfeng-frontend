@@ -52,28 +52,28 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
 
       if (normalizedRole === "superadmin") {
         setAccountHref("/superadmin/dashboard")
-        setAccountLabel("Superadmin")
+        setAccountLabel(t.account)
         setIsAuthenticated(true)
         return
       }
 
       if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
         setAccountHref("/admin/dashboard")
-        setAccountLabel(normalizedRole === "operations_manager" ? "Ops Manager" : "Admin")
+        setAccountLabel(t.account)
         setIsAuthenticated(true)
         return
       }
 
       if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
         setAccountHref("/finance/dashboard")
-        setAccountLabel(normalizedRole === "finance_manager" ? "Finance Manager" : "Finance")
+        setAccountLabel(t.account)
         setIsAuthenticated(true)
         return
       }
 
       if (normalizedRole === "merchant") {
         setAccountHref("/merchant/dashboard")
-        setAccountLabel("Merchant")
+        setAccountLabel(t.account)
         setIsAuthenticated(true)
         return
       }
