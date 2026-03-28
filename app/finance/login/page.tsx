@@ -2,14 +2,12 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { resolveInternalLoginCandidates, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isFinancePortalRole } from "@/lib/internal-roles"
 
 export default function FinanceLogin() {
-  const router = useRouter()
   const supabase = createClient()
 
   const [username, setUsername] = useState("")
@@ -27,6 +25,8 @@ export default function FinanceLogin() {
       setLoading(false)
       return
     }
+
+    await supabase.auth.signOut()
 
     const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
     let data: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>["data"] | null = null
@@ -71,7 +71,7 @@ export default function FinanceLogin() {
     }
 
     if (isFinancePortalRole(profile.role)) {
-      router.push("/finance/dashboard")
+      window.location.assign("/finance/dashboard")
       setLoading(false)
       return
     }

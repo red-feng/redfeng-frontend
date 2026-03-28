@@ -2,14 +2,12 @@
 
 import Link from "next/link"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { normalizeInternalUsername, resolveInternalLoginCandidates } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
 
 export default function AdminLogin() {
-  const router = useRouter()
   const supabase = createClient()
 
   const [username, setUsername] = useState("")
@@ -27,6 +25,8 @@ export default function AdminLogin() {
       setLoading(false)
       return
     }
+
+    await supabase.auth.signOut()
 
     const loginCandidates = resolveInternalLoginCandidates(normalizedUsername)
     let signedInUser: { id: string } | null = null
@@ -69,7 +69,7 @@ export default function AdminLogin() {
     }
 
     if (isAdminPortalRole(profile.role)) {
-      router.push("/admin/dashboard")
+      window.location.assign("/admin/dashboard")
       setLoading(false)
       return
     }
