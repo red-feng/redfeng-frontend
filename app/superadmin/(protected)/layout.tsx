@@ -47,10 +47,10 @@ export default async function SuperadminProtectedLayout({
   const navItems = [
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     {
-      label: "Manager Views",
+      label: "Manager Dashboard Preview",
       children: [
-        { href: "/superadmin/operations-manager", label: "Ops Manager View", badgeCount: 0 },
-        { href: "/superadmin/finance-manager", label: "Finance Manager View", badgeCount: 0 },
+        { href: "/superadmin/operations-manager", label: "Preview Ops Manager", badgeCount: 0 },
+        { href: "/superadmin/finance-manager", label: "Preview Finance Manager", badgeCount: 0 },
       ],
     },
     {
@@ -77,7 +77,7 @@ export default async function SuperadminProtectedLayout({
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">Executive control center Red Feng</p>
                 <p className="text-xs text-slate-500">
-                  Area pengawasan manager, audit lintas tim, dan kontrol internal tertinggi
+                  Area pengawasan manager, preview dashboard manager, audit lintas tim, dan kontrol internal tertinggi
                 </p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
