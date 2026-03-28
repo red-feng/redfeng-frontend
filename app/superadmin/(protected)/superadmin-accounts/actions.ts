@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createAdminAuditLog } from "@/lib/admin-audit"
 import { createClient } from "@/lib/supabase/server"
 import {
   buildInternalSuperadminEmail,
@@ -34,12 +35,15 @@ async function ensureSuperadminOperator() {
     redirect("/superadmin/dashboard")
   }
 
-  return user.id
+  return {
+    id: user.id,
+    role: profile.role,
+  }
 }
 
 export async function createSuperadminAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/superadmin/superadmin-accounts")
-  await ensureSuperadminOperator()
+  const actor = await ensureSuperadminOperator()
 
   const username = normalizeInternalUsername(String(formData.get("username") || ""))
   const password = String(formData.get("password") || "")
@@ -96,12 +100,26 @@ export async function createSuperadminAccount(formData: FormData) {
     redirectWithMessage(returnTo, profileError.message, "error")
   }
 
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: createdUser.user.id,
+    action: "create_account",
+    summary: `Akun superadmin ${username} dibuat`,
+    metadata: {
+      scope: "superadmin_accounts",
+      username,
+      requestedRole: "superadmin",
+    },
+  })
+
   redirectWithMessage(returnTo, `Akun superadmin ${username} berhasil dibuat`, "success")
 }
 
 export async function resetSuperadminPassword(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/superadmin/superadmin-accounts")
-  await ensureSuperadminOperator()
+  const actor = await ensureSuperadminOperator()
 
   const superadminId = String(formData.get("superadminId") || "")
   const password = String(formData.get("password") || "")
@@ -117,7 +135,7 @@ export async function resetSuperadminPassword(formData: FormData) {
   const adminSupabase = createAdminClient()
   const { data: targetProfile } = await adminSupabase
     .from("profiles")
-    .select("role")
+    .select("role, username")
     .eq("id", superadminId)
     .maybeSingle()
 
@@ -133,12 +151,26 @@ export async function resetSuperadminPassword(formData: FormData) {
     redirectWithMessage(returnTo, error.message, "error")
   }
 
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: superadminId,
+    action: "reset_password",
+    summary: `Password akun superadmin ${targetProfile.username || superadminId} diperbarui`,
+    metadata: {
+      scope: "superadmin_accounts",
+      targetRole: targetProfile.role,
+      username: targetProfile.username || null,
+    },
+  })
+
   redirectWithMessage(returnTo, "Password superadmin berhasil diperbarui", "success")
 }
 
 export async function deleteSuperadminAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/superadmin/superadmin-accounts")
-  const actorId = await ensureSuperadminOperator()
+  const actor = await ensureSuperadminOperator()
 
   const superadminId = String(formData.get("superadminId") || "")
 
@@ -146,7 +178,7 @@ export async function deleteSuperadminAccount(formData: FormData) {
     redirectWithMessage(returnTo, "Akun superadmin tidak valid", "error")
   }
 
-  if (superadminId === actorId) {
+  if (superadminId === actor.id) {
     redirectWithMessage(returnTo, "Akun superadmin yang sedang dipakai tidak boleh dihapus dari panel ini", "error")
   }
 
@@ -167,6 +199,20 @@ export async function deleteSuperadminAccount(formData: FormData) {
   if (deleteError) {
     redirectWithMessage(returnTo, deleteError.message, "error")
   }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: superadminId,
+    action: "delete_account",
+    summary: `Akun superadmin ${targetProfile.username || superadminId} dihapus`,
+    metadata: {
+      scope: "superadmin_accounts",
+      targetRole: targetProfile.role,
+      username: targetProfile.username || null,
+    },
+  })
 
   redirectWithMessage(returnTo, `Akun superadmin ${targetProfile.username || superadminId} berhasil dihapus`, "success")
 }
