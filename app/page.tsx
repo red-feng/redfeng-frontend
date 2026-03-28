@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
@@ -6,6 +7,7 @@ import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { type Locale } from "@/lib/i18n"
 import HomeResultsClient from "@/app/HomeResultsClient"
+import { redirect } from "next/navigation"
 
 const localePriceRangeMap: Record<Locale, number> = {
   id: 100000000,
@@ -229,6 +231,37 @@ export default async function HomePage({
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()
+
+    const normalizedRole = String(profile?.role || "").trim().toLowerCase()
+
+    if (normalizedRole === "superadmin") {
+      redirect("/superadmin/dashboard")
+    }
+
+    if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
+      redirect("/admin/dashboard")
+    }
+
+    if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
+      redirect("/finance/dashboard")
+    }
+
+    if (normalizedRole === "merchant") {
+      redirect("/merchant/dashboard")
+    }
+  }
+
   const resolvedSearchParams = (await searchParams) || {}
   const locale = await getCurrentLocale()
   const localeMaxPrice = localePriceRangeMap[locale]
@@ -237,9 +270,9 @@ export default async function HomePage({
     getPackages(resolvedSearchParams, locale),
     getAvailableCountries(),
   ])
-  const supabase = createAdminClient()
+  const adminSupabase = createAdminClient()
 
-  const { data: facilitiesData } = await supabase
+  const { data: facilitiesData } = await adminSupabase
     .from("facilities")
     .select("id, name, category")
 

@@ -42,6 +42,42 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
         return
       }
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle()
+
+      const normalizedRole = String(profile?.role || "").trim().toLowerCase()
+
+      if (normalizedRole === "superadmin") {
+        setAccountHref("/superadmin/dashboard")
+        setAccountLabel("Superadmin")
+        setIsAuthenticated(true)
+        return
+      }
+
+      if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
+        setAccountHref("/admin/dashboard")
+        setAccountLabel(normalizedRole === "operations_manager" ? "Ops Manager" : "Admin")
+        setIsAuthenticated(true)
+        return
+      }
+
+      if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
+        setAccountHref("/finance/dashboard")
+        setAccountLabel(normalizedRole === "finance_manager" ? "Finance Manager" : "Finance")
+        setIsAuthenticated(true)
+        return
+      }
+
+      if (normalizedRole === "merchant") {
+        setAccountHref("/merchant/dashboard")
+        setAccountLabel("Merchant")
+        setIsAuthenticated(true)
+        return
+      }
+
       setAccountHref("/customer/dashboard")
       setAccountLabel(t.account)
       setIsAuthenticated(true)
