@@ -4,7 +4,8 @@ import { getRoleLabel } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { submitOperationsManagerReport } from "./actions"
-import { createAdminAccount, createFinanceAccount } from "@/app/finance/(protected)/admin-users/actions"
+import { createAdminAccount } from "@/app/admin/(protected)/team-accounts/actions"
+import { createFinanceAccount } from "@/app/finance/(protected)/team-accounts/actions"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()

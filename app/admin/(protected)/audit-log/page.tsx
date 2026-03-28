@@ -5,7 +5,7 @@ type AdminActionLogRow = {
   id: string
   actor_id: string | null
   actor_role: string | null
-  target_type: "merchant" | "package" | "booking"
+  target_type: "merchant" | "package" | "booking" | "internal_account"
   target_id: string
   action: string
   summary: string
@@ -13,8 +13,21 @@ type AdminActionLogRow = {
   created_at: string | null
 }
 
-type FilterTarget = "all" | "merchant" | "package" | "booking"
-type FilterAction = "all" | "approve" | "reject" | "deactivate" | "reactivate" | "delete" | "handoff_to_finance" | "note" | "note_resolved" | "note_reopened"
+type FilterTarget = "all" | "merchant" | "package" | "booking" | "internal_account"
+type FilterAction =
+  | "all"
+  | "approve"
+  | "reject"
+  | "deactivate"
+  | "reactivate"
+  | "delete"
+  | "handoff_to_finance"
+  | "note"
+  | "note_resolved"
+  | "note_reopened"
+  | "create_account"
+  | "reset_password"
+  | "delete_account"
 type SearchParams = {
   target?: string
   action?: string
@@ -45,7 +58,7 @@ function titleCase(value: string | null | undefined) {
 
 function normalizeTargetFilter(value: string | undefined): FilterTarget {
   const normalized = String(value || "").trim().toLowerCase()
-  if (normalized === "merchant" || normalized === "package" || normalized === "booking") {
+  if (normalized === "merchant" || normalized === "package" || normalized === "booking" || normalized === "internal_account") {
     return normalized
   }
   return "all"
@@ -62,7 +75,10 @@ function normalizeActionFilter(value: string | undefined): FilterAction {
     normalized === "handoff_to_finance" ||
     normalized === "note" ||
     normalized === "note_resolved" ||
-    normalized === "note_reopened"
+    normalized === "note_reopened" ||
+    normalized === "create_account" ||
+    normalized === "reset_password" ||
+    normalized === "delete_account"
   ) {
     return normalized
   }
@@ -178,6 +194,7 @@ export default async function AdminAuditLogPage({
     { value: "merchant", label: "Merchant" },
     { value: "package", label: "Package" },
     { value: "booking", label: "Booking" },
+    { value: "internal_account", label: "Internal Account" },
   ]
   const actionFilters: Array<{ value: FilterAction; label: string }> = [
     { value: "all", label: "Semua Action" },
@@ -190,6 +207,9 @@ export default async function AdminAuditLogPage({
     { value: "note", label: "Note" },
     { value: "note_resolved", label: "Note Resolved" },
     { value: "note_reopened", label: "Note Reopened" },
+    { value: "create_account", label: "Create Account" },
+    { value: "reset_password", label: "Reset Password" },
+    { value: "delete_account", label: "Delete Account" },
   ]
 
   return (

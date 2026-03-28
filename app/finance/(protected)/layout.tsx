@@ -46,17 +46,17 @@ export default async function FinanceProtectedLayout({
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
   const financeNav = isFinanceManager
-    ? [
-        { href: "/finance/dashboard", label: "Dashboard" },
-        { href: "/finance/payouts", label: "Payout Queue" },
-        { href: "/finance/admin-users", label: "Team Accounts" },
-      ]
-    : [
-        { href: "/finance/dashboard", label: "Dashboard" },
-        { href: "/finance/payouts", label: "Payout Queue" },
-        { href: "/finance/settings", label: "Finance Settings" },
-        { href: "/finance/admin-users", label: "Team Accounts" },
-      ]
+      ? [
+          { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/payouts", label: "Payout Queue" },
+          { href: "/finance/team-accounts", label: "Team Accounts" },
+        ]
+      : [
+          { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/payouts", label: "Payout Queue" },
+          { href: "/finance/settings", label: "Finance Settings" },
+          { href: "/finance/team-accounts", label: "Team Accounts" },
+        ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
