@@ -622,7 +622,7 @@ export default async function AdminDashboard({
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href="/finance/admin-users"
+                    href="/superadmin/finance-team-accounts"
                     className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
                   >
                     Kelola akun internal
@@ -677,7 +677,7 @@ export default async function AdminDashboard({
 
           <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance network</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Semua akun finance</h2>
@@ -685,7 +685,10 @@ export default async function AdminDashboard({
                     Superadmin memegang kontrol tertinggi untuk semua akun finance yang mengelola payout dan transfer merchant.
                   </p>
                 </div>
-                <Link href="/finance/admin-users" className="text-sm font-semibold text-orange-600">
+                <Link
+                  href="/superadmin/finance-team-accounts"
+                  className="inline-flex w-fit rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                >
                   Buka Internal Accounts
                 </Link>
               </div>
@@ -698,8 +701,10 @@ export default async function AdminDashboard({
                   financeProfiles.map((profile) => (
                     <div key={profile.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
                       <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance account</p>
-                      <h3 className="mt-3 text-lg font-semibold text-slate-950">{profile.email || "(tanpa email)"}</h3>
-                      <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
+                      <h3 className="mt-3 break-all text-base font-semibold leading-7 text-slate-950">
+                        {profile.email || "(tanpa email)"}
+                      </h3>
+                      <p className="mt-3 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
                         {formatFinanceCode(profile.id)}
                       </p>
                       <p className="mt-2 text-xs text-slate-500">{getRoleLabel(financeRoleMap.get(profile.id) || "finance")}</p>
@@ -710,7 +715,7 @@ export default async function AdminDashboard({
             </div>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Admin network</p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Semua akun admin</h2>
@@ -718,7 +723,10 @@ export default async function AdminDashboard({
                     Semua admin operasional dan operations manager terhubung ke data yang sama, sehingga superadmin bisa memantau kapasitas tim dari satu dashboard.
                   </p>
                 </div>
-                <Link href="/finance/admin-users" className="text-sm font-semibold text-orange-600">
+                <Link
+                  href="/superadmin/team-accounts"
+                  className="inline-flex w-fit rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                >
                   Kelola akun
                 </Link>
               </div>
@@ -763,9 +771,14 @@ export default async function AdminDashboard({
               <div className="mt-5 grid gap-4">
                 {[
                   {
-                    label: "Internal Accounts",
-                    href: "/finance/admin-users",
-                    description: "Kelola seluruh akun finance dan admin dari satu panel.",
+                    label: "Ops Team Accounts",
+                    href: "/superadmin/team-accounts",
+                    description: "Kelola akun admin dan operations manager dari portal superadmin.",
+                  },
+                  {
+                    label: "Finance Team Accounts",
+                    href: "/superadmin/finance-team-accounts",
+                    description: "Kelola akun finance dan finance manager tanpa keluar dari portal superadmin.",
                   },
                   {
                     label: "Booking Center",
