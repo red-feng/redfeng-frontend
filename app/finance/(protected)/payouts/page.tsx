@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
-import { isFinanceExecutionRole } from "@/lib/internal-roles"
+import { isFinanceApprovalRole, isFinanceExecutionRole } from "@/lib/internal-roles"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
@@ -131,6 +131,7 @@ export default async function FinancePayoutsPage({
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
+  const canApprovePayout = isFinanceApprovalRole(currentProfile?.role)
   const canExecuteTransferFlow = isFinanceExecutionRole(currentProfile?.role)
   const isFinanceManager = currentProfile?.role === "finance_manager"
 
@@ -388,20 +389,22 @@ export default async function FinancePayoutsPage({
                       <div className="rounded-[24px] border border-orange-100 bg-white p-5">
                         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Decision flow</p>
                         <p className="mt-3 text-sm leading-7 text-slate-700">
-                          Approve dulu untuk validasi internal, tandai processing saat transfer sedang dijalankan,
-                          lalu tutup sebagai paid setelah dana benar-benar masuk ke merchant.
+                          Finance manager melakukan approval internal lebih dulu. Setelah itu finance maker
+                          menjalankan transfer, menandai processing, lalu menutup sebagai paid saat dana benar-benar masuk ke merchant.
                         </p>
                       </div>
 
                       {!isFinal && (
                         <div className="grid gap-4">
-                          <form action={updatePayoutStatus} className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
-                            <input type="hidden" name="payoutId" value={payout.id} />
-                            <input type="hidden" name="nextStatus" value="approved" />
-                            <button className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
-                              Approve payout
-                            </button>
-                          </form>
+                          {canApprovePayout ? (
+                            <form action={updatePayoutStatus} className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
+                              <input type="hidden" name="payoutId" value={payout.id} />
+                              <input type="hidden" name="nextStatus" value="approved" />
+                              <button className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
+                                Approve payout
+                              </button>
+                            </form>
+                          ) : null}
 
                           {canExecuteTransferFlow ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-sky-200 bg-sky-50/80 p-5">
@@ -428,21 +431,28 @@ export default async function FinancePayoutsPage({
                             </form>
                           ) : null}
 
-                          <form action={updatePayoutStatus} className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-5 space-y-4">
-                            <input type="hidden" name="payoutId" value={payout.id} />
-                            <input type="hidden" name="nextStatus" value="rejected" />
-                            <textarea
-                              name="note"
-                              placeholder="Wajib isi alasan jika payout perlu ditolak atau dikembalikan"
-                              className="min-h-[110px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                            />
-                            <button className="rounded-[18px] bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(225,29,72,0.22)] transition hover:bg-rose-700">
-                              Reject payout
-                            </button>
-                          </form>
+                          {canApprovePayout ? (
+                            <form action={updatePayoutStatus} className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-5 space-y-4">
+                              <input type="hidden" name="payoutId" value={payout.id} />
+                              <input type="hidden" name="nextStatus" value="rejected" />
+                              <textarea
+                                name="note"
+                                placeholder="Wajib isi alasan jika payout perlu ditolak atau dikembalikan"
+                                className="min-h-[110px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+                              />
+                              <button className="rounded-[18px] bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(225,29,72,0.22)] transition hover:bg-rose-700">
+                                Reject payout
+                              </button>
+                            </form>
+                          ) : null}
+                          {!canApprovePayout && canExecuteTransferFlow ? (
+                            <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
+                              Role finance di workspace ini bertindak sebagai maker transfer. Approval dan reject payout hanya dijalankan finance manager atau superadmin.
+                            </div>
+                          ) : null}
                           {isFinanceManager ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                              Finance Manager hanya memegang approval / reject. Perubahan ke tahap processing dan paid tetap dijalankan finance eksekusi atau superadmin.
+                              Finance Manager memegang approval / reject. Perubahan ke tahap processing dan paid tetap dijalankan finance eksekusi atau superadmin.
                             </div>
                           ) : null}
                         </div>

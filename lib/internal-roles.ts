@@ -9,7 +9,7 @@ export type AdminManagedRole = "admin" | "operations_manager"
 export type FinanceManagedRole = "finance" | "finance_manager"
 export type AdminExecutionRole = "admin" | "superadmin"
 export type FinanceExecutionRole = "finance" | "superadmin"
-export type FinanceApprovalRole = "finance" | "finance_manager" | "superadmin"
+export type FinanceApprovalRole = "finance_manager" | "superadmin"
 
 export function isAdminPortalRole(role: string | null | undefined): role is AdminPortalRole {
   return ADMIN_PORTAL_ROLES.includes(String(role || "").trim().toLowerCase() as AdminPortalRole)
@@ -40,7 +40,7 @@ export function isFinanceExecutionRole(role: string | null | undefined): role is
 }
 
 export function isFinanceApprovalRole(role: string | null | undefined): role is FinanceApprovalRole {
-  return ["finance", "finance_manager", "superadmin"].includes(String(role || "").trim().toLowerCase())
+  return ["finance_manager", "superadmin"].includes(String(role || "").trim().toLowerCase())
 }
 
 export function getRoleLabel(role: string | null | undefined) {
