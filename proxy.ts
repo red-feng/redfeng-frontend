@@ -79,7 +79,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url))
   }
 
-  if (pathname.startsWith("/admin") && !["admin", "superadmin"].includes(profile.role)) {
+  if (pathname.startsWith("/admin") && !["admin", "operations_manager", "superadmin"].includes(profile.role)) {
     return NextResponse.redirect(new URL("/", req.url))
   }
 
