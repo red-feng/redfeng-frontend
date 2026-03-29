@@ -243,7 +243,6 @@ async function applyGatewayExecution(params: {
       kopraReferenceNo:
         params.kopraReferenceNo ||
         safeString(transferResponse.referenceNo) ||
-        safeString(transferResponse.reference_no) ||
         params.refund.kopra_reference_no,
     }
   }
@@ -674,7 +673,6 @@ export async function syncRefundGatewayStatus(formData: FormData) {
     })
 
     const keyword =
-      normalizeKeyword(statusResponse.transactionStatus) ||
       normalizeKeyword(statusResponse.status) ||
       normalizeKeyword(statusResponse.message)
 
@@ -685,7 +683,6 @@ export async function syncRefundGatewayStatus(formData: FormData) {
     }
     kopraReferencePatch =
       safeString(statusResponse.referenceNo) ||
-      safeString(statusResponse.reference_no) ||
       refund.kopra_reference_no
 
     if (["success", "successful", "paid", "completed"].includes(keyword)) {
