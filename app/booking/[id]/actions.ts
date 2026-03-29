@@ -24,7 +24,7 @@ async function getOwnedBooking(bookingId: string) {
 
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, package_id, customer_email, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, package_id, customer_email, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, adult_count, child_count")
     .eq("id", bookingId)
     .single()
 
@@ -123,4 +123,116 @@ export async function confirmCustomerPickedUp(formData: FormData) {
   }
 
   redirect(`/booking/${bookingId}?success=Status Picked up berhasil dikirim. Merchant dapat melanjutkan ke Go Confirmed.`)
+}
+
+function parseParticipantAge(rawValue: FormDataEntryValue | null) {
+  const parsed = Number(String(rawValue || "").trim())
+  return Number.isFinite(parsed) ? parsed : NaN
+}
+
+export async function saveBookingParticipants(formData: FormData) {
+  const bookingId = String(formData.get("booking_id") || "")
+
+  if (!bookingId) {
+    redirect("/?error=Booking tidak valid")
+  }
+
+  const { booking, error: bookingError } = await getOwnedBooking(bookingId)
+  if (bookingError || !booking) {
+    redirect(`/booking/${bookingId}?error=${encodeURIComponent(bookingError || "Booking tidak valid")}`)
+  }
+
+  const adultCount = Math.max(Number(booking.adult_count || 0), 0)
+  const childCount = Math.max(Number(booking.child_count || 0), 0)
+  const participants: Array<{
+    booking_id: string
+    participant_type: "adult" | "child"
+    sequence_no: number
+    full_name: string
+    identity_number: string
+    nationality: string
+    age: number
+  }> = []
+
+  const validationErrors: string[] = []
+
+  for (let index = 1; index <= adultCount; index += 1) {
+    const fullName = String(formData.get(`adult_full_name_${index}`) || "").trim()
+    const identityNumber = String(formData.get(`adult_identity_number_${index}`) || "").trim()
+    const nationality = String(formData.get(`adult_nationality_${index}`) || "").trim()
+    const age = parseParticipantAge(formData.get(`adult_age_${index}`))
+
+    if (!fullName || !identityNumber || !nationality || Number.isNaN(age)) {
+      validationErrors.push(`Lengkapi data peserta dewasa ${index}.`)
+      continue
+    }
+
+    if (age < 18) {
+      validationErrors.push(`Umur peserta dewasa ${index} minimal 18 tahun.`)
+      continue
+    }
+
+    participants.push({
+      booking_id: bookingId,
+      participant_type: "adult",
+      sequence_no: index,
+      full_name: fullName,
+      identity_number: identityNumber,
+      nationality,
+      age,
+    })
+  }
+
+  for (let index = 1; index <= childCount; index += 1) {
+    const fullName = String(formData.get(`child_full_name_${index}`) || "").trim()
+    const identityNumber = String(formData.get(`child_identity_number_${index}`) || "").trim()
+    const nationality = String(formData.get(`child_nationality_${index}`) || "").trim()
+    const age = parseParticipantAge(formData.get(`child_age_${index}`))
+
+    if (!fullName || !identityNumber || !nationality || Number.isNaN(age)) {
+      validationErrors.push(`Lengkapi data peserta anak ${index}.`)
+      continue
+    }
+
+    if (age >= 18) {
+      validationErrors.push(`Umur peserta anak ${index} harus di bawah 18 tahun.`)
+      continue
+    }
+
+    participants.push({
+      booking_id: bookingId,
+      participant_type: "child",
+      sequence_no: index,
+      full_name: fullName,
+      identity_number: identityNumber,
+      nationality,
+      age,
+    })
+  }
+
+  if (validationErrors.length > 0) {
+    redirect(
+      `/booking/${bookingId}/participants?error=${encodeURIComponent(validationErrors.join(" "))}`,
+    )
+  }
+
+  const adminSupabase = createAdminClient()
+  const { error: deleteError } = await adminSupabase
+    .from("booking_participants")
+    .delete()
+    .eq("booking_id", bookingId)
+
+  if (deleteError) {
+    redirect(`/booking/${bookingId}/participants?error=${encodeURIComponent(deleteError.message)}`)
+  }
+
+  if (participants.length > 0) {
+    const { error: insertError } = await adminSupabase.from("booking_participants").insert(participants)
+
+    if (insertError) {
+      redirect(`/booking/${bookingId}/participants?error=${encodeURIComponent(insertError.message)}`)
+    }
+  }
+
+  redirect(`/booking/${bookingId}?from_checkout=1&success=${encodeURIComponent("Data peserta berhasil disimpan. Silakan cek konfirmasi booking sebelum lanjut ke pembayaran.")}`)
 }

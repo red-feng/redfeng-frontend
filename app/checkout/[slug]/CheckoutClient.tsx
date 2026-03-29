@@ -211,38 +211,7 @@ export default function CheckoutClient({
         return
       }
 
-      const paymentRes = await fetch("/api/payments/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ booking_id: bookingPayload.booking_id }),
-      })
-
-      const snapData = await paymentRes.json()
-
-      if (!paymentRes.ok || !snapData.snap_token) {
-        setErrorMsg(snapData.error || t.createTransactionFailed)
-        setSubmitting(false)
-        return
-      }
-
-      const snap = (window as Window & {
-        snap?: {
-          pay: (token: string, callbacks?: Record<string, () => void>) => void
-        }
-      }).snap
-
-      if (!snap) {
-        setErrorMsg(t.snapNotReady)
-        setSubmitting(false)
-        return
-      }
-
-      snap.pay(snapData.snap_token, {
-        onSuccess: () => router.push(`/booking/${bookingPayload.booking_id}`),
-        onPending: () => router.push(`/booking/${bookingPayload.booking_id}`),
-        onError: () => setSubmitting(false),
-        onClose: () => setSubmitting(false),
-      })
+      router.push(`/booking/${bookingPayload.booking_id}/participants`)
     } catch {
       setErrorMsg("Terjadi gangguan saat membuat booking")
       setSubmitting(false)

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic"
 
 type BookingPageProps = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ success?: string; error?: string }>
+  searchParams: Promise<{ success?: string; error?: string; from_checkout?: string }>
 }
 
 type BookingDetailRow = {
@@ -19,6 +19,9 @@ type BookingDetailRow = {
   booking_code: string | null
   customer_name: string | null
   customer_email: string | null
+  customer_phone: string | null
+  adult_count: number | null
+  child_count: number | null
   total_amount: number | null
   subtotal_amount?: number | null
   customer_admin_fee_amount?: number | null
@@ -36,6 +39,16 @@ type BookingDetailRow = {
   merchant_arrived_at: string | null
   merchant_picked_up_at: string | null
   customer_picked_up_at: string | null
+}
+
+type BookingParticipantRow = {
+  id: string
+  participant_type: "adult" | "child"
+  sequence_no: number
+  full_name: string | null
+  identity_number: string | null
+  nationality: string | null
+  age: number | null
 }
 
 function formatDateTime(dateStr: string | null) {
@@ -87,7 +100,10 @@ function resolveJourneyPhase(booking: BookingDetailRow) {
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
   }
-  if (normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" || normalizeStatus(booking.escrow_status) === "awaiting_admin_handoff") {
+  if (
+    normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" ||
+    normalizeStatus(booking.escrow_status) === "awaiting_admin_handoff"
+  ) {
     return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
   }
   if (booking.merchant_picked_up_at) {
@@ -128,7 +144,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, adult_count, child_count, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -141,6 +157,19 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .select("id, rating, comment")
     .eq("booking_id", booking.id)
     .maybeSingle()
+
+  const { data: participantRows } = await adminSupabase
+    .from("booking_participants")
+    .select("id, participant_type, sequence_no, full_name, identity_number, nationality, age")
+    .eq("booking_id", booking.id)
+    .order("participant_type", { ascending: true })
+    .order("sequence_no", { ascending: true })
+
+  const participants = (participantRows as BookingParticipantRow[] | null) || []
+  const adultCount = Math.max(Number(booking.adult_count || 0), 0)
+  const childCount = Math.max(Number(booking.child_count || 0), 0)
+  const expectedParticipantCount = adultCount + childCount
+  const hasCompleteParticipants = expectedParticipantCount > 0 && participants.length === expectedParticipantCount
 
   const timeline = [
     {
@@ -162,29 +191,45 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
   const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
+  const canStartInitialPayment = ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status))
   const phase = resolveJourneyPhase(booking)
+  const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Booking Berhasil</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{openedFromCheckout ? "Konfirmasi Booking" : "Booking Berhasil"}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Dana customer masuk ke rekening RedFeng dan tetap ditahan sampai pickup dikonfirmasi merchant dan customer.
+            {openedFromCheckout
+              ? "Periksa dulu seluruh data peserta, rincian booking, dan nominal biaya. Jika sudah sesuai, lanjutkan ke pembayaran dari halaman ini."
+              : "Dana customer masuk ke rekening RedFeng dan tetap ditahan sampai pickup dikonfirmasi merchant dan customer."}
           </p>
         </section>
 
-        {resolvedSearchParams.success && (
+        {openedFromCheckout ? (
+          <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
+            Booking sudah dibuat. Lengkapi data peserta, lalu cek detail nominal dan data booking sebelum membuka popup Midtrans.
+          </div>
+        ) : null}
+
+        {!hasCompleteParticipants ? (
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Data peserta belum lengkap. Silakan isi semua data peserta terlebih dahulu sebelum melanjutkan ke pembayaran.
+          </div>
+        ) : null}
+
+        {resolvedSearchParams.success ? (
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
             {resolvedSearchParams.success}
           </div>
-        )}
+        ) : null}
 
-        {resolvedSearchParams.error && (
+        {resolvedSearchParams.error ? (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {resolvedSearchParams.error}
           </div>
-        )}
+        ) : null}
 
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -193,9 +238,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Total</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">
-              {formatIdr(booking.total_amount)}
-            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">{formatIdr(booking.total_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Status Pembayaran</p>
@@ -214,31 +257,23 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Subtotal Paket</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {formatIdr(booking.subtotal_amount)}
-            </p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.subtotal_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Admin Fee</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {formatIdr(booking.customer_admin_fee_amount)}
-            </p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_admin_fee_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Pajak</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {formatIdr(booking.customer_tax_amount)}
-            </p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_tax_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Sisa Pelunasan</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {formatIdr(booking.final_payment_amount)}
-            </p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.final_payment_amount)}</p>
           </div>
         </section>
 
-        {(booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date) && (
+        {booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date ? (
           <section className="mt-6 rounded-[28px] border border-blue-100 bg-blue-50 p-6 shadow-sm">
             <h2 className="text-xl font-semibold text-slate-900">Ringkasan Harga Sesuai Bahasa Anda</h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -265,13 +300,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </div>
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
                 <p className="text-sm text-slate-500">Tanggal Kurs</p>
-                <p className="mt-2 text-lg font-semibold text-slate-900">
-                  {booking.exchange_rate_date || "-"}
-                </p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{booking.exchange_rate_date || "-"}</p>
               </div>
             </div>
           </section>
-        )}
+        ) : null}
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">Detail Booking</h2>
@@ -283,6 +316,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <div>
               <p className="text-sm text-slate-500">Email</p>
               <p className="mt-2 font-medium text-slate-900">{booking.customer_email || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Nomor Telepon</p>
+              <p className="mt-2 font-medium text-slate-900">{booking.customer_phone || "-"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Jumlah Peserta</p>
+              <p className="mt-2 font-medium text-slate-900">Dewasa {adultCount} · Anak {childCount}</p>
             </div>
             <div>
               <p className="text-sm text-slate-500">Journey Phase</p>
@@ -297,22 +338,103 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </span>
             </div>
           </div>
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-900">Data Peserta</h2>
+              <p className="mt-2 text-sm text-slate-500">
+                Semua peserta yang akan berangkat harus terdata lengkap sebelum pembayaran dibuka.
+              </p>
+            </div>
+            <a
+              href={`/booking/${booking.id}/participants`}
+              className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+            >
+              {hasCompleteParticipants ? "Ubah data peserta" : "Isi data peserta"}
+            </a>
+          </div>
+
+          <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Status data peserta:{" "}
+            <span className={`font-semibold ${hasCompleteParticipants ? "text-emerald-700" : "text-amber-700"}`}>
+              {hasCompleteParticipants
+                ? `${participants.length} dari ${expectedParticipantCount} peserta sudah lengkap`
+                : `${participants.length} dari ${expectedParticipantCount} peserta terisi`}
+            </span>
+          </div>
+
+          {participants.length > 0 ? (
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              {participants.map((participant) => (
+                <div key={participant.id} className="rounded-[20px] border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                    {participant.participant_type === "adult" ? `Dewasa ${participant.sequence_no}` : `Anak ${participant.sequence_no}`}
+                  </p>
+                  <p className="mt-3 text-lg font-semibold text-slate-900">{participant.full_name || "-"}</p>
+                  <dl className="mt-3 space-y-2 text-sm text-slate-600">
+                    <div className="flex items-center justify-between gap-4">
+                      <dt>No identitas / paspor</dt>
+                      <dd className="font-medium text-slate-900">{participant.identity_number || "-"}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt>Kewarganegaraan</dt>
+                      <dd className="font-medium text-slate-900">{participant.nationality || "-"}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt>Umur</dt>
+                      <dd className="font-medium text-slate-900">{participant.age ?? "-"}</dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">
+              Belum ada data peserta yang disimpan untuk booking ini.
+            </div>
+          )}
+        </section>
+
+        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-2">
+            <h2 className="text-xl font-semibold text-slate-900">Aksi Booking</h2>
+            <p className="text-sm text-slate-500">
+              Popup Midtrans baru dibuka setelah data peserta lengkap. Setelah pembayaran sukses, progress meeting point tetap berjalan dari halaman ini.
+            </p>
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
+            {canStartInitialPayment && hasCompleteParticipants ? (
+              <BookingPaymentButton
+                bookingId={booking.id}
+                label="Lanjut ke Pembayaran"
+                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              />
+            ) : null}
+            {canStartInitialPayment && !hasCompleteParticipants ? (
+              <a
+                href={`/booking/${booking.id}/participants`}
+                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Lengkapi Data Peserta
+              </a>
+            ) : null}
             <a
               href={`/chat?booking_id=${booking.id}`}
               className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
             >
               Chat Sesudah Booking
             </a>
-            {booking.package_id && (
+            {booking.package_id ? (
               <a
                 href={`/chat?package_id=${booking.package_id}`}
                 className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
               >
                 Lihat Chat Sebelum Booking
               </a>
-            )}
+            ) : null}
           </div>
         </section>
 
@@ -336,18 +458,19 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             ))}
           </div>
 
-          {canConfirmPickup && (
+          {canConfirmPickup ? (
             <form action={confirmCustomerPickedUp} className="mt-6">
               <input type="hidden" name="booking_id" value={booking.id} />
               <button
                 type="submit"
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Picked up
-                </button>
-              </form>
-            )}
-          {canPayRemaining && (
+              >
+                Picked up
+              </button>
+            </form>
+          ) : null}
+
+          {canPayRemaining ? (
             <div className="mt-4">
               <BookingPaymentButton
                 bookingId={booking.id}
@@ -355,7 +478,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
               />
             </div>
-          )}
+          ) : null}
         </section>
 
         {existingReview ? (
