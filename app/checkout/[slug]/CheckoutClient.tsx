@@ -136,10 +136,6 @@ export default function CheckoutClient({
   }, [supabase])
 
   const effectivePickupDate = usesFixedDeparture ? (data.departure_date || "") : pickupDate
-  const participantCombinationHint =
-    minimumParticipants > 1
-      ? `Minimal ${minimumParticipants} peserta total. Contoh: dewasa ${minimumParticipants}, dewasa ${Math.max(minimumParticipants - 1, 1)} + anak 1, atau kombinasi lain selama total peserta mencapai ${minimumParticipants}.`
-      : ""
   const minimumParticipantsMessage =
     minimumParticipants > 1
       ? `Minimal peserta untuk paket ini ${minimumParticipants} orang. Total dewasa dan anak harus mencapai minimal tersebut sebelum booking bisa dilanjutkan.`
@@ -315,12 +311,6 @@ export default function CheckoutClient({
               />
             </div>
           </div>
-
-          {participantCombinationHint ? (
-            <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-800">
-              {participantCombinationHint}
-            </div>
-          ) : null}
 
           {minimumParticipantsMessage ? (
             <div
