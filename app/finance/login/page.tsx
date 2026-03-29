@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalFinanceEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isFinancePortalRole } from "@/lib/internal-roles"
+import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 
 export default function FinanceLogin() {
   const supabase = createClient()
@@ -14,6 +15,15 @@ export default function FinanceLogin() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [systemError] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return new URLSearchParams(window.location.search).get("error") || ""
+  })
+  const systemErrorMessage = readPortalSessionErrorMessage(systemError, {
+    noSession: "Sesi finance Anda sudah berakhir atau tergantikan. Silakan login lagi.",
+    noProfile: "Akun internal ini belum memiliki profil finance yang valid.",
+    wrongPortalPrefix: "Portal finance hanya menerima akun finance atau finance manager.",
+  })
 
   const handleLogin = async () => {
     setLoading(true)
@@ -132,6 +142,12 @@ export default function FinanceLogin() {
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
+
+              {systemErrorMessage ? (
+                <div className="mt-8 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {systemErrorMessage}
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="mt-8 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

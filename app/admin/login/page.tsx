@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isAdminPortalRole } from "@/lib/internal-roles"
+import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 
 export default function AdminLogin() {
   const supabase = createClient()
@@ -20,13 +21,12 @@ export default function AdminLogin() {
     return params.get("error") || ""
   })
   const systemErrorMessage =
-    systemError === "no-session"
-      ? "Sesi admin belum terbentuk. Coba login ulang."
-      : systemError === "no-profile"
-        ? "Akun internal ini belum memiliki profile admin yang valid."
-        : systemError?.startsWith("wrong-role:")
-          ? `Portal admin menerima role admin atau operations manager. Role terdeteksi: ${systemError.replace("wrong-role:", "")}.`
-          : ""
+    readPortalSessionErrorMessage(systemError, {
+      noSession: "Sesi admin Anda sudah berakhir atau tergantikan. Silakan login lagi.",
+      noProfile: "Akun internal ini belum memiliki profile admin yang valid.",
+      wrongPortalPrefix: "Portal admin menerima role admin atau operations manager.",
+    }) ||
+    (systemError === "no-session" ? "Sesi admin belum terbentuk. Coba login ulang." : "")
 
   const handleLogin = async () => {
     setLoading(true)

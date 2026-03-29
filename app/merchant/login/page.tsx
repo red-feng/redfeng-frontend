@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
+import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 
 const partnerPoints = [
   {
@@ -36,12 +37,21 @@ export default function MerchantLogin() {
     if (typeof window === "undefined") return null
     return new URLSearchParams(window.location.search).get("blocked")
   })
+  const [systemError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null
+    return new URLSearchParams(window.location.search).get("error")
+  })
   const blockedError =
     blockedStatus === "inactive"
       ? "Akun merchant Anda sedang dinonaktifkan sementara oleh admin."
       : blockedStatus === "deleted"
         ? "Akun merchant Anda sudah dihapus dari akses merchant oleh admin."
         : ""
+  const systemErrorMessage = readPortalSessionErrorMessage(systemError, {
+    noSession: "Sesi merchant Anda sudah berakhir atau tergantikan. Silakan login lagi.",
+    noProfile: "Akun ini belum memiliki profil merchant yang valid.",
+    wrongPortalPrefix: "Portal merchant hanya menerima akun merchant.",
+  })
 
   useEffect(() => {
     if (!blockedStatus) return
@@ -216,9 +226,9 @@ export default function MerchantLogin() {
                 </Link>
               </div>
 
-              {error || blockedError ? (
+              {error || blockedError || systemErrorMessage ? (
                 <div className="mt-8 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {error || blockedError}
+                  {error || blockedError || systemErrorMessage}
                 </div>
               ) : null}
 

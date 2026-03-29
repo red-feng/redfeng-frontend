@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import { formatFinanceCode } from "@/lib/merchant-code"
+import { buildPortalSessionError } from "@/lib/portal-session"
 import { createClient } from "@/lib/supabase/server"
 import { getRoleLabel, isFinancePortalRole } from "@/lib/internal-roles"
 
@@ -17,7 +18,7 @@ export default async function FinanceProtectedLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/finance/login")
+    redirect("/finance/login?error=session-ended")
   }
 
   const { data: profile } = await supabase
@@ -27,19 +28,11 @@ export default async function FinanceProtectedLayout({
     .single()
 
   if (!profile) {
-    redirect("/finance/login")
-  }
-
-  if (profile.role === "merchant") {
-    redirect("/merchant/dashboard")
-  }
-
-  if (profile.role === "superadmin") {
-    redirect("/superadmin/dashboard")
+    redirect("/finance/login?error=no-profile")
   }
 
   if (!isFinancePortalRole(profile.role)) {
-    redirect("/finance/login")
+    redirect(`/finance/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
   const isFinanceManager = profile.role === "finance_manager"

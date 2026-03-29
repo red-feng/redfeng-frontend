@@ -5,6 +5,7 @@ import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
 import { buildInternalSuperadminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
+import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 
 export default function SuperadminLoginPage() {
   const supabase = createClient()
@@ -12,6 +13,15 @@ export default function SuperadminLoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [systemError] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return new URLSearchParams(window.location.search).get("error") || ""
+  })
+  const systemErrorMessage = readPortalSessionErrorMessage(systemError, {
+    noSession: "Sesi superadmin Anda sudah berakhir atau tergantikan. Silakan login lagi.",
+    noProfile: "Akun ini belum memiliki profil superadmin yang valid.",
+    wrongPortalPrefix: "Portal ini hanya menerima akun superadmin.",
+  })
 
   const handleLogin = async () => {
     setLoading(true)
@@ -115,6 +125,12 @@ export default function SuperadminLoginPage() {
                   <span aria-hidden="true">→</span>
                 </Link>
               </div>
+
+              {systemErrorMessage ? (
+                <div className="mt-8 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  {systemErrorMessage}
+                </div>
+              ) : null}
 
               {error ? (
                 <div className="mt-8 rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

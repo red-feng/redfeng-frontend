@@ -8,6 +8,7 @@ import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { formatMerchantLocationLabel } from "@/lib/location-labels"
 import { formatMerchantCode } from "@/lib/merchant-code"
+import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
@@ -43,7 +44,7 @@ export default async function MerchantLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/merchant/login")
+    redirect("/merchant/login?error=session-ended")
   }
 
   const { data: profile, error } = await supabase
@@ -53,11 +54,11 @@ export default async function MerchantLayout({
     .single()
 
   if (error || !profile) {
-    redirect("/")
+    redirect("/merchant/login?error=no-profile")
   }
 
   if (profile.role !== "merchant") {
-    redirect("/")
+    redirect(`/merchant/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
   const { data: merchant } = await supabase

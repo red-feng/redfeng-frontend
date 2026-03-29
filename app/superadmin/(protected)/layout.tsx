@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import { formatAdminCode } from "@/lib/merchant-code"
+import { buildPortalSessionError } from "@/lib/portal-session"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function SuperadminProtectedLayout({
@@ -15,7 +16,7 @@ export default async function SuperadminProtectedLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/superadmin/login")
+    redirect("/superadmin/login?error=session-ended")
   }
 
   const { data: profile } = await supabase
@@ -25,23 +26,11 @@ export default async function SuperadminProtectedLayout({
     .single()
 
   if (!profile) {
-    redirect("/superadmin/login")
-  }
-
-  if (profile.role === "merchant") {
-    redirect("/merchant/dashboard")
-  }
-
-  if (profile.role === "admin" || profile.role === "operations_manager") {
-    redirect("/admin/dashboard")
-  }
-
-  if (profile.role === "finance" || profile.role === "finance_manager") {
-    redirect("/finance/dashboard")
+    redirect("/superadmin/login?error=no-profile")
   }
 
   if (profile.role !== "superadmin") {
-    redirect("/superadmin/login")
+    redirect(`/superadmin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
   const navItems = [

@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getRequiredEnv } from "@/lib/env"
+import { buildPortalSessionError } from "@/lib/portal-session"
 
 const CANONICAL_HOST = "app.redfeng.co"
 
@@ -35,11 +36,19 @@ export async function proxy(req: NextRequest) {
 
   const res = NextResponse.next()
 
-  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant")) {
+  const isFinanceRoute = pathname.startsWith("/finance")
+  const isSuperadminRoute = pathname.startsWith("/superadmin")
+
+  if (!pathname.startsWith("/admin") && !pathname.startsWith("/merchant") && !isFinanceRoute && !isSuperadminRoute) {
     return res
   }
 
-  if (isAdminLoginRoute || isMerchantPublicRoute) {
+  if (
+    isAdminLoginRoute ||
+    isMerchantPublicRoute ||
+    pathname === "/finance/login" ||
+    pathname === "/superadmin/login"
+  ) {
     return res
   }
 
@@ -66,7 +75,14 @@ export async function proxy(req: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(new URL("/", req.url))
+    const target = pathname.startsWith("/admin")
+      ? "/admin/login?error=session-ended"
+      : pathname.startsWith("/merchant")
+        ? "/merchant/login?error=session-ended"
+        : pathname.startsWith("/finance")
+          ? "/finance/login?error=session-ended"
+          : "/superadmin/login?error=session-ended"
+    return NextResponse.redirect(new URL(target, req.url))
   }
 
   const { data: profile } = await supabase
@@ -76,15 +92,38 @@ export async function proxy(req: NextRequest) {
     .single()
 
   if (!profile) {
-    return NextResponse.redirect(new URL("/", req.url))
+    const target = pathname.startsWith("/admin")
+      ? "/admin/login?error=no-profile"
+      : pathname.startsWith("/merchant")
+        ? "/merchant/login?error=no-profile"
+        : pathname.startsWith("/finance")
+          ? "/finance/login?error=no-profile"
+          : "/superadmin/login?error=no-profile"
+    return NextResponse.redirect(new URL(target, req.url))
   }
 
   if (pathname.startsWith("/admin") && !["admin", "operations_manager", "superadmin"].includes(profile.role)) {
-    return NextResponse.redirect(new URL("/", req.url))
+    return NextResponse.redirect(
+      new URL(`/admin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`, req.url),
+    )
   }
 
   if (pathname.startsWith("/merchant") && profile.role !== "merchant") {
-    return NextResponse.redirect(new URL("/", req.url))
+    return NextResponse.redirect(
+      new URL(`/merchant/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`, req.url),
+    )
+  }
+
+  if (pathname.startsWith("/finance") && !["finance", "finance_manager", "superadmin"].includes(profile.role)) {
+    return NextResponse.redirect(
+      new URL(`/finance/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`, req.url),
+    )
+  }
+
+  if (pathname.startsWith("/superadmin") && profile.role !== "superadmin") {
+    return NextResponse.redirect(
+      new URL(`/superadmin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`, req.url),
+    )
   }
 
   return res
