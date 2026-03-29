@@ -3,6 +3,7 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
+import { updateMerchantProfile } from "./actions"
 
 type MerchantProfileRow = {
   id: string
@@ -19,6 +20,9 @@ type MerchantProfileRow = {
   npwp_personal: string | null
   npwp_company: string | null
   pic_name: string | null
+  pic_position: string | null
+  ktp_number: string | null
+  nib: string | null
 }
 
 function maskedAccountNumber(value: string | null) {
@@ -27,7 +31,12 @@ function maskedAccountNumber(value: string | null) {
   return `${"*".repeat(Math.max(value.length - 4, 0))}${value.slice(-4)}`
 }
 
-export default async function MerchantProfilePage() {
+export default async function MerchantProfilePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ success?: string; error?: string }>
+}) {
+  const params = searchParams ? await searchParams : undefined
   const locale = normalizeLocale(await getCurrentLocale())
   const t = {
     merchantCode: "Merchant code",
@@ -44,7 +53,7 @@ export default async function MerchantProfilePage() {
   const { data, error } = await supabase
     .from("merchants")
     .select(
-      "id, company_name, brand_name, address, city, province, logo_url, bank_name, bank_account_number, bank_account_holder, bank_branch, npwp_personal, npwp_company, pic_name",
+      "id, company_name, brand_name, address, city, province, logo_url, bank_name, bank_account_number, bank_account_holder, bank_branch, npwp_personal, npwp_company, pic_name, pic_position, ktp_number, nib",
     )
     .eq("user_id", user.id)
     .single()
@@ -52,6 +61,8 @@ export default async function MerchantProfilePage() {
   const merchant = data as MerchantProfileRow | null
   const merchantCode = formatMerchantCode(merchant?.id)
   const addressLabel = [merchant?.address, merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"
+  const successMessage = params?.success || ""
+  const errorMessage = params?.error || ""
   const metricCards = [
     {
       label: t.businessName,
@@ -122,6 +133,16 @@ export default async function MerchantProfilePage() {
         </div>
       ) : (
         <>
+          {successMessage ? (
+            <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+              {successMessage}
+            </div>
+          ) : null}
+          {errorMessage ? (
+            <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+              {errorMessage}
+            </div>
+          ) : null}
           <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             {metricCards.map((card) => (
               <div
@@ -167,6 +188,187 @@ export default async function MerchantProfilePage() {
             </aside>
 
             <main className="space-y-6">
+              <section className="rounded-[32px] border border-[#f3dbc3] bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.profileEditorBadge}</p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.editProfile}</h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{t.editProfileHint}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-orange-100 bg-[#fff8f1] px-4 py-3 text-sm text-slate-600">
+                    {t.editProfileNote}
+                  </div>
+                </div>
+
+                <form action={updateMerchantProfile} className="mt-6 space-y-6">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.businessName}</span>
+                      <input
+                        name="company_name"
+                        defaultValue={merchant.company_name || ""}
+                        placeholder={t.businessNamePlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.brandName}</span>
+                      <input
+                        name="brand_name"
+                        defaultValue={merchant.brand_name || ""}
+                        placeholder={t.brandNamePlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.address}</span>
+                      <textarea
+                        name="address"
+                        defaultValue={merchant.address || ""}
+                        placeholder={t.addressPlaceholder}
+                        rows={4}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <div className="grid gap-5">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.city}</span>
+                        <input
+                          name="city"
+                          defaultValue={merchant.city || ""}
+                          placeholder={t.cityPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.province}</span>
+                        <input
+                          name="province"
+                          defaultValue={merchant.province || ""}
+                          placeholder={t.provincePlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-3">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.picName}</span>
+                      <input
+                        name="pic_name"
+                        defaultValue={merchant.pic_name || ""}
+                        placeholder={t.picNamePlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.picPosition}</span>
+                      <input
+                        name="pic_position"
+                        defaultValue={merchant.pic_position || ""}
+                        placeholder={t.picPositionPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.ktpNumber}</span>
+                      <input
+                        name="ktp_number"
+                        defaultValue={merchant.ktp_number || ""}
+                        placeholder={t.ktpNumberPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.bankName}</span>
+                      <input
+                        name="bank_name"
+                        defaultValue={merchant.bank_name || ""}
+                        placeholder={t.bankNamePlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.bankBranch}</span>
+                      <input
+                        name="bank_branch"
+                        defaultValue={merchant.bank_branch || ""}
+                        placeholder={t.bankBranchPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.accountHolder}</span>
+                      <input
+                        name="bank_account_holder"
+                        defaultValue={merchant.bank_account_holder || ""}
+                        placeholder={t.accountHolderPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.accountNumber}</span>
+                      <input
+                        name="bank_account_number"
+                        defaultValue={merchant.bank_account_number || ""}
+                        placeholder={t.accountNumberPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-3">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.personalTaxId}</span>
+                      <input
+                        name="npwp_personal"
+                        defaultValue={merchant.npwp_personal || ""}
+                        placeholder={t.personalTaxIdPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.companyTaxId}</span>
+                      <input
+                        name="npwp_company"
+                        defaultValue={merchant.npwp_company || ""}
+                        placeholder={t.companyTaxIdPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-700">{t.nibNumber}</span>
+                      <input
+                        name="nib"
+                        defaultValue={merchant.nib || ""}
+                        placeholder={t.nibNumberPlaceholder}
+                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 md:flex-row md:items-center md:justify-between">
+                    <p className="text-sm leading-7 text-slate-500">{t.editFormFooter}</p>
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5"
+                    >
+                      {t.saveChanges}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
               <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.businessIdentity}</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.businessInformation}</h2>
@@ -190,6 +392,10 @@ export default async function MerchantProfilePage() {
                   <div>
                       <p className="text-sm text-slate-500">{t.contact}</p>
                       <p className="mt-2 font-medium text-slate-950">{merchant.pic_name || t.notAvailable}</p>
+                  </div>
+                  <div>
+                      <p className="text-sm text-slate-500">{t.picPosition}</p>
+                      <p className="mt-2 font-medium text-slate-950">{merchant.pic_position || t.notAvailable}</p>
                   </div>
                 </div>
               </section>
@@ -227,10 +433,18 @@ export default async function MerchantProfilePage() {
                   </div>
                   <div>
                       <p className="text-sm text-slate-500">{t.companyTaxId}</p>
-                    <p className="mt-2 font-medium text-slate-950">{merchant.npwp_company || "-"}</p>
-                  </div>
-                </div>
-              </section>
+                     <p className="mt-2 font-medium text-slate-950">{merchant.npwp_company || "-"}</p>
+                   </div>
+                   <div>
+                       <p className="text-sm text-slate-500">{t.ktpNumber}</p>
+                     <p className="mt-2 font-medium text-slate-950">{merchant.ktp_number || "-"}</p>
+                   </div>
+                   <div>
+                       <p className="text-sm text-slate-500">{t.nibNumber}</p>
+                     <p className="mt-2 font-medium text-slate-950">{merchant.nib || "-"}</p>
+                   </div>
+                 </div>
+               </section>
             </main>
           </div>
         </>
@@ -264,19 +478,46 @@ function getProfileText(locale: Locale) {
       businessAddress: "Alamat bisnis",
       businessIdentity: "Business Identity",
       businessInformation: "Informasi bisnis",
+      profileEditorBadge: "Profile Editor",
+      editProfile: "Edit profil merchant",
+      editProfileHint: "Perbarui data bisnis, alamat operasional, PIC, rekening payout, dan identitas pajak langsung dari halaman ini.",
+      editProfileNote: "Perubahan akan langsung tersimpan ke profil merchant Anda.",
       brandName: "Nama brand",
+      businessNamePlaceholder: "PT Red Feng Digital Nusantara",
+      brandNamePlaceholder: "Red Feng",
+      addressPlaceholder: "Alamat operasional utama merchant",
+      city: "Kota",
+      cityPlaceholder: "Semarang",
+      province: "Provinsi",
+      provincePlaceholder: "Jawa Tengah",
+      picName: "Nama PIC",
+      picNamePlaceholder: "Nama penanggung jawab merchant",
+      picPosition: "Jabatan PIC",
+      picPositionPlaceholder: "Founder / Director / Manager",
+      ktpNumber: "Nomor KTP",
+      ktpNumberPlaceholder: "Nomor KTP penanggung jawab",
       description: "Deskripsi",
       descriptionUnavailable: "Belum tersedia di schema merchant saat ini.",
       contact: "Kontak",
       bankAccountSection: "Bank Account",
       bankAccount: "Rekening bank",
       bankName: "Nama bank",
+      bankNamePlaceholder: "BCA / Mandiri / BNI / BRI",
       bankBranch: "Cabang bank",
+      bankBranchPlaceholder: "Cabang bank payout",
       accountHolder: "Atas nama",
+      accountHolderPlaceholder: "Nama pemilik rekening",
       accountNumber: "Nomor rekening",
+      accountNumberPlaceholder: "Nomor rekening payout",
       taxIdentity: "Tax Identity",
       personalTaxId: "NPWP Personal",
+      personalTaxIdPlaceholder: "Opsional jika tersedia",
       companyTaxId: "NPWP Perusahaan",
+      companyTaxIdPlaceholder: "Nomor NPWP perusahaan",
+      nibNumber: "Nomor NIB",
+      nibNumberPlaceholder: "Nomor induk berusaha",
+      editFormFooter: "Pastikan nama bisnis, brand, dan rekening payout tetap sesuai data legal merchant.",
+      saveChanges: "Simpan perubahan",
       notAvailable: "Belum tersedia",
     },
     en: {
@@ -302,19 +543,46 @@ function getProfileText(locale: Locale) {
       businessAddress: "Business address",
       businessIdentity: "Business Identity",
       businessInformation: "Business information",
+      profileEditorBadge: "Profile Editor",
+      editProfile: "Edit merchant profile",
+      editProfileHint: "Update business details, operating address, PIC, payout bank account, and tax identity directly from this page.",
+      editProfileNote: "Changes are saved directly to your merchant profile.",
       brandName: "Brand name",
+      businessNamePlaceholder: "PT Red Feng Digital Nusantara",
+      brandNamePlaceholder: "Red Feng",
+      addressPlaceholder: "Main merchant operating address",
+      city: "City",
+      cityPlaceholder: "Semarang",
+      province: "Province",
+      provincePlaceholder: "Central Java",
+      picName: "PIC name",
+      picNamePlaceholder: "Merchant person in charge",
+      picPosition: "PIC position",
+      picPositionPlaceholder: "Founder / Director / Manager",
+      ktpNumber: "ID card number",
+      ktpNumberPlaceholder: "Person in charge ID number",
       description: "Description",
       descriptionUnavailable: "Not available in the current merchant schema yet.",
       contact: "Contact",
       bankAccountSection: "Bank Account",
       bankAccount: "Bank account",
       bankName: "Bank name",
+      bankNamePlaceholder: "BCA / Mandiri / BNI / BRI",
       bankBranch: "Bank branch",
+      bankBranchPlaceholder: "Payout bank branch",
       accountHolder: "Account holder",
+      accountHolderPlaceholder: "Bank account holder name",
       accountNumber: "Account number",
+      accountNumberPlaceholder: "Payout bank account number",
       taxIdentity: "Tax Identity",
       personalTaxId: "Personal tax ID",
+      personalTaxIdPlaceholder: "Optional if available",
       companyTaxId: "Company tax ID",
+      companyTaxIdPlaceholder: "Company tax ID number",
+      nibNumber: "Business ID number",
+      nibNumberPlaceholder: "Business registration number",
+      editFormFooter: "Keep the business name, brand, and payout account aligned with the merchant's legal records.",
+      saveChanges: "Save changes",
       notAvailable: "Not available",
     },
     zh: {
