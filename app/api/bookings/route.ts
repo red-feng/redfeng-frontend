@@ -168,7 +168,6 @@ export async function POST(req: Request) {
     const { data: booking, error: insertError } = await supabase
       .from("bookings")
       .insert({
-        user_id: user.id,
         package_id,
         adult_count: Number(adult_count || 0),
         child_count: Number(child_count || 0),

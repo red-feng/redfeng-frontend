@@ -52,7 +52,17 @@ export async function POST(req: Request) {
       )
     }
 
+    const bookingOwnerEmail = String(booking.customer_email || "").trim().toLowerCase()
+    const signedInEmail = String(user.email || "").trim().toLowerCase()
+
     if (booking.user_id && booking.user_id !== user.id) {
+      return NextResponse.json(
+        { error: "Booking ini bukan milik akun Anda" },
+        { status: 403 }
+      )
+    }
+
+    if (!booking.user_id && bookingOwnerEmail && signedInEmail && bookingOwnerEmail !== signedInEmail) {
       return NextResponse.json(
         { error: "Booking ini bukan milik akun Anda" },
         { status: 403 }
