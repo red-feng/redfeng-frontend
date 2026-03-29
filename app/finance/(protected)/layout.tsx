@@ -48,12 +48,14 @@ export default async function FinanceProtectedLayout({
   const financeNav = isFinanceManager
       ? [
           { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/refunds", label: "Refund Queue" },
           { href: "/finance/payouts", label: "Payout Queue" },
           { href: "/finance/settings", label: "Finance Settings" },
           { href: "/finance/team-accounts", label: "Team Accounts" },
         ]
       : [
           { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/refunds", label: "Refund Queue" },
           { href: "/finance/payouts", label: "Payout Queue" },
         ]
 

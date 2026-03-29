@@ -279,8 +279,14 @@ export default async function FinanceDashboardPage({
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href="/finance/payouts"
+                    href="/finance/refunds"
                     className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+                  >
+                    Buka Refund Queue
+                  </Link>
+                  <Link
+                    href="/finance/payouts"
+                    className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
                     Buka Payout Queue
                   </Link>
@@ -869,8 +875,14 @@ export default async function FinanceDashboardPage({
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
-                  href="/finance/payouts"
+                  href="/finance/refunds"
                   className="inline-flex items-center rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Buka Refund Queue
+                </Link>
+                <Link
+                  href="/finance/payouts"
+                  className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                 >
                   Buka Payout Queue
                 </Link>

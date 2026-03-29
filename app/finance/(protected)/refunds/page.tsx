@@ -1,0 +1,630 @@
+import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { isFinanceApprovalRole, isFinanceExecutionRole } from "@/lib/internal-roles"
+import { createRefundRequest, syncRefundGatewayStatus, updateRefundStatus } from "./actions"
+
+type RefundRow = {
+  id: string
+  booking_id: string | null
+  merchant_id: string | null
+  order_id: string | null
+  payment_method: string | null
+  payment_channel: string | null
+  refund_channel: string | null
+  midtrans_transaction_id: string | null
+  midtrans_refund_id: string | null
+  kopra_reference_no: string | null
+  refund_reason: string
+  refund_reason_code: string | null
+  gross_amount: number | null
+  deduction_amount: number | null
+  net_refund_amount: number | null
+  bank_name: string | null
+  bank_account_number: string | null
+  bank_account_holder: string | null
+  status: string | null
+  notes: string | null
+  metadata: Record<string, unknown> | null
+  requested_at: string | null
+  reviewed_at: string | null
+  approved_at: string | null
+  executed_at: string | null
+  completed_at: string | null
+  created_at: string | null
+}
+
+type RefundEventRow = {
+  id: string
+  refund_request_id: string
+  actor_role: string | null
+  event_type: string
+  summary: string
+  created_at: string | null
+}
+
+type BookingRow = {
+  id: string
+  booking_code: string | null
+  customer_name: string | null
+  customer_email: string | null
+  booking_status: string | null
+  total_amount: number | null
+}
+
+type MerchantRow = {
+  id: string
+  brand_name: string | null
+  company_name: string | null
+  email: string | null
+}
+
+function normalizeStatus(value: string | null | undefined) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function titleCaseStatus(value: string | null | undefined) {
+  const normalized = normalizeStatus(value)
+  if (!normalized) return "-"
+
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function formatMoney(value: number | null | undefined) {
+  return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "-"
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function statusTone(status: string | null | undefined) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "refund_paid" || normalized === "refund_reconciled") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  }
+  if (normalized === "refund_rejected" || normalized === "refund_failed") {
+    return "border-rose-200 bg-rose-50 text-rose-700"
+  }
+  if (
+    normalized === "refund_approved" ||
+    normalized === "refund_processing_midtrans" ||
+    normalized === "refund_processing_bank"
+  ) {
+    return "border-sky-200 bg-sky-50 text-sky-700"
+  }
+  if (normalized === "refund_closed") {
+    return "border-slate-200 bg-slate-100 text-slate-700"
+  }
+  return "border-amber-200 bg-amber-50 text-amber-700"
+}
+
+function renderMetadataText(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string,
+  fallback = "-",
+) {
+  const value = metadata?.[key]
+  return typeof value === "string" && value.trim() ? value.trim() : fallback
+}
+
+export default async function FinanceRefundsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ success?: string; error?: string }>
+}) {
+  const params = await searchParams
+  const adminSupabase = createAdminClient()
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null }
+  const canApproveRefund = isFinanceApprovalRole(currentProfile?.role)
+  const canExecuteRefund = isFinanceExecutionRole(currentProfile?.role)
+
+  const { data: refundsData, error } = await adminSupabase
+    .from("refund_requests")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  const refunds = (refundsData as RefundRow[] | null) || []
+  const refundIds = refunds.map((refund) => refund.id)
+  const bookingIds = Array.from(new Set(refunds.map((refund) => refund.booking_id).filter(Boolean)))
+  const merchantIds = Array.from(new Set(refunds.map((refund) => refund.merchant_id).filter(Boolean)))
+
+  const { data: eventsData } =
+    refundIds.length > 0
+      ? await adminSupabase
+          .from("refund_events")
+          .select("id, refund_request_id, actor_role, event_type, summary, created_at")
+          .in("refund_request_id", refundIds)
+          .order("created_at", { ascending: false })
+      : { data: [] as RefundEventRow[] }
+
+  const { data: bookingsData } =
+    bookingIds.length > 0
+      ? await adminSupabase
+          .from("bookings")
+          .select("id, booking_code, customer_name, customer_email, booking_status, total_amount")
+          .in("id", bookingIds)
+      : { data: [] as BookingRow[] }
+
+  const { data: merchantsData } =
+    merchantIds.length > 0
+      ? await adminSupabase
+          .from("merchants")
+          .select("id, brand_name, company_name, email")
+          .in("id", merchantIds)
+      : { data: [] as MerchantRow[] }
+
+  const bookingMap = new Map(((bookingsData as BookingRow[] | null) || []).map((booking) => [booking.id, booking]))
+  const merchantMap = new Map(((merchantsData as MerchantRow[] | null) || []).map((merchant) => [merchant.id, merchant]))
+  const eventMap = new Map<string, RefundEventRow[]>()
+
+  for (const event of ((eventsData as RefundEventRow[] | null) || [])) {
+    const list = eventMap.get(event.refund_request_id) || []
+    list.push(event)
+    eventMap.set(event.refund_request_id, list)
+  }
+
+  const requestedCount = refunds.filter((refund) =>
+    ["refund_requested", "refund_under_review"].includes(normalizeStatus(refund.status)),
+  ).length
+  const processingCount = refunds.filter((refund) =>
+    ["refund_approved", "refund_processing_midtrans", "refund_processing_bank"].includes(normalizeStatus(refund.status)),
+  ).length
+  const completedCount = refunds.filter((refund) =>
+    ["refund_paid", "refund_reconciled", "refund_closed"].includes(normalizeStatus(refund.status)),
+  ).length
+  const outstandingTotal = refunds
+    .filter((refund) => !["refund_paid", "refund_rejected", "refund_failed", "refund_closed"].includes(normalizeStatus(refund.status)))
+    .reduce((sum, refund) => sum + Number(refund.net_refund_amount || 0), 0)
+
+  return (
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#b45309_34%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Finance Refund Queue
+              </span>
+              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                Kelola refund customer dari review sampai dana kembali.
+              </h1>
+              <p className="mt-4 text-base leading-8 text-orange-50/90">
+                Queue ini memisahkan refund via Midtrans dan refund manual via Kopra, sekaligus menyimpan alasan,
+                nominal potongan, referensi transaksi, dan timeline audit tiap request.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Refund pulse</p>
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <p className="text-sm text-orange-50/80">Masuk / review</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{requestedCount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Approved / processing</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{processingCount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Outstanding refund</p>
+                  <p className="mt-1 text-2xl font-semibold text-white">{formatMoney(outstandingTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Selesai / closed</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{completedCount}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {params.success ? (
+          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+            {params.success}
+          </div>
+        ) : null}
+
+        {params.error ? (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {params.error}
+          </div>
+        ) : null}
+
+        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create Request</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Buat refund request baru</h2>
+            <p className="mt-2 text-sm leading-7 text-slate-500">
+              Masukkan booking code atau booking ID bila ada agar sistem menarik konteks transaksi. Untuk refund manual
+              yang berdiri sendiri, form ini tetap bisa dipakai tanpa booking.
+            </p>
+
+            <form action={createRefundRequest} className="mt-6 grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Booking code / booking ID</label>
+                  <input name="bookingReference" placeholder="Contoh RF2603291234" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Order ID</label>
+                  <input name="orderId" placeholder="Opsional untuk Midtrans order" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Refund channel</label>
+                  <select name="refundChannel" defaultValue="kopra_manual" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2">
+                    <option value="midtrans">Midtrans</option>
+                    <option value="kopra_manual">Kopra Manual</option>
+                    <option value="void_cancel">Void / Cancel</option>
+                    <option value="manual_other">Manual Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Payment method</label>
+                  <input name="paymentMethod" placeholder="bank_transfer / qris / credit_card" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Payment channel</label>
+                  <input name="paymentChannel" placeholder="mis. qris, gopay, cimb_clicks" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Gross amount</label>
+                  <input name="grossAmount" required inputMode="decimal" placeholder="0" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Deduction amount</label>
+                  <input name="deductionAmount" inputMode="decimal" placeholder="0" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Net refund amount</label>
+                  <input name="netRefundAmount" inputMode="decimal" placeholder="Kosongkan untuk auto hitung" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Midtrans transaction ID</label>
+                  <input name="midtransTransactionId" placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Refund reason code</label>
+                  <input name="refundReasonCode" placeholder="mis. merchant_fault / customer_cancel" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Refund reason</label>
+                <textarea name="refundReason" required placeholder="Jelaskan alasan refund dan kebijakan yang dipakai." className="min-h-[120px] w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Bank name</label>
+                  <input name="bankName" placeholder="Wajib untuk Kopra manual" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Bank account number</label>
+                  <input name="bankAccountNumber" placeholder="Nomor rekening customer" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Bank account holder</label>
+                  <input name="bankAccountHolder" placeholder="Nama pemilik rekening" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Internal notes</label>
+                <textarea name="notes" placeholder="Opsional: arahan finance, dokumen pendukung, atau catatan internal." className="min-h-[100px] w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+              </div>
+
+              <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                Simpan refund request
+              </button>
+            </form>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+            {[
+              { label: "Masuk / review", value: String(requestedCount), note: "Request baru dan refund yang sedang diperiksa." },
+              { label: "Approved / processing", value: String(processingCount), note: "Refund yang sudah lolos approval dan menunggu eksekusi." },
+              { label: "Outstanding nominal", value: formatMoney(outstandingTotal), note: "Total refund bersih yang belum final." },
+              { label: "Selesai / closed", value: String(completedCount), note: "Refund yang sudah dibayar, direkonsiliasi, atau ditutup." },
+            ].map((card) => (
+              <div key={card.label} className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
+              </div>
+            ))}
+
+            <div className="rounded-[26px] border border-sky-200 bg-sky-50 px-5 py-5 text-sm leading-7 text-sky-800 shadow-[0_18px_44px_rgba(15,23,42,0.06)] md:col-span-2">
+              Alur kerja: request dibuat, finance review, finance manager approve atau reject, finance eksekusi refund via
+              Midtrans atau Kopra, lalu rekonsiliasi dan close saat bukti dana sudah aman.
+            </div>
+          </div>
+        </section>
+
+        {!error && !refunds.length ? (
+          <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <h2 className="text-2xl font-semibold text-slate-950">Belum ada refund request</h2>
+            <p className="mt-3 text-sm leading-7 text-slate-600">
+              Tim finance bisa mulai dengan membuat refund request baru dari form di atas.
+            </p>
+          </section>
+        ) : null}
+
+        {!error && refunds.length ? (
+          <section className="grid gap-6">
+            {refunds.map((refund) => {
+              const booking = refund.booking_id ? bookingMap.get(refund.booking_id) : null
+              const merchant = refund.merchant_id ? merchantMap.get(refund.merchant_id) : null
+              const events = eventMap.get(refund.id) || []
+              const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tidak terhubung"
+              const isClosed = normalizeStatus(refund.status) === "refund_closed"
+
+              return (
+                <article
+                  key={refund.id}
+                  className="overflow-hidden rounded-[30px] border border-orange-100 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
+                >
+                  <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+                    <div className="border-b border-orange-100/80 p-7 lg:border-b-0 lg:border-r">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
+                            Refund request
+                          </p>
+                          <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                            {booking?.booking_code || refund.order_id || refund.id}
+                          </h2>
+                          <p className="mt-2 text-sm leading-7 text-slate-600">
+                            {booking?.customer_name ||
+                              renderMetadataText(refund.metadata, "customerName", "Customer belum terhubung")}
+                            {" • "}
+                            {booking?.customer_email ||
+                              renderMetadataText(refund.metadata, "customerEmail", "Email belum tersedia")}
+                          </p>
+                          <p className="mt-2 text-sm leading-7 text-slate-500">{merchantName}</p>
+                        </div>
+                        <span
+                          className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] ${statusTone(refund.status)}`}
+                        >
+                          {titleCaseStatus(refund.status)}
+                        </span>
+                      </div>
+
+                      <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Gross</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(refund.gross_amount)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Deduction</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(refund.deduction_amount)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Net refund</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(refund.net_refund_amount)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Booking total</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(booking?.total_amount)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Payment method</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(refund.payment_method)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Payment channel</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(refund.payment_channel)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Refund channel</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(refund.refund_channel)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Booking status</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(booking?.booking_status)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Requested</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{formatDate(refund.requested_at || refund.created_at)}</p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Reviewed / approved</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {refund.approved_at ? formatDate(refund.approved_at) : formatDate(refund.reviewed_at)}
+                          </p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Executed / completed</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">
+                            {refund.completed_at ? formatDate(refund.completed_at) : formatDate(refund.executed_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Reason & notes</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">
+                          <span className="font-semibold text-slate-950">{refund.refund_reason}</span>
+                          {refund.refund_reason_code ? ` • ${refund.refund_reason_code}` : ""}
+                        </p>
+                        <p className="mt-3 text-sm leading-7 text-slate-600">
+                          {refund.notes || "Belum ada catatan tambahan."}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Midtrans TX</p>
+                          <p className="mt-2 break-all text-sm font-medium text-slate-800">
+                            {refund.midtrans_transaction_id || "-"}
+                          </p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Midtrans refund</p>
+                          <p className="mt-2 break-all text-sm font-medium text-slate-800">
+                            {refund.midtrans_refund_id || "-"}
+                          </p>
+                        </div>
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Kopra ref</p>
+                          <p className="mt-2 break-all text-sm font-medium text-slate-800">
+                            {refund.kopra_reference_no || "-"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Rekening refund</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">
+                          {[refund.bank_name, refund.bank_account_holder, refund.bank_account_number]
+                            .filter(Boolean)
+                            .join(" • ") || "-"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-5 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] p-7">
+                      <div className="rounded-[24px] border border-orange-100 bg-white p-5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Refund timeline</p>
+                        <div className="mt-4 space-y-3">
+                          {!events.length ? (
+                            <p className="text-sm leading-7 text-slate-500">Belum ada event refund.</p>
+                          ) : (
+                            events.slice(0, 6).map((event) => (
+                              <div key={event.id} className="rounded-[18px] border border-slate-200 bg-slate-50/80 px-4 py-3">
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
+                                  {titleCaseStatus(event.event_type)} • {event.actor_role || "system"}
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-slate-700">{event.summary}</p>
+                                <p className="mt-2 text-xs text-slate-500">{formatDate(event.created_at)}</p>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      {isClosed ? (
+                        <div className="rounded-[24px] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-600">
+                          Refund ini sudah ditutup. Timeline dan audit trail tetap tersimpan untuk pengecekan.
+                        </div>
+                      ) : (
+                        <form action={updateRefundStatus} className="rounded-[24px] border border-slate-200 bg-white p-5 space-y-4">
+                          <input type="hidden" name="refundId" value={refund.id} />
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-700">Midtrans refund ID</label>
+                              <input name="midtransRefundId" defaultValue={refund.midtrans_refund_id || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                            </div>
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-700">Kopra reference no</label>
+                              <input name="kopraReferenceNo" defaultValue={refund.kopra_reference_no || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">Midtrans transaction ID</label>
+                            <input name="midtransTransactionId" defaultValue={refund.midtrans_transaction_id || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          </div>
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">Finance note</label>
+                            <textarea name="note" placeholder="Isi catatan untuk approval, reject, bank transfer, bukti refund, atau rekonsiliasi." className="min-h-[110px] w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          </div>
+                          <div className="grid gap-3">
+                            <button name="nextStatus" value="refund_under_review" className="rounded-[18px] border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 transition hover:border-amber-300 hover:bg-amber-100">
+                              Mark under review
+                            </button>
+                            {canApproveRefund ? (
+                              <>
+                                <button name="nextStatus" value="refund_approved" className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                                  Approve refund
+                                </button>
+                                <button name="nextStatus" value="refund_rejected" className="rounded-[18px] bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
+                                  Reject refund
+                                </button>
+                              </>
+                            ) : null}
+                            {canExecuteRefund ? (
+                              <>
+                                <button name="nextStatus" value="refund_processing_midtrans" className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700">
+                                  Mark processing Midtrans
+                                </button>
+                                <button name="nextStatus" value="refund_processing_bank" className="rounded-[18px] bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
+                                  Mark processing bank
+                                </button>
+                                <button name="nextStatus" value="refund_paid" className="rounded-[18px] bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700">
+                                  Mark paid
+                                </button>
+                                <button name="nextStatus" value="refund_failed" className="rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
+                                  Mark failed
+                                </button>
+                                <button name="nextStatus" value="refund_reconciled" className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
+                                  Mark reconciled
+                                </button>
+                              </>
+                            ) : null}
+                            {canApproveRefund ? (
+                              <button name="nextStatus" value="refund_closed" className="rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                                Close refund
+                              </button>
+                            ) : null}
+                          </div>
+                        </form>
+                      )}
+
+                      {canExecuteRefund && !isClosed ? (
+                        <form action={syncRefundGatewayStatus} className="rounded-[24px] border border-slate-200 bg-white p-5">
+                          <input type="hidden" name="refundId" value={refund.id} />
+                          <button className="w-full rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                            Sync gateway status
+                          </button>
+                        </form>
+                      ) : null}
+
+                      {!canApproveRefund ? (
+                        <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
+                          Approval, reject, dan close refund tetap dijalankan oleh finance manager atau superadmin.
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </section>
+        ) : null}
+      </div>
+    </main>
+  )
+}

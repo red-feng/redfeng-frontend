@@ -3,7 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 type AdminAuditParams = {
   actorId: string
   actorRole?: string | null
-  targetType: "merchant" | "package" | "booking" | "internal_account"
+  targetType: "merchant" | "package" | "booking" | "internal_account" | "refund"
   targetId: string
   action: string
   summary: string
