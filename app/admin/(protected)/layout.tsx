@@ -40,11 +40,7 @@ export default async function AdminProtectedLayout({
     redirect("/merchant/dashboard")
   }
 
-  if (profile.role === "superadmin") {
-    redirect("/superadmin/dashboard")
-  }
-
-  if (!isAdminPortalRole(profile.role)) {
+  if (!isAdminPortalRole(profile.role) && profile.role !== "superadmin") {
     redirect(`/admin/login?error=${encodeURIComponent(`wrong-role:${String(profile.role || "unknown")}`)}`)
   }
 
