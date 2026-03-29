@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatMerchantCode } from "@/lib/merchant-code"
@@ -34,7 +35,7 @@ function maskedAccountNumber(value: string | null) {
 export default async function MerchantProfilePage({
   searchParams,
 }: {
-  searchParams?: Promise<{ success?: string; error?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; edit?: string }>
 }) {
   const params = searchParams ? await searchParams : undefined
   const locale = normalizeLocale(await getCurrentLocale())
@@ -63,6 +64,11 @@ export default async function MerchantProfilePage({
   const addressLabel = [merchant?.address, merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"
   const successMessage = params?.success || ""
   const errorMessage = params?.error || ""
+  const isEditing = params?.edit === "1"
+  const editProfileButtonLabel =
+    locale === "id" ? "Edit Profile" : locale === "zh" ? "编辑资料" : "Edit Profile"
+  const cancelEditButtonLabel =
+    locale === "id" ? "Batal Edit" : locale === "zh" ? "取消编辑" : "Cancel Edit"
   const metricCards = [
     {
       label: t.businessName,
@@ -184,190 +190,204 @@ export default async function MerchantProfilePage({
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.businessAddress}</p>
                   <p className="mt-2 text-sm leading-7 text-slate-700">{addressLabel}</p>
                 </div>
+                <div className="mt-5 flex w-full flex-col gap-3">
+                  <Link
+                    href={isEditing ? "/merchant/profil" : "/merchant/profil?edit=1"}
+                    className={`inline-flex items-center justify-center rounded-2xl px-4 py-3 text-sm font-semibold transition ${
+                      isEditing
+                        ? "border border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                        : "bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] hover:-translate-y-0.5"
+                    }`}
+                  >
+                    {isEditing ? cancelEditButtonLabel : editProfileButtonLabel}
+                  </Link>
+                </div>
               </div>
             </aside>
 
             <main className="space-y-6">
-              <section className="rounded-[32px] border border-[#f3dbc3] bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.profileEditorBadge}</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.editProfile}</h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{t.editProfileHint}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-orange-100 bg-[#fff8f1] px-4 py-3 text-sm text-slate-600">
-                    {t.editProfileNote}
-                  </div>
-                </div>
-
-                <form action={updateMerchantProfile} className="mt-6 space-y-6">
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.businessName}</span>
-                      <input
-                        name="company_name"
-                        defaultValue={merchant.company_name || ""}
-                        placeholder={t.businessNamePlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.brandName}</span>
-                      <input
-                        name="brand_name"
-                        defaultValue={merchant.brand_name || ""}
-                        placeholder={t.brandNamePlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
+              {isEditing ? (
+                <section className="rounded-[32px] border border-[#f3dbc3] bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.profileEditorBadge}</p>
+                      <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{t.editProfile}</h2>
+                      <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-600">{t.editProfileHint}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-orange-100 bg-[#fff8f1] px-4 py-3 text-sm text-slate-600">
+                      {t.editProfileNote}
+                    </div>
                   </div>
 
-                  <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.address}</span>
-                      <textarea
-                        name="address"
-                        defaultValue={merchant.address || ""}
-                        placeholder={t.addressPlaceholder}
-                        rows={4}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <div className="grid gap-5">
+                  <form action={updateMerchantProfile} className="mt-6 space-y-6">
+                    <div className="grid gap-5 md:grid-cols-2">
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">{t.city}</span>
+                        <span className="text-sm font-semibold text-slate-700">{t.businessName}</span>
                         <input
-                          name="city"
-                          defaultValue={merchant.city || ""}
-                          placeholder={t.cityPlaceholder}
+                          name="company_name"
+                          defaultValue={merchant.company_name || ""}
+                          placeholder={t.businessNamePlaceholder}
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
                         />
                       </label>
                       <label className="space-y-2">
-                        <span className="text-sm font-semibold text-slate-700">{t.province}</span>
+                        <span className="text-sm font-semibold text-slate-700">{t.brandName}</span>
                         <input
-                          name="province"
-                          defaultValue={merchant.province || ""}
-                          placeholder={t.provincePlaceholder}
+                          name="brand_name"
+                          defaultValue={merchant.brand_name || ""}
+                          placeholder={t.brandNamePlaceholder}
                           className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
                         />
                       </label>
                     </div>
-                  </div>
 
-                  <div className="grid gap-5 md:grid-cols-3">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.picName}</span>
-                      <input
-                        name="pic_name"
-                        defaultValue={merchant.pic_name || ""}
-                        placeholder={t.picNamePlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.picPosition}</span>
-                      <input
-                        name="pic_position"
-                        defaultValue={merchant.pic_position || ""}
-                        placeholder={t.picPositionPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.ktpNumber}</span>
-                      <input
-                        name="ktp_number"
-                        defaultValue={merchant.ktp_number || ""}
-                        placeholder={t.ktpNumberPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                  </div>
+                    <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.address}</span>
+                        <textarea
+                          name="address"
+                          defaultValue={merchant.address || ""}
+                          placeholder={t.addressPlaceholder}
+                          rows={4}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <div className="grid gap-5">
+                        <label className="space-y-2">
+                          <span className="text-sm font-semibold text-slate-700">{t.city}</span>
+                          <input
+                            name="city"
+                            defaultValue={merchant.city || ""}
+                            placeholder={t.cityPlaceholder}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                          />
+                        </label>
+                        <label className="space-y-2">
+                          <span className="text-sm font-semibold text-slate-700">{t.province}</span>
+                          <input
+                            name="province"
+                            defaultValue={merchant.province || ""}
+                            placeholder={t.provincePlaceholder}
+                            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                          />
+                        </label>
+                      </div>
+                    </div>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.bankName}</span>
-                      <input
-                        name="bank_name"
-                        defaultValue={merchant.bank_name || ""}
-                        placeholder={t.bankNamePlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.bankBranch}</span>
-                      <input
-                        name="bank_branch"
-                        defaultValue={merchant.bank_branch || ""}
-                        placeholder={t.bankBranchPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                  </div>
+                    <div className="grid gap-5 md:grid-cols-3">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.picName}</span>
+                        <input
+                          name="pic_name"
+                          defaultValue={merchant.pic_name || ""}
+                          placeholder={t.picNamePlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.picPosition}</span>
+                        <input
+                          name="pic_position"
+                          defaultValue={merchant.pic_position || ""}
+                          placeholder={t.picPositionPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.ktpNumber}</span>
+                        <input
+                          name="ktp_number"
+                          defaultValue={merchant.ktp_number || ""}
+                          placeholder={t.ktpNumberPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                    </div>
 
-                  <div className="grid gap-5 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.accountHolder}</span>
-                      <input
-                        name="bank_account_holder"
-                        defaultValue={merchant.bank_account_holder || ""}
-                        placeholder={t.accountHolderPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.accountNumber}</span>
-                      <input
-                        name="bank_account_number"
-                        defaultValue={merchant.bank_account_number || ""}
-                        placeholder={t.accountNumberPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                  </div>
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.bankName}</span>
+                        <input
+                          name="bank_name"
+                          defaultValue={merchant.bank_name || ""}
+                          placeholder={t.bankNamePlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.bankBranch}</span>
+                        <input
+                          name="bank_branch"
+                          defaultValue={merchant.bank_branch || ""}
+                          placeholder={t.bankBranchPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                    </div>
 
-                  <div className="grid gap-5 md:grid-cols-3">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.personalTaxId}</span>
-                      <input
-                        name="npwp_personal"
-                        defaultValue={merchant.npwp_personal || ""}
-                        placeholder={t.personalTaxIdPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.companyTaxId}</span>
-                      <input
-                        name="npwp_company"
-                        defaultValue={merchant.npwp_company || ""}
-                        placeholder={t.companyTaxIdPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-700">{t.nibNumber}</span>
-                      <input
-                        name="nib"
-                        defaultValue={merchant.nib || ""}
-                        placeholder={t.nibNumberPlaceholder}
-                        className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-                      />
-                    </label>
-                  </div>
+                    <div className="grid gap-5 md:grid-cols-2">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.accountHolder}</span>
+                        <input
+                          name="bank_account_holder"
+                          defaultValue={merchant.bank_account_holder || ""}
+                          placeholder={t.accountHolderPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.accountNumber}</span>
+                        <input
+                          name="bank_account_number"
+                          defaultValue={merchant.bank_account_number || ""}
+                          placeholder={t.accountNumberPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                    </div>
 
-                  <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 md:flex-row md:items-center md:justify-between">
-                    <p className="text-sm leading-7 text-slate-500">{t.editFormFooter}</p>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5"
-                    >
-                      {t.saveChanges}
-                    </button>
-                  </div>
-                </form>
-              </section>
+                    <div className="grid gap-5 md:grid-cols-3">
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.personalTaxId}</span>
+                        <input
+                          name="npwp_personal"
+                          defaultValue={merchant.npwp_personal || ""}
+                          placeholder={t.personalTaxIdPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.companyTaxId}</span>
+                        <input
+                          name="npwp_company"
+                          defaultValue={merchant.npwp_company || ""}
+                          placeholder={t.companyTaxIdPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                      <label className="space-y-2">
+                        <span className="text-sm font-semibold text-slate-700">{t.nibNumber}</span>
+                        <input
+                          name="nib"
+                          defaultValue={merchant.nib || ""}
+                          placeholder={t.nibNumberPlaceholder}
+                          className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+                        />
+                      </label>
+                    </div>
+
+                    <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 md:flex-row md:items-center md:justify-between">
+                      <p className="text-sm leading-7 text-slate-500">{t.editFormFooter}</p>
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#d86118_0%,#ef7f1a_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(216,97,24,0.28)] transition hover:-translate-y-0.5"
+                      >
+                        {t.saveChanges}
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              ) : null}
 
               <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.businessIdentity}</p>
