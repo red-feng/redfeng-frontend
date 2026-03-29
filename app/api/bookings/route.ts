@@ -161,36 +161,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: windowCheck.reason }, { status: 400 })
     }
 
-    const { data: bookingData, error: rpcError } = await supabase.rpc(
-      "create_booking_atomic_v2",
-      {
-        p_user_id: user.id,
-        p_package_id: package_id,
-        p_adult: adult_count,
-        p_child: child_count,
-      },
-    )
-
-    if (rpcError || !bookingData) {
-      return NextResponse.json(
-        { error: rpcError?.message || "Booking gagal" },
-        { status: 400 },
-      )
-    }
-
     const bookingCode = generateBookingCode()
     const expiry = new Date()
     expiry.setMinutes(expiry.getMinutes() + 30)
 
-    const { data: booking, error: updateError } = await supabase
+    const { data: booking, error: insertError } = await supabase
       .from("bookings")
-      .update({
+      .insert({
+        user_id: user.id,
+        package_id,
+        adult_count: Number(adult_count || 0),
+        child_count: Number(child_count || 0),
         booking_code: bookingCode,
         pickup_date,
         customer_name,
         customer_email,
         customer_phone,
         expiry_time: expiry.toISOString(),
+        payment_type: "full",
+        payment_status: "pending",
+        booking_status: "pending",
+        escrow_status: "pending_payment",
         display_currency: localizedPricing.currency,
         display_subtotal_amount:
           Number(localizedPricing.priceAdult || 0) * Number(adult_count || 0) +
@@ -208,13 +199,12 @@ export async function POST(req: Request) {
         dp_amount: priceBreakdown.dpAmount,
         payment_method: priceBreakdown.paymentMethod,
       })
-      .eq("id", bookingData.id)
       .select()
       .single()
 
-    if (updateError || !booking) {
+    if (insertError || !booking) {
       return NextResponse.json(
-        { error: "Gagal menyimpan data booking" },
+        { error: insertError?.message || "Gagal menyimpan data booking" },
         { status: 500 },
       )
     }
