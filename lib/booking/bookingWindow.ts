@@ -1,34 +1,42 @@
-// lib/booking/bookingWindow.ts
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function getJakartaTodayDateString() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
+}
+
+function toUtcMidnight(value: string) {
+  const [year, month, day] = value.split("-").map(Number)
+  return Date.UTC(year, (month || 1) - 1, day || 1)
+}
+
+export function addDaysToDateString(value: string, days: number) {
+  const timestamp = toUtcMidnight(value)
+  return new Date(timestamp + days * DAY_MS).toISOString().slice(0, 10)
+}
+
+export function getMinimumBookingDate() {
+  return addDaysToDateString(getJakartaTodayDateString(), 3)
+}
 
 export function calculateDaysDiff(pickupDateUTC: string) {
-  const nowUTC = new Date()
-
-  const pickup = new Date(pickupDateUTC)
-
-  const todayMidnightUTC = new Date(Date.UTC(
-    nowUTC.getUTCFullYear(),
-    nowUTC.getUTCMonth(),
-    nowUTC.getUTCDate()
-  ))
-
-  const pickupMidnightUTC = new Date(Date.UTC(
-    pickup.getUTCFullYear(),
-    pickup.getUTCMonth(),
-    pickup.getUTCDate()
-  ))
-
-  const diffMs = pickupMidnightUTC.getTime() - todayMidnightUTC.getTime()
-
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const minimumBookingDate = getMinimumBookingDate()
+  const diffMs = toUtcMidnight(pickupDateUTC) - toUtcMidnight(minimumBookingDate)
+  return Math.floor(diffMs / DAY_MS) + 3
 }
 
 export function validateBookingWindow(pickupDateUTC: string) {
+  const minimumBookingDate = getMinimumBookingDate()
   const daysDiff = calculateDaysDiff(pickupDateUTC)
 
-  if (daysDiff < 3) {
+  if (pickupDateUTC < minimumBookingDate) {
     return {
       allowed: false,
-      reason: "Booking minimal 3 hari sebelum penjemputan"
+      reason: `Booking hanya bisa dilakukan mulai ${minimumBookingDate}.`
     }
   }
 

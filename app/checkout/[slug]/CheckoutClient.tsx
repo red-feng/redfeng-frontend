@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { getMinimumBookingDate } from "@/lib/booking/bookingWindow"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizePaymentMethod, resolveCustomerAdminFeePercent, type FinancePaymentMethod } from "@/lib/finance/settings"
@@ -51,6 +52,8 @@ export default function CheckoutClient({
   const t = dictionaries[locale].checkout
   const participantLabel = getScheduleQuotaLabel(data.travel_style, locale)
   const usesFixedDeparture = isQuotaTravelStyle(data.travel_style)
+  const minimumBookingDate = getMinimumBookingDate()
+  const fixedDepartureDate = data.departure_date || ""
 
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingSession, setCheckingSession] = useState(true)
@@ -135,7 +138,8 @@ export default function CheckoutClient({
     checkSession()
   }, [supabase])
 
-  const effectivePickupDate = usesFixedDeparture ? (data.departure_date || "") : pickupDate
+  const effectivePickupDate = usesFixedDeparture ? fixedDepartureDate : pickupDate
+  const fixedDepartureTooSoon = usesFixedDeparture && Boolean(fixedDepartureDate) && fixedDepartureDate < minimumBookingDate
   const minimumParticipantsMessage =
     minimumParticipants > 1
       ? `Minimal peserta untuk paket ini ${minimumParticipants} orang. Total dewasa dan anak harus mencapai minimal tersebut sebelum booking bisa dilanjutkan.`
@@ -149,6 +153,11 @@ export default function CheckoutClient({
 
     if (!effectivePickupDate) {
       setErrorMsg("Pilih tanggal wisata terlebih dahulu")
+      return
+    }
+
+    if (fixedDepartureTooSoon) {
+      setErrorMsg(`Booking untuk paket ini hanya bisa dilakukan mulai ${minimumBookingDate}.`)
       return
     }
 
@@ -280,8 +289,8 @@ export default function CheckoutClient({
                 value={effectivePickupDate}
                 onChange={(event) => setPickupDate(event.target.value)}
                 className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-                min={usesFixedDeparture && data.departure_date ? data.departure_date : undefined}
-                max={usesFixedDeparture && data.departure_date ? data.departure_date : undefined}
+                min={usesFixedDeparture && fixedDepartureDate ? fixedDepartureDate : minimumBookingDate}
+                max={usesFixedDeparture && fixedDepartureDate ? fixedDepartureDate : undefined}
                 readOnly={usesFixedDeparture}
               />
               {usesFixedDeparture && (
@@ -324,6 +333,16 @@ export default function CheckoutClient({
               <p className="mt-1 font-semibold">
                 Total peserta saat ini: {totalParticipants} / {minimumParticipants} orang
               </p>
+            </div>
+          ) : null}
+
+          <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-800">
+            Booking paling cepat hanya bisa dibuat untuk tanggal <span className="font-semibold">{minimumBookingDate}</span> atau setelahnya.
+          </div>
+
+          {fixedDepartureTooSoon ? (
+            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-7 text-rose-700">
+              Tanggal keberangkatan paket ini lebih cepat dari batas booking minimum H+3, sehingga booking belum bisa dilanjutkan hari ini.
             </div>
           ) : null}
 
@@ -453,11 +472,13 @@ export default function CheckoutClient({
               <button
                 type="button"
                 onClick={handleBooking}
-                disabled={submitting || !hasMetMinimumParticipants}
+                disabled={submitting || !hasMetMinimumParticipants || fixedDepartureTooSoon}
                 className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {!checkingSession && !isAuthenticated
                   ? "Login untuk Booking"
+                  : fixedDepartureTooSoon
+                    ? "Belum bisa dibooking hari ini"
                   : !hasMetMinimumParticipants
                     ? `Minimal ${minimumParticipants} peserta`
                     : submitting
