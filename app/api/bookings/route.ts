@@ -60,8 +60,18 @@ export async function POST(req: Request) {
     }
 
     const requestedParticipants = Number(adult_count || 0) + Number(child_count || 0)
+    const minimumParticipants = Math.max(Number(packagePricing.minimal_peserta || 0), 1)
     if (requestedParticipants <= 0) {
       return NextResponse.json({ error: "Jumlah peserta tidak valid" }, { status: 400 })
+    }
+
+    if (requestedParticipants < minimumParticipants) {
+      return NextResponse.json(
+        {
+          error: `Minimal peserta untuk paket ini ${minimumParticipants} orang. Total peserta dewasa dan anak harus mencapai jumlah tersebut.`,
+        },
+        { status: 400 },
+      )
     }
 
     const activeLocale = normalizeLocale(locale)

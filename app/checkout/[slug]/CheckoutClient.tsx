@@ -64,6 +64,9 @@ export default function CheckoutClient({
   const [adultCount, setAdultCount] = useState(1)
   const [childCount, setChildCount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod>("bank_transfer")
+  const minimumParticipants = Math.max(Number(data.minimal_peserta || 0), 1)
+  const totalParticipants = adultCount + childCount
+  const hasMetMinimumParticipants = totalParticipants >= minimumParticipants
 
   const adultPrice = data.price_adult ?? 0
   const childPrice = data.price_child ?? 0
@@ -133,6 +136,14 @@ export default function CheckoutClient({
   }, [supabase])
 
   const effectivePickupDate = usesFixedDeparture ? (data.departure_date || "") : pickupDate
+  const participantCombinationHint =
+    minimumParticipants > 1
+      ? `Minimal ${minimumParticipants} peserta total. Contoh: dewasa ${minimumParticipants}, dewasa ${Math.max(minimumParticipants - 1, 1)} + anak 1, atau kombinasi lain selama total peserta mencapai ${minimumParticipants}.`
+      : ""
+  const minimumParticipantsMessage =
+    minimumParticipants > 1
+      ? `Minimal peserta untuk paket ini ${minimumParticipants} orang. Total dewasa dan anak harus mencapai minimal tersebut sebelum booking bisa dilanjutkan.`
+      : ""
 
   const handleBooking = async () => {
     if (!isAuthenticated) {
@@ -142,6 +153,11 @@ export default function CheckoutClient({
 
     if (!effectivePickupDate) {
       setErrorMsg("Pilih tanggal wisata terlebih dahulu")
+      return
+    }
+
+    if (!hasMetMinimumParticipants) {
+      setErrorMsg(`Minimal peserta untuk paket ini ${minimumParticipants} orang.`)
       return
     }
 
@@ -284,7 +300,7 @@ export default function CheckoutClient({
                 type="number"
                 min="1"
                 value={adultCount}
-                onChange={(event) => setAdultCount(Number(event.target.value) || 1)}
+                onChange={(event) => setAdultCount(Math.max(Number(event.target.value) || 1, 1))}
                 className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
             </div>
@@ -294,11 +310,32 @@ export default function CheckoutClient({
                 type="number"
                 min="0"
                 value={childCount}
-                onChange={(event) => setChildCount(Number(event.target.value) || 0)}
+                onChange={(event) => setChildCount(Math.max(Number(event.target.value) || 0, 0))}
                 className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
             </div>
           </div>
+
+          {participantCombinationHint ? (
+            <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-800">
+              {participantCombinationHint}
+            </div>
+          ) : null}
+
+          {minimumParticipantsMessage ? (
+            <div
+              className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${
+                hasMetMinimumParticipants
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : "border-amber-200 bg-amber-50 text-amber-800"
+              }`}
+            >
+              <p>{minimumParticipantsMessage}</p>
+              <p className="mt-1 font-semibold">
+                Total peserta saat ini: {totalParticipants} / {minimumParticipants} orang
+              </p>
+            </div>
+          ) : null}
 
           <div className="mt-6">
             <label className="mb-3 block text-sm font-medium text-slate-700">Metode pembayaran</label>
@@ -380,8 +417,14 @@ export default function CheckoutClient({
                   <span className="font-semibold text-slate-900">{data.duration || 0} hari</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>{participantLabel}</span>
+                  <span>{participantLabel} total</span>
                   <span className="font-semibold text-slate-900">{data.minimal_peserta || 0} orang</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Total peserta dipilih</span>
+                  <span className={`font-semibold ${hasMetMinimumParticipants ? "text-emerald-700" : "text-rose-700"}`}>
+                    {totalParticipants} orang
+                  </span>
                 </div>
                 {usesFixedDeparture && data.departure_date && (
                   <div className="flex items-center justify-between">
@@ -420,10 +463,16 @@ export default function CheckoutClient({
               <button
                 type="button"
                 onClick={handleBooking}
-                disabled={submitting}
+                disabled={submitting || !hasMetMinimumParticipants}
                 className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {!checkingSession && !isAuthenticated ? "Login untuk Booking" : submitting ? "Memproses..." : t.createBookingPay}
+                {!checkingSession && !isAuthenticated
+                  ? "Login untuk Booking"
+                  : !hasMetMinimumParticipants
+                    ? `Minimal ${minimumParticipants} peserta`
+                    : submitting
+                      ? "Memproses..."
+                      : t.createBookingPay}
               </button>
             </div>
           </section>
