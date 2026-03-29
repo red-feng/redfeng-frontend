@@ -240,7 +240,7 @@ export default async function MerchantPackagePage({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-950">{pkg.title || t.untitledPackage}</h2>
-                    <p className="mt-1 text-sm text-slate-500">{formatTravelStyleLabel(pkg.travel_style)}</p>
+                    <p className="mt-1 text-sm text-slate-500">{formatTravelStyleLabel(pkg.travel_style, locale)}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(pkg.status)}`}>
                     {formatStatus(pkg.status, t.pendingReviewStatus, t.rejected, t.active, t.draft, t.inactivePackages)}

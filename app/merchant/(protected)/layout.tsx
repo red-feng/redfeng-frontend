@@ -6,6 +6,7 @@ import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import { formatMerchantLocationLabel } from "@/lib/location-labels"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
@@ -91,7 +92,10 @@ export default async function MerchantLayout({
 
   const merchantLabel = merchant.brand_name || merchant.company_name || "Merchant"
   const merchantCode = formatMerchantCode(merchant.id)
-  const locationLabel = [merchant.city, merchant.province].filter(Boolean).join(", ") || "Indonesia"
+  const locationLabel = formatMerchantLocationLabel(
+    { city: merchant.city, province: merchant.province, country: "Indonesia" },
+    locale,
+  )
   const seenPackagesAt = cookieStore.get("merchant_nav_seen_packages")?.value
   const seenOrdersAt = cookieStore.get("merchant_nav_seen_orders")?.value
   const seenCalendarAt = cookieStore.get("merchant_nav_seen_calendar")?.value
