@@ -59,6 +59,7 @@ export default function CheckoutClient({
   const [checkingSession, setCheckingSession] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
+  const [showValidation, setShowValidation] = useState(false)
 
   const [nama, setNama] = useState("")
   const [email, setEmail] = useState("")
@@ -140,14 +141,30 @@ export default function CheckoutClient({
 
   const effectivePickupDate = usesFixedDeparture ? fixedDepartureDate : pickupDate
   const fixedDepartureTooSoon = usesFixedDeparture && Boolean(fixedDepartureDate) && fixedDepartureDate < minimumBookingDate
+  const trimmedNama = nama.trim()
+  const trimmedEmail = email.trim()
+  const trimmedPhone = phone.trim()
+  const missingRequiredFields = [
+    !trimmedNama ? "Nama" : null,
+    !trimmedEmail ? "Email" : null,
+    !trimmedPhone ? "Nomor Telepon" : null,
+    !effectivePickupDate ? (usesFixedDeparture ? "Tanggal keberangkatan" : "Tanggal wisata") : null,
+  ].filter(Boolean) as string[]
   const minimumParticipantsMessage =
     minimumParticipants > 1
       ? `Minimal peserta untuk paket ini ${minimumParticipants} orang. Total dewasa dan anak harus mencapai minimal tersebut sebelum booking bisa dilanjutkan.`
       : ""
 
   const handleBooking = async () => {
+    setShowValidation(true)
+
     if (!isAuthenticated) {
       router.push(`/login?next=${encodeURIComponent(`/checkout/${data.slug}`)}`)
+      return
+    }
+
+    if (missingRequiredFields.length > 0) {
+      setErrorMsg(`Lengkapi kolom wajib terlebih dahulu: ${missingRequiredFields.join(", ")}.`)
       return
     }
 
@@ -260,8 +277,13 @@ export default function CheckoutClient({
               <input
                 value={nama}
                 onChange={(event) => setNama(event.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2 ${
+                  showValidation && !trimmedNama ? "border-rose-300 bg-rose-50" : "border-slate-300"
+                }`}
               />
+              {showValidation && !trimmedNama ? (
+                <p className="mt-2 text-xs text-rose-600">Nama wajib diisi.</p>
+              ) : null}
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">{t.email}</label>
@@ -269,16 +291,26 @@ export default function CheckoutClient({
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2 ${
+                  showValidation && !trimmedEmail ? "border-rose-300 bg-rose-50" : "border-slate-300"
+                }`}
               />
+              {showValidation && !trimmedEmail ? (
+                <p className="mt-2 text-xs text-rose-600">Email wajib diisi.</p>
+              ) : null}
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">{t.phone}</label>
               <input
                 value={phone}
                 onChange={(event) => setPhone(event.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2 ${
+                  showValidation && !trimmedPhone ? "border-rose-300 bg-rose-50" : "border-slate-300"
+                }`}
               />
+              {showValidation && !trimmedPhone ? (
+                <p className="mt-2 text-xs text-rose-600">Nomor telepon wajib diisi.</p>
+              ) : null}
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
@@ -288,7 +320,9 @@ export default function CheckoutClient({
                 type="date"
                 value={effectivePickupDate}
                 onChange={(event) => setPickupDate(event.target.value)}
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2 ${
+                  showValidation && !effectivePickupDate ? "border-rose-300 bg-rose-50" : "border-slate-300"
+                }`}
                 min={usesFixedDeparture && fixedDepartureDate ? fixedDepartureDate : minimumBookingDate}
                 max={usesFixedDeparture && fixedDepartureDate ? fixedDepartureDate : undefined}
                 readOnly={usesFixedDeparture}
@@ -298,6 +332,11 @@ export default function CheckoutClient({
                   Jadwal keberangkatan untuk paket ini sudah tetap dan mengikuti tanggal yang ditentukan merchant.
                 </p>
               )}
+              {showValidation && !effectivePickupDate ? (
+                <p className="mt-2 text-xs text-rose-600">
+                  {usesFixedDeparture ? "Tanggal keberangkatan wajib tersedia." : "Tanggal wisata wajib dipilih."}
+                </p>
+              ) : null}
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Peserta dewasa</label>
