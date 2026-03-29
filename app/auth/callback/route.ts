@@ -5,10 +5,6 @@ import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 function getCustomerPortalRoleError(role: string | null | undefined) {
   const normalizedRole = String(role || "").trim().toLowerCase()
 
-  if (normalizedRole === "merchant") {
-    return "Akun Google ini terdaftar sebagai merchant. Gunakan portal merchant untuk melanjutkan."
-  }
-
   if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
     return "Akun Google ini terdaftar sebagai finance. Gunakan portal finance untuk melanjutkan."
   }
@@ -53,11 +49,11 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL(safeNext, origin))
       }
 
-      if (profile.role === "customer") {
+      if (profile.role === "customer" || profile.role === "merchant") {
         return NextResponse.redirect(new URL(safeNext, origin))
       }
 
-      if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "merchant" || profile.role === "superadmin") {
+      if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "superadmin") {
         await supabase.auth.signOut()
         return NextResponse.redirect(
           new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(profile.role))}`, origin),
