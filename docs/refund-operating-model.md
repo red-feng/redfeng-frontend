@@ -215,3 +215,7 @@ Menyimpan histori event, misalnya:
   opsional bearer token untuk endpoint Kopra / bridge
 - `KOPRA_API_KEY`
   opsional API key header untuk endpoint Kopra / bridge
+
+Dokumen kontrak payload bridge:
+
+- lihat `docs/kopra-refund-bridge-contract.md`

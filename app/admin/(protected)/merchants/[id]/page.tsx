@@ -17,6 +17,31 @@ type PackageRow = {
   rejection_reason: string | null
 }
 
+function titleCaseStatus(value: string | null | undefined) {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (!normalized) return "-"
+
+  return normalized
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ")
+}
+
+function merchantStatusTone(status: string | null | undefined) {
+  const normalized = String(status || "").trim().toLowerCase()
+  if (normalized === "approved" || normalized === "active" || normalized === "verified") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  }
+  if (normalized === "pending" || normalized === "under_review") {
+    return "border-amber-200 bg-amber-50 text-amber-700"
+  }
+  if (normalized === "rejected" || normalized === "suspended") {
+    return "border-rose-200 bg-rose-50 text-rose-700"
+  }
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
 const FILTERS = [
   { key: "all", label: "Semua Paket" },
   { key: "pending", label: "Pending Review" },
@@ -121,26 +146,53 @@ export default async function AdminMerchantPackagesPage({
             </div>
           </div>
 
-          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2 xl:grid-cols-5">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Email</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">{merchant.email || "-"}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant Code</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">{merchantCode}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Lokasi</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">{[merchant.city, merchant.province].filter(Boolean).join(", ") || "-"}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Status Merchant</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">{merchant.verification_status || "-"}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Onboarding</p>
-              <p className="mt-2 text-sm font-medium text-slate-900">{merchant.onboarding_completed ? "Completed" : "Belum selesai"}</p>
+          <div className="px-8 py-5">
+            <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:p-5">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.7fr)]">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4 md:col-span-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Email</p>
+                    <p className="mt-2 break-all text-sm font-medium text-slate-900">{merchant.email || "-"}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant Code</p>
+                    <p className="mt-2 font-mono text-sm font-semibold text-slate-900">{merchantCode}</p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Lokasi</p>
+                    <p className="mt-2 text-sm font-medium leading-6 text-slate-900">
+                      {[merchant.city, merchant.province].filter(Boolean).join(", ") || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Status Merchant</p>
+                    <div className="mt-3">
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${merchantStatusTone(merchant.verification_status)}`}
+                      >
+                        {titleCaseStatus(merchant.verification_status)}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Onboarding</p>
+                    <div className="mt-3">
+                      <span
+                        className={`inline-flex rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] ${
+                          merchant.onboarding_completed
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {merchant.onboarding_completed ? "Completed" : "Belum Selesai"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
