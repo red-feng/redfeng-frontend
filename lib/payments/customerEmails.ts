@@ -19,6 +19,7 @@ type PaymentEmailPayload = {
   paymentTypeLabel: string
   paymentStatusLabel: string
   sendInvoicePdf?: boolean
+  settlementDueLabel?: string | null
 }
 
 function formatMoney(value: number) {
@@ -88,6 +89,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
         </div>
 
         <p style="margin:0 0 14px;">Tahap operasional berikutnya akan mengikuti alur <strong>Arrived</strong>, <strong>Picked up</strong>, <strong>Go</strong>, lalu <strong>Ready for Finance</strong> sebelum payout merchant diproses.</p>
+        ${payload.settlementDueLabel ? `<p style="margin:0 0 14px;"><strong>Batas waktu pelunasan:</strong> ${payload.settlementDueLabel}</p>` : ""}
         <p style="margin:0 0 14px;">Verifikasi Booking ID: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
         <p style="margin:0 0 18px;">${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah status pembayaran berubah menjadi Fully Paid."}</p>
         <p style="margin:0;">Terima kasih,<br/><strong>Tim RedFeng</strong></p>

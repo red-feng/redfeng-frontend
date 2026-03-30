@@ -68,6 +68,7 @@ export default function CheckoutClient({
   const [adultCount, setAdultCount] = useState(1)
   const [childCount, setChildCount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod>("bank_transfer")
+  const [paymentType, setPaymentType] = useState<"dp" | "full">("full")
   const minimumParticipants = Math.max(Number(data.minimal_peserta || 0), 1)
   const totalParticipants = adultCount + childCount
   const hasMetMinimumParticipants = totalParticipants >= minimumParticipants
@@ -95,6 +96,8 @@ export default function CheckoutClient({
   const adminFee = Math.round(subtotal * (customerAdminFeePercent / 100))
   const ppn = Math.round((subtotal + adminFee) * (financeSettings.customerTaxPercent / 100))
   const total = subtotal + adminFee + ppn
+  const dpAmount = Math.round(total * 0.3)
+  const remainingAmount = Math.max(total - dpAmount, 0)
   const paymentMethodOptions: Array<{ value: FinancePaymentMethod; label: string; hint: string }> = [
     {
       value: "bank_transfer",
@@ -200,6 +203,7 @@ export default function CheckoutClient({
           customer_email: email,
           customer_phone: phone,
           payment_method: normalizePaymentMethod(paymentMethod),
+          payment_type: paymentType,
         }),
       })
 
@@ -355,6 +359,67 @@ export default function CheckoutClient({
           ) : null}
 
           <div className="mt-6">
+            <label className="mb-3 block text-sm font-medium text-slate-700">Jenis pembayaran</label>
+            <div className="grid gap-3 md:grid-cols-2">
+              <label
+                className={`cursor-pointer rounded-2xl border px-4 py-4 transition ${
+                  paymentType === "full"
+                    ? "border-orange-300 bg-orange-50"
+                    : "border-slate-200 bg-slate-50 hover:border-orange-200"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Full payment</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-500">
+                      Customer membayar penuh sekarang dan email akan membawa invoice PDF.
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">Rp {total.toLocaleString("id-ID")}</p>
+                </div>
+                <input
+                  type="radio"
+                  name="payment_type"
+                  value="full"
+                  checked={paymentType === "full"}
+                  onChange={() => setPaymentType("full")}
+                  className="sr-only"
+                />
+              </label>
+              <label
+                className={`cursor-pointer rounded-2xl border px-4 py-4 transition ${
+                  paymentType === "dp"
+                    ? "border-orange-300 bg-orange-50"
+                    : "border-slate-200 bg-slate-50 hover:border-orange-200"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">DP 30%</p>
+                    <p className="mt-1 text-xs leading-6 text-slate-500">
+                      Customer bayar DP dulu. Email konfirmasi dikirim tanpa invoice PDF, lalu pelunasan menyusul.
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-900">Rp {dpAmount.toLocaleString("id-ID")}</p>
+                </div>
+                <input
+                  type="radio"
+                  name="payment_type"
+                  value="dp"
+                  checked={paymentType === "dp"}
+                  onChange={() => setPaymentType("dp")}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+            {paymentType === "dp" ? (
+              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                Customer bayar DP Rp {dpAmount.toLocaleString("id-ID")} sekarang, lalu sisa pelunasan Rp {remainingAmount.toLocaleString("id-ID")} dibayar setelahnya.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-6">
             <label className="mb-3 block text-sm font-medium text-slate-700">Metode pembayaran</label>
             <div className="grid gap-3">
               {paymentMethodOptions.map((option) => {
@@ -471,9 +536,15 @@ export default function CheckoutClient({
                     <span className="font-semibold text-slate-900">Rp {ppn.toLocaleString("id-ID")}</span>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">
-                    <span>{t.totalPay}</span>
-                    <span>Rp {total.toLocaleString("id-ID")}</span>
+                    <span>{paymentType === "dp" ? "Bayar sekarang" : t.totalPay}</span>
+                    <span>Rp {(paymentType === "dp" ? dpAmount : total).toLocaleString("id-ID")}</span>
                   </div>
+                  {paymentType === "dp" ? (
+                    <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                      <span>Sisa pelunasan</span>
+                      <span className="font-semibold text-slate-900">Rp {remainingAmount.toLocaleString("id-ID")}</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 

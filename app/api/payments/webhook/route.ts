@@ -31,6 +31,15 @@ function formatDateLabel(value: string | null) {
   })
 }
 
+function normalizeStatus(value: string | null | undefined) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function resolveSettlementDueLabel(pickupDate: string | null) {
+  if (!pickupDate) return null
+  return formatDateLabel(pickupDate)
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -133,7 +142,41 @@ export async function POST(req: Request) {
       const amountPaid =
         resolvedPaymentType === "dp"
           ? Number(booking.dp_amount || 0)
-          : Number(booking.total_amount || 0)
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? Number(booking.final_payment_amount || 0)
+            : Number(booking.total_amount || 0)
+      const paymentTypeLabel =
+        resolvedPaymentType === "dp"
+          ? "DP Payment"
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? "Final Payment"
+            : "Full Payment"
+      const paymentStatusLabel =
+        resolvedPaymentType === "dp"
+          ? "DP Paid"
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? "Final Payment Settled"
+            : "Fully Paid"
+      const settlementDueLabel =
+        resolvedPaymentType === "dp" ? resolveSettlementDueLabel(booking.pickup_date || null) : null
+      const invoiceSubtotalAmount =
+        resolvedPaymentType === "dp"
+          ? Number(booking.subtotal_amount || 0)
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? Number(booking.final_payment_amount || 0)
+            : Number(booking.subtotal_amount || 0)
+      const invoiceAdminFeeAmount =
+        resolvedPaymentType === "dp"
+          ? Number(booking.customer_admin_fee_amount || 0)
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? 0
+            : Number(booking.customer_admin_fee_amount || 0)
+      const invoiceTaxAmount =
+        resolvedPaymentType === "dp"
+          ? Number(booking.customer_tax_amount || 0)
+          : normalizeStatus(booking.payment_status) === "dp_paid"
+            ? 0
+            : Number(booking.customer_tax_amount || 0)
 
       try {
         const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(booking.booking_code || booking.id)}`
@@ -158,13 +201,14 @@ export async function POST(req: Request) {
           merchantCode: packageRow?.merchant_id ? formatMerchantCode(packageRow.merchant_id) : null,
           verificationUrl,
           totalAmount: amountPaid,
-          subtotalAmount: Number(booking.subtotal_amount || 0),
-          adminFeeAmount: Number(booking.customer_admin_fee_amount || 0),
-          taxAmount: Number(booking.customer_tax_amount || 0),
+          subtotalAmount: invoiceSubtotalAmount,
+          adminFeeAmount: invoiceAdminFeeAmount,
+          taxAmount: invoiceTaxAmount,
           finalPaymentAmount: Number(booking.final_payment_amount || 0),
-          paymentTypeLabel: resolvedPaymentType === "dp" ? "DP Payment" : "Final / Full Payment",
-          paymentStatusLabel: resolvedPaymentType === "dp" ? "DP Paid" : "Fully Paid",
+          paymentTypeLabel,
+          paymentStatusLabel,
           sendInvoicePdf: resolvedPaymentType !== "dp",
+          settlementDueLabel,
         })
       } catch (emailError) {
         console.error("Failed to send payment email:", emailError)

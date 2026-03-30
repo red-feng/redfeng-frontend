@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       customer_email,
       customer_phone,
       payment_method,
+      payment_type,
     } = body
 
     const supabase = createClient(
@@ -154,6 +155,7 @@ export async function POST(req: Request) {
       Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
       Number(childPriceCharge.amount || 0) * Number(child_count || 0)
     const normalizedPaymentMethod = normalizePaymentMethod(payment_method)
+    const normalizedPaymentType = String(payment_type || "full").trim().toLowerCase() === "dp" ? "dp" : "full"
     const priceBreakdown = calculateBookingAmounts(subtotalAmount, normalizedPaymentMethod, financeSettings)
 
     const windowCheck = validateBookingWindow(pickup_date)
@@ -177,7 +179,7 @@ export async function POST(req: Request) {
         customer_email,
         customer_phone,
         expiry_time: expiry.toISOString(),
-        payment_type: "full",
+        payment_type: normalizedPaymentType,
         payment_status: "pending",
         escrow_status: "pending_payment",
         display_currency: localizedPricing.currency,

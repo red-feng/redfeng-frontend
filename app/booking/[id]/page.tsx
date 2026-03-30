@@ -22,6 +22,8 @@ type BookingDetailRow = {
   customer_phone: string | null
   adult_count: number | null
   child_count: number | null
+  payment_type: string | null
+  dp_amount: number | null
   total_amount: number | null
   subtotal_amount?: number | null
   customer_admin_fee_amount?: number | null
@@ -144,7 +146,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, adult_count, child_count, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -194,6 +196,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const canStartInitialPayment = ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status))
   const phase = resolveJourneyPhase(booking)
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
+  const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"
+  const amountDueNow = normalizedPaymentType === "dp" ? Number(booking.dp_amount || 0) : Number(booking.total_amount || 0)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
@@ -326,6 +330,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="mt-2 font-medium text-slate-900">Dewasa {adultCount} · Anak {childCount}</p>
             </div>
             <div>
+              <p className="text-sm text-slate-500">Jenis Pembayaran</p>
+              <p className="mt-2 font-medium text-slate-900">{normalizedPaymentType === "dp" ? "DP 30%" : "Full payment"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Tagihan Sekarang</p>
+              <p className="mt-2 font-medium text-slate-900">{formatIdr(amountDueNow)}</p>
+            </div>
+            <div>
               <p className="text-sm text-slate-500">Journey Phase</p>
               <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
                 {phase.label}
@@ -409,7 +421,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             {canStartInitialPayment && hasCompleteParticipants ? (
               <BookingPaymentButton
                 bookingId={booking.id}
-                label="Lanjut ke Pembayaran"
+                label={normalizedPaymentType === "dp" ? "Bayar DP Sekarang" : "Bayar Full Payment"}
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               />
             ) : null}
