@@ -20,6 +20,7 @@ type BookingDetailRow = {
   customer_name: string | null
   customer_email: string | null
   customer_phone: string | null
+  pickup_date: string | null
   adult_count: number | null
   child_count: number | null
   payment_type: string | null
@@ -64,6 +65,25 @@ function formatDateTime(dateStr: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function formatDate(dateStr: string | null) {
+  if (!dateStr) return "-"
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return dateStr
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+}
+
+function resolveFinalPaymentDueDate(dateStr: string | null) {
+  if (!dateStr) return "-"
+  const date = new Date(`${dateStr}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return dateStr
+  date.setDate(date.getDate() - 3)
+  return formatDate(date.toISOString())
 }
 
 function titleCaseStatus(value: string | null) {
@@ -146,7 +166,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -337,6 +357,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="text-sm text-slate-500">Tagihan Sekarang</p>
               <p className="mt-2 font-medium text-slate-900">{formatIdr(amountDueNow)}</p>
             </div>
+            {normalizedPaymentType === "dp" ? (
+              <div>
+                <p className="text-sm text-slate-500">Batas Pelunasan</p>
+                <p className="mt-2 font-medium text-slate-900">{resolveFinalPaymentDueDate(booking.pickup_date || null)}</p>
+              </div>
+            ) : null}
             <div>
               <p className="text-sm text-slate-500">Journey Phase</p>
               <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>

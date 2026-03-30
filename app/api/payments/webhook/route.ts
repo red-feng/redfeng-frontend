@@ -37,7 +37,10 @@ function normalizeStatus(value: string | null | undefined) {
 
 function resolveSettlementDueLabel(pickupDate: string | null) {
   if (!pickupDate) return null
-  return formatDateLabel(pickupDate)
+  const parsed = new Date(`${pickupDate}T00:00:00`)
+  if (Number.isNaN(parsed.getTime())) return formatDateLabel(pickupDate)
+  parsed.setDate(parsed.getDate() - 3)
+  return formatDateLabel(parsed.toISOString())
 }
 
 export async function POST(req: Request) {

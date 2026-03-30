@@ -397,7 +397,7 @@ export default function CheckoutClient({
                   <div>
                     <p className="text-sm font-semibold text-slate-900">DP 30%</p>
                     <p className="mt-1 text-xs leading-6 text-slate-500">
-                      Customer bayar DP dulu. Email konfirmasi dikirim tanpa invoice PDF, lalu pelunasan menyusul.
+                      Customer bayar DP dulu. Email konfirmasi dikirim tanpa invoice PDF, lalu sisa pembayaran wajib lunas maksimal H-3.
                     </p>
                   </div>
                   <p className="text-sm font-semibold text-slate-900">Rp {dpAmount.toLocaleString("id-ID")}</p>
@@ -414,7 +414,7 @@ export default function CheckoutClient({
             </div>
             {paymentType === "dp" ? (
               <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                Customer bayar DP Rp {dpAmount.toLocaleString("id-ID")} sekarang, lalu sisa pelunasan Rp {remainingAmount.toLocaleString("id-ID")} dibayar setelahnya.
+                Customer bayar DP Rp {dpAmount.toLocaleString("id-ID")} sekarang, lalu sisa pelunasan Rp {remainingAmount.toLocaleString("id-ID")} wajib lunas maksimal H-3 dari tanggal wisata.
               </div>
             ) : null}
           </div>
