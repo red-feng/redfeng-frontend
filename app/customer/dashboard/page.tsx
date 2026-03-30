@@ -15,6 +15,8 @@ type BookingRow = {
   booking_code: string | null
   customer_email?: string | null
   pickup_date: string | null
+  final_payment_amount?: number | null
+  payment_type?: string | null
   total_amount: number | null
   display_currency?: string | null
   display_subtotal_amount?: number | null
@@ -55,6 +57,14 @@ function formatDate(dateStr: string | null) {
     month: "long",
     year: "numeric",
   })
+}
+
+function resolveFinalPaymentDueDate(dateStr: string | null) {
+  if (!dateStr) return "-"
+  const date = new Date(`${dateStr}T00:00:00`)
+  if (Number.isNaN(date.getTime())) return dateStr
+  date.setDate(date.getDate() - 3)
+  return formatDate(date.toISOString())
 }
 
 function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
@@ -110,7 +120,7 @@ export default async function CustomerDashboardPage() {
   const adminBookingsResult = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, customer_email, pickup_date, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      "id, package_id, booking_code, customer_email, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
     )
     .eq("customer_email", user.email)
 
@@ -123,7 +133,7 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_email, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_code, customer_email, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -338,6 +348,7 @@ export default async function CustomerDashboardPage() {
                   const pkg = packageMap.get(booking.package_id || "")
                   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
                   const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
+                  const finalPaymentDueDate = resolveFinalPaymentDueDate(booking.pickup_date)
 
                   return (
                     <article
@@ -386,6 +397,12 @@ export default async function CustomerDashboardPage() {
                         </div>
                       </div>
 
+                      {canPayRemaining ? (
+                        <div className="mt-5 rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
+                          Sisa pembayaran <span className="font-semibold">Rp {Number(booking.final_payment_amount || 0).toLocaleString("id-ID")}</span> untuk booking ini wajib dilunasi maksimal <span className="font-semibold">{finalPaymentDueDate}</span> atau H-3 dari tanggal wisata.
+                        </div>
+                      ) : null}
+
                       <div className="mt-5 flex flex-wrap gap-3">
                         <Link
                           href={`/booking/${booking.id}`}
@@ -413,7 +430,7 @@ export default async function CustomerDashboardPage() {
                         {canPayRemaining && (
                           <BookingPaymentButton
                             bookingId={booking.id}
-                            label="Bayar Pelunasan"
+                            label="Lunasi Sekarang"
                             className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
                           />
                         )}
