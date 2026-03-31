@@ -103,7 +103,7 @@ export default function CheckoutClient({
   const total = subtotal + adminFee + ppn
   const dpAmount = Math.round(total * 0.3)
   const remainingAmount = Math.max(total - dpAmount, 0)
-  const paymentMethodOptions: Array<{ value: FinancePaymentMethod; label: string; hint: string }> = [
+  const allPaymentMethodOptions: Array<{ value: FinancePaymentMethod; label: string; hint: string }> = [
     {
       value: "bank_transfer",
       label: "Bank transfer",
@@ -119,7 +119,10 @@ export default function CheckoutClient({
       label: "Kartu kredit",
       hint: "Fee customer biasanya lebih tinggi karena biaya channel kartu.",
     },
-  ].filter((option) => activeCustomerPaymentMethods.includes(option.value))
+  ]
+  const paymentMethodOptions = allPaymentMethodOptions.filter((option) =>
+    activeCustomerPaymentMethods.includes(option.value),
+  )
 
   useEffect(() => {
     const checkSession = async () => {
