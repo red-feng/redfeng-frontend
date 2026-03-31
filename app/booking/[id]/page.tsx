@@ -1,8 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import ReviewForm from "./ReviewForm"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
-import { confirmCustomerPickedUp, submitPackageReview } from "./actions"
+import { confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { normalizeLocale } from "@/lib/i18n"
@@ -52,19 +51,6 @@ type BookingParticipantRow = {
   identity_number: string | null
   nationality: string | null
   age: number | null
-}
-
-function formatDateTime(dateStr: string | null) {
-  if (!dateStr) return "-"
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-  return date.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
 }
 
 function formatDate(dateStr: string | null) {
@@ -174,12 +160,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     return <div className="p-10">Booking tidak ditemukan</div>
   }
 
-  const { data: existingReview } = await adminSupabase
-    .from("package_reviews")
-    .select("id, rating, comment")
-    .eq("booking_id", booking.id)
-    .maybeSingle()
-
   const { data: participantRows } = await adminSupabase
     .from("booking_participants")
     .select("id, participant_type, sequence_no, full_name, identity_number, nationality, age")
@@ -192,24 +172,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const childCount = Math.max(Number(booking.child_count || 0), 0)
   const expectedParticipantCount = adultCount + childCount
   const hasCompleteParticipants = expectedParticipantCount > 0 && participants.length === expectedParticipantCount
-
-  const timeline = [
-    {
-      label: "Merchant tiba di meeting point",
-      done: Boolean(booking.merchant_arrived_at),
-      value: booking.merchant_arrived_at,
-    },
-    {
-      label: "Customer klik Picked up",
-      done: Boolean(booking.customer_picked_up_at),
-      value: booking.customer_picked_up_at,
-    },
-    {
-      label: "Merchant klik Go",
-      done: Boolean(booking.merchant_picked_up_at),
-      value: booking.merchant_picked_up_at,
-    },
-  ]
 
   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
   const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
@@ -465,6 +427,24 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             >
               Chat Sesudah Booking
             </a>
+            {canConfirmPickup ? (
+              <form action={confirmCustomerPickedUp}>
+                <input type="hidden" name="booking_id" value={booking.id} />
+                <button
+                  type="submit"
+                  className="rounded-2xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                >
+                  Picked up
+                </button>
+              </form>
+            ) : null}
+            {canPayRemaining ? (
+              <BookingPaymentButton
+                bookingId={booking.id}
+                label="Bayar Pelunasan"
+                className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+              />
+            ) : null}
             {booking.package_id ? (
               <a
                 href={`/chat?package_id=${booking.package_id}`}
@@ -476,63 +456,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           </div>
         </section>
 
-        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold text-slate-900">Progress Meeting Point</h2>
-            <p className="text-sm text-slate-500">
-              Dana baru bisa dilanjutkan ke finance setelah merchant klik Arrived, customer klik Picked up, dan merchant klik Go.
-            </p>
-          </div>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {timeline.map((item) => (
-              <div key={item.label} className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm font-semibold text-slate-900">{item.label}</p>
-                <p className={`mt-2 text-xs font-semibold ${item.done ? "text-emerald-600" : "text-slate-500"}`}>
-                  {item.done ? "Selesai" : "Menunggu"}
-                </p>
-                <p className="mt-2 text-xs text-slate-500">{formatDateTime(item.value)}</p>
-              </div>
-            ))}
-          </div>
-
-          {canConfirmPickup ? (
-            <form action={confirmCustomerPickedUp} className="mt-6">
-              <input type="hidden" name="booking_id" value={booking.id} />
-              <button
-                type="submit"
-                className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Picked up
-              </button>
-            </form>
-          ) : null}
-
-          {canPayRemaining ? (
-            <div className="mt-4">
-              <BookingPaymentButton
-                bookingId={booking.id}
-                label="Bayar Pelunasan"
-                className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
-              />
-            </div>
-          ) : null}
-        </section>
-
-        {existingReview ? (
-          <div className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Review Anda</h2>
-            <p className="mt-3 text-sm text-slate-600">Rating: {existingReview.rating ?? "-"} / 5</p>
-            <p className="mt-2 text-sm text-slate-700">{existingReview.comment || "-"}</p>
-          </div>
-        ) : booking.package_id ? (
-          <ReviewForm
-            bookingId={booking.id}
-            packageId={booking.package_id}
-            customerName={booking.customer_name || "Customer"}
-            submitAction={submitPackageReview}
-          />
-        ) : null}
       </div>
     </main>
   )

@@ -8,6 +8,36 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function canReviewCompletedTrip(booking: {
+  booking_status?: string | null
+  escrow_status?: string | null
+  customer_picked_up_at?: string | null
+  merchant_picked_up_at?: string | null
+}) {
+  const bookingStatus = normalizeStatus(booking.booking_status || null)
+  const escrowStatus = normalizeStatus(booking.escrow_status || null)
+
+  if (
+    [
+      "awaiting_admin_handoff",
+      "finance_review",
+      "finance_processing",
+      "payout_processing",
+      "payout_completed",
+      "paid_out",
+      "completed",
+    ].includes(bookingStatus)
+  ) {
+    return true
+  }
+
+  if (["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(escrowStatus)) {
+    return true
+  }
+
+  return Boolean(booking.customer_picked_up_at && booking.merchant_picked_up_at)
+}
+
 async function getOwnedBooking(bookingId: string) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -24,7 +54,7 @@ async function getOwnedBooking(bookingId: string) {
 
   const { data: booking } = await adminSupabase
     .from("bookings")
-    .select("id, package_id, customer_email, payment_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, adult_count, child_count")
+    .select("id, package_id, customer_email, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, adult_count, child_count")
     .eq("id", bookingId)
     .single()
 
@@ -57,6 +87,10 @@ export async function submitPackageReview(formData: FormData) {
 
   if (booking.package_id !== packageId) {
     redirect(`/booking/${bookingId}?error=Package review tidak valid`)
+  }
+
+  if (!canReviewCompletedTrip(booking)) {
+    redirect(`/booking/${bookingId}?error=Review baru tersedia setelah trip selesai dikonfirmasi customer`)
   }
 
   const adminSupabase = createAdminClient()
