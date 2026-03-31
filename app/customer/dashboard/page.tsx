@@ -67,6 +67,14 @@ function resolveFinalPaymentDueDate(dateStr: string | null) {
   return formatDate(date.toISOString())
 }
 
+function resolvePaymentHeadline(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "dp_paid") return "DP Sudah Dibayar"
+  if (normalized === "paid") return "Lunas"
+  if (normalized === "pending") return "Menunggu Pembayaran"
+  return titleCaseStatus(status)
+}
+
 function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   const normalized = normalizeStatus(value)
   if (normalized === "paid" || normalized === "confirmed" || normalized === "paid_out") {
@@ -349,6 +357,7 @@ export default async function CustomerDashboardPage() {
                   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
                   const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
                   const finalPaymentDueDate = resolveFinalPaymentDueDate(booking.pickup_date)
+                  const dpAmountPaid = Math.max(Number(booking.total_amount || 0) - Number(booking.final_payment_amount || 0), 0)
 
                   return (
                     <article
@@ -365,7 +374,7 @@ export default async function CustomerDashboardPage() {
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
-                            Bayar: {titleCaseStatus(booking.payment_status)}
+                            Bayar: {resolvePaymentHeadline(booking.payment_status)}
                           </span>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
                             Trip: {titleCaseStatus(booking.booking_status)}
@@ -398,8 +407,34 @@ export default async function CustomerDashboardPage() {
                       </div>
 
                       {canPayRemaining ? (
-                        <div className="mt-5 rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-800">
-                          Sisa pembayaran <span className="font-semibold">Rp {Number(booking.final_payment_amount || 0).toLocaleString("id-ID")}</span> untuk booking ini wajib dilunasi maksimal <span className="font-semibold">{finalPaymentDueDate}</span> atau H-3 dari tanggal wisata.
+                        <div className="mt-5 rounded-[24px] border border-amber-200 bg-[linear-gradient(135deg,#fff8e7_0%,#fff2cf_100%)] p-5 text-amber-900">
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-700">Pelunasan Booking</p>
+                              <h4 className="mt-2 text-lg font-semibold text-amber-950">{resolvePaymentHeadline(booking.payment_status)}</h4>
+                              <p className="mt-2 max-w-2xl text-sm leading-7 text-amber-800">
+                                DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir.
+                              </p>
+                            </div>
+                            <span className="inline-flex rounded-full border border-amber-300 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                              Jatuh tempo H-3
+                            </span>
+                          </div>
+
+                          <div className="mt-4 grid gap-3 md:grid-cols-3">
+                            <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">DP diterima</p>
+                              <p className="mt-2 text-lg font-semibold text-amber-950">{formatMoney(dpAmountPaid)}</p>
+                            </div>
+                            <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Sisa pelunasan</p>
+                              <p className="mt-2 text-lg font-semibold text-amber-950">{formatMoney(Number(booking.final_payment_amount || 0))}</p>
+                            </div>
+                            <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Batas pelunasan</p>
+                              <p className="mt-2 text-lg font-semibold text-amber-950">{finalPaymentDueDate}</p>
+                            </div>
+                          </div>
                         </div>
                       ) : null}
 
