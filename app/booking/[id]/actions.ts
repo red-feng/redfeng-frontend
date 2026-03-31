@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -157,6 +158,32 @@ export async function confirmCustomerPickedUp(formData: FormData) {
   }
 
   redirect(`/booking/${bookingId}?success=Status Picked up berhasil dikirim. Merchant dapat melanjutkan ke Go Confirmed.`)
+}
+
+export async function cancelDraftBooking(formData: FormData) {
+  const bookingId = String(formData.get("booking_id") || "")
+
+  if (!bookingId) {
+    redirect("/customer/dashboard?error=Booking tidak valid")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { booking, error: bookingError } = await getOwnedBooking(bookingId)
+  if (bookingError || !booking) {
+    redirect(`/customer/dashboard?error=${encodeURIComponent(bookingError || "Booking tidak ditemukan")}`)
+  }
+
+  if (!isDraftBookingDeletable(booking)) {
+    redirect(`/booking/${bookingId}?error=Booking ini sudah memiliki pembayaran dan tidak bisa dihapus otomatis`)
+  }
+
+  const { error } = await deleteDraftBooking(adminSupabase, bookingId)
+
+  if (error) {
+    redirect(`/booking/${bookingId}?error=${encodeURIComponent(error.message)}`)
+  }
+
+  redirect("/customer/dashboard?success=Draft booking yang belum dibayar sudah dibatalkan dan dihapus")
 }
 
 function parseParticipantAge(rawValue: FormDataEntryValue | null) {

@@ -7,6 +7,8 @@ type BookingPaymentButtonProps = {
   bookingId: string
   label: string
   className?: string
+  cleanupOnAbandon?: boolean
+  redirectOnCleanup?: string
 }
 
 type SnapResult = {
@@ -17,6 +19,8 @@ export default function BookingPaymentButton({
   bookingId,
   label,
   className = "",
+  cleanupOnAbandon = false,
+  redirectOnCleanup = "/customer/dashboard?info=Draft%20booking%20dibatalkan",
 }: BookingPaymentButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -84,16 +88,39 @@ export default function BookingPaymentButton({
           await syncPaymentAndRedirect(result?.order_id || payload.order_id, "/customer/dashboard?payment=pending")
         },
         onError: () => {
+          if (cleanupOnAbandon) {
+            void cleanupDraftBooking("Pembayaran belum berhasil diproses. Draft booking dibersihkan otomatis.")
+            return
+          }
           setErrorMessage("Pembayaran belum berhasil diproses. Silakan coba lagi.")
           setLoading(false)
         },
         onClose: () => {
+          if (cleanupOnAbandon) {
+            void cleanupDraftBooking("Popup pembayaran ditutup. Draft booking dibersihkan otomatis.")
+            return
+          }
           setErrorMessage("Popup pembayaran ditutup sebelum proses selesai.")
           setLoading(false)
         },
       })
     } catch {
       setErrorMessage("Terjadi gangguan saat membuka pembayaran. Silakan coba lagi.")
+      setLoading(false)
+    }
+  }
+
+  async function cleanupDraftBooking(message: string) {
+    try {
+      await fetch("/api/bookings/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId }),
+      })
+    } finally {
+      router.push(redirectOnCleanup)
+      router.refresh()
+      setErrorMessage(message)
       setLoading(false)
     }
   }

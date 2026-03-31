@@ -1,0 +1,35 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+
+function normalizeStatus(value: string | null | undefined) {
+  return String(value || "").trim().toLowerCase()
+}
+
+export function isDraftBookingDeletable(booking: {
+  payment_status?: string | null
+  booking_status?: string | null
+}) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const bookingStatus = normalizeStatus(booking.booking_status)
+
+  const hasFinalPayment =
+    paymentStatus === "paid" ||
+    paymentStatus === "dp_paid" ||
+    bookingStatus === "confirmed" ||
+    bookingStatus === "awaiting_final_payment" ||
+    bookingStatus === "merchant_arrived" ||
+    bookingStatus === "customer_picked_up" ||
+    bookingStatus === "awaiting_admin_handoff"
+
+  return !hasFinalPayment
+}
+
+export async function deleteDraftBooking(
+  supabase: SupabaseClient,
+  bookingId: string,
+) {
+  await supabase.from("package_chat_rooms").delete().eq("booking_id", bookingId)
+  await supabase.from("payments").delete().eq("booking_id", bookingId)
+  await supabase.from("booking_participants").delete().eq("booking_id", bookingId)
+
+  return supabase.from("bookings").delete().eq("id", bookingId)
+}

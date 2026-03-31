@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
+import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -137,7 +138,27 @@ export async function POST(req: Request) {
       }
     }
 
-    const transaction = await snap.createTransaction(parameter)
+    let transaction: { token: string }
+
+    try {
+      transaction = await snap.createTransaction(parameter)
+    } catch (gatewayError) {
+      if (!hasPaidDp && isDraftBookingDeletable(booking)) {
+        await deleteDraftBooking(supabase, booking.id)
+      } else {
+        await supabase.from("payments").delete().eq("booking_id", booking.id).eq("order_id", orderId)
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            gatewayError instanceof Error
+              ? gatewayError.message
+              : "Popup pembayaran belum bisa dibuka. Draft booking dibersihkan otomatis.",
+        },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       snap_token: transaction.token,

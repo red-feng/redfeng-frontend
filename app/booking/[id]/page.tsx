@@ -1,7 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
-import { confirmCustomerPickedUp } from "./actions"
+import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { normalizeLocale } from "@/lib/i18n"
@@ -408,6 +408,8 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 bookingId={booking.id}
                 label={normalizedPaymentType === "dp" ? "Bayar DP Sekarang" : "Bayar Full Payment"}
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                cleanupOnAbandon
+                redirectOnCleanup="/customer/dashboard?info=Draft%20booking%20dibatalkan%20karena%20pembayaran%20tidak%20dilanjutkan"
               />
             ) : null}
             {canStartInitialPayment && !hasCompleteParticipants ? (
@@ -417,6 +419,17 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               >
                 Lengkapi Data Peserta
               </a>
+            ) : null}
+            {canStartInitialPayment ? (
+              <form action={cancelDraftBooking}>
+                <input type="hidden" name="booking_id" value={booking.id} />
+                <button
+                  type="submit"
+                  className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
+                >
+                  Batalkan & Hapus Booking
+                </button>
+              </form>
             ) : null}
             {canConfirmPickup ? (
               <form action={confirmCustomerPickedUp}>

@@ -7,6 +7,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
+import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -161,6 +162,19 @@ export async function POST(req: Request) {
     const windowCheck = validateBookingWindow(pickup_date)
     if (!windowCheck.allowed) {
       return NextResponse.json({ error: windowCheck.reason }, { status: 400 })
+    }
+
+    const { data: staleDrafts } = await supabase
+      .from("bookings")
+      .select("id, payment_status, booking_status")
+      .eq("package_id", package_id)
+      .eq("pickup_date", pickup_date)
+      .eq("customer_email", user.email || customer_email)
+
+    for (const staleDraft of staleDrafts || []) {
+      if (isDraftBookingDeletable(staleDraft)) {
+        await deleteDraftBooking(supabase, staleDraft.id)
+      }
     }
 
     const bookingCode = generateBookingCode()

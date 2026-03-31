@@ -23,6 +23,10 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
   - Required if Snap payment script is used on customer-facing checkout/payment pages.
 - `RESEND_API_KEY`
   - Required if merchant verification email sending is enabled.
+- `RESEND_FROM_EMAIL`
+  - Expected sender for customer payment confirmation and invoice email, for example `Red Feng <hello@redfeng.co>`.
+- `CRON_SECRET`
+  - Recommended to protect scheduled cleanup endpoints such as abandoned draft booking cleanup.
 - `WORDPRESS_SITE_URL`
   - Required if customer SSO between `www.redfeng.co` and `app.redfeng.co` is enabled.
 - `WORDPRESS_SSO_SHARED_SECRET`
@@ -64,6 +68,10 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
   - Snap script will not load on the frontend.
 - Missing `RESEND_API_KEY`
   - Merchant pending email route returns `Email service not configured`.
+- Missing `RESEND_FROM_EMAIL`
+  - Payment emails may fall back to the default sender and fail if that sender is not verified in Resend.
+- Missing `CRON_SECRET`
+  - Scheduled cleanup endpoints can be called without a shared secret.
 - Missing or disabled `NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK`
   - Facebook button stays hidden on login/register pages.
 - Enabled frontend provider flag without enabling the same provider in Supabase

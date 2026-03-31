@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
+import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -219,10 +220,14 @@ export async function POST(req: Request) {
     }
 
     if (transaction_status === "expire" || transaction_status === "cancel") {
-      await supabase
-        .from("bookings")
-        .update({ payment_status: "cancelled", booking_status: "cancelled" })
-        .eq("id", booking.id)
+      if (isDraftBookingDeletable(booking)) {
+        await deleteDraftBooking(supabase, booking.id)
+      } else {
+        await supabase
+          .from("bookings")
+          .update({ payment_status: "cancelled", booking_status: "cancelled" })
+          .eq("id", booking.id)
+      }
     }
 
     return NextResponse.json({ received: true })
