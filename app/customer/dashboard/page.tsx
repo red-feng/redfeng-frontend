@@ -14,6 +14,7 @@ type BookingRow = {
   package_id: string | null
   booking_code: string | null
   customer_email?: string | null
+  created_at?: string | null
   pickup_date: string | null
   final_payment_amount?: number | null
   payment_type?: string | null
@@ -108,7 +109,20 @@ function getTimelineStatus(booking: BookingRow) {
   if (booking.merchant_picked_up_at) return "Merchant sudah klik Go"
   if (booking.customer_picked_up_at) return "Customer sudah klik Picked up"
   if (booking.merchant_arrived_at) return "Merchant sudah tiba di meeting point"
+  if (normalizeStatus(booking.payment_status) === "dp_paid") return "Menunggu pelunasan customer"
+  if (normalizeStatus(booking.payment_status) === "paid") return "Pembayaran lengkap, menunggu progress pickup"
   return "Menunggu progress pickup"
+}
+
+function getBookingPriority(booking: BookingRow) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const bookingStatus = normalizeStatus(booking.booking_status)
+
+  if (paymentStatus === "dp_paid") return 4
+  if (paymentStatus === "paid") return 3
+  if (bookingStatus === "cancelled") return 0
+  if (paymentStatus === "pending") return 1
+  return 2
 }
 
 export default async function CustomerDashboardPage() {
@@ -125,12 +139,12 @@ export default async function CustomerDashboardPage() {
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null
-  const adminBookingsResult = await adminSupabase
-    .from("bookings")
-    .select(
-      "id, package_id, booking_code, customer_email, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
-    )
-    .eq("customer_email", user.email)
+    const adminBookingsResult = await adminSupabase
+      .from("bookings")
+      .select(
+        "id, package_id, booking_code, customer_email, created_at, pickup_date, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+      )
+      .eq("customer_email", user.email)
 
   bookings = (adminBookingsResult.data as BookingRow[] | null) || null
   error = adminBookingsResult.error
@@ -141,7 +155,7 @@ export default async function CustomerDashboardPage() {
     const fallbackBookingsResult = await adminSupabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_email, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
+        "id, package_id, booking_code, customer_email, created_at, payment_type, final_payment_amount, total_amount, display_currency, display_subtotal_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at",
       )
       .eq("customer_email", user.email)
 
@@ -154,6 +168,13 @@ export default async function CustomerDashboardPage() {
   }
 
   const customerBookings = ((bookings as BookingRow[] | null) || []).sort((a, b) => {
+    const priorityDiff = getBookingPriority(b) - getBookingPriority(a)
+    if (priorityDiff !== 0) return priorityDiff
+
+    const createdAtA = a.created_at ? new Date(a.created_at).getTime() : 0
+    const createdAtB = b.created_at ? new Date(b.created_at).getTime() : 0
+    if (createdAtB !== createdAtA) return createdAtB - createdAtA
+
     const timeA = a.pickup_date ? new Date(a.pickup_date).getTime() : 0
     const timeB = b.pickup_date ? new Date(b.pickup_date).getTime() : 0
     return timeB - timeA
