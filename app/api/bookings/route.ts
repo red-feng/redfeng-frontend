@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { calculateBookingAmounts, getFinanceSettings, normalizePaymentMethod } from "@/lib/finance/settings"
+import { calculateBookingAmounts, getFinanceSettings, resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { convertCurrencyAmount, getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
@@ -154,7 +154,7 @@ export async function POST(req: Request) {
     const subtotalAmount =
       Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
       Number(childPriceCharge.amount || 0) * Number(child_count || 0)
-    const normalizedPaymentMethod = normalizePaymentMethod(payment_method)
+    const normalizedPaymentMethod = resolveActiveCustomerPaymentMethod(payment_method)
     const normalizedPaymentType = String(payment_type || "full").trim().toLowerCase() === "dp" ? "dp" : "full"
     const priceBreakdown = calculateBookingAmounts(subtotalAmount, normalizedPaymentMethod, financeSettings)
 

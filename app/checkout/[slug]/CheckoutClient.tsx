@@ -8,7 +8,12 @@ import { dictionaries, type Locale } from "@/lib/i18n"
 import { getMinimumBookingDate } from "@/lib/booking/bookingWindow"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
-import { normalizePaymentMethod, resolveCustomerAdminFeePercent, type FinancePaymentMethod } from "@/lib/finance/settings"
+import {
+  activeCustomerPaymentMethods,
+  resolveActiveCustomerPaymentMethod,
+  resolveCustomerAdminFeePercent,
+  type FinancePaymentMethod,
+} from "@/lib/finance/settings"
 
 type CheckoutPackageData = {
   id: string
@@ -114,7 +119,7 @@ export default function CheckoutClient({
       label: "Kartu kredit",
       hint: "Fee customer biasanya lebih tinggi karena biaya channel kartu.",
     },
-  ]
+  ].filter((option) => activeCustomerPaymentMethods.includes(option.value))
 
   useEffect(() => {
     const checkSession = async () => {
@@ -202,7 +207,7 @@ export default function CheckoutClient({
           customer_name: nama,
           customer_email: email,
           customer_phone: phone,
-          payment_method: normalizePaymentMethod(paymentMethod),
+          payment_method: resolveActiveCustomerPaymentMethod(paymentMethod),
           payment_type: paymentType,
         }),
       })

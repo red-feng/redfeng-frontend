@@ -28,6 +28,7 @@ export type FinanceSettings = {
 }
 
 export type FinancePaymentMethod = "bank_transfer" | "qris" | "credit_card"
+export const activeCustomerPaymentMethods: FinancePaymentMethod[] = ["bank_transfer"]
 
 export type MerchantPayoutBreakdown = {
   grossAmount: number
@@ -179,6 +180,18 @@ export function normalizePaymentMethod(value: string | null | undefined): Financ
   if (normalized === "qris") return "qris"
   if (normalized === "credit_card" || normalized === "card" || normalized === "kartu_kredit") {
     return "credit_card"
+  }
+  return "bank_transfer"
+}
+
+export function isCustomerPaymentMethodActive(value: string | null | undefined) {
+  return activeCustomerPaymentMethods.includes(normalizePaymentMethod(value))
+}
+
+export function resolveActiveCustomerPaymentMethod(value: string | null | undefined): FinancePaymentMethod {
+  const normalizedMethod = normalizePaymentMethod(value)
+  if (activeCustomerPaymentMethods.includes(normalizedMethod)) {
+    return normalizedMethod
   }
   return "bank_transfer"
 }
