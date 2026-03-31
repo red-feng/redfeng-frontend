@@ -9,6 +9,10 @@ type BookingPaymentButtonProps = {
   className?: string
 }
 
+type SnapResult = {
+  order_id?: string
+}
+
 export default function BookingPaymentButton({
   bookingId,
   label,
@@ -17,6 +21,21 @@ export default function BookingPaymentButton({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+
+  async function syncPaymentAndRedirect(orderId: string | undefined, redirectTo: string) {
+    try {
+      await fetch("/api/payments/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: bookingId,
+          order_id: orderId,
+        }),
+      })
+    } finally {
+      router.push(redirectTo)
+    }
+  }
 
   async function handlePayment() {
     setLoading(true)
@@ -41,8 +60,8 @@ export default function BookingPaymentButton({
           pay: (
             token: string,
             callbacks?: {
-              onSuccess?: () => void
-              onPending?: () => void
+              onSuccess?: (result?: SnapResult) => void
+              onPending?: (result?: SnapResult) => void
               onError?: () => void
               onClose?: () => void
             },
@@ -58,8 +77,12 @@ export default function BookingPaymentButton({
 
       snap.pay(payload.snap_token, {
         ...(payload.snap_mode === "qr" ? { uiMode: "qr" as const } : {}),
-        onSuccess: () => router.push("/customer/dashboard?payment=success"),
-        onPending: () => router.push("/customer/dashboard?payment=pending"),
+        onSuccess: async (result) => {
+          await syncPaymentAndRedirect(result?.order_id || payload.order_id, "/customer/dashboard?payment=success")
+        },
+        onPending: async (result) => {
+          await syncPaymentAndRedirect(result?.order_id || payload.order_id, "/customer/dashboard?payment=pending")
+        },
         onError: () => {
           setErrorMessage("Pembayaran belum berhasil diproses. Silakan coba lagi.")
           setLoading(false)

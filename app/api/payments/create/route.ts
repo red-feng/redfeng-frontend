@@ -142,6 +142,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       snap_token: transaction.token,
       snap_mode: financePaymentMethod === "qris" ? "qr" : "auto",
+      order_id: orderId,
     })
 
   } catch (error) {
