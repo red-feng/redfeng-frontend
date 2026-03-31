@@ -103,7 +103,7 @@ export default function AdminNavLinks({
         <div className="flex min-w-max flex-wrap gap-2 rounded-[22px] border border-[#ecd9c2] bg-[#fffaf3] p-2">
           {visibleChildren.map((child) => {
             const isActive = pathname.startsWith(normalizeHref(child.href))
-            const visibleBadgeCount = isActive ? 0 : Number(child.badgeCount || 0)
+            const visibleBadgeCount = Number(child.badgeCount || 0)
 
             return (
               <Link
@@ -111,7 +111,7 @@ export default function AdminNavLinks({
                 href={child.href}
                 className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
                   isActive
-                    ? "border-orange-200 bg-white text-orange-600"
+                    ? "border-orange-200 bg-white text-orange-600 shadow-[0_6px_18px_rgba(249,115,22,0.08)]"
                     : "border-transparent bg-transparent text-slate-600 hover:border-orange-200 hover:bg-white hover:text-orange-600"
                 }`}
               >
