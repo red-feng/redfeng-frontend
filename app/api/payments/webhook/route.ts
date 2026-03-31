@@ -6,7 +6,7 @@ import { formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 
 function resolveOrder(orderId: string) {
-  const match = orderId.match(/^(.*?)-(dp|full)$/i)
+  const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
   if (match) {
     return {
       bookingCode: match[1],

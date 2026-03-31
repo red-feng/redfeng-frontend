@@ -16,9 +16,11 @@ export default function BookingPaymentButton({
 }: BookingPaymentButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
 
   async function handlePayment() {
     setLoading(true)
+    setErrorMessage("")
 
     try {
       const response = await fetch("/api/payments/create", {
@@ -29,6 +31,7 @@ export default function BookingPaymentButton({
 
       const payload = await response.json()
       if (!response.ok || !payload.snap_token) {
+        setErrorMessage(payload?.error || "Popup pembayaran belum bisa dibuka. Coba lagi sebentar.")
         setLoading(false)
         return
       }
@@ -48,6 +51,7 @@ export default function BookingPaymentButton({
       }).snap
 
       if (!snap) {
+        setErrorMessage("Snap Midtrans belum siap di browser ini. Muat ulang halaman lalu coba lagi.")
         setLoading(false)
         return
       }
@@ -56,17 +60,27 @@ export default function BookingPaymentButton({
         ...(payload.snap_mode === "qr" ? { uiMode: "qr" as const } : {}),
         onSuccess: () => router.refresh(),
         onPending: () => router.refresh(),
-        onError: () => setLoading(false),
-        onClose: () => setLoading(false),
+        onError: () => {
+          setErrorMessage("Pembayaran belum berhasil diproses. Silakan coba lagi.")
+          setLoading(false)
+        },
+        onClose: () => {
+          setErrorMessage("Popup pembayaran ditutup sebelum proses selesai.")
+          setLoading(false)
+        },
       })
     } catch {
+      setErrorMessage("Terjadi gangguan saat membuka pembayaran. Silakan coba lagi.")
       setLoading(false)
     }
   }
 
   return (
-    <button type="button" onClick={handlePayment} disabled={loading} className={className}>
-      {loading ? "Memproses..." : label}
-    </button>
+    <div className="space-y-2">
+      <button type="button" onClick={handlePayment} disabled={loading} className={className}>
+        {loading ? "Memproses..." : label}
+      </button>
+      {errorMessage ? <p className="text-sm font-medium text-rose-600">{errorMessage}</p> : null}
+    </div>
   )
 }

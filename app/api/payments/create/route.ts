@@ -12,6 +12,12 @@ function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   return ["bank_transfer"]
 }
 
+function createOrderId(bookingCode: string | null | undefined, paymentType: string) {
+  const baseCode = String(bookingCode || "").trim()
+  const fallbackCode = `booking-${Date.now()}`
+  return `${baseCode || fallbackCode}-${paymentType}-${Date.now()}`
+}
+
 export async function POST(req: Request) {
   try {
     const { booking_id } = await req.json()
@@ -87,7 +93,7 @@ export async function POST(req: Request) {
     // ===============================
     // 3️⃣ Generate Order ID
     // ===============================
-    const orderId = `${booking.booking_code}-${paymentType}`
+    const orderId = createOrderId(booking.booking_code, paymentType)
 
     // ===============================
     // 4️⃣ Simpan ke table payments
@@ -103,12 +109,12 @@ export async function POST(req: Request) {
     transaction_status: "pending"
   })
 
-if (paymentError) {
-  return NextResponse.json(
-    { error: "Gagal membuat payment record" },
-    { status: 500 }
-  )
-}
+    if (paymentError) {
+      return NextResponse.json(
+        { error: paymentError.message || "Gagal membuat payment record" },
+        { status: 500 }
+      )
+    }
 
     // ===============================
     // 5️⃣ Create Midtrans Snap
@@ -141,7 +147,7 @@ if (paymentError) {
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: "Server error" },
+      { error: error instanceof Error ? error.message : "Server error" },
       { status: 500 }
     )
   }
