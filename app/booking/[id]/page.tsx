@@ -86,6 +86,14 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function resolvePaymentStatusLabel(status: string | null) {
+  const normalized = normalizeStatus(status)
+  if (normalized === "dp_paid") return "Menunggu Pelunasan"
+  if (normalized === "paid") return "Lunas"
+  if (normalized === "pending") return "Menunggu Pembayaran"
+  return titleCaseStatus(status)
+}
+
 function badgeTone(status: string | null) {
   const normalized = normalizeStatus(status)
   if (normalized === "paid") return "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -127,7 +135,7 @@ function resolveJourneyPhase(booking: BookingDetailRow) {
     return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "DP Paid", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: "Menunggu Pelunasan", tone: "border-amber-200 bg-amber-50 text-amber-700" }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
 }
@@ -229,7 +237,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Status Pembayaran</p>
             <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
-              {titleCaseStatus(booking.payment_status)}
+              {resolvePaymentStatusLabel(booking.payment_status)}
             </span>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -334,7 +342,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <div>
               <p className="text-sm text-slate-500">Status Pembayaran</p>
               <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
-                {titleCaseStatus(booking.payment_status)}
+                {resolvePaymentStatusLabel(booking.payment_status)}
               </span>
             </div>
           </div>

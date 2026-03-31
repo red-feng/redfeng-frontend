@@ -70,7 +70,7 @@ function resolveFinalPaymentDueDate(dateStr: string | null) {
 
 function resolvePaymentHeadline(status: string | null) {
   const normalized = normalizeStatus(status)
-  if (normalized === "dp_paid") return "DP Sudah Dibayar"
+  if (normalized === "dp_paid") return "Menunggu Pelunasan"
   if (normalized === "paid") return "Lunas"
   if (normalized === "pending") return "Menunggu Pembayaran"
   return titleCaseStatus(status)
@@ -202,7 +202,12 @@ export default async function CustomerDashboardPage() {
 
   const pendingPayments = customerBookings.filter((booking) => {
     const paymentStatus = normalizeStatus(booking.payment_status)
-    return paymentStatus === "pending" || paymentStatus === "dp_paid"
+    return paymentStatus === "pending"
+  })
+
+  const pendingSettlements = customerBookings.filter((booking) => {
+    const paymentStatus = normalizeStatus(booking.payment_status)
+    return paymentStatus === "dp_paid"
   })
 
   const waitingCustomerAction = customerBookings.filter(
@@ -245,6 +250,11 @@ export default async function CustomerDashboardPage() {
       label: "Payment pending",
       value: String(pendingPayments.length),
       note: "Perlu diselesaikan agar booking tetap aman.",
+    },
+    {
+      label: "Pelunasan",
+      value: String(pendingSettlements.length),
+      note: "Booking DP yang menunggu pelunasan akhir.",
     },
     {
       label: "Pickup confirmation",
@@ -432,7 +442,7 @@ export default async function CustomerDashboardPage() {
                           <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                               <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-700">Pelunasan Booking</p>
-                              <h4 className="mt-2 text-lg font-semibold text-amber-950">{resolvePaymentHeadline(booking.payment_status)}</h4>
+                              <h4 className="mt-2 text-lg font-semibold text-amber-950">DP Sudah Dibayar</h4>
                               <p className="mt-2 max-w-2xl text-sm leading-7 text-amber-800">
                                 DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir.
                               </p>
@@ -531,6 +541,10 @@ export default async function CustomerDashboardPage() {
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
                   <span>Menunggu pembayaran</span>
                   <span className="font-semibold text-slate-900">{pendingPayments.length}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
+                  <span>Menunggu pelunasan</span>
+                  <span className="font-semibold text-slate-900">{pendingSettlements.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
                   <span>Menunggu aksi customer</span>
