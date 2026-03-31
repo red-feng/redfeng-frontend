@@ -28,7 +28,7 @@ function formatMoney(value: number) {
 
 export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
   const apiKey = getOptionalEnv("RESEND_API_KEY")
-  const fromEmail = getOptionalEnv("RESEND_FROM_EMAIL", "Red Feng <noreply@redfeng.co>")
+  const fromEmail = getOptionalEnv("RESEND_FROM_EMAIL", "Red Feng <hello@redfeng.co>")
 
   if (!apiKey || !payload.customerEmail) {
     return { skipped: true }
