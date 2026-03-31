@@ -41,6 +41,11 @@ function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
 }
 
+function isVisiblePaidBooking(booking: BookingRow) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  return paymentStatus === "paid" || paymentStatus === "dp_paid"
+}
+
 function countJourneyPhase(bookings: BookingRow[], phase: "dp" | "paid" | "pickup" | "finance" | "paid_out") {
   return bookings.filter((booking) => {
     const paymentStatus = normalizeStatus(booking.payment_status)
@@ -97,7 +102,7 @@ export default async function MerchantDashboardPage() {
     .eq("packages.merchant_id", merchant.id)
 
   const packages = (packagesData as PackageRow[] | null) || []
-  const bookings = (bookingsData as BookingRow[] | null) || []
+  const bookings = ((bookingsData as BookingRow[] | null) || []).filter((booking) => isVisiblePaidBooking(booking))
   const chatRooms = (chatRoomsData as ChatRoomRow[] | null) || []
   const reviews = (reviewsResult.data as ReviewRow[] | null) || []
 

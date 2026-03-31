@@ -79,6 +79,11 @@ function formatMoney(value: number | null) {
   return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
 }
 
+function isVisiblePaidBooking(booking: BookingRow) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  return paymentStatus === "paid" || paymentStatus === "dp_paid"
+}
+
 function titleCaseStatus(value: string | null) {
   const normalized = normalizeStatus(value)
   if (!normalized) return "-"
@@ -332,8 +337,8 @@ export default async function AdminBookingsPage({
       merchant.brand_name || merchant.company_name || merchant.id,
     ]),
   )
-  const validBookings = bookings.filter((booking) =>
-    hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
+  const validBookings = bookings.filter(
+    (booking) => hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")) && isVisiblePaidBooking(booking),
   )
   const incompleteBookings = bookings.filter(
     (booking) => !hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),

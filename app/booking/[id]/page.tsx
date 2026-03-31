@@ -400,9 +400,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2">
             <h2 className="text-xl font-semibold text-slate-900">Aksi Booking</h2>
-            <p className="text-sm text-slate-500">
-              Popup Midtrans baru dibuka setelah data peserta lengkap. Setelah pembayaran sukses, progress meeting point tetap berjalan dari halaman ini.
-            </p>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
@@ -421,12 +418,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 Lengkapi Data Peserta
               </a>
             ) : null}
-            <a
-              href={`/chat?booking_id=${booking.id}`}
-              className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
-            >
-              Chat Sesudah Booking
-            </a>
             {canConfirmPickup ? (
               <form action={confirmCustomerPickedUp}>
                 <input type="hidden" name="booking_id" value={booking.id} />
@@ -444,14 +435,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 label="Bayar Pelunasan"
                 className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
               />
-            ) : null}
-            {booking.package_id ? (
-              <a
-                href={`/chat?package_id=${booking.package_id}`}
-                className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
-              >
-                Lihat Chat Sebelum Booking
-              </a>
             ) : null}
           </div>
         </section>

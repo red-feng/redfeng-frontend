@@ -78,6 +78,11 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function isVisiblePaidBooking(booking: BookingRow) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  return paymentStatus === "paid" || paymentStatus === "dp_paid"
+}
+
 function isMatchingFilter(booking: BookingRow, filter: string) {
   const paymentStatus = normalizeStatus(booking.payment_status)
   const tripStatus = normalizeStatus(booking.booking_status)
@@ -198,7 +203,7 @@ export default async function MerchantOrdersPage({
         .order("created_at", { ascending: false })
     : { data: [] as BookingRow[], error: packageError }
 
-  const allBookings = (data as BookingRow[] | null) ?? []
+  const allBookings = ((data as BookingRow[] | null) ?? []).filter((booking) => isVisiblePaidBooking(booking))
   const bookings = allBookings.filter((booking) => isMatchingFilter(booking, activeFilter))
 
   const summaryCards = [
