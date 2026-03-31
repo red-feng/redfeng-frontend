@@ -143,6 +143,20 @@ export async function POST(req: Request) {
         })
         .eq("id", booking.id)
 
+      const { data: siblingDrafts } = await supabase
+        .from("bookings")
+        .select("id, payment_status, booking_status")
+        .eq("customer_email", booking.customer_email)
+        .eq("package_id", booking.package_id)
+        .eq("pickup_date", booking.pickup_date)
+        .neq("id", booking.id)
+
+      for (const siblingDraft of siblingDrafts || []) {
+        if (isDraftBookingDeletable(siblingDraft)) {
+          await deleteDraftBooking(supabase, siblingDraft.id)
+        }
+      }
+
       const amountPaid =
         resolvedPaymentType === "dp"
           ? Number(booking.dp_amount || 0)

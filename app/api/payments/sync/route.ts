@@ -5,6 +5,7 @@ import { getRequiredEnv } from "@/lib/env"
 import { getMidtransTransactionStatus } from "@/lib/refunds/midtrans"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
+import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -154,6 +155,20 @@ export async function POST(req: Request) {
           gateway_payment_method: gatewayPaymentMethod,
         })
         .eq("id", booking.id)
+
+      const { data: siblingDrafts } = await supabase
+        .from("bookings")
+        .select("id, payment_status, booking_status")
+        .eq("customer_email", booking.customer_email)
+        .eq("package_id", booking.package_id)
+        .eq("pickup_date", booking.pickup_date)
+        .neq("id", booking.id)
+
+      for (const siblingDraft of siblingDrafts || []) {
+        if (isDraftBookingDeletable(siblingDraft)) {
+          await deleteDraftBooking(supabase, siblingDraft.id)
+        }
+      }
 
       if (shouldSendEmail) {
         const amountPaid =
