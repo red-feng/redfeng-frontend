@@ -53,6 +53,7 @@ export default function BookingPaymentButton({
       }
 
       snap.pay(payload.snap_token, {
+        ...(payload.snap_mode === "qr" ? { uiMode: "qr" as const } : {}),
         onSuccess: () => router.refresh(),
         onPending: () => router.refresh(),
         onError: () => setLoading(false),

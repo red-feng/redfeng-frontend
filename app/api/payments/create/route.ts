@@ -7,7 +7,7 @@ import { normalizePaymentMethod } from "@/lib/finance/settings"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = normalizePaymentMethod(paymentMethod)
-  if (normalizedMethod === "qris") return ["qris"]
+  if (normalizedMethod === "qris") return ["qris", "gopay"]
   if (normalizedMethod === "credit_card") return ["credit_card"]
   return ["bank_transfer"]
 }
@@ -134,7 +134,8 @@ if (paymentError) {
     const transaction = await snap.createTransaction(parameter)
 
     return NextResponse.json({
-      snap_token: transaction.token
+      snap_token: transaction.token,
+      snap_mode: financePaymentMethod === "qris" ? "qr" : "auto",
     })
 
   } catch (error) {
