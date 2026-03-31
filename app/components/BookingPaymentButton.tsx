@@ -58,8 +58,8 @@ export default function BookingPaymentButton({
 
       snap.pay(payload.snap_token, {
         ...(payload.snap_mode === "qr" ? { uiMode: "qr" as const } : {}),
-        onSuccess: () => router.refresh(),
-        onPending: () => router.refresh(),
+        onSuccess: () => router.push("/customer/dashboard?payment=success"),
+        onPending: () => router.push("/customer/dashboard?payment=pending"),
         onError: () => {
           setErrorMessage("Pembayaran belum berhasil diproses. Silakan coba lagi.")
           setLoading(false)
