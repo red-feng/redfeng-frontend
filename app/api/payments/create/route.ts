@@ -5,6 +5,7 @@ import { getRequiredEnv } from "@/lib/env"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
+import { formatFinalPaymentDueLabel, isFinalPaymentOverdue } from "@/lib/booking/final-payment-deadline"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -83,6 +84,15 @@ export async function POST(req: Request) {
     let amount = booking.total_amount
     let paymentType = booking.payment_type || "full"
     const financePaymentMethod = resolveActiveCustomerPaymentMethod(booking.payment_method)
+
+    if (hasPaidDp && isFinalPaymentOverdue(booking.pickup_date || null)) {
+      return NextResponse.json(
+        {
+          error: `Batas pelunasan sudah lewat. Pelunasan hanya bisa dilakukan sampai ${formatFinalPaymentDueLabel(booking.pickup_date || null)}.`,
+        },
+        { status: 400 }
+      )
+    }
 
     if (hasPaidDp) {
       paymentType = "full"

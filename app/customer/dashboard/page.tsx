@@ -8,6 +8,10 @@ import { getCurrentLocale } from "@/lib/locale"
 import { normalizeLocale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getEscrowStatusTone, getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
+import {
+  formatFinalPaymentDueLabel,
+  isFinalPaymentOverdue,
+} from "@/lib/booking/final-payment-deadline"
 
 type BookingRow = {
   id: string
@@ -58,14 +62,6 @@ function formatDate(dateStr: string | null) {
     month: "long",
     year: "numeric",
   })
-}
-
-function resolveFinalPaymentDueDate(dateStr: string | null) {
-  if (!dateStr) return "-"
-  const date = new Date(`${dateStr}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return dateStr
-  date.setDate(date.getDate() - 3)
-  return formatDate(date.toISOString())
 }
 
 function resolvePaymentHeadline(status: string | null) {
@@ -386,8 +382,10 @@ export default async function CustomerDashboardPage() {
                 {customerBookings.slice(0, 6).map((booking) => {
                   const pkg = packageMap.get(booking.package_id || "")
                   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
-                  const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
-                  const finalPaymentDueDate = resolveFinalPaymentDueDate(booking.pickup_date)
+                  const isDpPaid = normalizeStatus(booking.payment_status) === "dp_paid"
+                  const canPayRemaining = isDpPaid && !isFinalPaymentOverdue(booking.pickup_date)
+                  const finalPaymentDueDate = formatFinalPaymentDueLabel(booking.pickup_date)
+                  const isSettlementOverdue = isDpPaid && isFinalPaymentOverdue(booking.pickup_date)
                   const dpAmountPaid = Math.max(Number(booking.total_amount || 0) - Number(booking.final_payment_amount || 0), 0)
 
                   return (
@@ -442,14 +440,18 @@ export default async function CustomerDashboardPage() {
                           <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
                               <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-700">Pelunasan Booking</p>
-                              <h4 className="mt-2 text-lg font-semibold text-amber-950">DP Sudah Dibayar</h4>
+                              <h4 className="mt-2 text-lg font-semibold text-amber-950">
+                                {isSettlementOverdue ? "Pelunasan Terlewat" : "Menunggu Pelunasan"}
+                              </h4>
                               <p className="mt-2 max-w-2xl text-sm leading-7 text-amber-800">
-                                DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir.
+                                {isSettlementOverdue
+                                  ? "Batas waktu pelunasan sudah lewat. Booking ini memerlukan tindak lanjut manual dari tim Red Feng."
+                                  : "DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir."}
                               </p>
                             </div>
-                            <span className="inline-flex rounded-full border border-amber-300 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                              Jatuh tempo H-3
-                            </span>
+                              <span className="inline-flex rounded-full border border-amber-300 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                                {isSettlementOverdue ? "Batas terlewat" : "Jatuh tempo H-3"}
+                              </span>
                           </div>
 
                           <div className="mt-4 grid gap-3 md:grid-cols-3">

@@ -5,6 +5,7 @@ import { getRequiredEnv } from "@/lib/env"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
+import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -34,14 +35,6 @@ function formatDateLabel(value: string | null) {
 
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
-}
-
-function resolveSettlementDueLabel(pickupDate: string | null) {
-  if (!pickupDate) return null
-  const parsed = new Date(`${pickupDate}T00:00:00`)
-  if (Number.isNaN(parsed.getTime())) return formatDateLabel(pickupDate)
-  parsed.setDate(parsed.getDate() - 3)
-  return formatDateLabel(parsed.toISOString())
 }
 
 export async function POST(req: Request) {
@@ -176,7 +169,7 @@ export async function POST(req: Request) {
             ? "Final Payment Settled"
             : "Fully Paid"
       const settlementDueLabel =
-        resolvedPaymentType === "dp" ? resolveSettlementDueLabel(booking.pickup_date || null) : null
+        resolvedPaymentType === "dp" ? formatFinalPaymentDueLabel(booking.pickup_date || null) : null
       const invoiceSubtotalAmount =
         resolvedPaymentType === "dp"
           ? Number(booking.subtotal_amount || 0)

@@ -5,6 +5,10 @@ import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { normalizeLocale } from "@/lib/i18n"
+import {
+  formatFinalPaymentDueLabel,
+  isFinalPaymentOverdue,
+} from "@/lib/booking/final-payment-deadline"
 
 export const dynamic = "force-dynamic"
 
@@ -51,25 +55,6 @@ type BookingParticipantRow = {
   identity_number: string | null
   nationality: string | null
   age: number | null
-}
-
-function formatDate(dateStr: string | null) {
-  if (!dateStr) return "-"
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-  return date.toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  })
-}
-
-function resolveFinalPaymentDueDate(dateStr: string | null) {
-  if (!dateStr) return "-"
-  const date = new Date(`${dateStr}T00:00:00`)
-  if (Number.isNaN(date.getTime())) return dateStr
-  date.setDate(date.getDate() - 3)
-  return formatDate(date.toISOString())
 }
 
 function titleCaseStatus(value: string | null) {
@@ -182,7 +167,12 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const hasCompleteParticipants = expectedParticipantCount > 0 && participants.length === expectedParticipantCount
 
   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
-  const canPayRemaining = normalizeStatus(booking.payment_status) === "dp_paid"
+  const canPayRemaining =
+    normalizeStatus(booking.payment_status) === "dp_paid" &&
+    !isFinalPaymentOverdue(booking.pickup_date || null)
+  const isRemainingPaymentOverdue =
+    normalizeStatus(booking.payment_status) === "dp_paid" &&
+    isFinalPaymentOverdue(booking.pickup_date || null)
   const canStartInitialPayment = ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status))
   const phase = resolveJourneyPhase(booking)
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
@@ -330,7 +320,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             {normalizedPaymentType === "dp" ? (
               <div>
                 <p className="text-sm text-slate-500">Batas Pelunasan</p>
-                <p className="mt-2 font-medium text-slate-900">{resolveFinalPaymentDueDate(booking.pickup_date || null)}</p>
+                <p className="mt-2 font-medium text-slate-900">{formatFinalPaymentDueLabel(booking.pickup_date || null)}</p>
               </div>
             ) : null}
             <div>
@@ -456,6 +446,11 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 label="Bayar Pelunasan"
                 className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
               />
+            ) : null}
+            {isRemainingPaymentOverdue ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700">
+                Batas pelunasan sudah lewat pada {formatFinalPaymentDueLabel(booking.pickup_date || null)}.
+              </div>
             ) : null}
           </div>
         </section>
