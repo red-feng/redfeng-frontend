@@ -71,13 +71,6 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
         return
       }
 
-      if (normalizedRole === "merchant") {
-        setAccountHref("/merchant/dashboard")
-        setAccountLabel(t.account)
-        setIsAuthenticated(true)
-        return
-      }
-
       setAccountHref("/customer/dashboard")
       setAccountLabel(t.account)
       setIsAuthenticated(true)
