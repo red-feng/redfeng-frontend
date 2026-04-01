@@ -102,6 +102,7 @@ function resolvePaymentStatusLabel(status: string | null) {
   if (normalized === "dp_paid") return "Menunggu Pelunasan"
   if (normalized === "paid") return "Lunas"
   if (normalized === "pending") return "Menunggu Pembayaran"
+  if (normalized === "refund_pending_review") return "Refund Ditinjau"
   return titleCaseStatus(status)
 }
 

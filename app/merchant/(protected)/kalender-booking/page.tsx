@@ -221,6 +221,16 @@ function badgeClass(value: string | null, type: "payment" | "trip") {
   return toneClass("neutral")
 }
 
+function isActiveCalendarBooking(booking: BookingCalendarRow) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const bookingStatus = normalizeStatus(booking.booking_status)
+
+  if (bookingStatus.startsWith("cancelled")) return false
+  if (["refund", "refund_pending_review", "expired"].includes(paymentStatus)) return false
+
+  return true
+}
+
 function isOpenTripOrUmroh(pkg: MerchantPackageRow | null | undefined) {
   const title = (pkg?.title || "").toLowerCase()
   const style = (pkg?.travel_style || "").toLowerCase()
@@ -271,7 +281,7 @@ export default async function MerchantBookingCalendarPage() {
     : { data: [] as BookingCalendarRow[], error: packageError }
 
   const bookings = ((data as BookingCalendarRow[] | null) || []).filter(
-    (booking) => !isBookingExpiredForNonPayment(booking),
+    (booking) => !isBookingExpiredForNonPayment(booking) && isActiveCalendarBooking(booking),
   )
   const grouped = new Map<string, CalendarEntry>()
 

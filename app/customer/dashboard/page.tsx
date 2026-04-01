@@ -70,6 +70,7 @@ function resolvePaymentHeadline(status: string | null) {
   if (normalized === "dp_paid") return "Menunggu Pelunasan"
   if (normalized === "paid") return "Lunas"
   if (normalized === "pending") return "Menunggu Pembayaran"
+  if (normalized === "refund_pending_review") return "Refund Ditinjau"
   return titleCaseStatus(status)
 }
 
@@ -117,7 +118,7 @@ function getBookingPriority(booking: BookingRow) {
 
   if (paymentStatus === "dp_paid") return 4
   if (paymentStatus === "paid") return 3
-  if (bookingStatus === "cancelled") return 0
+  if (bookingStatus.startsWith("cancelled")) return 0
   if (paymentStatus === "pending") return 1
   return 2
 }
@@ -196,7 +197,11 @@ export default async function CustomerDashboardPage() {
   const upcomingTrips = customerBookings.filter((booking) => {
     if (!booking.pickup_date) return false
     const pickup = new Date(booking.pickup_date)
-    return !Number.isNaN(pickup.getTime()) && pickup >= now && normalizeStatus(booking.booking_status) !== "cancelled"
+    return (
+      !Number.isNaN(pickup.getTime()) &&
+      pickup >= now &&
+      !normalizeStatus(booking.booking_status).startsWith("cancelled")
+    )
   })
 
   const pendingPayments = customerBookings.filter((booking) => {
