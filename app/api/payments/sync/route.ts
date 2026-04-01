@@ -27,6 +27,14 @@ function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
 
+function isSuccessfulMidtransStatus(status: string | null | undefined) {
+  return ["settlement", "capture"].includes(normalizeStatus(status))
+}
+
+function isPendingMidtransStatus(status: string | null | undefined) {
+  return ["pending", "authorize"].includes(normalizeStatus(status))
+}
+
 function formatDateLabel(value: string | null) {
   if (!value) return "-"
   const parsed = new Date(value)
@@ -97,7 +105,7 @@ export async function POST(req: Request) {
       .eq("booking_id", booking.id)
       .eq("order_id", resolvedOrderId)
 
-    if (transactionStatus === "settlement") {
+    if (isSuccessfulMidtransStatus(transactionStatus)) {
       const { paymentType } = resolveOrder(resolvedOrderId)
       const resolvedPaymentType = paymentType || booking.payment_type || "full"
       const nextPaymentStatus = resolvedPaymentType === "dp" ? "dp_paid" : "paid"
@@ -240,7 +248,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (transactionStatus === "pending") {
+    if (isPendingMidtransStatus(transactionStatus)) {
       await supabase
         .from("bookings")
         .update({

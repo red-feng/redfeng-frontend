@@ -37,6 +37,10 @@ function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
 
+function isSuccessfulMidtransStatus(status: string | null | undefined) {
+  return ["settlement", "capture"].includes(normalizeStatus(status))
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
@@ -87,7 +91,7 @@ export async function POST(req: Request) {
       .eq("booking_id", booking.id)
       .eq("order_id", order_id)
 
-    if (transaction_status === "settlement") {
+    if (isSuccessfulMidtransStatus(transaction_status)) {
       const resolvedPaymentType = paymentType || booking.payment_type || "full"
       const bookingPatch =
         resolvedPaymentType === "dp"

@@ -57,6 +57,32 @@ type BookingParticipantRow = {
   age: number | null
 }
 
+function hasExpectedParticipants(
+  participants: BookingParticipantRow[],
+  counts: {
+    adult: number
+    child: number
+  },
+) {
+  const expectedKeys = new Set<string>()
+
+  for (let index = 1; index <= counts.adult; index += 1) {
+    expectedKeys.add(`adult:${index}`)
+  }
+
+  for (let index = 1; index <= counts.child; index += 1) {
+    expectedKeys.add(`child:${index}`)
+  }
+
+  if (expectedKeys.size === 0 || participants.length !== expectedKeys.size) {
+    return false
+  }
+
+  return participants.every((participant) =>
+    expectedKeys.has(`${participant.participant_type}:${participant.sequence_no}`),
+  )
+}
+
 function titleCaseStatus(value: string | null) {
   const normalized = (value || "").trim().toLowerCase()
   if (!normalized) return "-"
@@ -164,7 +190,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const adultCount = Math.max(Number(booking.adult_count || 0), 0)
   const childCount = Math.max(Number(booking.child_count || 0), 0)
   const expectedParticipantCount = adultCount + childCount
-  const hasCompleteParticipants = expectedParticipantCount > 0 && participants.length === expectedParticipantCount
+  const hasCompleteParticipants = hasExpectedParticipants(participants, {
+    adult: adultCount,
+    child: childCount,
+  })
 
   const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
   const canPayRemaining =

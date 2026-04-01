@@ -20,6 +20,37 @@ function createOrderId(bookingCode: string | null | undefined, paymentType: stri
   return `${baseCode || fallbackCode}-${paymentType}-${Date.now()}`
 }
 
+type BookingParticipantRow = {
+  participant_type: "adult" | "child"
+  sequence_no: number
+}
+
+function hasExpectedParticipants(
+  participants: BookingParticipantRow[],
+  counts: {
+    adult: number
+    child: number
+  },
+) {
+  const expectedKeys = new Set<string>()
+
+  for (let index = 1; index <= counts.adult; index += 1) {
+    expectedKeys.add(`adult:${index}`)
+  }
+
+  for (let index = 1; index <= counts.child; index += 1) {
+    expectedKeys.add(`child:${index}`)
+  }
+
+  if (expectedKeys.size === 0 || participants.length !== expectedKeys.size) {
+    return false
+  }
+
+  return participants.every((participant) =>
+    expectedKeys.has(`${participant.participant_type}:${participant.sequence_no}`),
+  )
+}
+
 export async function POST(req: Request) {
   try {
     const { booking_id } = await req.json()
@@ -74,6 +105,46 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: "Booking ini bukan milik akun Anda" },
         { status: 403 }
+      )
+    }
+
+    const adultCount = Math.max(Number(booking.adult_count || 0), 0)
+    const childCount = Math.max(Number(booking.child_count || 0), 0)
+    const expectedParticipantCount = adultCount + childCount
+
+    if (expectedParticipantCount <= 0) {
+      return NextResponse.json(
+        { error: "Booking ini belum memiliki jumlah peserta yang valid" },
+        { status: 400 }
+      )
+    }
+
+    const { data: participantRows, error: participantError } = await supabase
+      .from("booking_participants")
+      .select("participant_type, sequence_no")
+      .eq("booking_id", booking.id)
+      .order("participant_type", { ascending: true })
+      .order("sequence_no", { ascending: true })
+
+    if (participantError) {
+      return NextResponse.json(
+        { error: "Data peserta belum bisa diverifikasi" },
+        { status: 500 }
+      )
+    }
+
+    const hasCompleteParticipants = hasExpectedParticipants(
+      (participantRows as BookingParticipantRow[] | null) || [],
+      {
+        adult: adultCount,
+        child: childCount,
+      }
+    )
+
+    if (!hasCompleteParticipants) {
+      return NextResponse.json(
+        { error: "Lengkapi data seluruh peserta sebelum membuka pembayaran." },
+        { status: 400 }
       )
     }
 

@@ -110,19 +110,19 @@ export default async function BookingParticipantsPage({
                       <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Nama lengkap</label>
-                          <input name={`adult_full_name_${sequenceNo}`} defaultValue={participant?.full_name || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`adult_full_name_${sequenceNo}`} defaultValue={participant?.full_name || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">No identitas / paspor</label>
-                          <input name={`adult_identity_number_${sequenceNo}`} defaultValue={participant?.identity_number || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`adult_identity_number_${sequenceNo}`} defaultValue={participant?.identity_number || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Kewarganegaraan</label>
-                          <input name={`adult_nationality_${sequenceNo}`} defaultValue={participant?.nationality || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`adult_nationality_${sequenceNo}`} defaultValue={participant?.nationality || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Umur</label>
-                          <input type="number" min="18" max="120" name={`adult_age_${sequenceNo}`} defaultValue={participant?.age ?? ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input type="number" min="18" max="120" step="1" inputMode="numeric" name={`adult_age_${sequenceNo}`} defaultValue={participant?.age ?? ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                       </div>
                     </div>
@@ -155,19 +155,19 @@ export default async function BookingParticipantsPage({
                       <div className="mt-4 grid gap-4 md:grid-cols-2">
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Nama lengkap</label>
-                          <input name={`child_full_name_${sequenceNo}`} defaultValue={participant?.full_name || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`child_full_name_${sequenceNo}`} defaultValue={participant?.full_name || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">No identitas / paspor</label>
-                          <input name={`child_identity_number_${sequenceNo}`} defaultValue={participant?.identity_number || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`child_identity_number_${sequenceNo}`} defaultValue={participant?.identity_number || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Kewarganegaraan</label>
-                          <input name={`child_nationality_${sequenceNo}`} defaultValue={participant?.nationality || ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input name={`child_nationality_${sequenceNo}`} defaultValue={participant?.nationality || ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                         <div>
                           <label className="mb-2 block text-sm font-medium text-slate-700">Umur</label>
-                          <input type="number" min="0" max="17" name={`child_age_${sequenceNo}`} defaultValue={participant?.age ?? ""} className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                          <input type="number" min="0" max="17" step="1" inputMode="numeric" name={`child_age_${sequenceNo}`} defaultValue={participant?.age ?? ""} required className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                         </div>
                       </div>
                     </div>
