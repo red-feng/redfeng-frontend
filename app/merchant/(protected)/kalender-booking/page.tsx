@@ -4,6 +4,7 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
+import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
 
 export const dynamic = "force-dynamic"
 
@@ -269,7 +270,9 @@ export default async function MerchantBookingCalendarPage() {
         .order("pickup_date", { ascending: true })
     : { data: [] as BookingCalendarRow[], error: packageError }
 
-  const bookings = (data as BookingCalendarRow[] | null) || []
+  const bookings = ((data as BookingCalendarRow[] | null) || []).filter(
+    (booking) => !isBookingExpiredForNonPayment(booking),
+  )
   const grouped = new Map<string, CalendarEntry>()
 
   for (const booking of bookings) {

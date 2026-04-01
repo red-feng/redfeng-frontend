@@ -5,6 +5,7 @@ import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normali
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { markMerchantArrived, markMerchantGo } from "./actions"
+import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
 
 export const dynamic = "force-dynamic"
 
@@ -203,7 +204,9 @@ export default async function MerchantOrdersPage({
         .order("created_at", { ascending: false })
     : { data: [] as BookingRow[], error: packageError }
 
-  const allBookings = ((data as BookingRow[] | null) ?? []).filter((booking) => isVisiblePaidBooking(booking))
+  const allBookings = ((data as BookingRow[] | null) ?? [])
+    .filter((booking) => !isBookingExpiredForNonPayment(booking))
+    .filter((booking) => isVisiblePaidBooking(booking))
   const bookings = allBookings.filter((booking) => isMatchingFilter(booking, activeFilter))
 
   const summaryCards = [
