@@ -49,8 +49,16 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
 1. Open Vercel project settings.
 2. Go to `Environment Variables`.
 3. Confirm all required values exist in `Production`.
-4. Redeploy after adding or changing any variable.
-5. Validate on the Vercel deployment URL, not localhost.
+4. Confirm `CRON_SECRET` is set in `Production` if scheduled cleanup endpoints are enabled.
+5. Verify `vercel.json` includes the cleanup cron for `/api/cron/cleanup-booking-drafts`.
+6. Redeploy after adding or changing any variable or cron configuration.
+7. Validate on the Vercel deployment URL, not localhost.
+
+## Active cron schedule
+
+- `/api/cron/cleanup-booking-drafts`
+  - Runs every 5 minutes via `vercel.json`.
+  - Deletes expired draft bookings and H-3 overdue unpaid bookings, including related payment and participant records.
 
 ## Symptoms of missing variables
 

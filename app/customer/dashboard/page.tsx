@@ -12,6 +12,7 @@ import {
   formatFinalPaymentDueLabel,
   isFinalPaymentOverdue,
 } from "@/lib/booking/final-payment-deadline"
+import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
 
 type BookingRow = {
   id: string
@@ -163,7 +164,9 @@ export default async function CustomerDashboardPage() {
     error = fallbackBookingsResult.error
   }
 
-  const customerBookings = ((bookings as BookingRow[] | null) || []).sort((a, b) => {
+  const customerBookings = ((bookings as BookingRow[] | null) || [])
+    .filter((booking) => !isBookingExpiredForNonPayment(booking))
+    .sort((a, b) => {
     const priorityDiff = getBookingPriority(b) - getBookingPriority(a)
     if (priorityDiff !== 0) return priorityDiff
 
@@ -173,8 +176,8 @@ export default async function CustomerDashboardPage() {
 
     const timeA = a.pickup_date ? new Date(a.pickup_date).getTime() : 0
     const timeB = b.pickup_date ? new Date(b.pickup_date).getTime() : 0
-    return timeB - timeA
-  })
+      return timeB - timeA
+    })
   const packageIds = [...new Set(customerBookings.map((booking) => booking.package_id).filter(Boolean))]
 
   let packageRows: PackageRow[] | null = []
