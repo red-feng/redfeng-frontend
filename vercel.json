@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/cleanup-booking-drafts",
-      "schedule": "*/5 * * * *"
+      "schedule": "5 17 * * *"
     }
   ]
 }
