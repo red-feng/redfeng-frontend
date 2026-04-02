@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { toneClass } from "@/lib/status-tones"
+import ConfirmSubmitButton from "../merchants/ConfirmSubmitButton"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 
 type PackageRow = {
@@ -225,9 +226,12 @@ export default async function AdminPackagesPage({
                 {isSuperadmin ? (
                   <form action={deletePackage}>
                     <input type="hidden" name="packageId" value={pkg.id} />
-                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    <ConfirmSubmitButton
+                      confirmMessage="Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan."
+                      className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                    >
                       Hapus permanen dari database
-                    </button>
+                    </ConfirmSubmitButton>
                   </form>
                 ) : (
                   <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">

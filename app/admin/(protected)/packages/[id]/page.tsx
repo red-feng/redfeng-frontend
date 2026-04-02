@@ -6,6 +6,7 @@ import { approvePackage, deletePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
+import ConfirmSubmitButton from "../../merchants/ConfirmSubmitButton"
 
 type CountryRow = {
   id: string
@@ -485,9 +486,12 @@ export default async function Page({
                       await deletePackage(id)
                     }}
                   >
-                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    <ConfirmSubmitButton
+                      confirmMessage="Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan."
+                      className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                    >
                       Hapus Permanen dari Database
-                    </button>
+                    </ConfirmSubmitButton>
                   </form>
                 ) : (
                   <div className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-500">

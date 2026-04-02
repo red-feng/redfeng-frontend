@@ -542,9 +542,12 @@ export default async function AdminMerchantsPage({
                             </p>
                             <form action={approveMerchant} className="mt-5">
                               <input type="hidden" name="merchantId" value={merchant.id} />
-                              <button className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
+                              <ConfirmSubmitButton
+                                confirmMessage="Yakin ingin approve merchant ini? Merchant akan mendapatkan akses aktif sesuai status persetujuan."
+                                className="inline-flex items-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700"
+                              >
                                 Approve merchant
-                              </button>
+                              </ConfirmSubmitButton>
                             </form>
                           </div>
 
@@ -563,9 +566,12 @@ export default async function AdminMerchantsPage({
                                 required
                                 className="min-h-[132px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                               />
-                              <button className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,38,38,0.22)] transition hover:bg-red-700">
+                              <ConfirmSubmitButton
+                                confirmMessage="Yakin ingin reject merchant ini? Merchant akan menerima alasan penolakan dan perlu mengajukan ulang."
+                                className="inline-flex items-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(220,38,38,0.22)] transition hover:bg-red-700"
+                              >
                                 Reject merchant
-                              </button>
+                              </ConfirmSubmitButton>
                             </form>
                           </div>
                         </>

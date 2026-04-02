@@ -147,6 +147,11 @@ export default function AdminMerchantPackageBulkClient({
               <button
                 formAction={bulkDeletePackages}
                 disabled={!selectedIds.length}
+                onClick={(event) => {
+                  if (!window.confirm("Yakin ingin menghapus permanen semua paket terpilih dari database? Tindakan ini tidak bisa dibatalkan.")) {
+                    event.preventDefault()
+                  }
+                }}
                 className="rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Hapus permanen paket terpilih
@@ -243,7 +248,14 @@ export default function AdminMerchantPackageBulkClient({
 
                   <form action={deletePackage}>
                     <input type="hidden" name="packageId" value={pkg.id} />
-                    <button className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    <button
+                      onClick={(event) => {
+                        if (!window.confirm("Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan.")) {
+                          event.preventDefault()
+                        }
+                      }}
+                      className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                    >
                       Hapus permanen dari database
                     </button>
                   </form>
