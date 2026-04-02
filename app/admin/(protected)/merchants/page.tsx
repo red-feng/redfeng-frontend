@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { toneClass } from "@/lib/status-tones"
 import Link from "next/link"
+import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
   approveMerchant,
@@ -793,9 +794,12 @@ export default async function AdminMerchantsPage({
                               required
                               className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                             />
-                            <button className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700">
+                            <ConfirmSubmitButton
+                              confirmMessage="Yakin ingin menghapus akses merchant ini? Role merchant akan dicabut karena data merchant tidak ditemukan."
+                              className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
+                            >
                               Hapus akses merchant
-                            </button>
+                            </ConfirmSubmitButton>
                           </form>
                         </>
                       ) : (

@@ -1,6 +1,7 @@
 "use client"
 
 import { useId, useState } from "react"
+import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import { deactivateMerchant, deleteMerchant } from "./actions"
 
 type MerchantReasonActionCardProps = {
@@ -49,6 +50,10 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
   const copy = COPY[variant]
   const action = variant === "deactivate" ? deactivateMerchant : deleteMerchant
   const submitLabel = variant === "deactivate" ? "Lanjutkan nonaktifkan" : "Lanjutkan hapus akses"
+  const confirmMessage =
+    variant === "deactivate"
+      ? "Yakin ingin menonaktifkan merchant ini? Merchant tidak akan bisa mengakses dashboard sampai diaktifkan kembali."
+      : "Yakin ingin menghapus akses merchant ini? Akses merchant akan dicabut dari sistem."
 
   return (
     <>
@@ -107,12 +112,12 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
                 >
                   Batal
                 </button>
-                <button
-                  type="submit"
+                <ConfirmSubmitButton
+                  confirmMessage={confirmMessage}
                   className={`rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition ${copy.buttonClass}`}
                 >
                   {submitLabel}
-                </button>
+                </ConfirmSubmitButton>
               </div>
             </form>
           </div>
