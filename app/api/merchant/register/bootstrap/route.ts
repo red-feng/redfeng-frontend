@@ -6,10 +6,15 @@ export async function POST(request: Request) {
     const body = (await request.json()) as {
       userId?: string
       email?: string
+      defaultLocale?: string
     }
 
     const userId = body.userId?.trim()
     const email = body.email?.trim().toLowerCase() ?? null
+    const defaultLocale =
+      body.defaultLocale === "en" || body.defaultLocale === "zh" || body.defaultLocale === "id"
+        ? body.defaultLocale
+        : "id"
 
     if (!userId) {
       return NextResponse.json({ error: "Missing merchant user id." }, { status: 400 })
@@ -33,6 +38,7 @@ export async function POST(request: Request) {
       {
         user_id: userId,
         email,
+        default_locale: defaultLocale,
         verification_status: "draft",
         onboarding_step: 1,
         onboarding_completed: false,

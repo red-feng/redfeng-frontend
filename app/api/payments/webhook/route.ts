@@ -34,6 +34,13 @@ function formatDateLabel(value: string | null) {
   })
 }
 
+function inferCustomerLocaleFromBooking(input: { display_currency?: string | null }) {
+  const currency = String(input.display_currency || "").trim().toUpperCase()
+  if (currency === "USD") return "en"
+  if (currency === "CNY" || currency === "RMB") return "zh"
+  return "id"
+}
+
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
@@ -74,7 +81,7 @@ export async function POST(req: Request) {
     const { data: booking } = await supabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency",
       )
       .or(`booking_code.eq.${bookingCode},id.eq.${order_id}`)
       .maybeSingle()
@@ -223,6 +230,7 @@ export async function POST(req: Request) {
           bookingCode: booking.booking_code || booking.id,
           customerName: booking.customer_name || null,
           customerEmail: booking.customer_email || null,
+          locale: inferCustomerLocaleFromBooking(booking),
           packageTitle: packageRow?.title || null,
           pickupDateLabel: formatDateLabel(booking.pickup_date || null),
           merchantName: merchantRow?.brand_name || merchantRow?.company_name || null,

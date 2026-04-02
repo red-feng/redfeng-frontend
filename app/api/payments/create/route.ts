@@ -6,6 +6,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 import { resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { formatFinalPaymentDueLabel, isFinalPaymentOverdue } from "@/lib/booking/final-payment-deadline"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 
 function resolveEnabledPayments(paymentMethod: string | null | undefined) {
   const normalizedMethod = resolveActiveCustomerPaymentMethod(paymentMethod)
@@ -51,16 +52,64 @@ function hasExpectedParticipants(
   )
 }
 
+function paymentCreateCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      loginRequired: "Please log in first.",
+      bookingNotFound: "Booking not found.",
+      alreadyPaid: "This booking has already been fully paid.",
+      notOwner: "This booking does not belong to your account.",
+      invalidParticipants: "This booking does not yet have a valid participant count.",
+      participantVerificationFailed: "Participant data could not be verified.",
+      participantsIncomplete: "Please complete all participant data before opening payment.",
+      overdueFinalPayment: (dueLabel: string) => `The final payment deadline has passed. Final payment can only be made until ${dueLabel}.`,
+      paymentRecordFailed: "Failed to create payment record.",
+      popupFailedCleanup: "The payment popup could not be opened. The draft booking was cleaned up automatically.",
+      serverError: "Server error.",
+    }
+  }
+  if (locale === "zh") {
+    return {
+      loginRequired: "请先登录。",
+      bookingNotFound: "未找到订单。",
+      alreadyPaid: "该订单已完成全额付款。",
+      notOwner: "该订单不属于您的账号。",
+      invalidParticipants: "该订单尚未有有效的参团人数。",
+      participantVerificationFailed: "无法验证参团人资料。",
+      participantsIncomplete: "请先完善所有参团人资料后再打开付款。",
+      overdueFinalPayment: (dueLabel: string) => `尾款期限已过，尾款只能在 ${dueLabel} 前支付。`,
+      paymentRecordFailed: "创建付款记录失败。",
+      popupFailedCleanup: "无法打开付款弹窗，草稿订单已自动清理。",
+      serverError: "服务器错误。",
+    }
+  }
+  return {
+    loginRequired: "Silakan login terlebih dahulu",
+    bookingNotFound: "Booking tidak ditemukan",
+    alreadyPaid: "Booking ini sudah lunas",
+    notOwner: "Booking ini bukan milik akun Anda",
+    invalidParticipants: "Booking ini belum memiliki jumlah peserta yang valid",
+    participantVerificationFailed: "Data peserta belum bisa diverifikasi",
+    participantsIncomplete: "Lengkapi data seluruh peserta sebelum membuka pembayaran.",
+    overdueFinalPayment: (dueLabel: string) => `Batas pelunasan sudah lewat. Pelunasan hanya bisa dilakukan sampai ${dueLabel}.`,
+    paymentRecordFailed: "Gagal membuat payment record",
+    popupFailedCleanup: "Popup pembayaran belum bisa dibuka. Draft booking dibersihkan otomatis.",
+    serverError: "Server error",
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const { booking_id } = await req.json()
+    const { booking_id, locale } = await req.json()
+    const activeLocale = normalizeLocale(locale)
+    const t = paymentCreateCopy(activeLocale)
     const authSupabase = await createServerClient()
     const {
       data: { user },
     } = await authSupabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 })
+      return NextResponse.json({ error: t.loginRequired }, { status: 401 })
     }
 
     const supabase = createClient(
@@ -79,14 +128,14 @@ export async function POST(req: Request) {
 
     if (error || !booking) {
       return NextResponse.json(
-        { error: "Booking tidak ditemukan" },
+        { error: t.bookingNotFound },
         { status: 404 }
       )
     }
 
     if (booking.payment_status === "paid") {
       return NextResponse.json(
-        { error: "Booking ini sudah lunas" },
+        { error: t.alreadyPaid },
         { status: 400 }
       )
     }
@@ -96,14 +145,14 @@ export async function POST(req: Request) {
 
     if (booking.user_id && booking.user_id !== user.id) {
       return NextResponse.json(
-        { error: "Booking ini bukan milik akun Anda" },
+        { error: t.notOwner },
         { status: 403 }
       )
     }
 
     if (!booking.user_id && bookingOwnerEmail && signedInEmail && bookingOwnerEmail !== signedInEmail) {
       return NextResponse.json(
-        { error: "Booking ini bukan milik akun Anda" },
+        { error: t.notOwner },
         { status: 403 }
       )
     }
@@ -114,7 +163,7 @@ export async function POST(req: Request) {
 
     if (expectedParticipantCount <= 0) {
       return NextResponse.json(
-        { error: "Booking ini belum memiliki jumlah peserta yang valid" },
+        { error: t.invalidParticipants },
         { status: 400 }
       )
     }
@@ -128,7 +177,7 @@ export async function POST(req: Request) {
 
     if (participantError) {
       return NextResponse.json(
-        { error: "Data peserta belum bisa diverifikasi" },
+        { error: t.participantVerificationFailed },
         { status: 500 }
       )
     }
@@ -143,7 +192,7 @@ export async function POST(req: Request) {
 
     if (!hasCompleteParticipants) {
       return NextResponse.json(
-        { error: "Lengkapi data seluruh peserta sebelum membuka pembayaran." },
+        { error: t.participantsIncomplete },
         { status: 400 }
       )
     }
@@ -159,7 +208,7 @@ export async function POST(req: Request) {
     if (hasPaidDp && isFinalPaymentOverdue(booking.pickup_date || null)) {
       return NextResponse.json(
         {
-          error: `Batas pelunasan sudah lewat. Pelunasan hanya bisa dilakukan sampai ${formatFinalPaymentDueLabel(booking.pickup_date || null)}.`,
+          error: t.overdueFinalPayment(formatFinalPaymentDueLabel(booking.pickup_date || null)),
         },
         { status: 400 }
       )
@@ -193,7 +242,7 @@ export async function POST(req: Request) {
 
     if (paymentError) {
       return NextResponse.json(
-        { error: paymentError.message || "Gagal membuat payment record" },
+        { error: paymentError.message || t.paymentRecordFailed },
         { status: 500 }
       )
     }
@@ -235,7 +284,7 @@ export async function POST(req: Request) {
           error:
             gatewayError instanceof Error
               ? gatewayError.message
-              : "Popup pembayaran belum bisa dibuka. Draft booking dibersihkan otomatis.",
+              : t.popupFailedCleanup,
         },
         { status: 500 }
       )
@@ -250,7 +299,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Server error" },
+      { error: error instanceof Error ? error.message : t.serverError },
       { status: 500 }
     )
   }

@@ -5,6 +5,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
+import type { Locale } from "@/lib/i18n"
 
 const highlights = [
   {
@@ -30,12 +31,19 @@ const checkpoints = [
   "Upload dokumen untuk masuk review admin",
 ]
 
+const languageOptions: Array<{ value: Locale; label: string }> = [
+  { value: "id", label: "Bahasa Indonesia" },
+  { value: "en", label: "English" },
+  { value: "zh", label: "中文" },
+]
+
 export default function MerchantRegister() {
   const supabase = createClient()
   const router = useRouter()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [defaultLocale, setDefaultLocale] = useState<Locale>("id")
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
@@ -85,6 +93,7 @@ export default function MerchantRegister() {
         body: JSON.stringify({
           userId: signInData.user.id,
           email: normalizedEmail,
+          defaultLocale,
         }),
       })
 
@@ -118,6 +127,7 @@ export default function MerchantRegister() {
       body: JSON.stringify({
         userId: user.id,
         email: normalizedEmail,
+        defaultLocale,
       }),
     })
 
@@ -253,6 +263,30 @@ export default function MerchantRegister() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
+                </div>
+
+                <div className="space-y-3">
+                  <label
+                    htmlFor="merchant-default-language"
+                    className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500"
+                  >
+                    Bahasa default merchant
+                  </label>
+                  <select
+                    id="merchant-default-language"
+                    value={defaultLocale}
+                    onChange={(e) => setDefaultLocale(e.target.value as Locale)}
+                    className="w-full rounded-[20px] border border-orange-100 bg-white px-5 py-4 text-base text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  >
+                    {languageOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-sm leading-7 text-slate-500">
+                    Bahasa ini akan dipakai sebagai bahasa default komunikasi email merchant dari sistem admin.
+                  </p>
                 </div>
 
                 <div className="space-y-3">

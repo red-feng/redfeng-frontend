@@ -1,6 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import { normalizeLocale } from "@/lib/i18n"
+import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createClient } from "@/lib/supabase/server"
@@ -42,6 +45,13 @@ export default async function CustomerLayout({
   }
 
   const customerCode = formatCustomerCode(user.id)
+  const locale = normalizeLocale(await getCurrentLocale())
+  const languageLabel = locale === "en" ? "Language" : locale === "zh" ? "语言" : "Bahasa"
+  const languageOptions = [
+    { value: "id" as const, label: "Bahasa Indonesia" },
+    { value: "en" as const, label: "English" },
+    { value: "zh" as const, label: "中文" },
+  ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
@@ -69,6 +79,11 @@ export default async function CustomerLayout({
             </div>
           </div>
           <div className="flex items-center gap-3 text-sm text-slate-600">
+            <MerchantLanguageSwitcher
+              locale={locale}
+              label={languageLabel}
+              options={languageOptions}
+            />
             <Link
               href="/customer/dashboard"
               className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"

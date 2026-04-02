@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 import { getCurrentLocale } from "@/lib/locale"
-import { normalizeLocale } from "@/lib/i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getEscrowStatusTone, getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
 import {
@@ -54,23 +54,306 @@ function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
 }
 
-function formatDate(dateStr: string | null) {
+function formatDate(dateStr: string | null, locale: Locale) {
   if (!dateStr) return "-"
   const date = new Date(dateStr)
   if (Number.isNaN(date.getTime())) return dateStr
-  return date.toLocaleDateString("id-ID", {
+  const dateLocale = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
+  return date.toLocaleDateString(dateLocale, {
     day: "2-digit",
     month: "long",
     year: "numeric",
   })
 }
 
-function resolvePaymentHeadline(status: string | null) {
+const dashboardCopy = {
+  id: {
+    paymentWaitingSettlement: "Menunggu Pelunasan",
+    paid: "Lunas",
+    awaitingPayment: "Menunggu Pembayaran",
+    refundReview: "Refund Ditinjau",
+    merchantGo: "Merchant sudah klik Go",
+    customerPickedUp: "Customer sudah klik Picked up",
+    merchantArrived: "Merchant sudah tiba di meeting point",
+    waitingSettlementCustomer: "Menunggu pelunasan customer",
+    completePaymentWaitingPickup: "Pembayaran lengkap, menunggu progress pickup",
+    waitingPickupProgress: "Menunggu progress pickup",
+    totalBooking: "Total Booking",
+    totalBookingNote: "Riwayat seluruh transaksi Anda",
+    upcomingTrips: "Trip Mendatang",
+    upcomingTripsNote: "Booking dengan tanggal wisata terdekat",
+    waitingYourAction: "Menunggu Aksi Anda",
+    waitingYourActionNote: "Booking yang perlu konfirmasi customer",
+    financeFunds: "Dana Diproses RedFeng",
+    financeFundsNote: "Dana sedang atau sudah diproses melalui finance",
+    paymentPending: "Payment pending",
+    paymentPendingNote: "Perlu diselesaikan agar booking tetap aman.",
+    settlement: "Pelunasan",
+    settlementNote: "Booking DP yang menunggu pelunasan akhir.",
+    pickupConfirmation: "Pickup confirmation",
+    pickupConfirmationNote: "Merchant sudah Arrived, customer perlu klik Picked up.",
+    upcomingPlans: "Upcoming plans",
+    upcomingPlansNote: "Trip aktif yang tanggalnya belum lewat.",
+    checklist1Title: "Login sebelum checkout",
+    checklist1Body: "Booking dan pembayaran hanya bisa dilakukan oleh customer yang sudah login ke akun RedFeng.",
+    checklist2Title: "Pantau progress meeting point",
+    checklist2Body: "Saat merchant klik Arrived atau Go, update akan muncul di booking Anda sebagai acuan koordinasi.",
+    checklist3Title: "Konfirmasi sudah dijemput",
+    checklist3Body: "Klik Picked up setelah benar-benar naik kendaraan agar merchant bisa lanjut klik Go dan booking normal yang sudah lunas bisa masuk queue finance.",
+    heroBadge: "Customer Travel Hub",
+    heroTitle: "Kelola booking, pembayaran, dan progress trip Anda dalam satu workspace.",
+    heroBody: "Pantau status transaksi, alur escrow RedFeng, progres pickup merchant, dan akses cepat ke detail trip tanpa perlu lompat antar halaman.",
+    travelSnapshot: "Travel snapshot",
+    travelSnapshotBody: "Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.",
+    quickActions: "Quick actions",
+    explorePackages: "Jelajahi Paket",
+    backHome: "Kembali ke Beranda",
+    bookingFeed: "Booking Feed",
+    latestBookings: "Booking terbaru Anda",
+    latestBookingsBody: "Monitor pembayaran, status trip, dan escrow untuk booking yang paling relevan saat ini.",
+    failedLoad: "Gagal memuat dashboard customer.",
+    noBookings: "Belum ada booking. Mulai dari jelajahi paket, lanjut checkout, lalu semua progres trip akan muncul di sini.",
+    booking: "Booking",
+    code: "Kode",
+    pay: "Bayar",
+    trip: "Trip",
+    escrow: "Escrow",
+    travelDate: "Tanggal Wisata",
+    totalTransaction: "Total Transaksi",
+    localizedPrice: "Harga sesuai bahasa customer:",
+    pickupProgress: "Progress Pickup",
+    settlementBadge: "Pelunasan Booking",
+    settlementMissed: "Pelunasan Terlewat",
+    waitingSettlement: "Menunggu Pelunasan",
+    settlementMissedBody: "Batas waktu pelunasan sudah lewat. Booking ini memerlukan tindak lanjut manual dari tim Red Feng.",
+    settlementWaitingBody: "DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir.",
+    deadlinePassed: "Batas terlewat",
+    dueH3: "Jatuh tempo H-3",
+    dpReceived: "DP diterima",
+    remainingSettlement: "Sisa pelunasan",
+    settlementDeadline: "Batas pelunasan",
+    viewBooking: "Lihat Detail Booking",
+    postBookingChat: "Chat Sesudah Booking",
+    payNow: "Lunasi Sekarang",
+    viewPackage: "Lihat Paket",
+    customerGuide: "Customer Guide",
+    customerChecklist: "Checklist aksi customer",
+    paymentOverview: "Payment overview",
+    paymentSummary: "Ringkasan pembayaran",
+    waitingPayment: "Menunggu pembayaran",
+    waitingSettlementShort: "Menunggu pelunasan",
+    waitingCustomerAction: "Menunggu aksi customer",
+    financeProcessing: "Diproses finance",
+    financeReview: "Ditinjau finance",
+    paidOut: "Sudah dibayarkan",
+    confirmed: "Dikonfirmasi",
+    cancelled: "Dibatalkan",
+    escrowHeld: "Dana ditahan",
+    escrowPartialHold: "Dana ditahan sebagian",
+  },
+  en: {
+    paymentWaitingSettlement: "Awaiting Final Payment",
+    paid: "Paid",
+    awaitingPayment: "Awaiting Payment",
+    refundReview: "Refund Under Review",
+    merchantGo: "Merchant has clicked Go",
+    customerPickedUp: "Customer has clicked Picked up",
+    merchantArrived: "Merchant has arrived at the meeting point",
+    waitingSettlementCustomer: "Waiting for customer final payment",
+    completePaymentWaitingPickup: "Payment complete, waiting for pickup progress",
+    waitingPickupProgress: "Waiting for pickup progress",
+    totalBooking: "Total Bookings",
+    totalBookingNote: "Your full booking and transaction history",
+    upcomingTrips: "Upcoming Trips",
+    upcomingTripsNote: "Bookings with the nearest travel dates",
+    waitingYourAction: "Waiting for Your Action",
+    waitingYourActionNote: "Bookings that need customer confirmation",
+    financeFunds: "Funds Processed by RedFeng",
+    financeFundsNote: "Funds are being or have been processed through finance",
+    paymentPending: "Payment pending",
+    paymentPendingNote: "Needs to be completed to keep the booking secure.",
+    settlement: "Final Payment",
+    settlementNote: "DP bookings waiting for the remaining payment.",
+    pickupConfirmation: "Pickup confirmation",
+    pickupConfirmationNote: "Merchant has Arrived, customer needs to click Picked up.",
+    upcomingPlans: "Upcoming plans",
+    upcomingPlansNote: "Active trips with dates that have not passed.",
+    checklist1Title: "Log in before checkout",
+    checklist1Body: "Booking and payment can only be made by customers who are logged into a RedFeng account.",
+    checklist2Title: "Monitor meeting point progress",
+    checklist2Body: "When the merchant clicks Arrived or Go, the update will appear in your booking for coordination.",
+    checklist3Title: "Confirm that you have been picked up",
+    checklist3Body: "Click Picked up only after you are actually in the vehicle so the merchant can continue with Go and fully paid normal bookings can move into the finance queue.",
+    heroBadge: "Customer Travel Hub",
+    heroTitle: "Manage your bookings, payments, and trip progress in one workspace.",
+    heroBody: "Track transaction status, RedFeng escrow flow, merchant pickup progress, and quick access to trip details without jumping between pages.",
+    travelSnapshot: "Travel snapshot",
+    travelSnapshotBody: "Total bookings linked to your account, including active bookings and transaction history.",
+    quickActions: "Quick actions",
+    explorePackages: "Explore Packages",
+    backHome: "Back to Home",
+    bookingFeed: "Booking Feed",
+    latestBookings: "Your latest bookings",
+    latestBookingsBody: "Monitor payment, trip status, and escrow for the bookings most relevant right now.",
+    failedLoad: "Failed to load customer dashboard.",
+    noBookings: "No bookings yet. Start by exploring packages, continue to checkout, and all trip progress will appear here.",
+    booking: "Booking",
+    code: "Code",
+    pay: "Pay",
+    trip: "Trip",
+    escrow: "Escrow",
+    travelDate: "Travel Date",
+    totalTransaction: "Total Transaction",
+    localizedPrice: "Price in customer language:",
+    pickupProgress: "Pickup Progress",
+    settlementBadge: "Booking Final Payment",
+    settlementMissed: "Final Payment Missed",
+    waitingSettlement: "Awaiting Final Payment",
+    settlementMissedBody: "The final payment deadline has passed. This booking requires manual follow-up from the Red Feng team.",
+    settlementWaitingBody: "The DP for this booking has been received. The customer only needs to complete the remaining payment before the deadline.",
+    deadlinePassed: "Deadline passed",
+    dueH3: "Due H-3",
+    dpReceived: "DP received",
+    remainingSettlement: "Remaining payment",
+    settlementDeadline: "Payment deadline",
+    viewBooking: "View Booking Detail",
+    postBookingChat: "Post-booking Chat",
+    payNow: "Pay Now",
+    viewPackage: "View Package",
+    customerGuide: "Customer Guide",
+    customerChecklist: "Customer action checklist",
+    paymentOverview: "Payment overview",
+    paymentSummary: "Payment summary",
+    waitingPayment: "Awaiting payment",
+    waitingSettlementShort: "Awaiting final payment",
+    waitingCustomerAction: "Waiting for customer action",
+    financeProcessing: "Being processed by finance",
+    financeReview: "Under finance review",
+    paidOut: "Paid out",
+    confirmed: "Confirmed",
+    cancelled: "Cancelled",
+    escrowHeld: "Funds on hold",
+    escrowPartialHold: "Funds partially on hold",
+  },
+  zh: {
+    paymentWaitingSettlement: "等待尾款",
+    paid: "已付款",
+    awaitingPayment: "等待付款",
+    refundReview: "退款审核中",
+    merchantGo: "商家已点击 Go",
+    customerPickedUp: "客户已点击 Picked up",
+    merchantArrived: "商家已到达集合点",
+    waitingSettlementCustomer: "等待客户支付尾款",
+    completePaymentWaitingPickup: "付款已完成，等待接送进度",
+    waitingPickupProgress: "等待接送进度",
+    totalBooking: "订单总数",
+    totalBookingNote: "您的全部订单与交易记录",
+    upcomingTrips: "即将出行",
+    upcomingTripsNote: "距离出行日期最近的订单",
+    waitingYourAction: "等待您的操作",
+    waitingYourActionNote: "需要客户确认的订单",
+    financeFunds: "由 RedFeng 处理中的资金",
+    financeFundsNote: "资金正在或已经由财务处理",
+    paymentPending: "待付款",
+    paymentPendingNote: "请尽快完成，以确保订单有效。",
+    settlement: "尾款",
+    settlementNote: "已付定金、等待支付尾款的订单。",
+    pickupConfirmation: "接送确认",
+    pickupConfirmationNote: "商家已点击 Arrived，客户需要点击 Picked up。",
+    upcomingPlans: "即将计划",
+    upcomingPlansNote: "日期尚未过去的有效行程。",
+    checklist1Title: "结账前先登录",
+    checklist1Body: "只有已登录 RedFeng 账号的客户才能进行预订和付款。",
+    checklist2Title: "关注集合点进度",
+    checklist2Body: "当商家点击 Arrived 或 Go 时，更新会显示在您的订单中，方便协调。",
+    checklist3Title: "确认已上车",
+    checklist3Body: "请在真正上车后再点击 Picked up，这样商家才能继续点击 Go，且已全额付款的正常订单才能进入财务队列。",
+    heroBadge: "客户旅行中心",
+    heroTitle: "在一个工作区中管理您的订单、付款和行程进度。",
+    heroBody: "查看交易状态、RedFeng 托管流程、商家接送进度，并快速进入行程详情，无需来回切换页面。",
+    travelSnapshot: "旅行概览",
+    travelSnapshotBody: "与您账号关联的订单总数，包括进行中的订单和交易历史。",
+    quickActions: "快捷操作",
+    explorePackages: "浏览套餐",
+    backHome: "返回首页",
+    bookingFeed: "订单动态",
+    latestBookings: "您的最新订单",
+    latestBookingsBody: "查看当前最相关订单的付款、行程状态和托管进度。",
+    failedLoad: "客户仪表盘加载失败。",
+    noBookings: "目前还没有订单。先浏览套餐并完成结账，之后所有行程进度都会显示在这里。",
+    booking: "订单",
+    code: "编号",
+    pay: "付款",
+    trip: "行程",
+    escrow: "托管",
+    travelDate: "出行日期",
+    totalTransaction: "交易总额",
+    localizedPrice: "客户语言价格：",
+    pickupProgress: "接送进度",
+    settlementBadge: "订单尾款",
+    settlementMissed: "错过尾款期限",
+    waitingSettlement: "等待尾款",
+    settlementMissedBody: "尾款支付期限已过。该订单需要 Red Feng 团队人工跟进。",
+    settlementWaitingBody: "该订单定金已收到，客户只需在截止时间前完成剩余付款。",
+    deadlinePassed: "已过期限",
+    dueH3: "出发前 3 天到期",
+    dpReceived: "已收定金",
+    remainingSettlement: "剩余尾款",
+    settlementDeadline: "尾款截止时间",
+    viewBooking: "查看订单详情",
+    postBookingChat: "订单后聊天",
+    payNow: "立即支付尾款",
+    viewPackage: "查看套餐",
+    customerGuide: "客户指引",
+    customerChecklist: "客户操作清单",
+    paymentOverview: "付款概览",
+    paymentSummary: "付款汇总",
+    waitingPayment: "等待付款",
+    waitingSettlementShort: "等待尾款",
+    waitingCustomerAction: "等待客户操作",
+    financeProcessing: "财务处理中",
+    financeReview: "财务审核中",
+    paidOut: "已付款给商家",
+    confirmed: "已确认",
+    cancelled: "已取消",
+    escrowHeld: "资金已托管",
+    escrowPartialHold: "部分资金托管中",
+  },
+} satisfies Record<Locale, Record<string, string>>
+
+function resolvePaymentHeadline(status: string | null, locale: Locale) {
+  const t = dashboardCopy[locale]
   const normalized = normalizeStatus(status)
-  if (normalized === "dp_paid") return "Menunggu Pelunasan"
-  if (normalized === "paid") return "Lunas"
-  if (normalized === "pending") return "Menunggu Pembayaran"
-  if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  if (normalized === "dp_paid") return t.paymentWaitingSettlement
+  if (normalized === "paid") return t.paid
+  if (normalized === "pending") return t.awaitingPayment
+  if (normalized === "refund_pending_review") return t.refundReview
+  return titleCaseStatus(status)
+}
+
+function resolveTripStatusLabel(status: string | null, locale: Locale) {
+  const normalized = normalizeStatus(status)
+  const t = dashboardCopy[locale]
+  if (normalized === "merchant_arrived") return t.merchantArrived
+  if (normalized === "customer_picked_up") return t.customerPickedUp
+  if (normalized === "customer_picked_up_pending_final_payment") return t.customerPickedUp
+  if (normalized === "awaiting_admin_handoff" || normalized === "finance_review") return t.financeReview
+  if (normalized === "finance_processing" || normalized === "payout_processing") return t.financeProcessing
+  if (normalized === "payout_completed") return t.paidOut
+  if (normalized === "confirmed") return t.confirmed
+  if (normalized.startsWith("cancelled")) return t.cancelled
+  return titleCaseStatus(status)
+}
+
+function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
+  const normalized = normalizeStatus(status)
+  const t = dashboardCopy[locale]
+  if (normalized === "held") return t.escrowHeld
+  if (normalized === "partial_hold") return t.escrowPartialHold
+  if (normalized === "finance_review" || normalized === "awaiting_admin_handoff") return t.financeReview
+  if (normalized === "payout_processing") return t.financeProcessing
+  if (normalized === "paid_out") return t.paidOut
+  if (normalized === "refund_pending_review") return t.refundReview
   return titleCaseStatus(status)
 }
 
@@ -103,13 +386,14 @@ function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   return toneClass("neutral")
 }
 
-function getTimelineStatus(booking: BookingRow) {
-  if (booking.merchant_picked_up_at) return "Merchant sudah klik Go"
-  if (booking.customer_picked_up_at) return "Customer sudah klik Picked up"
-  if (booking.merchant_arrived_at) return "Merchant sudah tiba di meeting point"
-  if (normalizeStatus(booking.payment_status) === "dp_paid") return "Menunggu pelunasan customer"
-  if (normalizeStatus(booking.payment_status) === "paid") return "Pembayaran lengkap, menunggu progress pickup"
-  return "Menunggu progress pickup"
+function getTimelineStatus(booking: BookingRow, locale: Locale) {
+  const t = dashboardCopy[locale]
+  if (booking.merchant_picked_up_at) return t.merchantGo
+  if (booking.customer_picked_up_at) return t.customerPickedUp
+  if (booking.merchant_arrived_at) return t.merchantArrived
+  if (normalizeStatus(booking.payment_status) === "dp_paid") return t.waitingSettlementCustomer
+  if (normalizeStatus(booking.payment_status) === "paid") return t.completePaymentWaitingPickup
+  return t.waitingPickupProgress
 }
 
 function getBookingPriority(booking: BookingRow) {
@@ -134,6 +418,7 @@ export default async function CustomerDashboardPage() {
   if (!user) return null
   if (!user.email) return null
   const customerCode = formatCustomerCode(user.id)
+  const t = dashboardCopy[locale]
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null
@@ -224,66 +509,67 @@ export default async function CustomerDashboardPage() {
 
   const summaryCards = [
     {
-      label: "Total Booking",
+      label: t.totalBooking,
       value: customerBookings.length,
-      note: "Riwayat seluruh transaksi Anda",
+      note: t.totalBookingNote,
       tone: "from-amber-500 to-orange-400",
     },
     {
-      label: "Trip Mendatang",
+      label: t.upcomingTrips,
       value: upcomingTrips.length,
-      note: "Booking dengan tanggal wisata terdekat",
+      note: t.upcomingTripsNote,
       tone: "from-orange-500 to-amber-300",
     },
     {
-      label: "Menunggu Aksi Anda",
+      label: t.waitingYourAction,
       value: waitingCustomerAction.length,
-      note: "Booking yang perlu konfirmasi customer",
+      note: t.waitingYourActionNote,
       tone: "from-orange-600 to-red-400",
     },
     {
-      label: "Dana Diproses RedFeng",
+      label: t.financeFunds,
       value: readyForPayout.length,
-      note: "Dana sedang atau sudah diproses melalui finance",
+      note: t.financeFundsNote,
       tone: "from-lime-500 to-emerald-400",
     },
   ]
 
   const quickSignals = [
-    {
-      label: "Payment pending",
+      {
+      label: t.paymentPending,
       value: String(pendingPayments.length),
-      note: "Perlu diselesaikan agar booking tetap aman.",
+      note: t.paymentPendingNote,
     },
     {
-      label: "Pelunasan",
+      label: t.settlement,
       value: String(pendingSettlements.length),
-      note: "Booking DP yang menunggu pelunasan akhir.",
+      note: t.settlementNote,
     },
     {
-      label: "Pickup confirmation",
+      label: t.pickupConfirmation,
       value: String(waitingCustomerAction.length),
-      note: "Merchant sudah Arrived, customer perlu klik Picked up.",
+      note: t.pickupConfirmationNote,
     },
     {
-      label: "Upcoming plans",
+      label: t.upcomingPlans,
       value: String(upcomingTrips.length),
-      note: "Trip aktif yang tanggalnya belum lewat.",
+      note: t.upcomingPlansNote,
     },
   ]
 
   const customerChecklist = [
     {
       title: "Login sebelum checkout",
-      body: "Booking dan pembayaran hanya bisa dilakukan oleh customer yang sudah login ke akun RedFeng.",
+      title: t.checklist1Title,
+      body: t.checklist1Body,
     },
     {
-      title: "Pantau progress meeting point",
-      body: "Saat merchant klik Arrived atau Go, update akan muncul di booking Anda sebagai acuan koordinasi.",
+      title: t.checklist2Title,
+      body: t.checklist2Body,
     },
     {
-      title: "Konfirmasi sudah dijemput",
-      body: "Klik Picked up setelah benar-benar naik kendaraan agar merchant bisa lanjut klik Go dan booking normal yang sudah lunas bisa masuk queue finance.",
+      title: t.checklist3Title,
+      body: t.checklist3Body,
     },
   ]
 
@@ -294,14 +580,13 @@ export default async function CustomerDashboardPage() {
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Customer Travel Hub
+                {t.heroBadge}
               </span>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-                Kelola booking, pembayaran, dan progress trip Anda dalam satu workspace.
+                {t.heroTitle}
               </h1>
               <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
-                Pantau status transaksi, alur escrow RedFeng, progres pickup merchant, dan akses cepat
-                ke detail trip tanpa perlu lompat antar halaman.
+                {t.heroBody}
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -317,10 +602,10 @@ export default async function CustomerDashboardPage() {
 
             <div className="grid gap-4">
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Travel snapshot</p>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.travelSnapshot}</p>
                 <p className="mt-4 text-3xl font-semibold text-white">{customerBookings.length}</p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
-                  Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.
+                  {t.travelSnapshotBody}
                 </p>
                 <div className="mt-4 inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-50">
                   {customerCode}
@@ -328,19 +613,19 @@ export default async function CustomerDashboardPage() {
               </div>
 
               <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
-                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">Quick actions</p>
+                <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.quickActions}</p>
                 <div className="mt-5 grid gap-3">
                   <Link
                     href="https://redfeng.co/paket-tour/"
                     className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-orange-50"
                   >
-                    Jelajahi Paket
+                    {t.explorePackages}
                   </Link>
                   <Link
                     href="https://redfeng.co/"
                     className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                   >
-                    Kembali ke Beranda
+                    {t.backHome}
                   </Link>
                 </div>
               </div>
@@ -367,23 +652,23 @@ export default async function CustomerDashboardPage() {
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                  Booking Feed
+                  {t.bookingFeed}
                 </span>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Booking terbaru Anda</h2>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{t.latestBookings}</h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Monitor pembayaran, status trip, dan escrow untuk booking yang paling relevan saat ini.
+                  {t.latestBookingsBody}
                 </p>
               </div>
             </div>
 
             {error ? (
               <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
-                Gagal memuat dashboard customer.
+                {t.failedLoad}
                 {error.message ? <div className="mt-2 text-xs text-rose-600">Detail: {error.message}</div> : null}
               </div>
             ) : customerBookings.length === 0 ? (
               <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-6 text-sm text-slate-600">
-                Belum ada booking. Mulai dari jelajahi paket, lanjut checkout, lalu semua progres trip akan muncul di sini.
+                {t.noBookings}
               </div>
             ) : (
               <div className="mt-6 space-y-4">
@@ -403,43 +688,43 @@ export default async function CustomerDashboardPage() {
                     >
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Booking</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{t.booking}</p>
                           <h3 className="mt-2 text-xl font-semibold text-slate-950">
                             {pkg?.title || booking.booking_code || booking.id}
                           </h3>
-                          <p className="mt-2 text-sm text-slate-500">Kode: {booking.booking_code || booking.id}</p>
+                          <p className="mt-2 text-sm text-slate-500">{t.code}: {booking.booking_code || booking.id}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>
-                            Bayar: {resolvePaymentHeadline(booking.payment_status)}
+                            {t.pay}: {resolvePaymentHeadline(booking.payment_status, locale)}
                           </span>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.booking_status, "trip")}`}>
-                            Trip: {titleCaseStatus(booking.booking_status)}
+                            {t.trip}: {resolveTripStatusLabel(booking.booking_status, locale)}
                           </span>
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.escrow_status, "escrow")}`}>
-                            Escrow: {titleCaseStatus(booking.escrow_status)}
+                            {t.escrow}: {resolveEscrowStatusLabel(booking.escrow_status, locale)}
                           </span>
                         </div>
                       </div>
 
                       <div className="mt-5 grid gap-4 md:grid-cols-3">
                         <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Tanggal Wisata</p>
-                          <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date)}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.travelDate}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(booking.pickup_date, locale)}</p>
                         </div>
                         <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total Transaksi</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.totalTransaction}</p>
                           <p className="mt-2 text-sm font-medium text-slate-900">{formatMoney(Number(booking.total_amount || 0))}</p>
                           {booking.display_currency && (
                             <p className="mt-2 text-xs text-slate-500">
-                              Harga sesuai bahasa customer:{" "}
+                              {t.localizedPrice}{" "}
                               {formatPackageMoney(booking.display_subtotal_amount, booking.display_currency, locale)}
                             </p>
                           )}
                         </div>
                         <div className="rounded-[20px] border border-[#efe1cf] bg-white/80 p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Pickup</p>
-                          <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking)}</p>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.pickupProgress}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking, locale)}</p>
                         </div>
                       </div>
 
@@ -447,32 +732,32 @@ export default async function CustomerDashboardPage() {
                         <div className="mt-5 rounded-[24px] border border-amber-200 bg-[linear-gradient(135deg,#fff8e7_0%,#fff2cf_100%)] p-5 text-amber-900">
                           <div className="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-700">Pelunasan Booking</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amber-700">{t.settlementBadge}</p>
                               <h4 className="mt-2 text-lg font-semibold text-amber-950">
-                                {isSettlementOverdue ? "Pelunasan Terlewat" : "Menunggu Pelunasan"}
+                                {isSettlementOverdue ? t.settlementMissed : t.waitingSettlement}
                               </h4>
                               <p className="mt-2 max-w-2xl text-sm leading-7 text-amber-800">
                                 {isSettlementOverdue
-                                  ? "Batas waktu pelunasan sudah lewat. Booking ini memerlukan tindak lanjut manual dari tim Red Feng."
-                                  : "DP untuk booking ini sudah diterima. Customer tinggal melunasi sisa pembayaran sebelum batas waktu berakhir."}
+                                  ? t.settlementMissedBody
+                                  : t.settlementWaitingBody}
                               </p>
                             </div>
                               <span className="inline-flex rounded-full border border-amber-300 bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-                                {isSettlementOverdue ? "Batas terlewat" : "Jatuh tempo H-3"}
+                                {isSettlementOverdue ? t.deadlinePassed : t.dueH3}
                               </span>
                           </div>
 
                           <div className="mt-4 grid gap-3 md:grid-cols-3">
                             <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">DP diterima</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">{t.dpReceived}</p>
                               <p className="mt-2 text-lg font-semibold text-amber-950">{formatMoney(dpAmountPaid)}</p>
                             </div>
                             <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Sisa pelunasan</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">{t.remainingSettlement}</p>
                               <p className="mt-2 text-lg font-semibold text-amber-950">{formatMoney(Number(booking.final_payment_amount || 0))}</p>
                             </div>
                             <div className="rounded-[18px] border border-amber-200 bg-white/70 p-4">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">Batas pelunasan</p>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">{t.settlementDeadline}</p>
                               <p className="mt-2 text-lg font-semibold text-amber-950">{finalPaymentDueDate}</p>
                             </div>
                           </div>
@@ -484,13 +769,13 @@ export default async function CustomerDashboardPage() {
                           href={`/booking/${booking.id}`}
                           className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                         >
-                          Lihat Detail Booking
+                          {t.viewBooking}
                         </Link>
                         <Link
                           href={`/chat?booking_id=${booking.id}`}
                           className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
                         >
-                          Chat Sesudah Booking
+                          {t.postBookingChat}
                         </Link>
                         {canConfirmPickup && (
                           <form action={confirmCustomerPickedUp}>
@@ -506,7 +791,8 @@ export default async function CustomerDashboardPage() {
                         {canPayRemaining && (
                           <BookingPaymentButton
                             bookingId={booking.id}
-                            label="Lunasi Sekarang"
+                            locale={locale}
+                            label={t.payNow}
                             className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
                           />
                         )}
@@ -515,7 +801,7 @@ export default async function CustomerDashboardPage() {
                             href={`/packages/${encodeURIComponent(pkg.slug)}`}
                             className="rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                           >
-                            Lihat Paket
+                            {t.viewPackage}
                           </Link>
                         )}
                       </div>
@@ -529,9 +815,9 @@ export default async function CustomerDashboardPage() {
           <aside className="space-y-6">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm">
               <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
-                Customer Guide
+                {t.customerGuide}
               </span>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Checklist aksi customer</h2>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{t.customerChecklist}</h2>
               <div className="mt-5 space-y-4">
                 {customerChecklist.map((item, index) => (
                   <div key={item.title} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
@@ -545,23 +831,23 @@ export default async function CustomerDashboardPage() {
             </div>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Payment overview</p>
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">Ringkasan pembayaran</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{t.paymentOverview}</p>
+              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{t.paymentSummary}</h2>
               <div className="mt-5 space-y-4 text-sm text-slate-600">
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
-                  <span>Menunggu pembayaran</span>
+                  <span>{t.waitingPayment}</span>
                   <span className="font-semibold text-slate-900">{pendingPayments.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
-                  <span>Menunggu pelunasan</span>
+                  <span>{t.waitingSettlementShort}</span>
                   <span className="font-semibold text-slate-900">{pendingSettlements.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
-                  <span>Menunggu aksi customer</span>
+                  <span>{t.waitingCustomerAction}</span>
                   <span className="font-semibold text-slate-900">{waitingCustomerAction.length}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3">
-                  <span>Diproses finance</span>
+                  <span>{t.financeProcessing}</span>
                   <span className="font-semibold text-slate-900">{readyForPayout.length}</span>
                 </div>
               </div>

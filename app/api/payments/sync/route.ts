@@ -8,6 +8,7 @@ import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline"
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -47,16 +48,53 @@ function formatDateLabel(value: string | null) {
   })
 }
 
+function inferCustomerLocaleFromBooking(input: { display_currency?: string | null }) {
+  const currency = String(input.display_currency || "").trim().toUpperCase()
+  if (currency === "USD") return "en"
+  if (currency === "CNY" || currency === "RMB") return "zh"
+  return "id"
+}
+
+function paymentSyncCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      loginRequired: "Please log in first.",
+      bookingNotFound: "Booking not found.",
+      notOwner: "This booking does not belong to your account.",
+      midtransUnavailable: "Midtrans transaction status is not available yet.",
+      serverError: "Server error.",
+    }
+  }
+  if (locale === "zh") {
+    return {
+      loginRequired: "请先登录。",
+      bookingNotFound: "未找到订单。",
+      notOwner: "该订单不属于您的账号。",
+      midtransUnavailable: "Midtrans 交易状态暂时不可用。",
+      serverError: "服务器错误。",
+    }
+  }
+  return {
+    loginRequired: "Silakan login terlebih dahulu",
+    bookingNotFound: "Booking tidak ditemukan",
+    notOwner: "Booking ini bukan milik akun Anda",
+    midtransUnavailable: "Status transaksi Midtrans belum tersedia",
+    serverError: "Server error",
+  }
+}
+
 export async function POST(req: Request) {
   try {
-    const { booking_id, order_id } = await req.json()
+    const { booking_id, order_id, locale } = await req.json()
+    const activeLocale = normalizeLocale(locale)
+    const t = paymentSyncCopy(activeLocale)
     const authSupabase = await createServerClient()
     const {
       data: { user },
     } = await authSupabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: "Silakan login terlebih dahulu" }, { status: 401 })
+      return NextResponse.json({ error: t.loginRequired }, { status: 401 })
     }
 
     const supabase = createClient(
@@ -67,20 +105,20 @@ export async function POST(req: Request) {
     const { data: booking } = await supabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency",
       )
       .eq("id", booking_id)
       .maybeSingle()
 
     if (!booking) {
-      return NextResponse.json({ error: "Booking tidak ditemukan" }, { status: 404 })
+      return NextResponse.json({ error: t.bookingNotFound }, { status: 404 })
     }
 
     const bookingOwnerEmail = String(booking.customer_email || "").trim().toLowerCase()
     const signedInEmail = String(user.email || "").trim().toLowerCase()
 
     if (bookingOwnerEmail && signedInEmail && bookingOwnerEmail !== signedInEmail) {
-      return NextResponse.json({ error: "Booking ini bukan milik akun Anda" }, { status: 403 })
+      return NextResponse.json({ error: t.notOwner }, { status: 403 })
     }
 
     const statusResponse = (await getMidtransTransactionStatus(String(order_id || booking.booking_code || booking.id))) as {
@@ -94,7 +132,7 @@ export async function POST(req: Request) {
     const resolvedOrderId = String(statusResponse?.order_id || order_id || "").trim()
 
     if (!resolvedOrderId || !transactionStatus) {
-      return NextResponse.json({ error: "Status transaksi Midtrans belum tersedia" }, { status: 409 })
+      return NextResponse.json({ error: t.midtransUnavailable }, { status: 409 })
     }
 
     await supabase
@@ -236,10 +274,12 @@ export async function POST(req: Request) {
           : { data: null as { brand_name?: string | null; company_name?: string | null } | null }
 
         try {
+          const emailLocale = locale || inferCustomerLocaleFromBooking(booking)
           await sendCustomerPaymentEmail({
             bookingCode: booking.booking_code || booking.id,
             customerName: booking.customer_name || null,
             customerEmail: booking.customer_email || null,
+            locale: emailLocale,
             packageTitle: packageRow?.title || null,
             pickupDateLabel: formatDateLabel(booking.pickup_date || null),
             merchantName: merchantRow?.brand_name || merchantRow?.company_name || null,
@@ -275,7 +315,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error(error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Server error" },
+      { error: error instanceof Error ? error.message : t.serverError },
       { status: 500 },
     )
   }

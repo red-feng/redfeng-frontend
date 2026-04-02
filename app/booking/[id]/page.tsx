@@ -4,7 +4,7 @@ import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
-import { normalizeLocale } from "@/lib/i18n"
+import { normalizeLocale, type Locale } from "@/lib/i18n"
 import {
   formatFinalPaymentDueLabel,
   isFinalPaymentOverdue,
@@ -97,12 +97,252 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
-function resolvePaymentStatusLabel(status: string | null) {
+const bookingPageCopy = {
+  id: {
+    loginRequired: "Silakan login untuk melihat booking Anda.",
+    bookingNotFound: "Booking tidak ditemukan",
+    waitingSettlement: "Menunggu Pelunasan",
+    paid: "Lunas",
+    awaitingPayment: "Menunggu Pembayaran",
+    refundReview: "Refund Ditinjau",
+    paidOut: "Paid Out",
+    readyForFinance: "Ready for Finance",
+    goConfirmed: "Go Confirmed",
+    pickedUp: "Picked Up",
+    awaitingPickup: "Awaiting Pickup",
+    fullyPaid: "Fully Paid",
+    financeProcessing: "Diproses finance",
+    confirmed: "Dikonfirmasi",
+    cancelled: "Dibatalkan",
+    escrowHeld: "Dana ditahan",
+    escrowPartialHold: "Dana ditahan sebagian",
+    bookingConfirmation: "Konfirmasi Booking",
+    bookingSuccess: "Booking Berhasil",
+    confirmationIntro: "Periksa dulu seluruh data peserta, rincian booking, dan nominal biaya. Jika sudah sesuai, lanjutkan ke pembayaran dari halaman ini.",
+    successIntro: "Dana customer masuk ke rekening RedFeng dan tetap ditahan sampai pickup dikonfirmasi merchant dan customer.",
+    checkoutAlert: "Booking sudah dibuat. Lengkapi data peserta, lalu cek detail nominal dan data booking sebelum membuka popup Midtrans.",
+    participantsIncomplete: "Data peserta belum lengkap. Silakan isi semua data peserta terlebih dahulu sebelum melanjutkan ke pembayaran.",
+    bookingCode: "Kode Booking",
+    total: "Total",
+    paymentStatus: "Status Pembayaran",
+    escrowStatus: "Status Escrow",
+    packageSubtotal: "Subtotal Paket",
+    adminFee: "Admin Fee",
+    tax: "Pajak",
+    remainingSettlement: "Sisa Pelunasan",
+    localizedPriceSummary: "Ringkasan Harga Sesuai Bahasa Anda",
+    localizedPriceBody: "Tampilan harga paket mengikuti bahasa yang Anda pilih saat checkout. Pembayaran tetap diproses dalam IDR.",
+    adultPrice: "Harga Dewasa",
+    childPrice: "Harga Anak",
+    displaySubtotal: "Subtotal Display",
+    exchangeRateDate: "Tanggal Kurs",
+    bookingDetail: "Detail Booking",
+    name: "Nama",
+    email: "Email",
+    phone: "Nomor Telepon",
+    participantCount: "Jumlah Peserta",
+    adult: "Dewasa",
+    child: "Anak",
+    paymentType: "Jenis Pembayaran",
+    fullPayment: "Full payment",
+    billNow: "Tagihan Sekarang",
+    settlementDeadline: "Batas Pelunasan",
+    journeyPhase: "Journey Phase",
+    participantData: "Data Peserta",
+    participantDataBody: "Semua peserta yang akan berangkat harus terdata lengkap sebelum pembayaran dibuka.",
+    editParticipantData: "Ubah data peserta",
+    fillParticipantData: "Isi data peserta",
+    participantStatus: "Status data peserta:",
+    participantsComplete: "peserta sudah lengkap",
+    participantsFilled: "peserta terisi",
+    identityNumber: "No identitas / paspor",
+    nationality: "Kewarganegaraan",
+    age: "Umur",
+    noParticipantData: "Belum ada data peserta yang disimpan untuk booking ini.",
+    bookingActions: "Aksi Booking",
+    payDpNow: "Bayar DP Sekarang",
+    payFullNow: "Bayar Full Payment",
+    draftCancelledRedirect: "/customer/dashboard?info=Draft%20booking%20dibatalkan%20karena%20pembayaran%20tidak%20dilanjutkan",
+    completeParticipants: "Lengkapi Data Peserta",
+    cancelAndDeleteBooking: "Batalkan & Hapus Booking",
+    paySettlement: "Bayar Pelunasan",
+    settlementExpiredOn: "Batas pelunasan sudah lewat pada",
+  },
+  en: {
+    loginRequired: "Please log in to view your booking.",
+    bookingNotFound: "Booking not found",
+    waitingSettlement: "Awaiting Final Payment",
+    paid: "Paid",
+    awaitingPayment: "Awaiting Payment",
+    refundReview: "Refund Under Review",
+    paidOut: "Paid Out",
+    readyForFinance: "Ready for Finance",
+    goConfirmed: "Go Confirmed",
+    pickedUp: "Picked Up",
+    awaitingPickup: "Awaiting Pickup",
+    fullyPaid: "Fully Paid",
+    financeProcessing: "Being processed by finance",
+    confirmed: "Confirmed",
+    cancelled: "Cancelled",
+    escrowHeld: "Funds on hold",
+    escrowPartialHold: "Funds partially on hold",
+    bookingConfirmation: "Booking Confirmation",
+    bookingSuccess: "Booking Created",
+    confirmationIntro: "Please review all participant data, booking details, and payment amounts. If everything is correct, continue to payment from this page.",
+    successIntro: "Customer funds are received by RedFeng and remain held until pickup is confirmed by both merchant and customer.",
+    checkoutAlert: "The booking has been created. Complete participant data, then review the amount and booking details before opening the Midtrans popup.",
+    participantsIncomplete: "Participant data is incomplete. Please fill in all participant information before continuing to payment.",
+    bookingCode: "Booking Code",
+    total: "Total",
+    paymentStatus: "Payment Status",
+    escrowStatus: "Escrow Status",
+    packageSubtotal: "Package Subtotal",
+    adminFee: "Admin Fee",
+    tax: "Tax",
+    remainingSettlement: "Remaining Final Payment",
+    localizedPriceSummary: "Price Summary in Your Language",
+    localizedPriceBody: "Package pricing follows the language you selected during checkout. Payment is still processed in IDR.",
+    adultPrice: "Adult Price",
+    childPrice: "Child Price",
+    displaySubtotal: "Displayed Subtotal",
+    exchangeRateDate: "Exchange Rate Date",
+    bookingDetail: "Booking Details",
+    name: "Name",
+    email: "Email",
+    phone: "Phone Number",
+    participantCount: "Participant Count",
+    adult: "Adult",
+    child: "Child",
+    paymentType: "Payment Type",
+    fullPayment: "Full payment",
+    billNow: "Amount Due Now",
+    settlementDeadline: "Final Payment Deadline",
+    journeyPhase: "Journey Phase",
+    participantData: "Participant Data",
+    participantDataBody: "All travelers must be fully recorded before payment can be opened.",
+    editParticipantData: "Edit participant data",
+    fillParticipantData: "Fill participant data",
+    participantStatus: "Participant data status:",
+    participantsComplete: "participants complete",
+    participantsFilled: "participants filled",
+    identityNumber: "ID / passport number",
+    nationality: "Nationality",
+    age: "Age",
+    noParticipantData: "No participant data has been saved for this booking yet.",
+    bookingActions: "Booking Actions",
+    payDpNow: "Pay DP Now",
+    payFullNow: "Pay Full Payment",
+    draftCancelledRedirect: "/customer/dashboard?info=Draft%20booking%20was%20cancelled%20because%20payment%20was%20not%20continued",
+    completeParticipants: "Complete Participant Data",
+    cancelAndDeleteBooking: "Cancel & Delete Booking",
+    paySettlement: "Pay Final Payment",
+    settlementExpiredOn: "The final payment deadline passed on",
+  },
+  zh: {
+    loginRequired: "请先登录以查看您的订单。",
+    bookingNotFound: "未找到订单",
+    waitingSettlement: "等待尾款",
+    paid: "已付款",
+    awaitingPayment: "等待付款",
+    refundReview: "退款审核中",
+    paidOut: "已结算",
+    readyForFinance: "待财务处理",
+    goConfirmed: "已确认 Go",
+    pickedUp: "已接送",
+    awaitingPickup: "等待接送",
+    fullyPaid: "已全额付款",
+    financeProcessing: "财务处理中",
+    confirmed: "已确认",
+    cancelled: "已取消",
+    escrowHeld: "资金已托管",
+    escrowPartialHold: "部分资金托管中",
+    bookingConfirmation: "订单确认",
+    bookingSuccess: "订单已创建",
+    confirmationIntro: "请先检查所有参团人资料、订单详情和费用金额。如无误，请在此页面继续付款。",
+    successIntro: "客户资金已进入 RedFeng 账户，并将在商家和客户确认接送前保持托管。",
+    checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开 Midtrans 弹窗。",
+    participantsIncomplete: "参团人资料尚未完整。请先填写所有参团人信息后再继续付款。",
+    bookingCode: "订单编号",
+    total: "总额",
+    paymentStatus: "付款状态",
+    escrowStatus: "托管状态",
+    packageSubtotal: "套餐小计",
+    adminFee: "管理费",
+    tax: "税费",
+    remainingSettlement: "剩余尾款",
+    localizedPriceSummary: "按您语言显示的价格摘要",
+    localizedPriceBody: "套餐价格显示会跟随您在结账时选择的语言，付款仍以印尼盾处理。",
+    adultPrice: "成人价格",
+    childPrice: "儿童价格",
+    displaySubtotal: "显示小计",
+    exchangeRateDate: "汇率日期",
+    bookingDetail: "订单详情",
+    name: "姓名",
+    email: "邮箱",
+    phone: "电话号码",
+    participantCount: "参团人数",
+    adult: "成人",
+    child: "儿童",
+    paymentType: "付款方式",
+    fullPayment: "全额付款",
+    billNow: "当前应付",
+    settlementDeadline: "尾款截止时间",
+    journeyPhase: "行程阶段",
+    participantData: "参团人资料",
+    participantDataBody: "所有出行人员资料必须完整后才能开启付款。",
+    editParticipantData: "修改参团人资料",
+    fillParticipantData: "填写参团人资料",
+    participantStatus: "参团人资料状态：",
+    participantsComplete: "位参团人资料已完整",
+    participantsFilled: "位参团人资料已填写",
+    identityNumber: "证件号 / 护照号",
+    nationality: "国籍",
+    age: "年龄",
+    noParticipantData: "该订单尚未保存任何参团人资料。",
+    bookingActions: "订单操作",
+    payDpNow: "立即支付定金",
+    payFullNow: "立即全额付款",
+    draftCancelledRedirect: "/customer/dashboard?info=%E8%8D%89%E7%A8%BF%E8%AE%A2%E5%8D%95%E5%9B%A0%E6%9C%AA%E7%BB%A7%E7%BB%AD%E4%BB%98%E6%AC%BE%E8%80%8C%E5%B7%B2%E5%8F%96%E6%B6%88",
+    completeParticipants: "完善参团人资料",
+    cancelAndDeleteBooking: "取消并删除订单",
+    paySettlement: "支付尾款",
+    settlementExpiredOn: "尾款截止时间已过：",
+  },
+} satisfies Record<Locale, Record<string, string>>
+
+function resolvePaymentStatusLabel(status: string | null, locale: Locale) {
+  const t = bookingPageCopy[locale]
   const normalized = normalizeStatus(status)
-  if (normalized === "dp_paid") return "Menunggu Pelunasan"
-  if (normalized === "paid") return "Lunas"
-  if (normalized === "pending") return "Menunggu Pembayaran"
-  if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  if (normalized === "dp_paid") return t.waitingSettlement
+  if (normalized === "paid") return t.paid
+  if (normalized === "pending") return t.awaitingPayment
+  if (normalized === "refund_pending_review") return t.refundReview
+  return titleCaseStatus(status)
+}
+
+function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
+  const normalized = normalizeStatus(status)
+  const t = bookingPageCopy[locale]
+  if (normalized === "held") return t.escrowHeld
+  if (normalized === "partial_hold") return t.escrowPartialHold
+  if (normalized === "awaiting_admin_handoff" || normalized === "finance_review") return t.readyForFinance
+  if (normalized === "payout_processing") return t.financeProcessing
+  if (normalized === "paid_out") return t.paidOut
+  if (normalized === "refund_pending_review") return t.refundReview
+  return titleCaseStatus(status)
+}
+
+function resolveBookingStatusLabel(status: string | null, locale: Locale) {
+  const normalized = normalizeStatus(status)
+  const t = bookingPageCopy[locale]
+  if (normalized === "merchant_arrived") return t.awaitingPickup
+  if (normalized === "customer_picked_up") return t.pickedUp
+  if (normalized === "customer_picked_up_pending_final_payment") return t.pickedUp
+  if (normalized === "awaiting_admin_handoff" || normalized === "finance_review") return t.readyForFinance
+  if (normalized === "finance_processing" || normalized === "payout_processing") return t.financeProcessing
+  if (normalized === "payout_completed") return t.paidOut
+  if (normalized === "confirmed") return t.confirmed
+  if (normalized.startsWith("cancelled")) return t.cancelled
   return titleCaseStatus(status)
 }
 
@@ -124,32 +364,33 @@ function escrowBadgeTone(status: string | null) {
   return "border-slate-200 bg-slate-100 text-slate-700"
 }
 
-function resolveJourneyPhase(booking: BookingDetailRow) {
+function resolveJourneyPhase(booking: BookingDetailRow, locale: Locale) {
+  const t = bookingPageCopy[locale]
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
-    return { label: "Paid Out", tone: "border-violet-200 bg-violet-50 text-violet-700" }
+    return { label: t.paidOut, tone: "border-violet-200 bg-violet-50 text-violet-700" }
   }
   if (
     normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" ||
     normalizeStatus(booking.escrow_status) === "awaiting_admin_handoff"
   ) {
-    return { label: "Ready for Finance", tone: "border-sky-200 bg-sky-50 text-sky-700" }
+    return { label: t.readyForFinance, tone: "border-sky-200 bg-sky-50 text-sky-700" }
   }
   if (booking.merchant_picked_up_at) {
-    return { label: "Go Confirmed", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: t.goConfirmed, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (booking.customer_picked_up_at) {
-    return { label: "Picked Up", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: t.pickedUp, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (booking.merchant_arrived_at) {
-    return { label: "Awaiting Pickup", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: t.awaitingPickup, tone: "border-amber-200 bg-amber-50 text-amber-700" }
   }
   if (normalizeStatus(booking.payment_status) === "paid") {
-    return { label: "Fully Paid", tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+    return { label: t.fullyPaid, tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "Menunggu Pelunasan", tone: "border-amber-200 bg-amber-50 text-amber-700" }
+    return { label: t.waitingSettlement, tone: "border-amber-200 bg-amber-50 text-amber-700" }
   }
-  return { label: titleCaseStatus(booking.booking_status), tone: "border-slate-200 bg-slate-100 text-slate-700" }
+  return { label: resolveBookingStatusLabel(booking.booking_status, locale), tone: "border-slate-200 bg-slate-100 text-slate-700" }
 }
 
 function formatIdr(value: number | null | undefined) {
@@ -162,12 +403,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const authSupabase = await createClient()
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
+  const t = bookingPageCopy[locale]
   const {
     data: { user },
   } = await authSupabase.auth.getUser()
 
   if (!user) {
-    return <div className="p-10">Silakan login untuk melihat booking Anda.</div>
+    return <div className="p-10">{t.loginRequired}</div>
   }
 
   const { data: booking, error } = await adminSupabase
@@ -177,7 +419,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .single<BookingDetailRow>()
 
   if (error || !booking || !user.email || booking.customer_email !== user.email) {
-    return <div className="p-10">Booking tidak ditemukan</div>
+    return <div className="p-10">{t.bookingNotFound}</div>
   }
 
   const { data: participantRows } = await adminSupabase
@@ -204,7 +446,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     normalizeStatus(booking.payment_status) === "dp_paid" &&
     isFinalPaymentOverdue(booking.pickup_date || null)
   const canStartInitialPayment = ["pending", "unpaid", ""].includes(normalizeStatus(booking.payment_status))
-  const phase = resolveJourneyPhase(booking)
+  const phase = resolveJourneyPhase(booking, locale)
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
   const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"
   const amountDueNow = normalizedPaymentType === "dp" ? Number(booking.dp_amount || 0) : Number(booking.total_amount || 0)
@@ -213,23 +455,23 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">{openedFromCheckout ? "Konfirmasi Booking" : "Booking Berhasil"}</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{openedFromCheckout ? t.bookingConfirmation : t.bookingSuccess}</h1>
           <p className="mt-2 text-sm text-slate-500">
             {openedFromCheckout
-              ? "Periksa dulu seluruh data peserta, rincian booking, dan nominal biaya. Jika sudah sesuai, lanjutkan ke pembayaran dari halaman ini."
-              : "Dana customer masuk ke rekening RedFeng dan tetap ditahan sampai pickup dikonfirmasi merchant dan customer."}
+              ? t.confirmationIntro
+              : t.successIntro}
           </p>
         </section>
 
         {openedFromCheckout ? (
           <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
-            Booking sudah dibuat. Lengkapi data peserta, lalu cek detail nominal dan data booking sebelum membuka popup Midtrans.
+            {t.checkoutAlert}
           </div>
         ) : null}
 
         {!hasCompleteParticipants ? (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            Data peserta belum lengkap. Silakan isi semua data peserta terlebih dahulu sebelum melanjutkan ke pembayaran.
+            {t.participantsIncomplete}
           </div>
         ) : null}
 
@@ -247,73 +489,73 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Kode Booking</p>
+            <p className="text-sm text-slate-500">{t.bookingCode}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{booking.booking_code || booking.id}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Total</p>
+            <p className="text-sm text-slate-500">{t.total}</p>
             <p className="mt-2 text-2xl font-bold text-slate-900">{formatIdr(booking.total_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Status Pembayaran</p>
+            <p className="text-sm text-slate-500">{t.paymentStatus}</p>
             <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
-              {resolvePaymentStatusLabel(booking.payment_status)}
+              {resolvePaymentStatusLabel(booking.payment_status, locale)}
             </span>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Status Escrow</p>
+            <p className="text-sm text-slate-500">{t.escrowStatus}</p>
             <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${escrowBadgeTone(booking.escrow_status)}`}>
-              {titleCaseStatus(booking.escrow_status)}
+              {resolveEscrowStatusLabel(booking.escrow_status, locale)}
             </span>
           </div>
         </section>
 
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Subtotal Paket</p>
+            <p className="text-sm text-slate-500">{t.packageSubtotal}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.subtotal_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Admin Fee</p>
+            <p className="text-sm text-slate-500">{t.adminFee}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_admin_fee_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Pajak</p>
+            <p className="text-sm text-slate-500">{t.tax}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_tax_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Sisa Pelunasan</p>
+            <p className="text-sm text-slate-500">{t.remainingSettlement}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.final_payment_amount)}</p>
           </div>
         </section>
 
         {booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date ? (
           <section className="mt-6 rounded-[28px] border border-blue-100 bg-blue-50 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-900">Ringkasan Harga Sesuai Bahasa Anda</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{t.localizedPriceSummary}</h2>
             <p className="mt-2 text-sm text-slate-600">
-              Tampilan harga paket mengikuti bahasa yang Anda pilih saat checkout. Pembayaran tetap diproses dalam IDR.
+              {t.localizedPriceBody}
             </p>
             <div className="mt-5 grid gap-4 md:grid-cols-4">
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
-                <p className="text-sm text-slate-500">Harga Dewasa</p>
+                <p className="text-sm text-slate-500">{t.adultPrice}</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">
                   {formatPackageMoney(booking.display_price_adult, booking.display_currency, locale)}
                 </p>
               </div>
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
-                <p className="text-sm text-slate-500">Harga Anak</p>
+                <p className="text-sm text-slate-500">{t.childPrice}</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">
                   {formatPackageMoney(booking.display_price_child, booking.display_currency, locale)}
                 </p>
               </div>
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
-                <p className="text-sm text-slate-500">Subtotal Display</p>
+                <p className="text-sm text-slate-500">{t.displaySubtotal}</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">
                   {formatPackageMoney(booking.display_subtotal_amount, booking.display_currency, locale)}
                 </p>
               </div>
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
-                <p className="text-sm text-slate-500">Tanggal Kurs</p>
+                <p className="text-sm text-slate-500">{t.exchangeRateDate}</p>
                 <p className="mt-2 text-lg font-semibold text-slate-900">{booking.exchange_rate_date || "-"}</p>
               </div>
             </div>
@@ -321,48 +563,48 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         ) : null}
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">Detail Booking</h2>
+          <h2 className="text-xl font-semibold text-slate-900">{t.bookingDetail}</h2>
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             <div>
-              <p className="text-sm text-slate-500">Nama</p>
+              <p className="text-sm text-slate-500">{t.name}</p>
               <p className="mt-2 font-medium text-slate-900">{booking.customer_name || "-"}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Email</p>
+              <p className="text-sm text-slate-500">{t.email}</p>
               <p className="mt-2 font-medium text-slate-900">{booking.customer_email || "-"}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Nomor Telepon</p>
+              <p className="text-sm text-slate-500">{t.phone}</p>
               <p className="mt-2 font-medium text-slate-900">{booking.customer_phone || "-"}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Jumlah Peserta</p>
-              <p className="mt-2 font-medium text-slate-900">Dewasa {adultCount} · Anak {childCount}</p>
+              <p className="text-sm text-slate-500">{t.participantCount}</p>
+              <p className="mt-2 font-medium text-slate-900">{`${t.adult} ${adultCount} / ${t.child} ${childCount}`}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Jenis Pembayaran</p>
-              <p className="mt-2 font-medium text-slate-900">{normalizedPaymentType === "dp" ? "DP 30%" : "Full payment"}</p>
+              <p className="text-sm text-slate-500">{t.paymentType}</p>
+              <p className="mt-2 font-medium text-slate-900">{normalizedPaymentType === "dp" ? "DP 30%" : t.fullPayment}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Tagihan Sekarang</p>
+              <p className="text-sm text-slate-500">{t.billNow}</p>
               <p className="mt-2 font-medium text-slate-900">{formatIdr(amountDueNow)}</p>
             </div>
             {normalizedPaymentType === "dp" ? (
               <div>
-                <p className="text-sm text-slate-500">Batas Pelunasan</p>
+                <p className="text-sm text-slate-500">{t.settlementDeadline}</p>
                 <p className="mt-2 font-medium text-slate-900">{formatFinalPaymentDueLabel(booking.pickup_date || null)}</p>
               </div>
             ) : null}
             <div>
-              <p className="text-sm text-slate-500">Journey Phase</p>
+              <p className="text-sm text-slate-500">{t.journeyPhase}</p>
               <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
                 {phase.label}
               </span>
             </div>
             <div>
-              <p className="text-sm text-slate-500">Status Pembayaran</p>
+              <p className="text-sm text-slate-500">{t.paymentStatus}</p>
               <span className={`mt-2 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${badgeTone(booking.payment_status)}`}>
-                {resolvePaymentStatusLabel(booking.payment_status)}
+                {resolvePaymentStatusLabel(booking.payment_status, locale)}
               </span>
             </div>
           </div>
@@ -371,25 +613,25 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">Data Peserta</h2>
+              <h2 className="text-xl font-semibold text-slate-900">{t.participantData}</h2>
               <p className="mt-2 text-sm text-slate-500">
-                Semua peserta yang akan berangkat harus terdata lengkap sebelum pembayaran dibuka.
+                {t.participantDataBody}
               </p>
             </div>
             <a
               href={`/booking/${booking.id}/participants`}
               className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
             >
-              {hasCompleteParticipants ? "Ubah data peserta" : "Isi data peserta"}
+              {hasCompleteParticipants ? t.editParticipantData : t.fillParticipantData}
             </a>
           </div>
 
           <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Status data peserta:{" "}
+            {t.participantStatus}{" "}
             <span className={`font-semibold ${hasCompleteParticipants ? "text-emerald-700" : "text-amber-700"}`}>
               {hasCompleteParticipants
-                ? `${participants.length} dari ${expectedParticipantCount} peserta sudah lengkap`
-                : `${participants.length} dari ${expectedParticipantCount} peserta terisi`}
+                ? `${participants.length} / ${expectedParticipantCount} ${t.participantsComplete}`
+                : `${participants.length} / ${expectedParticipantCount} ${t.participantsFilled}`}
             </span>
           </div>
 
@@ -398,20 +640,20 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               {participants.map((participant) => (
                 <div key={participant.id} className="rounded-[20px] border border-slate-200 bg-white p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    {participant.participant_type === "adult" ? `Dewasa ${participant.sequence_no}` : `Anak ${participant.sequence_no}`}
+                    {participant.participant_type === "adult" ? `${t.adult} ${participant.sequence_no}` : `${t.child} ${participant.sequence_no}`}
                   </p>
                   <p className="mt-3 text-lg font-semibold text-slate-900">{participant.full_name || "-"}</p>
                   <dl className="mt-3 space-y-2 text-sm text-slate-600">
                     <div className="flex items-center justify-between gap-4">
-                      <dt>No identitas / paspor</dt>
+                      <dt>{t.identityNumber}</dt>
                       <dd className="font-medium text-slate-900">{participant.identity_number || "-"}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt>Kewarganegaraan</dt>
+                      <dt>{t.nationality}</dt>
                       <dd className="font-medium text-slate-900">{participant.nationality || "-"}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt>Umur</dt>
+                      <dt>{t.age}</dt>
                       <dd className="font-medium text-slate-900">{participant.age ?? "-"}</dd>
                     </div>
                   </dl>
@@ -420,24 +662,25 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             </div>
           ) : (
             <div className="mt-5 rounded-[20px] border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">
-              Belum ada data peserta yang disimpan untuk booking ini.
+              {t.noParticipantData}
             </div>
           )}
         </section>
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-2">
-            <h2 className="text-xl font-semibold text-slate-900">Aksi Booking</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{t.bookingActions}</h2>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
             {canStartInitialPayment && hasCompleteParticipants ? (
               <BookingPaymentButton
                 bookingId={booking.id}
-                label={normalizedPaymentType === "dp" ? "Bayar DP Sekarang" : "Bayar Full Payment"}
+                locale={locale}
+                label={normalizedPaymentType === "dp" ? t.payDpNow : t.payFullNow}
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 cleanupOnAbandon
-                redirectOnCleanup="/customer/dashboard?info=Draft%20booking%20dibatalkan%20karena%20pembayaran%20tidak%20dilanjutkan"
+                redirectOnCleanup={t.draftCancelledRedirect}
               />
             ) : null}
             {canStartInitialPayment && !hasCompleteParticipants ? (
@@ -445,7 +688,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 href={`/booking/${booking.id}/participants`}
                 className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
-                Lengkapi Data Peserta
+                {t.completeParticipants}
               </a>
             ) : null}
             {canStartInitialPayment ? (
@@ -455,7 +698,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                   type="submit"
                   className="rounded-2xl border border-rose-300 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
                 >
-                  Batalkan & Hapus Booking
+                  {t.cancelAndDeleteBooking}
                 </button>
               </form>
             ) : null}
@@ -473,13 +716,14 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             {canPayRemaining ? (
               <BookingPaymentButton
                 bookingId={booking.id}
-                label="Bayar Pelunasan"
+                locale={locale}
+                label={t.paySettlement}
                 className="rounded-2xl border border-orange-300 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
               />
             ) : null}
             {isRemainingPaymentOverdue ? (
               <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700">
-                Batas pelunasan sudah lewat pada {formatFinalPaymentDueLabel(booking.pickup_date || null)}.
+                {t.settlementExpiredOn} {formatFinalPaymentDueLabel(booking.pickup_date || null)}.
               </div>
             ) : null}
           </div>
