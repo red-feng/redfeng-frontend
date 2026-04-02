@@ -97,6 +97,7 @@ function titleCaseStatus(value: string | null) {
 function resolvePaymentStatusLabel(value: string | null) {
   const normalized = normalizeStatus(value)
   if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  if (normalized === "dp_paid") return "Customer DP Paid"
   return titleCaseStatus(value)
 }
 
@@ -137,7 +138,7 @@ function journeyPhase(booking: BookingRow) {
     return { label: "Fully Paid", tone: getJourneyStageTone("fully_paid", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
+    return { label: "Customer DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: getJourneyStageTone("fallback", "bordered") }
 }
@@ -595,7 +596,7 @@ export default async function AdminBookingsPage({
                 <p className="mt-3 text-3xl font-semibold text-slate-950">
                   {productScopedBookings.filter((booking) => canHandoffToFinance(booking)).length}
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang sudah lunas dan urutan pickup sudah lengkap.</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang siap atau sudah otomatis masuk queue finance.</p>
               </Link>
               <Link
                 href={buildFilterHref(activeProduct, "in-finance", "all", searchQuery, sortMode)}
@@ -716,9 +717,9 @@ export default async function AdminBookingsPage({
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Validasi booking sebelum handoff ke finance</h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Booking Center hanya mengirim booking yang sudah lunas dan seluruh urutan pickup selesai.
+              Booking normal yang sudah lunas dan urutan pickup lengkap akan masuk queue finance secara semi-otomatis. Admin tetap memantau dan bisa melakukan handoff manual jika diperlukan.
             </p>
             <p className="mt-2 text-xs leading-6 text-slate-500">
               Urutan aktif: {sortOptions.find((option) => option.value === sortMode)?.label || "Booking terbaru"}.
@@ -857,7 +858,7 @@ export default async function AdminBookingsPage({
                             disabled={!ready}
                             className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                           >
-                            Kirim ke Finance
+                            Kirim ke Finance Manual
                           </button>
                         </form>
                       ) : (

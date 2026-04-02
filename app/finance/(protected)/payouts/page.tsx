@@ -103,6 +103,36 @@ function bookingPhaseTone(status: string | null) {
   return "bg-slate-100 text-slate-700 border-slate-200"
 }
 
+function payoutSourceTone(source: string | null) {
+  const normalized = normalizeStatus(source)
+  if (normalized === "merchant_go_auto") return "bg-emerald-50 text-emerald-700 border-emerald-200"
+  if (normalized === "payment_settlement_auto") return "bg-sky-50 text-sky-700 border-sky-200"
+  if (normalized === "admin_handoff") return "bg-amber-50 text-amber-700 border-amber-200"
+  return "bg-slate-100 text-slate-700 border-slate-200"
+}
+
+function resolvePayoutSourceLabel(source: string | null) {
+  const normalized = normalizeStatus(source)
+  if (normalized === "merchant_go_auto") return "Auto: Merchant Go"
+  if (normalized === "payment_settlement_auto") return "Auto: Full / Final Payment"
+  if (normalized === "admin_handoff") return "Manual: Admin Handoff"
+  return "Manual / Legacy"
+}
+
+function resolvePayoutSourceDescription(source: string | null) {
+  const normalized = normalizeStatus(source)
+  if (normalized === "merchant_go_auto") {
+    return "Masuk otomatis setelah merchant klik Go dan booking customer sudah lunas penuh."
+  }
+  if (normalized === "payment_settlement_auto") {
+    return "Masuk otomatis setelah full payment atau pelunasan customer berhasil pada booking yang pickup-nya sudah tervalidasi."
+  }
+  if (normalized === "admin_handoff") {
+    return "Masuk lewat review dan handoff manual dari admin operasional."
+  }
+  return "Request payout ini berasal dari flow lama atau dibuat di luar jalur semi-otomatis terbaru."
+}
+
 function hasCompleteBookingData(booking: BookingLiteRow | null | undefined) {
   return Boolean(
     booking &&
@@ -200,7 +230,7 @@ export default async function FinancePayoutsPage({
                 Semua dana customer tetap masuk ke escrow Red Feng. Payout baru boleh diproses penuh setelah
                 merchant klik <span className="font-semibold">Arrived</span>, customer klik{" "}
                 <span className="font-semibold">Picked up</span>, merchant klik{" "}
-                <span className="font-semibold">Go</span>, lalu admin handoff booking ke finance.
+                <span className="font-semibold">Go</span>, lalu booking normal yang sudah lunas masuk queue finance secara semi-otomatis.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
@@ -254,7 +284,7 @@ export default async function FinancePayoutsPage({
           <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
             <h2 className="text-2xl font-semibold text-slate-950">Belum ada payout request</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Merchant baru bisa mengajukan payout ketika booking sudah berstatus ready for payout.
+              Queue payout akan terisi setelah customer sudah full payment dan alur pickup tervalidasi.
             </p>
           </section>
         ) : (
@@ -265,6 +295,8 @@ export default async function FinancePayoutsPage({
               const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tanpa nama"
               const merchantCode = formatMerchantCode(merchant?.id || payout.merchant_id)
               const isFinal = ["paid", "completed", "rejected"].includes(normalizeStatus(payout.status))
+              const payoutSourceLabel = resolvePayoutSourceLabel(payout.source || "manual")
+              const payoutSourceDescription = resolvePayoutSourceDescription(payout.source || "manual")
 
               return (
                 <article
@@ -287,9 +319,14 @@ export default async function FinancePayoutsPage({
                             {booking ? `Booking ${booking.booking_code || booking.id} • ${booking.customer_name || "-"}` : "Request payout manual / legacy"}
                           </p>
                         </div>
-                        <span className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] ${statusTone(payout.status)}`}>
-                          {titleCaseStatus(payout.status)}
-                        </span>
+                        <div className="flex flex-col items-end gap-2">
+                          <span className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] ${statusTone(payout.status)}`}>
+                            {titleCaseStatus(payout.status)}
+                          </span>
+                          <span className={`inline-flex items-center rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] ${payoutSourceTone(payout.source || "manual")}`}>
+                            {payoutSourceLabel}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -358,7 +395,7 @@ export default async function FinancePayoutsPage({
                           <p className="mt-2 text-sm font-medium text-slate-800">{formatMoney(Number(payout.merchant_transfer_fee || 0))}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Net payout / pelunasan</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Net payout merchant</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">
                             {formatMoney(Number(payout.amount || 0))}
                             {booking?.final_payment_amount ? ` • sisa Rp ${Number(booking.final_payment_amount).toLocaleString("id-ID")}` : ""}
@@ -369,7 +406,8 @@ export default async function FinancePayoutsPage({
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Source</p>
-                          <p className="mt-2 text-sm font-medium text-slate-800">{titleCaseStatus(payout.source || "manual")}</p>
+                          <p className="mt-2 text-sm font-medium text-slate-800">{payoutSourceLabel}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">{payoutSourceDescription}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Status booking</p>
@@ -392,6 +430,7 @@ export default async function FinancePayoutsPage({
                           Finance manager melakukan approval internal lebih dulu. Setelah itu finance maker
                           menjalankan transfer, menandai processing, lalu menutup sebagai paid saat dana benar-benar masuk ke merchant.
                         </p>
+                        <p className="mt-3 text-sm leading-7 text-slate-500">{payoutSourceDescription}</p>
                       </div>
 
                       {!isFinal && (

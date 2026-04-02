@@ -803,7 +803,7 @@ export default async function FinanceDashboardPage({
   }
 
   const metricCards = [
-    { label: "Booking dari admin", value: String(bookings.filter((item) => normalizeStatus(item.booking_status) === "finance_review").length), note: "Booking yang sudah di-handoff admin ke finance." },
+    { label: "Booking masuk finance", value: String(bookings.filter((item) => normalizeStatus(item.booking_status) === "finance_review").length), note: "Booking yang sudah masuk queue finance, baik otomatis maupun dari admin." },
     { label: "Payout pending", value: String(pendingCount), note: "Request payout menunggu keputusan finance." },
     { label: "Sedang diproses", value: String(processingCount), note: "Transfer sedang dijalankan atau sudah di-approve." },
     { label: "Sudah paid", value: String(paidCount), note: "Request payout yang sudah final." },
@@ -945,8 +945,8 @@ export default async function FinanceDashboardPage({
                 <p>1. Dana customer tetap masuk dan ditahan di rekening Red Feng.</p>
                 <p>2. Merchant klik <span className="font-semibold text-slate-900">Arrived</span> saat sudah di meeting point.</p>
                 <p>3. Customer klik <span className="font-semibold text-slate-900">Picked up</span> saat sudah naik kendaraan.</p>
-                <p>4. Merchant klik <span className="font-semibold text-slate-900">Go</span> agar admin tahu trip sudah berjalan.</p>
-                <p>5. Admin handoff booking ke finance, lalu finance transfer sesuai setting komisi dan biaya.</p>
+                <p>4. Merchant klik <span className="font-semibold text-slate-900">Go</span> agar trip tervalidasi berjalan.</p>
+                <p>5. Booking normal yang sudah lunas masuk queue finance secara semi-otomatis, lalu finance transfer sesuai setting komisi dan biaya.</p>
               </div>
             </div>
           </div>

@@ -66,7 +66,7 @@ export default async function AdminProtectedLayout({
     (pkg) => normalizeStatus(pkg.status) === "pending",
   ).length
   const financeReadyCount = ((bookingResult.data as Array<{ id: string; booking_status: string | null }> | null) || []).filter(
-    (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff",
+    (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
   ).length
 
   const adminNav = isOperationsManager

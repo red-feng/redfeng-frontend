@@ -88,7 +88,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
           <p style="margin:0;"><strong>Nominal dibayar:</strong> ${formatMoney(payload.totalAmount)}</p>
         </div>
 
-        <p style="margin:0 0 14px;">Tahap operasional berikutnya akan mengikuti alur <strong>Arrived</strong>, <strong>Picked up</strong>, <strong>Go</strong>, lalu <strong>Ready for Finance</strong> sebelum payout merchant diproses.</p>
+        <p style="margin:0 0 14px;">Tahap operasional berikutnya akan mengikuti alur <strong>Arrived</strong>, <strong>Picked up</strong>, <strong>Go</strong>, lalu <strong>Ready for Finance</strong> saat booking masuk ke antrean finance.</p>
         ${payload.settlementDueLabel ? `<p style="margin:0 0 14px;"><strong>Batas waktu pelunasan:</strong> ${payload.settlementDueLabel}</p>` : ""}
         <p style="margin:0 0 14px;">Verifikasi Booking ID: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
         <p style="margin:0 0 18px;">${payload.sendInvoicePdf ? "Invoice PDF terlampir pada email ini." : "Invoice PDF akan dikirim setelah status pembayaran berubah menjadi Fully Paid."}</p>

@@ -102,6 +102,7 @@ function titleCaseStatus(value: string | null) {
 function resolvePaymentStatusLabel(value: string | null) {
   const normalized = normalizeStatus(value)
   if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  if (normalized === "dp_paid") return "Customer DP Paid"
   return titleCaseStatus(value)
 }
 
@@ -167,7 +168,7 @@ function journeyPhase(booking: BookingDetailRow) {
     return { label: "Fully Paid", tone: getJourneyStageTone("fully_paid", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
+    return { label: "Customer DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: getJourneyStageTone("fallback", "bordered") }
 }
@@ -440,7 +441,7 @@ export default async function AdminBookingDetailPage({
               </p>
               <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">{booking.booking_code || booking.id}</h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Detail lengkap booking untuk investigasi admin, pengecekan handoff, dan koordinasi ke merchant atau finance.
+                Detail lengkap booking untuk investigasi admin, pengecekan auto-queue finance, dan koordinasi ke merchant atau finance.
               </p>
             </div>
             <Link
@@ -495,7 +496,7 @@ export default async function AdminBookingDetailPage({
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Audit Log</p>
               <p className="mt-3 text-lg font-semibold text-slate-950">Jejak admin booking ini</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Lihat handoff dan aksi admin yang pernah tercatat.</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">Lihat auto-queue, handoff manual, dan aksi admin yang pernah tercatat.</p>
             </Link>
 
             <Link
@@ -599,7 +600,7 @@ export default async function AdminBookingDetailPage({
           </div>
 
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Handoff readiness</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance queue readiness</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kesiapan ke finance</h2>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
               <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>{resolvePaymentStatusLabel(booking.payment_status)}</span>
@@ -627,7 +628,7 @@ export default async function AdminBookingDetailPage({
                     disabled={!ready}
                     className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
-                    Kirim ke Finance
+                    Kirim ke Finance Manual
                   </button>
                 </form>
               ) : (
@@ -637,7 +638,7 @@ export default async function AdminBookingDetailPage({
               )}
               {!ready ? (
                 <span className="rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
-                  Handoff terkunci sampai payment lunas dan urutan pickup lengkap.
+                  Queue finance terkunci sampai payment lunas dan urutan pickup lengkap.
                 </span>
               ) : null}
             </div>

@@ -129,7 +129,7 @@ function journeyPhase(booking: BookingRow, text: ReturnType<typeof getOrdersText
     return { label: text.fullyPaid, tone: getJourneyStageTone("fully_paid", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: text.dpPaid, tone: getJourneyStageTone("dp_paid", "bordered") }
+    return { label: text.customerDpPaid, tone: getJourneyStageTone("dp_paid", "bordered") }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: getJourneyStageTone("fallback", "bordered") }
 }
@@ -394,7 +394,7 @@ export default async function MerchantOrdersPage({
 
                     <div className="flex flex-wrap gap-2 lg:max-w-sm lg:justify-end">
                       <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${paymentTone(booking.payment_status)}`}>
-                        {titleCaseStatus(booking.payment_status)}
+                        {normalizeStatus(booking.payment_status) === "dp_paid" ? t.customerDpStatus : titleCaseStatus(booking.payment_status)}
                       </span>
                       <span className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
                         {phase.label}
@@ -500,7 +500,8 @@ function getOrdersText(locale: Locale) {
       pickedUp: "Picked Up",
       awaitingPickup: "Awaiting Pickup",
       fullyPaid: "Fully Paid",
-      dpPaid: "DP Paid",
+      customerDpPaid: "Customer DP Paid",
+      customerDpStatus: "Customer DP Paid",
       merchantArrivedMeetingPoint: "Merchant tiba di meeting point",
       customerClickedPickedUp: "Customer klik Picked up",
       merchantClickedGo: "Merchant klik Go",
@@ -551,7 +552,8 @@ function getOrdersText(locale: Locale) {
       pickedUp: "Picked Up",
       awaitingPickup: "Awaiting Pickup",
       fullyPaid: "Fully Paid",
-      dpPaid: "DP Paid",
+      customerDpPaid: "Customer DP Paid",
+      customerDpStatus: "Customer DP Paid",
       merchantArrivedMeetingPoint: "Merchant arrived at meeting point",
       customerClickedPickedUp: "Customer clicked Picked up",
       merchantClickedGo: "Merchant clicked Go",
@@ -602,7 +604,8 @@ function getOrdersText(locale: Locale) {
       pickedUp: "已上车",
       awaitingPickup: "等待接送",
       fullyPaid: "已全额付款",
-      dpPaid: "已付定金",
+      customerDpPaid: "客户已付定金",
+      customerDpStatus: "客户已付定金",
       merchantArrivedMeetingPoint: "商家已到达集合点",
       customerClickedPickedUp: "客户点击了 Picked up",
       merchantClickedGo: "商家点击了 Go",

@@ -140,13 +140,15 @@ export default async function AdminDashboard({
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
-  const financeReadyCount = bookings.filter((item) => normalizeStatus(item.booking_status) === "awaiting_admin_handoff").length
+  const financeReadyCount = bookings.filter((item) =>
+    ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(item.booking_status)),
+  ).length
   const merchantOverdueCount = pendingMerchantsData.filter((merchant) => daysSince(merchant.created_at) >= 3).length
   const packageOverdueCount = packages.filter(
     (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
   ).length
   const bookingStalledCount = bookings.filter(
-    (booking) => normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" && daysSince(booking.created_at) >= 1,
+    (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
   ).length
   const needsAttentionCards = [
     {
@@ -162,7 +164,7 @@ export default async function AdminDashboard({
     {
       label: "Booking stalled",
       value: bookingStalledCount,
-      note: "Booking siap handoff 1 hari atau lebih.",
+      note: "Booking yang sudah auto-queue / siap finance selama 1 hari atau lebih.",
     },
   ]
   const slaCards = [
@@ -201,7 +203,7 @@ export default async function AdminDashboard({
     {
       label: "Finance handoff",
       value: String(financeReadyCount),
-      note: "Booking yang sudah siap dikirim admin ke finance.",
+      note: "Booking yang sudah auto-queue atau siap dipantau sebelum finance eksekusi.",
     },
   ]
 
@@ -252,7 +254,7 @@ export default async function AdminDashboard({
     .filter((item) => ["partial_hold", "held", "awaiting_admin_handoff", "finance_review", "payout_processing"].includes(item.escrowStatus))
     .reduce((sum, item) => sum + item.receivedAmount, 0)
   const customerReadyForFinanceFundsTotal = customerTransactionRows
-    .filter((item) => item.bookingStatus === "awaiting_admin_handoff")
+    .filter((item) => ["awaiting_admin_handoff", "finance_review"].includes(item.bookingStatus))
     .reduce((sum, item) => sum + item.receivedAmount, 0)
   const customerOperationallyBlockedFundsTotal = customerTransactionRows
     .filter((item) => item.paymentStatus === "paid" && !["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(item.bookingStatus))
@@ -306,7 +308,7 @@ export default async function AdminDashboard({
     {
       label: "Finance handoff",
       value: String(financeReadyCount),
-      note: "Booking siap handoff yang perlu dipantau lintas admin dan finance.",
+      note: "Booking yang sudah masuk jalur finance dan perlu dipantau lintas admin dan finance.",
     },
   ]
 

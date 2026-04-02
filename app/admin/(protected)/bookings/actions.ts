@@ -3,9 +3,9 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { calculateMerchantPayout, getFinanceSettings, resolveCustomerAdminFeePercent } from "@/lib/finance/settings"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -70,80 +70,18 @@ export async function handoffBookingToFinance(formData: FormData) {
     backToBookings("Booking ini sudah berstatus Ready for Finance", "success")
   }
 
-  const { data: existingPayout } = await adminSupabase
-    .from("payout_requests")
-    .select("id, status")
-    .eq("booking_id", booking.id)
-    .maybeSingle()
-
-  if (existingPayout?.id && ["pending", "approved", "processing", "paid"].includes(normalizeStatus(existingPayout.status))) {
-    backToBookings("Booking ini sudah memiliki antrean payout aktif", "success")
-  }
-
-  const { data: pkg } = await adminSupabase
-    .from("packages")
-    .select("merchant_id")
-    .eq("id", booking.package_id)
-    .single()
-
-  if (!pkg?.merchant_id) {
-    backToBookings("Merchant untuk booking ini tidak ditemukan", "error")
-  }
-
-  const { data: merchant } = await adminSupabase
-    .from("merchants")
-    .select("id, bank_name, bank_account_number, bank_account_holder")
-    .eq("id", pkg.merchant_id)
-    .single()
-
-  if (!merchant) {
-    backToBookings("Rekening merchant belum tersedia", "error")
-  }
-
-  const settings = await getFinanceSettings(
-    adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
-  )
-  const payout = calculateMerchantPayout(
-    Number(booking.subtotal_amount || 0),
-    settings,
-    merchant.bank_name,
-  )
-  const customerAdminFeePercent = resolveCustomerAdminFeePercent(booking.payment_method, settings)
-
-  const payoutPayload: Record<string, unknown> = {
-    merchant_id: merchant.id,
-    booking_id: booking.id,
-    amount: payout.netAmount,
-    bank_name: merchant.bank_name,
-    bank_account_number: merchant.bank_account_number,
-    bank_account_holder: merchant.bank_account_holder,
-    status: "pending",
-    note: `Auto handoff dari admin untuk booking ${booking.booking_code || booking.id}. Basis payout subtotal paket ${payout.grossAmount}, komisi ${payout.redfengCommissionAmount}, biaya transfer ${payout.merchantTransferFee}.`,
-    gross_booking_amount: payout.grossAmount,
-    redfeng_commission_percent: payout.redfengCommissionPercent,
-    redfeng_commission_amount: payout.redfengCommissionAmount,
-    customer_admin_fee_percent: customerAdminFeePercent,
-    customer_tax_percent: Number(booking.customer_tax_percent || settings.customerTaxPercent),
-    merchant_transfer_fee: payout.merchantTransferFee,
+  const queueResult = await queueBookingToFinance({
+    adminSupabase,
+    bookingId: booking.id,
     source: "admin_handoff",
+  })
+
+  if (!queueResult.ok) {
+    backToBookings(queueResult.error, "error")
   }
 
-  const { error: payoutError } = await adminSupabase.from("payout_requests").insert(payoutPayload as never)
-
-  if (payoutError) {
-    backToBookings(payoutError.message, "error")
-  }
-
-  const { error: updateError } = await adminSupabase
-    .from("bookings")
-    .update({
-      booking_status: "finance_review",
-      escrow_status: "finance_review",
-    })
-    .eq("id", booking.id)
-
-  if (updateError) {
-    backToBookings(updateError.message, "error")
+  if (queueResult.alreadyQueued) {
+    backToBookings("Booking ini sudah berada di antrean finance", "success")
   }
 
   await createAdminAuditLog({
@@ -155,9 +93,9 @@ export async function handoffBookingToFinance(formData: FormData) {
     summary: `Booking ${booking.booking_code || booking.id} dikirim ke finance`,
     metadata: {
       bookingCode: booking.booking_code,
-      payoutAmount: payout.netAmount,
-      grossAmount: payout.grossAmount,
-      merchantId: merchant.id,
+      payoutAmount: queueResult.payoutAmount,
+      grossAmount: queueResult.grossAmount,
+      merchantId: queueResult.merchantId,
       source: "admin_handoff",
     },
   })

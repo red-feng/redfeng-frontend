@@ -101,7 +101,7 @@ function resolveJourneyPhase(booking: BookingVerificationRow) {
     return {
       label: "Ready for Finance",
       tone: "border-sky-200 bg-sky-50 text-sky-700",
-      description: "Pickup tervalidasi dan booking siap diteruskan admin ke finance.",
+      description: "Pickup tervalidasi dan booking sudah masuk atau siap masuk queue finance.",
     }
   }
 

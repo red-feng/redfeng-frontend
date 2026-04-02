@@ -283,7 +283,7 @@ export default async function CustomerDashboardPage() {
     },
     {
       title: "Konfirmasi sudah dijemput",
-      body: "Klik Picked up setelah benar-benar naik kendaraan agar merchant bisa lanjut klik Go dan admin bisa handoff ke finance.",
+      body: "Klik Picked up setelah benar-benar naik kendaraan agar merchant bisa lanjut klik Go dan booking normal yang sudah lunas bisa masuk queue finance.",
     },
   ]
 
