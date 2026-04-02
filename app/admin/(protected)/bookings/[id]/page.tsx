@@ -99,6 +99,18 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function resolvePaymentStatusLabel(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  return titleCaseStatus(value)
+}
+
+function resolveEscrowStatusLabel(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "refund_review") return "Refund Review"
+  return titleCaseStatus(value)
+}
+
 function formatDateTime(value: string | null) {
   if (!value) return "-"
   const parsed = new Date(value)
@@ -133,6 +145,9 @@ function escrowTone(status: string | null) {
 }
 
 function journeyPhase(booking: BookingDetailRow) {
+  if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
+    return { label: "Refund Review", tone: getJourneyStageTone("fallback", "bordered") }
+  }
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: "Paid Out", tone: getJourneyStageTone("paid_out", "bordered") }
   }
@@ -180,6 +195,10 @@ function isOverduePickup(booking: BookingDetailRow) {
 
 function deriveAttentionReasons(booking: BookingDetailRow) {
   const reasons: string[] = []
+  if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
+    reasons.push("Booking DP melewati batas pelunasan H-3 dan sudah masuk ke refund review finance")
+    return reasons
+  }
   if (normalizeStatus(booking.payment_status) !== "paid") reasons.push("Payment belum lunas")
   if (normalizeStatus(booking.payment_status) === "paid" && isPickupFlowIncomplete(booking)) {
     reasons.push("Urutan pickup belum lengkap")
@@ -583,9 +602,9 @@ export default async function AdminBookingDetailPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Handoff readiness</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kesiapan ke finance</h2>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>{titleCaseStatus(booking.payment_status)}</span>
+              <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>{resolvePaymentStatusLabel(booking.payment_status)}</span>
               <span className={`rounded-full border px-3 py-1 ${phase.tone}`}>{phase.label}</span>
-              <span className={`rounded-full border px-3 py-1 ${escrowTone(booking.escrow_status)}`}>Escrow {titleCaseStatus(booking.escrow_status)}</span>
+              <span className={`rounded-full border px-3 py-1 ${escrowTone(booking.escrow_status)}`}>Escrow {resolveEscrowStatusLabel(booking.escrow_status)}</span>
             </div>
             <div className="mt-6 space-y-3">
               {attentionReasons.map((reason) => (

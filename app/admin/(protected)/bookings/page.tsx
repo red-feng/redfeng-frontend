@@ -81,7 +81,7 @@ function formatMoney(value: number | null) {
 
 function isVisiblePaidBooking(booking: BookingRow) {
   const paymentStatus = normalizeStatus(booking.payment_status)
-  return paymentStatus === "paid" || paymentStatus === "dp_paid"
+  return paymentStatus === "paid" || paymentStatus === "dp_paid" || paymentStatus === "refund_pending_review"
 }
 
 function titleCaseStatus(value: string | null) {
@@ -94,6 +94,18 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function resolvePaymentStatusLabel(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "refund_pending_review") return "Refund Ditinjau"
+  return titleCaseStatus(value)
+}
+
+function resolveEscrowStatusLabel(value: string | null) {
+  const normalized = normalizeStatus(value)
+  if (normalized === "refund_review") return "Refund Review"
+  return titleCaseStatus(value)
+}
+
 function paymentTone(status: string | null) {
   return getPaymentStatusTone(status, "bordered")
 }
@@ -103,6 +115,9 @@ function escrowTone(status: string | null) {
 }
 
 function journeyPhase(booking: BookingRow) {
+  if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
+    return { label: "Refund Review", tone: getJourneyStageTone("fallback", "bordered") }
+  }
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: "Paid Out", tone: getJourneyStageTone("paid_out", "bordered") }
   }
@@ -155,6 +170,15 @@ function isReadyAgingBooking(booking: BookingRow) {
 function deriveAttentionReasons(booking: BookingRow) {
   const reasons: Array<{ key: Exclude<AttentionFocus, "all">; label: string; note: string }> = []
 
+  if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
+    reasons.push({
+      key: "payment",
+      label: "Refund review otomatis",
+      note: "Booking DP melewati batas pelunasan H-3 dan sudah dipindahkan ke antrean refund review finance.",
+    })
+    return reasons
+  }
+
   if (normalizeStatus(booking.payment_status) !== "paid") {
     reasons.push({
       key: "payment",
@@ -191,6 +215,9 @@ function deriveAttentionReasons(booking: BookingRow) {
 }
 
 function deriveActionNow(booking: BookingRow) {
+  if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
+    return "Pantau antrean refund finance dan pastikan booking ini tidak diproses lagi sebagai handoff payout biasa."
+  }
   if (normalizeStatus(booking.payment_status) !== "paid") {
     return "Follow up pembayaran customer sampai status booking Fully Paid."
   }
@@ -744,13 +771,13 @@ export default async function AdminBookingsPage({
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs font-semibold">
                         <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>
-                          {titleCaseStatus(booking.payment_status)}
+                          {resolvePaymentStatusLabel(booking.payment_status)}
                         </span>
                         <span className={`rounded-full border px-3 py-1 ${phase.tone}`}>
                           {phase.label}
                         </span>
                         <span className={`rounded-full border px-3 py-1 ${escrowTone(booking.escrow_status)}`}>
-                          Escrow {titleCaseStatus(booking.escrow_status)}
+                          Escrow {resolveEscrowStatusLabel(booking.escrow_status)}
                         </span>
                       </div>
                     </div>
