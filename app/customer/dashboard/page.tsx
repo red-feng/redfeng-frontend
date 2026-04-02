@@ -559,7 +559,6 @@ export default async function CustomerDashboardPage() {
 
   const customerChecklist = [
     {
-      title: "Login sebelum checkout",
       title: t.checklist1Title,
       body: t.checklist1Body,
     },
