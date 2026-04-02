@@ -43,11 +43,12 @@ type MerchantShellDictionary = {
     pendingPaymentCount: string
     noCustomerReview: string
     dpPaid: string
+    customerDpPaid?: string
     fullyPaid: string
     awaitingPickup: string
     readyForFinance: string
-      paidOut: string
-    }
+    paidOut: string
+  }
   packages: {
     merchantMissing: string
     addPackage: string
@@ -138,6 +139,7 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       pendingPaymentCount: "Pembayaran pending",
       noCustomerReview: "Belum ada ulasan customer",
       dpPaid: "DP Paid",
+      customerDpPaid: "Customer DP Paid",
       fullyPaid: "Fully Paid",
       awaitingPickup: "Awaiting Pickup",
       readyForFinance: "Ready for Finance",
@@ -231,6 +233,7 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       pendingPaymentCount: "Pending payments",
       noCustomerReview: "No customer reviews yet",
       dpPaid: "DP Paid",
+      customerDpPaid: "Customer DP Paid",
       fullyPaid: "Fully Paid",
       awaitingPickup: "Awaiting Pickup",
       readyForFinance: "Ready for Finance",
