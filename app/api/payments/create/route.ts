@@ -99,9 +99,10 @@ function paymentCreateCopy(locale: Locale) {
 }
 
 export async function POST(req: Request) {
+  let activeLocale: Locale = "id"
   try {
     const { booking_id, locale } = await req.json()
-    const activeLocale = normalizeLocale(locale)
+    activeLocale = normalizeLocale(locale)
     const t = paymentCreateCopy(activeLocale)
     const authSupabase = await createServerClient()
     const {
@@ -298,6 +299,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error(error)
+    const t = paymentCreateCopy(activeLocale)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : t.serverError },
       { status: 500 }
