@@ -43,7 +43,7 @@ async function sendMerchantDecisionEmail({
 }: {
   email: string | null
   brandName: string | null
-  type: "approved" | "rejected"
+  type: "approved" | "rejected" | "inactive" | "deleted"
   reason?: string
 }) {
   if (!email) return
@@ -68,6 +68,44 @@ async function sendMerchantDecisionEmail({
           <p style="margin:0 0 14px;">Kabar baik. Akun merchant Anda telah <strong>disetujui</strong> oleh tim RedFeng.</p>
           <p style="margin:0 0 14px;">Anda sekarang dapat login ke dashboard merchant untuk mulai mengelola profil bisnis dan mengunggah paket wisata.</p>
           <p style="margin:0 0 18px;">Silakan gunakan akun merchant Anda untuk melanjutkan operasional di platform RedFeng.</p>
+          <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
+        </div>
+      `,
+    })
+    return
+  }
+
+  if (type === "inactive") {
+    await resend.emails.send({
+      from: "RedFeng Admin <admin@redfeng.co>",
+      to: email,
+      subject: "RedFeng Merchant: Akses Merchant Dinonaktifkan Sementara",
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+          <h2 style="margin-bottom:8px;">Halo ${merchantName},</h2>
+          <p style="margin:0 0 14px;">Akses merchant Anda saat ini <strong>dinonaktifkan sementara</strong> oleh tim RedFeng.</p>
+          <p style="margin:0 0 8px;"><strong>Catatan admin:</strong></p>
+          <p style="margin:0 0 14px;">${reason || "Silakan hubungi tim RedFeng untuk informasi lebih lanjut mengenai status akun merchant Anda."}</p>
+          <p style="margin:0 0 18px;">Selama status ini aktif, merchant tidak dapat mengakses dashboard sampai diaktifkan kembali oleh admin.</p>
+          <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
+        </div>
+      `,
+    })
+    return
+  }
+
+  if (type === "deleted") {
+    await resend.emails.send({
+      from: "RedFeng Admin <admin@redfeng.co>",
+      to: email,
+      subject: "RedFeng Merchant: Akses Merchant Dicabut",
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+          <h2 style="margin-bottom:8px;">Halo ${merchantName},</h2>
+          <p style="margin:0 0 14px;">Akses merchant Anda telah <strong>dicabut</strong> dari sistem RedFeng.</p>
+          <p style="margin:0 0 8px;"><strong>Alasan admin:</strong></p>
+          <p style="margin:0 0 14px;">${reason || "Silakan hubungi tim RedFeng untuk informasi lebih lanjut mengenai pencabutan akses merchant ini."}</p>
+          <p style="margin:0 0 18px;">Jika Anda memerlukan tindak lanjut, silakan hubungi tim internal RedFeng melalui kanal komunikasi resmi.</p>
           <p style="margin:0;">Terima kasih,<br/><strong>Tim Admin RedFeng</strong></p>
         </div>
       `,
@@ -209,6 +247,11 @@ export async function deactivateMerchant(formData: FormData) {
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
+  const { data: merchant } = await supabaseAdmin
+    .from("merchants")
+    .select("email, brand_name")
+    .eq("id", merchantId)
+    .maybeSingle()
 
   const { error } = await supabaseAdmin
     .from("merchants")
@@ -222,6 +265,17 @@ export async function deactivateMerchant(formData: FormData) {
   if (error) {
     console.error("Deactivate merchant error:", error)
     return
+  }
+
+  try {
+    await sendMerchantDecisionEmail({
+      email: merchant?.email ?? null,
+      brandName: merchant?.brand_name ?? null,
+      type: "inactive",
+      reason,
+    })
+  } catch (emailError) {
+    console.error("Deactivate merchant email error:", emailError)
   }
 
   revalidateMerchantPages()
@@ -290,7 +344,7 @@ export async function deleteMerchant(formData: FormData) {
   if (merchantId) {
     const { data: merchant } = await supabaseAdmin
       .from("merchants")
-      .select("id, user_id, verification_status")
+      .select("id, user_id, verification_status, email, brand_name")
       .eq("id", merchantId)
       .maybeSingle()
 
@@ -311,6 +365,17 @@ export async function deleteMerchant(formData: FormData) {
     revalidateMerchantPages()
     revalidatePath(`/admin/merchants/${merchantId}`)
 
+    try {
+      await sendMerchantDecisionEmail({
+        email: merchant?.email ?? null,
+        brandName: merchant?.brand_name ?? null,
+        type: "deleted",
+        reason,
+      })
+    } catch (emailError) {
+      console.error("Delete merchant email error:", emailError)
+    }
+
     await createAdminAuditLog({
       actorId: actor.id,
       actorRole: actor.role,
@@ -330,7 +395,7 @@ export async function deleteMerchant(formData: FormData) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("id, role")
+    .select("id, role, email")
     .eq("id", profileId)
     .maybeSingle()
 
@@ -364,6 +429,17 @@ export async function deleteMerchant(formData: FormData) {
   }
 
   revalidateMerchantPages()
+
+  try {
+    await sendMerchantDecisionEmail({
+      email: profile.email ?? null,
+      brandName: null,
+      type: "deleted",
+      reason,
+    })
+  } catch (emailError) {
+    console.error("Delete orphan merchant profile email error:", emailError)
+  }
 
   await createAdminAuditLog({
     actorId: actor.id,
