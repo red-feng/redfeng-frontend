@@ -634,146 +634,146 @@ function buildInvoiceStreams(payload: InvoicePdfPayload) {
   pageOne.push(pdfFilledRect(0, 0, 595, 842, [0.99, 0.98, 0.97]))
   pageOne.push(pdfFilledRect(0, 734, 595, 108, [0.49, 0.18, 0.07]))
   pageOne.push(pdfFilledRect(392, 756, 155, 60, [0.98, 0.64, 0.34]))
-  pageOne.push(pdfRoundedSection(40, 522, 515, 192, [1, 1, 1], [0.94, 0.9, 0.84]))
-  pageOne.push(pdfRoundedSection(40, 248, 515, 250, [1, 1, 1], [0.94, 0.9, 0.84]))
-  pageOne.push(pdfRoundedSection(40, 48, 245, 176, [1, 1, 1], [0.94, 0.9, 0.84]))
-  pageOne.push(pdfRoundedSection(310, 48, 245, 176, [1, 1, 1], [0.94, 0.9, 0.84]))
+  pageOne.push(pdfRoundedSection(34, 506, 527, 210, [1, 1, 1], [0.94, 0.9, 0.84]))
+  pageOne.push(pdfRoundedSection(34, 222, 527, 262, [1, 1, 1], [0.94, 0.9, 0.84]))
+  pageOne.push(pdfRoundedSection(34, 40, 258, 164, [1, 1, 1], [0.94, 0.9, 0.84]))
+  pageOne.push(pdfRoundedSection(303, 40, 258, 164, [1, 1, 1], [0.94, 0.9, 0.84]))
 
-  pageOne.push(pdfImage(52, 756, 52, 39, "Im1"))
-  pageOne.push(pdfText(112, 790, "RED FENG", { font: "F2", size: 26, color: [1, 1, 1] }))
-  pageOne.push(pdfText(112, 768, t.subtitle, { font: textFont, size: 12, color: [0.98, 0.94, 0.9] }))
-  pageOne.push(pdfText(410, 794, t.invoiceLabel, { font: headingFont, size: 18, color: [0.49, 0.18, 0.07] }))
-  pageOne.push(pdfText(410, 790, payload.invoiceNumber, { font: headingFont, size: 11, color: [0.49, 0.18, 0.07] }))
-  pageOne.push(pdfText(410, 772, `${t.bookingIdLabel} ${payload.bookingCode}`, { font: textFont, size: 10, color: [0.49, 0.18, 0.07] }))
+  pageOne.push(pdfImage(50, 752, 58, 44, "Im1"))
+  pageOne.push(pdfText(118, 790, "RED FENG", { font: "F2", size: 28, color: [1, 1, 1] }))
+  pageOne.push(pdfText(118, 766, t.subtitle, { font: textFont, size: 13, color: [0.98, 0.94, 0.9] }))
+  pageOne.push(pdfText(410, 794, t.invoiceLabel, { font: headingFont, size: 19, color: [0.49, 0.18, 0.07] }))
+  pageOne.push(pdfText(410, 788, payload.invoiceNumber, { font: headingFont, size: 11.5, color: [0.49, 0.18, 0.07] }))
+  pageOne.push(pdfText(410, 770, `${t.bookingIdLabel} ${payload.bookingCode}`, { font: textFont, size: 10.5, color: [0.49, 0.18, 0.07] }))
 
-  pageOne.push(pdfText(56, 692, t.issuedTo, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageOne.push(pdfText(56, 668, payload.customerName || t.customerFallback, { font: headingFont, size: 17 }))
-  let leftInfoY = 666
+  pageOne.push(pdfText(56, 694, t.issuedTo, { font: headingFont, size: 12, color: [0.76, 0.34, 0.1] }))
+  pageOne.push(pdfText(56, 668, payload.customerName || t.customerFallback, { font: headingFont, size: 18 }))
+  let leftInfoY = 642
   leftInfoY = addLabelValueLines(pageOne, {
     x: 56,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.bookingCode,
     value: payload.bookingCode,
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 30,
   }) - 6
   leftInfoY = addLabelValueLines(pageOne, {
     x: 52,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.invoiceDate,
     value: formatDate(issuedAt, locale),
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 26,
   }) - 6
   leftInfoY = addLabelValueLines(pageOne, {
     x: 52,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.packageLabel,
     value: payload.packageTitle || "-",
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: locale === "zh" ? 18 : 30,
   }) - 6
   leftInfoY = addLabelValueLines(pageOne, {
     x: 52,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.pickupDate,
     value: payload.pickupDateLabel || "-",
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 24,
   }) - 6
   leftInfoY = addLabelValueLines(pageOne, {
     x: 52,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.merchantLabel,
     value: payload.merchantName || "-",
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: locale === "zh" ? 18 : 30,
   }) - 6
   addLabelValueLines(pageOne, {
     x: 52,
     y: leftInfoY,
-    labelWidth: 72,
-    lineHeight: 12,
+    labelWidth: 84,
+    lineHeight: 14,
     label: t.merchantCode,
     value: payload.merchantCode || "-",
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 20,
   })
 
-  pageOne.push(pdfText(326, 692, t.paymentDetails, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
+  pageOne.push(pdfText(332, 694, t.paymentDetails, { font: headingFont, size: 12, color: [0.76, 0.34, 0.1] }))
   addLabelValueLines(pageOne, {
-    x: 326,
-    y: 666,
-    labelWidth: 44,
-    lineHeight: 12,
+    x: 332,
+    y: 642,
+    labelWidth: 52,
+    lineHeight: 14,
     label: t.status,
     value: payload.paymentStatusLabel,
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 18,
   })
   addLabelValueLines(pageOne, {
-    x: 326,
-    y: 648,
-    labelWidth: 44,
-    lineHeight: 12,
+    x: 332,
+    y: 620,
+    labelWidth: 52,
+    lineHeight: 14,
     label: t.type,
     value: payload.paymentTypeLabel,
     font: textFont,
     labelFont: headingFont,
-    size: 10,
+    size: 10.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: 18,
   })
-  pageOne.push(pdfText(326, 626, t.escrowNoticeLine1, { font: textFont, size: 10, color: [0.35, 0.38, 0.44] }))
-  pageOne.push(pdfText(326, 614, t.escrowNoticeLine2, { font: textFont, size: 10, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(332, 596, t.escrowNoticeLine1, { font: textFont, size: 10.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(332, 582, t.escrowNoticeLine2, { font: textFont, size: 10.5, color: [0.35, 0.38, 0.44] }))
   addLabelValueLines(pageOne, {
-    x: 326,
-    y: 596,
-    labelWidth: 54,
-    lineHeight: 10,
+    x: 332,
+    y: 562,
+    labelWidth: 62,
+    lineHeight: 11,
     label: t.verifyUrl,
     value: payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/",
     font: textFont,
     labelFont: headingFont,
-    size: 8,
+    size: 8.5,
     color: [0.35, 0.38, 0.44],
     wrapAt: locale === "zh" ? 20 : 28,
   })
 
-  pageOne.push(pdfFilledRect(56, 454, 483, 42, [0.99, 0.97, 0.94], [0.92, 0.86, 0.8]))
-  pageOne.push(pdfText(72, 480, t.description, { font: headingFont, size: 10, color: [0.36, 0.28, 0.2] }))
-  pageOne.push(pdfText(496, 480, t.amount, { font: headingFont, size: 10, color: [0.36, 0.28, 0.2] }))
+  pageOne.push(pdfFilledRect(50, 432, 495, 44, [0.99, 0.97, 0.94], [0.92, 0.86, 0.8]))
+  pageOne.push(pdfText(68, 459, t.description, { font: headingFont, size: 10.5, color: [0.36, 0.28, 0.2] }))
+  pageOne.push(pdfText(498, 459, t.amount, { font: headingFont, size: 10.5, color: [0.36, 0.28, 0.2] }))
 
   const rows = [
     { label: t.packageSubtotal, amount: payload.subtotalAmount },
@@ -781,65 +781,65 @@ function buildInvoiceStreams(payload: InvoicePdfPayload) {
     { label: t.customerTax, amount: payload.taxAmount },
   ]
 
-  let rowTop = 454
+  let rowTop = 432
   for (const row of rows) {
-    rowTop -= 44
-    pageOne.push(pdfLine(56, rowTop, 539, rowTop))
-    pageOne.push(pdfText(72, rowTop + 16, row.label, { font: textFont, size: 11, color: [0.18, 0.2, 0.24] }))
-    pageOne.push(pdfText(451, rowTop + 16, formatMoney(row.amount, locale), { font: headingFont, size: 11, color: [0.18, 0.2, 0.24] }))
+    rowTop -= 46
+    pageOne.push(pdfLine(50, rowTop, 545, rowTop))
+    pageOne.push(pdfText(68, rowTop + 18, row.label, { font: textFont, size: 11.5, color: [0.18, 0.2, 0.24] }))
+    pageOne.push(pdfText(448, rowTop + 18, formatMoney(row.amount, locale), { font: headingFont, size: 11.5, color: [0.18, 0.2, 0.24] }))
   }
 
-  pageOne.push(pdfFilledRect(324, 290, 203, 110, [1, 0.98, 0.95], [0.94, 0.84, 0.74]))
-  pageOne.push(pdfText(342, 376, t.totalPayment, { font: headingFont, size: 10, color: [0.76, 0.34, 0.1] }))
-  pageOne.push(pdfText(342, 336, formatMoney(payload.totalAmount, locale), { font: headingFont, size: 22, color: [0.07, 0.09, 0.13] }))
-  pageOne.push(pdfText(342, 316, t.verifiedBy, { font: textFont, size: 9.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfFilledRect(318, 268, 215, 118, [1, 0.98, 0.95], [0.94, 0.84, 0.74]))
+  pageOne.push(pdfText(338, 364, t.totalPayment, { font: headingFont, size: 10.5, color: [0.76, 0.34, 0.1] }))
+  pageOne.push(pdfText(338, 320, formatMoney(payload.totalAmount, locale), { font: headingFont, size: 24, color: [0.07, 0.09, 0.13] }))
+  pageOne.push(pdfText(338, 298, t.verifiedBy, { font: textFont, size: 10, color: [0.35, 0.38, 0.44] }))
 
-  pageOne.push(pdfText(56, 204, t.verificationBarcode, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageOne.push(pdfFilledRect(56, 98, 213, 78, [1, 1, 1], [0.92, 0.86, 0.8]))
-  pageOne.push(buildCode39Bars(payload.bookingCode, 72, 114, 42))
-  pageOne.push(pdfText(106, 102, payload.bookingCode, { font: "F2", size: 13, color: [0.07, 0.09, 0.13] }))
-  pageOne.push(pdfText(72, 84, t.verificationBarcodeNote, { font: textFont, size: 8.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(54, 182, t.verificationBarcode, { font: headingFont, size: 11.5, color: [0.76, 0.34, 0.1] }))
+  pageOne.push(pdfFilledRect(54, 86, 218, 74, [1, 1, 1], [0.92, 0.86, 0.8]))
+  pageOne.push(buildCode39Bars(payload.bookingCode, 68, 100, 38))
+  pageOne.push(pdfText(104, 88, payload.bookingCode, { font: "F2", size: 12.5, color: [0.07, 0.09, 0.13] }))
+  pageOne.push(pdfText(68, 72, t.verificationBarcodeNote, { font: textFont, size: 8, color: [0.35, 0.38, 0.44] }))
 
   const qrValue = payload.verificationUrl || `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(payload.bookingCode)}`
-  pageOne.push(pdfText(326, 204, t.verificationQr, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageOne.push(pdfFilledRect(326, 92, 108, 108, [1, 1, 1], [0.92, 0.86, 0.8]))
-  pageOne.push(buildQrBlocks(qrValue, 336, 102, 88))
-  pageOne.push(pdfText(452, 156, t.qrLine1, { font: headingFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageOne.push(pdfText(452, 140, t.qrLine2, { font: textFont, size: 9, color: [0.35, 0.38, 0.44] }))
-  pageOne.push(pdfText(452, 126, t.qrLine3, { font: textFont, size: 9, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(320, 182, t.verificationQr, { font: headingFont, size: 11.5, color: [0.76, 0.34, 0.1] }))
+  pageOne.push(pdfFilledRect(320, 80, 116, 116, [1, 1, 1], [0.92, 0.86, 0.8]))
+  pageOne.push(buildQrBlocks(qrValue, 332, 92, 92))
+  pageOne.push(pdfText(452, 146, t.qrLine1, { font: headingFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageOne.push(pdfText(452, 130, t.qrLine2, { font: textFont, size: 9.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(452, 116, t.qrLine3, { font: textFont, size: 9.5, color: [0.35, 0.38, 0.44] }))
   pageOne.push(pdfLine(52, 40, 543, 40, 1, [0.92, 0.86, 0.8]))
   pageOne.push(pdfText(184, 20, "Red Feng", { font: "F2", size: 12, color: [0.18, 0.2, 0.24] }))
-  pageOne.push(pdfText(255, 28, `${t.supportLabel}:`, { font: headingFont, size: 8, color: [0.35, 0.38, 0.44] }))
-  pageOne.push(pdfText(255, 16, t.supportValue, { font: textFont, size: 7.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(255, 28, `${t.supportLabel}:`, { font: headingFont, size: 8.5, color: [0.35, 0.38, 0.44] }))
+  pageOne.push(pdfText(255, 16, t.supportValue, { font: textFont, size: 7.8, color: [0.35, 0.38, 0.44] }))
   pageOne.push(pdfText(486, 20, `${t.pageLabel} 1/2`, { font: textFont, size: 8, color: [0.35, 0.38, 0.44] }))
 
   pageTwo.push(pdfFilledRect(0, 0, 595, 842, [0.99, 0.98, 0.97]))
   pageTwo.push(pdfFilledRect(0, 734, 595, 108, [0.49, 0.18, 0.07]))
-  pageTwo.push(pdfRoundedSection(40, 72, 515, 620, [1, 1, 1], [0.94, 0.9, 0.84]))
-  pageTwo.push(pdfImage(52, 756, 52, 39, "Im1"))
-  pageTwo.push(pdfText(112, 790, "RED FENG", { font: "F2", size: 26, color: [1, 1, 1] }))
-  pageTwo.push(pdfText(112, 768, t.termsTitle, { font: headingFont, size: 16, color: [0.98, 0.94, 0.9] }))
-  pageTwo.push(pdfText(56, 676, `${t.bookingIdLabel}: ${payload.bookingCode}`, { font: textFont, size: 11, color: [0.35, 0.38, 0.44] }))
-  pageTwo.push(pdfText(56, 638, t.paymentTerms, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageTwo.push(pdfText(56, 614, t.paymentTerm1, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 594, t.paymentTerm2, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 578, t.paymentTerm2b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 558, t.paymentTerm3, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 542, t.paymentTerm3b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 500, t.travelTerms, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageTwo.push(pdfText(56, 476, t.travelTerm4, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 460, t.travelTerm4b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 440, t.travelTerm5, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 424, t.travelTerm5b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 382, t.refundTerms, { font: headingFont, size: 11, color: [0.76, 0.34, 0.1] }))
-  pageTwo.push(pdfText(56, 358, t.refundTerm6, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 342, t.refundTerm6b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(56, 322, t.refundTerm7, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(72, 306, t.refundTerm7b, { font: textFont, size: 10, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfRoundedSection(34, 58, 527, 646, [1, 1, 1], [0.94, 0.9, 0.84]))
+  pageTwo.push(pdfImage(50, 752, 58, 44, "Im1"))
+  pageTwo.push(pdfText(118, 790, "RED FENG", { font: "F2", size: 28, color: [1, 1, 1] }))
+  pageTwo.push(pdfText(118, 766, t.termsTitle, { font: headingFont, size: 17, color: [0.98, 0.94, 0.9] }))
+  pageTwo.push(pdfText(56, 684, `${t.bookingIdLabel}: ${payload.bookingCode}`, { font: textFont, size: 11.5, color: [0.35, 0.38, 0.44] }))
+  pageTwo.push(pdfText(56, 638, t.paymentTerms, { font: headingFont, size: 12, color: [0.76, 0.34, 0.1] }))
+  pageTwo.push(pdfText(56, 610, t.paymentTerm1, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 588, t.paymentTerm2, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 570, t.paymentTerm2b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 548, t.paymentTerm3, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 530, t.paymentTerm3b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 484, t.travelTerms, { font: headingFont, size: 12, color: [0.76, 0.34, 0.1] }))
+  pageTwo.push(pdfText(56, 456, t.travelTerm4, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 438, t.travelTerm4b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 416, t.travelTerm5, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 398, t.travelTerm5b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 352, t.refundTerms, { font: headingFont, size: 12, color: [0.76, 0.34, 0.1] }))
+  pageTwo.push(pdfText(56, 324, t.refundTerm6, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 306, t.refundTerm6b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(56, 284, t.refundTerm7, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
+  pageTwo.push(pdfText(74, 266, t.refundTerm7b, { font: textFont, size: 10.5, color: [0.18, 0.2, 0.24] }))
   pageTwo.push(pdfLine(52, 40, 543, 40, 1, [0.92, 0.86, 0.8]))
   pageTwo.push(pdfText(184, 20, "Red Feng", { font: "F2", size: 12, color: [0.18, 0.2, 0.24] }))
-  pageTwo.push(pdfText(255, 28, `${t.supportLabel}:`, { font: headingFont, size: 8, color: [0.35, 0.38, 0.44] }))
-  pageTwo.push(pdfText(255, 16, t.supportValue, { font: textFont, size: 7.5, color: [0.35, 0.38, 0.44] }))
+  pageTwo.push(pdfText(255, 28, `${t.supportLabel}:`, { font: headingFont, size: 8.5, color: [0.35, 0.38, 0.44] }))
+  pageTwo.push(pdfText(255, 16, t.supportValue, { font: textFont, size: 7.8, color: [0.35, 0.38, 0.44] }))
   pageTwo.push(pdfText(486, 20, `${t.pageLabel} 2/2`, { font: textFont, size: 8, color: [0.35, 0.38, 0.44] }))
 
   return [pageOne.join("\n"), pageTwo.join("\n")]
