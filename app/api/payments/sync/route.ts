@@ -108,12 +108,24 @@ function paymentSyncCopy(locale: Locale) {
   }
 }
 
+const paymentSyncCopyZh = {
+  loginRequired: "请先登录。",
+  bookingNotFound: "未找到订单。",
+  notOwner: "该订单不属于您的账户。",
+  midtransUnavailable: "Midtrans 交易状态暂时不可用。",
+  serverError: "服务器错误。",
+}
+
+function getPaymentSyncCopy(locale: Locale) {
+  return locale === "zh" ? paymentSyncCopyZh : paymentSyncCopy(locale)
+}
+
 export async function POST(req: Request) {
   let activeLocale: Locale = "id"
   try {
     const { booking_id, order_id, locale } = await req.json()
     activeLocale = normalizeLocale(locale)
-    const t = paymentSyncCopy(activeLocale)
+    const t = getPaymentSyncCopy(activeLocale)
     const authSupabase = await createServerClient()
     const {
       data: { user },
@@ -376,9 +388,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, transaction_status: transactionStatus })
   } catch (error) {
     console.error(error)
-    const t = paymentSyncCopy(activeLocale)
+    const t = getPaymentSyncCopy(activeLocale)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : t.serverError },
+      { error: t.serverError },
       { status: 500 },
     )
   }

@@ -312,8 +312,84 @@ const bookingPageCopy = {
   },
 } satisfies Record<Locale, Record<string, string>>
 
+const bookingPageCopyZh = {
+  loginRequired: "请先登录以查看您的订单。",
+  bookingNotFound: "未找到订单",
+  waitingSettlement: "等待尾款",
+  paid: "已付款",
+  awaitingPayment: "等待付款",
+  refundReview: "退款审核中",
+  paidOut: "已结算",
+  readyForFinance: "待财务处理",
+  goConfirmed: "已确认 Go",
+  pickedUp: "已接送",
+  awaitingPickup: "等待接送",
+  fullyPaid: "已全额付款",
+  financeProcessing: "财务处理中",
+  confirmed: "已确认",
+  cancelled: "已取消",
+  escrowHeld: "资金已托管",
+  escrowPartialHold: "部分资金托管中",
+  bookingConfirmation: "订单确认",
+  bookingSuccess: "订单已创建",
+  confirmationIntro: "请先检查所有参团人资料、订单详情和费用金额。如无误，请在此页面继续付款。",
+  successIntro: "客户资金已进入 RedFeng 账户，并会在商家和客户都确认接送前保持托管。",
+  checkoutAlert: "订单已创建。请先完善参团人资料，并核对金额和订单详情后再打开 Midtrans 弹窗。",
+  participantsIncomplete: "参团人资料尚未完整。请先填写所有参团人信息后再继续付款。",
+  bookingCode: "订单编号",
+  total: "总额",
+  paymentStatus: "付款状态",
+  escrowStatus: "托管状态",
+  packageSubtotal: "套餐小计",
+  adminFee: "手续费",
+  tax: "税费",
+  remainingSettlement: "剩余尾款",
+  localizedPriceSummary: "按您语言显示的价格摘要",
+  localizedPriceBody: "套餐价格会跟随您在结账时选择的语言显示，付款网关仍以 IDR 处理。",
+  adultPrice: "成人价格",
+  childPrice: "儿童价格",
+  displaySubtotal: "显示小计",
+  exchangeRateDate: "汇率日期",
+  bookingDetail: "订单详情",
+  name: "姓名",
+  email: "邮箱",
+  phone: "电话号码",
+  participantCount: "参团人数",
+  adult: "成人",
+  child: "儿童",
+  paymentType: "付款方式",
+  fullPayment: "全额付款",
+  billNow: "当前应付",
+  settlementDeadline: "尾款截止时间",
+  journeyPhase: "行程阶段",
+  participantData: "参团人资料",
+  participantDataBody: "所有出行人员资料必须完整后才能开启付款。",
+  editParticipantData: "修改参团人资料",
+  fillParticipantData: "填写参团人资料",
+  participantStatus: "参团人资料状态：",
+  participantsComplete: "位参团人资料已完整",
+  participantsFilled: "位参团人资料已填写",
+  identityNumber: "证件号 / 护照号",
+  nationality: "国籍",
+  age: "年龄",
+  noParticipantData: "该订单尚未保存任何参团人资料。",
+  bookingActions: "订单操作",
+  payDpNow: "立即支付定金",
+  payFullNow: "立即全额付款",
+  draftCancelledRedirect:
+    "/customer/dashboard?info=%E8%8D%89%E7%A8%BF%E8%AE%A2%E5%8D%95%E5%9B%A0%E6%9C%AA%E7%BB%A7%E7%BB%AD%E4%BB%98%E6%AC%BE%E8%80%8C%E5%B7%B2%E5%8F%96%E6%B6%88",
+  completeParticipants: "完善参团人资料",
+  cancelAndDeleteBooking: "取消并删除订单",
+  paySettlement: "支付尾款",
+  settlementExpiredOn: "尾款截止时间已过：",
+} satisfies Record<string, string>
+
+function getBookingPageCopy(locale: Locale) {
+  return locale === "zh" ? bookingPageCopyZh : bookingPageCopy[locale]
+}
+
 function resolvePaymentStatusLabel(status: string | null, locale: Locale) {
-  const t = bookingPageCopy[locale]
+  const t = getBookingPageCopy(locale)
   const normalized = normalizeStatus(status)
   if (normalized === "dp_paid") return t.waitingSettlement
   if (normalized === "paid") return t.paid
@@ -324,7 +400,7 @@ function resolvePaymentStatusLabel(status: string | null, locale: Locale) {
 
 function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
   const normalized = normalizeStatus(status)
-  const t = bookingPageCopy[locale]
+  const t = getBookingPageCopy(locale)
   if (normalized === "held") return t.escrowHeld
   if (normalized === "partial_hold") return t.escrowPartialHold
   if (normalized === "awaiting_admin_handoff" || normalized === "finance_review") return t.readyForFinance
@@ -336,7 +412,7 @@ function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
 
 function resolveBookingStatusLabel(status: string | null, locale: Locale) {
   const normalized = normalizeStatus(status)
-  const t = bookingPageCopy[locale]
+  const t = getBookingPageCopy(locale)
   if (normalized === "merchant_arrived") return t.awaitingPickup
   if (normalized === "customer_picked_up") return t.pickedUp
   if (normalized === "customer_picked_up_pending_final_payment") return t.pickedUp
@@ -367,7 +443,7 @@ function escrowBadgeTone(status: string | null) {
 }
 
 function resolveJourneyPhase(booking: BookingDetailRow, locale: Locale) {
-  const t = bookingPageCopy[locale]
+  const t = getBookingPageCopy(locale)
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: t.paidOut, tone: "border-violet-200 bg-violet-50 text-violet-700" }
   }
@@ -405,7 +481,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const authSupabase = await createClient()
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
-  const t = bookingPageCopy[locale]
+  const t = getBookingPageCopy(locale)
   const {
     data: { user },
   } = await authSupabase.auth.getUser()

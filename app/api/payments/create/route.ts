@@ -98,12 +98,30 @@ function paymentCreateCopy(locale: Locale) {
   }
 }
 
+const paymentCreateCopyZh = {
+  loginRequired: "请先登录。",
+  bookingNotFound: "未找到订单。",
+  alreadyPaid: "该订单已完成全额付款。",
+  notOwner: "该订单不属于您的账户。",
+  invalidParticipants: "该订单尚未有有效的参团人数。",
+  participantVerificationFailed: "无法验证参团人资料。",
+  participantsIncomplete: "请先完善所有参团人资料后再打开付款。",
+  overdueFinalPayment: (dueLabel: string) => `尾款期限已过，尾款只能在 ${dueLabel} 前支付。`,
+  paymentRecordFailed: "创建付款记录失败。",
+  popupFailedCleanup: "无法打开付款弹窗，草稿订单已自动清理。",
+  serverError: "服务器错误。",
+}
+
+function getPaymentCreateCopy(locale: Locale) {
+  return locale === "zh" ? paymentCreateCopyZh : paymentCreateCopy(locale)
+}
+
 export async function POST(req: Request) {
   let activeLocale: Locale = "id"
   try {
     const { booking_id, locale } = await req.json()
     activeLocale = normalizeLocale(locale)
-    const t = paymentCreateCopy(activeLocale)
+    const t = getPaymentCreateCopy(activeLocale)
     const authSupabase = await createServerClient()
     const {
       data: { user },
@@ -273,7 +291,7 @@ export async function POST(req: Request) {
 
     try {
       transaction = await snap.createTransaction(parameter)
-    } catch (gatewayError) {
+    } catch {
       if (!hasPaidDp && isDraftBookingDeletable(booking)) {
         await deleteDraftBooking(supabase, booking.id)
       } else {
@@ -282,10 +300,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json(
         {
-          error:
-            gatewayError instanceof Error
-              ? gatewayError.message
-              : t.popupFailedCleanup,
+          error: t.popupFailedCleanup,
         },
         { status: 500 }
       )
@@ -299,9 +314,9 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error(error)
-    const t = paymentCreateCopy(activeLocale)
+    const t = getPaymentCreateCopy(activeLocale)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : t.serverError },
+      { error: t.serverError },
       { status: 500 }
     )
   }
