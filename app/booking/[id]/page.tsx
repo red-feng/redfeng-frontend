@@ -32,6 +32,8 @@ type BookingDetailRow = {
   subtotal_amount?: number | null
   customer_admin_fee_amount?: number | null
   customer_tax_amount?: number | null
+  customer_admin_fee_percent?: number | null
+  customer_tax_percent?: number | null
   final_payment_amount?: number | null
   display_currency?: string | null
   display_subtotal_amount?: number | null
@@ -414,7 +416,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -450,6 +452,19 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
   const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"
   const amountDueNow = normalizedPaymentType === "dp" ? Number(booking.dp_amount || 0) : Number(booking.total_amount || 0)
+  const displayCurrency = booking.display_currency || "IDR"
+  const displaySubtotal = Number(booking.display_subtotal_amount || 0)
+  const displayAdminFee = Math.round(
+    displaySubtotal * (Number(booking.customer_admin_fee_percent || 0) / 100),
+  )
+  const displayTax = Math.round(
+    (displaySubtotal + displayAdminFee) * (Number(booking.customer_tax_percent || 0) / 100),
+  )
+  const displayTotal = displaySubtotal + displayAdminFee + displayTax
+  const displayDpAmount = Math.round(displayTotal * 0.3)
+  const displayFinalPaymentAmount = Math.max(displayTotal - displayDpAmount, 0)
+  const displayAmountDueNow =
+    normalizedPaymentType === "dp" ? displayDpAmount : displayTotal
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
@@ -494,7 +509,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.total}</p>
-            <p className="mt-2 text-2xl font-bold text-slate-900">{formatIdr(booking.total_amount)}</p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {formatPackageMoney(displayTotal, displayCurrency, locale)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.total_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.paymentStatus}</p>
@@ -513,19 +531,31 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.packageSubtotal}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.subtotal_amount)}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {formatPackageMoney(displaySubtotal, displayCurrency, locale)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.subtotal_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.adminFee}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_admin_fee_amount)}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {formatPackageMoney(displayAdminFee, displayCurrency, locale)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.customer_admin_fee_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.tax}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.customer_tax_amount)}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {formatPackageMoney(displayTax, displayCurrency, locale)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.customer_tax_amount)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.remainingSettlement}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{formatIdr(booking.final_payment_amount)}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">
+              {formatPackageMoney(displayFinalPaymentAmount, displayCurrency, locale)}
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.final_payment_amount)}</p>
           </div>
         </section>
 
@@ -535,6 +565,18 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <p className="mt-2 text-sm text-slate-600">
               {t.localizedPriceBody}
             </p>
+            <div className="mt-4 rounded-[20px] border border-blue-200 bg-white px-4 py-3 text-sm text-slate-600">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>{t.billNow}</span>
+                <span className="font-semibold text-slate-900">
+                  {formatPackageMoney(displayAmountDueNow, displayCurrency, locale)}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+                <span>Payment gateway IDR</span>
+                <span className="font-semibold text-slate-700">{formatIdr(amountDueNow)}</span>
+              </div>
+            </div>
             <div className="mt-5 grid gap-4 md:grid-cols-4">
               <div className="rounded-[20px] border border-blue-100 bg-white p-4">
                 <p className="text-sm text-slate-500">{t.adultPrice}</p>
@@ -585,10 +627,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               <p className="text-sm text-slate-500">{t.paymentType}</p>
               <p className="mt-2 font-medium text-slate-900">{normalizedPaymentType === "dp" ? "DP 30%" : t.fullPayment}</p>
             </div>
-            <div>
-              <p className="text-sm text-slate-500">{t.billNow}</p>
-              <p className="mt-2 font-medium text-slate-900">{formatIdr(amountDueNow)}</p>
-            </div>
+              <div>
+                <p className="text-sm text-slate-500">{t.billNow}</p>
+                <p className="mt-2 font-medium text-slate-900">
+                  {formatPackageMoney(displayAmountDueNow, displayCurrency, locale)}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">{formatIdr(amountDueNow)}</p>
+              </div>
             {normalizedPaymentType === "dp" ? (
               <div>
                 <p className="text-sm text-slate-500">{t.settlementDeadline}</p>
