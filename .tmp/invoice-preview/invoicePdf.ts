@@ -55,6 +55,12 @@ type InvoiceCopy = {
   website: string
   termsTitle: string
   refundTitle: string
+  dpPayment: string
+  finalPayment: string
+  fullPayment: string
+  dpPaid: string
+  finalPaymentSettled: string
+  fullyPaid: string
   terms: string[]
   refunds: string[]
 }
@@ -90,6 +96,12 @@ const copy: Record<Locale, InvoiceCopy> = {
     website: "Website",
     termsTitle: "Syarat dan Ketentuan",
     refundTitle: "Klausul Refund",
+    dpPayment: "DP Payment",
+    finalPayment: "Final Payment",
+    fullPayment: "Full Payment",
+    dpPaid: "DP Paid",
+    finalPaymentSettled: "Final Payment Settled",
+    fullyPaid: "Fully Paid",
     terms: [
       "1. Invoice ini merupakan bukti pembayaran resmi customer kepada Red Feng untuk transaksi sesuai Booking ID yang tercantum.",
       "2. Data booking, nominal pembayaran, dan detail paket pada invoice ini mengikuti data yang tercatat di sistem Red Feng pada saat transaksi berhasil dibuat.",
@@ -141,6 +153,12 @@ const copy: Record<Locale, InvoiceCopy> = {
     website: "Website",
     termsTitle: "Terms and Conditions",
     refundTitle: "Refund Clause",
+    dpPayment: "DP Payment",
+    finalPayment: "Final Payment",
+    fullPayment: "Full Payment",
+    dpPaid: "DP Paid",
+    finalPaymentSettled: "Final Payment Settled",
+    fullyPaid: "Fully Paid",
     terms: [
       "1. This invoice is official proof of customer payment to Red Feng for the transaction linked to the Booking ID shown here.",
       "2. Booking data, payment amount, and package details on this invoice follow the records stored in the Red Feng system when the transaction is created.",
@@ -163,54 +181,60 @@ const copy: Record<Locale, InvoiceCopy> = {
     ],
   },
   zh: {
-    invoice: "å‘ç¥¨",
-    issuedTo: "å¼€å…·ç»™",
-    paymentDetails: "ä»˜æ¬¾è¯¦æƒ…",
-    bookingCode: "é¢„è®¢ç¼–å·",
-    invoiceDate: "å‘ç¥¨æ—¥æœŸ",
-    packageLabel: "å¥—é¤",
-    travelDate: "å‡ºè¡Œæ—¥æœŸ",
-    merchantLabel: "å•†å®¶",
-    merchantCode: "å•†å®¶ä»£ç ",
-    status: "çŠ¶æ€",
-    type: "ç±»åž‹",
-    noLabel: "åºå·",
-    description: "è¯´æ˜Ž",
-    qty: "æ•°é‡",
-    nominal: "é‡‘é¢",
-    total: "æ€»è®¡",
-    subTotal: "å¥—é¤å°è®¡",
-    adminFee: "ç®¡ç†è´¹",
-    tax: "ç¨Žè´¹",
-    totalPayment: "ä»˜æ¬¾æ€»é¢",
-    barcodeTitle: "éªŒè¯æ¡ç ",
-    barcodeNote: "è¯·åœ¨éªŒè¯é¡µé¢ä½¿ç”¨æ­¤é¢„è®¢ç¼–å·ã€‚",
-    qrNote1: "æ‰«ç æ‰“å¼€",
-    qrNote2: "é¢„è®¢éªŒè¯é¡µé¢ã€‚",
-    support: "å®¢æˆ·æ”¯æŒ",
-    email: "é‚®ç®±",
-    website: "ç½‘ç«™",
-    termsTitle: "æ¡æ¬¾ä¸Žæ¡ä»¶",
-    refundTitle: "é€€æ¬¾æ¡æ¬¾",
+    invoice: "发票",
+    issuedTo: "开具给",
+    paymentDetails: "付款详情",
+    bookingCode: "预订编号",
+    invoiceDate: "发票日期",
+    packageLabel: "套餐",
+    travelDate: "出行日期",
+    merchantLabel: "商家",
+    merchantCode: "商家代码",
+    status: "状态",
+    type: "类型",
+    noLabel: "序号",
+    description: "说明",
+    qty: "数量",
+    nominal: "金额",
+    total: "总计",
+    subTotal: "套餐小计",
+    adminFee: "管理费",
+    tax: "税费",
+    totalPayment: "付款总额",
+    barcodeTitle: "验证条码",
+    barcodeNote: "请在验证页面使用此预订编号。",
+    qrNote1: "扫码打开",
+    qrNote2: "预订验证页面。",
+    support: "客户支持",
+    email: "邮箱",
+    website: "网站",
+    termsTitle: "条款与条件",
+    refundTitle: "退款条款",
+    dpPayment: "定金付款",
+    finalPayment: "尾款支付",
+    fullPayment: "全额付款",
+    dpPaid: "定金已支付",
+    finalPaymentSettled: "尾款已结清",
+    fullyPaid: "已全额付款",
     terms: [
-      "1. æœ¬å‘ç¥¨æ˜¯å®¢æˆ·å‘ Red Feng æ”¯ä»˜ä¸Žæœ¬é¢„è®¢ç¼–å·ç›¸å…³äº¤æ˜“æ¬¾é¡¹çš„æ­£å¼å‡­è¯ã€‚",
-      "2. å‘ç¥¨ä¸­çš„è®¢å•èµ„æ–™ã€ä»˜æ¬¾é‡‘é¢åŠå¥—é¤è¯¦æƒ…ï¼Œä»¥äº¤æ˜“æˆåŠŸåˆ›å»ºæ—¶ Red Feng ç³»ç»Ÿè®°å½•ä¸ºå‡†ã€‚",
-      "3. ä»˜æ¬¾æ–¹å¼å¯ä¸ºå®šé‡‘ã€å°¾æ¬¾æˆ–å…¨é¢ä»˜æ¬¾ï¼Œå…·ä½“å–å†³äºŽç»“è´¦æ—¶é€‰æ‹©çš„æ–¹å¼ã€‚",
-      "4. å®¢æˆ·èµ„é‡‘å°†ç”± Red Feng å…ˆè¡ŒæŽ¥æ”¶å’Œç®¡ç†ï¼Œå¹¶éµå¾ªé€‚ç”¨çš„æ‰˜ç®¡åŠè¿è¥æµç¨‹ã€‚",
-      "5. æœ¬å‘ç¥¨æ‰€ç¤ºä»˜æ¬¾çŠ¶æ€ä»…ä»£è¡¨å¼€ç¥¨æ—¶çŠ¶æ€ï¼ŒåŽç»­å¯éšç³»ç»Ÿäº¤æ˜“æ›´æ–°è€Œå˜åŒ–ã€‚",
-      "6. æ”¯ä»˜ç½‘å…³è´¹ç”¨ã€ç¨Žè´¹ã€æœåŠ¡è´¹æˆ–å…¶ä»–åˆ—ç¤ºè´¹ç”¨ç”±å®¢æˆ·æ‰¿æ‹…ï¼Œå¹¶ä»¥äº¤æ˜“æ—¶é€‚ç”¨è§„åˆ™ä¸ºå‡†ã€‚",
-      "7. å¯¹äºŽå®šé‡‘è®¢å•ï¼Œå®¢æˆ·é¡»åœ¨è§„å®šæœŸé™å‰å®Œæˆå°¾æ¬¾æ”¯ä»˜ã€‚é€¾æœŸå¯èƒ½å¯¼è‡´è®¢å•ä¾æ”¿ç­–è¢«å–æ¶ˆã€‚",
-      "8. é€€æ¬¾ä¸Žå–æ¶ˆç”³è¯·ä»…å¯åœ¨å‡ºè¡Œæ—¥å‰ H-3 ä¹‹å‰å—ç†ã€‚è¶…è¿‡ H-3 åŽæ¬¾é¡¹ä¸å¯é€€æ¬¾ã€‚",
-      "9. æœ¬å‘ç¥¨ä¸­çš„é¢„è®¢ç¼–å·å¯é€šè¿‡ Red Feng å®˜æ–¹éªŒè¯æ¸ é“æ ¸éªŒäº¤æ˜“çœŸä¼ªã€‚",
-      "10. å¦‚æœ¬å‘ç¥¨ä¸Ž Red Feng ç³»ç»Ÿæ•°æ®å­˜åœ¨å·®å¼‚ï¼Œä»¥ç³»ç»Ÿæ•°æ®ä¸ºå‡†ã€‚",
+      "1. 本发票是客户向 Red Feng 支付与本预订编号相关交易款项的正式凭证。",
+      "2. 发票中的订单资料、付款金额及套餐详情，以交易成功创建时 Red Feng 系统记录为准。",
+      "3. 付款方式可为定金、尾款或全额付款，具体取决于结账时选择的方式。",
+      "4. 客户资金将由 Red Feng 先行接收和管理，并遵循适用的托管及运营流程。",
+      "5. 本发票所示付款状态仅代表开票时状态，后续可随系统交易更新而变化。",
+      "6. 支付网关费用、税费、服务费或其他列示费用由客户承担，并以交易时适用规则为准。",
+      "7. 对于定金订单，客户须在规定期限前完成尾款支付。逾期可能导致订单依政策被取消。",
+      "8. 退款与取消申请仅可在出行日前 H-3 之前受理。超过 H-3 后款项不可退款。",
+      "9. 本发票中的预订编号可通过 Red Feng 官方验证渠道核验交易真伪。",
+      "10. 如本发票与 Red Feng 系统数据存在差异，以系统数据为准。",
     ],
     refunds: [
-      "1. é€€æ¬¾ç”³è¯·ä»…å¯åœ¨å‡ºè¡Œæ—¥å‰ H-3 ä¹‹å‰å¤„ç†ã€‚",
-      "2. è¶…è¿‡ H-3 æˆªæ­¢æ—¶é—´åŽï¼Œå·²æ”¶å–çš„å…¨éƒ¨æ¬¾é¡¹å‡ä¸å¯é€€æ¬¾ã€‚",
-      "3. åœ¨ H-3 å‰æäº¤çš„é€€æ¬¾ç”³è¯·ï¼Œæ‰¹å‡†é‡‘é¢ä»å¯èƒ½æ‰£é™¤ç®¡ç†è´¹ã€æ”¯ä»˜ç½‘å…³è´¹ç”¨ã€ç¨Žè´¹ã€æœåŠ¡è´¹æˆ–å…¶ä»–ä¸å¯é€€è¿˜é¡¹ç›®ã€‚",
-      "4. å®šé‡‘ã€å°¾æ¬¾æˆ–å…¨é¢ä»˜æ¬¾çš„é€€æ¬¾ï¼Œå°†ä¾æ®è®¢å•çŠ¶æ€ã€ç”³è¯·æ—¶é—´åŠå·²è¿›è¡Œçš„è¿è¥é˜¶æ®µå†³å®šã€‚",
-      "5. å› å°¾æ¬¾é€¾æœŸã€æœªåˆ°åœºã€å‚å›¢èµ„æ–™æ— æ•ˆæˆ–è¿åé¢„è®¢æ¡æ¬¾è€Œæå‡ºçš„é€€æ¬¾ç”³è¯·ï¼Œå¯ä¾ Red Feng æ”¿ç­–è¢«æ‹’ç»ã€‚",
-      "6. é€€æ¬¾åˆ°è´¦æ—¶é—´å–å†³äºŽå†…éƒ¨å®¡æ ¸æµç¨‹ã€ä»˜æ¬¾æ–¹å¼ä»¥åŠç›¸å…³æ”¯ä»˜ç½‘å…³æˆ–é“¶è¡Œæ”¿ç­–ã€‚",
+      "1. 退款申请仅可在出行日前 H-3 之前处理。",
+      "2. 超过 H-3 截止时间后，已收取的全部款项均不可退款。",
+      "3. 在 H-3 前提交的退款申请，批准金额仍可能扣除管理费、支付网关费用、税费、服务费或其他不可退还项目。",
+      "4. 定金、尾款或全额付款的退款，将依据订单状态、申请时间及已进行的运营阶段决定。",
+      "5. 因尾款逾期、未到场、参团资料无效或违反预订条款而提出的退款申请，可依 Red Feng 政策被拒绝。",
+      "6. 退款到账时间取决于内部审核流程、付款方式以及相关支付网关或银行政策。",
     ],
   },
 }
@@ -336,9 +360,25 @@ function buildTermsList(items: string[]) {
   return items.map((item) => `<li>${escapeHtml(item.replace(/^\d+\.\s*/, ""))}</li>`).join("")
 }
 
+function localizePaymentTypeLabel(value: string, t: InvoiceCopy) {
+  if (value === "DP Payment" || value === t.dpPayment) return t.dpPayment
+  if (value === "Final Payment" || value === t.finalPayment) return t.finalPayment
+  if (value === "Full Payment" || value === t.fullPayment) return t.fullPayment
+  return value
+}
+
+function localizePaymentStatusLabel(value: string, t: InvoiceCopy) {
+  if (value === "DP Paid" || value === t.dpPaid) return t.dpPaid
+  if (value === "Final Payment Settled" || value === t.finalPaymentSettled) return t.finalPaymentSettled
+  if (value === "Fully Paid" || value === t.fullyPaid) return t.fullyPaid
+  return value
+}
+
 async function renderInvoiceHtml(payload: InvoicePdfPayload) {
   const locale = normalizeLocale(payload.locale)
   const t = copy[locale]
+  const paymentStatusLabel = localizePaymentStatusLabel(payload.paymentStatusLabel, t)
+  const paymentTypeLabel = localizePaymentTypeLabel(payload.paymentTypeLabel, t)
   const quantity = Math.max(1, Number(payload.quantity || 1))
   const nominalAmount = quantity > 0 ? Math.round(payload.subtotalAmount / quantity) : payload.subtotalAmount
   const verificationUrl =
@@ -351,6 +391,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #ffffff; }
+    body.locale-zh { font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', 'Hiragino Sans GB', 'Source Han Sans SC', Arial, sans-serif; }
     .page { width: 794px; min-height: 1123px; padding: 18px 8px 18px 8px; position: relative; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
     .logo { width: 178px; display:block; }
@@ -405,7 +446,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
         <meta charset="utf-8" />
         <style>${styles}</style>
       </head>
-      <body>
+      <body class="locale-${locale}">
         <section class="page">
           <div class="header">
             <img class="logo" src="${logoUrl}" alt="Red Feng" />
@@ -433,8 +474,8 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
               <h2 class="section-title">${escapeHtml(t.paymentDetails)}</h2>
               <div style="height:49px"></div>
               <div class="rows">
-                <div class="row"><span class="label">${escapeHtml(t.status)}</span><span class="colon">:</span><span>${escapeHtml(payload.paymentStatusLabel)}</span></div>
-                <div class="row"><span class="label">${escapeHtml(t.type)}</span><span class="colon">:</span><span>${escapeHtml(payload.paymentTypeLabel)}</span></div>
+                <div class="row"><span class="label">${escapeHtml(t.status)}</span><span class="colon">:</span><span>${escapeHtml(paymentStatusLabel)}</span></div>
+                <div class="row"><span class="label">${escapeHtml(t.type)}</span><span class="colon">:</span><span>${escapeHtml(paymentTypeLabel)}</span></div>
               </div>
             </div>
           </section>
@@ -560,4 +601,5 @@ export async function createInvoicePdf(payload: InvoicePdfPayload) {
     await browser.close()
   }
 }
+
 

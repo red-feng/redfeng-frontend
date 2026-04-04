@@ -19,15 +19,16 @@ const common = {
 }
 
 const locales = [
-  { code: "id", status: "Lunas", type: "Full Payment" },
-  { code: "en", status: "Fully Paid", type: "Full Payment" },
-  { code: "zh", status: "?????", type: "????" },
+  { code: "id", status: "Lunas", type: "Full Payment", packageTitle: "3 Hari 2 Malam Bali Adventure" },
+  { code: "en", status: "Fully Paid", type: "Full Payment", packageTitle: "3 Days 2 Nights Bali Adventure" },
+  { code: "zh", status: "Fully Paid", type: "Full Payment", packageTitle: "巴厘岛 3天2晚探险之旅" },
 ]
 
 for (const locale of locales) {
   const pdf = await createInvoicePdf({
     ...common,
     locale: locale.code,
+    packageTitle: locale.packageTitle,
     paymentStatusLabel: locale.status,
     paymentTypeLabel: locale.type,
   })

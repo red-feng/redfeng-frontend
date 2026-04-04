@@ -192,6 +192,7 @@ export async function POST(req: Request) {
         customer_name,
         customer_email,
         customer_phone,
+        customer_locale: activeLocale,
         expiry_time: expiry.toISOString(),
         payment_type: normalizedPaymentType,
         payment_status: "pending",

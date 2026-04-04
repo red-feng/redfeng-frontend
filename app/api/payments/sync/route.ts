@@ -9,6 +9,7 @@ import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draf
 import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline"
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { resolvePackageTranslation } from "@/lib/package-pricing"
 
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
@@ -37,22 +38,46 @@ function isPendingMidtransStatus(status: string | null | undefined) {
   return ["pending", "authorize"].includes(normalizeStatus(status))
 }
 
-function formatDateLabel(value: string | null) {
+function formatDateLabel(value: string | null, locale: Locale) {
   if (!value) return "-"
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
-  return parsed.toLocaleDateString("id-ID", {
+  const localeCode = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
+  return parsed.toLocaleDateString(localeCode, {
     day: "2-digit",
     month: "long",
     year: "numeric",
   })
 }
 
-function inferCustomerLocaleFromBooking(input: { display_currency?: string | null }) {
+function inferCustomerLocaleFromBooking(input: { customer_locale?: string | null; display_currency?: string | null }) {
+  if (input.customer_locale === "en" || input.customer_locale === "zh" || input.customer_locale === "id") {
+    return input.customer_locale
+  }
   const currency = String(input.display_currency || "").trim().toUpperCase()
   if (currency === "USD") return "en"
   if (currency === "CNY" || currency === "RMB") return "zh"
   return "id"
+}
+
+function calculateLocalizedDisplayBreakdown(input: {
+  displaySubtotalAmount?: number | null
+  displayCurrency?: string | null
+  adminFeePercent?: number | null
+  taxPercent?: number | null
+}) {
+  const subtotalAmount = Math.max(Number(input.displaySubtotalAmount || 0), 0)
+  const adminFeePercent = Math.max(Number(input.adminFeePercent || 0), 0)
+  const taxPercent = Math.max(Number(input.taxPercent || 0), 0)
+  const adminFeeAmount = Math.round(subtotalAmount * (adminFeePercent / 100))
+  const taxAmount = Math.round((subtotalAmount + adminFeeAmount) * (taxPercent / 100))
+  return {
+    currency: String(input.displayCurrency || "IDR").trim().toUpperCase(),
+    subtotalAmount,
+    adminFeeAmount,
+    taxAmount,
+    totalAmount: subtotalAmount + adminFeeAmount + taxAmount,
+  }
 }
 
 function paymentSyncCopy(locale: Locale) {
@@ -106,7 +131,7 @@ export async function POST(req: Request) {
     const { data: booking } = await supabase
       .from("bookings")
       .select(
-        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, payment_type, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency",
+        "id, package_id, booking_code, customer_name, customer_email, pickup_date, total_amount, dp_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, payment_type, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, display_currency, display_subtotal_amount, customer_locale",
       )
       .eq("id", booking_id)
       .maybeSingle()
@@ -244,24 +269,38 @@ export async function POST(req: Request) {
               : "Fully Paid"
         const settlementDueLabel =
           resolvedPaymentType === "dp" ? formatFinalPaymentDueLabel(booking.pickup_date || null) : null
+        const localizedDisplay = calculateLocalizedDisplayBreakdown({
+          displaySubtotalAmount: booking.display_subtotal_amount,
+          displayCurrency: booking.display_currency,
+          adminFeePercent: booking.customer_admin_fee_percent,
+          taxPercent: booking.customer_tax_percent,
+        })
+        const localizedPaidRatio = Number(booking.total_amount || 0) > 0 ? amountPaid / Number(booking.total_amount || 0) : 0
+        const localizedPaidAmount = Math.round(localizedDisplay.totalAmount * localizedPaidRatio)
         const invoiceSubtotalAmount =
           resolvedPaymentType === "dp"
-            ? Number(booking.subtotal_amount || 0)
+            ? localizedPaidAmount
             : normalizeStatus(booking.payment_status) === "dp_paid"
-              ? Number(booking.final_payment_amount || 0)
-              : Number(booking.subtotal_amount || 0)
+              ? localizedPaidAmount
+              : localizedDisplay.subtotalAmount
         const invoiceAdminFeeAmount =
           resolvedPaymentType === "dp"
-            ? Number(booking.customer_admin_fee_amount || 0)
+            ? 0
             : normalizeStatus(booking.payment_status) === "dp_paid"
               ? 0
-              : Number(booking.customer_admin_fee_amount || 0)
+              : localizedDisplay.adminFeeAmount
         const invoiceTaxAmount =
           resolvedPaymentType === "dp"
-            ? Number(booking.customer_tax_amount || 0)
+            ? 0
             : normalizeStatus(booking.payment_status) === "dp_paid"
               ? 0
-              : Number(booking.customer_tax_amount || 0)
+              : localizedDisplay.taxAmount
+        const invoiceTotalAmount =
+          resolvedPaymentType === "dp"
+            ? localizedPaidAmount
+            : normalizeStatus(booking.payment_status) === "dp_paid"
+              ? localizedPaidAmount
+              : localizedDisplay.totalAmount
         const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(booking.booking_code || booking.id)}`
         const { data: packageRow } = booking.package_id
           ? await supabase.from("packages").select("title, merchant_id").eq("id", booking.package_id).maybeSingle()
@@ -275,18 +314,40 @@ export async function POST(req: Request) {
           : { data: null as { brand_name?: string | null; company_name?: string | null } | null }
 
         try {
-          const emailLocale = locale || inferCustomerLocaleFromBooking(booking)
+          const emailLocale = normalizeLocale(locale || booking.customer_locale || inferCustomerLocaleFromBooking(booking))
+          const { data: localizedPackageRow } = booking.package_id
+            ? await supabase
+                .from("packages")
+                .select("title, merchant_id, default_language, published_languages, package_translations(language_code, title)")
+                .eq("id", booking.package_id)
+                .maybeSingle()
+            : {
+                data: null as {
+                  title?: string | null
+                  merchant_id?: string | null
+                  default_language?: string | null
+                  published_languages?: string[] | null
+                  package_translations?: Array<{ language_code?: string | null; title?: string | null }> | null
+                } | null,
+              }
+          const localizedTranslation = resolvePackageTranslation(
+            localizedPackageRow?.package_translations,
+            emailLocale,
+            localizedPackageRow?.default_language,
+            localizedPackageRow?.published_languages,
+          )
           await sendCustomerPaymentEmail({
             bookingCode: booking.booking_code || booking.id,
             customerName: booking.customer_name || null,
             customerEmail: booking.customer_email || null,
             locale: emailLocale,
-            packageTitle: packageRow?.title || null,
-            pickupDateLabel: formatDateLabel(booking.pickup_date || null),
+            packageTitle: localizedTranslation?.title?.trim() || localizedPackageRow?.title || packageRow?.title || null,
+            pickupDateLabel: formatDateLabel(booking.pickup_date || null, emailLocale),
             merchantName: merchantRow?.brand_name || merchantRow?.company_name || null,
             merchantCode: packageRow?.merchant_id ? formatMerchantCode(packageRow.merchant_id) : null,
             verificationUrl,
-            totalAmount: amountPaid,
+            currency: localizedDisplay.currency,
+            totalAmount: invoiceTotalAmount,
             subtotalAmount: invoiceSubtotalAmount,
             adminFeeAmount: invoiceAdminFeeAmount,
             taxAmount: invoiceTaxAmount,

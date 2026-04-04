@@ -1,4 +1,4 @@
-import { Resend } from "resend"
+﻿import { Resend } from "resend"
 import { getOptionalEnv } from "@/lib/env"
 import { createInvoicePdf } from "./invoicePdf"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
@@ -8,6 +8,7 @@ type PaymentEmailPayload = {
   customerName: string | null
   customerEmail: string | null
   locale?: string | null
+  currency?: string | null
   packageTitle?: string | null
   pickupDateLabel?: string | null
   merchantName?: string | null
@@ -24,9 +25,18 @@ type PaymentEmailPayload = {
   settlementDueLabel?: string | null
 }
 
-function formatMoney(value: number, locale: Locale) {
+function formatMoney(value: number, locale: Locale, currency?: string | null) {
   const localeCode = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
-  return `Rp ${Number(value || 0).toLocaleString(localeCode)}`
+  const safeCurrency = String(currency || (locale === "en" ? "USD" : locale === "zh" ? "CNY" : "IDR")).trim().toUpperCase()
+  try {
+    return new Intl.NumberFormat(localeCode, {
+      style: "currency",
+      currency: safeCurrency,
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0))
+  } catch {
+    return `${safeCurrency} ${Number(value || 0).toLocaleString(localeCode)}`
+  }
 }
 
 export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
@@ -132,8 +142,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
       dpPaid: "定金已支付",
       finalPaymentSettled: "尾款已结清",
       fullyPaid: "已全额付款",
-    },
-  }[locale]
+    },  }[locale]
 
   const localizedPaymentTypeLabel =
     payload.paymentTypeLabel === "DP Payment"
@@ -162,6 +171,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
             bookingCode: payload.bookingCode,
             customerName: payload.customerName,
             locale,
+            currency: payload.currency || null,
             packageTitle: payload.packageTitle || null,
             pickupDateLabel: payload.pickupDateLabel || null,
             merchantName: payload.merchantName || null,
@@ -199,10 +209,10 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
         </div>
 
         <div style="border:1px solid #fed7aa;border-radius:16px;padding:16px 18px;margin:0 0 18px;background:#fff7ed;">
-          <p style="margin:0 0 8px;"><strong>${copy.subtotal}:</strong> ${formatMoney(Number(payload.subtotalAmount || 0), locale)}</p>
-          <p style="margin:0 0 8px;"><strong>${copy.adminFee}:</strong> ${formatMoney(Number(payload.adminFeeAmount || 0), locale)}</p>
-          <p style="margin:0 0 8px;"><strong>${copy.tax}:</strong> ${formatMoney(Number(payload.taxAmount || 0), locale)}</p>
-          <p style="margin:0;"><strong>${copy.paidAmount}:</strong> ${formatMoney(payload.totalAmount, locale)}</p>
+          <p style="margin:0 0 8px;"><strong>${copy.subtotal}:</strong> ${formatMoney(Number(payload.subtotalAmount || 0), locale, payload.currency)}</p>
+          <p style="margin:0 0 8px;"><strong>${copy.adminFee}:</strong> ${formatMoney(Number(payload.adminFeeAmount || 0), locale, payload.currency)}</p>
+          <p style="margin:0 0 8px;"><strong>${copy.tax}:</strong> ${formatMoney(Number(payload.taxAmount || 0), locale, payload.currency)}</p>
+          <p style="margin:0;"><strong>${copy.paidAmount}:</strong> ${formatMoney(payload.totalAmount, locale, payload.currency)}</p>
         </div>
 
         <p style="margin:0 0 14px;">${copy.operationalFlow}</p>
@@ -217,3 +227,4 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
 
   return { skipped: false }
 }
+

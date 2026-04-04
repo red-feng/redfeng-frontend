@@ -1,4 +1,4 @@
-import fs from "node:fs"
+﻿import fs from "node:fs"
 import path from "node:path"
 import chromium from "@sparticuz/chromium"
 import puppeteer from "puppeteer-core"
@@ -10,6 +10,7 @@ type InvoicePdfPayload = {
   bookingCode: string
   customerName: string | null
   locale?: string | null
+  currency?: string | null
   packageTitle?: string | null
   pickupDateLabel?: string | null
   merchantName?: string | null
@@ -55,6 +56,12 @@ type InvoiceCopy = {
   website: string
   termsTitle: string
   refundTitle: string
+  dpPayment: string
+  finalPayment: string
+  fullPayment: string
+  dpPaid: string
+  finalPaymentSettled: string
+  fullyPaid: string
   terms: string[]
   refunds: string[]
 }
@@ -90,6 +97,12 @@ const copy: Record<Locale, InvoiceCopy> = {
     website: "Website",
     termsTitle: "Syarat dan Ketentuan",
     refundTitle: "Klausul Refund",
+    dpPayment: "DP Payment",
+    finalPayment: "Final Payment",
+    fullPayment: "Full Payment",
+    dpPaid: "DP Paid",
+    finalPaymentSettled: "Final Payment Settled",
+    fullyPaid: "Fully Paid",
     terms: [
       "1. Invoice ini merupakan bukti pembayaran resmi customer kepada Red Feng untuk transaksi sesuai Booking ID yang tercantum.",
       "2. Data booking, nominal pembayaran, dan detail paket pada invoice ini mengikuti data yang tercatat di sistem Red Feng pada saat transaksi berhasil dibuat.",
@@ -141,6 +154,12 @@ const copy: Record<Locale, InvoiceCopy> = {
     website: "Website",
     termsTitle: "Terms and Conditions",
     refundTitle: "Refund Clause",
+    dpPayment: "DP Payment",
+    finalPayment: "Final Payment",
+    fullPayment: "Full Payment",
+    dpPaid: "DP Paid",
+    finalPaymentSettled: "Final Payment Settled",
+    fullyPaid: "Fully Paid",
     terms: [
       "1. This invoice is official proof of customer payment to Red Feng for the transaction linked to the Booking ID shown here.",
       "2. Booking data, payment amount, and package details on this invoice follow the records stored in the Red Feng system when the transaction is created.",
@@ -192,6 +211,12 @@ const copy: Record<Locale, InvoiceCopy> = {
     website: "网站",
     termsTitle: "条款与条件",
     refundTitle: "退款条款",
+    dpPayment: "定金付款",
+    finalPayment: "尾款支付",
+    fullPayment: "全额付款",
+    dpPaid: "定金已支付",
+    finalPaymentSettled: "尾款已结清",
+    fullyPaid: "已全额付款",
     terms: [
       "1. 本发票是客户向 Red Feng 支付与本预订编号相关交易款项的正式凭证。",
       "2. 发票中的订单资料、付款金额及套餐详情，以交易成功创建时 Red Feng 系统记录为准。",
@@ -281,9 +306,18 @@ const code39Patterns: Record<string, string> = {
   "*": "nwnnwnwnn",
 }
 
-function formatMoney(value: number, locale: Locale) {
+function formatMoney(value: number, locale: Locale, currency?: string | null) {
   const localeCode = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
-  return `IDR ${Number(value || 0).toLocaleString(localeCode)}`
+  const safeCurrency = String(currency || (locale === "en" ? "USD" : locale === "zh" ? "CNY" : "IDR")).trim().toUpperCase()
+  try {
+    return new Intl.NumberFormat(localeCode, {
+      style: "currency",
+      currency: safeCurrency,
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0))
+  } catch {
+    return `${safeCurrency} ${Number(value || 0).toLocaleString(localeCode)}`
+  }
 }
 
 function formatDate(value: Date, locale: Locale) {
@@ -336,9 +370,26 @@ function buildTermsList(items: string[]) {
   return items.map((item) => `<li>${escapeHtml(item.replace(/^\d+\.\s*/, ""))}</li>`).join("")
 }
 
+function localizePaymentTypeLabel(value: string, t: InvoiceCopy) {
+  if (value === "DP Payment" || value === t.dpPayment) return t.dpPayment
+  if (value === "Final Payment" || value === t.finalPayment) return t.finalPayment
+  if (value === "Full Payment" || value === t.fullPayment) return t.fullPayment
+  return value
+}
+
+function localizePaymentStatusLabel(value: string, t: InvoiceCopy) {
+  if (value === "DP Paid" || value === t.dpPaid) return t.dpPaid
+  if (value === "Final Payment Settled" || value === t.finalPaymentSettled) return t.finalPaymentSettled
+  if (value === "Fully Paid" || value === t.fullyPaid) return t.fullyPaid
+  return value
+}
+
 async function renderInvoiceHtml(payload: InvoicePdfPayload) {
   const locale = normalizeLocale(payload.locale)
   const t = copy[locale]
+  const paymentStatusLabel = localizePaymentStatusLabel(payload.paymentStatusLabel, t)
+  const paymentTypeLabel = localizePaymentTypeLabel(payload.paymentTypeLabel, t)
+  const displayCurrency = String(payload.currency || (locale === "en" ? "USD" : locale === "zh" ? "CNY" : "IDR")).trim().toUpperCase()
   const quantity = Math.max(1, Number(payload.quantity || 1))
   const nominalAmount = quantity > 0 ? Math.round(payload.subtotalAmount / quantity) : payload.subtotalAmount
   const verificationUrl =
@@ -351,6 +402,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #ffffff; }
+    body.locale-zh { font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', 'Hiragino Sans GB', 'Source Han Sans SC', Arial, sans-serif; }
     .page { width: 794px; min-height: 1123px; padding: 18px 8px 18px 8px; position: relative; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
     .logo { width: 178px; display:block; }
@@ -405,7 +457,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
         <meta charset="utf-8" />
         <style>${styles}</style>
       </head>
-      <body>
+      <body class="locale-${locale}">
         <section class="page">
           <div class="header">
             <img class="logo" src="${logoUrl}" alt="Red Feng" />
@@ -433,8 +485,8 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
               <h2 class="section-title">${escapeHtml(t.paymentDetails)}</h2>
               <div style="height:49px"></div>
               <div class="rows">
-                <div class="row"><span class="label">${escapeHtml(t.status)}</span><span class="colon">:</span><span>${escapeHtml(payload.paymentStatusLabel)}</span></div>
-                <div class="row"><span class="label">${escapeHtml(t.type)}</span><span class="colon">:</span><span>${escapeHtml(payload.paymentTypeLabel)}</span></div>
+                <div class="row"><span class="label">${escapeHtml(t.status)}</span><span class="colon">:</span><span>${escapeHtml(paymentStatusLabel)}</span></div>
+                <div class="row"><span class="label">${escapeHtml(t.type)}</span><span class="colon">:</span><span>${escapeHtml(paymentTypeLabel)}</span></div>
               </div>
             </div>
           </section>
@@ -451,15 +503,15 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
               <div>1</div>
               <div class="desc">${packageLines.map(escapeHtml).join("<br/>")}</div>
               <div>${quantity}</div>
-              <div>${escapeHtml(formatMoney(nominalAmount, locale))}</div>
-              <div>${escapeHtml(formatMoney(payload.subtotalAmount, locale))}</div>
+              <div>${escapeHtml(formatMoney(nominalAmount, locale, displayCurrency))}</div>
+              <div>${escapeHtml(formatMoney(payload.subtotalAmount, locale, displayCurrency))}</div>
             </div>
             <div class="rule"></div>
             <div class="totals">
-              <div class="sum-row"><div class="label-text">${escapeHtml(t.subTotal)} :</div><div class="amount">${escapeHtml(formatMoney(payload.subtotalAmount, locale))}</div></div>
-              <div class="sum-row"><div class="label-text">${escapeHtml(t.adminFee)} :</div><div class="amount">${escapeHtml(formatMoney(payload.adminFeeAmount, locale))}</div></div>
-              <div class="sum-row"><div class="label-text">${escapeHtml(t.tax)} :</div><div class="amount">${escapeHtml(formatMoney(payload.taxAmount, locale))}</div></div>
-              <div class="total-row"><div class="label">${escapeHtml(t.totalPayment)} :</div><div class="amount">${escapeHtml(formatMoney(payload.totalAmount, locale))}</div></div>
+              <div class="sum-row"><div class="label-text">${escapeHtml(t.subTotal)} :</div><div class="amount">${escapeHtml(formatMoney(payload.subtotalAmount, locale, displayCurrency))}</div></div>
+              <div class="sum-row"><div class="label-text">${escapeHtml(t.adminFee)} :</div><div class="amount">${escapeHtml(formatMoney(payload.adminFeeAmount, locale, displayCurrency))}</div></div>
+              <div class="sum-row"><div class="label-text">${escapeHtml(t.tax)} :</div><div class="amount">${escapeHtml(formatMoney(payload.taxAmount, locale, displayCurrency))}</div></div>
+              <div class="total-row"><div class="label">${escapeHtml(t.totalPayment)} :</div><div class="amount">${escapeHtml(formatMoney(payload.totalAmount, locale, displayCurrency))}</div></div>
             </div>
           </section>
 
@@ -560,3 +612,4 @@ export async function createInvoicePdf(payload: InvoicePdfPayload) {
     await browser.close()
   }
 }
+
