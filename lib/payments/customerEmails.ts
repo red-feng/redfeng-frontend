@@ -157,7 +157,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
     ? [
         {
           filename: `invoice-${payload.bookingCode}.pdf`,
-          content: createInvoicePdf({
+          content: await createInvoicePdf({
             invoiceNumber: `INV-${payload.bookingCode}`,
             bookingCode: payload.bookingCode,
             customerName: payload.customerName,

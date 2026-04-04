@@ -25,7 +25,7 @@ const locales = [
 ]
 
 for (const locale of locales) {
-  const pdf = createInvoicePdf({
+  const pdf = await createInvoicePdf({
     ...common,
     locale: locale.code,
     paymentStatusLabel: locale.status,
