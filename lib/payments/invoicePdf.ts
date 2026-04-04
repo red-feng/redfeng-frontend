@@ -313,6 +313,7 @@ function formatMoney(value: number, locale: Locale, currency?: string | null) {
     return new Intl.NumberFormat(localeCode, {
       style: "currency",
       currency: safeCurrency,
+      currencyDisplay: safeCurrency === "IDR" ? "code" : "symbol",
       maximumFractionDigits: 0,
     }).format(Number(value || 0))
   } catch {

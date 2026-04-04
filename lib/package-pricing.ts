@@ -145,6 +145,7 @@ export function formatPackageMoney(
     return new Intl.NumberFormat(localeMap[locale], {
       style: "currency",
       currency: safeCurrency,
+      currencyDisplay: safeCurrency === "IDR" ? "code" : "symbol",
       maximumFractionDigits: 0,
     }).format(safeValue)
   } catch {
