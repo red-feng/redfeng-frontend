@@ -10,6 +10,14 @@ import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 
+type LocalizedPackageEmailRow = {
+  title?: string | null
+  merchant_id?: string | null
+  default_language?: string | null
+  published_languages?: string[] | null
+  package_translations?: Array<{ language_code?: string | null; title?: string | null }> | null
+}
+
 function resolveOrder(orderId: string) {
   const match = orderId.match(/^(.*?)-(dp|full)(?:-.+)?$/i)
   if (match) {
@@ -264,15 +272,9 @@ export async function POST(req: Request) {
               .from("packages")
               .select("title, merchant_id, default_language, published_languages, package_translations(language_code, title)")
               .eq("id", booking.package_id)
-              .maybeSingle()
+              .maybeSingle<LocalizedPackageEmailRow>()
           : {
-              data: null as {
-                title?: string | null
-                merchant_id?: string | null
-                default_language?: string | null
-                published_languages?: string[] | null
-                package_translations?: Array<{ language_code?: string | null; title?: string | null }> | null
-              } | null,
+              data: null as LocalizedPackageEmailRow | null,
             }
         const { data: merchantRow } = packageRow?.merchant_id
           ? await supabase
