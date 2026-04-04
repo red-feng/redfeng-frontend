@@ -81,6 +81,13 @@ const verificationCopy = {
     dpPaidDescription: "DP sudah diterima, booking menunggu pelunasan.",
     pendingDescription: "Booking tercatat di sistem dan menunggu progres berikutnya.",
     pickupDateFallback: "Pickup {date}",
+    paymentPending: "Menunggu Pembayaran",
+    paymentCancelled: "Dibatalkan",
+    escrowHeld: "Dana ditahan",
+    escrowPartialHold: "Dana ditahan sebagian",
+    escrowAwaitingHandoff: "Menunggu handoff finance",
+    escrowReadyForPayout: "Siap payout merchant",
+    escrowUnknown: "Escrow diproses",
   },
   en: {
     heroBadge: "Booking Verification Desk",
@@ -154,6 +161,13 @@ const verificationCopy = {
     dpPaidDescription: "The deposit has been received and the booking is awaiting final payment.",
     pendingDescription: "The booking is recorded in the system and waiting for the next progress update.",
     pickupDateFallback: "Pickup {date}",
+    paymentPending: "Awaiting Payment",
+    paymentCancelled: "Cancelled",
+    escrowHeld: "Funds on Hold",
+    escrowPartialHold: "Partially Held",
+    escrowAwaitingHandoff: "Awaiting Finance Handoff",
+    escrowReadyForPayout: "Ready for Merchant Payout",
+    escrowUnknown: "Escrow in Progress",
   },
   zh: {
     heroBadge: "订单验证中心",
@@ -303,7 +317,7 @@ const verificationCopyZh = {
   escrowUnknown: "托管处理中",
 } satisfies Record<string, string>
 
-function copy(locale: string) {
+function copy(locale: string): Record<string, string> {
   const normalized = normalizeLocale(locale)
   return normalized === "zh" ? verificationCopyZh : verificationCopy[normalized]
 }
