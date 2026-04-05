@@ -56,15 +56,15 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const displayPricing = pkg.livePricing || pricing
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
-  const departureLabel = locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
-  const durationLabel = locale === "zh" ? "时长" : locale === "en" ? "Duration" : "Durasi"
-  const childPriceLabel = locale === "zh" ? "儿童价格" : locale === "en" ? "Child price" : "Harga anak"
-  const taxNotice = locale === "zh" ? "未含税费" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
+  const departureLabel = locale === "zh" ? "\u51fa\u53d1\u65e5\u671f" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
+  const durationLabel = locale === "zh" ? "\u65f6\u957f" : locale === "en" ? "Duration" : "Durasi"
+  const childPriceLabel = locale === "zh" ? "\u513f\u7ae5\u4ef7\u683c" : locale === "en" ? "Child price" : "Harga anak"
+  const taxNotice = locale === "zh" ? "\u672a\u542b\u7a0e\u8d39" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
   const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
   const hasDescription = Boolean(translation?.description?.trim())
   const hasChildPrice = Number(displayPricing.priceChild || 0) > 0
-  const dayLabel = locale === "zh" ? "天" : locale === "en" ? "days" : "hari"
-  const availableLabel = locale === "zh" ? "可预订" : locale === "en" ? "Available now" : "Tersedia sekarang"
+  const dayLabel = locale === "zh" ? "\u5929" : locale === "en" ? "days" : "hari"
+  const availableLabel = locale === "zh" ? "\u53ef\u9884\u8ba2" : locale === "en" ? "Available now" : "Tersedia sekarang"
 
   const infoChips = [
     pkg.travel_style

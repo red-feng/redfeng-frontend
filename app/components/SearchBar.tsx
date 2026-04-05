@@ -1,7 +1,7 @@
 ﻿"use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
@@ -31,6 +31,7 @@ function formatCountryLabel(country: string, locale: Locale) {
 }
 
 export default function SearchBar({ locale, countries }: SearchBarProps) {
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = dictionaries[locale].searchBar
@@ -40,6 +41,15 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
   const [departureDate, setDepartureDate] = useState(searchParams.get("departure_date") || "")
   const showDepartureDate = isQuotaTravelStyle(style)
+  const countryOptions = useMemo(() => {
+    const uniqueCountries = [...new Set(countries.map((value) => value.trim()).filter(Boolean))]
+
+    if (country && !uniqueCountries.includes(country)) {
+      return [country, ...uniqueCountries]
+    }
+
+    return uniqueCountries
+  }, [countries, country])
 
   const applyFilter = () => {
     const params = new URLSearchParams(searchParams.toString())
@@ -70,7 +80,7 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
 
     params.delete("page")
     const nextQuery = params.toString()
-    window.location.assign(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
   }
 
   return (
@@ -87,7 +97,7 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
               className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             >
               <option value="">{t.allCountries}</option>
-              {countries.map((option) => (
+              {countryOptions.map((option) => (
                 <option key={option} value={option}>
                   {formatCountryLabel(option, locale)}
                 </option>

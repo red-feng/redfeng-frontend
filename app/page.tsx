@@ -26,6 +26,8 @@ type PackageListItem = {
   cover_image: string | null
   city: string | null
   country: string | null
+  destination_country_id?: string | null
+  destination_province?: string | null
   currency: string | null
   departure_date: string | null
   minimal_peserta: number | null
@@ -49,6 +51,8 @@ const packageListBaseSelect = `
   cover_image,
   city,
   country,
+  destination_country_id,
+  destination_province,
   currency,
   departure_date,
   minimal_peserta,
@@ -93,28 +97,10 @@ const getFacilitiesLookup = cache(async () => {
   return data || []
 })
 
-async function getAvailableCountries(publicMerchantIds: Set<string>): Promise<string[]> {
-  const supabase = createAdminClient()
-  if (publicMerchantIds.size === 0) return []
-  const { data: packagesData, error } = await supabase
-    .from("packages")
-    .select("country, merchant_id")
-    .eq("status", "approved")
-    .in("merchant_id", Array.from(publicMerchantIds))
-
-  if (error || !packagesData) return []
-
-  return [...new Set(
-    packagesData
-      .map((pkg) => (pkg.country || "").trim())
-      .filter(Boolean),
-  )].sort((a, b) => a.localeCompare(b))
-}
-
-
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
 }, locale: Locale = "id", publicMerchantIds: Set<string> = new Set(), facilitiesLookup: Array<{ id: string; name: string | null }> = []): Promise<{
+  availableCountries: string[]
   items: PackageListItem[]
   total: number
 }> {
@@ -123,6 +109,7 @@ async function getPackages(searchParams?: {
 
   if (publicMerchantIds.size === 0) {
     return {
+      availableCountries: [],
       items: [],
       total: 0,
     }
@@ -149,7 +136,33 @@ async function getPackages(searchParams?: {
     .in("merchant_id", Array.from(publicMerchantIds))
 // FILTER COUNTRY
 if (searchParams?.country) {
-  query = query.ilike("country", `%${searchParams.country}%`)
+  const { data: matchedCountries, error: matchedCountriesError } = await supabase
+    .from("countries")
+    .select("id")
+    .ilike("name", `%${searchParams.country}%`)
+
+  if (matchedCountriesError) {
+    console.log("COUNTRY FILTER ERROR:", matchedCountriesError)
+    return {
+      availableCountries: [],
+      items: [],
+      total: 0,
+    }
+  }
+
+  const countryIds = (matchedCountries || [])
+    .map((country) => String(country.id || "").trim())
+    .filter(Boolean)
+
+  if (countryIds.length === 0) {
+    return {
+      availableCountries: [],
+      items: [],
+      total: 0,
+    }
+  }
+
+  query = query.in("destination_country_id", countryIds)
 }
 
 // FILTER TRAVEL STYLE
@@ -200,6 +213,7 @@ if (searchParams?.duration) {
     if (selectedFacilityKeys.length > 0) {
       if (facilitiesLookup.length === 0) {
         return {
+          availableCountries: [],
           items: [],
           total: 0,
         }
@@ -211,6 +225,7 @@ if (searchParams?.duration) {
 
       if (facilityIds.length === 0) {
         return {
+          availableCountries: [],
           items: [],
           total: 0,
         }
@@ -224,6 +239,7 @@ if (searchParams?.duration) {
       if (facilityError) {
         console.log("FACILITY FILTER ERROR:", facilityError)
         return {
+          availableCountries: [],
           items: [],
           total: 0,
         }
@@ -329,6 +345,25 @@ if (searchParams?.duration) {
     })
   }
 
+  const availableDestinationCountryIds = [...new Set(
+    filtered
+      .map((pkg) => String(pkg.destination_country_id || "").trim())
+      .filter(Boolean),
+  )]
+  let availableCountries: string[] = []
+
+  if (availableDestinationCountryIds.length > 0) {
+    const { data: availableCountriesRows } = await supabase
+      .from("countries")
+      .select("id, name")
+      .in("id", availableDestinationCountryIds)
+
+    availableCountries = (availableCountriesRows || [])
+      .map((country) => String(country.name || "").trim())
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b))
+  }
+
   const total = filtered.length
   const startIndex = (currentPage - 1) * packagesPerPage
   const pagedItems = filtered.slice(startIndex, startIndex + packagesPerPage)
@@ -336,6 +371,7 @@ if (searchParams?.duration) {
 
   if (pagedItemIds.length === 0) {
     return {
+      availableCountries,
       items: [],
       total,
     }
@@ -349,16 +385,44 @@ if (searchParams?.duration) {
   if (pageError) {
     console.log("PAGE DETAIL ERROR:", pageError)
     return {
+      availableCountries,
       items: pagedItems,
       total,
     }
   }
 
+  const detailedPackages = (pageData as PackageListItem[] | null) || []
+  const destinationCountryIds = [...new Set(
+    detailedPackages
+      .map((pkg) => String(pkg.destination_country_id || "").trim())
+      .filter(Boolean),
+  )]
+  const countryNameById = new Map<string, string>()
+
+  if (destinationCountryIds.length > 0) {
+    const { data: destinationCountries } = await supabase
+      .from("countries")
+      .select("id, name")
+      .in("id", destinationCountryIds)
+
+    for (const country of destinationCountries || []) {
+      countryNameById.set(String(country.id), String(country.name || "").trim())
+    }
+  }
+
   const pageDataMap = new Map(
-    ((pageData as PackageListItem[] | null) || []).map((pkg) => [pkg.id, pkg]),
+    detailedPackages.map((pkg) => [
+      pkg.id,
+      {
+        ...pkg,
+        city: pkg.city || pkg.destination_province || null,
+        country: countryNameById.get(String(pkg.destination_country_id || "")) || pkg.country || null,
+      },
+    ]),
   )
 
   return {
+    availableCountries,
     items: pagedItems.map((pkg) => {
       const detailedPackage = pageDataMap.get(pkg.id)
       return detailedPackage
@@ -393,19 +457,18 @@ export default async function HomePage({
     .filter(Boolean)
   const publicMerchantIds = await getPublicMerchantIds()
   const facilitiesData = await getFacilitiesLookup()
-  const [packagesResult, countries] = await Promise.all([
-    getPackages(
-      resolvedSearchParams,
-      locale,
-      publicMerchantIds,
-      (facilitiesData as Array<{ id: string; name: string | null; category: string | null }>).map((facility) => ({
-        id: facility.id,
-        name: facility.name,
-      })),
-    ),
-    getAvailableCountries(publicMerchantIds),
-  ])
+  const facilitiesLookup = (facilitiesData as Array<{ id: string; name: string | null; category: string | null }>).map((facility) => ({
+    id: facility.id,
+    name: facility.name,
+  }))
+  const packagesResult = await getPackages(
+    resolvedSearchParams,
+    locale,
+    publicMerchantIds,
+    facilitiesLookup,
+  )
   const packages = packagesResult.items
+  const countries = packagesResult.availableCountries
 
   const facilitiesMap = new Map<string, { id: string; name: string; category: string }>()
   for (const facility of facilitiesData) {
