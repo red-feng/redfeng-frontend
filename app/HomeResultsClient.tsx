@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { usePathname, useSearchParams } from "next/navigation"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
@@ -66,6 +66,7 @@ export default function HomeResultsClient({
   const searchParams = useSearchParams()
   const t = dictionaries[locale]
   const [, startTransition] = useTransition()
+  const hasMountedRef = useRef(false)
   const [filters, setFilters] = useState<PackageFilterState>({
     ...defaultFilterState,
     maxPrice: initialFilters?.maxPrice ?? maxAvailablePrice,
@@ -92,6 +93,11 @@ export default function HomeResultsClient({
         : { previous: "Sebelumnya", next: "Berikutnya", page: "Halaman" }
 
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+
     const params = new URLSearchParams(searchParams.toString())
 
     if (filters.minPrice > 0) {
