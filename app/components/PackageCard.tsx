@@ -1,4 +1,3 @@
-﻿import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -133,12 +132,12 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
           )}
         </div>
 
-        <Link
+        <a
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
           className="mt-6 w-full rounded-2xl bg-orange-500 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
         >
           {t.choosePackage}
-        </Link>
+        </a>
       </div>
     </div>
   )
