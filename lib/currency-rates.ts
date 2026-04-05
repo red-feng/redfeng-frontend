@@ -98,12 +98,7 @@ export async function getLiveLocalizedPackagePricing(input: {
   baseAdultPrice?: number | null
   baseChildPrice?: number | null
 }) {
-  const defaultLocale = normalizeLocale(input.defaultLanguage)
-  const allowedLocales = new Set<Locale>([
-    defaultLocale,
-    ...((input.publishedLanguages || []).map((language) => normalizeLocale(language))),
-  ])
-  const activeLocale = allowedLocales.has(input.locale) ? input.locale : defaultLocale
+  const activeLocale = normalizeLocale(input.locale)
   const currency = localeCurrencyMap[activeLocale]
   const normalizedBaseCurrency = normalizePackageCurrency(input.baseCurrency)
   const baseAdultPrice = Number(input.baseAdultPrice || 0)
