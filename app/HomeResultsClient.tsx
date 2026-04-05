@@ -126,9 +126,9 @@ export default function HomeResultsClient({
 
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
     startTransition(() => {
-      router.replace(nextUrl, { scroll: false })
+      window.location.replace(nextUrl)
     })
-  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, router, searchParams, startTransition])
+  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, searchParams, startTransition])
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
