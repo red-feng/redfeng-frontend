@@ -1,6 +1,5 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { type Locale } from "@/lib/i18n"
 
 type MerchantLanguageSwitcherProps = {
@@ -14,15 +13,15 @@ export default function MerchantLanguageSwitcher({
   label,
   options,
 }: MerchantLanguageSwitcherProps) {
-  const router = useRouter()
-
   const handleChange = async (nextLocale: string) => {
-    await fetch("/api/locale", {
+    const response = await fetch("/api/locale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ locale: nextLocale }),
     })
-    router.refresh()
+
+    if (!response.ok) return
+    window.location.reload()
   }
 
   return (

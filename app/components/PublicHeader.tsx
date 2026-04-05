@@ -104,12 +104,14 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
 
   const changeLocale = async (nextLocale: Locale) => {
     setIsLanguageOpen(false)
-    await fetch("/api/locale", {
+    const response = await fetch("/api/locale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ locale: nextLocale }),
     })
-    router.refresh()
+
+    if (!response.ok) return
+    window.location.reload()
   }
 
   return (
