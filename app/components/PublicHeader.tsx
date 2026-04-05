@@ -19,7 +19,7 @@ type PublicHeaderProps = {
 export default function PublicHeader({ locale, languageOptions, redirectSuperadminFromHome = false }: PublicHeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const t = dictionaries[locale].header
   const availableLocales = languageOptions && languageOptions.length > 0
     ? languageOptions
