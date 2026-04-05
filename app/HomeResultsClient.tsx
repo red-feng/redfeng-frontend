@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useEffect, useRef, useState, useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
@@ -46,6 +46,36 @@ type PackageItem = {
   facilityKeys?: string[]
 }
 
+function PackageCardSkeleton() {
+  return (
+    <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+      <div className="h-[220px] w-[280px] shrink-0 animate-pulse bg-slate-200" />
+      <div className="flex-1 p-6">
+        <div className="h-8 w-2/3 animate-pulse rounded-2xl bg-slate-200" />
+        <div className="mt-4 h-4 w-1/3 animate-pulse rounded-full bg-slate-100" />
+        <div className="mt-5 flex flex-wrap gap-2">
+          <div className="h-8 w-24 animate-pulse rounded-full bg-orange-100" />
+          <div className="h-8 w-28 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-8 w-20 animate-pulse rounded-full bg-amber-100" />
+        </div>
+        <div className="mt-6 space-y-3">
+          <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
+          <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-4 w-2/3 animate-pulse rounded-full bg-slate-100" />
+        </div>
+      </div>
+      <div className="flex w-[260px] flex-col justify-between border-l border-slate-200 bg-slate-50/70 p-6">
+        <div>
+          <div className="ml-auto h-9 w-32 animate-pulse rounded-2xl bg-orange-100" />
+          <div className="mt-3 ml-auto h-4 w-24 animate-pulse rounded-full bg-slate-100" />
+          <div className="mt-3 ml-auto h-4 w-28 animate-pulse rounded-full bg-slate-100" />
+        </div>
+        <div className="mt-6 h-12 w-full animate-pulse rounded-2xl bg-orange-100" />
+      </div>
+    </div>
+  )
+}
+
 const defaultFilterState: PackageFilterState = {
   minPrice: 0,
   maxPrice: Number.MAX_SAFE_INTEGER,
@@ -53,6 +83,7 @@ const defaultFilterState: PackageFilterState = {
 }
 
 const packagesPerPage = 12
+const visibleSkeletonCount = 3
 
 export default function HomeResultsClient({
   facilities,
@@ -74,12 +105,32 @@ export default function HomeResultsClient({
   const searchParams = useSearchParams()
   const t = dictionaries[locale]
   const [isPending, startTransition] = useTransition()
+  const [displayedPackages, setDisplayedPackages] = useState<PackageItem[]>(packages)
+  const [loadedPage, setLoadedPage] = useState(Math.max(1, Math.ceil(packages.length / packagesPerPage)))
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [freshPackageIds, setFreshPackageIds] = useState<string[]>([])
+  const freshPackageTimerRef = useRef<number | null>(null)
   const filters: PackageFilterState = {
     ...defaultFilterState,
     maxPrice: initialFilters?.maxPrice ?? maxAvailablePrice,
     minPrice: initialFilters?.minPrice ?? defaultFilterState.minPrice,
     selectedFacilities: initialFilters?.selectedFacilities ?? defaultFilterState.selectedFacilities,
   }
+
+  useEffect(() => {
+    setDisplayedPackages(packages)
+    setLoadedPage(Math.max(1, Math.ceil(packages.length / packagesPerPage)))
+    setIsLoadingMore(false)
+    setFreshPackageIds([])
+  }, [packages])
+
+  useEffect(() => {
+    return () => {
+      if (freshPackageTimerRef.current !== null && typeof window !== "undefined") {
+        window.clearTimeout(freshPackageTimerRef.current)
+      }
+    }
+  }, [])
 
   const handleFilterChange = (nextFilters: PackageFilterState) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -119,25 +170,68 @@ export default function HomeResultsClient({
     Math.max(Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1, 1),
     totalPages,
   )
+  const visiblePage = Math.max(loadedPage, safeCurrentPage)
+  const hasMorePackages = displayedPackages.length < totalPackages && visiblePage < totalPages
 
   const paginationCopy =
     locale === "en"
-      ? { previous: "Previous", next: "Next", page: "Page" }
+      ? { loadMore: "Load more", loading: "Loading...", page: "Page" }
       : locale === "zh"
-        ? { previous: "上一页", next: "下一页", page: "第" }
-        : { previous: "Sebelumnya", next: "Berikutnya", page: "Halaman" }
+        ? { loadMore: "加载更多", loading: "加载中...", page: "第" }
+        : { loadMore: "Muat lebih banyak", loading: "Memuat...", page: "Halaman" }
 
-  const goToPage = (page: number) => {
+  const goToPage = async (page: number) => {
+    if (page <= visiblePage || isLoadingMore) return
+
     const params = new URLSearchParams(searchParams.toString())
-    if (page <= 1) {
-      params.delete("page")
-    } else {
-      params.set("page", String(page))
-    }
+    params.set("page", String(page))
+    params.set("locale", locale)
 
-    const nextQuery = params.toString()
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
-    router.push(nextUrl, { scroll: false })
+    setIsLoadingMore(true)
+    try {
+      const response = await fetch(`/api/home-packages?${params.toString()}`, {
+        method: "GET",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to load page ${page}`)
+      }
+
+      const result = (await response.json()) as { items?: PackageItem[] }
+      const nextItems = result.items || []
+      const appendedIds: string[] = []
+      setDisplayedPackages((current) => {
+        const seenIds = new Set(current.map((pkg) => pkg.id))
+        const appendedItems = nextItems.filter((pkg) => !seenIds.has(pkg.id))
+        appendedIds.push(...appendedItems.map((pkg) => pkg.id))
+        return [...current, ...appendedItems]
+      })
+      setLoadedPage(page)
+
+      if (appendedIds.length > 0) {
+        setFreshPackageIds(appendedIds)
+        if (freshPackageTimerRef.current !== null && typeof window !== "undefined") {
+          window.clearTimeout(freshPackageTimerRef.current)
+        }
+        if (typeof window !== "undefined") {
+          freshPackageTimerRef.current = window.setTimeout(() => {
+            setFreshPackageIds([])
+            freshPackageTimerRef.current = null
+          }, 450)
+        }
+      }
+
+      const nextParams = new URLSearchParams(searchParams.toString())
+      nextParams.set("page", String(page))
+      const nextQuery = nextParams.toString()
+      const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+      window.history.replaceState(window.history.state, "", nextUrl)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLoadingMore(false)
+    }
   }
 
   return (
@@ -156,40 +250,77 @@ export default function HomeResultsClient({
       <main className="flex-1">
         <SortBar total={totalPackages} locale={locale} />
 
-        <div className={`relative flex flex-col gap-6 transition-opacity duration-200 ${isPending ? "opacity-60" : "opacity-100"}`}>
-          {isPending && (
-            <div className="pointer-events-none absolute inset-0 z-10 rounded-[28px] bg-white/35 backdrop-blur-[1px]" />
-          )}
-          {totalPackages === 0 ? (
+        <div className="relative flex flex-col gap-6">
+          {totalPackages === 0 && !isPending ? (
             <p>{t.home.noPackages}</p>
+          ) : isPending ? (
+            Array.from({ length: visibleSkeletonCount }).map((_, index) => (
+              <div
+                key={`pending-skeleton-${index}`}
+                className="animate-[homePackageReveal_220ms_ease-out]"
+                style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
+              >
+                <PackageCardSkeleton />
+              </div>
+            ))
           ) : (
-            packages.map((pkg) => <PackageCard key={pkg.id} pkg={pkg} locale={locale} />)
+            displayedPackages.map((pkg, index) => {
+              const isFresh = freshPackageIds.includes(pkg.id)
+
+              return (
+                <div
+                  key={pkg.id}
+                  className={isFresh ? "animate-[homePackageReveal_320ms_ease-out]" : undefined}
+                  style={isFresh ? { animationDelay: `${Math.min(index % packagesPerPage, 5) * 45}ms`, animationFillMode: "both" } : undefined}
+                >
+                  <PackageCard pkg={pkg} locale={locale} />
+                </div>
+              )
+            })
           )}
+
+          {!isPending && isLoadingMore &&
+            Array.from({ length: Math.min(packagesPerPage, Math.max(totalPackages - displayedPackages.length, 1)) }).map((_, index) => (
+              <div
+                key={`skeleton-${index}`}
+                className="animate-[homePackageReveal_220ms_ease-out]"
+                style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
+              >
+                <PackageCardSkeleton />
+              </div>
+            ))}
         </div>
+
+        <style jsx>{`
+          @keyframes homePackageReveal {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
 
         {totalPackages > packagesPerPage && (
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-600">
-              {paginationCopy.page} {safeCurrentPage} / {totalPages}
+              {paginationCopy.page} {visiblePage} / {totalPages}
             </p>
-            <div className="flex items-center gap-3">
+            {hasMorePackages ? (
               <button
                 type="button"
-                onClick={() => goToPage(safeCurrentPage - 1)}
-                disabled={safeCurrentPage === 1}
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+                onClick={() => void goToPage(visiblePage + 1)}
+                disabled={isPending || isLoadingMore}
+                className="rounded-full border border-orange-200 bg-orange-50 px-5 py-2.5 text-sm font-semibold text-orange-600 transition hover:border-orange-300 hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-300"
               >
-                {paginationCopy.previous}
+                {isPending || isLoadingMore ? paginationCopy.loading : paginationCopy.loadMore}
               </button>
-              <button
-                type="button"
-                onClick={() => goToPage(safeCurrentPage + 1)}
-                disabled={safeCurrentPage === totalPages}
-                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
-              >
-                {paginationCopy.next}
-              </button>
-            </div>
+            ) : (
+              <p className="text-sm font-medium text-slate-400">{displayedPackages.length} / {totalPackages}</p>
+            )}
           </div>
         )}
       </main>
