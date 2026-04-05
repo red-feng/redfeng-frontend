@@ -16,6 +16,9 @@ const localePriceRangeMap: Record<Locale, number> = {
 }
 
 const packagesPerPage = 12
+
+export const dynamic = "force-dynamic"
+
 type PackageListItem = {
   id: string
   slug: string
