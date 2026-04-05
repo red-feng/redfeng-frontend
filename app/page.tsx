@@ -48,8 +48,16 @@ export default async function HomePage({
     id: facility.id,
     name: facility.name,
   }))
+  const searchBarParams = { ...resolvedSearchParams }
+  delete searchBarParams.country
+  delete searchBarParams.page
   const packagesResult = await getHomePackages(resolvedSearchParams, locale, {
     pageSizeMode: "cumulative",
+    publicMerchantIds,
+    facilitiesLookup,
+  })
+  const searchBarCountriesResult = await getHomePackages(searchBarParams, locale, {
+    pageSizeMode: "single",
     publicMerchantIds,
     facilitiesLookup,
   })
@@ -72,7 +80,11 @@ export default async function HomePage({
   return (
     <div className="min-h-screen bg-gray-100">
       <PublicHeader locale={locale} redirectSuperadminFromHome />
-      <SearchBar key={`search:${locale}:${searchParamsKey}`} locale={locale} countries={packagesResult.availableCountries} />
+      <SearchBar
+        key={`search:${locale}:${searchParamsKey}`}
+        locale={locale}
+        countries={searchBarCountriesResult.availableCountries}
+      />
       <HomeResultsClient
         key={`results:${locale}:${searchParamsKey}`}
         facilities={facilities}

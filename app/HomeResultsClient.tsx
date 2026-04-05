@@ -258,14 +258,28 @@ export default function HomeResultsClient({
 
         <div className="relative flex flex-col gap-6">
           {isPending ? (
-            <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white/85 px-8 text-center shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
-              <div className="mb-5 flex items-center gap-2">
-                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_infinite] rounded-full bg-sky-300" />
-                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.15s_infinite] rounded-full bg-sky-400" />
-                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.3s_infinite] rounded-full bg-sky-500" />
+            <div className="relative flex min-h-[340px] flex-col items-center justify-center overflow-hidden rounded-[28px] border border-orange-100 bg-[radial-gradient(circle_at_top,_rgba(255,237,213,0.92),_rgba(255,255,255,0.97)_38%,_rgba(255,247,237,0.98)_100%)] px-5 py-10 text-center shadow-[0_28px_60px_-36px_rgba(234,88,12,0.28)] sm:min-h-[400px] sm:px-7 sm:py-12 lg:min-h-[460px] lg:rounded-[32px] lg:px-8 lg:py-14">
+              <div className="pointer-events-none absolute left-[-70px] top-[-90px] h-36 w-36 rounded-full bg-orange-200/30 blur-3xl sm:h-40 sm:w-40 lg:h-48 lg:w-48" />
+              <div className="pointer-events-none absolute bottom-[-100px] right-[-30px] h-44 w-44 rounded-full bg-amber-100/45 blur-3xl sm:h-52 sm:w-52 lg:h-60 lg:w-60" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/55 to-transparent sm:h-24" />
+
+              <div className="mb-5 flex items-center gap-2 rounded-full border border-orange-100 bg-white/85 px-3.5 py-1.5 shadow-sm sm:mb-6 sm:px-4 sm:py-2">
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_infinite] rounded-full bg-orange-300" />
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.15s_infinite] rounded-full bg-orange-400" />
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.3s_infinite] rounded-full bg-orange-500" />
               </div>
-              <p className="text-[24px] font-semibold text-slate-900">{searchMessage.title}</p>
-              <p className="mt-2 text-base text-slate-500">{searchMessage.subtitle}</p>
+
+              <div className="relative z-10 max-w-[560px]">
+                <div className="mb-4 inline-flex items-center rounded-full border border-orange-100 bg-white/85 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500 shadow-sm sm:mb-5 sm:text-[11px]">
+                  Red Feng
+                </div>
+                <p className="text-[22px] font-semibold leading-[1.2] tracking-[-0.02em] text-slate-900 sm:text-[26px] md:text-[30px] lg:text-[34px]">
+                  {searchMessage.title}
+                </p>
+                <p className="mt-3 text-[14px] leading-6 text-slate-500 sm:mt-4 sm:text-[16px] sm:leading-7 md:text-[17px] lg:text-[18px]">
+                  {searchMessage.subtitle}
+                </p>
+              </div>
             </div>
           ) : totalPackages === 0 ? (
             <p>{t.home.noPackages}</p>
