@@ -1,15 +1,13 @@
 import { cache } from "react"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createClient } from "@/lib/supabase/server"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
 import { fetchLatestCurrencyRates } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { type Locale } from "@/lib/i18n"
-import { localeCurrencyMap, normalizePackageCurrency } from "@/lib/package-pricing"
+import { localeCurrencyMap, normalizePackageCurrency, resolveLocalizedPackagePricing } from "@/lib/package-pricing"
 import HomeResultsClient from "@/app/HomeResultsClient"
-import { redirect } from "next/navigation"
 
 const localePriceRangeMap: Record<Locale, number> = {
   id: 100000000,
@@ -18,10 +16,6 @@ const localePriceRangeMap: Record<Locale, number> = {
 }
 
 const packagesPerPage = 12
-
-
-export const dynamic = "force-dynamic"
-
 type PackageListItem = {
   id: string
   slug: string
@@ -45,7 +39,7 @@ type PackageListItem = {
   }
 }
 
-const packageListSelect = `
+const packageListBaseSelect = `
   id,
   slug,
   merchant_id,
@@ -59,7 +53,16 @@ const packageListSelect = `
   price_adult,
   price_child,
   default_language,
-  published_languages,
+  published_languages
+`
+
+const packagePricingSelect = `
+  ${packageListBaseSelect},
+  package_translations(language_code, currency, price_adult, price_child)
+`
+
+const packageListSelect = `
+  ${packageListBaseSelect},
   package_translations(language_code, title, description, currency, price_adult, price_child)
 `
 
@@ -113,6 +116,7 @@ async function getPackages(searchParams?: {
   total: number
 }> {
   const supabase = createAdminClient()
+  const buildInFilterValue = (values: string[]) => `(${values.map((value) => `"${value}"`).join(",")})`
 
   if (publicMerchantIds.size === 0) {
     return {
@@ -130,13 +134,14 @@ async function getPackages(searchParams?: {
   const minPriceParam = Number(toParamString(searchParams?.min_price) || 0)
   const maxPriceParamRaw = toParamString(searchParams?.max_price)
   const maxPriceParam = maxPriceParamRaw ? Number(maxPriceParamRaw) : Number.POSITIVE_INFINITY
+  const hasPriceFilter = Number.isFinite(minPriceParam) || Number.isFinite(maxPriceParam)
   const selectedFacilityKeys = facilitiesParam
     .split(",")
     .map((key) => key.trim())
     .filter(Boolean)
   let query = supabase
     .from("packages")
-    .select(packageListSelect)
+    .select(packagePricingSelect)
     .eq("status", "approved")
     .in("merchant_id", Array.from(publicMerchantIds))
 // FILTER COUNTRY
@@ -154,7 +159,7 @@ if (searchParams?.departure_date) {
 }
 
 // FILTER DURATION
-  if (searchParams?.duration) {
+if (searchParams?.duration) {
   if (searchParams.duration === "1-3") {
     query = query.lte("duration", 3)
   } else if (searchParams.duration === "4-7") {
@@ -163,6 +168,30 @@ if (searchParams?.departure_date) {
     query = query.gte("duration", 8)
   }
 }
+
+  if (hasPriceFilter) {
+    const { data: localePriceRows, error: localePriceError } = await supabase
+      .from("package_translations")
+      .select("package_id, price_adult")
+      .eq("language_code", locale)
+      .eq("currency", localeCurrencyMap[locale])
+
+    if (localePriceError) {
+      console.log("LOCALE PRICE QUERY ERROR:", localePriceError)
+    } else if (localePriceRows && localePriceRows.length > 0) {
+      const excludedPackageIds = localePriceRows
+        .filter((row) => {
+          const priceAdult = Number(row.price_adult || 0)
+          return priceAdult < minPriceParam || priceAdult > maxPriceParam
+        })
+        .map((row) => String(row.package_id || ""))
+        .filter(Boolean)
+
+      if (excludedPackageIds.length > 0) {
+        query = query.not("id", "in", buildInFilterValue(excludedPackageIds))
+      }
+    }
+  }
   // FILTER FACILITIES
   if (hasFacilityFilter) {
     if (selectedFacilityKeys.length > 0) {
@@ -218,9 +247,40 @@ if (searchParams?.departure_date) {
   let filtered = (data as PackageListItem[] | null) || []
 
   const targetCurrency = localeCurrencyMap[locale]
+  const resolvedPricingByPackage = new Map<string, { currency: string; priceAdult: number; priceChild: number }>()
+
+  for (const pkg of filtered) {
+    const exactLocalizedPricing = (pkg.package_translations || []).find(
+      (translation) =>
+        String(translation.language_code || "").trim().toLowerCase() === locale &&
+        normalizePackageCurrency(translation.currency) === targetCurrency,
+    )
+
+    if (exactLocalizedPricing) {
+      resolvedPricingByPackage.set(pkg.id, {
+        currency: targetCurrency,
+        priceAdult: Number(exactLocalizedPricing.price_adult || 0),
+        priceChild: Number(exactLocalizedPricing.price_child || 0),
+      })
+      continue
+    }
+
+    resolvedPricingByPackage.set(
+      pkg.id,
+      resolveLocalizedPackagePricing({
+        locale,
+        defaultLanguage: pkg.default_language,
+        publishedLanguages: pkg.published_languages,
+        baseCurrency: pkg.currency,
+        baseAdultPrice: pkg.price_adult,
+        baseChildPrice: pkg.price_child,
+        translations: pkg.package_translations,
+      }),
+    )
+  }
   const distinctBaseCurrencies = [...new Set(
     filtered
-      .map((pkg) => normalizePackageCurrency(pkg.currency))
+      .map((pkg) => normalizePackageCurrency(resolvedPricingByPackage.get(pkg.id)?.currency || pkg.currency))
       .filter((currency) => currency !== targetCurrency),
   )]
   const rateEntries = await Promise.all(
@@ -231,14 +291,15 @@ if (searchParams?.departure_date) {
   )
   const ratesByCurrency = new Map(rateEntries)
   filtered = filtered.map((pkg) => {
-    const baseCurrency = normalizePackageCurrency(pkg.currency)
-    const baseAdultPrice = Number(pkg.price_adult || 0)
-    const baseChildPrice = Number(pkg.price_child || 0)
+     const resolvedPricing = resolvedPricingByPackage.get(pkg.id)
+     const baseCurrency = normalizePackageCurrency(resolvedPricing?.currency || pkg.currency)
+     const baseAdultPrice = Number(resolvedPricing?.priceAdult ?? pkg.price_adult ?? 0)
+     const baseChildPrice = Number(resolvedPricing?.priceChild ?? pkg.price_child ?? 0)
 
-    if (baseCurrency === targetCurrency) {
-      return {
-        ...pkg,
-        livePricing: {
+     if (baseCurrency === targetCurrency) {
+       return {
+         ...pkg,
+         livePricing: {
           currency: targetCurrency,
           priceAdult: Math.round(baseAdultPrice),
           priceChild: Math.round(baseChildPrice),
@@ -258,7 +319,7 @@ if (searchParams?.departure_date) {
     }
   })
 
-  if (Number.isFinite(minPriceParam) || Number.isFinite(maxPriceParam)) {
+  if (hasPriceFilter) {
     filtered = filtered.filter((pkg) => {
       const priceAdult = Number(pkg.livePricing?.priceAdult || 0)
       return priceAdult >= minPriceParam && priceAdult <= maxPriceParam
@@ -267,9 +328,43 @@ if (searchParams?.departure_date) {
 
   const total = filtered.length
   const startIndex = (currentPage - 1) * packagesPerPage
+  const pagedItems = filtered.slice(startIndex, startIndex + packagesPerPage)
+  const pagedItemIds = pagedItems.map((pkg) => pkg.id)
+
+  if (pagedItemIds.length === 0) {
+    return {
+      items: [],
+      total,
+    }
+  }
+
+  const { data: pageData, error: pageError } = await supabase
+    .from("packages")
+    .select(packageListSelect)
+    .in("id", pagedItemIds)
+
+  if (pageError) {
+    console.log("PAGE DETAIL ERROR:", pageError)
+    return {
+      items: pagedItems,
+      total,
+    }
+  }
+
+  const pageDataMap = new Map(
+    ((pageData as PackageListItem[] | null) || []).map((pkg) => [pkg.id, pkg]),
+  )
 
   return {
-    items: filtered.slice(startIndex, startIndex + packagesPerPage),
+    items: pagedItems.map((pkg) => {
+      const detailedPackage = pageDataMap.get(pkg.id)
+      return detailedPackage
+        ? {
+            ...detailedPackage,
+            livePricing: pkg.livePricing,
+          }
+        : pkg
+    }),
     total,
   }
 }
@@ -279,25 +374,6 @@ export default async function HomePage({
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle()
-
-    const normalizedRole = String(profile?.role || "").trim().toLowerCase()
-
-    if (normalizedRole === "superadmin") {
-      redirect("/superadmin/dashboard")
-    }
-  }
-
   const resolvedSearchParams = (await searchParams) || {}
   const locale = await getCurrentLocale()
   const localeMaxPrice = localePriceRangeMap[locale]
@@ -341,7 +417,7 @@ export default async function HomePage({
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      <PublicHeader locale={locale} />
+      <PublicHeader locale={locale} redirectSuperadminFromHome />
       <SearchBar locale={locale} countries={countries} />
       <HomeResultsClient
         key={`${locale}:${initialMinPrice}:${Math.max(initialMaxPrice, initialMinPrice)}:${initialSelectedFacilities.join(",")}`}

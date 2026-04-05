@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import SignOutButton from "@/app/components/SignOutButton"
@@ -13,10 +13,12 @@ type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
 type PublicHeaderProps = {
   locale: Locale
   languageOptions?: Locale[]
+  redirectSuperadminFromHome?: boolean
 }
 
-export default function PublicHeader({ locale, languageOptions }: PublicHeaderProps) {
+export default function PublicHeader({ locale, languageOptions, redirectSuperadminFromHome = false }: PublicHeaderProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = createClient()
   const t = dictionaries[locale].header
   const availableLocales = languageOptions && languageOptions.length > 0
@@ -64,6 +66,9 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
       if (normalizedRole === "superadmin") {
         setAccountRole("superadmin")
         setIsAuthenticated(true)
+        if (redirectSuperadminFromHome && pathname === "/") {
+          router.replace("/superadmin/dashboard")
+        }
         return
       }
 
@@ -84,7 +89,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
     }
 
     syncSession()
-  }, [supabase])
+  }, [pathname, redirectSuperadminFromHome, router, supabase])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
