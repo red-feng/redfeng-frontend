@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useTransition } from "react"
+import { useTransition } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
@@ -30,7 +30,14 @@ type PackageItem = {
   default_language?: string | null
   published_languages?: string[] | null
   package_facilities?: { facility_id: string }[] | null
-  package_translations?: { language_code?: string | null; title: string | null; description: string | null; currency?: string | null; price_adult?: number | null; price_child?: number | null }[] | null
+  package_translations?: {
+    language_code?: string | null
+    title: string | null
+    description: string | null
+    currency?: string | null
+    price_adult?: number | null
+    price_child?: number | null
+  }[] | null
   livePricing?: {
     currency: string
     priceAdult: number
@@ -67,16 +74,43 @@ export default function HomeResultsClient({
   const searchParams = useSearchParams()
   const t = dictionaries[locale]
   const [isPending, startTransition] = useTransition()
-  const hasMountedRef = useRef(false)
-  const [filters, setFilters] = useState<PackageFilterState>({
+  const filters: PackageFilterState = {
     ...defaultFilterState,
     maxPrice: initialFilters?.maxPrice ?? maxAvailablePrice,
     minPrice: initialFilters?.minPrice ?? defaultFilterState.minPrice,
     selectedFacilities: initialFilters?.selectedFacilities ?? defaultFilterState.selectedFacilities,
-  })
+  }
 
   const handleFilterChange = (nextFilters: PackageFilterState) => {
-    setFilters(nextFilters)
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (nextFilters.minPrice > 0) {
+      params.set("min_price", String(nextFilters.minPrice))
+    } else {
+      params.delete("min_price")
+    }
+
+    if (nextFilters.maxPrice < maxAvailablePrice) {
+      params.set("max_price", String(nextFilters.maxPrice))
+    } else {
+      params.delete("max_price")
+    }
+
+    if (nextFilters.selectedFacilities.length > 0) {
+      params.set("facilities", nextFilters.selectedFacilities.join(","))
+    } else {
+      params.delete("facilities")
+    }
+
+    params.delete("page")
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    startTransition(() => {
+      router.replace(nextUrl, { scroll: false })
+    })
   }
 
   const totalPages = Math.max(1, Math.ceil(totalPackages / packagesPerPage))
@@ -93,43 +127,6 @@ export default function HomeResultsClient({
         ? { previous: "上一页", next: "下一页", page: "第" }
         : { previous: "Sebelumnya", next: "Berikutnya", page: "Halaman" }
 
-  useEffect(() => {
-    if (!hasMountedRef.current) {
-      hasMountedRef.current = true
-      return
-    }
-
-    const params = new URLSearchParams(searchParams.toString())
-
-    if (filters.minPrice > 0) {
-      params.set("min_price", String(filters.minPrice))
-    } else {
-      params.delete("min_price")
-    }
-
-    if (filters.maxPrice < maxAvailablePrice) {
-      params.set("max_price", String(filters.maxPrice))
-    } else {
-      params.delete("max_price")
-    }
-
-    if (filters.selectedFacilities.length > 0) {
-      params.set("facilities", filters.selectedFacilities.join(","))
-    } else {
-      params.delete("facilities")
-    }
-
-    params.delete("page")
-    const nextQuery = params.toString()
-    const currentQuery = searchParams.toString()
-    if (nextQuery === currentQuery) return
-
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
-    startTransition(() => {
-      router.replace(nextUrl, { scroll: false })
-    })
-  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, router, searchParams, startTransition])
-
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
     if (page <= 1) {
@@ -144,7 +141,7 @@ export default function HomeResultsClient({
   }
 
   return (
-    <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
+    <div className="mx-auto flex max-w-[1360px] gap-8 px-8 py-8">
       <aside className="w-[320px] shrink-0">
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}

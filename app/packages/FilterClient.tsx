@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { formatPackageMoney, localeCurrencyMap } from "@/lib/package-pricing"
@@ -36,6 +36,7 @@ export default function FilterClient({
   const priceCurrency = localeCurrencyMap[locale]
   const sliderMin = 0
   const sliderMax = Math.max(maxAvailablePrice, sliderMin)
+  const priceChangeTimeoutRef = useRef<number | null>(null)
 
   const [minPrice, setMinPrice] = useState(initialState?.minPrice ?? sliderMin)
   const [maxPrice, setMaxPrice] = useState(initialState?.maxPrice ?? sliderMax)
@@ -81,13 +82,40 @@ export default function FilterClient({
   const maxPercent =
     sliderMax === sliderMin ? 100 : ((effectiveMaxPrice - sliderMin) / (sliderMax - sliderMin)) * 100
 
-  useEffect(() => {
+  const emitChange = ({
+    nextMinPrice = minPrice,
+    nextMaxPrice = maxPrice,
+    nextSelectedFacilities = selectedFacilities,
+  }: {
+    nextMinPrice?: number
+    nextMaxPrice?: number
+    nextSelectedFacilities?: string[]
+  }) => {
+    const boundedMinPrice = Math.min(nextMinPrice, sliderMax)
+    const boundedMaxPrice = Math.min(Math.max(nextMaxPrice, boundedMinPrice), sliderMax)
+
     onChange({
-      minPrice: effectiveMinPrice,
-      maxPrice: effectiveMaxPrice,
-      selectedFacilities,
+      minPrice: boundedMinPrice,
+      maxPrice: boundedMaxPrice,
+      selectedFacilities: nextSelectedFacilities,
     })
-  }, [effectiveMaxPrice, effectiveMinPrice, onChange, selectedFacilities])
+  }
+
+  const schedulePriceChange = (nextMinPrice: number, nextMaxPrice: number) => {
+    if (typeof window === "undefined") {
+      emitChange({ nextMinPrice, nextMaxPrice })
+      return
+    }
+
+    if (priceChangeTimeoutRef.current !== null) {
+      window.clearTimeout(priceChangeTimeoutRef.current)
+    }
+
+    priceChangeTimeoutRef.current = window.setTimeout(() => {
+      emitChange({ nextMinPrice, nextMaxPrice })
+      priceChangeTimeoutRef.current = null
+    }, 180)
+  }
 
   const toggleCategory = (category: string) => {
     setOpenCategories((current) =>
@@ -100,10 +128,23 @@ export default function FilterClient({
     window.sessionStorage.setItem(openCategoriesStorageKey, openCategories.join(","))
   }, [openCategories])
 
+  useEffect(() => {
+    return () => {
+      if (priceChangeTimeoutRef.current !== null && typeof window !== "undefined") {
+        window.clearTimeout(priceChangeTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const resetFilters = () => {
     setMinPrice(sliderMin)
     setMaxPrice(sliderMax)
     setSelectedFacilities([])
+    emitChange({
+      nextMinPrice: sliderMin,
+      nextMaxPrice: sliderMax,
+      nextSelectedFacilities: [],
+    })
   }
 
   const hasActiveFilters =
@@ -146,6 +187,7 @@ export default function FilterClient({
             onChange={(event) => {
               const nextMin = Math.min(Number(event.target.value), maxPrice)
               setMinPrice(nextMin)
+              schedulePriceChange(nextMin, maxPrice)
             }}
             className="pointer-events-none absolute left-0 top-1/2 h-1 w-full -translate-y-1/2 appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-8 [&::-moz-range-thumb]:w-8 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-200 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.35)] [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-200 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.35)]"
           />
@@ -158,6 +200,7 @@ export default function FilterClient({
             onChange={(event) => {
               const nextMax = Math.max(Number(event.target.value), minPrice)
               setMaxPrice(nextMax)
+              schedulePriceChange(minPrice, nextMax)
             }}
             className="pointer-events-none absolute left-0 top-1/2 h-1 w-full -translate-y-1/2 appearance-none bg-transparent [&::-moz-range-thumb]:pointer-events-auto [&::-moz-range-thumb]:h-8 [&::-moz-range-thumb]:w-8 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border [&::-moz-range-thumb]:border-slate-200 [&::-moz-range-thumb]:bg-white [&::-moz-range-thumb]:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.35)] [&::-webkit-slider-thumb]:pointer-events-auto [&::-webkit-slider-thumb]:h-8 [&::-webkit-slider-thumb]:w-8 [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-slate-200 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.35)]"
           />
@@ -198,12 +241,18 @@ export default function FilterClient({
                           value={facility.id}
                           checked={selectedFacilities.includes(facility.id)}
                           onChange={(event) => {
+                            const nextSelectedFacilities = event.target.checked
+                              ? [...selectedFacilities, facility.id]
+                              : selectedFacilities.filter((id) => id !== facility.id)
+
+                            setSelectedFacilities(nextSelectedFacilities)
+
                             if (event.target.checked) {
-                              setSelectedFacilities((current) => [...current, facility.id])
+                              emitChange({ nextSelectedFacilities })
                               return
                             }
 
-                            setSelectedFacilities((current) => current.filter((id) => id !== facility.id))
+                            emitChange({ nextSelectedFacilities })
                           }}
                           className="mt-1 rounded border-slate-300"
                         />
