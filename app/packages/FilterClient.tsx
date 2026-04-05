@@ -17,6 +17,8 @@ export type PackageFilterState = {
   selectedFacilities: string[]
 }
 
+const openCategoriesStorageKey = "rf_home_filter_open_categories"
+
 export default function FilterClient({
   facilities,
   initialState,
@@ -57,9 +59,20 @@ export default function FilterClient({
     return Object.entries(grouped)
   }, [facilities])
 
-  const [openCategories, setOpenCategories] = useState<string[]>(() =>
-    groupedEntries.length > 0 ? [groupedEntries[0][0]] : [],
-  )
+  const [openCategories, setOpenCategories] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedValue = window.sessionStorage.getItem(openCategoriesStorageKey)
+      if (storedValue) {
+        const parsed = storedValue
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean)
+        if (parsed.length > 0) return parsed
+      }
+    }
+
+    return groupedEntries.length > 0 ? [groupedEntries[0][0]] : []
+  })
 
   const effectiveMinPrice = Math.min(minPrice, sliderMax)
   const effectiveMaxPrice = Math.min(Math.max(maxPrice, effectiveMinPrice), sliderMax)
@@ -81,6 +94,11 @@ export default function FilterClient({
       current.includes(category) ? current.filter((item) => item !== category) : [...current, category],
     )
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.sessionStorage.setItem(openCategoriesStorageKey, openCategories.join(","))
+  }, [openCategories])
 
   const resetFilters = () => {
     setMinPrice(sliderMin)
