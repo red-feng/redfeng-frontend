@@ -66,7 +66,7 @@ export default function HomeResultsClient({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = dictionaries[locale]
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
   const hasMountedRef = useRef(false)
   const [filters, setFilters] = useState<PackageFilterState>({
     ...defaultFilterState,
@@ -126,9 +126,9 @@ export default function HomeResultsClient({
 
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
     startTransition(() => {
-      window.location.replace(nextUrl)
+      router.replace(nextUrl, { scroll: false })
     })
-  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, searchParams, startTransition])
+  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, router, searchParams, startTransition])
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -159,7 +159,10 @@ export default function HomeResultsClient({
       <main className="flex-1">
         <SortBar total={totalPackages} locale={locale} />
 
-        <div className="flex flex-col gap-6">
+        <div className={`relative flex flex-col gap-6 transition-opacity duration-200 ${isPending ? "opacity-60" : "opacity-100"}`}>
+          {isPending && (
+            <div className="pointer-events-none absolute inset-0 z-10 rounded-[28px] bg-white/35 backdrop-blur-[1px]" />
+          )}
           {totalPackages === 0 ? (
             <p>{t.home.noPackages}</p>
           ) : (
