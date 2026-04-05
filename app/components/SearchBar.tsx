@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
@@ -32,6 +32,7 @@ function formatCountryLabel(country: string, locale: Locale) {
 
 export default function SearchBar({ locale, countries }: SearchBarProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = dictionaries[locale].searchBar
 
@@ -68,7 +69,9 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
       params.delete("departure_date")
     }
 
-    router.push(`/?${params.toString()}`)
+    params.delete("page")
+    const nextQuery = params.toString()
+    router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname)
   }
 
   return (

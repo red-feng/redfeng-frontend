@@ -378,6 +378,10 @@ export default async function HomePage({
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
+  const searchParamsKey = Object.entries(resolvedSearchParams)
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(",") : value || ""}`)
+    .join("|")
   const locale = await getCurrentLocale()
   const localeMaxPrice = localePriceRangeMap[locale]
   const initialMinPrice = Math.max(0, Number(Array.isArray(resolvedSearchParams.min_price) ? resolvedSearchParams.min_price[0] : resolvedSearchParams.min_price || 0) || 0)
@@ -421,9 +425,9 @@ export default async function HomePage({
   return (
     <div className="bg-gray-100 min-h-screen">
       <PublicHeader locale={locale} redirectSuperadminFromHome />
-      <SearchBar locale={locale} countries={countries} />
+      <SearchBar key={`search:${locale}:${searchParamsKey}`} locale={locale} countries={countries} />
       <HomeResultsClient
-        key={`${locale}:${initialMinPrice}:${Math.max(initialMaxPrice, initialMinPrice)}:${initialSelectedFacilities.join(",")}`}
+        key={`results:${locale}:${searchParamsKey}`}
         facilities={facilities}
         initialFilters={{
           minPrice: initialMinPrice,
