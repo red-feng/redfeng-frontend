@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useTransition } from "react"
-import { usePathname, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import FilterClient, { type PackageFilterState } from "@/app/packages/FilterClient"
@@ -62,6 +62,7 @@ export default function HomeResultsClient({
   packages: PackageItem[]
   totalPackages: number
 }) {
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = dictionaries[locale]
@@ -125,9 +126,9 @@ export default function HomeResultsClient({
 
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
     startTransition(() => {
-      window.location.replace(nextUrl)
+      router.replace(nextUrl, { scroll: false })
     })
-  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, searchParams, startTransition])
+  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, router, searchParams, startTransition])
 
   const goToPage = (page: number) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -139,7 +140,7 @@ export default function HomeResultsClient({
 
     const nextQuery = params.toString()
     const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
-    window.location.assign(nextUrl)
+    router.push(nextUrl, { scroll: false })
   }
 
   return (
