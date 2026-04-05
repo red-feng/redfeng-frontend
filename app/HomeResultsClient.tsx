@@ -83,7 +83,6 @@ const defaultFilterState: PackageFilterState = {
 }
 
 const packagesPerPage = 12
-const visibleSkeletonCount = 3
 
 export default function HomeResultsClient({
   facilities,
@@ -180,6 +179,13 @@ export default function HomeResultsClient({
         ? { loadMore: "加载更多", loading: "加载中...", page: "第" }
         : { loadMore: "Muat lebih banyak", loading: "Memuat...", page: "Halaman" }
 
+  const searchMessage =
+    locale === "en"
+      ? { title: "Finding the best packages for you....", subtitle: "hang tight, okay..." }
+      : locale === "zh"
+        ? { title: "正在为你寻找最合适的旅游套餐....", subtitle: "请耐心等一下哦..." }
+        : { title: "Lagi cari paket terbaik untukmu....", subtitle: "sabar ya..." }
+
   const goToPage = async (page: number) => {
     if (page <= visiblePage || isLoadingMore) return
 
@@ -251,18 +257,18 @@ export default function HomeResultsClient({
         <SortBar total={totalPackages} locale={locale} />
 
         <div className="relative flex flex-col gap-6">
-          {totalPackages === 0 && !isPending ? (
-            <p>{t.home.noPackages}</p>
-          ) : isPending ? (
-            Array.from({ length: visibleSkeletonCount }).map((_, index) => (
-              <div
-                key={`pending-skeleton-${index}`}
-                className="animate-[homePackageReveal_220ms_ease-out]"
-                style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
-              >
-                <PackageCardSkeleton />
+          {isPending ? (
+            <div className="flex min-h-[420px] flex-col items-center justify-center rounded-[28px] border border-slate-200 bg-white/85 px-8 text-center shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
+              <div className="mb-5 flex items-center gap-2">
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_infinite] rounded-full bg-sky-300" />
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.15s_infinite] rounded-full bg-sky-400" />
+                <span className="h-2.5 w-2.5 animate-[homeLoadingDot_0.9s_ease-in-out_0.3s_infinite] rounded-full bg-sky-500" />
               </div>
-            ))
+              <p className="text-[24px] font-semibold text-slate-900">{searchMessage.title}</p>
+              <p className="mt-2 text-base text-slate-500">{searchMessage.subtitle}</p>
+            </div>
+          ) : totalPackages === 0 ? (
+            <p>{t.home.noPackages}</p>
           ) : (
             displayedPackages.map((pkg, index) => {
               const isFresh = freshPackageIds.includes(pkg.id)
@@ -300,6 +306,19 @@ export default function HomeResultsClient({
             to {
               opacity: 1;
               transform: translateY(0);
+            }
+          }
+
+          @keyframes homeLoadingDot {
+            0%,
+            80%,
+            100% {
+              transform: translateY(0);
+              opacity: 0.45;
+            }
+            40% {
+              transform: translateY(-5px);
+              opacity: 1;
             }
           }
         `}</style>

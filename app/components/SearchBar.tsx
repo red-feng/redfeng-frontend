@@ -1,7 +1,7 @@
-﻿"use client"
+"use client"
 
-import { usePathname, useSearchParams } from "next/navigation"
-import { useMemo, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useMemo, useState, useTransition } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
 
@@ -31,9 +31,11 @@ function formatCountryLabel(country: string, locale: Locale) {
 }
 
 export default function SearchBar({ locale, countries }: SearchBarProps) {
+  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const t = dictionaries[locale].searchBar
+  const [isPending, startTransition] = useTransition()
 
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
@@ -79,20 +81,34 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
 
     params.delete("page")
     const nextQuery = params.toString()
-    window.location.assign(nextQuery ? `${pathname}?${nextQuery}` : pathname)
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    startTransition(() => {
+      router.push(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+    })
   }
 
   return (
     <div className="border-b border-slate-200 bg-white/95 px-6 py-5 backdrop-blur md:px-8">
       <div className="mx-auto max-w-[1360px] rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-white to-orange-50/40 p-5 shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] md:p-6">
-        <div className="flex flex-wrap items-end gap-4">
+        <div className={`relative transition-opacity duration-200 ${isPending ? "opacity-75" : "opacity-100"}`}>
+          {isPending && (
+            <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden rounded-[24px]">
+              <div className="absolute inset-0 bg-white/45 backdrop-blur-[1px]" />
+              <div className="absolute left-0 top-0 h-full w-24 -translate-x-full animate-[searchBarLoading_1.1s_linear_infinite] bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-end gap-4">
           <label className="flex min-w-[220px] flex-1 flex-col gap-2">
             <span className="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">
               {t.countryLabel}
             </span>
             <select
               value={country}
-              onChange={(e) => setCountry(e.target.value)}
+              onChange={(event) => setCountry(event.target.value)}
+              disabled={isPending}
               className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             >
               <option value="">{t.allCountries}</option>
@@ -110,13 +126,14 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
             </span>
             <select
               value={style}
-              onChange={(e) => {
-                const nextStyle = e.target.value
+              onChange={(event) => {
+                const nextStyle = event.target.value
                 setStyle(nextStyle)
                 if (!isQuotaTravelStyle(nextStyle)) {
                   setDepartureDate("")
                 }
               }}
+              disabled={isPending}
               className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             >
               <option value="">{t.allStyles}</option>
@@ -136,7 +153,8 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
               <input
                 type="date"
                 value={departureDate}
-                onChange={(e) => setDepartureDate(e.target.value)}
+                onChange={(event) => setDepartureDate(event.target.value)}
+                disabled={isPending}
                 className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
                 aria-label={t.departureDateLabel}
               />
@@ -149,7 +167,8 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
             </span>
             <select
               value={duration}
-              onChange={(e) => setDuration(e.target.value)}
+              onChange={(event) => setDuration(event.target.value)}
+              disabled={isPending}
               className="h-14 rounded-2xl border border-slate-200 bg-white px-4 text-[15px] font-medium text-slate-800 shadow-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
             >
               <option value="">{t.allDurations}</option>
@@ -161,12 +180,24 @@ export default function SearchBar({ locale, countries }: SearchBarProps) {
 
           <button
             onClick={applyFilter}
-            className="h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-7 text-[15px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(249,115,22,0.9)] transition hover:-translate-y-0.5 hover:from-orange-600 hover:to-orange-500"
+            disabled={isPending}
+            className="h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-7 text-[15px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(249,115,22,0.9)] transition hover:-translate-y-0.5 hover:from-orange-600 hover:to-orange-500 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {t.apply}
+            {isPending ? (locale === "en" ? "Loading..." : locale === "zh" ? "加载中..." : "Memuat...") : t.apply}
           </button>
         </div>
+        </div>
       </div>
+      <style jsx>{`
+        @keyframes searchBarLoading {
+          from {
+            transform: translateX(-120%);
+          }
+          to {
+            transform: translateX(680%);
+          }
+        }
+      `}</style>
     </div>
   )
 }
