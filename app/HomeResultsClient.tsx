@@ -76,7 +76,7 @@ export default function HomeResultsClient({
 
   return (
     <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
-      <aside className="w-[280px] shrink-0">
+      <aside className="w-[320px] shrink-0">
         <FilterClient
           facilities={facilities}
           locale={locale}
