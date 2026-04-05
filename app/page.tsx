@@ -248,6 +248,7 @@ if (searchParams?.duration) {
       const packageIds = [...new Set((facilityRows || []).map((row) => row.package_id))]
       if (packageIds.length === 0) {
         return {
+          availableCountries: [],
           items: [],
           total: 0,
         }
