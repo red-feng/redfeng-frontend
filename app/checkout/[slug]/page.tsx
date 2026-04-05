@@ -44,6 +44,9 @@ type PackageCheckoutRow = {
   }> | null
 }
 
+const checkoutPackageSelect =
+  "id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)"
+
 export default async function CheckoutPage({
   params,
 }: {
@@ -66,7 +69,7 @@ export default async function CheckoutPage({
   for (const candidate of slugCandidates) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)")
+        .select(checkoutPackageSelect)
         .eq("slug", candidate)
       .eq("status", "approved")
       .maybeSingle()
@@ -83,7 +86,7 @@ export default async function CheckoutPage({
     if (suffix) {
       const { data } = await supabase
         .from("packages")
-        .select("id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)")
+        .select(checkoutPackageSelect)
         .ilike("slug", `%${suffix}`)
         .eq("status", "approved")
         .limit(1)
@@ -103,28 +106,29 @@ export default async function CheckoutPage({
     pkg.default_language,
     pkg.published_languages,
   )
-  const localizedPricing = await getLiveLocalizedPackagePricing({
-    locale: locale as Locale,
-    defaultLanguage: pkg.default_language,
-    publishedLanguages: pkg.published_languages,
-    baseCurrency: pkg.currency,
-    baseAdultPrice: pkg.price_adult,
-    baseChildPrice: pkg.price_child,
-  })
-  const paymentAdultPrice = await convertCurrencyAmount({
-    amount: Number(pkg.price_adult || 0),
-    fromCurrency: pkg.currency || "IDR",
-    toCurrency: "IDR",
-  })
-  const paymentChildPrice = await convertCurrencyAmount({
-    amount: Number(pkg.price_child || 0),
-    fromCurrency: pkg.currency || "IDR",
-    toCurrency: "IDR",
-  })
-
-  const settings = await getFinanceSettings(
-    supabase as unknown as Parameters<typeof getFinanceSettings>[0],
-  )
+  const [localizedPricing, paymentAdultPrice, paymentChildPrice, settings] = await Promise.all([
+    getLiveLocalizedPackagePricing({
+      locale: locale as Locale,
+      defaultLanguage: pkg.default_language,
+      publishedLanguages: pkg.published_languages,
+      baseCurrency: pkg.currency,
+      baseAdultPrice: pkg.price_adult,
+      baseChildPrice: pkg.price_child,
+    }),
+    convertCurrencyAmount({
+      amount: Number(pkg.price_adult || 0),
+      fromCurrency: pkg.currency || "IDR",
+      toCurrency: "IDR",
+    }),
+    convertCurrencyAmount({
+      amount: Number(pkg.price_child || 0),
+      fromCurrency: pkg.currency || "IDR",
+      toCurrency: "IDR",
+    }),
+    getFinanceSettings(
+      supabase as unknown as Parameters<typeof getFinanceSettings>[0],
+    ),
+  ])
   const financeSettings = {
     customerTaxPercent: settings.customerTaxPercent,
     customerAdminFeeRules: settings.customerAdminFeeRules,

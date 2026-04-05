@@ -1,6 +1,7 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import FilterClient, { type PackageFilterState } from "@/app/packages/FilterClient"
@@ -44,57 +45,149 @@ const defaultFilterState: PackageFilterState = {
   selectedFacilities: [],
 }
 
+const packagesPerPage = 12
+
 export default function HomeResultsClient({
   facilities,
+  initialFilters,
   locale,
   maxAvailablePrice,
   packages,
+  totalPackages,
 }: {
   facilities: Facility[]
+  initialFilters?: Partial<PackageFilterState>
   locale: Locale
   maxAvailablePrice: number
   packages: PackageItem[]
+  totalPackages: number
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const t = dictionaries[locale]
+  const [, startTransition] = useTransition()
   const [filters, setFilters] = useState<PackageFilterState>({
     ...defaultFilterState,
-    maxPrice: maxAvailablePrice,
+    maxPrice: initialFilters?.maxPrice ?? maxAvailablePrice,
+    minPrice: initialFilters?.minPrice ?? defaultFilterState.minPrice,
+    selectedFacilities: initialFilters?.selectedFacilities ?? defaultFilterState.selectedFacilities,
   })
 
-  const filteredPackages = useMemo(() => {
-    return packages.filter((pkg) => {
-      const displayPrice = Number(pkg.livePricing?.priceAdult || 0)
-      const withinPriceRange = displayPrice >= filters.minPrice && displayPrice <= filters.maxPrice
-      if (!withinPriceRange) return false
+  const handleFilterChange = (nextFilters: PackageFilterState) => {
+    setFilters(nextFilters)
+  }
 
-      if (filters.selectedFacilities.length === 0) return true
+  const totalPages = Math.max(1, Math.ceil(totalPackages / packagesPerPage))
+  const requestedPage = Number(searchParams.get("page") || "1")
+  const safeCurrentPage = Math.min(
+    Math.max(Number.isFinite(requestedPage) && requestedPage > 0 ? Math.floor(requestedPage) : 1, 1),
+    totalPages,
+  )
 
-      const packageFacilityKeys = new Set(pkg.facilityKeys || [])
-      return filters.selectedFacilities.some((facilityId) => packageFacilityKeys.has(facilityId))
+  const paginationCopy =
+    locale === "en"
+      ? { previous: "Previous", next: "Next", page: "Page" }
+      : locale === "zh"
+        ? { previous: "上一页", next: "下一页", page: "第" }
+        : { previous: "Sebelumnya", next: "Berikutnya", page: "Halaman" }
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+
+    if (filters.minPrice > 0) {
+      params.set("min_price", String(filters.minPrice))
+    } else {
+      params.delete("min_price")
+    }
+
+    if (filters.maxPrice < maxAvailablePrice) {
+      params.set("max_price", String(filters.maxPrice))
+    } else {
+      params.delete("max_price")
+    }
+
+    if (filters.selectedFacilities.length > 0) {
+      params.set("facilities", filters.selectedFacilities.join(","))
+    } else {
+      params.delete("facilities")
+    }
+
+    params.delete("page")
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    startTransition(() => {
+      router.replace(nextUrl, { scroll: false })
     })
-  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, packages])
+  }, [filters.maxPrice, filters.minPrice, filters.selectedFacilities, maxAvailablePrice, pathname, router, searchParams, startTransition])
+
+  const goToPage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (page <= 1) {
+      params.delete("page")
+    } else {
+      params.set("page", String(page))
+    }
+
+    const nextQuery = params.toString()
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    startTransition(() => {
+      router.replace(nextUrl, { scroll: false })
+    })
+  }
 
   return (
     <div className="max-w-[1360px] mx-auto flex gap-8 px-8 py-8">
       <aside className="w-[320px] shrink-0">
         <FilterClient
+          key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
           facilities={facilities}
+          initialState={filters}
           locale={locale}
           maxAvailablePrice={maxAvailablePrice}
-          onChange={setFilters}
+          onChange={handleFilterChange}
         />
       </aside>
 
       <main className="flex-1">
-        <SortBar total={filteredPackages.length} locale={locale} />
+        <SortBar total={totalPackages} locale={locale} />
 
         <div className="flex flex-col gap-6">
-          {filteredPackages.length === 0 ? (
+          {totalPackages === 0 ? (
             <p>{t.home.noPackages}</p>
           ) : (
-            filteredPackages.map((pkg) => <PackageCard key={pkg.id} pkg={pkg} locale={locale} />)
+            packages.map((pkg) => <PackageCard key={pkg.id} pkg={pkg} locale={locale} />)
           )}
         </div>
+
+        {totalPackages > packagesPerPage && (
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-sm text-slate-600">
+              {paginationCopy.page} {safeCurrentPage} / {totalPages}
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => goToPage(safeCurrentPage - 1)}
+                disabled={safeCurrentPage === 1}
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+              >
+                {paginationCopy.previous}
+              </button>
+              <button
+                type="button"
+                onClick={() => goToPage(safeCurrentPage + 1)}
+                disabled={safeCurrentPage === totalPages}
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-300"
+              >
+                {paginationCopy.next}
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

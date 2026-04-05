@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import SignOutButton from "@/app/components/SignOutButton"
 
+type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
+
 type PublicHeaderProps = {
   locale: Locale
   languageOptions?: Locale[]
@@ -23,11 +25,21 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
   const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
   const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
   const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
-  const [accountHref, setAccountHref] = useState("/login")
-  const [accountLabel, setAccountLabel] = useState(guestLoginLabel)
+  const [accountRole, setAccountRole] = useState<AccountRole>("guest")
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const languageMenuRef = useRef<HTMLDivElement | null>(null)
+  const accountHref =
+    accountRole === "superadmin"
+      ? "/superadmin/dashboard"
+      : accountRole === "admin"
+        ? "/admin/dashboard"
+        : accountRole === "finance"
+          ? "/finance/dashboard"
+          : accountRole === "customer"
+            ? "/customer/dashboard"
+            : "/login"
+  const accountLabel = isAuthenticated ? t.account : guestLoginLabel
 
   useEffect(() => {
     const syncSession = async () => {
@@ -36,8 +48,7 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
       } = await supabase.auth.getSession()
 
       if (!session?.user) {
-        setAccountHref("/login")
-        setAccountLabel(guestLoginLabel)
+        setAccountRole("guest")
         setIsAuthenticated(false)
         return
       }
@@ -51,33 +62,29 @@ export default function PublicHeader({ locale, languageOptions }: PublicHeaderPr
       const normalizedRole = String(profile?.role || "").trim().toLowerCase()
 
       if (normalizedRole === "superadmin") {
-        setAccountHref("/superadmin/dashboard")
-        setAccountLabel(t.account)
+        setAccountRole("superadmin")
         setIsAuthenticated(true)
         return
       }
 
       if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
-        setAccountHref("/admin/dashboard")
-        setAccountLabel(t.account)
+        setAccountRole("admin")
         setIsAuthenticated(true)
         return
       }
 
       if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
-        setAccountHref("/finance/dashboard")
-        setAccountLabel(t.account)
+        setAccountRole("finance")
         setIsAuthenticated(true)
         return
       }
 
-      setAccountHref("/customer/dashboard")
-      setAccountLabel(t.account)
+      setAccountRole("customer")
       setIsAuthenticated(true)
     }
 
     syncSession()
-  }, [guestLoginLabel, supabase, t.account])
+  }, [supabase])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {

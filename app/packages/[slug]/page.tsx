@@ -76,6 +76,23 @@ type ItineraryDayRow = {
   package_itinerary_routes: ItineraryRouteRow[]
 }
 
+type PackageTranslationRow = {
+  language_code: string | null
+  title: string | null
+  description: string | null
+  about_tour: string | null
+  service_standard: string | null
+  include: string | null
+  exclude: string | null
+  preparation: string | null
+  terms_conditions: string | null
+  meeting_point: string | null
+  highlights: string | null
+  currency: string | null
+  price_adult: number | null
+  price_child: number | null
+}
+
 function safeDecode(value: string): string {
   try {
     return decodeURIComponent(value)
@@ -283,6 +300,7 @@ export default async function PaketPage({
   const activeLocale = allowedLocales.includes(cookieLocale)
     ? cookieLocale
     : allowedLocales[0] || normalizeLocale(pkg.default_language)
+  const localeFallbacks = [...new Set([activeLocale, defaultLocale, "id"])]
   const t = dictionaries[activeLocale].detail
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, activeLocale)
   const luxuryCopy =
@@ -325,84 +343,72 @@ export default async function PaketPage({
             withWord: "dengan",
           }
 
-  const { data: translationRows } = await supabase
-    .from("package_translations")
-    .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
-    .eq("package_id", pkg.id)
-    .in(
-      "language_code",
-      [...new Set([activeLocale, defaultLocale, "id"])].filter(Boolean)
-    )
-
-  const translations = (translationRows || []) as Array<{
-    language_code: string | null
-    title: string | null
-    description: string | null
-    about_tour: string | null
-    service_standard: string | null
-    include: string | null
-    exclude: string | null
-    preparation: string | null
-    terms_conditions: string | null
-    meeting_point: string | null
-    highlights: string | null
-    currency: string | null
-    price_adult: number | null
-    price_child: number | null
-  }>
-
-  const translation = resolvePackageTranslation(translations, activeLocale, pkg.default_language, pkg.published_languages)
-  const localizedPricing = await getLiveLocalizedPackagePricing({
-    locale: activeLocale,
-    defaultLanguage: pkg.default_language,
-    publishedLanguages: pkg.published_languages,
-    baseCurrency: pkg.currency,
-    baseAdultPrice: pkg.price_adult,
-    baseChildPrice: pkg.price_child,
-  })
-
-  const { data: detail } = await supabase
-    .from("package_details")
-    .select("meeting_point, map_embed")
-    .eq("package_id", pkg.id)
-    .maybeSingle()
-
-  const { data: galleryData } = await supabase
-    .from("package_images")
-    .select("id, image_url")
-    .eq("package_id", pkg.id)
-  const galleryImages = (galleryData as GalleryRow[] | null) || []
-
-  const { data: facilitiesData } = await supabase
-    .from("package_facilities")
-    .select(`
-      facility_id,
-      facilities ( name )
-    `)
-    .eq("package_id", pkg.id)
-  const facilities = (facilitiesData as PackageFacilityRow[] | null) || []
-
-  const { data: tagsData } = await supabase
-    .from("package_tags")
-    .select("id, tag")
-    .eq("package_id", pkg.id)
-  const tags = (tagsData as TagRow[] | null) || []
-
-  const { data: itineraryDaysData } = await supabase
-    .from("package_itinerary_days")
-    .select(`
-      id,
-      day_number,
-      day_title,
-      package_itinerary_routes (
+  const [
+    translationResult,
+    localizedPricing,
+    detailResult,
+    galleryResult,
+    facilitiesResult,
+    tagsResult,
+    itineraryDaysResult,
+  ] = await Promise.all([
+    supabase
+      .from("package_translations")
+      .select("language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
+      .eq("package_id", pkg.id)
+      .in("language_code", localeFallbacks),
+    getLiveLocalizedPackagePricing({
+      locale: activeLocale,
+      defaultLanguage: pkg.default_language,
+      publishedLanguages: pkg.published_languages,
+      baseCurrency: pkg.currency,
+      baseAdultPrice: pkg.price_adult,
+      baseChildPrice: pkg.price_child,
+    }),
+    supabase
+      .from("package_details")
+      .select("meeting_point, map_embed")
+      .eq("package_id", pkg.id)
+      .maybeSingle(),
+    supabase
+      .from("package_images")
+      .select("id, image_url")
+      .eq("package_id", pkg.id),
+    supabase
+      .from("package_facilities")
+      .select(`
+        facility_id,
+        facilities ( name )
+      `)
+      .eq("package_id", pkg.id),
+    supabase
+      .from("package_tags")
+      .select("id, tag")
+      .eq("package_id", pkg.id),
+    supabase
+      .from("package_itinerary_days")
+      .select(`
         id,
-        pickup_time,
-        route,
-        description
-      )
-    `)
-    .eq("package_id", pkg.id)
-    .order("day_number", { ascending: true })
+        day_number,
+        day_title,
+        package_itinerary_routes (
+          id,
+          pickup_time,
+          route,
+          description
+        )
+      `)
+      .eq("package_id", pkg.id)
+      .order("day_number", { ascending: true }),
+  ])
+
+  const translations = (translationResult.data || []) as PackageTranslationRow[]
+  const translation = resolvePackageTranslation(translations, activeLocale, pkg.default_language, pkg.published_languages)
+  const detail = detailResult.data
+  const galleryImages = (galleryResult.data as GalleryRow[] | null) || []
+  const facilities = (facilitiesResult.data as PackageFacilityRow[] | null) || []
+  const tags = (tagsResult.data as TagRow[] | null) || []
+  const itineraryDaysData = itineraryDaysResult.data
   const itineraryDays = (itineraryDaysData as ItineraryDayRow[] | null) || []
   const itineraryDayIds = itineraryDays.map((day) => day.id)
   const itineraryRouteIds = itineraryDays.flatMap((day) => day.package_itinerary_routes.map((route) => route.id))
@@ -413,14 +419,14 @@ export default async function PaketPage({
           .from("package_itinerary_day_translations")
           .select("itinerary_day_id, language_code, day_title")
           .in("itinerary_day_id", itineraryDayIds)
-          .in("language_code", [...new Set([activeLocale, defaultLocale, "id"])])
+          .in("language_code", localeFallbacks)
       : Promise.resolve({ data: [], error: null }),
     itineraryRouteIds.length > 0
       ? supabase
           .from("package_itinerary_route_translations")
           .select("itinerary_route_id, language_code, route, description")
           .in("itinerary_route_id", itineraryRouteIds)
-          .in("language_code", [...new Set([activeLocale, defaultLocale, "id"])])
+          .in("language_code", localeFallbacks)
       : Promise.resolve({ data: [], error: null }),
   ])
 
@@ -448,14 +454,13 @@ export default async function PaketPage({
   )
 
   const countryIds = [pkg.origin_country_id, pkg.destination_country_id].filter(Boolean)
-  let countries: CountryRow[] = []
-  if (countryIds.length > 0) {
-    const { data } = await supabase
-      .from("countries")
-      .select("id, name")
-      .in("id", countryIds)
-    countries = (data as CountryRow[] | null) || []
-  }
+  const countryResult = countryIds.length > 0
+    ? await supabase
+        .from("countries")
+        .select("id, name")
+        .in("id", countryIds)
+    : { data: [] as CountryRow[] | null }
+  const countries = (countryResult.data as CountryRow[] | null) || []
   const countryMap = new Map(countries.map((country) => [country.id, country.name]))
 
   const displayTitle = translation?.title || pkg.title || "Detail Paket"

@@ -19,11 +19,13 @@ export type PackageFilterState = {
 
 export default function FilterClient({
   facilities,
+  initialState,
   locale,
   maxAvailablePrice,
   onChange,
 }: {
   facilities: Facility[]
+  initialState?: Partial<PackageFilterState>
   locale: Locale
   maxAvailablePrice: number
   onChange: (state: PackageFilterState) => void
@@ -33,9 +35,9 @@ export default function FilterClient({
   const sliderMin = 0
   const sliderMax = Math.max(maxAvailablePrice, sliderMin)
 
-  const [minPrice, setMinPrice] = useState(sliderMin)
-  const [maxPrice, setMaxPrice] = useState(sliderMax)
-  const [selectedFacilities, setSelectedFacilities] = useState<string[]>([])
+  const [minPrice, setMinPrice] = useState(initialState?.minPrice ?? sliderMin)
+  const [maxPrice, setMaxPrice] = useState(initialState?.maxPrice ?? sliderMax)
+  const [selectedFacilities, setSelectedFacilities] = useState<string[]>(initialState?.selectedFacilities ?? [])
 
   const sliderStep = useMemo(() => {
     if (priceCurrency === "USD") return 10

@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { buildLocalizedPricingFromBase, localeCurrencyMap, normalizePackageCurrency, type CurrencyRateMap } from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 
@@ -8,11 +9,11 @@ type LatestRatesResponse = {
   rates?: Record<string, number>
 }
 
-export async function fetchLatestCurrencyRates(baseCurrency: string): Promise<{
+export const fetchLatestCurrencyRates = cache(async (baseCurrency: string): Promise<{
   baseCurrency: string
   rates: CurrencyRateMap
   date: string | null
-}> {
+}> => {
   const normalizedBaseCurrency = normalizePackageCurrency(baseCurrency)
   const targets = [...new Set(Object.values(localeCurrencyMap).filter((currency) => currency !== normalizedBaseCurrency))]
   const fallbackRates = Object.values(localeCurrencyMap).reduce(
@@ -64,7 +65,7 @@ export async function fetchLatestCurrencyRates(baseCurrency: string): Promise<{
       date: null,
     }
   }
-}
+})
 
 export async function buildAutoLocalizedPricing(input: {
   baseLanguage: string

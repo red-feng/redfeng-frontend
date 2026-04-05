@@ -1,11 +1,13 @@
+import { cache } from "react"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import SearchBar from "@/app/components/SearchBar"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getFacilityCategoryLabel, getFacilityLabel, normalizeFacilityCategory, normalizeFacilityName } from "@/lib/facility-labels"
-import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
+import { fetchLatestCurrencyRates } from "@/lib/currency-rates"
 import { getCurrentLocale } from "@/lib/locale"
 import { type Locale } from "@/lib/i18n"
+import { localeCurrencyMap, normalizePackageCurrency } from "@/lib/package-pricing"
 import HomeResultsClient from "@/app/HomeResultsClient"
 import { redirect } from "next/navigation"
 
@@ -14,6 +16,8 @@ const localePriceRangeMap: Record<Locale, number> = {
   en: 6000,
   zh: 50000,
 }
+
+const packagesPerPage = 12
 
 
 export const dynamic = "force-dynamic"
@@ -33,7 +37,6 @@ type PackageListItem = {
   price_child?: number | null
   default_language?: string | null
   published_languages?: string[] | null
-  package_facilities?: { facility_id: string }[] | null
   package_translations?: { language_code?: string | null; title: string | null; description: string | null; currency?: string | null; price_adult?: number | null; price_child?: number | null }[] | null
   livePricing?: {
     currency: string
@@ -42,7 +45,25 @@ type PackageListItem = {
   }
 }
 
-async function getPublicMerchantIds(): Promise<Set<string>> {
+const packageListSelect = `
+  id,
+  slug,
+  merchant_id,
+  cover_image,
+  city,
+  country,
+  currency,
+  departure_date,
+  minimal_peserta,
+  travel_style,
+  price_adult,
+  price_child,
+  default_language,
+  published_languages,
+  package_translations(language_code, title, description, currency, price_adult, price_child)
+`
+
+const getPublicMerchantIds = cache(async (): Promise<Set<string>> => {
   const supabase = createAdminClient()
   const { data: merchantRows, error } = await supabase
     .from("merchants")
@@ -58,22 +79,27 @@ async function getPublicMerchantIds(): Promise<Set<string>> {
       })
       .map((merchant) => merchant.id),
   )
-}
+})
 
-async function getAvailableCountries(): Promise<string[]> {
+const getFacilitiesLookup = cache(async () => {
+  const adminSupabase = createAdminClient()
+  const { data } = await adminSupabase.from("facilities").select("id, name, category")
+  return data || []
+})
+
+async function getAvailableCountries(publicMerchantIds: Set<string>): Promise<string[]> {
   const supabase = createAdminClient()
-  const publicMerchantIds = await getPublicMerchantIds()
   if (publicMerchantIds.size === 0) return []
   const { data: packagesData, error } = await supabase
     .from("packages")
     .select("country, merchant_id")
     .eq("status", "approved")
+    .in("merchant_id", Array.from(publicMerchantIds))
 
   if (error || !packagesData) return []
 
   return [...new Set(
     packagesData
-      .filter((pkg) => pkg.merchant_id && publicMerchantIds.has(pkg.merchant_id))
       .map((pkg) => (pkg.country || "").trim())
       .filter(Boolean),
   )].sort((a, b) => a.localeCompare(b))
@@ -82,27 +108,37 @@ async function getAvailableCountries(): Promise<string[]> {
 
 async function getPackages(searchParams?: {
   [key: string]: string | string[] | undefined
-}, locale: Locale = "id"): Promise<PackageListItem[]> {
+}, locale: Locale = "id", publicMerchantIds: Set<string> = new Set(), facilitiesLookup: Array<{ id: string; name: string | null }> = []): Promise<{
+  items: PackageListItem[]
+  total: number
+}> {
   const supabase = createAdminClient()
-  const publicMerchantIds = await getPublicMerchantIds()
 
   if (publicMerchantIds.size === 0) {
-    return []
+    return {
+      items: [],
+      total: 0,
+    }
   }
 
   const toParamString = (value: string | string[] | undefined): string =>
     Array.isArray(value) ? value.join(",") : value || ""
+  const pageParam = Number(toParamString(searchParams?.page) || 1)
+  const currentPage = Number.isFinite(pageParam) && pageParam > 0 ? Math.floor(pageParam) : 1
   const facilitiesParam = toParamString(searchParams?.facilities)
   const hasFacilityFilter = facilitiesParam.length > 0
-
+  const minPriceParam = Number(toParamString(searchParams?.min_price) || 0)
+  const maxPriceParamRaw = toParamString(searchParams?.max_price)
+  const maxPriceParam = maxPriceParamRaw ? Number(maxPriceParamRaw) : Number.POSITIVE_INFINITY
+  const selectedFacilityKeys = facilitiesParam
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean)
   let query = supabase
     .from("packages")
-    .select(`
-      *,
-      package_translations(*),
-      package_facilities(facility_id)
-    `)
+    .select(packageListSelect)
     .eq("status", "approved")
+    .in("merchant_id", Array.from(publicMerchantIds))
 // FILTER COUNTRY
 if (searchParams?.country) {
   query = query.ilike("country", `%${searchParams.country}%`)
@@ -129,27 +165,23 @@ if (searchParams?.departure_date) {
 }
   // FILTER FACILITIES
   if (hasFacilityFilter) {
-    const selectedFacilityKeys = facilitiesParam
-      .split(",")
-      .map((key) => key.trim())
-      .filter(Boolean)
-
     if (selectedFacilityKeys.length > 0) {
-      const { data: facilitiesLookup, error: facilitiesLookupError } = await supabase
-        .from("facilities")
-        .select("id, name")
-
-      if (facilitiesLookupError) {
-        console.log("FACILITY LOOKUP ERROR:", facilitiesLookupError)
-        return []
+      if (facilitiesLookup.length === 0) {
+        return {
+          items: [],
+          total: 0,
+        }
       }
 
-      const facilityIds = (facilitiesLookup || [])
+      const facilityIds = facilitiesLookup
         .filter((facility) => selectedFacilityKeys.includes(normalizeFacilityName(facility.name)))
         .map((facility) => facility.id)
 
       if (facilityIds.length === 0) {
-        return []
+        return {
+          items: [],
+          total: 0,
+        }
       }
 
       const { data: facilityRows, error: facilityError } = await supabase
@@ -159,12 +191,18 @@ if (searchParams?.departure_date) {
 
       if (facilityError) {
         console.log("FACILITY FILTER ERROR:", facilityError)
-        return []
+        return {
+          items: [],
+          total: 0,
+        }
       }
 
       const packageIds = [...new Set((facilityRows || []).map((row) => row.package_id))]
       if (packageIds.length === 0) {
-        return []
+        return {
+          items: [],
+          total: 0,
+        }
       }
 
       query = query.in("id", packageIds)
@@ -178,52 +216,62 @@ if (searchParams?.departure_date) {
   }
 
   let filtered = (data as PackageListItem[] | null) || []
-  filtered = filtered.filter((pkg) => pkg.merchant_id && publicMerchantIds.has(pkg.merchant_id))
 
-  const withLivePricing = await Promise.all(
-    filtered.map(async (pkg) => {
-      const livePricing = await getLiveLocalizedPackagePricing({
-        locale,
-        defaultLanguage: pkg.default_language,
-        publishedLanguages: pkg.published_languages,
-        baseCurrency: pkg.currency,
-        baseAdultPrice: pkg.price_adult,
-        baseChildPrice: pkg.price_child,
-      })
-
-      return {
-        ...pkg,
-        livePricing,
-      }
+  const targetCurrency = localeCurrencyMap[locale]
+  const distinctBaseCurrencies = [...new Set(
+    filtered
+      .map((pkg) => normalizePackageCurrency(pkg.currency))
+      .filter((currency) => currency !== targetCurrency),
+  )]
+  const rateEntries = await Promise.all(
+    distinctBaseCurrencies.map(async (currency) => {
+      const { rates, date } = await fetchLatestCurrencyRates(currency)
+      return [currency, { rate: Number(rates[targetCurrency] || 0), date }] as const
     }),
   )
-  filtered = withLivePricing
+  const ratesByCurrency = new Map(rateEntries)
+  filtered = filtered.map((pkg) => {
+    const baseCurrency = normalizePackageCurrency(pkg.currency)
+    const baseAdultPrice = Number(pkg.price_adult || 0)
+    const baseChildPrice = Number(pkg.price_child || 0)
 
-  if (hasFacilityFilter) {
-    const selected = new Set(
-      facilitiesParam
-        .split(",")
-        .map((key) => key.trim())
-        .filter(Boolean)
-    )
+    if (baseCurrency === targetCurrency) {
+      return {
+        ...pkg,
+        livePricing: {
+          currency: targetCurrency,
+          priceAdult: Math.round(baseAdultPrice),
+          priceChild: Math.round(baseChildPrice),
+        },
+      }
+    }
 
-    const { data: facilitiesLookup } = await supabase
-      .from("facilities")
-      .select("id, name")
-    const facilityIdToKey = new Map(
-      ((facilitiesLookup || []) as Array<{ id: string; name: string | null }>).map((facility) => [
-        facility.id,
-        normalizeFacilityName(facility.name),
-      ])
-    )
+    const conversion = ratesByCurrency.get(baseCurrency)
+    const rate = Number(conversion?.rate || 0)
+    return {
+      ...pkg,
+      livePricing: {
+        currency: targetCurrency,
+        priceAdult: Math.round(baseAdultPrice * rate),
+        priceChild: Math.round(baseChildPrice * rate),
+      },
+    }
+  })
 
+  if (Number.isFinite(minPriceParam) || Number.isFinite(maxPriceParam)) {
     filtered = filtered.filter((pkg) => {
-      const ids = (pkg.package_facilities || []).map((f) => f.facility_id)
-      return ids.some((id) => selected.has(facilityIdToKey.get(id) || ""))
+      const priceAdult = Number(pkg.livePricing?.priceAdult || 0)
+      return priceAdult >= minPriceParam && priceAdult <= maxPriceParam
     })
   }
 
-  return filtered
+  const total = filtered.length
+  const startIndex = (currentPage - 1) * packagesPerPage
+
+  return {
+    items: filtered.slice(startIndex, startIndex + packagesPerPage),
+    total,
+  }
 }
 
 export default async function HomePage({
@@ -253,19 +301,31 @@ export default async function HomePage({
   const resolvedSearchParams = (await searchParams) || {}
   const locale = await getCurrentLocale()
   const localeMaxPrice = localePriceRangeMap[locale]
-
-  const [packages, countries] = await Promise.all([
-    getPackages(resolvedSearchParams, locale),
-    getAvailableCountries(),
+  const initialMinPrice = Math.max(0, Number(Array.isArray(resolvedSearchParams.min_price) ? resolvedSearchParams.min_price[0] : resolvedSearchParams.min_price || 0) || 0)
+  const initialMaxPriceRaw = Number(Array.isArray(resolvedSearchParams.max_price) ? resolvedSearchParams.max_price[0] : resolvedSearchParams.max_price || localeMaxPrice)
+  const initialMaxPrice = initialMaxPriceRaw > 0 ? Math.min(initialMaxPriceRaw, localeMaxPrice) : localeMaxPrice
+  const initialSelectedFacilities = String(Array.isArray(resolvedSearchParams.facilities) ? resolvedSearchParams.facilities[0] : resolvedSearchParams.facilities || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+  const publicMerchantIds = await getPublicMerchantIds()
+  const facilitiesData = await getFacilitiesLookup()
+  const [packagesResult, countries] = await Promise.all([
+    getPackages(
+      resolvedSearchParams,
+      locale,
+      publicMerchantIds,
+      (facilitiesData as Array<{ id: string; name: string | null; category: string | null }>).map((facility) => ({
+        id: facility.id,
+        name: facility.name,
+      })),
+    ),
+    getAvailableCountries(publicMerchantIds),
   ])
-  const adminSupabase = createAdminClient()
-
-  const { data: facilitiesData } = await adminSupabase
-    .from("facilities")
-    .select("id, name, category")
+  const packages = packagesResult.items
 
   const facilitiesMap = new Map<string, { id: string; name: string; category: string }>()
-  for (const facility of facilitiesData ?? []) {
+  for (const facility of facilitiesData) {
     const normalizedName = normalizeFacilityName(facility.name)
     const normalizedCategory = normalizeFacilityCategory(facility.category)
     const key = `${normalizedCategory}::${normalizedName}`
@@ -278,25 +338,23 @@ export default async function HomePage({
     }
   }
   const facilities = Array.from(facilitiesMap.values())
-  const facilityIdToKey = new Map(
-    (facilitiesData ?? []).map((facility) => [facility.id, normalizeFacilityName(facility.name)]),
-  )
-  const packagesWithFacilityKeys = packages.map((pkg) => ({
-    ...pkg,
-    facilityKeys: (pkg.package_facilities || [])
-      .map((facility) => facilityIdToKey.get(facility.facility_id) || "")
-      .filter(Boolean),
-  }))
 
   return (
     <div className="bg-gray-100 min-h-screen">
       <PublicHeader locale={locale} />
       <SearchBar locale={locale} countries={countries} />
       <HomeResultsClient
+        key={`${locale}:${initialMinPrice}:${Math.max(initialMaxPrice, initialMinPrice)}:${initialSelectedFacilities.join(",")}`}
         facilities={facilities}
+        initialFilters={{
+          minPrice: initialMinPrice,
+          maxPrice: Math.max(initialMaxPrice, initialMinPrice),
+          selectedFacilities: initialSelectedFacilities,
+        }}
         locale={locale}
         maxAvailablePrice={localeMaxPrice}
-        packages={packagesWithFacilityKeys}
+        packages={packages}
+        totalPackages={packagesResult.total}
       />
     </div>
   )
