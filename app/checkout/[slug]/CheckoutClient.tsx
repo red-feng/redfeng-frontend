@@ -330,7 +330,6 @@ export default function CheckoutClient({
     }
     return { ...option, hint: ui.qrisHint }
   })
-
   useEffect(() => {
     const checkSession = async () => {
       const {
@@ -359,6 +358,16 @@ export default function CheckoutClient({
 
   const effectivePickupDate = usesFixedDeparture ? fixedDepartureDate : pickupDate
   const fixedDepartureTooSoon = usesFixedDeparture && Boolean(fixedDepartureDate) && fixedDepartureDate < minimumBookingDate
+  const primaryButtonLabel =
+    !checkingSession && !isAuthenticated
+      ? ui.loginForBooking
+      : fixedDepartureTooSoon
+        ? ui.notBookableToday
+        : !hasMetMinimumParticipants
+          ? formatCopy(ui.minimumParticipantsShort, { count: minimumParticipants })
+          : submitting
+            ? ui.processing
+            : t.createBookingPay
   const trimmedNama = nama.trim()
   const trimmedEmail = email.trim()
   const trimmedPhone = phone.trim()
@@ -438,7 +447,7 @@ export default function CheckoutClient({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 sm:p-6 md:p-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 pb-36 sm:p-6 sm:pb-36 md:p-10 md:pb-10">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-500">{ui.checkoutLabel}</p>
@@ -833,21 +842,37 @@ export default function CheckoutClient({
                 type="button"
                 onClick={handleBooking}
                 disabled={submitting || !hasMetMinimumParticipants || fixedDepartureTooSoon}
-                className="mt-6 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="mt-6 hidden w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300 lg:block"
               >
-                {!checkingSession && !isAuthenticated
-                  ? ui.loginForBooking
-                  : fixedDepartureTooSoon
-                    ? ui.notBookableToday
-                  : !hasMetMinimumParticipants
-                    ? formatCopy(ui.minimumParticipantsShort, { count: minimumParticipants })
-                    : submitting
-                      ? ui.processing
-                      : t.createBookingPay}
+                {primaryButtonLabel}
               </button>
             </div>
           </section>
         </aside>
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-3 shadow-[0_-20px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              {paymentType === "dp" ? ui.payNow : t.totalPay}
+            </p>
+            <p className="mt-1 truncate text-lg font-bold text-slate-950">
+              {formatPackageMoney(
+                paymentType === "dp" ? localizedDpAmount : localizedTotal,
+                data.currency,
+                locale,
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleBooking}
+            disabled={submitting || !hasMetMinimumParticipants || fixedDepartureTooSoon}
+            className="shrink-0 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          >
+            {primaryButtonLabel}
+          </button>
+        </div>
       </div>
     </main>
   )

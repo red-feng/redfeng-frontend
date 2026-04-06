@@ -87,6 +87,39 @@ type ManagerReportRow = {
   created_at: string | null
 }
 
+type WebVitalEventRow = {
+  event_type: string | null
+  metric_name: string
+  metric_value: number | null
+  path: string
+  rating: string | null
+  created_at: string | null
+}
+
+function averageMetricValue(rows: WebVitalEventRow[], metricName: string) {
+  const matchingRows = rows.filter((row) => row.metric_name === metricName && Number.isFinite(Number(row.metric_value)))
+  if (matchingRows.length === 0) return null
+  const total = matchingRows.reduce((sum, row) => sum + Number(row.metric_value || 0), 0)
+  return total / matchingRows.length
+}
+
+function formatPerformanceMetric(metricName: string, value: number | null) {
+  if (value == null) return "-"
+  if (metricName === "CLS") return value.toFixed(3)
+  return `${Math.round(value)} ms`
+}
+
+function formatRelativeHours(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  const diffHours = Math.max(Math.round((Date.now() - parsed.getTime()) / (1000 * 60 * 60)), 0)
+  if (diffHours < 1) return "< 1 jam lalu"
+  if (diffHours < 24) return `${diffHours} jam lalu`
+  const diffDays = Math.floor(diffHours / 24)
+  return `${diffDays} hari lalu`
+}
+
 export default async function AdminDashboard({
   searchParams,
 }: {
@@ -106,7 +139,7 @@ export default async function AdminDashboard({
   const isOperationsManager = currentProfile?.role === "operations_manager"
   const showOperationsManagerView = isOperationsManager || (isSuperadmin && params.view === "operations-manager")
 
-  const [merchantResult, packageResult, bookingResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult, webVitalsResult] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id, created_at")
@@ -119,6 +152,11 @@ export default async function AdminDashboard({
       .from("bookings")
       .select("id, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
+    adminSupabase
+      .from("web_vitals_events")
+      .select("event_type, metric_name, metric_value, path, rating, created_at")
+      .order("created_at", { ascending: false })
+      .limit(240),
   ])
 
   const pendingMerchantsData = (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
@@ -136,6 +174,9 @@ export default async function AdminDashboard({
     customer_admin_fee_amount: number | null
     customer_tax_amount: number | null
   }> | null) || []
+  const webVitalEvents = webVitalsResult.error
+    ? []
+    : ((webVitalsResult.data as WebVitalEventRow[] | null) || [])
   const pendingMerchants = pendingMerchantsData.length
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
@@ -206,6 +247,43 @@ export default async function AdminDashboard({
       note: "Booking yang sudah auto-queue atau siap dipantau sebelum finance eksekusi.",
     },
   ]
+  const recentWebVitalEvents = webVitalEvents
+  const performanceCards = [
+    {
+      label: "Avg LCP",
+      value: formatPerformanceMetric("LCP", averageMetricValue(recentWebVitalEvents, "LCP")),
+      note: "Rata-rata dari sampel terbaru yang masuk.",
+    },
+    {
+      label: "Avg INP",
+      value: formatPerformanceMetric("INP", averageMetricValue(recentWebVitalEvents, "INP")),
+      note: "Respons interaksi dari sampel terbaru.",
+    },
+    {
+      label: "Avg CLS",
+      value: formatPerformanceMetric("CLS", averageMetricValue(recentWebVitalEvents, "CLS")),
+      note: "Stabilitas layout publik terbaru.",
+    },
+    {
+      label: "Poor vitals",
+      value: String(recentWebVitalEvents.filter((row) => row.rating === "poor").length),
+      note: "Sampel yang masuk rating poor.",
+    },
+  ]
+  const trackedPublicPaths = new Set(recentWebVitalEvents.map((row) => row.path)).size
+  const latestPerformanceSampleAt = recentWebVitalEvents[0]?.created_at || null
+  const performancePathSummary = Array.from(
+    recentWebVitalEvents.reduce((map, row) => {
+      const current = map.get(row.path) || { path: row.path, samples: 0, poorCount: 0 }
+      current.samples += 1
+      if (row.rating === "poor") current.poorCount += 1
+      map.set(row.path, current)
+      return map
+    }, new Map<string, { path: string; samples: number; poorCount: number }>()),
+  )
+    .map(([, value]) => value)
+    .sort((a, b) => b.poorCount - a.poorCount || b.samples - a.samples)
+    .slice(0, 5)
 
   const customerTransactionRows = bookings
     .map((booking) => {
@@ -494,6 +572,57 @@ export default async function AdminDashboard({
                 <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
               </div>
             ))}
+          </section>
+
+          <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.98fr_1.02fr]">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Public Performance</p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Ringkasan Web Vitals publik</h2>
+                </div>
+                <div className="rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3 text-xs leading-6 text-slate-600">
+                  <p>{recentWebVitalEvents.length} sampel terbaru tersimpan</p>
+                  <p>{trackedPublicPaths} path publik terlacak</p>
+                </div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {performanceCards.map((card) => (
+                  <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                    <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-xs text-slate-500">Sample terbaru: {formatDateTime(latestPerformanceSampleAt)} ({formatRelativeHours(latestPerformanceSampleAt)})</p>
+            </div>
+
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Path Watchlist</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Path publik yang paling sering bermasalah</h2>
+              {performancePathSummary.length === 0 ? (
+                <div className="mt-5 rounded-[24px] border border-dashed border-[#e7d8c6] bg-[#fffaf3] px-5 py-6 text-sm leading-7 text-slate-500">
+                  Belum ada data Web Vitals yang tersimpan. Begitu user publik membuka app, ringkasan performa akan muncul di sini.
+                </div>
+              ) : (
+                <div className="mt-5 space-y-3">
+                  {performancePathSummary.map((item) => (
+                    <div key={item.path} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-950">{item.path}</p>
+                          <p className="mt-1 text-xs text-slate-500">{item.samples} sampel masuk, {item.poorCount} di antaranya poor</p>
+                        </div>
+                        <div className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                          {item.poorCount > 0 ? "Perlu cek" : "Stabil"}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           <section className="grid gap-4 sm:gap-6 xl:grid-cols-2">
@@ -1688,6 +1817,57 @@ export default async function AdminDashboard({
               <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
             </div>
           ))}
+        </section>
+
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.98fr_1.02fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Public Performance</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Ringkasan Web Vitals publik</h2>
+              </div>
+              <div className="rounded-[18px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-3 text-xs leading-6 text-slate-600">
+                <p>{recentWebVitalEvents.length} sampel terbaru tersimpan</p>
+                <p>{trackedPublicPaths} path publik terlacak</p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {performanceCards.map((card) => (
+                <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
+                  <p className="mt-3 text-3xl font-semibold text-slate-950">{card.value}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{card.note}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-xs text-slate-500">Sample terbaru: {formatDateTime(latestPerformanceSampleAt)} ({formatRelativeHours(latestPerformanceSampleAt)})</p>
+          </div>
+
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Path Watchlist</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Path publik yang paling sering bermasalah</h2>
+            {performancePathSummary.length === 0 ? (
+              <div className="mt-5 rounded-[24px] border border-dashed border-[#e7d8c6] bg-[#fffaf3] px-5 py-6 text-sm leading-7 text-slate-500">
+                Belum ada data Web Vitals yang tersimpan. Begitu user publik membuka app, ringkasan performa akan muncul di sini.
+              </div>
+            ) : (
+              <div className="mt-5 space-y-3">
+                {performancePathSummary.map((item) => (
+                  <div key={item.path} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950">{item.path}</p>
+                        <p className="mt-1 text-xs text-slate-500">{item.samples} sampel masuk, {item.poorCount} di antaranya poor</p>
+                      </div>
+                      <div className="inline-flex rounded-full border border-orange-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600">
+                        {item.poorCount > 0 ? "Perlu cek" : "Stabil"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {isSuperadmin ? (

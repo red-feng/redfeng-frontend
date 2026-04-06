@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import type { Locale } from "@/lib/i18n"
 
@@ -54,11 +55,16 @@ export default function Gallery({ images, locale = "id" }: { images: GalleryImag
   return (
     <div className="space-y-5">
       <div className="relative overflow-hidden rounded-[32px] border border-white/40 bg-white/50 shadow-[0_28px_90px_rgba(15,23,42,0.14)]">
-        <img
-          src={images[current].image_url}
-          alt={`Gallery image ${current + 1}`}
-          className="h-[360px] w-full object-cover md:h-[680px]"
-        />
+        <div className="relative h-[360px] w-full md:h-[680px]">
+          <Image
+            src={images[current].image_url}
+            alt={`Gallery image ${current + 1}`}
+            fill
+            priority
+            sizes="(max-width: 767px) 100vw, 1200px"
+            className="object-cover"
+          />
+        </div>
 
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(15,23,42,0.08)_38%,rgba(15,23,42,0.58)_100%)]" />
 
@@ -114,11 +120,15 @@ export default function Gallery({ images, locale = "id" }: { images: GalleryImag
                   : "border-slate-200 hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-md"
               }`}
             >
-              <img
-                src={img.image_url}
-                alt={`Thumbnail ${index + 1}`}
-                className="h-20 w-full object-cover md:h-24"
-              />
+              <div className="relative h-20 w-full md:h-24">
+                <Image
+                  src={img.image_url}
+                  alt={`Thumbnail ${index + 1}`}
+                  fill
+                  sizes="(max-width: 767px) 25vw, 16vw"
+                  className="object-cover"
+                />
+              </div>
             </button>
           ))}
         </div>

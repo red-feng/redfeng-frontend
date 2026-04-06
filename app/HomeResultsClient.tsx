@@ -17,9 +17,9 @@ type PackageItem = {
   id: string
   slug: string
   merchant_id: string | null
-  cover_image: string | null
-  city: string | null
-  country: string | null
+  cover_image?: string | null
+  city?: string | null
+  country?: string | null
   currency: string | null
   departure_date: string | null
   minimal_peserta: number | null
@@ -106,6 +106,9 @@ export default function HomeResultsClient({
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [freshPackageIds, setFreshPackageIds] = useState<string[]>([])
   const freshPackageTimerRef = useRef<number | null>(null)
+  const pageCacheRef = useRef(new Map<string, PackageItem[]>())
+  const inFlightRequestRef = useRef<AbortController | null>(null)
+  const activeRequestKeyRef = useRef<string | null>(null)
   const filters: PackageFilterState = {
     ...defaultFilterState,
     maxPrice: initialFilters?.maxPrice ?? maxAvailablePrice,
@@ -118,12 +121,17 @@ export default function HomeResultsClient({
     setLoadedPage(Math.max(1, Math.ceil(packages.length / packagesPerPage)))
     setIsLoadingMore(false)
     setFreshPackageIds([])
+    pageCacheRef.current.clear()
+    pageCacheRef.current.set(`page:${Math.max(1, Math.ceil(packages.length / packagesPerPage))}`, packages)
   }, [packages])
 
   useEffect(() => {
     return () => {
       if (freshPackageTimerRef.current !== null && typeof window !== "undefined") {
         window.clearTimeout(freshPackageTimerRef.current)
+      }
+      if (inFlightRequestRef.current) {
+        inFlightRequestRef.current.abort()
       }
     }
   }, [])
@@ -186,27 +194,42 @@ export default function HomeResultsClient({
   const goToPage = async (page: number) => {
     if (page <= visiblePage || isLoadingMore) return
 
+    const requestCacheKey = `page:${page}|${searchParams.toString()}|${locale}`
     const params = new URLSearchParams(searchParams.toString())
     params.set("page", String(page))
     params.set("locale", locale)
 
     setIsLoadingMore(true)
     try {
-      const response = await fetch(`/api/home-packages?${params.toString()}`, {
-        method: "GET",
-        cache: "no-store",
-      })
+      let nextItems = pageCacheRef.current.get(requestCacheKey)
 
-      if (!response.ok) {
-        throw new Error(`Failed to load page ${page}`)
+      if (!nextItems) {
+        if (inFlightRequestRef.current) {
+          inFlightRequestRef.current.abort()
+        }
+
+        const controller = new AbortController()
+        inFlightRequestRef.current = controller
+        activeRequestKeyRef.current = requestCacheKey
+
+        const response = await fetch(`/api/home-packages?${params.toString()}`, {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          throw new Error(`Failed to load page ${page}`)
+        }
+
+        const result = (await response.json()) as { items?: PackageItem[] }
+        nextItems = result.items || []
+        pageCacheRef.current.set(requestCacheKey, nextItems)
       }
-
-      const result = (await response.json()) as { items?: PackageItem[] }
-      const nextItems = result.items || []
       const appendedIds: string[] = []
       setDisplayedPackages((current) => {
         const seenIds = new Set(current.map((pkg) => pkg.id))
-        const appendedItems = nextItems.filter((pkg) => !seenIds.has(pkg.id))
+        const appendedItems = (nextItems || []).filter((pkg) => !seenIds.has(pkg.id))
         appendedIds.push(...appendedItems.map((pkg) => pkg.id))
         return [...current, ...appendedItems]
       })
@@ -231,8 +254,15 @@ export default function HomeResultsClient({
       const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
       window.history.replaceState(window.history.state, "", nextUrl)
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return
+      }
       console.error(error)
     } finally {
+      if (activeRequestKeyRef.current === requestCacheKey) {
+        inFlightRequestRef.current = null
+        activeRequestKeyRef.current = null
+      }
       setIsLoadingMore(false)
     }
   }

@@ -7,6 +7,9 @@ import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
 import PublicHeader from "@/app/components/PublicHeader"
+import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
+import PublicMobileNav from "@/app/components/PublicMobileNav"
+import PublicStickyAction from "@/app/components/PublicStickyAction"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
@@ -471,8 +474,9 @@ export default async function PaketPage({
       : tags.map((tag) => tag.tag).slice(0, 4)
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)] pb-36 md:pb-0">
       <PackageViewTracker packageId={pkg.id} />
+      <PublicInstallPrompt locale={activeLocale} />
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-5 md:px-6 md:py-8">
@@ -669,6 +673,13 @@ export default async function PaketPage({
           </aside>
         </div>
       </div>
+      <PublicStickyAction
+        locale={activeLocale}
+        href={`/checkout/${encodeURIComponent(pkg.slug)}`}
+        label={t.bookingNow}
+        summary={luxuryCopy.bookingSummary}
+      />
+      <PublicMobileNav locale={activeLocale} />
     </main>
   )
 }

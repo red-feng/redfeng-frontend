@@ -1,19 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import PublicPerformanceTracker from "@/app/components/PublicPerformanceTracker";
 import Script from "next/script";
 import ServiceWorkerRegistrar from "@/app/components/ServiceWorkerRegistrar";
 import { getOptionalEnv } from "@/lib/env";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://app.redfeng.co"),
@@ -53,8 +43,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_26%,#f5f7fb_100%)] antialiased`}
+        className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_26%,#f5f7fb_100%)] antialiased"
       >
+        <PublicPerformanceTracker />
         <ServiceWorkerRegistrar />
         {children}
 

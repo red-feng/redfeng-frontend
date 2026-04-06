@@ -1,5 +1,6 @@
 import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicHeader from "@/app/components/PublicHeader"
+import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
@@ -43,6 +44,7 @@ export default async function PackagesPage({
 
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
+      <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} />
 
       <section className="px-4 pb-5 pt-5 sm:px-6 md:px-8 md:pb-6 md:pt-7">

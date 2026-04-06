@@ -1,10 +1,12 @@
 import Link from "next/link"
 import PackageCard from "@/app/components/PackageCard"
 import PublicHeader from "@/app/components/PublicHeader"
+import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
 import { getCurrentLocale } from "@/lib/locale"
+import { getFeaturedHomePackages } from "@/lib/home-packages"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 
 export const dynamic = "force-dynamic"
@@ -16,8 +18,10 @@ export default async function HomePage({
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const locale = await getCurrentLocale()
-  const { packagesResult, searchBarCountries, searchParamsKey } = await getPublicCatalogData(resolvedSearchParams, locale)
-  const featuredPackages = packagesResult.items.slice(0, 3)
+  const [{ packagesResult, searchBarCountries, searchParamsKey }, featuredPackages] = await Promise.all([
+    getPublicCatalogData(resolvedSearchParams, locale),
+    getFeaturedHomePackages(locale),
+  ])
   const heroCopy = {
     id: {
       eyebrow: "Red Feng Mobile Tour",
@@ -68,6 +72,7 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ef_0%,#fffdfb_28%,#f6f7fb_100%)]">
+      <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} redirectSuperadminFromHome />
 
       <main className="pb-36 md:pb-14">

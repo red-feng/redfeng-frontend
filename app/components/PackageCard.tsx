@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
@@ -15,9 +16,9 @@ type PackageCardTranslation = {
 type PackageCardData = {
   slug: string
   title?: string | null
-  cover_image: string | null
-  city: string | null
-  country: string | null
+  cover_image?: string | null
+  city?: string | null
+  country?: string | null
   currency: string | null
   departure_date: string | null
   minimal_peserta: number | null
@@ -100,8 +101,13 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   return (
     <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)] md:flex-row md:rounded-[28px]">
       <div className="relative h-[168px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
+        <Image
+          src={imageSrc}
+          alt={imageAlt}
+          fill
+          sizes="(max-width: 767px) 100vw, 280px"
+          className="object-cover"
+        />
         <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
           {availableLabel}
         </div>
