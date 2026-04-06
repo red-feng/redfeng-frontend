@@ -48,29 +48,26 @@ type PackageItem = {
 
 function PackageCardSkeleton() {
   return (
-    <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)]">
-      <div className="h-[220px] w-[280px] shrink-0 animate-pulse bg-slate-200" />
-      <div className="flex-1 p-6">
-        <div className="h-8 w-2/3 animate-pulse rounded-2xl bg-slate-200" />
-        <div className="mt-4 h-4 w-1/3 animate-pulse rounded-full bg-slate-100" />
-        <div className="mt-5 flex flex-wrap gap-2">
-          <div className="h-8 w-24 animate-pulse rounded-full bg-orange-100" />
-          <div className="h-8 w-28 animate-pulse rounded-full bg-slate-100" />
-          <div className="h-8 w-20 animate-pulse rounded-full bg-amber-100" />
+    <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)] md:flex md:rounded-[28px]">
+      <div className="h-[160px] w-full animate-pulse bg-slate-200 md:h-[220px] md:w-[280px] md:shrink-0" />
+      <div className="p-4 md:flex-1 md:p-6">
+        <div className="h-6 w-4/5 animate-pulse rounded-2xl bg-slate-200 md:h-8 md:w-2/3" />
+        <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-slate-100 md:mt-4 md:w-1/3" />
+        <div className="mt-4 flex flex-wrap gap-2 md:mt-5">
+          <div className="h-7 w-20 animate-pulse rounded-full bg-orange-100 md:h-8 md:w-24" />
+          <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100 md:h-8 md:w-28" />
         </div>
-        <div className="mt-6 space-y-3">
+        <div className="mt-5 space-y-3 md:mt-6">
           <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
           <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
-          <div className="h-4 w-2/3 animate-pulse rounded-full bg-slate-100" />
         </div>
       </div>
-      <div className="flex w-[260px] flex-col justify-between border-l border-slate-200 bg-slate-50/70 p-6">
+      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 md:w-[260px] md:border-l md:border-t-0 md:p-6">
         <div>
-          <div className="ml-auto h-9 w-32 animate-pulse rounded-2xl bg-orange-100" />
-          <div className="mt-3 ml-auto h-4 w-24 animate-pulse rounded-full bg-slate-100" />
-          <div className="mt-3 ml-auto h-4 w-28 animate-pulse rounded-full bg-slate-100" />
+          <div className="h-8 w-24 animate-pulse rounded-2xl bg-orange-100 md:ml-auto md:h-9 md:w-32" />
+          <div className="mt-3 h-4 w-20 animate-pulse rounded-full bg-slate-100 md:ml-auto md:w-24" />
         </div>
-        <div className="mt-6 h-12 w-full animate-pulse rounded-2xl bg-orange-100" />
+        <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-orange-100 md:mt-6 md:h-12" />
       </div>
     </div>
   )
@@ -256,7 +253,7 @@ export default function HomeResultsClient({
       <main className="flex-1">
         <SortBar total={totalPackages} locale={locale} />
 
-        <div className="relative flex flex-col gap-6">
+        <div className="relative">
           {isPending ? (
             <div className="relative flex min-h-[340px] flex-col items-center justify-center overflow-hidden rounded-[28px] border border-orange-100 bg-[radial-gradient(circle_at_top,_rgba(255,237,213,0.92),_rgba(255,255,255,0.97)_38%,_rgba(255,247,237,0.98)_100%)] px-5 py-10 text-center shadow-[0_28px_60px_-36px_rgba(234,88,12,0.28)] sm:min-h-[400px] sm:px-7 sm:py-12 lg:min-h-[460px] lg:rounded-[32px] lg:px-8 lg:py-14">
               <div className="pointer-events-none absolute left-[-70px] top-[-90px] h-36 w-36 rounded-full bg-orange-200/30 blur-3xl sm:h-40 sm:w-40 lg:h-48 lg:w-48" />
@@ -284,31 +281,36 @@ export default function HomeResultsClient({
           ) : totalPackages === 0 ? (
             <p>{t.home.noPackages}</p>
           ) : (
-            displayedPackages.map((pkg, index) => {
-              const isFresh = freshPackageIds.includes(pkg.id)
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:gap-6">
+              {displayedPackages.map((pkg, index) => {
+                const isFresh = freshPackageIds.includes(pkg.id)
 
-              return (
-                <div
-                  key={pkg.id}
-                  className={isFresh ? "animate-[homePackageReveal_320ms_ease-out]" : undefined}
-                  style={isFresh ? { animationDelay: `${Math.min(index % packagesPerPage, 5) * 45}ms`, animationFillMode: "both" } : undefined}
-                >
-                  <PackageCard pkg={pkg} locale={locale} />
-                </div>
-              )
-            })
+                return (
+                  <div
+                    key={pkg.id}
+                    className={isFresh ? "animate-[homePackageReveal_320ms_ease-out]" : undefined}
+                    style={isFresh ? { animationDelay: `${Math.min(index % packagesPerPage, 5) * 45}ms`, animationFillMode: "both" } : undefined}
+                  >
+                    <PackageCard pkg={pkg} locale={locale} />
+                  </div>
+                )
+              })}
+            </div>
           )}
 
-          {!isPending && isLoadingMore &&
-            Array.from({ length: Math.min(packagesPerPage, Math.max(totalPackages - displayedPackages.length, 1)) }).map((_, index) => (
-              <div
-                key={`skeleton-${index}`}
-                className="animate-[homePackageReveal_220ms_ease-out]"
-                style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
-              >
-                <PackageCardSkeleton />
-              </div>
-            ))}
+          {!isPending && isLoadingMore && (
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 lg:gap-6">
+              {Array.from({ length: Math.min(packagesPerPage, Math.max(totalPackages - displayedPackages.length, 1)) }).map((_, index) => (
+                <div
+                  key={`skeleton-${index}`}
+                  className="animate-[homePackageReveal_220ms_ease-out]"
+                  style={{ animationDelay: `${index * 40}ms`, animationFillMode: "both" }}
+                >
+                  <PackageCardSkeleton />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <style jsx>{`

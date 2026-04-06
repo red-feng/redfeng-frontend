@@ -98,36 +98,36 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)] md:flex-row md:rounded-[28px]">
-      <div className="relative h-[220px] w-full shrink-0 md:w-[280px]">
+      <div className="relative h-[170px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
-        <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm backdrop-blur">
+        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
           {availableLabel}
         </div>
       </div>
 
-      <div className="flex-1 p-5 sm:p-6">
-        <h2 className="mb-2 text-[22px] font-semibold leading-tight text-slate-950 sm:text-[24px] md:text-[28px]">{displayTitle}</h2>
+      <div className="flex-1 p-4 sm:p-5 md:p-6">
+        <h2 className="mb-2 line-clamp-2 text-[18px] font-semibold leading-tight text-slate-950 sm:text-[20px] md:text-[28px]">{displayTitle}</h2>
 
-        {locationText && <p className="mb-4 text-sm text-slate-500">{t.location}: {locationText}</p>}
+        {locationText && <p className="mb-3 text-xs text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
 
-        <div className="mb-4 flex flex-wrap gap-2 text-xs">
-          {infoChips.map((chip) => (
+        <div className="mb-3 flex flex-wrap gap-2 text-[11px] sm:mb-4 sm:text-xs">
+          {infoChips.slice(0, 3).map((chip) => (
             <span key={chip.key} className={`rounded-full px-3 py-1.5 font-medium ${chip.className}`}>
               {chip.label}
             </span>
           ))}
         </div>
 
-        {hasDescription && <p className="line-clamp-3 text-sm leading-7 text-slate-600">{translation?.description}</p>}
+        {hasDescription && <p className="line-clamp-2 text-xs leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">{translation?.description}</p>}
       </div>
 
-      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 md:w-[260px] md:border-l md:border-t-0">
+      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:w-[260px] md:border-l md:border-t-0 md:p-6">
         <div className="text-left md:text-right">
-          <div className="text-2xl font-bold text-orange-600">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
-          <div className="mt-1 text-xs font-medium text-slate-500">{taxNotice}</div>
+          <div className="text-xl font-bold text-orange-600 sm:text-2xl">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
+          <div className="mt-1 text-[11px] font-medium text-slate-500 sm:text-xs">{taxNotice}</div>
           {hasChildPrice && (
-            <div className="mt-2 text-sm text-slate-500">
+            <div className="mt-2 text-xs text-slate-500 sm:text-sm">
               {childPriceLabel}: {formatPackageMoney(displayPricing.priceChild, displayPricing.currency, locale)}
             </div>
           )}
@@ -135,7 +135,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="mt-5 w-full rounded-2xl bg-orange-500 py-3 text-center font-semibold text-white transition hover:bg-orange-600 md:mt-6"
+          className="mt-4 w-full rounded-2xl bg-orange-500 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600 md:mt-6 md:text-base"
         >
           {t.choosePackage}
         </Link>
