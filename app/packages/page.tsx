@@ -1,5 +1,7 @@
 import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicHeader from "@/app/components/PublicHeader"
+import PublicMobileNav from "@/app/components/PublicMobileNav"
+import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
@@ -20,21 +22,27 @@ export default async function PackagesPage({
       eyebrow: "Katalog Paket",
       title: "Temukan paket tour yang lebih cocok untuk rencana customer.",
       body: "Halaman ini difokuskan untuk browsing, search, filter harga, fasilitas, dan membandingkan pilihan dengan lebih nyaman di mobile.",
+      sticky: "Cari dan filter paket dengan cepat",
+      stickyCta: "Jelajahi paket",
     },
     en: {
       eyebrow: "Package Catalog",
       title: "Find the tour package that fits your customer plan better.",
       body: "This page is focused on browsing, search, price filters, facilities, and easier comparison on mobile.",
+      sticky: "Search and filter packages quickly",
+      stickyCta: "Browse packages",
     },
     zh: {
       eyebrow: "套餐目录",
       title: "找到更适合客户行程计划的旅游套餐。",
       body: "这个页面专注于浏览、搜索、价格筛选、设施筛选，以及更适合移动端的对比体验。",
+      sticky: "更快搜索和筛选套餐",
+      stickyCta: "浏览套餐",
     },
   }[locale]
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)]">
+    <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicHeader locale={locale} />
 
       <section className="px-4 pb-5 pt-5 sm:px-6 md:px-8 md:pb-6 md:pt-7">
@@ -49,11 +57,13 @@ export default async function PackagesPage({
         </div>
       </section>
 
-      <SearchBar
+      <div id="package-search">
+        <SearchBar
         key={`search:${locale}:${searchParamsKey}`}
         locale={locale}
         countries={searchBarCountries}
-      />
+        />
+      </div>
 
       <HomeResultsClient
         key={`results:${locale}:${searchParamsKey}`}
@@ -64,6 +74,8 @@ export default async function PackagesPage({
         packages={packagesResult.items}
         totalPackages={packagesResult.total}
       />
+      <PublicStickyAction locale={locale} href="#package-search" label={pageCopy.stickyCta} summary={pageCopy.sticky} />
+      <PublicMobileNav locale={locale} />
     </div>
   )
 }

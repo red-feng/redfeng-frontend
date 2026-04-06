@@ -66,6 +66,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const hasChildPrice = Number(displayPricing.priceChild || 0) > 0
   const dayLabel = locale === "zh" ? "\u5929" : locale === "en" ? "days" : "hari"
   const availableLabel = locale === "zh" ? "\u53ef\u9884\u8ba2" : locale === "en" ? "Available now" : "Tersedia sekarang"
+  const viewDetailLabel = locale === "zh" ? "\u67e5\u770b\u8be6\u60c5" : locale === "en" ? "View details" : "Lihat detail"
 
   const infoChips = [
     pkg.travel_style
@@ -98,31 +99,50 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
   return (
     <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)] md:flex-row md:rounded-[28px]">
-      <div className="relative h-[170px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
+      <div className="relative h-[168px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
         <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
           {availableLabel}
         </div>
+        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/45 via-slate-950/10 to-transparent md:hidden" />
+        <div className="absolute bottom-3 left-3 right-3 md:hidden">
+          <div className="rounded-[18px] border border-white/20 bg-white/92 px-3 py-2.5 shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] backdrop-blur">
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{viewDetailLabel}</p>
+                <p className="mt-1 truncate text-base font-bold text-orange-600">
+                  {formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}
+                </p>
+              </div>
+              <Link
+                href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                className="shrink-0 rounded-full bg-orange-500 px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-orange-600"
+              >
+                {t.choosePackage}
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 p-4 sm:p-5 md:p-6">
-        <h2 className="mb-2 line-clamp-2 text-[18px] font-semibold leading-tight text-slate-950 sm:text-[20px] md:text-[28px]">{displayTitle}</h2>
+        <h2 className="mb-2 line-clamp-2 text-[17px] font-semibold leading-tight text-slate-950 sm:text-[20px] md:text-[28px]">{displayTitle}</h2>
 
-        {locationText && <p className="mb-3 text-xs text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
+        {locationText && <p className="mb-3 text-[11px] text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
 
-        <div className="mb-3 flex flex-wrap gap-2 text-[11px] sm:mb-4 sm:text-xs">
+        <div className="mb-3 flex flex-wrap gap-2 text-[10px] sm:mb-4 sm:text-xs">
           {infoChips.slice(0, 3).map((chip) => (
-            <span key={chip.key} className={`rounded-full px-3 py-1.5 font-medium ${chip.className}`}>
+            <span key={chip.key} className={`rounded-full px-2.5 py-1.5 font-medium sm:px-3 ${chip.className}`}>
               {chip.label}
             </span>
           ))}
         </div>
 
-        {hasDescription && <p className="line-clamp-2 text-xs leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">{translation?.description}</p>}
+        {hasDescription && <p className="line-clamp-2 text-[12px] leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">{translation?.description}</p>}
       </div>
 
-      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:w-[260px] md:border-l md:border-t-0 md:p-6">
+      <div className="hidden flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:flex md:w-[260px] md:border-l md:border-t-0 md:p-6">
         <div className="text-left md:text-right">
           <div className="text-xl font-bold text-orange-600 sm:text-2xl">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
           <div className="mt-1 text-[11px] font-medium text-slate-500 sm:text-xs">{taxNotice}</div>

@@ -1,6 +1,8 @@
 import Link from "next/link"
 import PackageCard from "@/app/components/PackageCard"
 import PublicHeader from "@/app/components/PublicHeader"
+import PublicMobileNav from "@/app/components/PublicMobileNav"
+import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
@@ -68,7 +70,7 @@ export default async function HomePage({
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ef_0%,#fffdfb_28%,#f6f7fb_100%)]">
       <PublicHeader locale={locale} redirectSuperadminFromHome />
 
-      <main className="pb-14">
+      <main className="pb-36 md:pb-14">
         <section className="px-4 pb-6 pt-5 sm:px-6 md:px-8 md:pb-8 md:pt-7">
           <div className="mx-auto max-w-[1360px] overflow-hidden rounded-[30px] border border-orange-100/80 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#ffd3a1_100%)] px-5 py-6 text-white shadow-[0_34px_90px_-40px_rgba(194,65,12,0.5)] sm:rounded-[34px] sm:px-7 sm:py-8 lg:px-10 lg:py-10">
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
@@ -160,6 +162,8 @@ export default async function HomePage({
           </div>
         </section>
       </main>
+      <PublicStickyAction locale={locale} href="/packages" label={heroCopy.primaryCta} summary={heroCopy.browseBody} />
+      <PublicMobileNav locale={locale} />
     </div>
   )
 }
