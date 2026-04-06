@@ -101,7 +101,7 @@ function LanguageTabs({
   onChange: (language: string) => void
 }) {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2 sm:gap-3">
       {languages.map((language) => {
         const isActive = activeLanguage === language
         return (
@@ -109,7 +109,7 @@ function LanguageTabs({
             key={language}
             type="button"
             onClick={() => onChange(language)}
-            className={`group inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition ${
+            className={`group inline-flex w-full items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition sm:w-auto sm:justify-start sm:rounded-full ${
               isActive
                 ? "border-orange-200 bg-[linear-gradient(135deg,#fff1e7_0%,#ffe7d5_100%)] text-orange-700 shadow-[0_10px_24px_rgba(249,115,22,0.16)]"
                 : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-orange-200 hover:bg-orange-50/70 hover:text-orange-600"
@@ -197,7 +197,7 @@ export default function AdminPackageReviewTabs({
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#fff7ed_100%)] px-6 py-5">
+      <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#fff7ed_100%)] px-4 py-5 sm:px-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Review Konten Paket</p>
@@ -215,14 +215,14 @@ export default function AdminPackageReviewTabs({
         </div>
       </div>
 
-      <div className="px-6 py-5">
+      <div className="px-4 py-5 sm:px-6">
         <div className="flex flex-wrap gap-2">
           {TAB_ITEMS.map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+              className={`rounded-2xl border px-4 py-2 text-sm font-semibold transition sm:rounded-full ${
                 activeTab === tab.key
                   ? "border-slate-900 bg-slate-900 text-white shadow-sm"
                   : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
@@ -244,7 +244,7 @@ export default function AdminPackageReviewTabs({
         </div>
 
         {activeTab === "detail" && (
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="mt-5 grid gap-3 sm:gap-4 lg:grid-cols-2">
             <DetailBlock title="Judul Paket" value={activeTranslation?.title || fallbackTitle || detailContent.title} />
             <DetailBlock title="Info Tentang Tour" value={activeTranslation?.about_tour || detailContent.about_tour} />
             <DetailBlock title="Meeting Point" value={activeTranslation?.meeting_point || detailContent.meeting_point} />
@@ -301,7 +301,7 @@ export default function AdminPackageReviewTabs({
         )}
 
         {activeTab === "tags" && (
-          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="mt-5 grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <h3 className="mb-2 text-sm font-semibold text-slate-900">
                 Sorotan Bahasa {getLanguageLabel(activeLanguage)}
@@ -326,7 +326,7 @@ export default function AdminPackageReviewTabs({
         )}
 
         {activeTab === "itinerary" && (
-          <div className="mt-5 space-y-5">
+          <div className="mt-5 space-y-4 sm:space-y-5">
             {itineraryForLanguage.length === 0 && <p className="text-sm text-slate-500">Itinerary belum tersedia.</p>}
             {itineraryForLanguage.map((day) => (
               <div key={day.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70">

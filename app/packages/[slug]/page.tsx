@@ -475,23 +475,23 @@ export default async function PaketPage({
       <PackageViewTracker packageId={pkg.id} />
       <PublicHeader locale={activeLocale} languageOptions={allowedLocales} />
 
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-        <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)]">
-          <div className="relative px-5 py-6 md:px-8 md:py-8">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-5 md:px-6 md:py-8">
+        <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_28px_80px_rgba(15,23,42,0.08)] sm:rounded-[28px] md:rounded-[32px]">
+          <div className="relative px-4 py-5 sm:px-5 sm:py-6 md:px-8 md:py-8">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.96)_0%,rgba(255,247,237,0.92)_100%)]" />
             <div className="relative">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-3xl">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">{luxuryCopy.heroEyebrow}</p>
-                  <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 md:text-5xl">{displayTitle}</h1>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
+                  <h1 className="mt-3 text-[28px] font-semibold tracking-tight text-slate-950 sm:text-[34px] md:text-5xl">{displayTitle}</h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 md:text-base md:leading-7">
                     {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
                     {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-orange-100 bg-white/85 px-5 py-4 shadow-sm backdrop-blur">
+                <div className="w-full rounded-[20px] border border-orange-100 bg-white/85 px-4 py-4 shadow-sm backdrop-blur sm:w-auto sm:rounded-[24px] sm:px-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{t.bookingTour}</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-orange-600">
+                  <p className="mt-2 text-[28px] font-semibold tracking-tight text-orange-600 sm:text-3xl">
                     {formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}
                   </p>
                   <p className="mt-2 text-sm text-slate-500">
@@ -525,21 +525,21 @@ export default async function PaketPage({
                 </div>
               )}
 
-              <div className="mt-6 grid gap-3 md:grid-cols-3">
-                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="rounded-[20px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur sm:rounded-[24px]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.routeTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
                     {countryMap.get(pkg.origin_country_id || "") || "-"} - {pkg.origin_province || "-"} {t.fromTo}{" "}
                     {countryMap.get(pkg.destination_country_id || "") || "-"} - {pkg.destination_province || "-"}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="rounded-[20px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur sm:rounded-[24px]">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.tripTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
                     {formatTravelStyleLabel(pkg.travel_style, activeLocale)} {luxuryCopy.withWord ? `${luxuryCopy.withWord} ` : ""}{pkg.duration || 0} {t.day}
                   </p>
                 </div>
-                <div className="rounded-[24px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur">
+                <div className="rounded-[20px] border border-white/80 bg-white/80 p-4 shadow-sm backdrop-blur sm:rounded-[24px] sm:col-span-2 lg:col-span-1">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{luxuryCopy.bookingTitle}</p>
                   <p className="mt-2 text-sm font-medium leading-6 text-slate-800">
                     {participantLabel}: {pkg.minimal_peserta || 0} {t.people}
@@ -555,7 +555,7 @@ export default async function PaketPage({
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,2fr)_360px]">
           <div className="space-y-6">
-            <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white p-4 shadow-[0_24px_70px_rgba(15,23,42,0.08)] md:p-5">
+            <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white p-3 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[28px] sm:p-4 md:rounded-[32px] md:p-5">
               {galleryImages.length > 0 ? (
                 <Gallery images={galleryImages} locale={activeLocale} />
               ) : (
@@ -565,7 +565,7 @@ export default async function PaketPage({
                   width={1600}
                   height={900}
                   unoptimized
-                  className="h-[320px] w-full rounded-[28px] object-cover md:h-[620px]"
+                  className="h-[240px] w-full rounded-[20px] object-cover sm:h-[320px] sm:rounded-[24px] md:h-[620px] md:rounded-[28px]"
                 />
               )}
             </section>
@@ -621,8 +621,8 @@ export default async function PaketPage({
           </div>
 
           <aside className="space-y-4 lg:sticky lg:top-6 lg:h-fit">
-            <section className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)]">
-              <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-5">
+            <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.10)] sm:rounded-[28px] md:rounded-[32px]">
+              <div className="bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-4 sm:p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">{t.bookingTour}</p>
@@ -632,7 +632,7 @@ export default async function PaketPage({
                     {luxuryCopy.instant}
                   </span>
                 </div>
-                <p className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">
+                <p className="mt-3 text-[32px] font-semibold tracking-tight text-slate-950 sm:text-4xl">
                   {formatPackageMoney(localizedPricing.priceAdult, localizedPricing.currency, activeLocale)}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -640,7 +640,7 @@ export default async function PaketPage({
                 </p>
               </div>
 
-              <div className="space-y-3 p-5 text-sm text-slate-700">
+              <div className="space-y-3 p-4 text-sm text-slate-700 sm:p-5">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                   <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
                   <p className="mt-2">{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>

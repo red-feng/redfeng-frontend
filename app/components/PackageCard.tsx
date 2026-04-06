@@ -97,8 +97,8 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   ].filter(Boolean) as Array<{ key: string; className: string; label: string }>
 
   return (
-    <div className="flex overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)]">
-      <div className="relative h-[220px] w-[280px] shrink-0">
+    <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)] md:flex-row md:rounded-[28px]">
+      <div className="relative h-[220px] w-full shrink-0 md:w-[280px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageSrc} alt={imageAlt} className="h-full w-full object-cover" />
         <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm backdrop-blur">
@@ -106,8 +106,8 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
         </div>
       </div>
 
-      <div className="flex-1 p-6">
-        <h2 className="mb-2 text-[28px] font-semibold leading-tight text-slate-950">{displayTitle}</h2>
+      <div className="flex-1 p-5 sm:p-6">
+        <h2 className="mb-2 text-[22px] font-semibold leading-tight text-slate-950 sm:text-[24px] md:text-[28px]">{displayTitle}</h2>
 
         {locationText && <p className="mb-4 text-sm text-slate-500">{t.location}: {locationText}</p>}
 
@@ -122,8 +122,8 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
         {hasDescription && <p className="line-clamp-3 text-sm leading-7 text-slate-600">{translation?.description}</p>}
       </div>
 
-      <div className="flex w-[260px] flex-col justify-between border-l border-slate-200 bg-slate-50/70 p-6">
-        <div className="text-right">
+      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6 md:w-[260px] md:border-l md:border-t-0">
+        <div className="text-left md:text-right">
           <div className="text-2xl font-bold text-orange-600">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
           <div className="mt-1 text-xs font-medium text-slate-500">{taxNotice}</div>
           {hasChildPrice && (
@@ -135,7 +135,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="mt-6 w-full rounded-2xl bg-orange-500 py-3 text-center font-semibold text-white transition hover:bg-orange-600"
+          className="mt-5 w-full rounded-2xl bg-orange-500 py-3 text-center font-semibold text-white transition hover:bg-orange-600 md:mt-6"
         >
           {t.choosePackage}
         </Link>

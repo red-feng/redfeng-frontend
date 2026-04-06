@@ -327,21 +327,21 @@ export default async function MerchantDashboardPage() {
         : "Merchant sekarang melihat fase operasional yang sama persis dengan customer, admin, finance, dan halaman verifikasi invoice."
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(146,64,14,0.18)] sm:px-10 lg:px-12">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_36px_110px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:rounded-[36px] lg:px-12 lg:py-9">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 {t.heroBadge}
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 {merchant.brand_name || merchant.company_name || dashboardTitleFallback}
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-orange-50/92 sm:mt-4 sm:text-base sm:leading-8">
                 {t.heroDescription}
               </p>
-              <div className="mt-5 inline-flex flex-wrap items-center gap-3 rounded-[20px] border border-white/16 bg-white/10 px-4 py-3 backdrop-blur">
+              <div className="mt-5 inline-flex flex-wrap items-center gap-2 rounded-[18px] border border-white/16 bg-white/10 px-3 py-3 backdrop-blur sm:gap-3 sm:px-4">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-100/80">
                   Merchant Code
                 </span>
@@ -350,14 +350,14 @@ export default async function MerchantDashboardPage() {
                 </span>
               </div>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4">
                 {quickSignals.map((signal) => (
                   <div
                     key={signal.label}
-                    className={`rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur`}
+                    className="rounded-[20px] border border-white/18 bg-white/10 p-4 backdrop-blur sm:rounded-[24px] sm:p-5"
                   >
                     <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">{signal.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{signal.value}</p>
+                    <p className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{signal.value}</p>
                     <div className={`mt-4 h-2 rounded-full bg-gradient-to-r ${signal.tone}`} />
                   </div>
                 ))}
@@ -365,15 +365,15 @@ export default async function MerchantDashboardPage() {
             </div>
 
             <div className="grid gap-4">
-              <div className="rounded-[28px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
+              <div className="rounded-[22px] border border-white/18 bg-slate-950/16 p-5 backdrop-blur sm:rounded-[28px] sm:p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.performanceFocus}</p>
-                <p className="mt-4 text-3xl font-semibold text-white">{formatMoney(monthlyRevenue)}</p>
-                <p className="mt-2 text-sm leading-7 text-orange-50/85">
+                <p className="mt-4 text-2xl font-semibold text-white sm:text-3xl">{formatMoney(monthlyRevenue)}</p>
+                <p className="mt-2 text-sm leading-6 text-orange-50/85 sm:leading-7">
                   {t.revenueDescription}
                 </p>
               </div>
 
-              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+              <div className="rounded-[22px] border border-white/18 bg-white/10 p-5 backdrop-blur sm:rounded-[28px] sm:p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.operationalNotes}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {journeyBadges.map((item) => (
@@ -395,46 +395,46 @@ export default async function MerchantDashboardPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {spotlightCards.map((card) => (
             <article
               key={card.label}
-              className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]"
+              className="rounded-[22px] border border-orange-100 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:p-6"
             >
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-slate-500">{card.label}</p>
-              <p className="mt-4 text-4xl font-semibold tracking-tight text-slate-950">{card.value}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
+              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:mt-4 sm:text-4xl">{card.value}</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">{card.note}</p>
             </article>
           ))}
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:p-7">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[32px] sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
                   {merchantToolBadge}
                 </span>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+                <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
                   {merchantToolTitle}
                 </h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-slate-600 sm:leading-7">
                   {merchantToolDescription}
                 </p>
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 sm:grid-cols-2">
               {merchantMenus.map((menu) => (
                 <Link
                   key={menu.label}
                   href={menu.href}
-                  className="group rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-5 transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_18px_40px_rgba(194,65,12,0.12)]"
+                  className="group rounded-[22px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-4 transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-[0_18px_40px_rgba(194,65,12,0.12)] sm:rounded-[26px] sm:p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-lg font-semibold text-slate-950">{menu.label}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">{menu.note}</p>
+                      <p className="text-base font-semibold text-slate-950 sm:text-lg">{menu.label}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600 sm:leading-7">{menu.note}</p>
                     </div>
                     {menu.key === "chat" && unreadChats > 0 ? (
                       <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
@@ -450,7 +450,7 @@ export default async function MerchantDashboardPage() {
           </div>
 
           <aside className="space-y-6">
-            <div className="rounded-[32px] border border-orange-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[24px] border border-orange-100 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[32px] sm:p-6">
               <span className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-orange-700">
                 {businessSnapshotBadge}
               </span>
@@ -480,12 +480,12 @@ export default async function MerchantDashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#fffdfa_0%,#fff6ec_100%)] p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[32px] sm:p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">{recommendedNextMoveLabel}</p>
-              <p className="mt-4 text-lg font-semibold text-slate-950">
+              <p className="mt-4 text-base font-semibold text-slate-950 sm:text-lg">
                 {nextMoveTitle}
               </p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
+              <p className="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">
                 {nextMoveDescription}
               </p>
             </div>

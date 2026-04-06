@@ -57,15 +57,15 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
 
   return (
     <>
-      <div className={`flex h-full flex-col overflow-hidden rounded-[24px] border ${copy.cardClass}`}>
-        <div className={`border-b px-5 py-4 ${copy.headerClass}`}>
+      <div className={`flex h-full flex-col overflow-hidden rounded-[20px] border sm:rounded-[24px] ${copy.cardClass}`}>
+        <div className={`border-b px-4 py-4 sm:px-5 ${copy.headerClass}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
         </div>
-        <div className="flex h-full flex-col px-5 pb-5 pt-4">
+        <div className="flex h-full flex-col px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className={`mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition ${copy.buttonClass}`}
+            className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition sm:w-auto ${copy.buttonClass}`}
           >
             {copy.buttonLabel}
           </button>
@@ -73,18 +73,18 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
-          <div className="w-full max-w-xl rounded-[32px] border border-[#ecd9c2] bg-white p-6 shadow-[0_30px_90px_rgba(15,23,42,0.2)] sm:p-7">
-            <div className="flex items-start justify-between gap-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:py-6">
+          <div className="w-full max-w-xl rounded-[24px] border border-[#ecd9c2] bg-white p-5 shadow-[0_30px_90px_rgba(15,23,42,0.2)] sm:rounded-[32px] sm:p-7">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-orange-500">{copy.eyebrow}</p>
-                <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{copy.modalTitle}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{copy.modalDescription}</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">{copy.modalTitle}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">{copy.modalDescription}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-700"
+                className="inline-flex w-full items-center justify-center rounded-[16px] border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-700 sm:w-auto sm:rounded-full sm:px-3 sm:py-2"
               >
                 Tutup
               </button>
@@ -101,20 +101,20 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
                   name="reason"
                   placeholder={copy.placeholder}
                   required={variant === "delete"}
-                  className={`mt-3 min-h-[136px] w-full rounded-[20px] border bg-[#fffdfa] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 ${copy.textareaClass}`}
+                  className={`mt-3 min-h-[120px] w-full rounded-[18px] border bg-[#fffdfa] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 sm:min-h-[136px] sm:rounded-[20px] ${copy.textareaClass}`}
                 />
               </div>
-              <div className="flex flex-wrap justify-end gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+                  className="w-full rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 sm:w-auto"
                 >
                   Batal
                 </button>
                 <ConfirmSubmitButton
                   confirmMessage={confirmMessage}
-                  className={`rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition ${copy.buttonClass}`}
+                  className={`w-full rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition sm:w-auto ${copy.buttonClass}`}
                 >
                   {submitLabel}
                 </ConfirmSubmitButton>

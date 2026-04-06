@@ -170,11 +170,11 @@ export default function BookingPaymentButton({
   }
 
   return (
-    <div className="space-y-2">
-      <button type="button" onClick={handlePayment} disabled={loading} className={className}>
+    <div className="space-y-2.5 sm:space-y-3">
+      <button type="button" onClick={handlePayment} disabled={loading} className={`w-full sm:w-auto ${className}`}>
         {loading ? t.processing : label}
       </button>
-      {errorMessage ? <p className="text-sm font-medium text-rose-600">{errorMessage}</p> : null}
+      {errorMessage ? <p className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-medium leading-6 text-rose-600">{errorMessage}</p> : null}
     </div>
   )
 }

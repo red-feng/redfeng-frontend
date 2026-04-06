@@ -151,8 +151,8 @@ export default function FilterClient({
     effectiveMinPrice > sliderMin || effectiveMaxPrice < sliderMax || selectedFacilities.length > 0
 
   return (
-    <div className="sticky top-6 space-y-6">
-      <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="space-y-4 lg:sticky lg:top-6 lg:space-y-6">
+      <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px]">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[15px] font-semibold text-slate-950">{t.priceRange}</p>
@@ -206,11 +206,11 @@ export default function FilterClient({
           />
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-2">
-          <div className="min-w-0 rounded-full border border-slate-300 bg-white px-3 py-3 text-[13px] font-medium text-slate-700 shadow-sm">
+        <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8">
+          <div className="min-w-0 rounded-2xl border border-slate-300 bg-white px-3 py-3 text-[12px] font-medium text-slate-700 shadow-sm sm:rounded-full sm:text-[13px]">
             {formatPackageMoney(effectiveMinPrice, priceCurrency, locale)}
           </div>
-          <div className="min-w-0 rounded-full border border-slate-300 bg-white px-3 py-3 text-[13px] font-medium text-slate-700 shadow-sm">
+          <div className="min-w-0 rounded-2xl border border-slate-300 bg-white px-3 py-3 text-[12px] font-medium text-slate-700 shadow-sm sm:rounded-full sm:text-[13px]">
             {formatPackageMoney(effectiveMaxPrice, priceCurrency, locale)}
           </div>
         </div>
@@ -221,11 +221,11 @@ export default function FilterClient({
           const isOpen = openCategories.includes(category)
 
           return (
-            <div key={category} className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-sm">
+            <div key={category} className="overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm sm:rounded-[22px]">
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
-                className="flex w-full items-center justify-between px-4 py-4 text-left"
+                className="flex w-full items-center justify-between px-4 py-3.5 text-left sm:py-4"
               >
                 <span className="text-sm font-semibold text-slate-900">{getFacilityCategoryLabel(category, locale)}</span>
                 <span className={`text-sm text-slate-400 transition ${isOpen ? "rotate-180" : ""}`}>v</span>

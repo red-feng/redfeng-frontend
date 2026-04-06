@@ -241,8 +241,8 @@ export default function HomeResultsClient({
   }
 
   return (
-    <div className="mx-auto flex max-w-[1360px] gap-8 px-8 py-8">
-      <aside className="w-[320px] shrink-0">
+    <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:flex-row lg:gap-8">
+      <aside className="w-full shrink-0 lg:w-[320px]">
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
           facilities={facilities}
@@ -338,7 +338,7 @@ export default function HomeResultsClient({
         `}</style>
 
         {totalPackages > packagesPerPage && (
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-600">
               {paginationCopy.page} {visiblePage} / {totalPages}
             </p>

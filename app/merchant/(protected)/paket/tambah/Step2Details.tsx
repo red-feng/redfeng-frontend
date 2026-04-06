@@ -336,22 +336,22 @@ export default function Step2Details({
       />
 
       <div className="relative z-10">
-        <div className="px-10 py-8">
+        <div className="px-4 py-4 sm:px-6 sm:py-5 lg:px-10 lg:py-8">
           <Image
             src="/logo-redfeng.png"
             alt="Red Feng"
             width={0}
             height={0}
             sizes="100vw"
-            className="h-32 w-auto"
+            className="h-20 w-auto sm:h-24 lg:h-32"
             priority
           />
         </div>
 
-        <div className="flex justify-center px-8 pb-28">
-          <div className="w-full max-w-5xl rounded-3xl bg-white p-14 shadow-[0_20px_50px_rgba(0,0,0,0.15)]">
-            <h1 className="mb-1 text-2xl font-bold">{t.createPackageTitle}</h1>
-            <p className="mb-10 text-gray-500">{t.contentDetailsStep}</p>
+        <div className="flex justify-center px-4 pb-14 sm:px-6 sm:pb-20 lg:px-8 lg:pb-28">
+          <div className="w-full max-w-5xl rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(0,0,0,0.15)] sm:rounded-3xl sm:p-8 lg:p-14">
+            <h1 className="mb-1 text-xl font-bold sm:text-2xl">{t.createPackageTitle}</h1>
+            <p className="mb-6 text-sm text-gray-500 sm:mb-10 sm:text-base">{t.contentDetailsStep}</p>
 
             <form
               action={savePackageDetails}
@@ -361,7 +361,7 @@ export default function Step2Details({
             >
               <input type="hidden" name="package_id" value={packageId} />
 
-              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
+              <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm leading-6 text-orange-700">
                 {t.defaultLanguageNotice}: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
               </div>
 
@@ -372,7 +372,7 @@ export default function Step2Details({
                       key={lang.code}
                       type="button"
                       onClick={() => setActiveLang(lang.code)}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold ${
                         activeLang === lang.code
                           ? "bg-orange-500 text-white"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -389,7 +389,7 @@ export default function Step2Details({
                     className={activeLang === lang.code ? "space-y-6" : "hidden"}
                   >
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                         <span>
                           {t.contentLanguage}: <strong>{lang.label}</strong> ({lang.code})
                         </span>
@@ -414,7 +414,7 @@ export default function Step2Details({
                         name={`about_tour_${lang.code}`}
                         value={translationValues[lang.code].about_tour}
                         onChange={(event) => updateTranslationField(lang.code, "about_tour", event.target.value)}
-                        className="h-36 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-32 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-36"
                         required={lang.code === normalizedDefaultLanguage}
                       />
                     </div>
@@ -425,7 +425,7 @@ export default function Step2Details({
                         name={`service_standard_${lang.code}`}
                         value={translationValues[lang.code].service_standard}
                         onChange={(event) => updateTranslationField(lang.code, "service_standard", event.target.value)}
-                        className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-28"
                       />
                     </div>
 
@@ -435,7 +435,7 @@ export default function Step2Details({
                         name={`include_${lang.code}`}
                         value={translationValues[lang.code].include}
                         onChange={(event) => updateTranslationField(lang.code, "include", event.target.value)}
-                        className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-28"
                       />
                     </div>
 
@@ -445,7 +445,7 @@ export default function Step2Details({
                         name={`exclude_${lang.code}`}
                         value={translationValues[lang.code].exclude}
                         onChange={(event) => updateTranslationField(lang.code, "exclude", event.target.value)}
-                        className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-28"
                       />
                     </div>
 
@@ -455,7 +455,7 @@ export default function Step2Details({
                         name={`preparation_${lang.code}`}
                         value={translationValues[lang.code].preparation}
                         onChange={(event) => updateTranslationField(lang.code, "preparation", event.target.value)}
-                        className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-28"
                       />
                     </div>
 
@@ -485,7 +485,7 @@ export default function Step2Details({
                         name={`terms_conditions_${lang.code}`}
                         value={translationValues[lang.code].terms_conditions}
                         onChange={(event) => updateTranslationField(lang.code, "terms_conditions", event.target.value)}
-                        className="h-28 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                        className="h-24 w-full rounded-lg border p-4 outline-none focus:ring-2 focus:ring-orange-400 sm:h-28"
                       />
                     </div>
                   </div>
@@ -501,7 +501,7 @@ export default function Step2Details({
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                <div className="grid gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                   <div>
                     <label className="mb-2 block font-medium">{t.galleryImages}</label>
                     <input
@@ -518,7 +518,7 @@ export default function Step2Details({
                     {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
                   </div>
 
-                  <div className="grid gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                     <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
                         {galleryGuidance.cardLabel}
@@ -540,10 +540,10 @@ export default function Step2Details({
                 </div>
               </div>
 
-              <div className="flex justify-center pt-6">
+              <div className="flex justify-center pt-4 sm:pt-6">
                 <button
                   type="submit"
-                  className="rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-14 py-4 text-lg font-semibold text-white shadow-[0_10px_30px_rgba(249,115,22,0.45)] transition-all duration-300 hover:scale-105"
+                  className="w-full rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-orange-300 px-6 py-3.5 text-base font-semibold text-white shadow-[0_10px_30px_rgba(249,115,22,0.45)] transition-all duration-300 hover:scale-105 sm:w-auto sm:px-14 sm:py-4 sm:text-lg"
                 >
                   {t.saveAndNext}
                 </button>

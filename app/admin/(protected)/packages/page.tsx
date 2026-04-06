@@ -94,18 +94,18 @@ export default async function AdminPackagesPage({
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-8 py-7">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-5 py-6 sm:px-8 sm:py-7">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Admin Package Control</p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">Global pending queue</h1>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Global pending queue</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               Halaman ini khusus untuk paket yang benar-benar menunggu review admin. Untuk melihat semua paket satu merchant secara rapi,
               masuk lewat merchant directory lalu buka workspace paket merchant tersebut.
             </p>
           </div>
 
-          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2">
+          <div className="grid gap-3 px-5 py-5 sm:grid-cols-2 sm:gap-4 sm:px-8">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pending</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingCount}</p>
@@ -118,18 +118,18 @@ export default async function AdminPackagesPage({
         </div>
 
         {resolvedSearchParams.success ? (
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 sm:mt-6 sm:px-5 sm:py-4">
             {resolvedSearchParams.success}
           </div>
         ) : null}
 
         {resolvedSearchParams.error ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
+          <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 sm:mt-6 sm:px-5 sm:py-4">
             {resolvedSearchParams.error}
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-5 space-y-4 sm:mt-6">
           {!packages.length ? (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500 shadow-sm">
               Belum ada paket yang menunggu review.
@@ -139,7 +139,7 @@ export default async function AdminPackagesPage({
           {packages.map((pkg) => (
             <div
               key={pkg.id}
-              className="grid gap-5 rounded-[26px] border border-slate-200 bg-white p-6 shadow-sm xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]"
+              className="grid gap-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:rounded-[26px] sm:p-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]"
             >
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-4">
@@ -161,11 +161,11 @@ export default async function AdminPackagesPage({
                       ) : null}
                     </div>
 
-                    <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{pkg.title || "Tanpa judul"}</h2>
+                    <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pkg.title || "Tanpa judul"}</h2>
                     <p className="mt-2 text-sm text-slate-500">Package ID: {pkg.id}</p>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+                  <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:w-auto">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Harga Dewasa</p>
                     <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(pkg.price_adult, pkg.currency)}</p>
                   </div>
@@ -210,7 +210,7 @@ export default async function AdminPackagesPage({
                         name="reason"
                         placeholder="Alasan penolakan atau revisi paket"
                         required
-                        className="h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                        className="h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2 sm:h-28"
                       />
                       <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
                         Tolak paket

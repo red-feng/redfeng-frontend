@@ -438,11 +438,11 @@ export default function CheckoutClient({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 sm:p-6 md:p-10">
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+        <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-500">{ui.checkoutLabel}</p>
-          <h1 className="mt-3 text-3xl font-bold text-slate-900">{data.title || ui.paymentDetailFallback}</h1>
+          <h1 className="mt-3 text-[28px] font-bold text-slate-900 sm:text-3xl">{data.title || ui.paymentDetailFallback}</h1>
           <p className="mt-2 text-sm text-slate-500">
             {ui.intro}
           </p>
@@ -588,7 +588,7 @@ export default function CheckoutClient({
                     : "border-slate-200 bg-slate-50 hover:border-orange-200"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div>
                      <p className="text-sm font-semibold text-slate-900">{ui.fullPayment}</p>
                      <p className="mt-1 text-xs leading-6 text-slate-500">
@@ -615,7 +615,7 @@ export default function CheckoutClient({
                     : "border-slate-200 bg-slate-50 hover:border-orange-200"
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <div>
                      <p className="text-sm font-semibold text-slate-900">{ui.dpPayment}</p>
                      <p className="mt-1 text-xs leading-6 text-slate-500">
@@ -668,7 +668,7 @@ export default function CheckoutClient({
                         : "border-slate-200 bg-slate-50 hover:border-orange-200"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{option.label}</p>
                         <p className="mt-1 text-xs leading-6 text-slate-500">{option.hint}</p>
@@ -697,7 +697,7 @@ export default function CheckoutClient({
         </section>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
-          <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm sm:rounded-[28px]">
             {data.cover_image ? (
               <Image
                 src={data.cover_image}
@@ -705,12 +705,12 @@ export default function CheckoutClient({
                 width={1200}
                 height={800}
                 unoptimized
-                className="h-56 w-full object-cover"
+                className="h-48 w-full object-cover sm:h-56"
               />
             ) : (
-              <div className="h-56 bg-slate-100" />
+              <div className="h-48 bg-slate-100 sm:h-56" />
             )}
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <h2 className="text-xl font-semibold text-slate-900">{ui.paymentSummary}</h2>
               <div className="mt-4 space-y-3 text-sm text-slate-600">
                 <div className="flex items-center justify-between">

@@ -413,8 +413,8 @@ export default async function AdminDashboard({
     const customerFundsChartBase = Math.max(grossCustomerTransactionTotal, 1)
 
     return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
-        <div className="mx-auto max-w-7xl space-y-8">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+        <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
           {params.success ? (
             <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
               {params.success}
@@ -427,19 +427,19 @@ export default async function AdminDashboard({
             </div>
           ) : null}
 
-          <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+          <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
               <div className="max-w-3xl">
                 <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                   Operations Manager
                 </span>
-                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                   Monitor SLA, backlog, dan ritme kerja tim operasional Red Feng.
                 </h1>
-                <p className="mt-4 text-base leading-8 text-orange-50/90">
+                <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
                   Dashboard ini dirancang untuk operations manager agar cepat melihat antrian yang menumpuk, area yang mulai overdue, dan jalur tindak lanjut untuk merchant, package, serta Booking Center.
                 </p>
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
                   <Link
                     href="/admin/merchants"
                     className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
@@ -461,45 +461,45 @@ export default async function AdminDashboard({
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+              <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Operations pulse</p>
                 <div className="mt-5 grid gap-4">
                   <div>
                     <p className="text-sm text-orange-50/80">Total backlog</p>
-                    <p className="mt-1 text-3xl font-semibold text-white">{operationalLoad}</p>
+                    <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{operationalLoad}</p>
                   </div>
                   <div>
                     <p className="text-sm text-orange-50/80">Overdue items</p>
-                    <p className="mt-1 text-3xl font-semibold text-white">
+                    <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
                       {merchantOverdueCount + packageOverdueCount + bookingStalledCount}
                     </p>
                   </div>
                   <div>
                     <p className="text-sm text-orange-50/80">Ready for finance</p>
-                    <p className="mt-1 text-3xl font-semibold text-white">{financeReadyCount}</p>
+                    <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{financeReadyCount}</p>
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
             {metricCards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+                className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
-                <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{card.value}</p>
                 <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
               </div>
             ))}
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <section className="grid gap-4 sm:gap-6 xl:grid-cols-2">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Diagram Dana Customer</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Diagram transaksi dan dana customer</h2>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Diagram transaksi dan dana customer</h2>
               <ChartLegend
                 items={[
                   { label: "DP", tone: "bg-amber-400" },
@@ -507,7 +507,7 @@ export default async function AdminDashboard({
                   { label: "Full payment", tone: "bg-emerald-500" },
                 ]}
               />
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2">
                 <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] p-4">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Total transaksi customer</p>
                   <p className="mt-2 text-2xl font-semibold text-slate-950">{formatMoney(grossCustomerTransactionTotal)}</p>
@@ -553,9 +553,9 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Grafik Queue Dan Status Dana</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Grafik backlog dan status dana</h2>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Grafik backlog dan status dana</h2>
               <ChartLegend
                 items={[
                   { label: "Merchant pending", tone: "bg-amber-400" },
@@ -607,10 +607,10 @@ export default async function AdminDashboard({
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Area yang harus disentuh lebih dulu</h2>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Area yang harus disentuh lebih dulu</h2>
+              <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
                 {needsAttentionCards.map((card) => (
                   <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
@@ -621,10 +621,10 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">SLA Monitor</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kesehatan respons tim operasional</h2>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Kesehatan respons tim operasional</h2>
+              <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
                 {slaCards.map((card) => (
                   <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
@@ -1641,61 +1641,61 @@ export default async function AdminDashboard({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Admin Control Center
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Dashboard admin multi-produk dengan Paket Tour sebagai workspace utama saat ini.
               </h1>
-              <p className="mt-4 text-base leading-8 text-orange-50/90">
+              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
                 Semua workflow merchant dan review yang aktif saat ini dipusatkan di Paket Tour, sementara booking tetap dipisah karena akan menampung transaksi lintas produk.
               </p>
             </div>
 
-            <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+            <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Live queue snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
                   <p className="text-sm text-orange-50/80">Merchant pending</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{pendingMerchants}</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{pendingMerchants}</p>
                 </div>
                 <div>
                   <p className="text-sm text-orange-50/80">Ready for finance</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{financeReadyCount}</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{financeReadyCount}</p>
                 </div>
                 <div>
                   <p className="text-sm text-orange-50/80">Package approved</p>
-                  <p className="mt-1 text-3xl font-semibold text-white">{approvedPackages}</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{approvedPackages}</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {metricCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5"
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{card.value}</p>
               <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
             </div>
           ))}
         </section>
 
         {isSuperadmin ? (
-          <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager control deck</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">
                   Buat akun manager langsung dari dashboard superadmin
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -1708,8 +1708,8 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-6 grid gap-5 lg:grid-cols-2">
-                <form action={createAdminAccount} className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-6">
+            <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-2">
+                <form action={createAdminAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 sm:rounded-[28px] sm:p-6">
                   <input type="hidden" name="role" value="operations_manager" />
                   <input type="hidden" name="return_to" value="/superadmin/dashboard" />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Create operations manager</p>
@@ -1749,7 +1749,7 @@ export default async function AdminDashboard({
                   </div>
                 </form>
 
-                <form action={createFinanceAccount} className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-6">
+                <form action={createFinanceAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 sm:rounded-[28px] sm:p-6">
                   <input type="hidden" name="role" value="finance_manager" />
                   <input type="hidden" name="return_to" value="/superadmin/dashboard" />
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Create finance manager</p>
@@ -1792,11 +1792,11 @@ export default async function AdminDashboard({
           </section>
         ) : null}
 
-        <section className="grid gap-6 xl:grid-cols-2">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-2">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Antrian yang perlu perhatian cepat</h2>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Antrian yang perlu perhatian cepat</h2>
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               {needsAttentionCards.map((card) => (
                 <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
@@ -1807,10 +1807,10 @@ export default async function AdminDashboard({
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">SLA Monitor</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Target respons operasional admin</h2>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Target respons operasional admin</h2>
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               {slaCards.map((card) => (
                 <div key={card.label} className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>

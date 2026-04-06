@@ -466,16 +466,16 @@ export default async function AdminBookingsPage({
   ]
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
             Booking Center
           </p>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
             Booking Center untuk monitoring dan handoff booking lintas produk.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
             Semua booking customer dikumpulkan di sini sebagai pusat kontrol lintas produk. Admin bisa memfilter per channel, memantau status operasional, melihat queue yang butuh perhatian cepat, lalu mengirim booking yang siap ke finance.
           </p>
         </section>
@@ -498,7 +498,7 @@ export default async function AdminBookingsPage({
           </div>
         )}
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <form className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_260px_auto]">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Search</p>
@@ -537,7 +537,7 @@ export default async function AdminBookingsPage({
               </select>
             </div>
 
-            <div className="flex items-end gap-3">
+            <div className="flex flex-wrap items-end gap-3">
               <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
                 Terapkan
               </button>
@@ -551,9 +551,9 @@ export default async function AdminBookingsPage({
           </form>
         </section>
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Booking Center tetap gabungan, bisa dipilah per produk</h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Booking Center tetap gabungan, bisa dipilah per produk</h2>
           <div className="mt-5 flex flex-wrap gap-2">
             {productFilters.map((filter) => {
               const isActive = activeProduct === filter.value
@@ -575,11 +575,11 @@ export default async function AdminBookingsPage({
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Queue yang harus dicek lebih dulu</h2>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Queue yang harus dicek lebih dulu</h2>
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               <Link
                 href={buildFilterHref(activeProduct, "needs-attention", activeFocus, searchQuery, sortMode)}
                 className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
@@ -611,9 +611,9 @@ export default async function AdminBookingsPage({
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue filter</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pilih mode kerja admin</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pilih mode kerja admin</h2>
             <div className="mt-5 flex flex-wrap gap-2">
               {queueFilters.map((filter) => {
                 const isActive = activeQueue === filter.value
@@ -640,11 +640,11 @@ export default async function AdminBookingsPage({
         </section>
 
         {activeQueue === "needs-attention" && (
-          <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Actionable focus</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pilah blocker berdasarkan jenis masalah</h2>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pilah blocker berdasarkan jenis masalah</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   Fokus ini membantu admin memecah antrian berdasarkan penyebab booking tertahan, jadi follow up harian bisa lebih terarah.
                 </p>
@@ -674,7 +674,7 @@ export default async function AdminBookingsPage({
               })}
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Payment follow up</p>
                 <p className="mt-3 text-3xl font-semibold text-slate-950">{paymentAttentionCount}</p>
@@ -699,25 +699,25 @@ export default async function AdminBookingsPage({
           </section>
         )}
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Total booking</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredBookings.length}</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{filteredBookings.length}</p>
           </div>
-          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Siap handoff</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredReadyForAdmin.length}</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{filteredReadyForAdmin.length}</p>
           </div>
-          <div className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Sedang di finance</p>
-            <p className="mt-3 text-3xl font-semibold text-slate-950">{filteredInFinance.length}</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{filteredInFinance.length}</p>
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Booking normal yang sudah lunas dan urutan pickup lengkap akan masuk queue finance secara semi-otomatis. Admin tetap memantau dan bisa melakukan handoff manual jika diperlukan.
             </p>
@@ -748,14 +748,14 @@ export default async function AdminBookingsPage({
                 return (
                   <article
                     key={booking.id}
-                    className="rounded-[28px] border border-[#efe1cf] bg-[#fffaf3] p-5"
+                    className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-4 sm:rounded-[28px] sm:p-5"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
                           {booking.booking_code || booking.id}
                         </p>
-                        <h3 className="mt-2 text-xl font-semibold text-slate-950">{packageTitle}</h3>
+                        <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">{packageTitle}</h3>
                         <p className="mt-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-700">
                           {productLabel}
                         </p>
@@ -824,7 +824,7 @@ export default async function AdminBookingsPage({
                       </div>
                     )}
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-4">
+                     <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-[20px] border border-white bg-white p-4">
                         <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Paket</p>
                         <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.subtotal_amount)}</p>

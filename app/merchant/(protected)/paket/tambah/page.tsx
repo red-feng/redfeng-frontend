@@ -58,9 +58,9 @@ export default async function WizardPage({
   }
 
   return (
-    <div>
+    <div className="px-0">
       {errorMessage && (
-        <div className="mx-auto mt-4 max-w-5xl rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mx-auto mt-3 max-w-5xl rounded-2xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700 sm:mt-4">
           {errorMessage}
         </div>
       )}

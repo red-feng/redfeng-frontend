@@ -136,9 +136,9 @@ export default async function AdminProtectedLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
                   Admin Workspace
@@ -160,7 +160,7 @@ export default async function AdminProtectedLayout({
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-start md:self-auto">
                 <SignOutButton
                   redirectTo="https://app.redfeng.co/admin/login"
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"

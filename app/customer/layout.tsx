@@ -56,8 +56,8 @@ export default async function CustomerLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-5 md:px-10">
-          <div className="flex items-center gap-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:px-10 md:py-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link href="/customer/dashboard" className="inline-flex items-center">
               <Image
                 src="/logo-redfeng.png"
@@ -65,7 +65,7 @@ export default async function CustomerLayout({
                 width={220}
                 height={64}
                 priority
-                className="h-14 w-auto md:h-16"
+                className="h-11 w-auto sm:h-12 md:h-14 lg:h-16"
               />
             </Link>
             <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
@@ -78,7 +78,7 @@ export default async function CustomerLayout({
               <p className="text-xs text-slate-500">Area booking, pembayaran, dan status perjalanan</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 text-sm text-slate-600">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 sm:gap-3">
             <MerchantLanguageSwitcher
               locale={locale}
               label={languageLabel}

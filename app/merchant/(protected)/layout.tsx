@@ -223,10 +223,10 @@ export default async function MerchantLayout({
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <MerchantNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-[1480px] px-6 py-4 md:px-8 xl:px-10">
+        <div className="mx-auto w-full max-w-[1480px] px-4 py-4 sm:px-6 md:px-8 xl:px-10">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 sm:gap-4">
                 <Link href="/merchant/dashboard" className="inline-flex items-center">
                   <Image
                     src="/logo-redfeng.png"
@@ -234,7 +234,7 @@ export default async function MerchantLayout({
                     width={220}
                     height={64}
                     priority
-                    className="h-12 w-auto md:h-14"
+                    className="h-10 w-auto sm:h-12 md:h-14"
                   />
                 </Link>
 
@@ -284,7 +284,7 @@ export default async function MerchantLayout({
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1480px] px-0 md:px-2 xl:px-4">{children}</div>
+      <div className="mx-auto w-full max-w-[1480px] px-0 sm:px-2 xl:px-4">{children}</div>
     </div>
   )
 }

@@ -125,13 +125,13 @@ export default async function AdminMerchantPackagesPage({
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-8 py-7">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
+        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm sm:rounded-[28px]">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-5 py-6 sm:px-8 sm:py-7">
             <div className="flex flex-wrap items-start justify-between gap-6">
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Merchant Package Workspace</p>
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{merchantName}</h1>
+                <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{merchantName}</h1>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-orange-600">{merchantCode}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Audit semua paket merchant dalam satu konteks agar admin tidak perlu membedakan paket merchant ini dengan merchant lain.
@@ -139,14 +139,14 @@ export default async function AdminMerchantPackagesPage({
               </div>
               <Link
                 href="/admin/merchants"
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600 sm:w-auto"
               >
                 Kembali ke Merchant Directory
               </Link>
             </div>
           </div>
 
-          <div className="px-8 py-5">
+          <div className="px-5 py-5 sm:px-8">
             <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 sm:p-5">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,0.7fr)]">
                 <div className="grid gap-4 md:grid-cols-2">
@@ -198,19 +198,19 @@ export default async function AdminMerchantPackagesPage({
         </div>
 
         {resolvedSearchParams.success ? (
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-medium text-emerald-800">
+          <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 sm:mt-6 sm:px-5 sm:py-4">
             {resolvedSearchParams.success}
           </div>
         ) : null}
 
         {resolvedSearchParams.error ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-medium text-rose-800">
+          <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800 sm:mt-6 sm:px-5 sm:py-4">
             {resolvedSearchParams.error}
           </div>
         ) : null}
 
-        <div className="mt-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-8 py-6">
+        <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm sm:mt-6 sm:rounded-[28px]">
+          <div className="border-b border-slate-200 px-5 py-5 sm:px-8 sm:py-6">
             <div className="flex flex-wrap items-center gap-3">
               {FILTERS.map((filter) => {
                 const isActive = activeFilter === filter.key
@@ -264,7 +264,7 @@ export default async function AdminMerchantPackagesPage({
                 </select>
               </div>
 
-              <div className="flex items-end gap-3">
+              <div className="flex flex-wrap items-end gap-3">
                 {activeFilter !== "all" ? <input type="hidden" name="status" value={activeFilter} /> : null}
                 <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
                   Terapkan
@@ -279,7 +279,7 @@ export default async function AdminMerchantPackagesPage({
             </form>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {!filteredPackages.length ? (
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500">
                 Tidak ada paket pada tab ini.

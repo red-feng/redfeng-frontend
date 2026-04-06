@@ -431,15 +431,15 @@ export default async function AdminBookingDetailPage({
   const hasActiveNoteFilters = noteStatusFilter !== "all" || noteTypeFilter !== "all" || notePinFilter !== "all"
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)]">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-3xl">
+          <div className="max-w-3xl">
               <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Booking Detail
               </p>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">{booking.booking_code || booking.id}</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">{booking.booking_code || booking.id}</h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
                 Detail lengkap booking untuk investigasi admin, pengecekan auto-queue finance, dan koordinasi ke merchant atau finance.
               </p>
@@ -486,10 +486,10 @@ export default async function AdminBookingDetailPage({
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Quick actions</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Pindah cepat ke area terkait booking ini</h2>
-          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pindah cepat ke area terkait booking ini</h2>
+          <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-2 xl:grid-cols-5">
             <Link
               href={auditLogHref}
               className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
@@ -561,10 +561,10 @@ export default async function AdminBookingDetailPage({
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking context</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Informasi customer, package, dan merchant</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Informasi customer, package, dan merchant</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</p>
@@ -599,9 +599,9 @@ export default async function AdminBookingDetailPage({
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance queue readiness</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kesiapan ke finance</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Kesiapan ke finance</h2>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
               <span className={`rounded-full border px-3 py-1 ${paymentTone(booking.payment_status)}`}>{resolvePaymentStatusLabel(booking.payment_status)}</span>
               <span className={`rounded-full border px-3 py-1 ${phase.tone}`}>{phase.label}</span>
@@ -655,10 +655,10 @@ export default async function AdminBookingDetailPage({
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Financial breakdown</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Rincian nominal booking</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Rincian nominal booking</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[20px] border border-white bg-white p-4">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Paket</p>
@@ -709,10 +709,10 @@ export default async function AdminBookingDetailPage({
             )}
           </div>
 
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operational timeline</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Progress meeting point</h2>
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Progress meeting point</h2>
+            <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               {timeline.map((item) => (
                 <div key={item.label} className="rounded-[20px] border border-slate-200 bg-slate-50/80 p-4">
                   <p className="text-sm font-semibold text-slate-900">{item.label}</p>
@@ -732,10 +732,10 @@ export default async function AdminBookingDetailPage({
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Internal notes</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Tambahkan catatan operasional admin</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Tambahkan catatan operasional admin</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
               Catatan ini hanya untuk tim internal dan tidak tampil ke customer atau merchant.
             </p>
@@ -784,9 +784,9 @@ export default async function AdminBookingDetailPage({
             )}
           </div>
 
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent notes</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Riwayat catatan internal booking</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Riwayat catatan internal booking</h2>
             <div className="mt-6 space-y-4 rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Status note</p>

@@ -265,36 +265,36 @@ export default async function AdminMerchantsPage({
   const filteredManaged = managed.filter(matchesMerchant).sort(sortMerchants)
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Admin Merchant Review
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Review merchant baru dan kelola merchant aktif dari satu halaman.
               </h1>
-              <p className="mt-4 text-base leading-8 text-orange-50/90">
+              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
                 Admin dapat approve merchant baru, menonaktifkan merchant aktif sementara, lalu
                 menghapus akses merchant tanpa menyentuh data transaksi historis.
               </p>
             </div>
-            <div className="grid gap-3 rounded-[24px] border border-white/20 bg-white/10 px-5 py-4 backdrop-blur">
+            <div className="grid gap-3 rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Pending queue</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{pending.length}</p>
+                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{pending.length}</p>
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Merchant aktif</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{activeMerchants.length}</p>
+                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{activeMerchants.length}</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-6">
           <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_220px_auto]">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Cari merchant</label>
@@ -349,7 +349,7 @@ export default async function AdminMerchantsPage({
               </select>
             </div>
 
-            <div className="flex items-end gap-3">
+            <div className="flex flex-wrap items-end gap-3">
               <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
                 Terapkan
               </button>
@@ -364,7 +364,7 @@ export default async function AdminMerchantsPage({
         </section>
 
         <section className="space-y-5">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-600">Pending approvals</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Antrian merchant baru</h2>
@@ -373,7 +373,7 @@ export default async function AdminMerchantsPage({
           </div>
 
           {!filteredPending.length ? (
-            <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-orange-100 text-orange-700">
                 <span className="text-2xl font-semibold">OK</span>
               </div>
@@ -387,10 +387,10 @@ export default async function AdminMerchantsPage({
               {filteredPending.map((merchant) => (
                 <article
                   key={merchant.id}
-                  className="overflow-hidden rounded-[30px] border border-orange-100 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
+                  className="overflow-hidden rounded-[24px] border border-orange-100 bg-white shadow-[0_20px_70px_rgba(15,23,42,0.06)] sm:rounded-[30px]"
                 >
                   <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-                    <div className="border-b border-orange-100/80 p-7 lg:border-b-0 lg:border-r">
+                    <div className="border-b border-orange-100/80 p-5 sm:p-7 lg:border-b-0 lg:border-r">
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div className="flex items-center gap-3">
                           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
@@ -589,7 +589,7 @@ export default async function AdminMerchantsPage({
         </section>
 
         <section className="space-y-5">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant controls</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Merchant aktif, nonaktif, dan hapus</h2>
@@ -601,7 +601,7 @@ export default async function AdminMerchantsPage({
           </div>
 
           {!filteredManaged.length ? (
-            <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
               <h2 className="text-2xl font-semibold text-slate-950">Belum ada merchant aktif</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
                 Tidak ada merchant managed yang cocok dengan filter saat ini.
@@ -612,12 +612,12 @@ export default async function AdminMerchantsPage({
               {filteredManaged.map((merchant) => (
                 <article
                   key={merchant.id}
-                  className="rounded-[26px] border border-[#ece3d7] bg-[#fffdfa] p-6 shadow-[0_16px_44px_rgba(15,23,42,0.05)]"
+                  className="rounded-[22px] border border-[#ece3d7] bg-[#fffdfa] p-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)] sm:rounded-[26px] sm:p-6"
                 >
                   <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_272px] lg:items-start">
                     <div className="min-w-0 flex-1 space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-semibold text-slate-950">
+                        <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">
                           {merchant.brand_name || merchant.company_name || "Merchant tanpa nama"}
                         </h3>
                         <span
@@ -743,7 +743,7 @@ export default async function AdminMerchantsPage({
         </section>
 
         <section className="space-y-5">
-          <div className="flex items-end justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant anomalies</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Role merchant tanpa data merchant</h2>
@@ -755,7 +755,7 @@ export default async function AdminMerchantsPage({
           </div>
 
           {!orphanMerchantProfiles.length ? (
-            <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+            <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
               <h2 className="text-2xl font-semibold text-slate-950">Tidak ada merchant tanpa profil merchant</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
                 Semua akun merchant saat ini sudah punya data merchant yang valid.
@@ -766,12 +766,12 @@ export default async function AdminMerchantsPage({
               {orphanMerchantProfiles.map((profile) => (
                 <article
                   key={profile.id}
-                  className="rounded-[30px] border border-slate-200 bg-white p-7 shadow-[0_20px_70px_rgba(15,23,42,0.06)]"
+                  className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_20px_70px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-7"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-6">
                     <div className="space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-2xl font-semibold text-slate-950">{fieldValue(profile.email)}</h3>
+                        <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">{fieldValue(profile.email)}</h3>
                         <span className="inline-flex rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-red-700">
                           Merchant tanpa row merchants
                         </span>
@@ -783,7 +783,7 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="flex h-full min-w-[320px] flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5">
+                    <div className="flex h-full w-full min-w-0 flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5 lg:min-w-[320px]">
                       {canExecuteAdminOps ? (
                         <>
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">

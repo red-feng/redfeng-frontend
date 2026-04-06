@@ -78,12 +78,12 @@ export default function AdminMerchantPackageBulkClient({
 
   return (
     <div className="space-y-4">
-      <form id="bulk-package-actions" className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4">
+      <form id="bulk-package-actions" className="rounded-[20px] border border-slate-200 bg-slate-50/70 p-4 sm:rounded-[24px]">
         {selectedIds.map((packageId) => (
           <input key={packageId} type="hidden" name="packageIds" value={packageId} />
         ))}
 
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Bulk action</p>
             <p className="mt-2 text-sm text-slate-700">
@@ -129,7 +129,7 @@ export default function AdminMerchantPackageBulkClient({
               className="mt-4 h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
             />
 
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 formAction={bulkApprovePackages}
                 disabled={!selectedIds.length}
@@ -166,7 +166,7 @@ export default function AdminMerchantPackageBulkClient({
         return (
           <div
             key={pkg.id}
-            className={`grid gap-5 rounded-[24px] border bg-white p-5 shadow-sm transition xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] ${
+            className={`grid gap-4 rounded-[20px] border bg-white p-4 shadow-sm transition sm:gap-5 sm:rounded-[24px] sm:p-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)] ${
               isSelected ? "border-orange-300 shadow-[0_16px_40px_rgba(249,115,22,0.16)]" : "border-slate-200"
             }`}
           >
@@ -190,7 +190,7 @@ export default function AdminMerchantPackageBulkClient({
                 </span>
               </div>
 
-              <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">{pkg.title || "Tanpa judul"}</h2>
+              <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pkg.title || "Tanpa judul"}</h2>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
@@ -212,7 +212,7 @@ export default function AdminMerchantPackageBulkClient({
               </div>
             </div>
 
-            <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+              <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <Link
                 href={`/admin/packages/${pkg.id}`}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
@@ -239,7 +239,7 @@ export default function AdminMerchantPackageBulkClient({
                       name="reason"
                       placeholder="Alasan penolakan atau revisi paket"
                       required
-                      className="h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                      className="h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2 sm:h-24"
                     />
                     <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
                       Tolak paket

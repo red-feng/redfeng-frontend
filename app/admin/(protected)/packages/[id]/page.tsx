@@ -249,15 +249,15 @@ export default async function Page({
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl px-6 py-8">
-        <div className="mb-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-8 py-7">
+      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
+        <div className="mb-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm sm:mb-8 sm:rounded-[28px]">
+          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-5 py-6 sm:px-8 sm:py-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="max-w-3xl">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">
                   Tinjauan Paket Admin
                 </p>
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                   {primaryTranslation?.title || pkg.title}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -266,11 +266,11 @@ export default async function Page({
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{statusSummary(pkg.status)}</p>
               </div>
 
-              <div className="flex flex-col items-start gap-3">
+              <div className="flex w-full flex-col items-start gap-3 sm:w-auto">
                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(pkg.status)}`}>
                   {formatStatusLabel(pkg.status)}
                 </span>
-                <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+                <div className="w-full rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm backdrop-blur sm:w-auto">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                     Bahasa Review
                   </p>
@@ -280,7 +280,7 @@ export default async function Page({
             </div>
           </div>
 
-          <div className="grid gap-4 px-8 py-5 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 px-5 py-5 sm:grid-cols-2 sm:gap-4 sm:px-8 xl:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Harga Dewasa</p>
               <p className="mt-2 text-xl font-semibold text-slate-950">{formatMoney(pkg.price_adult, pkg.currency)}</p>
@@ -300,7 +300,7 @@ export default async function Page({
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_360px]">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.8fr)_360px]">
           <main className="space-y-6">
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="relative">
@@ -310,13 +310,13 @@ export default async function Page({
                   width={1600}
                   height={900}
                   unoptimized
-                  className="h-[360px] w-full object-cover"
+                  className="h-[220px] w-full object-cover sm:h-[280px] lg:h-[360px]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950/65 via-slate-950/20 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-6">
+                <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
                   <div className="max-w-2xl">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">Hero Preview</p>
-                    <h2 className="mt-2 text-2xl font-semibold tracking-tight text-white">
+                    <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
                       {primaryTranslation?.title || pkg.title}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-white/85">
@@ -330,7 +330,7 @@ export default async function Page({
 
             {galleryImages.length > 0 && (
               <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-slate-900">Galeri</h2>
                     <p className="mt-1 text-sm text-slate-500">
@@ -341,7 +341,7 @@ export default async function Page({
                     {galleryImages.length} foto
                   </span>
                 </div>
-                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3">
+                <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {galleryImages.map((image) => (
                     <Image
                       key={image.id}
@@ -350,7 +350,7 @@ export default async function Page({
                       width={800}
                       height={600}
                       unoptimized
-                      className="h-40 w-full rounded-2xl object-cover"
+                       className="h-48 w-full rounded-2xl object-cover sm:h-40"
                     />
                   ))}
                 </div>
@@ -421,7 +421,7 @@ export default async function Page({
             />
           </main>
 
-          <aside className="space-y-6 xl:sticky xl:top-6 xl:h-fit">
+          <aside className="space-y-4 sm:space-y-6 xl:sticky xl:top-6 xl:h-fit">
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="border-b border-slate-200 bg-slate-50/80 px-5 py-4">
                 <h2 className="text-base font-semibold text-slate-900">Keputusan Admin</h2>

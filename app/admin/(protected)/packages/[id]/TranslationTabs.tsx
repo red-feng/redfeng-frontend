@@ -41,17 +41,17 @@ export default function TranslationTabs({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-4 sm:space-y-5">
+      <div className="flex flex-wrap gap-2 sm:gap-3">
         {translations.map((translation, index) => (
           <button
             key={translation.language_code || `lang-${index}`}
             type="button"
             onClick={() => setActiveIndex(index)}
-            className={`rounded-full px-3 py-2 text-sm font-semibold transition ${
+            className={`inline-flex w-full items-center justify-between gap-2 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition sm:w-auto sm:justify-start sm:rounded-full ${
               activeIndex === index
-                ? "bg-slate-900 text-white"
-                : "border border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                ? "border-slate-900 bg-slate-900 text-white shadow-sm"
+                : "border-slate-300 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
             }`}
           >
             <span>{getLanguageLabel(translation.language_code)}</span>
@@ -74,7 +74,7 @@ export default function TranslationTabs({
         ))}
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700 sm:p-5">
         <div>
           <h3 className="mb-1 text-sm font-semibold text-slate-900">Judul Paket</h3>
           <p className="whitespace-pre-line">{activeTranslation.title || fallbackTitle || "-"}</p>
