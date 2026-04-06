@@ -101,8 +101,8 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-5">
+    <header className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+      <div className="mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <a href="https://redfeng.co/" className="flex items-center gap-3">
@@ -112,12 +112,12 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
               width={295}
               height={101}
               priority
-              className="h-12 w-auto sm:h-14 md:h-16 lg:h-20"
+              className="h-9 w-auto sm:h-14 md:h-16 lg:h-20"
             />
           </a>
 
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            <button type="button" className="rounded-full border border-slate-200 p-2.5 text-slate-600 transition hover:border-orange-200 hover:text-orange-600" aria-label="Search">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
+            <button type="button" className="rounded-full border border-orange-100 bg-white/90 p-2.5 text-slate-600 shadow-sm transition hover:border-orange-200 hover:text-orange-600" aria-label="Search">
               <svg viewBox="0 0 24 24" className="h-[22px] w-[22px] fill-none stroke-current stroke-2">
                 <circle cx="11" cy="11" r="7" />
                 <path d="M20 20L16.65 16.65" />
@@ -126,33 +126,33 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
             {!isAuthenticated && (
               <Link
                 href="/register"
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"
               >
                 {registerLabel}
               </Link>
             )}
             <Link
               href={accountHref}
-              className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+              className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(249,115,22,0.9)] transition hover:bg-orange-600"
             >
               {accountLabel}
             </Link>
             {isAuthenticated && (
               <SignOutButton
                 label={signOutLabel}
-                className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-rose-300 hover:text-rose-600"
+                className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600"
               />
             )}
           </div>
         </div>
 
-          <div className="overflow-x-auto pb-1">
-            <nav className="flex min-w-max items-center gap-4 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
-              <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.promo}</a>
-              <a href="https://redfeng.co/pesanan/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.orders}</a>
-              <a href="https://redfeng.co/kemitraan_tour/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.partnerTour}</a>
-              <Link href="/verifikasi-invoice" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.verifyInvoice}</Link>
-              <a href="https://redfeng.co/bantuan/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.help}</a>
+          <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
+              <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.promo}</a>
+              <a href="https://redfeng.co/pesanan/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.orders}</a>
+              <a href="https://redfeng.co/kemitraan_tour/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.partnerTour}</a>
+              <Link href="/verifikasi-invoice" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.verifyInvoice}</Link>
+              <a href="https://redfeng.co/bantuan/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.help}</a>
               <label className="relative block shrink-0">
                 <span className="sr-only">{t.language}</span>
                 <select
@@ -163,7 +163,7 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
                       void changeLocale(nextLocale)
                     }
                   }}
-                  className="min-h-[40px] appearance-none rounded-full border border-transparent bg-white py-1 pl-1 pr-8 text-sm font-medium text-slate-700 outline-none transition hover:text-orange-600 focus:border-orange-200 focus:text-orange-600"
+                  className="min-h-[40px] appearance-none rounded-full border border-orange-100 bg-white/90 py-2 pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm outline-none transition hover:text-orange-600 focus:border-orange-200 focus:text-orange-600 sm:border-transparent sm:bg-transparent sm:py-1 sm:pl-1 sm:shadow-none"
                 >
                   {availableLocales.includes("id") && <option value="id">{t.langId}</option>}
                   {availableLocales.includes("en") && <option value="en">{t.langEn}</option>}
@@ -178,15 +178,15 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
             </nav>
           </div>
 
-          <div className="overflow-x-auto pb-1">
-            <nav className="flex min-w-max items-center gap-4 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
-              <a href="https://redfeng.co/paket-tour/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.packageTour}</a>
-              <a href="https://redfeng.co/pesawat/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.flight}</a>
-              <a href="https://redfeng.co/hotel/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.hotel}</a>
-              <a href="https://redfeng.co/bus-travel/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.busTravel}</a>
-              <a href="https://redfeng.co/kereta_api/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.train}</a>
-              <a href="https://redfeng.co/kapal_laut/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.seaShip}</a>
-              <a href="https://redfeng.co/kapal_pesiar/" className="whitespace-nowrap rounded-full px-1 py-1 transition hover:text-orange-600">{t.cruise}</a>
+          <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
+              <a href="https://redfeng.co/paket-tour/" className="whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none">{t.packageTour}</a>
+              <a href="https://redfeng.co/pesawat/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.flight}</a>
+              <a href="https://redfeng.co/hotel/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.hotel}</a>
+              <a href="https://redfeng.co/bus-travel/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.busTravel}</a>
+              <a href="https://redfeng.co/kereta_api/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.train}</a>
+              <a href="https://redfeng.co/kapal_laut/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.seaShip}</a>
+              <a href="https://redfeng.co/kapal_pesiar/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.cruise}</a>
             </nav>
           </div>
         </div>

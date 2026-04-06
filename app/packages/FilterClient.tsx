@@ -41,6 +41,7 @@ export default function FilterClient({
   const [minPrice, setMinPrice] = useState(initialState?.minPrice ?? sliderMin)
   const [maxPrice, setMaxPrice] = useState(initialState?.maxPrice ?? sliderMax)
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(initialState?.selectedFacilities ?? [])
+  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false)
 
   const sliderStep = useMemo(() => {
     if (priceCurrency === "USD") return 10
@@ -150,9 +151,50 @@ export default function FilterClient({
   const hasActiveFilters =
     effectiveMinPrice > sliderMin || effectiveMaxPrice < sliderMax || selectedFacilities.length > 0
 
-  return (
-    <div className="space-y-4 lg:sticky lg:top-6 lg:space-y-6">
-      <div className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[24px]">
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    if (isMobilePanelOpen) {
+      const previousOverflow = document.body.style.overflow
+      document.body.style.overflow = "hidden"
+
+      return () => {
+        document.body.style.overflow = previousOverflow
+      }
+    }
+
+    return
+  }, [isMobilePanelOpen])
+
+  const mobileFilterTitle =
+    locale === "en" ? "Filter packages" : locale === "zh" ? "筛选套餐" : "Filter paket"
+  const mobileFilterSubtitle =
+    locale === "en"
+      ? "Refine the packages that match your plan."
+      : locale === "zh"
+        ? "调整符合你计划的套票。"
+        : "Atur paket yang paling cocok dengan rencanamu."
+  const mobileOpenLabel =
+    locale === "en" ? "Open filters" : locale === "zh" ? "打开筛选" : "Buka filter"
+  const mobileCloseLabel =
+    locale === "en" ? "Close" : locale === "zh" ? "关闭" : "Tutup"
+
+  const filterBody = (
+    <div className="space-y-4 lg:space-y-6">
+      <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)] p-4 shadow-[0_18px_40px_-30px_rgba(249,115,22,0.35)] sm:rounded-[24px]">
+        <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter Paket</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">
+              {locale === "en" ? "Adjust your package preference" : locale === "zh" ? "调整你的套票偏好" : "Atur preferensi paketmu"}
+            </p>
+          </div>
+          {selectedFacilities.length > 0 && (
+            <span className="rounded-full border border-orange-100 bg-white px-3 py-1 text-[11px] font-semibold text-orange-600 shadow-sm">
+              {selectedFacilities.length}
+            </span>
+          )}
+        </div>
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[15px] font-semibold text-slate-950">{t.priceRange}</p>
@@ -219,15 +261,27 @@ export default function FilterClient({
       <div className="space-y-3">
         {groupedEntries.map(([category, items]) => {
           const isOpen = openCategories.includes(category)
+          const selectedCount = items.filter((facility) => selectedFacilities.includes(facility.id)).length
 
           return (
-            <div key={category} className="overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-sm sm:rounded-[22px]">
+            <div key={category} className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] sm:rounded-[22px]">
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left sm:py-4"
+                className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left sm:py-4"
               >
-                <span className="text-sm font-semibold text-slate-900">{getFacilityCategoryLabel(category, locale)}</span>
+                <div className="min-w-0">
+                  <span className="block text-sm font-semibold text-slate-900">{getFacilityCategoryLabel(category, locale)}</span>
+                  {selectedCount > 0 && (
+                    <span className="mt-1 block text-[11px] font-medium text-orange-500">
+                      {locale === "en"
+                        ? `${selectedCount} selected`
+                        : locale === "zh"
+                          ? `已选 ${selectedCount}`
+                          : `${selectedCount} dipilih`}
+                    </span>
+                  )}
+                </div>
                 <span className={`text-sm text-slate-400 transition ${isOpen ? "rotate-180" : ""}`}>v</span>
               </button>
 
@@ -247,11 +301,6 @@ export default function FilterClient({
 
                             setSelectedFacilities(nextSelectedFacilities)
 
-                            if (event.target.checked) {
-                              emitChange({ nextSelectedFacilities })
-                              return
-                            }
-
                             emitChange({ nextSelectedFacilities })
                           }}
                           className="mt-1 rounded border-slate-300"
@@ -267,5 +316,63 @@ export default function FilterClient({
         })}
       </div>
     </div>
+  )
+
+  return (
+    <>
+      <div className="mb-4 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setIsMobilePanelOpen(true)}
+          className="flex w-full items-center justify-between rounded-[24px] border border-orange-100 bg-[linear-gradient(135deg,#ffffff_0%,#fff9f2_55%,#fff1e3_100%)] px-4 py-3.5 text-left shadow-[0_18px_40px_-30px_rgba(249,115,22,0.35)]"
+        >
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{mobileFilterTitle}</p>
+            <p className="mt-1 text-sm font-semibold text-slate-900">{mobileFilterSubtitle}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <span className="rounded-full border border-orange-100 bg-white px-3 py-1 text-[11px] font-semibold text-orange-600 shadow-sm">
+                {selectedFacilities.length > 0 ? selectedFacilities.length : 1}
+              </span>
+            )}
+            <span className="rounded-full bg-orange-500 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-18px_rgba(249,115,22,0.85)]">
+              {mobileOpenLabel}
+            </span>
+          </div>
+        </button>
+      </div>
+
+      <div className="hidden lg:block lg:sticky lg:top-6">{filterBody}</div>
+
+      {isMobilePanelOpen && (
+        <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/45 backdrop-blur-[2px] lg:hidden">
+          <button
+            type="button"
+            aria-label={mobileCloseLabel}
+            className="absolute inset-0"
+            onClick={() => setIsMobilePanelOpen(false)}
+          />
+          <div className="relative max-h-[88vh] w-full overflow-hidden rounded-t-[28px] border border-orange-100 bg-[linear-gradient(180deg,#fffdfb_0%,#fff7ef_100%)] shadow-[0_-24px_60px_-34px_rgba(15,23,42,0.45)]">
+            <div className="flex items-center justify-between gap-3 border-b border-orange-100/80 px-4 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{mobileFilterTitle}</p>
+                <p className="mt-1 text-sm font-semibold text-slate-900">{mobileFilterSubtitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobilePanelOpen(false)}
+                className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 shadow-sm"
+              >
+                {mobileCloseLabel}
+              </button>
+            </div>
+            <div className="max-h-[calc(88vh-84px)] overflow-y-auto px-4 py-4">
+              {filterBody}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
