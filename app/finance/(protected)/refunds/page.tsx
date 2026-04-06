@@ -231,15 +231,15 @@ export default async function FinanceRefundsPage({
     .reduce((sum, refund) => sum + Number(refund.net_refund_amount || 0), 0)
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#b45309_34%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#b45309_34%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Finance Refund Queue
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Kelola refund customer dari review sampai dana kembali.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
@@ -248,7 +248,7 @@ export default async function FinanceRefundsPage({
               </p>
             </div>
 
-            <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Refund pulse</p>
               <div className="mt-5 grid gap-4">
                 <div>
@@ -284,13 +284,13 @@ export default async function FinanceRefundsPage({
           </div>
         ) : null}
 
-        <section className="rounded-[28px] border border-[#f3dbc3] bg-white/90 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[28px] sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue Filter</p>
               <h2 className="mt-2 text-xl font-semibold text-slate-950">Pisahkan auto review dan refund manual</h2>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {[
                 { key: "all", label: "Semua", count: refunds.length },
                 { key: "auto-review", label: "Auto Review", count: autoReviewCount },
@@ -301,7 +301,7 @@ export default async function FinanceRefundsPage({
                   <Link
                     key={filter.key}
                     href={`/finance/refunds?filter=${filter.key}`}
-                    className={`rounded-full px-4 py-2.5 text-sm font-semibold transition ${
+                      className={`rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
                       active
                         ? "bg-slate-950 text-white shadow-lg"
                         : "border border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
@@ -315,8 +315,8 @@ export default async function FinanceRefundsPage({
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/90 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create Request</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Buat refund request baru</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500">

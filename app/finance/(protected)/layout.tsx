@@ -55,11 +55,11 @@ export default async function FinanceProtectedLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">
+        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
-                <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+                <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500 sm:px-4">
                   Finance Workspace
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">
@@ -79,15 +79,15 @@ export default async function FinanceProtectedLayout({
                   </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2 md:w-auto">
                 <SignOutButton
                   redirectTo="https://app.redfeng.co/finance/login"
-                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+                  className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 md:w-auto"
                 />
               </div>
             </div>
             <nav className="overflow-x-auto pb-1">
-              <div className="flex min-w-max flex-wrap gap-2">
+              <div className="flex min-w-max gap-2">
                 {financeNav.map((item) => (
                   <Link
                     key={item.href}

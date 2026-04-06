@@ -215,15 +215,15 @@ export default async function FinancePayoutsPage({
     .reduce((sum, item) => sum + Number(item.amount || 0), 0)
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Finance Payout Control
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Kelola approval payout merchant setelah pickup tervalidasi.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
@@ -233,7 +233,7 @@ export default async function FinancePayoutsPage({
                 <span className="font-semibold">Go</span>, lalu booking normal yang sudah lunas masuk queue finance secara semi-otomatis.
               </p>
             </div>
-            <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Payout snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
@@ -277,11 +277,11 @@ export default async function FinancePayoutsPage({
         )}
 
         {error ? (
-          <section className="rounded-[30px] border border-rose-200 bg-rose-50 p-8 text-rose-700 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+          <section className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-rose-700 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-8">
             Gagal memuat data payout request.
           </section>
         ) : !validPayouts.length ? (
-          <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-6 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
             <h2 className="text-2xl font-semibold text-slate-950">Belum ada payout request</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
               Queue payout akan terisi setelah customer sudah full payment dan alur pickup tervalidasi.

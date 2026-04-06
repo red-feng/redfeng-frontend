@@ -41,13 +41,13 @@ export default async function FinanceSettingsPage({
   )
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <div className="mx-auto max-w-5xl space-y-8">
-        <section className="rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)]">
+        <section className="rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8">
           <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
             Finance Settings
           </p>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
             Atur komisi Red Feng, fee customer, pajak, dan biaya transfer merchant.
           </h1>
         </section>
@@ -64,8 +64,8 @@ export default async function FinanceSettingsPage({
           </div>
         )}
 
-        <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-          <form action={saveFinanceSettings} className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] space-y-5">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_0.9fr]">
+          <form action={saveFinanceSettings} className="space-y-5 rounded-[24px] border border-[#f3dbc3] bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Komisi Red Feng (%)</label>
               <input
@@ -138,7 +138,7 @@ export default async function FinanceSettingsPage({
                 className="w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
               />
             </div>
-            <div className="rounded-[24px] border border-[#f3dbc3] bg-[#fffaf4] p-5">
+            <div className="rounded-[20px] border border-[#f3dbc3] bg-[#fffaf4] p-4 sm:rounded-[24px] sm:p-5">
               <p className="text-sm font-semibold text-slate-900">Biaya transfer per bank merchant</p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 {merchantTransferBanks.map((bank) => (
@@ -158,7 +158,7 @@ export default async function FinanceSettingsPage({
               </div>
             </div>
             {canEditSettings ? (
-              <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                <button className="w-full rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
                 Simpan Setting
               </button>
             ) : (
@@ -169,7 +169,7 @@ export default async function FinanceSettingsPage({
           </form>
 
           <section className="space-y-6">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Current snapshot</p>
               <div className="mt-4 space-y-3 text-sm text-slate-700">
                 <p>Komisi Red Feng: {settings.redfengCommissionPercent}%</p>
@@ -184,7 +184,7 @@ export default async function FinanceSettingsPage({
                 <p>Transfer bank Mandiri: Rp {(settings.merchantTransferFeeRules.mandiri ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
               </div>
             </div>
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Fallback</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">
                 Jika migration belum dijalankan, sistem akan memakai default aman:

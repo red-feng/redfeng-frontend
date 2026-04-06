@@ -276,7 +276,7 @@ export default async function FinanceDashboardPage({
     const customerMixBase = Math.max(grossCustomerTransactionTotal, 1)
 
     return (
-      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+      <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-8">
           {params.success ? (
             <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
@@ -290,19 +290,19 @@ export default async function FinanceDashboardPage({
             </div>
           ) : null}
 
-          <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+          <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#9a3412_30%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
               <div className="max-w-3xl">
                 <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                   Finance Manager
                 </span>
-                <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+                <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                   Pantau queue payout, aging, dan performa tim finance dari satu dashboard.
                 </h1>
                 <p className="mt-4 text-base leading-8 text-orange-50/90">
                   Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin.
                 </p>
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <Link
                     href="/finance/refunds?filter=auto-review"
                     className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
@@ -324,7 +324,7 @@ export default async function FinanceDashboardPage({
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+              <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
                 <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Finance pulse</p>
                 <div className="mt-5 grid gap-4">
                   <div>
@@ -348,11 +348,11 @@ export default async function FinanceDashboardPage({
             </div>
           </section>
 
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
             {managerMetricCards.map((card) => (
               <div
                 key={card.label}
-                className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+                className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
                 <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
@@ -812,15 +812,15 @@ export default async function FinanceDashboardPage({
   ]
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[32px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:px-10">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Finance Command Center
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Kelola payout approval merchant dari workspace finance.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
@@ -828,7 +828,7 @@ export default async function FinanceDashboardPage({
               </p>
             </div>
 
-            <div className="rounded-[24px] border border-white/20 bg-white/10 px-5 py-5 backdrop-blur">
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Live payout snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
@@ -848,11 +848,11 @@ export default async function FinanceDashboardPage({
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           {metricCards.map((card) => (
             <div
               key={card.label}
-              className="rounded-[26px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5"
             >
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
               <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
@@ -861,8 +861,8 @@ export default async function FinanceDashboardPage({
           ))}
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance priorities</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas payout hari ini</h2>
@@ -871,8 +871,8 @@ export default async function FinanceDashboardPage({
               </p>
             </div>
 
-            <div className="mt-6 rounded-[28px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 rounded-[24px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] p-4 sm:rounded-[28px] sm:p-6">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {[
                   {
                     label: "Payout pending",
@@ -900,7 +900,7 @@ export default async function FinanceDashboardPage({
                     note: `Outstanding ${formatMoney(autoReviewRefundOutstanding)}.`,
                   },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-[22px] border border-[#efe1cf] bg-white p-4">
+                  <div key={item.label} className="rounded-[20px] border border-[#efe1cf] bg-white p-4 sm:rounded-[22px]">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{item.label}</p>
                     <p className="mt-3 text-2xl font-semibold text-slate-950">{item.value}</p>
                     <p className="mt-2 text-xs leading-6 text-slate-500">{item.note}</p>
@@ -908,23 +908,23 @@ export default async function FinanceDashboardPage({
                 ))}
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/finance/refunds?filter=auto-review"
-                  className="inline-flex items-center rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                  className="inline-flex items-center justify-center rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   Buka Auto Review Refund
                 </Link>
                 <Link
                   href="/finance/payouts"
-                  className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                  className="inline-flex items-center justify-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                 >
                   Buka Payout Queue
                 </Link>
                 {canManageFinanceSettings ? (
                   <Link
                     href="/finance/settings"
-                    className="inline-flex items-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    className="inline-flex items-center justify-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                   >
                     Buka Finance Settings
                   </Link>
@@ -937,8 +937,8 @@ export default async function FinanceDashboardPage({
             </div>
           </div>
 
-          <div className="grid gap-6">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+          <div className="grid gap-4 sm:gap-6">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance note</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aturan release dana</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
