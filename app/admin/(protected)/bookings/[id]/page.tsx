@@ -147,28 +147,28 @@ function escrowTone(status: string | null) {
 
 function journeyPhase(booking: BookingDetailRow) {
   if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
-    return { label: "Refund Review", tone: getJourneyStageTone("fallback", "bordered") }
+    return { label: "Review refund", tone: getJourneyStageTone("fallback", "bordered") }
   }
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
-    return { label: "Paid Out", tone: getJourneyStageTone("paid_out", "bordered") }
+    return { label: "Sudah dibayar keluar", tone: getJourneyStageTone("paid_out", "bordered") }
   }
   if (normalizeStatus(booking.booking_status) === "finance_review") {
-    return { label: "Ready for Finance", tone: getJourneyStageTone("ready_for_finance", "bordered") }
+    return { label: "Siap ke finance", tone: getJourneyStageTone("ready_for_finance", "bordered") }
   }
   if (booking.merchant_picked_up_at) {
-    return { label: "Go Confirmed", tone: getJourneyStageTone("go_confirmed", "bordered") }
+    return { label: "Go terkonfirmasi", tone: getJourneyStageTone("go_confirmed", "bordered") }
   }
   if (booking.customer_picked_up_at) {
-    return { label: "Picked Up", tone: getJourneyStageTone("picked_up", "bordered") }
+    return { label: "Sudah dijemput", tone: getJourneyStageTone("picked_up", "bordered") }
   }
   if (booking.merchant_arrived_at) {
-    return { label: "Awaiting Pickup", tone: getJourneyStageTone("awaiting_pickup", "bordered") }
+    return { label: "Menunggu penjemputan", tone: getJourneyStageTone("awaiting_pickup", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "paid") {
-    return { label: "Fully Paid", tone: getJourneyStageTone("fully_paid", "bordered") }
+    return { label: "Lunas", tone: getJourneyStageTone("fully_paid", "bordered") }
   }
   if (normalizeStatus(booking.payment_status) === "dp_paid") {
-    return { label: "Customer DP Paid", tone: getJourneyStageTone("dp_paid", "bordered") }
+    return { label: "Customer sudah bayar DP", tone: getJourneyStageTone("dp_paid", "bordered") }
   }
   return { label: titleCaseStatus(booking.booking_status), tone: getJourneyStageTone("fallback", "bordered") }
 }
@@ -197,10 +197,10 @@ function isOverduePickup(booking: BookingDetailRow) {
 function deriveAttentionReasons(booking: BookingDetailRow) {
   const reasons: string[] = []
   if (normalizeStatus(booking.payment_status) === "refund_pending_review") {
-    reasons.push("Booking DP melewati batas pelunasan H-3 dan sudah masuk ke refund review finance")
+    reasons.push("Booking DP melewati batas pelunasan H-3 dan sudah masuk ke review refund finance")
     return reasons
   }
-  if (normalizeStatus(booking.payment_status) !== "paid") reasons.push("Payment belum lunas")
+  if (normalizeStatus(booking.payment_status) !== "paid") reasons.push("Pembayaran belum lunas")
   if (normalizeStatus(booking.payment_status) === "paid" && isPickupFlowIncomplete(booking)) {
     reasons.push("Urutan pickup belum lengkap")
   }

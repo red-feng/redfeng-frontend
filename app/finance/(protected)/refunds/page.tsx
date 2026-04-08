@@ -82,7 +82,7 @@ function resolveBookingStatusLabel(status: string | null | undefined) {
 
 function resolveRefundReasonCodeLabel(code: string | null | undefined) {
   const normalized = normalizeStatus(code)
-  if (normalized === "final_payment_overdue_auto_review") return "Auto review: DP overdue H-3"
+  if (normalized === "final_payment_overdue_auto_review") return "Review otomatis: DP overdue H-3"
   return code || "-"
 }
 
@@ -237,34 +237,34 @@ export default async function FinanceRefundsPage({
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Finance Refund Queue
+                Antrean Refund Finance
               </span>
               <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Kelola refund customer dari review sampai dana kembali.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Queue ini memisahkan refund via Midtrans dan refund manual via Kopra, sekaligus menyimpan alasan,
-                nominal potongan, referensi transaksi, dan timeline audit tiap request.
+                Antrean ini memisahkan refund via Midtrans dan refund manual via Kopra, sekaligus menyimpan alasan,
+                nominal potongan, referensi transaksi, dan timeline audit tiap permintaan.
               </p>
             </div>
 
             <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Refund pulse</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Ringkasan refund</p>
               <div className="mt-5 grid gap-4">
                 <div>
                   <p className="text-sm text-orange-50/80">Masuk / review</p>
                   <p className="mt-1 text-3xl font-semibold text-white">{requestedCount}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Approved / processing</p>
+                  <p className="text-sm text-orange-50/80">Disetujui / diproses</p>
                   <p className="mt-1 text-3xl font-semibold text-white">{processingCount}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Outstanding refund</p>
+                  <p className="text-sm text-orange-50/80">Refund outstanding</p>
                   <p className="mt-1 text-2xl font-semibold text-white">{formatMoney(outstandingTotal)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Selesai / closed</p>
+                  <p className="text-sm text-orange-50/80">Selesai / ditutup</p>
                   <p className="mt-1 text-3xl font-semibold text-white">{completedCount}</p>
                 </div>
               </div>
@@ -287,13 +287,13 @@ export default async function FinanceRefundsPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/90 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[28px] sm:p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue Filter</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter antrean</p>
               <h2 className="mt-2 text-xl font-semibold text-slate-950">Pisahkan auto review dan refund manual</h2>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               {[
                 { key: "all", label: "Semua", count: refunds.length },
-                { key: "auto-review", label: "Auto Review", count: autoReviewCount },
+                { key: "auto-review", label: "Review Otomatis", count: autoReviewCount },
                 { key: "manual", label: "Manual", count: manualCount },
               ].map((filter) => {
                 const active = filter.key === activeFilter
@@ -317,8 +317,8 @@ export default async function FinanceRefundsPage({
 
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="rounded-[24px] border border-[#f3dbc3] bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create Request</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Buat refund request baru</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Buat permintaan</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Buat permintaan refund baru</h2>
             <p className="mt-2 text-sm leading-7 text-slate-500">
               Masukkan booking code atau booking ID bila ada agar sistem menarik konteks transaksi. Untuk refund manual
               yang berdiri sendiri, form ini tetap bisa dipakai tanpa booking.
@@ -343,7 +343,7 @@ export default async function FinanceRefundsPage({
                     <option value="midtrans">Midtrans</option>
                     <option value="kopra_manual">Kopra Manual</option>
                     <option value="void_cancel">Void / Cancel</option>
-                    <option value="manual_other">Manual Other</option>
+                    <option value="manual_other">Manual Lainnya</option>
                   </select>
                 </div>
                 <div>
@@ -408,15 +408,15 @@ export default async function FinanceRefundsPage({
               </div>
 
               <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                Simpan refund request
+                Simpan permintaan refund
               </button>
             </form>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
             {[
-              { label: "Masuk / review", value: String(requestedCount), note: "Request baru dan refund yang sedang diperiksa." },
-              { label: "Approved / processing", value: String(processingCount), note: "Refund yang sudah lolos approval dan menunggu eksekusi." },
+              { label: "Masuk / review", value: String(requestedCount), note: "Permintaan baru dan refund yang sedang diperiksa." },
+              { label: "Disetujui / diproses", value: String(processingCount), note: "Refund yang sudah lolos persetujuan dan menunggu eksekusi." },
               { label: "Outstanding nominal", value: formatMoney(outstandingTotal), note: "Total refund bersih yang belum final." },
               { label: "Selesai / closed", value: String(completedCount), note: "Refund yang sudah dibayar, direkonsiliasi, atau ditutup." },
             ].map((card) => (
@@ -428,17 +428,17 @@ export default async function FinanceRefundsPage({
             ))}
 
             <div className="rounded-[26px] border border-sky-200 bg-sky-50 px-5 py-5 text-sm leading-7 text-sky-800 shadow-[0_18px_44px_rgba(15,23,42,0.06)] md:col-span-2">
-              Alur kerja: request dibuat, finance review, finance manager approve atau reject, finance eksekusi refund via
-              Midtrans atau Kopra, lalu rekonsiliasi dan close saat bukti dana sudah aman.
+              Alur kerja: permintaan dibuat, finance review, finance manager menyetujui atau menolak, finance mengeksekusi refund via
+              Midtrans atau Kopra, lalu rekonsiliasi dan menutup saat bukti dana sudah aman.
             </div>
           </div>
         </section>
 
         {!error && !refunds.length ? (
           <section className="rounded-[30px] border border-slate-200 bg-white p-10 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
-            <h2 className="text-2xl font-semibold text-slate-950">Belum ada refund request</h2>
+            <h2 className="text-2xl font-semibold text-slate-950">Belum ada permintaan refund</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Tim finance bisa mulai dengan membuat refund request baru dari form di atas.
+              Tim finance bisa mulai dengan membuat permintaan refund baru dari form di atas.
             </p>
           </section>
         ) : null}
@@ -489,7 +489,7 @@ export default async function FinanceRefundsPage({
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                            Refund request
+                            Permintaan refund
                           </p>
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
                             {booking?.booking_code || refund.order_id || refund.id}
@@ -497,7 +497,7 @@ export default async function FinanceRefundsPage({
                           <div className="mt-3 flex flex-wrap gap-2">
                             {autoGenerated ? (
                               <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-800">
-                                Auto Review
+                                Review Otomatis
                               </span>
                             ) : null}
                             {normalizeStatus(refund.refund_reason_code) === "final_payment_overdue_auto_review" ? (
@@ -532,7 +532,7 @@ export default async function FinanceRefundsPage({
                           <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(refund.deduction_amount)}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Net refund</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Refund bersih</p>
                           <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(refund.net_refund_amount)}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
@@ -562,11 +562,11 @@ export default async function FinanceRefundsPage({
 
                       <div className="mt-4 grid gap-4 sm:grid-cols-3">
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Requested</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Dibuat</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">{formatDate(refund.requested_at || refund.created_at)}</p>
                         </div>
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Reviewed / approved</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Direview / disetujui</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">
                             {refund.approved_at ? formatDate(refund.approved_at) : formatDate(refund.reviewed_at)}
                           </p>
@@ -592,9 +592,9 @@ export default async function FinanceRefundsPage({
 
                       {autoGenerated ? (
                         <div className="mt-4 rounded-[22px] border border-amber-200 bg-amber-50/70 p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-800">Auto-generated review</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-800">Review otomatis dari sistem</p>
                           <p className="mt-2 text-sm leading-7 text-amber-900">
-                            Refund request ini dibuat otomatis oleh sistem karena booking DP melewati batas pelunasan H-3 23.59 WIB dan dibatalkan untuk review finance.
+                            Permintaan refund ini dibuat otomatis oleh sistem karena booking DP melewati batas pelunasan H-3 23.59 WIB dan dibatalkan untuk review finance.
                           </p>
                         </div>
                       ) : null}
@@ -663,7 +663,7 @@ export default async function FinanceRefundsPage({
                               <input name="midtransRefundId" defaultValue={refund.midtrans_refund_id || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                             </div>
                             <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">Kopra reference no</label>
+                              <label className="mb-2 block text-sm font-medium text-slate-700">Nomor referensi Kopra</label>
                               <input name="kopraReferenceNo" defaultValue={refund.kopra_reference_no || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                             </div>
                           </div>
@@ -672,67 +672,67 @@ export default async function FinanceRefundsPage({
                             <input name="midtransTransactionId" defaultValue={refund.midtrans_transaction_id || ""} placeholder="Opsional" className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                           </div>
                           <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-700">Finance note</label>
-                            <textarea name="note" placeholder="Isi catatan untuk approval, reject, bank transfer, bukti refund, atau rekonsiliasi." className="min-h-[110px] w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
+                              <label className="mb-2 block text-sm font-medium text-slate-700">Catatan finance</label>
+                            <textarea name="note" placeholder="Isi catatan untuk persetujuan, penolakan, transfer bank, bukti refund, atau rekonsiliasi." className="min-h-[110px] w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2" />
                           </div>
                           <div className="grid gap-3">
                             {canMarkUnderReview ? (
                               <button name="nextStatus" value="refund_under_review" className="rounded-[18px] border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-800 transition hover:border-amber-300 hover:bg-amber-100">
-                                Mark under review
+                                Tandai masuk review
                               </button>
                             ) : null}
                             {canApproveThisRefund ? (
                               <>
                                 <button name="nextStatus" value="refund_approved" className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                                  Approve refund
+                                  Setujui refund
                                 </button>
                               </>
                             ) : null}
                             {canRejectThisRefund ? (
                               <>
                                 <button name="nextStatus" value="refund_rejected" className="rounded-[18px] bg-rose-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                                  Reject refund
+                                  Tolak refund
                                 </button>
                               </>
                             ) : null}
                             {canMarkProcessingMidtrans ? (
                               <>
                                 <button name="nextStatus" value="refund_processing_midtrans" className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-700">
-                                  Mark processing Midtrans
+                                  Tandai diproses via Midtrans
                                 </button>
                               </>
                             ) : null}
                             {canMarkProcessingBank ? (
                               <>
                                 <button name="nextStatus" value="refund_processing_bank" className="rounded-[18px] bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">
-                                  Mark processing bank
+                                  Tandai diproses via bank
                                 </button>
                               </>
                             ) : null}
                             {canMarkRefundPaid ? (
                               <>
                                 <button name="nextStatus" value="refund_paid" className="rounded-[18px] bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-700">
-                                  Mark paid
+                                  Tandai sudah dibayar
                                 </button>
                               </>
                             ) : null}
                             {canMarkRefundFailed ? (
                               <>
                                 <button name="nextStatus" value="refund_failed" className="rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100">
-                                  Mark failed
+                                  Tandai gagal
                                 </button>
                               </>
                             ) : null}
                             {canMarkRefundReconciled ? (
                               <>
                                 <button name="nextStatus" value="refund_reconciled" className="rounded-[18px] border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100">
-                                  Mark reconciled
+                                  Tandai sudah direkonsiliasi
                                 </button>
                               </>
                             ) : null}
                             {canCloseRefund ? (
-                              <button name="nextStatus" value="refund_closed" className="rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
-                                Close refund
+                                <button name="nextStatus" value="refund_closed" className="rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
+                                  Tutup refund
                               </button>
                             ) : null}
                             {!canMarkUnderReview &&
@@ -745,7 +745,7 @@ export default async function FinanceRefundsPage({
                             !canMarkRefundReconciled &&
                             !canCloseRefund ? (
                               <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
-                                Tombol aksi akan muncul mengikuti urutan status refund dan role finance yang aktif.
+                                  Tombol aksi akan muncul mengikuti urutan status refund dan role finance yang aktif.
                               </div>
                             ) : null}
                           </div>
@@ -756,14 +756,14 @@ export default async function FinanceRefundsPage({
                         <form action={syncRefundGatewayStatus} className="rounded-[24px] border border-slate-200 bg-white p-5">
                           <input type="hidden" name="refundId" value={refund.id} />
                           <button className="w-full rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
-                            Sync gateway status
+                            Sinkronkan status gateway
                           </button>
                         </form>
                       ) : null}
 
                       {!canApproveRefund ? (
                         <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                          Approval, reject, dan close refund tetap dijalankan oleh finance manager atau superadmin.
+                          Persetujuan, penolakan, dan penutupan refund tetap dijalankan oleh finance manager atau superadmin.
                         </div>
                       ) : null}
                     </div>
@@ -774,7 +774,7 @@ export default async function FinanceRefundsPage({
           </section>
         ) : !error ? (
           <section className="rounded-[28px] border border-[#f3dbc3] bg-white/90 p-6 text-sm text-slate-600 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-sm">
-            Tidak ada refund request pada filter ini.
+            Tidak ada permintaan refund pada filter ini.
           </section>
         ) : null}
       </div>

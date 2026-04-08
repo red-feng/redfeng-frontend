@@ -205,7 +205,7 @@ export default async function AdminDashboard({
     {
       label: "Booking stalled",
       value: bookingStalledCount,
-      note: "Booking yang sudah auto-queue / siap finance selama 1 hari atau lebih.",
+      note: "Booking yang sudah masuk antrean otomatis / siap finance selama 1 hari atau lebih.",
     },
   ]
   const slaCards = [
@@ -232,7 +232,7 @@ export default async function AdminDashboard({
       note: "Partner menunggu approval admin.",
     },
     {
-      label: "Review queue",
+      label: "Antrean review",
       value: String(pendingPackages),
       note: "Paket yang masih menunggu keputusan admin.",
     },
@@ -242,9 +242,9 @@ export default async function AdminDashboard({
       note: "Paket yang sudah lolos review dan siap tayang.",
     },
     {
-      label: "Finance handoff",
+      label: "Handoff finance",
       value: String(financeReadyCount),
-      note: "Booking yang sudah auto-queue atau siap dipantau sebelum finance eksekusi.",
+      note: "Booking yang sudah masuk antrean otomatis atau siap dipantau sebelum finance eksekusi.",
     },
   ]
   const recentWebVitalEvents = webVitalEvents
@@ -384,7 +384,7 @@ export default async function AdminDashboard({
       note: "Queue merchant yang masih menunggu keputusan tim admin.",
     },
     {
-      label: "Finance handoff",
+      label: "Handoff finance",
       value: String(financeReadyCount),
       note: "Booking yang sudah masuk jalur finance dan perlu dipantau lintas admin dan finance.",
     },
@@ -478,8 +478,8 @@ export default async function AdminDashboard({
     const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
     const queueChartItems = [
       { label: "Merchant pending", value: pendingMerchants, tone: "bg-amber-400" },
-      { label: "Package review", value: pendingPackages, tone: "bg-sky-500" },
-      { label: "Ready for finance", value: financeReadyCount, tone: "bg-emerald-500" },
+      { label: "Review paket", value: pendingPackages, tone: "bg-sky-500" },
+      { label: "Siap ke finance", value: financeReadyCount, tone: "bg-emerald-500" },
     ]
     const queueChartBase = queueChartItems.reduce((sum, item) => sum + item.value, 0) || 1
     const customerFundsChartItems = [
@@ -553,7 +553,7 @@ export default async function AdminDashboard({
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-orange-50/80">Ready for finance</p>
+                    <p className="text-sm text-orange-50/80">Siap ke finance</p>
                     <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{financeReadyCount}</p>
                   </div>
                 </div>
@@ -676,7 +676,7 @@ export default async function AdminDashboard({
                   <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerTaxCollectedTotal)}</p>
                 </div>
                 <div className="rounded-[20px] border border-[#efe1cf] bg-white p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Ready for finance</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Siap ke finance</p>
                   <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(customerReadyForFinanceFundsTotal)}</p>
                 </div>
               </div>
@@ -688,8 +688,8 @@ export default async function AdminDashboard({
               <ChartLegend
                 items={[
                   { label: "Merchant pending", tone: "bg-amber-400" },
-                  { label: "Package review", tone: "bg-sky-500" },
-                  { label: "Ready for finance", tone: "bg-emerald-500" },
+                   { label: "Review paket", tone: "bg-sky-500" },
+                   { label: "Siap ke finance", tone: "bg-emerald-500" },
                 ]}
               />
               <div className="mt-6 space-y-4">
@@ -737,7 +737,7 @@ export default async function AdminDashboard({
 
           <section className="grid gap-6 xl:grid-cols-2">
             <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Needs Attention</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Perlu Perhatian</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Area yang harus disentuh lebih dulu</h2>
               <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
                 {needsAttentionCards.map((card) => (
@@ -770,10 +770,10 @@ export default async function AdminDashboard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Laporan</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Hal wajib yang dilaporkan ke superadmin</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Status queue merchant, package, dan booking yang sedang berjalan.</p>
+                <p>1. Status antrean merchant, paket, dan booking yang sedang berjalan.</p>
                 <p>2. Kondisi SLA, backlog, overdue, dan titik kemacetan terbesar.</p>
                 <p>3. Ringkasan transaksi customer: DP, pelunasan, full payment, admin fee, dan pajak yang masuk.</p>
-                <p>4. Status dana customer: held, partial hold, siap handoff, tertahan operasional, dan paid out.</p>
+                <p>4. Status dana customer: held, partial hold, siap handoff, tertahan operasional, dan sudah dibayar keluar.</p>
                 <p>5. Kualitas keputusan tim admin serta anomali transaksi customer yang perlu investigasi.</p>
                 <p>6. Kapasitas tim, eskalasi kasus penting, dan kualitas handoff ke finance.</p>
                 <p>7. Blocker utama, risiko operasional, next steps, dan keputusan yang dibutuhkan dari superadmin.</p>
@@ -786,7 +786,7 @@ export default async function AdminDashboard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Ke Superadmin</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operations manager</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Isi laporan secara lengkap agar superadmin bisa membaca kondisi queue, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
+                Isi laporan secara lengkap agar superadmin bisa membaca kondisi antrean, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
               </p>
               <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
                 <input
@@ -831,11 +831,11 @@ export default async function AdminDashboard({
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Status queue operasional</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Status antrean operasional</label>
                   <textarea
                     name="queue_status"
                     required
-                    placeholder="Jelaskan kondisi merchant pending, package review, booking ready handoff, dan area backlog yang paling berat."
+                    placeholder="Jelaskan kondisi merchant pending, review paket, booking siap handoff, dan area backlog yang paling berat."
                     className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
@@ -1364,7 +1364,7 @@ export default async function AdminDashboard({
                   <div className="grid gap-3 md:grid-cols-3">
                     {[
                       {
-                        label: "Ready for finance",
+                        label: "Siap ke finance",
                         value: getMetricNumber(latestOperationsReport.metric_snapshot, "customerReadyForFinanceFundsTotal"),
                       },
                       {
@@ -1794,7 +1794,7 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{pendingMerchants}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Ready for finance</p>
+                    <p className="text-sm text-orange-50/80">Siap ke finance</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{financeReadyCount}</p>
                 </div>
                 <div>

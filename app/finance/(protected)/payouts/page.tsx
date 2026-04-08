@@ -115,8 +115,8 @@ function resolvePayoutSourceLabel(source: string | null) {
   const normalized = normalizeStatus(source)
   if (normalized === "merchant_go_auto") return "Auto: Merchant Go"
   if (normalized === "payment_settlement_auto") return "Auto: Full / Final Payment"
-  if (normalized === "admin_handoff") return "Manual: Admin Handoff"
-  return "Manual / Legacy"
+  if (normalized === "admin_handoff") return "Manual: Handoff Admin"
+  return "Manual / Lama"
 }
 
 function resolvePayoutSourceDescription(source: string | null) {
@@ -130,7 +130,7 @@ function resolvePayoutSourceDescription(source: string | null) {
   if (normalized === "admin_handoff") {
     return "Masuk lewat review dan handoff manual dari admin operasional."
   }
-  return "Request payout ini berasal dari flow lama atau dibuat di luar jalur semi-otomatis terbaru."
+    return "Permintaan payout ini berasal dari alur lama atau dibuat di luar jalur semi-otomatis terbaru."
 }
 
 function hasCompleteBookingData(booking: BookingLiteRow | null | undefined) {
@@ -221,23 +221,23 @@ export default async function FinancePayoutsPage({
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Finance Payout Control
+                Kontrol Payout Finance
               </span>
               <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
-                Kelola approval payout merchant setelah pickup tervalidasi.
+                Kelola persetujuan payout merchant setelah pickup tervalidasi.
               </h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
                 Semua dana customer tetap masuk ke escrow Red Feng. Payout baru boleh diproses penuh setelah
                 merchant klik <span className="font-semibold">Arrived</span>, customer klik{" "}
                 <span className="font-semibold">Picked up</span>, merchant klik{" "}
-                <span className="font-semibold">Go</span>, lalu booking normal yang sudah lunas masuk queue finance secara semi-otomatis.
+                <span className="font-semibold">Go</span>, lalu booking normal yang sudah lunas masuk antrean finance secara semi-otomatis.
               </p>
             </div>
             <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Payout snapshot</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Ringkasan payout</p>
               <div className="mt-5 grid gap-4">
                 <div>
-                  <p className="text-sm text-orange-50/80">Request pending</p>
+                  <p className="text-sm text-orange-50/80">Request menunggu</p>
                   <p className="mt-1 text-3xl font-semibold text-white">{pendingCount}</p>
                 </div>
                 <div>
@@ -271,20 +271,20 @@ export default async function FinancePayoutsPage({
 
         {incompleteLinkedPayouts.length > 0 && (
           <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
-            {incompleteLinkedPayouts.length} payout terkait booking lama / belum sinkron disembunyikan dari queue finance
+            {incompleteLinkedPayouts.length} payout terkait booking lama / belum sinkron disembunyikan dari antrean finance
             agar tim finance hanya melihat data payout yang lengkap.
           </div>
         )}
 
         {error ? (
           <section className="rounded-[24px] border border-rose-200 bg-rose-50 p-5 text-rose-700 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-8">
-            Gagal memuat data payout request.
+            Gagal memuat data permintaan payout.
           </section>
         ) : !validPayouts.length ? (
           <section className="rounded-[24px] border border-slate-200 bg-white p-6 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
-            <h2 className="text-2xl font-semibold text-slate-950">Belum ada payout request</h2>
+            <h2 className="text-2xl font-semibold text-slate-950">Belum ada permintaan payout</h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Queue payout akan terisi setelah customer sudah full payment dan alur pickup tervalidasi.
+              Antrean payout akan terisi setelah customer sudah full payment dan alur pickup tervalidasi.
             </p>
           </section>
         ) : (
@@ -316,7 +316,7 @@ export default async function FinancePayoutsPage({
                       <div className="flex flex-wrap items-start justify-between gap-4">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">
-                            Payout request
+                            Permintaan payout
                           </p>
                           <h2 className="mt-2 text-2xl font-semibold text-slate-950">{merchantName}</h2>
                           <p className="mt-2 text-xs font-semibold uppercase tracking-[0.24em] text-orange-600">{merchantCode}</p>
@@ -324,7 +324,7 @@ export default async function FinancePayoutsPage({
                             {merchant?.email || "Email merchant belum tersedia"}
                           </p>
                           <p className="mt-2 text-sm leading-7 text-slate-500">
-                            {booking ? `Booking ${booking.booking_code || booking.id} • ${booking.customer_name || "-"}` : "Request payout manual / legacy"}
+                            {booking ? `Booking ${booking.booking_code || booking.id} • ${booking.customer_name || "-"}` : "Permintaan payout manual / lama"}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2">
@@ -413,7 +413,7 @@ export default async function FinancePayoutsPage({
 
                       <div className="mt-4 grid gap-4 sm:grid-cols-2">
                         <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Source</p>
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Sumber</p>
                           <p className="mt-2 text-sm font-medium text-slate-800">{payoutSourceLabel}</p>
                           <p className="mt-2 text-sm leading-6 text-slate-500">{payoutSourceDescription}</p>
                         </div>
@@ -427,16 +427,16 @@ export default async function FinancePayoutsPage({
 
                       <div className="mt-4 rounded-[22px] border border-slate-200 bg-white p-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Catatan finance</p>
-                        <p className="mt-2 text-sm leading-7 text-slate-700">{payout.note || "Belum ada catatan finance untuk request ini."}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-700">{payout.note || "Belum ada catatan finance untuk permintaan ini."}</p>
                       </div>
                     </div>
 
                     <div className="grid gap-5 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] p-7">
                       <div className="rounded-[24px] border border-orange-100 bg-white p-5">
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Decision flow</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Alur keputusan</p>
                         <p className="mt-3 text-sm leading-7 text-slate-700">
-                          Finance manager melakukan approval internal lebih dulu. Setelah itu finance maker
-                          menjalankan transfer, menandai processing, lalu menutup sebagai paid saat dana benar-benar masuk ke merchant.
+                              Finance manager melakukan persetujuan internal lebih dulu. Setelah itu finance maker
+                              menjalankan transfer, menandai sedang diproses, lalu menutup sebagai sudah dibayar saat dana benar-benar masuk ke merchant.
                         </p>
                         <p className="mt-3 text-sm leading-7 text-slate-500">{payoutSourceDescription}</p>
                       </div>
@@ -448,7 +448,7 @@ export default async function FinancePayoutsPage({
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="approved" />
                               <button className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
-                                Approve payout
+                                Setujui payout
                               </button>
                             </form>
                           ) : null}
@@ -458,7 +458,7 @@ export default async function FinancePayoutsPage({
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="processing" />
                               <button className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
-                                Mark processing
+                                Tandai sedang diproses
                               </button>
                             </form>
                           ) : null}
@@ -473,7 +473,7 @@ export default async function FinancePayoutsPage({
                                 className="min-h-[110px] w-full rounded-[18px] border border-violet-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-violet-400 focus:ring-4 focus:ring-violet-100"
                               />
                               <button className="rounded-[18px] bg-violet-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(124,58,237,0.22)] transition hover:bg-violet-700">
-                                Mark paid
+                                Tandai sudah dibayar
                               </button>
                             </form>
                           ) : null}
@@ -488,18 +488,18 @@ export default async function FinancePayoutsPage({
                                 className="min-h-[110px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
                               />
                               <button className="rounded-[18px] bg-rose-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(225,29,72,0.22)] transition hover:bg-rose-700">
-                                Reject payout
+                                Tolak payout
                               </button>
                             </form>
                           ) : null}
                           {!canApprovePayout && canExecuteTransferFlow ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                              Role finance di workspace ini bertindak sebagai maker transfer. Approval dan reject payout hanya dijalankan finance manager atau superadmin.
+                              Role finance di workspace ini bertindak sebagai maker transfer. Persetujuan dan penolakan payout hanya dijalankan finance manager atau superadmin.
                             </div>
                           ) : null}
                           {isFinanceManager ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                              Finance Manager memegang approval / reject. Perubahan ke tahap processing dan paid tetap dijalankan finance eksekusi atau superadmin.
+                              Finance Manager memegang persetujuan / penolakan. Perubahan ke tahap diproses dan dibayar tetap dijalankan finance eksekusi atau superadmin.
                             </div>
                           ) : null}
                           {!isFinal &&
@@ -508,8 +508,8 @@ export default async function FinancePayoutsPage({
                           !canMarkProcessingThisPayout &&
                           !canMarkPaidThisPayout ? (
                             <div className="rounded-[24px] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-600">
-                              Request ini sedang berada di fase <span className="font-semibold text-slate-950">{titleCaseStatus(payout.status)}</span>.
-                              Tombol action berikutnya akan muncul sesuai urutan payout: approve, processing, lalu paid.
+                              Permintaan ini sedang berada di fase <span className="font-semibold text-slate-950">{titleCaseStatus(payout.status)}</span>.
+                              Tombol aksi berikutnya akan muncul sesuai urutan payout: setujui, diproses, lalu dibayar.
                             </div>
                           ) : null}
                         </div>
@@ -517,7 +517,7 @@ export default async function FinancePayoutsPage({
 
                       {isFinal && (
                         <div className="rounded-[24px] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-600">
-                          Request ini sudah final dengan status <span className="font-semibold text-slate-950">{titleCaseStatus(payout.status)}</span>.
+                          Permintaan ini sudah final dengan status <span className="font-semibold text-slate-950">{titleCaseStatus(payout.status)}</span>.
                         </div>
                       )}
                     </div>
