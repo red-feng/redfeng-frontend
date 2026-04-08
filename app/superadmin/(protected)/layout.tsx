@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
+import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createClient } from "@/lib/supabase/server"
@@ -56,6 +57,14 @@ export default async function SuperadminProtectedLayout({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
+      <RoleAutoRefresh
+        onlyOnPaths={[
+          "/superadmin/dashboard",
+          "/superadmin/operations-manager",
+          "/superadmin/finance-manager",
+          "/admin/bookings",
+        ]}
+      />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-4">
