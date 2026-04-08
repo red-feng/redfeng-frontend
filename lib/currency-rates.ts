@@ -1,5 +1,11 @@
 import { cache } from "react"
-import { buildLocalizedPricingFromBase, localeCurrencyMap, normalizePackageCurrency, type CurrencyRateMap } from "@/lib/package-pricing"
+import {
+  buildLocalizedPricingFromBase,
+  localeCurrencyMap,
+  normalizePackageCurrency,
+  roundConvertedPrice,
+  type CurrencyRateMap,
+} from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 
 type LatestRatesResponse = {
@@ -109,8 +115,8 @@ export async function getLiveLocalizedPackagePricing(input: {
     return {
       locale: activeLocale,
       currency,
-      priceAdult: Math.round(baseAdultPrice),
-      priceChild: Math.round(baseChildPrice),
+      priceAdult: roundConvertedPrice(baseAdultPrice),
+      priceChild: roundConvertedPrice(baseChildPrice),
       exchangeDate: null as string | null,
     }
   }
@@ -121,8 +127,8 @@ export async function getLiveLocalizedPackagePricing(input: {
   return {
     locale: activeLocale,
     currency,
-    priceAdult: Math.round(baseAdultPrice * rate),
-    priceChild: Math.round(baseChildPrice * rate),
+    priceAdult: roundConvertedPrice(baseAdultPrice * rate),
+    priceChild: roundConvertedPrice(baseChildPrice * rate),
     exchangeDate: date,
   }
 }
@@ -149,7 +155,7 @@ export async function convertCurrencyAmount(input: {
   const rate = Number(rates[toCurrency] || 0)
 
   return {
-    amount: Math.round(amount * rate),
+    amount: roundConvertedPrice(amount * rate),
     rate,
     date,
     currency: toCurrency,

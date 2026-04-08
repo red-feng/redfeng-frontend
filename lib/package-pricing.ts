@@ -45,7 +45,7 @@ export function normalizePackagePriceInput(value: string): string {
 
 export function roundConvertedPrice(value: number): number {
   if (!Number.isFinite(value) || value <= 0) return 0
-  return Math.round(value)
+  return Math.ceil(value)
 }
 
 export function convertPriceAmount(amount: number, rate: number): number {

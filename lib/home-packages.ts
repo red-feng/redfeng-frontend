@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fetchLatestCurrencyRates } from "@/lib/currency-rates"
 import { type Locale } from "@/lib/i18n"
-import { localeCurrencyMap, normalizePackageCurrency } from "@/lib/package-pricing"
+import { localeCurrencyMap, normalizePackageCurrency, roundConvertedPrice } from "@/lib/package-pricing"
 import { normalizeFacilityName } from "@/lib/facility-labels"
 
 export const localePriceRangeMap: Record<Locale, number> = {
@@ -150,8 +150,8 @@ async function attachLivePricingToPackages(
         ...pkg,
         livePricing: {
           currency: targetCurrency,
-          priceAdult: Math.round(baseAdultPrice),
-          priceChild: Math.round(baseChildPrice),
+          priceAdult: roundConvertedPrice(baseAdultPrice),
+          priceChild: roundConvertedPrice(baseChildPrice),
         },
       }
     }
@@ -162,8 +162,8 @@ async function attachLivePricingToPackages(
       ...pkg,
       livePricing: {
         currency: targetCurrency,
-        priceAdult: Math.round(baseAdultPrice * rate),
-        priceChild: Math.round(baseChildPrice * rate),
+        priceAdult: roundConvertedPrice(baseAdultPrice * rate),
+        priceChild: roundConvertedPrice(baseChildPrice * rate),
       },
     }
   })
