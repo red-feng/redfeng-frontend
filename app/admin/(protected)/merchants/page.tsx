@@ -812,18 +812,19 @@ export default async function AdminMerchantsPage({
                     <div className="flex min-w-0 w-full flex-col gap-3 xl:w-[340px] xl:pt-[58px]">
                       {pendingDeletionRequest ? (
                         <div className="overflow-hidden rounded-[24px] border border-amber-200 bg-amber-50/80 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
-                          <div className="border-b border-amber-200 px-5 py-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-700">Pending deletion review</p>
-                            <h4 className="mt-2 text-base font-semibold text-slate-950">Menunggu keputusan operations manager</h4>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              Penghapusan merchant belum dijalankan. Request ini masih menunggu approve atau batal dari operations manager.
-                            </p>
-                          </div>
                           <div className="space-y-4 px-5 py-4">
-                            <div className="rounded-[18px] border border-amber-200 bg-white/80 p-4">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
-                              <p className="mt-3 break-words text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
-                            </div>
+                            <details className="group rounded-[18px] border border-amber-200 bg-white/80 p-4">
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
+                                  <p className="mt-2 text-sm text-slate-600">Buka untuk melihat alasan lengkap pengajuan hapus merchant dari admin.</p>
+                                </div>
+                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-amber-700 transition group-open:rotate-180">
+                                  v
+                                </span>
+                              </summary>
+                              <p className="mt-4 break-words text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
+                            </details>
                             <details className="group rounded-[18px] border border-slate-200 bg-white/90 p-4">
                               <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                                 <div>
@@ -875,8 +876,16 @@ export default async function AdminMerchantsPage({
                                 </Link>
                               </div>
                             </details>
-                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
+                            <details className="group rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
+                                  <p className="mt-2 text-sm text-slate-600">Buka untuk melihat paket yang terdampak dan konsekuensi hard delete.</p>
+                                </div>
+                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 text-slate-500 transition group-open:rotate-180">
+                                  v
+                                </span>
+                              </summary>
                               {(() => {
                                 const stats = packageStatsMap.get(merchant.id) || {
                                   total: 0,
@@ -893,7 +902,7 @@ export default async function AdminMerchantsPage({
                                   { label: "Paket draft", value: `${stats.draft}` },
                                 ]
                                 return (
-                                  <>
+                                  <div className="mt-4">
                                     <div className="grid gap-3 sm:grid-cols-2">
                                       {impactItems.map((item) => (
                                         <div key={item.label} className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
@@ -902,13 +911,13 @@ export default async function AdminMerchantsPage({
                                         </div>
                                       ))}
                                     </div>
-                                     <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
-                                       Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
-                                     </div>
-                                   </>
-                                 )
+                                    <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
+                                      Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
+                                    </div>
+                                  </div>
+                                )
                               })()}
-                            </div>
+                            </details>
                             {canReviewMerchantDeletion ? (
                               <>
                                 <form action={approveMerchantDeletion} className="space-y-3">
