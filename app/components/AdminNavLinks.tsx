@@ -8,13 +8,30 @@ type AdminNavChild = {
   href: string
   label: string
   badgeCount?: number
+  secondaryBadgeCount?: number
 }
 
 type AdminNavItem = {
   label: string
   href?: string
   badgeCount?: number
+  secondaryBadgeCount?: number
   children?: AdminNavChild[]
+}
+
+function renderBadge(count: number, tone: "primary" | "danger") {
+  if (count <= 0) return null
+
+  const className =
+    tone === "danger"
+      ? "bg-rose-600 text-white"
+      : "bg-orange-500 text-white"
+
+  return (
+    <span className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none ${className}`}>
+      {count > 99 ? "99+" : count}
+    </span>
+  )
 }
 
 export default function AdminNavLinks({
@@ -41,7 +58,8 @@ export default function AdminNavLinks({
           const isHighlighted = isActiveLink || isActiveGroup || visibleGroupLabel === item.label
 
           if (item.children) {
-            const totalBadgeCount = item.children.reduce((total, child) => total + Number(child.badgeCount || 0), 0)
+            const totalPrimaryBadgeCount = item.children.reduce((total, child) => total + Number(child.badgeCount || 0), 0)
+            const totalSecondaryBadgeCount = item.children.reduce((total, child) => total + Number(child.secondaryBadgeCount || 0), 0)
 
             return (
               <button
@@ -57,11 +75,8 @@ export default function AdminNavLinks({
                 }`}
               >
                 {item.label}
-                {totalBadgeCount > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                    {totalBadgeCount > 99 ? "99+" : totalBadgeCount}
-                  </span>
-                )}
+                {renderBadge(totalPrimaryBadgeCount, "primary")}
+                {renderBadge(totalSecondaryBadgeCount, "danger")}
                 <span className={`text-xs transition ${visibleGroupLabel === item.label ? "rotate-180" : ""}`}>v</span>
               </button>
             )
@@ -79,11 +94,8 @@ export default function AdminNavLinks({
                 }`}
               >
                 {item.label}
-                {Number(item.badgeCount || 0) > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                    {Number(item.badgeCount || 0) > 99 ? "99+" : Number(item.badgeCount || 0)}
-                  </span>
-                )}
+                {renderBadge(Number(item.badgeCount || 0), "primary")}
+                {renderBadge(Number(item.secondaryBadgeCount || 0), "danger")}
               </Link>
             )
           }
@@ -103,7 +115,8 @@ export default function AdminNavLinks({
         <div className="flex min-w-max flex-wrap gap-2 rounded-[22px] border border-[#ecd9c2] bg-[#fffaf3] p-2">
           {visibleChildren.map((child) => {
             const isActive = pathname.startsWith(normalizeHref(child.href))
-            const visibleBadgeCount = Number(child.badgeCount || 0)
+            const visiblePrimaryBadgeCount = Number(child.badgeCount || 0)
+            const visibleSecondaryBadgeCount = Number(child.secondaryBadgeCount || 0)
 
             return (
               <Link
@@ -116,11 +129,8 @@ export default function AdminNavLinks({
                 }`}
               >
                 {child.label}
-                {visibleBadgeCount > 0 && (
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                    {visibleBadgeCount > 99 ? "99+" : visibleBadgeCount}
-                  </span>
-                )}
+                {renderBadge(visiblePrimaryBadgeCount, "primary")}
+                {renderBadge(visibleSecondaryBadgeCount, "danger")}
               </Link>
             )
           })}

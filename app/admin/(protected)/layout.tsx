@@ -80,7 +80,12 @@ export default async function AdminProtectedLayout({
         {
           label: "Operational Review",
           children: [
-            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants + pendingMerchantDeletionRequests },
+            {
+              href: "/admin/merchants",
+              label: "Merchant Directory",
+              badgeCount: pendingMerchants,
+              secondaryBadgeCount: pendingMerchantDeletionRequests,
+            },
             { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
             { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
             { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
@@ -106,7 +111,12 @@ export default async function AdminProtectedLayout({
           label: "Paket Tour",
           children: [
             { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
-            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants + pendingMerchantDeletionRequests },
+            {
+              href: "/admin/merchants",
+              label: "Merchant Directory",
+              badgeCount: pendingMerchants,
+              secondaryBadgeCount: pendingMerchantDeletionRequests,
+            },
             { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
           ],
         },
