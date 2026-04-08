@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
@@ -357,8 +357,8 @@ export default async function MerchantOrdersPage({
               const totalPeserta = (booking.adult_count ?? 0) + (booking.child_count ?? 0)
               const timeline = pickupTimeline(booking, t)
               const paymentStatus = normalizeStatus(booking.payment_status)
-              const canMarkArrived = ["paid", "dp_paid"].includes(paymentStatus) && !booking.merchant_arrived_at
-              const canMarkGo = Boolean(booking.customer_picked_up_at) && !booking.merchant_picked_up_at
+              const canMarkArrived = paymentStatus === "paid" && !booking.merchant_arrived_at
+              const canMarkGo = paymentStatus === "paid" && Boolean(booking.customer_picked_up_at) && !booking.merchant_picked_up_at
               const phase = journeyPhase(booking, t)
 
               return (
@@ -627,3 +627,4 @@ function getOrdersText(locale: Locale) {
 
   return dict[locale]
 }
+

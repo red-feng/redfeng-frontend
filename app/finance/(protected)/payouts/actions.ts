@@ -84,6 +84,15 @@ export async function updatePayoutStatus(formData: FormData) {
     backToPayouts("Payout yang sudah berstatus Paid Out tidak bisa diubah lagi", "error")
   }
 
+  const validTransition =
+    (currentStatus === "pending" && (nextStatus === "approved" || nextStatus === "rejected")) ||
+    (currentStatus === "approved" && (nextStatus === "processing" || nextStatus === "rejected")) ||
+    (currentStatus === "processing" && nextStatus === "paid")
+
+  if (!validTransition) {
+    backToPayouts("Urutan status payout tidak valid untuk request ini", "error")
+  }
+
   const processedAt =
     nextStatus === "paid" || nextStatus === "rejected" ? new Date().toISOString() : null
 

@@ -1,11 +1,10 @@
-"use server"
+﻿"use server"
 
 import { redirect } from "next/navigation"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -55,13 +54,13 @@ async function getOrderActionText(locale?: Locale) {
       bookingMissing: "Booking tidak ditemukan",
       bookingNotOwned: "Booking bukan milik merchant ini",
       invalidBooking: "Booking tidak valid",
-      arrivedNeedPayment: "Merchant hanya bisa klik Arrived setelah ada pembayaran customer",
+      arrivedNeedPayment: "Merchant hanya bisa klik Arrived setelah booking customer lunas",
       arrivedAlreadySent: "Status Arrived sudah pernah dikirim",
       arrivedSuccess: "Status Arrived berhasil dikirim ke customer dan admin",
       arrivedFirst: "Klik Arrived terlebih dahulu saat merchant sudah sampai meeting point",
       customerPickedUpFirst: "Customer harus klik Picked up terlebih dahulu sebelum merchant klik Go",
       goAlreadySent: "Status Go Confirmed sudah pernah dikirim",
-      goReadyFinance: "Status Go Confirmed berhasil dikirim. Booking normal yang sudah lunas akan langsung masuk antrean finance.",
+      goReadyFinance: "Status Go Confirmed berhasil dikirim. Booking normal yang sudah lunas sekarang menunggu handoff admin ke finance.",
       goWaitingFullPaid: "Status Go Confirmed berhasil dikirim. Booking masih menunggu status Fully Paid.",
     },
     en: {
@@ -69,13 +68,13 @@ async function getOrderActionText(locale?: Locale) {
       bookingMissing: "Booking not found",
       bookingNotOwned: "This booking does not belong to the merchant",
       invalidBooking: "Invalid booking",
-      arrivedNeedPayment: "Merchant can only click Arrived after customer payment is received",
+      arrivedNeedPayment: "Merchant can only click Arrived after the booking is fully paid",
       arrivedAlreadySent: "Arrived status has already been submitted",
       arrivedSuccess: "Arrived status was successfully sent to the customer and admin",
       arrivedFirst: "Click Arrived first when the merchant has arrived at the meeting point",
       customerPickedUpFirst: "The customer must click Picked up before the merchant can click Go",
       goAlreadySent: "Go Confirmed status has already been submitted",
-      goReadyFinance: "Go Confirmed status was submitted successfully. Fully paid normal bookings will now move straight into the finance queue.",
+      goReadyFinance: "Go Confirmed status was submitted successfully. Fully paid normal bookings are now waiting for admin handoff to finance.",
       goWaitingFullPaid: "Go Confirmed status was submitted successfully. The booking is still waiting for Fully Paid status.",
     },
     zh: {
@@ -83,13 +82,13 @@ async function getOrderActionText(locale?: Locale) {
       bookingMissing: "未找到预订",
       bookingNotOwned: "该预订不属于此商家",
       invalidBooking: "预订无效",
-      arrivedNeedPayment: "只有在客户完成付款后，商家才能点击 Arrived",
+      arrivedNeedPayment: "只有在预订已全额付款后，商家才能点击 Arrived",
       arrivedAlreadySent: "Arrived 状态已提交过",
       arrivedSuccess: "Arrived 状态已成功发送给客户和管理员",
       arrivedFirst: "当商家已到达集合点时，请先点击 Arrived",
       customerPickedUpFirst: "在商家点击 Go 之前，客户必须先点击 Picked up",
       goAlreadySent: "Go Confirmed 状态已提交过",
-      goReadyFinance: "Go Confirmed 状态提交成功。已全额付款的正常预订将直接进入财务队列。",
+      goReadyFinance: "Go Confirmed 状态提交成功。已全额付款的正常预订现在等待管理员移交给财务。",
       goWaitingFullPaid: "Go Confirmed 状态提交成功。该预订仍在等待 Fully Paid 状态。",
     },
   } satisfies Record<Locale, Record<string, string>>
@@ -127,7 +126,7 @@ export async function markMerchantArrived(formData: FormData) {
   }
 
   const paymentStatus = normalizeStatus(booking.payment_status)
-  if (!["paid", "dp_paid"].includes(paymentStatus)) {
+  if (paymentStatus !== "paid") {
     redirectBack(t.arrivedNeedPayment, filter, "error")
   }
 
@@ -141,7 +140,7 @@ export async function markMerchantArrived(formData: FormData) {
     .update({
       merchant_arrived_at: new Date().toISOString(),
       booking_status: "merchant_arrived",
-      escrow_status: paymentStatus === "paid" ? "held" : "partial_hold",
+      escrow_status: "held",
     })
     .eq("id", bookingId)
 
@@ -205,18 +204,6 @@ export async function markMerchantGo(formData: FormData) {
     redirectBack(updateError.message, filter, "error")
   }
 
-  if (readyForFinanceQueue) {
-    const queueResult = await queueBookingToFinance({
-      adminSupabase,
-      bookingId,
-      source: "merchant_go_auto",
-    })
-
-    if (!queueResult.ok) {
-      redirectBack(queueResult.error, filter, "error")
-    }
-  }
-
   redirectBack(
     readyForFinanceQueue
       ? t.goReadyFinance
@@ -225,3 +212,4 @@ export async function markMerchantGo(formData: FormData) {
     "success",
   )
 }
+

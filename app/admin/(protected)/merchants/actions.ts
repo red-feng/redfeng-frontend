@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 
 import { getOptionalEnv } from "@/lib/env"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -207,8 +207,7 @@ async function sendMerchantDecisionEmail({
       statusLabel: "账号状态",
       closing: "此致敬礼，<br/><strong>Red Feng 管理团队</strong>",
       defaultReason: "如需进一步说明，请通过 Red Feng 官方沟通渠道联系我们。",
-    },
-  }
+    },  }
   const copy = emailCopy[activeLocale]
   const resolvedReason = reason || copy.defaultReason
 
@@ -638,3 +637,4 @@ export async function deleteMerchant(formData: FormData) {
     },
   })
 }
+

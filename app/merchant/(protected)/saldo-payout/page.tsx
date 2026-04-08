@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin"
+﻿import { createAdminClient } from "@/lib/supabase/admin"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPayoutRequestTone, normalizeStatus } from "@/lib/status-tones"
@@ -56,9 +56,9 @@ function getPayoutText(locale: Locale) {
       processed: "Diproses",
       financeControlled: "Finance Controlled",
       internalPayoutTitle: "Payout diproses internal",
-      internalPayoutDescription: "Merchant tidak lagi menarik dana manual. Setelah Arrived, customer Picked up, dan merchant Go selesai, booking normal yang sudah lunas akan masuk queue finance secara semi-otomatis.",
+      internalPayoutDescription: "Merchant tidak lagi menarik dana manual. Setelah Arrived, customer Picked up, dan merchant Go selesai, booking normal yang sudah lunas akan menunggu admin mengirimkannya ke finance.",
       payoutReadyEstimate: "Estimasi payout yang siap diproses saat ini:",
-      payoutFlowNote: "Dana customer tetap ditahan sampai merchant klik Arrived, customer klik Picked up, dan merchant klik Go. Setelah itu booking normal yang sudah lunas akan masuk queue finance untuk transfer.",
+      payoutFlowNote: "Dana customer tetap ditahan sampai merchant klik Arrived, customer klik Picked up, dan merchant klik Go. Setelah itu admin akan mengirim booking yang sudah lunas ke finance untuk proses transfer.",
       readyForPayout: "Ready For Payout",
       readyForPayoutTitle: "Booking siap payout",
       readyForPayoutDescription: "Booking yang sudah full payment dari customer dan pickup-nya sudah dikonfirmasi merchant dan customer.",
@@ -104,9 +104,9 @@ function getPayoutText(locale: Locale) {
       processed: "Processed",
       financeControlled: "Finance Controlled",
       internalPayoutTitle: "Payout is processed internally",
-      internalPayoutDescription: "Merchants no longer withdraw funds manually. After Arrived, customer Picked up, and merchant Go are completed, normal fully paid bookings will enter the finance queue semi-automatically.",
+      internalPayoutDescription: "Merchants no longer withdraw funds manually. After Arrived, customer Picked up, and merchant Go are completed, normal fully paid bookings will wait for admin handoff to finance.",
       payoutReadyEstimate: "Estimated payout currently ready to process:",
-      payoutFlowNote: "Customer funds remain held until the merchant clicks Arrived, the customer clicks Picked up, and the merchant clicks Go. After that, normal fully paid bookings move into the finance queue for transfer.",
+      payoutFlowNote: "Customer funds remain held until the merchant clicks Arrived, the customer clicks Picked up, and the merchant clicks Go. After that, admin will hand off fully paid bookings to finance for transfer processing.",
       readyForPayout: "Ready For Payout",
       readyForPayoutTitle: "Bookings ready for payout",
       readyForPayoutDescription: "Bookings where customer full payment is complete and pickup has been confirmed by merchant and customer.",
@@ -638,3 +638,4 @@ export default async function MerchantSaldoPayoutPage({
     </main>
   )
 }
+

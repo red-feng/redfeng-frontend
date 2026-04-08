@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
@@ -156,10 +156,9 @@ function getChatText(locale: Locale) {
       activeTransaction: "进行中的交易",
       leadInquiry: "咨询 / 线索",
       noMessages: "该聊天房间里暂时还没有消息。",
-      replyPlaceholder: "输入发给客户的回复...",
+      replyPlaceholder: "输入发送给客户的回复...",
       sendButton: "发送",
-    },
-  } satisfies Record<Locale, Record<string, string>>
+    },  } satisfies Record<Locale, Record<string, string>>
 
   return dict[locale]
 }
@@ -586,3 +585,4 @@ export default async function MerchantChatPage({
     </main>
   )
 }
+

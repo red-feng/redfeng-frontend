@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -27,10 +27,9 @@ async function getChatActionText(locale?: Locale) {
       roomNotFound: "未找到聊天房间。",
       messageEmpty: "消息内容不能为空。",
       roomInvalid: "聊天房间无效。",
-      tableMissing: "聊天数据表尚未可用。请先执行聊天迁移。",
+      tableMissing: "聊天数据表尚未可用。请先运行聊天迁移。",
       sendFailed: "发送消息失败",
-    },
-  } satisfies Record<Locale, Record<string, string>>
+    },  } satisfies Record<Locale, Record<string, string>>
 
   return dict[resolved]
 }
@@ -106,3 +105,4 @@ export async function sendMerchantChatMessage(formData: FormData) {
 
   redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}`)
 }
+

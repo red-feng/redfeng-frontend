@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
@@ -215,8 +215,7 @@ function getStatisticsText(locale: Locale) {
       packageTrafficDelta: "套餐流量",
       additionalAnalyticsMissing: "生产环境中部分补充分析数据暂未就绪。核心统计仍会基于商家套餐和预订数据计算。",
       stable: "稳定",
-    },
-  } satisfies Record<Locale, Record<string, string>>
+    },  } satisfies Record<Locale, Record<string, string>>
 
   return dict[locale]
 }
@@ -388,7 +387,7 @@ export default async function MerchantStatisticsPage({
       ? locale === "en"
         ? `${pendingPaymentCount} bookings are still pending or DP paid. Follow up so the funnel does not leak.`
         : locale === "zh"
-          ? `仍有 ${pendingPaymentCount} 笔预订处于待付款或已付定金状态。请及时跟进，避免转化流失。`
+          ? `仍有 ${pendingPaymentCount} 笔预订处于待付款或已付订金状态。请及时跟进，避免转化流失。`
           : `${pendingPaymentCount} booking masih pending atau dp paid. Follow up agar funnel tidak bocor.`
       : t.reducePendingPaymentsFallback
   const getRatingActionNote = () =>
@@ -980,3 +979,4 @@ export default async function MerchantStatisticsPage({
     </main>
   )
 }
+

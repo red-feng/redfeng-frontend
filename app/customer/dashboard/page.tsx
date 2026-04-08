@@ -50,6 +50,128 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function getCustomerActionHint(
+  booking: BookingRow,
+  t: {
+    paymentPendingNote: string
+    settlementWaitingBody: string
+  },
+  locale: Locale,
+) {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const bookingStatus = normalizeStatus(booking.booking_status)
+  const escrowStatus = normalizeStatus(booking.escrow_status)
+  const hintText = {
+    waitingMerchantArrived:
+      locale === "en"
+        ? "The booking is fully paid. Now wait for the merchant to arrive at the meeting point and click Arrived."
+        : locale === "zh"
+          ? "订单已全额付款。现在请等待商家到达集合点并点击 Arrived。"
+          : "Booking sudah lunas. Sekarang tunggu merchant tiba di meeting point dan klik Arrived.",
+    customerPickup:
+      locale === "en"
+        ? "The merchant has Arrived. Click Picked up only after you are actually picked up."
+        : locale === "zh"
+          ? "商家已经点击 Arrived。请在您真正上车后再点击 Picked up。"
+          : "Merchant sudah Arrived. Klik Picked up setelah Anda benar-benar dijemput.",
+    waitingMerchantGo:
+      locale === "en"
+        ? "Your confirmation is recorded. The merchant now needs to close the pickup checkpoint by clicking Go."
+        : locale === "zh"
+          ? "您的确认已记录。现在商家需要点击 Go 来完成接送检查点。"
+          : "Konfirmasi Anda sudah masuk. Merchant sekarang perlu menutup pickup dengan klik Go.",
+    waitingAdminFinance:
+      locale === "en"
+        ? "The pickup checkpoints are complete. Your booking is now waiting for admin handoff to finance."
+        : locale === "zh"
+          ? "接送检查点已经完整。您的订单现在正在等待管理员移交给财务。"
+          : "Checkpoint pickup lengkap. Booking Anda sekarang menunggu admin mengirimkannya ke finance.",
+    financeReview:
+      locale === "en"
+        ? "The booking has been forwarded to finance and is waiting for the merchant payout review."
+        : locale === "zh"
+          ? "订单已经转交给财务，目前正在等待商家 payout 审核。"
+          : "Booking sudah diteruskan ke finance dan sedang menunggu review payout merchant.",
+    financeProcessing:
+      locale === "en"
+        ? "Finance is currently processing the merchant payout transfer for this booking."
+        : locale === "zh"
+          ? "财务正在为该订单处理商家 payout 转账。"
+          : "Finance sedang memproses transfer payout merchant untuk booking ini.",
+    payoutCompleted:
+      locale === "en"
+        ? "The merchant payout flow for this booking has already been completed."
+        : locale === "zh"
+          ? "该订单的商家 payout 流程已经处理完成。"
+          : "Alur payout merchant untuk booking ini sudah selesai diproses.",
+  }
+
+  if (paymentStatus === "pending" || paymentStatus === "unpaid") {
+    return {
+      tone: "border-slate-200 bg-slate-50 text-slate-700",
+      text: t.paymentPendingNote,
+    }
+  }
+
+  if (paymentStatus === "dp_paid") {
+    return {
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
+      text: t.settlementWaitingBody,
+    }
+  }
+
+  if (paymentStatus === "paid" && !booking.merchant_arrived_at) {
+    return {
+      tone: "border-sky-200 bg-sky-50 text-sky-800",
+      text: hintText.waitingMerchantArrived,
+    }
+  }
+
+  if (booking.merchant_arrived_at && !booking.customer_picked_up_at) {
+    return {
+      tone: "border-orange-200 bg-orange-50 text-orange-800",
+      text: hintText.customerPickup,
+    }
+  }
+
+  if (booking.customer_picked_up_at && !booking.merchant_picked_up_at) {
+    return {
+      tone: "border-violet-200 bg-violet-50 text-violet-800",
+      text: hintText.waitingMerchantGo,
+    }
+  }
+
+  if (bookingStatus === "awaiting_admin_handoff" || escrowStatus === "awaiting_admin_handoff") {
+    return {
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      text: hintText.waitingAdminFinance,
+    }
+  }
+
+  if (bookingStatus === "finance_review") {
+    return {
+      tone: "border-sky-200 bg-sky-50 text-sky-800",
+      text: hintText.financeReview,
+    }
+  }
+
+  if (bookingStatus === "finance_processing" || escrowStatus === "payout_processing") {
+    return {
+      tone: "border-indigo-200 bg-indigo-50 text-indigo-800",
+      text: hintText.financeProcessing,
+    }
+  }
+
+  if (bookingStatus === "payout_completed" || escrowStatus === "paid_out") {
+    return {
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      text: hintText.payoutCompleted,
+    }
+  }
+
+  return null
+}
+
 function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
 }
@@ -150,6 +272,13 @@ const dashboardCopy = {
     cancelled: "Dibatalkan",
     escrowHeld: "Dana ditahan",
     escrowPartialHold: "Dana ditahan sebagian",
+    waitingMerchantArrivedHint: "Booking sudah lunas. Sekarang tunggu merchant tiba di meeting point dan klik Arrived.",
+    customerPickupHint: "Merchant sudah Arrived. Klik Picked up setelah Anda benar-benar dijemput.",
+    waitingMerchantGoHint: "Konfirmasi Anda sudah masuk. Merchant sekarang perlu menutup pickup dengan klik Go.",
+    waitingAdminFinanceHint: "Checkpoint pickup lengkap. Booking Anda sekarang menunggu admin mengirimkannya ke finance.",
+    financeReviewHint: "Booking sudah diteruskan ke finance dan sedang menunggu review payout merchant.",
+    financeProcessingHint: "Finance sedang memproses transfer payout merchant untuk booking ini.",
+    payoutCompletedHint: "Alur payout merchant untuk booking ini sudah selesai diproses.",
   },
   en: {
     paymentWaitingSettlement: "Awaiting Final Payment",
@@ -234,6 +363,13 @@ const dashboardCopy = {
     cancelled: "Cancelled",
     escrowHeld: "Funds on hold",
     escrowPartialHold: "Funds partially on hold",
+    waitingMerchantArrivedHint: "The booking is fully paid. Now wait for the merchant to arrive at the meeting point and click Arrived.",
+    customerPickupHint: "The merchant has Arrived. Click Picked up only after you are actually picked up.",
+    waitingMerchantGoHint: "Your confirmation is recorded. The merchant now needs to close the pickup checkpoint by clicking Go.",
+    waitingAdminFinanceHint: "The pickup checkpoints are complete. Your booking is now waiting for admin handoff to finance.",
+    financeReviewHint: "The booking has been forwarded to finance and is waiting for the merchant payout review.",
+    financeProcessingHint: "Finance is currently processing the merchant payout transfer for this booking.",
+    payoutCompletedHint: "The merchant payout flow for this booking has already been completed.",
   },
   zh: {
     paymentWaitingSettlement: "等待尾款",
@@ -679,6 +815,7 @@ export default async function CustomerDashboardPage() {
                   const finalPaymentDueDate = formatFinalPaymentDueLabel(booking.pickup_date)
                   const isSettlementOverdue = isDpPaid && isFinalPaymentOverdue(booking.pickup_date)
                   const dpAmountPaid = Math.max(Number(booking.total_amount || 0) - Number(booking.final_payment_amount || 0), 0)
+                  const actionHint = getCustomerActionHint(booking, t, locale)
 
                   return (
                     <article
@@ -726,6 +863,12 @@ export default async function CustomerDashboardPage() {
                           <p className="mt-2 text-sm font-medium text-slate-900">{getTimelineStatus(booking, locale)}</p>
                         </div>
                       </div>
+
+                      {actionHint ? (
+                        <div className={`mt-5 rounded-[20px] border px-4 py-4 text-sm leading-7 ${actionHint.tone}`}>
+                          {actionHint.text}
+                        </div>
+                      ) : null}
 
                       {canPayRemaining ? (
                         <div className="mt-5 rounded-[24px] border border-amber-200 bg-[linear-gradient(135deg,#fff8e7_0%,#fff2cf_100%)] p-5 text-amber-900">

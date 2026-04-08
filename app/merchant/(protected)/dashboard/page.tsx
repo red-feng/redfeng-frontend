@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { formatMerchantCode } from "@/lib/merchant-code"
@@ -59,6 +59,82 @@ function countJourneyPhase(bookings: BookingRow[], phase: "dp" | "paid" | "picku
     if (phase === "paid_out") return bookingStatus === "payout_completed" || escrowStatus === "paid_out"
     return false
   }).length
+}
+
+function getMerchantOpsCue(
+  locale: string,
+  counts: {
+    pickup: number
+    finance: number
+    dp: number
+    paid: number
+  },
+) {
+  if (counts.pickup > 0) {
+    return {
+      title:
+        locale === "en"
+          ? "Pickup checkpoints need attention"
+          : locale === "zh"
+            ? "è¯·ä¼˜å…ˆå…³æ³¨æŽ¥é€æ£€æŸ¥ç‚¹"
+            : "Checkpoint pickup perlu perhatian",
+      body:
+        locale === "en"
+          ? "Focus on Arrived and Go so admin can receive clean handoff-ready bookings."
+          : locale === "zh"
+            ? "è¯·ä¼˜å…ˆå®Œæˆ Arrived ä¸Ž Goï¼Œè®©ç®¡ç†å‘˜æŽ¥æ”¶å·²å®Œæˆæ£€æŸ¥ç‚¹çš„è®¢å•ã€‚"
+            : "Fokus ke Arrived dan Go agar admin menerima booking yang checkpoint-nya sudah lengkap.",
+    }
+  }
+
+  if (counts.finance > 0) {
+    return {
+      title:
+        locale === "en"
+          ? "Admin handoff is now in progress"
+          : locale === "zh"
+            ? "ç®¡ç†å‘˜ç§»äº¤æµç¨‹æ­£åœ¨è¿›è¡Œ"
+            : "Handoff admin sedang berjalan",
+      body:
+        locale === "en"
+          ? "These bookings have finished the merchant side. Admin and finance are now the active owners."
+          : locale === "zh"
+            ? "è¿™äº›è®¢å•çš„å•†å®¶é˜¶æ®µå·²å®Œæˆï¼Œå½“å‰ç”±ç®¡ç†å‘˜ä¸Žè´¢åŠ¡ç»§ç»­å¤„ç†ã€‚"
+            : "Booking pada fase ini sudah selesai dari sisi merchant. Admin dan finance kini menjadi owner aktifnya.",
+    }
+  }
+
+  if (counts.dp > 0) {
+    return {
+      title:
+        locale === "en"
+          ? "Some bookings are still waiting for full payment"
+          : locale === "zh"
+            ? "éƒ¨åˆ†è®¢å•ä»åœ¨ç­‰å¾…å…¨é¢ä»˜æ¬¾"
+            : "Sebagian booking masih menunggu pelunasan",
+      body:
+        locale === "en"
+          ? "Operational checkpoints only start after the booking is fully paid."
+          : locale === "zh"
+            ? "è¿è¥æ£€æŸ¥ç‚¹åªæœ‰åœ¨è®¢å•å…¨é¢ä»˜æ¬¾åŽæ‰ä¼šå¼€å§‹ã€‚"
+            : "Checkpoint operasional baru dimulai setelah booking benar-benar lunas.",
+    }
+  }
+
+  return {
+    title:
+      locale === "en"
+        ? "Operational phases are in sync"
+        : locale === "zh"
+          ? "è¿è¥é˜¶æ®µå·²ç»åŒæ­¥"
+          : "Fase operasional sudah sinkron",
+    body:
+      locale === "en"
+        ? "Merchant, customer, admin, and finance now follow the same booking checkpoints."
+        : locale === "zh"
+          ? "商家、客户、管理员与财务现在都遵循同一套 booking checkpoint。"
+          : "Merchant, customer, admin, dan finance sekarang membaca checkpoint booking yang sama.",
+  }
 }
 
 export const dynamic = "force-dynamic"
@@ -128,23 +204,23 @@ export default async function MerchantDashboardPage() {
       : "-"
 
   const spotlightCards = [
-    { label: t.totalPackages, value: String(totalPackages), note: `${activePackages} ${t.active} • ${draftPackages} ${t.draft}` },
+    { label: t.totalPackages, value: String(totalPackages), note: `${activePackages} ${t.active} â€¢ ${draftPackages} ${t.draft}` },
     { label: t.totalBookings, value: String(totalBookings), note: `${pendingPayments} ${t.awaitingPayment}` },
     { label: t.revenue, value: formatMoney(monthlyRevenue), note: `${paidBookings.length} ${t.paidBookings}` },
     { label: t.rating, value: averageRating, note: `${reviews.length} ${t.customerReviews}` },
   ]
 
   const merchantToolBadge =
-    locale === "en" ? "Merchant Tools" : locale === "zh" ? "商家工具" : "Merchant Tools"
+    locale === "en" ? "Merchant Tools" : locale === "zh" ? "å•†å®¶å·¥å…·" : "Merchant Tools"
   const merchantToolTitle =
     locale === "en"
       ? "Merchant operations area"
       : locale === "zh"
-        ? "商家运营区域"
+        ? "å•†å®¶è¿è¥åŒºåŸŸ"
         : "Area operasional merchant"
 
   const menuMeta: Record<string, string> = {
-    "Kelola Paket": `${activePackages} aktif • ${pendingPackages} pending review`,
+    "Kelola Paket": `${activePackages} aktif â€¢ ${pendingPackages} pending review`,
     Pesanan: `${totalBookings} total booking`,
     "Chat Customer": unreadChats > 0 ? `${unreadChats} chat baru` : "Inbox customer",
     "Kalender Booking": "Jadwal trip dan kapasitas peserta",
@@ -159,24 +235,24 @@ export default async function MerchantDashboardPage() {
     locale === "en"
       ? "Quick access to every merchant operations area for listing quality, bookings, and customer service."
       : locale === "zh"
-        ? "快速进入商家各个运营区域，持续管理套餐质量、预订与客户服务。"
+        ? "å¿«é€Ÿè¿›å…¥å•†å®¶å„ä¸ªè¿è¥åŒºåŸŸï¼ŒæŒç»­ç®¡ç†å¥—é¤è´¨é‡ã€é¢„è®¢ä¸Žå®¢æˆ·æœåŠ¡ã€‚"
         : "Akses cepat ke seluruh area operasional merchant untuk menjaga kualitas listing, booking, dan layanan customer."
   const businessSnapshotBadge =
-    locale === "en" ? "Business Snapshot" : locale === "zh" ? "业务概览" : "Business Snapshot"
+    locale === "en" ? "Business Snapshot" : locale === "zh" ? "ä¸šåŠ¡æ¦‚è§ˆ" : "Business Snapshot"
   const recommendedNextMoveLabel =
-    locale === "en" ? "Recommended next move" : locale === "zh" ? "下一步建议" : "Recommended next move"
+    locale === "en" ? "Recommended next move" : locale === "zh" ? "ä¸‹ä¸€æ­¥å»ºè®®" : "Recommended next move"
   const missingBrandName =
     locale === "en"
       ? "Merchant has not set a brand name yet"
       : locale === "zh"
-        ? "商家尚未设置品牌名称"
+        ? "å•†å®¶å°šæœªè®¾ç½®å“ç‰Œåç§°"
         : "Merchant belum memiliki brand name"
   const completeMerchantProfile =
-    locale === "en" ? "Complete the merchant profile" : locale === "zh" ? "请完善商家资料" : "Lengkapi profil merchant"
+    locale === "en" ? "Complete the merchant profile" : locale === "zh" ? "è¯·å®Œå–„å•†å®¶èµ„æ–™" : "Lengkapi profil merchant"
   const noRatingYet =
-    locale === "en" ? "No rating yet" : locale === "zh" ? "暂无评分" : "Belum ada rating"
+    locale === "en" ? "No rating yet" : locale === "zh" ? "æš‚æ— è¯„åˆ†" : "Belum ada rating"
   const dashboardTitleFallback =
-    locale === "en" ? "Merchant Dashboard" : locale === "zh" ? "商家仪表盘" : "Merchant Dashboard"
+    locale === "en" ? "Merchant Dashboard" : locale === "zh" ? "å•†å®¶ä»ªè¡¨ç›˜" : "Merchant Dashboard"
   const merchantMenus = [
     {
       key: "packages",
@@ -184,10 +260,10 @@ export default async function MerchantDashboardPage() {
       href: "/merchant/paket",
       note:
         locale === "en"
-          ? `${activePackages} active • ${pendingPackages} pending review`
+          ? `${activePackages} active â€¢ ${pendingPackages} pending review`
           : locale === "zh"
-            ? `${activePackages} 个已上架 • ${pendingPackages} 个待审核`
-            : `${activePackages} aktif • ${pendingPackages} pending review`,
+            ? `${activePackages} ä¸ªå·²ä¸Šæž¶ â€¢ ${pendingPackages} ä¸ªå¾…å®¡æ ¸`
+            : `${activePackages} aktif â€¢ ${pendingPackages} pending review`,
     },
     {
       key: "orders",
@@ -197,35 +273,35 @@ export default async function MerchantDashboardPage() {
         locale === "en"
           ? `${totalBookings} total bookings`
           : locale === "zh"
-            ? `${totalBookings} 笔订单`
+            ? `${totalBookings} ç¬”è®¢å•`
             : `${totalBookings} total booking`,
     },
     {
       key: "chat",
-      label: locale === "en" ? "Customer Chat" : locale === "zh" ? "客户聊天" : "Chat Customer",
+      label: locale === "en" ? "Customer Chat" : locale === "zh" ? "å®¢æˆ·èŠå¤©" : "Chat Customer",
       href: "/merchant/chat",
       note:
         unreadChats > 0
           ? locale === "en"
             ? `${unreadChats} new chats`
             : locale === "zh"
-              ? `${unreadChats} 条新消息`
+              ? `${unreadChats} æ¡æ–°æ¶ˆæ¯`
               : `${unreadChats} chat baru`
           : locale === "en"
             ? "Customer inbox"
             : locale === "zh"
-              ? "客户收件箱"
+              ? "å®¢æˆ·æ”¶ä»¶ç®±"
               : "Inbox customer",
     },
     {
       key: "calendar",
-      label: locale === "en" ? "Booking Calendar" : locale === "zh" ? "预订日历" : "Kalender Booking",
+      label: locale === "en" ? "Booking Calendar" : locale === "zh" ? "é¢„è®¢æ—¥åŽ†" : "Kalender Booking",
       href: "/merchant/kalender-booking",
       note:
         locale === "en"
           ? "Trip schedules and participant capacity"
           : locale === "zh"
-            ? "行程排期与参与人数容量"
+            ? "è¡Œç¨‹æŽ’æœŸä¸Žå‚ä¸Žäººæ•°å®¹é‡"
             : "Jadwal trip dan kapasitas peserta",
     },
     {
@@ -236,7 +312,7 @@ export default async function MerchantDashboardPage() {
         locale === "en"
           ? "Revenue, top packages, and conversion"
           : locale === "zh"
-            ? "营收、热门套餐与转化率"
+            ? "è¥æ”¶ã€çƒ­é—¨å¥—é¤ä¸Žè½¬åŒ–çŽ‡"
             : "Revenue, top paket, conversion",
     },
     {
@@ -247,7 +323,7 @@ export default async function MerchantDashboardPage() {
         locale === "en"
           ? "Available balance and pending payouts"
           : locale === "zh"
-            ? "可用余额与待结算款项"
+            ? "å¯ç”¨ä½™é¢ä¸Žå¾…ç»“ç®—æ¬¾é¡¹"
             : "Saldo tersedia dan pending payout",
     },
     {
@@ -259,17 +335,17 @@ export default async function MerchantDashboardPage() {
           ? locale === "en"
             ? `${reviews.length} incoming reviews`
             : locale === "zh"
-              ? `${reviews.length} 条评价`
+              ? `${reviews.length} æ¡è¯„ä»·`
               : `${reviews.length} ulasan masuk`
           : locale === "en"
             ? "Ratings and customer comments"
             : locale === "zh"
-              ? "评分与客户评论"
+              ? "è¯„åˆ†ä¸Žå®¢æˆ·è¯„è®º"
               : "Rating dan komentar customer",
     },
     {
       key: "profile",
-      label: locale === "en" ? "Merchant Profile" : locale === "zh" ? "商家资料" : "Profil Merchant",
+      label: locale === "en" ? "Merchant Profile" : locale === "zh" ? "å•†å®¶èµ„æ–™" : "Profil Merchant",
       href: "/merchant/profil",
       note: merchant.company_name || completeMerchantProfile,
     },
@@ -294,36 +370,42 @@ export default async function MerchantDashboardPage() {
     { label: t.readyForFinance, value: countJourneyPhase(bookings, "finance"), tone: "border-sky-200 bg-sky-50 text-sky-700" },
     { label: t.paidOut, value: countJourneyPhase(bookings, "paid_out"), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" },
   ]
+  const opsCue = getMerchantOpsCue(locale, {
+    pickup: countJourneyPhase(bookings, "pickup"),
+    finance: countJourneyPhase(bookings, "finance"),
+    dp: countJourneyPhase(bookings, "dp"),
+    paid: countJourneyPhase(bookings, "paid"),
+  })
 
   const nextMoveTitle =
     pendingPackages > 0
       ? locale === "en"
         ? "Finish the package reviews that are still pending."
         : locale === "zh"
-          ? "请先完成仍在待审核中的套餐。"
+          ? "è¯·å…ˆå®Œæˆä»åœ¨å¾…å®¡æ ¸ä¸­çš„å¥—é¤ã€‚"
           : "Selesaikan review paket yang masih pending."
       : draftPackages > 0
         ? locale === "en"
           ? "Complete your draft packages so they can be submitted."
           : locale === "zh"
-            ? "请先完善草稿套餐，再提交审核。"
+            ? "è¯·å…ˆå®Œå–„è‰ç¨¿å¥—é¤ï¼Œå†æäº¤å®¡æ ¸ã€‚"
             : "Lengkapi draft paket agar bisa diajukan."
         : countJourneyPhase(bookings, "pickup") > 0
           ? locale === "en"
             ? "Focus on bookings that are currently waiting for pickup."
             : locale === "zh"
-              ? "请优先处理当前等待接送的订单。"
+              ? "è¯·ä¼˜å…ˆå¤„ç†å½“å‰ç­‰å¾…æŽ¥é€çš„è®¢å•ã€‚"
               : "Fokus pada booking yang sedang menunggu pickup."
           : locale === "en"
             ? "Focus on booking optimization and customer response speed."
             : locale === "zh"
-              ? "请专注于优化预订转化与客户响应速度。"
+              ? "è¯·ä¸“æ³¨äºŽä¼˜åŒ–é¢„è®¢è½¬åŒ–ä¸Žå®¢æˆ·å“åº”é€Ÿåº¦ã€‚"
               : "Fokus pada optimasi booking dan respons customer."
   const nextMoveDescription =
     locale === "en"
       ? "Merchants now see the same operational phases used by customers, admin, finance, and invoice verification."
       : locale === "zh"
-        ? "商家现在看到的运营阶段，已与客户、管理员、财务和发票核验页面保持一致。"
+        ? "å•†å®¶çŽ°åœ¨çœ‹åˆ°çš„è¿è¥é˜¶æ®µï¼Œå·²ä¸Žå®¢æˆ·ã€ç®¡ç†å‘˜ã€è´¢åŠ¡å’Œå‘ç¥¨æ ¸éªŒé¡µé¢ä¿æŒä¸€è‡´ã€‚"
         : "Merchant sekarang melihat fase operasional yang sama persis dengan customer, admin, finance, dan halaman verifikasi invoice."
 
   return (
@@ -385,7 +467,7 @@ export default async function MerchantDashboardPage() {
                 <div className="mt-4 space-y-3">
                   {operationalNotes.map((note) => (
                     <div key={note} className="flex items-start gap-3">
-                      <span className="mt-0.5 text-sm text-amber-200">●</span>
+                      <span className="mt-0.5 text-sm text-amber-200">â—</span>
                       <p className="text-sm leading-7 text-orange-50/90">{note}</p>
                     </div>
                   ))}
@@ -441,7 +523,7 @@ export default async function MerchantDashboardPage() {
                         {unreadChats}
                       </span>
                     ) : (
-                      <span className="text-sm text-orange-500 transition group-hover:text-orange-700">→</span>
+                      <span className="text-sm text-orange-500 transition group-hover:text-orange-700">â†’</span>
                     )}
                   </div>
                 </Link>
@@ -488,6 +570,10 @@ export default async function MerchantDashboardPage() {
               <p className="mt-3 text-sm leading-6 text-slate-600 sm:leading-7">
                 {nextMoveDescription}
               </p>
+              <div className="mt-5 rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-4 text-sm leading-7 text-orange-800">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-700">{opsCue.title}</p>
+                <p className="mt-2">{opsCue.body}</p>
+              </div>
             </div>
           </aside>
         </section>
@@ -495,3 +581,4 @@ export default async function MerchantDashboardPage() {
     </main>
   )
 }
+

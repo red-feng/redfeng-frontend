@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -209,6 +209,143 @@ function deriveAttentionReasons(booking: BookingDetailRow) {
   return reasons
 }
 
+function getOperationalOwnerCue(booking: BookingDetailRow, locale: "id" | "en" | "zh") {
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const bookingStatus = normalizeStatus(booking.booking_status)
+  const escrowStatus = normalizeStatus(booking.escrow_status)
+  const copy = {
+    id: {
+      waitingCustomerLabel: "Menunggu customer",
+      waitingCustomerBody: "Checkpoint operasional baru bisa berjalan setelah booking lunas.",
+      waitingMerchantArrivedLabel: "Menunggu merchant klik Arrived",
+      waitingMerchantArrivedBody: "Merchant perlu konfirmasi sudah tiba di meeting point sebelum customer bisa lanjut Picked up.",
+      waitingCustomerPickupLabel: "Menunggu customer klik Picked up",
+      waitingCustomerPickupBody: "Customer perlu mengonfirmasi sudah dijemput agar merchant bisa lanjut ke Go.",
+      waitingMerchantGoLabel: "Menunggu merchant klik Go",
+      waitingMerchantGoBody: "Go akan menutup checkpoint pickup dan memindahkan booking ke fase handoff admin.",
+      waitingAdminLabel: "Menunggu admin kirim ke finance",
+      waitingAdminBody: "Tiga checkpoint sudah lengkap. Admin operasional sekarang menjadi gerbang berikutnya.",
+      financeReviewLabel: "Sedang di review finance",
+      financeReviewBody: "Booking sudah diserahkan admin dan menunggu approval payout dari finance manager atau superadmin.",
+      financeProcessingLabel: "Sedang diproses finance",
+      financeProcessingBody: "Tim finance sedang menjalankan transfer payout ke merchant.",
+      payoutDoneLabel: "Payout selesai",
+      payoutDoneBody: "Dana merchant sudah ditandai selesai dibayarkan.",
+      fallbackLabel: "Pantau status booking",
+      fallbackBody: "Gunakan timeline operasional dan status escrow untuk memastikan fase berikutnya jelas.",
+    },
+    en: {
+      waitingCustomerLabel: "Waiting for customer",
+      waitingCustomerBody: "Operational checkpoints only begin after the booking is fully paid.",
+      waitingMerchantArrivedLabel: "Waiting for merchant to click Arrived",
+      waitingMerchantArrivedBody: "The merchant must confirm arrival at the meeting point before the customer can continue to Picked up.",
+      waitingCustomerPickupLabel: "Waiting for customer to click Picked up",
+      waitingCustomerPickupBody: "The customer needs to confirm pickup so the merchant can continue to Go.",
+      waitingMerchantGoLabel: "Waiting for merchant to click Go",
+      waitingMerchantGoBody: "Go closes the pickup checkpoint and moves the booking into the admin handoff phase.",
+      waitingAdminLabel: "Waiting for admin handoff to finance",
+      waitingAdminBody: "All three checkpoints are complete. Operations admin is now the next gate.",
+      financeReviewLabel: "Under finance review",
+      financeReviewBody: "The booking has been handed off by admin and is waiting for payout approval from finance manager or superadmin.",
+      financeProcessingLabel: "Being processed by finance",
+      financeProcessingBody: "The finance team is currently executing the merchant payout transfer.",
+      payoutDoneLabel: "Payout completed",
+      payoutDoneBody: "The merchant payout has already been marked as completed.",
+      fallbackLabel: "Monitor booking status",
+      fallbackBody: "Use the operational timeline and escrow status to keep the next phase clear.",
+    },
+    zh: {
+      waitingCustomerLabel: "等待客户",
+      waitingCustomerBody: "只有在订单全额付款后，运营检查点才会开始。",
+      waitingMerchantArrivedLabel: "等待商家点击 Arrived",
+      waitingMerchantArrivedBody: "商家需要先确认已到达集合点，客户才能继续点击 Picked up。",
+      waitingCustomerPickupLabel: "等待客户点击 Picked up",
+      waitingCustomerPickupBody: "客户需要确认已被接走，商家才能继续点击 Go。",
+      waitingMerchantGoLabel: "等待商家点击 Go",
+      waitingMerchantGoBody: "Go 会结束接送检查点，并把订单带入管理员移交流程。",
+      waitingAdminLabel: "等待管理员移交给财务",
+      waitingAdminBody: "三个检查点都已完成。运营管理员现在是下一道关口。",
+      financeReviewLabel: "财务审核中",
+      financeReviewBody: "订单已由管理员移交，目前正在等待 finance manager 或 superadmin 批准 payout。",
+      financeProcessingLabel: "财务处理中",
+      financeProcessingBody: "财务团队正在执行商家的 payout 转账。",
+      payoutDoneLabel: "Payout 已完成",
+      payoutDoneBody: "商家的 payout 已经被标记为完成。",
+      fallbackLabel: "关注订单状态",
+      fallbackBody: "请结合运营时间线与 escrow 状态，明确下一阶段由谁继续处理。",
+    },  }[locale]
+
+  if (paymentStatus !== "paid") {
+    return {
+      label: copy.waitingCustomerLabel,
+      body: copy.waitingCustomerBody,
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
+    }
+  }
+
+  if (!booking.merchant_arrived_at) {
+    return {
+      label: copy.waitingMerchantArrivedLabel,
+      body: copy.waitingMerchantArrivedBody,
+      tone: "border-sky-200 bg-sky-50 text-sky-800",
+    }
+  }
+
+  if (!booking.customer_picked_up_at) {
+    return {
+      label: copy.waitingCustomerPickupLabel,
+      body: copy.waitingCustomerPickupBody,
+      tone: "border-orange-200 bg-orange-50 text-orange-800",
+    }
+  }
+
+  if (!booking.merchant_picked_up_at) {
+    return {
+      label: copy.waitingMerchantGoLabel,
+      body: copy.waitingMerchantGoBody,
+      tone: "border-violet-200 bg-violet-50 text-violet-800",
+    }
+  }
+
+  if (bookingStatus === "awaiting_admin_handoff" || escrowStatus === "awaiting_admin_handoff") {
+    return {
+      label: copy.waitingAdminLabel,
+      body: copy.waitingAdminBody,
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    }
+  }
+
+  if (bookingStatus === "finance_review" || escrowStatus === "finance_review") {
+    return {
+      label: copy.financeReviewLabel,
+      body: copy.financeReviewBody,
+      tone: "border-sky-200 bg-sky-50 text-sky-800",
+    }
+  }
+
+  if (bookingStatus === "finance_processing" || escrowStatus === "payout_processing") {
+    return {
+      label: copy.financeProcessingLabel,
+      body: copy.financeProcessingBody,
+      tone: "border-indigo-200 bg-indigo-50 text-indigo-800",
+    }
+  }
+
+  if (bookingStatus === "payout_completed" || escrowStatus === "paid_out") {
+    return {
+      label: copy.payoutDoneLabel,
+      body: copy.payoutDoneBody,
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    }
+  }
+
+  return {
+    label: copy.fallbackLabel,
+    body: copy.fallbackBody,
+    tone: "border-slate-200 bg-slate-50 text-slate-700",
+  }
+}
+
 function noteTypeLabel(value: string | null) {
   const normalized = normalizeStatus(value)
   if (normalized === "urgent") return "Urgent"
@@ -361,6 +498,7 @@ export default async function AdminBookingDetailPage({
 
   const phase = journeyPhase(booking)
   const ready = canHandoffToFinance(booking)
+  const operationalOwnerCue = getOperationalOwnerCue(booking, locale)
   const attentionReasons = deriveAttentionReasons(booking)
   const productLabel = booking.package_id ? "Paket Tour" : "Pesawat"
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
@@ -724,6 +862,10 @@ export default async function AdminBookingDetailPage({
               ))}
             </div>
             <div className="mt-6 rounded-[22px] border border-slate-200 bg-white p-5">
+              <div className={`mb-5 rounded-[18px] border px-4 py-4 text-sm leading-7 ${operationalOwnerCue.tone}`}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em]">{operationalOwnerCue.label}</p>
+                <p className="mt-2">{operationalOwnerCue.body}</p>
+              </div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant payout destination</p>
               <p className="mt-2 text-sm text-slate-700">Bank: {merchant?.bank_name || "-"}</p>
               <p className="mt-2 text-sm text-slate-700">No. Rekening: {merchant?.bank_account_number || "-"}</p>
@@ -989,3 +1131,4 @@ export default async function AdminBookingDetailPage({
     </main>
   )
 }
+

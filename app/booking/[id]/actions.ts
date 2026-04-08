@@ -143,12 +143,16 @@ export async function confirmCustomerPickedUp(formData: FormData) {
   }
 
   const paymentStatus = normalizeStatus(booking.payment_status)
+  if (paymentStatus !== "paid") {
+    redirect(`/booking/${bookingId}?error=Status Picked up hanya tersedia setelah booking lunas`)
+  }
+
   const { error } = await adminSupabase
     .from("bookings")
     .update({
       customer_picked_up_at: new Date().toISOString(),
-      booking_status: paymentStatus === "paid" ? "customer_picked_up" : "customer_picked_up_pending_final_payment",
-      escrow_status: paymentStatus === "paid" ? "held" : "partial_hold",
+      booking_status: "customer_picked_up",
+      escrow_status: "held",
       escrow_released_at: null,
     })
     .eq("id", bookingId)

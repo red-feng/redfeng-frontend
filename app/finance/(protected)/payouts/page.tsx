@@ -294,7 +294,15 @@ export default async function FinancePayoutsPage({
               const booking = payout.booking_id ? bookingMap.get(payout.booking_id) : null
               const merchantName = merchant?.brand_name || merchant?.company_name || "Merchant tanpa nama"
               const merchantCode = formatMerchantCode(merchant?.id || payout.merchant_id)
-              const isFinal = ["paid", "completed", "rejected"].includes(normalizeStatus(payout.status))
+              const normalizedPayoutStatus = normalizeStatus(payout.status)
+              const isFinal = ["paid", "completed", "rejected"].includes(normalizedPayoutStatus)
+              const canApproveThisPayout = canApprovePayout && normalizedPayoutStatus === "pending"
+              const canRejectThisPayout =
+                canApprovePayout && ["pending", "approved"].includes(normalizedPayoutStatus)
+              const canMarkProcessingThisPayout =
+                canExecuteTransferFlow && normalizedPayoutStatus === "approved"
+              const canMarkPaidThisPayout =
+                canExecuteTransferFlow && normalizedPayoutStatus === "processing"
               const payoutSourceLabel = resolvePayoutSourceLabel(payout.source || "manual")
               const payoutSourceDescription = resolvePayoutSourceDescription(payout.source || "manual")
 
@@ -435,7 +443,7 @@ export default async function FinancePayoutsPage({
 
                       {!isFinal && (
                         <div className="grid gap-4">
-                          {canApprovePayout ? (
+                          {canApproveThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="approved" />
@@ -445,7 +453,7 @@ export default async function FinancePayoutsPage({
                             </form>
                           ) : null}
 
-                          {canExecuteTransferFlow ? (
+                          {canMarkProcessingThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-sky-200 bg-sky-50/80 p-5">
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="processing" />
@@ -455,7 +463,7 @@ export default async function FinancePayoutsPage({
                             </form>
                           ) : null}
 
-                          {canExecuteTransferFlow ? (
+                          {canMarkPaidThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-violet-200 bg-violet-50/80 p-5 space-y-4">
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="paid" />
@@ -470,7 +478,7 @@ export default async function FinancePayoutsPage({
                             </form>
                           ) : null}
 
-                          {canApprovePayout ? (
+                          {canRejectThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-5 space-y-4">
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="rejected" />
@@ -492,6 +500,16 @@ export default async function FinancePayoutsPage({
                           {isFinanceManager ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
                               Finance Manager memegang approval / reject. Perubahan ke tahap processing dan paid tetap dijalankan finance eksekusi atau superadmin.
+                            </div>
+                          ) : null}
+                          {!isFinal &&
+                          !canApproveThisPayout &&
+                          !canRejectThisPayout &&
+                          !canMarkProcessingThisPayout &&
+                          !canMarkPaidThisPayout ? (
+                            <div className="rounded-[24px] border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-600">
+                              Request ini sedang berada di fase <span className="font-semibold text-slate-950">{titleCaseStatus(payout.status)}</span>.
+                              Tombol action berikutnya akan muncul sesuai urutan payout: approve, processing, lalu paid.
                             </div>
                           ) : null}
                         </div>

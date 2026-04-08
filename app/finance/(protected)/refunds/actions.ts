@@ -270,6 +270,22 @@ function isFinalStatus(status: string | null | undefined) {
   return ["refund_rejected", "refund_failed", "refund_closed"].includes(normalizeStatus(status))
 }
 
+function isValidRefundTransition(currentStatus: string, nextStatus: RefundStatus) {
+  const transitions: Record<string, RefundStatus[]> = {
+    refund_requested: ["refund_under_review"],
+    refund_under_review: ["refund_approved", "refund_rejected"],
+    refund_approved: ["refund_processing_midtrans", "refund_processing_bank", "refund_failed"],
+    refund_processing_midtrans: ["refund_paid", "refund_failed"],
+    refund_processing_bank: ["refund_paid", "refund_failed"],
+    refund_paid: ["refund_reconciled", "refund_closed"],
+    refund_rejected: ["refund_closed"],
+    refund_failed: ["refund_closed"],
+    refund_reconciled: ["refund_closed"],
+  }
+
+  return transitions[currentStatus]?.includes(nextStatus) ?? false
+}
+
 export async function createRefundRequest(formData: FormData) {
   const actor = await ensureFinanceActor()
   const bookingReference = readText(formData, "bookingReference")
@@ -475,6 +491,10 @@ export async function updateRefundStatus(formData: FormData) {
     backToRefunds("Refund dengan status final tidak bisa diubah lagi.", "error")
   }
 
+  if (!isValidRefundTransition(currentStatus, nextStatus)) {
+    backToRefunds("Urutan status refund tidak valid untuk request ini.", "error")
+  }
+
   if (nextStatus === "refund_processing_midtrans" && !(midtransRefundId || refund.midtrans_refund_id || midtransTransactionId || refund.midtrans_transaction_id)) {
     backToRefunds("Isi Midtrans refund ID atau transaction ID sebelum menandai processing Midtrans.", "error")
   }
@@ -624,6 +644,11 @@ export async function syncRefundGatewayStatus(formData: FormData) {
 
   const now = new Date().toISOString()
   const currentStatus = normalizeStatus(refund.status)
+
+  if (!["refund_processing_midtrans", "refund_processing_bank"].includes(currentStatus)) {
+    backToRefunds("Sync gateway hanya bisa dijalankan saat refund sedang diproses.", "error")
+  }
+
   let nextStatus: RefundStatus | null = null
   let gatewaySummary = ""
   let metadataPatch: Record<string, unknown> | null = null

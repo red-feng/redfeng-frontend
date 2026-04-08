@@ -516,7 +516,10 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     child: childCount,
   })
 
-  const canConfirmPickup = Boolean(booking.merchant_arrived_at) && !booking.customer_picked_up_at
+  const canConfirmPickup =
+    normalizeStatus(booking.payment_status) === "paid" &&
+    Boolean(booking.merchant_arrived_at) &&
+    !booking.customer_picked_up_at
   const canPayRemaining =
     normalizeStatus(booking.payment_status) === "dp_paid" &&
     !isFinalPaymentOverdue(booking.pickup_date || null)

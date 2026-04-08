@@ -40,7 +40,9 @@ export default async function CustomerLayout({
     redirect("/admin/login")
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
-  } else if (profile.role !== "customer" && profile.role !== "merchant") {
+  } else if (profile.role === "merchant") {
+    redirect("/merchant/dashboard")
+  } else if (profile.role !== "customer") {
     redirect("/login")
   }
 
