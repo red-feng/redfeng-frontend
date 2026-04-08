@@ -29,12 +29,12 @@ const COPY = {
   delete: {
     eyebrow: "Access Removal",
     title: "Hapus merchant",
-    description: "Gunakan hanya jika merchant harus dicabut permanen dari akses sistem tanpa menghapus histori transaksi.",
+    description: "Gunakan hanya jika merchant harus dihapus permanen dari database beserta data merchant yang terhubung.",
     noteLabel: "Deletion reason + email to merchant",
     placeholder: "Alasan penghapusan merchant. Isi ini juga dikirim ke email merchant...",
     buttonLabel: "Hapus akses merchant",
     modalTitle: "Hapus akses merchant",
-    modalDescription: "Isi alasan penghapusan lalu lanjutkan soft delete merchant ini dari akses sistem. Alasan ini juga dikirim ke email merchant.",
+    modalDescription: "Isi alasan penghapusan lalu lanjutkan hard delete merchant ini dari database. Alasan ini juga dikirim ke email merchant.",
     cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
     headerClass: "border-[#f3e4d2] text-rose-700",
     panelClass: "border-[#f3e4d2]",
@@ -53,7 +53,7 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
   const confirmMessage =
     variant === "deactivate"
       ? "Yakin ingin menonaktifkan merchant ini? Merchant tidak akan bisa mengakses dashboard sampai diaktifkan kembali."
-      : "Yakin ingin menghapus akses merchant ini? Akses merchant akan dicabut dari sistem."
+      : "Yakin ingin menghapus merchant ini secara permanen? Data merchant dan paket yang terhubung akan dihapus dari database."
 
   return (
     <>

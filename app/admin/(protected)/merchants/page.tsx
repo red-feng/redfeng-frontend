@@ -101,7 +101,7 @@ function normalizeText(value: string | null) {
 export default async function AdminMerchantsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string }>
+  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string; success?: string; error?: string }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const searchQuery = (resolvedSearchParams.q || "").trim().toLowerCase()
@@ -363,8 +363,19 @@ export default async function AdminMerchantsPage({
           </form>
         </section>
 
-        <section className="space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <section className="space-y-5">
+        {resolvedSearchParams.success ? (
+          <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+            {resolvedSearchParams.success}
+          </div>
+        ) : null}
+        {resolvedSearchParams.error ? (
+          <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
+            {resolvedSearchParams.error}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-orange-600">Pending approvals</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Antrian merchant baru</h2>
@@ -790,7 +801,7 @@ export default async function AdminMerchantsPage({
                             Hapus akses merchant
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
-                            Action ini akan mengubah role akun ini dari `merchant` menjadi `customer` karena data merchant-nya tidak ada.
+                            Action ini akan menghapus akun merchant ini secara permanen dari database karena data merchant-nya tidak ada.
                           </p>
                           <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
                             <input type="hidden" name="profileId" value={profile.id} />
@@ -801,7 +812,7 @@ export default async function AdminMerchantsPage({
                               className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                             />
                             <ConfirmSubmitButton
-                              confirmMessage="Yakin ingin menghapus akses merchant ini? Role merchant akan dicabut karena data merchant tidak ditemukan."
+                              confirmMessage="Yakin ingin menghapus akun merchant ini secara permanen? Akun auth dan profile merchant akan dihapus dari database."
                               className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
                             >
                               Hapus akses merchant

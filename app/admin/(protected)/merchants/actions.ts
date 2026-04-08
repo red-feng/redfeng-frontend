@@ -8,11 +8,73 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { purgePackageRecords } from "@/lib/package-delete"
+import { redirectWithMessage } from "@/lib/internal-account-management"
 
 function revalidateMerchantPages() {
   revalidatePath("/admin/merchants")
   revalidatePath("/merchant/dashboard")
   revalidatePath("/merchant/login")
+  revalidatePath("/admin/packages")
+  revalidatePath("/finance/payouts")
+  revalidatePath("/finance/refunds")
+}
+
+function backToMerchants(message: string, type: "success" | "error"): never {
+  redirectWithMessage("/admin/merchants", message, type)
+}
+
+async function purgeMerchantAccountRecords(adminSupabase: ReturnType<typeof createAdminClient>, merchantId: string, userId?: string | null) {
+  const { data: packageRows, error: packageRowsError } = await adminSupabase
+    .from("packages")
+    .select("id")
+    .eq("merchant_id", merchantId)
+
+  if (packageRowsError) {
+    throw new Error(`Gagal memuat paket merchant: ${packageRowsError.message}`)
+  }
+
+  const packageIds = (((packageRows as Array<{ id: string }> | null) || []) as Array<{ id: string }>)
+    .map((item) => item.id)
+    .filter(Boolean)
+
+  for (const packageId of packageIds) {
+    await purgePackageRecords(adminSupabase, packageId)
+  }
+
+  const { error: refundDeleteError } = await adminSupabase
+    .from("refund_requests")
+    .delete()
+    .eq("merchant_id", merchantId)
+
+  if (refundDeleteError) {
+    throw new Error(`Gagal menghapus refund merchant: ${refundDeleteError.message}`)
+  }
+
+  const { error: merchantDeleteError } = await adminSupabase
+    .from("merchants")
+    .delete()
+    .eq("id", merchantId)
+
+  if (merchantDeleteError) {
+    throw new Error(`Gagal menghapus data merchant utama: ${merchantDeleteError.message}`)
+  }
+
+  if (!userId) return
+
+  const { error: profileDeleteError } = await adminSupabase
+    .from("profiles")
+    .delete()
+    .eq("id", userId)
+
+  if (profileDeleteError) {
+    throw new Error(`Gagal menghapus profil merchant: ${profileDeleteError.message}`)
+  }
+
+  const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(userId)
+  if (authDeleteError) {
+    throw new Error(`Gagal menghapus akun auth merchant: ${authDeleteError.message}`)
+  }
 }
 
 async function getAdminActor() {
@@ -310,7 +372,9 @@ async function sendMerchantDecisionEmail({
 
 export async function approveMerchant(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
-  if (!merchantId) return
+  if (!merchantId) {
+    backToMerchants("Merchant tidak ditemukan.", "error")
+  }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
@@ -332,7 +396,7 @@ export async function approveMerchant(formData: FormData) {
 
   if (error) {
     console.error("Approve error:", error)
-    return
+    backToMerchants(error.message || "Gagal menyetujui merchant.", "error")
   }
 
   try {
@@ -360,13 +424,17 @@ export async function approveMerchant(formData: FormData) {
       brandName: merchant?.brand_name ?? null,
     },
   })
+
+  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil disetujui.`, "success")
 }
 
 export async function rejectMerchant(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
   const reason = formData.get("reason") as string
 
-  if (!merchantId || !reason) return
+  if (!merchantId || !reason) {
+    backToMerchants("Merchant dan alasan penolakan wajib diisi.", "error")
+  }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
@@ -387,7 +455,7 @@ export async function rejectMerchant(formData: FormData) {
 
   if (error) {
     console.error("Reject error:", error)
-    return
+    backToMerchants(error.message || "Gagal menolak merchant.", "error")
   }
 
   try {
@@ -417,13 +485,17 @@ export async function rejectMerchant(formData: FormData) {
       brandName: merchant?.brand_name ?? null,
     },
   })
+
+  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil ditolak.`, "success")
 }
 
 export async function deactivateMerchant(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
   const reason = ((formData.get("reason") as string) || "").trim()
 
-  if (!merchantId) return
+  if (!merchantId) {
+    backToMerchants("Merchant tidak ditemukan.", "error")
+  }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
@@ -444,7 +516,7 @@ export async function deactivateMerchant(formData: FormData) {
 
   if (error) {
     console.error("Deactivate merchant error:", error)
-    return
+    backToMerchants(error.message || "Gagal menonaktifkan merchant.", "error")
   }
 
   try {
@@ -473,11 +545,15 @@ export async function deactivateMerchant(formData: FormData) {
       reason: reason || "Merchant dinonaktifkan sementara oleh admin.",
     },
   })
+
+  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil dinonaktifkan sementara.`, "success")
 }
 
 export async function reactivateMerchant(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
-  if (!merchantId) return
+  if (!merchantId) {
+    backToMerchants("Merchant tidak ditemukan.", "error")
+  }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
@@ -494,7 +570,7 @@ export async function reactivateMerchant(formData: FormData) {
 
   if (error) {
     console.error("Reactivate merchant error:", error)
-    return
+    backToMerchants(error.message || "Gagal mengaktifkan kembali merchant.", "error")
   }
 
   revalidateMerchantPages()
@@ -510,6 +586,8 @@ export async function reactivateMerchant(formData: FormData) {
       status: "approved",
     },
   })
+
+  backToMerchants(`Merchant ${merchantId} berhasil diaktifkan kembali.`, "success")
 }
 
 export async function deleteMerchant(formData: FormData) {
@@ -517,7 +595,9 @@ export async function deleteMerchant(formData: FormData) {
   const profileId = ((formData.get("profileId") as string) || "").trim()
   const reason = ((formData.get("reason") as string) || "").trim()
 
-  if ((!merchantId && !profileId) || !reason) return
+  if ((!merchantId && !profileId) || !reason) {
+    backToMerchants("Alasan penghapusan wajib diisi.", "error")
+  }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
@@ -529,22 +609,10 @@ export async function deleteMerchant(formData: FormData) {
       .eq("id", merchantId)
       .maybeSingle()
 
-    const { error } = await supabaseAdmin
-      .from("merchants")
-      .update({
-        verification_status: "deleted",
-        rejection_reason: reason,
-      })
-      .eq("id", merchantId)
-      .in("verification_status", ["approved", "inactive"])
-
-    if (error) {
-      console.error("Delete merchant error:", error)
-      return
+    if (!merchant) {
+      console.error("Delete merchant error: merchant not found", merchantId)
+      backToMerchants("Merchant tidak ditemukan.", "error")
     }
-
-    revalidateMerchantPages()
-    revalidatePath(`/admin/merchants/${merchantId}`)
 
     try {
       await sendMerchantDecisionEmail({
@@ -558,21 +626,31 @@ export async function deleteMerchant(formData: FormData) {
       console.error("Delete merchant email error:", emailError)
     }
 
+    try {
+      await purgeMerchantAccountRecords(supabaseAdmin, merchantId, merchant.user_id)
+    } catch (deleteError) {
+      console.error("Delete merchant hard delete error:", deleteError)
+      backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
+    }
+
     await createAdminAuditLog({
       actorId: actor.id,
       actorRole: actor.role,
       targetType: "merchant",
       targetId: merchantId,
       action: "delete",
-      summary: `Merchant ${merchantId} ditandai deleted`,
+      summary: `Merchant ${merchantId} dihapus permanen`,
       metadata: {
-        status: "deleted",
+        mode: "permanent_delete",
         reason,
         userId: merchant?.user_id ?? null,
       },
     })
 
-    return
+    revalidateMerchantPages()
+    revalidatePath(`/admin/merchants/${merchantId}`)
+
+    backToMerchants(`Merchant ${merchant.brand_name || merchant.email || merchantId} berhasil dihapus permanen dari database.`, "success")
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -583,7 +661,7 @@ export async function deleteMerchant(formData: FormData) {
 
   if (profileError || !profile || profile.role !== "merchant") {
     console.error("Delete orphan merchant profile error:", profileError)
-    return
+    backToMerchants("Akun merchant tanpa data merchant tidak ditemukan.", "error")
   }
 
   const { data: relatedMerchant } = await supabaseAdmin
@@ -594,20 +672,24 @@ export async function deleteMerchant(formData: FormData) {
 
   if (relatedMerchant?.id) {
     console.error("Delete orphan merchant profile aborted: merchant row exists", relatedMerchant.id)
-    return
+    backToMerchants("Akun ini masih memiliki data merchant yang aktif, jadi tidak bisa dihapus dari blok anomali.", "error")
   }
 
-  const { error: updateProfileError } = await supabaseAdmin
+  const { error: deleteProfileError } = await supabaseAdmin
     .from("profiles")
-    .update({
-      role: "customer",
-    })
+    .delete()
     .eq("id", profileId)
     .eq("role", "merchant")
 
-  if (updateProfileError) {
-    console.error("Delete orphan merchant profile update error:", updateProfileError)
-    return
+  if (deleteProfileError) {
+    console.error("Delete orphan merchant profile delete error:", deleteProfileError)
+    backToMerchants(deleteProfileError.message || "Gagal menghapus profil merchant.", "error")
+  }
+
+  const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
+  if (deleteAuthError) {
+    console.error("Delete orphan merchant auth user error:", deleteAuthError)
+    backToMerchants(deleteAuthError.message || "Gagal menghapus akun auth merchant.", "error")
   }
 
   revalidateMerchantPages()
@@ -629,12 +711,14 @@ export async function deleteMerchant(formData: FormData) {
     targetType: "merchant",
     targetId: profileId,
     action: "delete",
-    summary: `Role merchant tanpa data merchant dicabut untuk user ${profileId}`,
+    summary: `Akun merchant tanpa data merchant dihapus permanen untuk user ${profileId}`,
     metadata: {
-      status: "deleted",
+      mode: "permanent_delete",
       reason,
       fallbackTarget: "profile_only_merchant",
     },
   })
+
+  backToMerchants(`Akun merchant ${profile.email || profileId} berhasil dihapus permanen dari database.`, "success")
 }
 
