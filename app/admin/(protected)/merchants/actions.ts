@@ -702,7 +702,7 @@ export async function requestMerchantDeletion(formData: FormData) {
 
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
-    .select("id, role, email")
+    .select("id, role")
     .eq("id", profileId)
     .maybeSingle()
 
@@ -710,6 +710,12 @@ export async function requestMerchantDeletion(formData: FormData) {
     console.error("Delete orphan merchant profile error:", profileError)
     backToMerchants("Akun merchant tanpa data merchant tidak ditemukan.", "error")
   }
+
+  const { data: authUserData, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(profileId)
+  if (authUserError) {
+    console.error("Load orphan merchant auth user error:", authUserError)
+  }
+  const orphanMerchantEmail = authUserData?.user?.email || null
 
   const { data: relatedMerchant } = await supabaseAdmin
     .from("merchants")
@@ -729,8 +735,8 @@ export async function requestMerchantDeletion(formData: FormData) {
 
   const { error: insertRequestError } = await supabaseAdmin.from("merchant_deletion_requests").insert({
     profile_id: profileId,
-    merchant_email: profile.email,
-    merchant_name: profile.email || profileId,
+    merchant_email: orphanMerchantEmail,
+    merchant_name: orphanMerchantEmail || profileId,
     reason,
     requested_by: actor.id,
   })
@@ -754,7 +760,7 @@ export async function requestMerchantDeletion(formData: FormData) {
   })
 
   revalidateMerchantPages()
-  backToMerchants(`Pengajuan hapus akun merchant ${profile.email || profileId} berhasil dikirim ke operations manager.`, "success")
+  backToMerchants(`Pengajuan hapus akun merchant ${orphanMerchantEmail || profileId} berhasil dikirim ke operations manager.`, "success")
 }
 
 export async function approveMerchantDeletion(formData: FormData) {
@@ -810,7 +816,7 @@ export async function approveMerchantDeletion(formData: FormData) {
   } else if (request.profile_id) {
     const { data: profile } = await supabaseAdmin
       .from("profiles")
-      .select("id, role, email")
+      .select("id, role")
       .eq("id", request.profile_id)
       .maybeSingle()
 
@@ -835,7 +841,7 @@ export async function approveMerchantDeletion(formData: FormData) {
 
     try {
       await sendMerchantDecisionEmail({
-        email: profile.email ?? null,
+        email: request.merchant_email ?? null,
         brandName: null,
         type: "deleted",
         reason: request.reason,
