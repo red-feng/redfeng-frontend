@@ -8,8 +8,9 @@ import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
   approveMerchant,
   approveMerchantDeletion,
-  cancelMerchantDeletion,
+  finalizeMerchantDeletionCancellation,
   reactivateMerchant,
+  rejectMerchantDeletion,
   rejectMerchant,
   requestMerchantDeletion,
 } from "./actions"
@@ -146,6 +147,7 @@ export default async function AdminMerchantsPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const currentRole = String(currentProfile?.role || "").trim().toLowerCase()
+  const currentUserId = user?.id || null
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
   const canRequestMerchantDeletion = ["admin", "superadmin"].includes(currentRole)
   const canReviewMerchantDeletion = ["operations_manager", "superadmin"].includes(currentRole)
@@ -257,10 +259,11 @@ export default async function AdminMerchantsPage({
         .select(
           "id, merchant_id, profile_id, merchant_email, merchant_name, reason, status, review_note, requested_at, reviewed_at, requested_by, reviewed_by",
         )
-        .eq("status", "pending")
+        .in("status", ["pending", "manager_rejected"])
     : { data: [] as MerchantDeletionRequestRow[] }
   const pendingDeletionRequestMap = new Map<string, MerchantDeletionRequestRow>()
   const pendingDeletionRequests = (((pendingDeletionRequestsData as MerchantDeletionRequestRow[] | null) || []) as MerchantDeletionRequestRow[])
+  const pendingDeletionQueue = pendingDeletionRequests.filter((request) => request.status === "pending")
   for (const request of pendingDeletionRequests) {
     const key = getDeletionRequestKey({ merchantId: request.merchant_id, profileId: request.profile_id })
     if (key) {
@@ -443,12 +446,12 @@ export default async function AdminMerchantsPage({
               </div>
               <div className="rounded-[20px] border border-amber-200 bg-white/80 px-5 py-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700">Pending request</p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{pendingDeletionRequests.length}</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">{pendingDeletionQueue.length}</p>
               </div>
             </div>
-            {pendingDeletionRequests.length > 0 ? (
+            {pendingDeletionQueue.length > 0 ? (
               <div className="mt-5 grid gap-3 lg:grid-cols-2">
-                {pendingDeletionRequests.slice(0, 4).map((request) => (
+                {pendingDeletionQueue.slice(0, 4).map((request) => (
                   <div key={request.id} className="rounded-[18px] border border-amber-200 bg-white/85 px-4 py-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -918,13 +921,13 @@ export default async function AdminMerchantsPage({
                                 )
                               })()}
                             </details>
-                            {canReviewMerchantDeletion ? (
+                            {pendingDeletionRequest.status === "pending" && canReviewMerchantDeletion ? (
                               <>
                                 <form action={approveMerchantDeletion} className="space-y-3">
                                   <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
                                   <textarea
                                     name="reviewNote"
-                                    placeholder="Catatan approval operations manager..."
+                                    placeholder="Alasan final penghapusan yang akan dikirim ke email merchant..."
                                     className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                   />
                                   <ConfirmSubmitButton
@@ -935,25 +938,49 @@ export default async function AdminMerchantsPage({
                                     Setujui penghapusan
                                   </ConfirmSubmitButton>
                                 </form>
-                                <form action={cancelMerchantDeletion} className="space-y-3">
+                                <form action={rejectMerchantDeletion} className="space-y-3">
                                   <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
                                   <textarea
                                     name="reviewNote"
-                                    placeholder="Alasan pembatalan penghapusan..."
+                                    placeholder="Alasan operations manager menolak penghapusan. Alasan ini akan dikirim ke admin..."
                                     className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
                                   />
                                   <ConfirmSubmitButton
-                                    confirmMessage="Batalkan pengajuan penghapusan merchant ini?"
-                                    pendingLabel="Sedang membatalkan..."
+                                    confirmMessage="Tolak pengajuan penghapusan merchant ini dan kirim alasan ke admin?"
+                                    pendingLabel="Sedang menolak..."
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                                  >
+                                    Tolak penghapusan
+                                  </ConfirmSubmitButton>
+                                </form>
+                              </>
+                            ) : pendingDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && (currentUserId === pendingDeletionRequest.requested_by || currentRole === "superadmin") ? (
+                              <div className="space-y-3">
+                                <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
+                                  <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
+                                </div>
+                                <form action={finalizeMerchantDeletionCancellation} className="space-y-3">
+                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                  <textarea
+                                    name="cancelNote"
+                                    placeholder="Catatan admin saat menutup pengajuan ini..."
+                                    className="min-h-[96px] w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+                                  />
+                                  <ConfirmSubmitButton
+                                    confirmMessage="Tutup pengajuan penghapusan merchant ini sebagai dibatalkan?"
+                                    pendingLabel="Sedang menutup pengajuan..."
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                                   >
                                     Batalkan penghapusan
                                   </ConfirmSubmitButton>
                                 </form>
-                              </>
+                              </div>
                             ) : (
                               <div className="rounded-[18px] border border-sky-200 bg-sky-50 p-4 text-sm leading-7 text-sky-700">
-                                Menunggu keputusan operations manager. Admin tidak bisa menghapus merchant ini sebelum request direview.
+                                {pendingDeletionRequest.status === "manager_rejected"
+                                  ? "Pengajuan ini sudah ditolak operations manager dan sedang menunggu admin menutup request."
+                                  : "Menunggu keputusan operations manager. Admin tidak bisa menghapus merchant ini sebelum request direview."}
                               </div>
                             )}
                           </div>
@@ -1069,13 +1096,13 @@ export default async function AdminMerchantsPage({
                               Jika disetujui, akun anomali ini akan dihapus permanen dengan menghapus profile merchant dan auth user yang terkait.
                             </div>
                           </div>
-                          {canReviewMerchantDeletion ? (
+                          {pendingDeletionRequest.status === "pending" && canReviewMerchantDeletion ? (
                             <div className="mt-4 space-y-4">
                               <form action={approveMerchantDeletion} className="space-y-3">
                                 <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
                                 <textarea
                                   name="reviewNote"
-                                  placeholder="Catatan approval operations manager..."
+                                  placeholder="Alasan final penghapusan yang akan dikirim ke email merchant..."
                                   className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                 />
                                 <ConfirmSubmitButton
@@ -1086,17 +1113,39 @@ export default async function AdminMerchantsPage({
                                   Setujui penghapusan
                                 </ConfirmSubmitButton>
                               </form>
-                              <form action={cancelMerchantDeletion} className="space-y-3">
+                              <form action={rejectMerchantDeletion} className="space-y-3">
                                 <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
                                 <textarea
                                   name="reviewNote"
-                                  placeholder="Alasan pembatalan penghapusan..."
+                                  placeholder="Alasan operations manager menolak penghapusan. Alasan ini akan dikirim ke admin..."
                                   className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
                                 />
                                 <ConfirmSubmitButton
-                                  confirmMessage="Batalkan pengajuan penghapusan akun merchant ini?"
-                                  pendingLabel="Sedang membatalkan..."
+                                  confirmMessage="Tolak pengajuan penghapusan akun merchant ini dan kirim alasan ke admin?"
+                                  pendingLabel="Sedang menolak..."
                                   className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                                >
+                                  Tolak penghapusan
+                                </ConfirmSubmitButton>
+                              </form>
+                            </div>
+                          ) : pendingDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && (currentUserId === pendingDeletionRequest.requested_by || currentRole === "superadmin") ? (
+                            <div className="mt-4 space-y-3">
+                              <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
+                                <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
+                              </div>
+                              <form action={finalizeMerchantDeletionCancellation} className="space-y-3">
+                                <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                <textarea
+                                  name="cancelNote"
+                                  placeholder="Catatan admin saat menutup pengajuan ini..."
+                                  className="min-h-[96px] w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
+                                />
+                                <ConfirmSubmitButton
+                                  confirmMessage="Tutup pengajuan penghapusan akun merchant ini sebagai dibatalkan?"
+                                  pendingLabel="Sedang menutup pengajuan..."
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                                 >
                                   Batalkan penghapusan
                                 </ConfirmSubmitButton>
@@ -1104,7 +1153,9 @@ export default async function AdminMerchantsPage({
                             </div>
                           ) : (
                             <div className="mt-4 text-sm leading-7 text-sky-700">
-                              Menunggu keputusan operations manager. Admin tidak bisa menghapus akun ini sebelum request direview.
+                              {pendingDeletionRequest.status === "manager_rejected"
+                                ? "Pengajuan ini sudah ditolak operations manager dan sedang menunggu admin menutup request."
+                                : "Menunggu keputusan operations manager. Admin tidak bisa menghapus akun ini sebelum request direview."}
                             </div>
                           )}
                         </>
