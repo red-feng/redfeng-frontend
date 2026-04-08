@@ -254,7 +254,8 @@ export default async function AdminMerchantsPage({
         .eq("status", "pending")
     : { data: [] as MerchantDeletionRequestRow[] }
   const pendingDeletionRequestMap = new Map<string, MerchantDeletionRequestRow>()
-  for (const request of ((pendingDeletionRequestsData as MerchantDeletionRequestRow[] | null) || []) as MerchantDeletionRequestRow[]) {
+  const pendingDeletionRequests = (((pendingDeletionRequestsData as MerchantDeletionRequestRow[] | null) || []) as MerchantDeletionRequestRow[])
+  for (const request of pendingDeletionRequests) {
     const key = getDeletionRequestKey({ merchantId: request.merchant_id, profileId: request.profile_id })
     if (key) {
       pendingDeletionRequestMap.set(key, request)
@@ -423,6 +424,49 @@ export default async function AdminMerchantsPage({
           <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
             {resolvedSearchParams.error}
           </div>
+        ) : null}
+        {canReviewMerchantDeletion ? (
+          <section className="rounded-[24px] border border-amber-200 bg-[linear-gradient(135deg,#fff9eb_0%,#fff4d6_100%)] p-5 shadow-[0_18px_50px_rgba(146,64,14,0.08)] sm:rounded-[28px] sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-amber-700">Deletion review queue</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Pengajuan hapus merchant dari admin</h2>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Review data merchant, alasan admin, dan dampak penghapusan sebelum menyetujui atau membatalkan request.
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-amber-200 bg-white/80 px-5 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amber-700">Pending request</p>
+                <p className="mt-2 text-3xl font-semibold text-slate-950">{pendingDeletionRequests.length}</p>
+              </div>
+            </div>
+            {pendingDeletionRequests.length > 0 ? (
+              <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                {pendingDeletionRequests.slice(0, 4).map((request) => (
+                  <div key={request.id} className="rounded-[18px] border border-amber-200 bg-white/85 px-4 py-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">
+                          {request.merchant_name || request.merchant_email || request.merchant_id || request.profile_id || request.id}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          {request.requested_at ? new Date(request.requested_at).toLocaleString("id-ID") : "Waktu request tidak tersedia"}
+                        </p>
+                      </div>
+                      <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                        Menunggu review
+                      </span>
+                    </div>
+                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{request.reason}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 rounded-[18px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-700">
+                Belum ada pengajuan hapus merchant yang menunggu review dari admin.
+              </div>
+            )}
+          </section>
         ) : null}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -774,6 +818,83 @@ export default async function AdminMerchantsPage({
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
                               <p className="mt-3 text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
                             </div>
+                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ringkasan merchant</p>
+                              <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Brand</p>
+                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.brand_name || merchant.company_name)}</p>
+                                </div>
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Email</p>
+                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.email)}</p>
+                                </div>
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Company</p>
+                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.company_name)}</p>
+                                </div>
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
+                                  <p className="mt-2 font-medium text-slate-800">{getStatusLabel(merchant.verification_status)}</p>
+                                </div>
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NIB</p>
+                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.nib)}</p>
+                                </div>
+                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NPWP</p>
+                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.npwp_company)}</p>
+                                </div>
+                              </div>
+                              <div className="mt-4 flex flex-wrap gap-3">
+                                <Link
+                                  href={`/admin/merchants/${merchant.id}/profile`}
+                                  className="inline-flex items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
+                                >
+                                  Review profil merchant
+                                </Link>
+                                <Link
+                                  href={`/admin/merchants/${merchant.id}`}
+                                  className="inline-flex items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                                >
+                                  Review paket merchant
+                                </Link>
+                              </div>
+                            </div>
+                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
+                              {(() => {
+                                const stats = packageStatsMap.get(merchant.id) || {
+                                  total: 0,
+                                  pending: 0,
+                                  approved: 0,
+                                  rejected: 0,
+                                  draft: 0,
+                                  inactive: 0,
+                                }
+                                const impactItems = [
+                                  { label: "Total paket", value: `${stats.total}` },
+                                  { label: "Paket approved", value: `${stats.approved}` },
+                                  { label: "Paket pending", value: `${stats.pending}` },
+                                  { label: "Paket draft", value: `${stats.draft}` },
+                                ]
+                                return (
+                                  <>
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                      {impactItems.map((item) => (
+                                        <div key={item.label} className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
+                                          <p className="mt-2 font-medium text-slate-800">{item.value}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
+                                      Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
+                                    </div>
+                                  </>
+                                )
+                              })()}
+                            </div>
                             {canReviewMerchantDeletion ? (
                               <>
                                 <form action={approveMerchantDeletion} className="space-y-3">
@@ -918,6 +1039,12 @@ export default async function AdminMerchantsPage({
                           <div className="mt-4 rounded-[18px] border border-amber-200 bg-white/80 p-4 text-sm leading-7 text-slate-700">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
                             <p className="mt-3">{pendingDeletionRequest.reason}</p>
+                          </div>
+                          <div className="mt-4 rounded-[18px] border border-slate-200 bg-white/90 p-4 text-sm leading-7 text-slate-700">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
+                            <div className="mt-3 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-4 text-rose-700">
+                              Jika disetujui, akun anomali ini akan dihapus permanen dengan menghapus profile merchant dan auth user yang terkait.
+                            </div>
                           </div>
                           {canReviewMerchantDeletion ? (
                             <div className="mt-4 space-y-4">

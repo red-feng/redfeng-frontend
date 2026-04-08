@@ -48,7 +48,7 @@ export default async function AdminProtectedLayout({
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
 
-  const [merchantResult, packageResult, bookingResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id", { count: "exact", head: true })
@@ -59,9 +59,14 @@ export default async function AdminProtectedLayout({
     adminSupabase
       .from("bookings")
       .select("id, booking_status"),
+    adminSupabase
+      .from("merchant_deletion_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
   ])
 
   const pendingMerchants = merchantResult.count || 0
+  const pendingMerchantDeletionRequests = merchantDeletionRequestResult.count || 0
   const pendingPackages = ((packageResult.data as Array<{ id: string; status: string | null }> | null) || []).filter(
     (pkg) => normalizeStatus(pkg.status) === "pending",
   ).length
@@ -75,7 +80,7 @@ export default async function AdminProtectedLayout({
         {
           label: "Operational Review",
           children: [
-            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants },
+            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants + pendingMerchantDeletionRequests },
             { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
             { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
             { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
@@ -101,7 +106,7 @@ export default async function AdminProtectedLayout({
           label: "Paket Tour",
           children: [
             { href: "/admin/paket-tour", label: "Workspace", badgeCount: 0 },
-            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants },
+            { href: "/admin/merchants", label: "Merchant Directory", badgeCount: pendingMerchants + pendingMerchantDeletionRequests },
             { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
           ],
         },
