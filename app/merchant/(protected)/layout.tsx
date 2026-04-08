@@ -231,6 +231,14 @@ export default async function MerchantLayout({
           "/merchant/review",
           "/merchant/kalender-booking",
         ]}
+        realtimeTables={[
+          "merchants",
+          "packages",
+          "bookings",
+          "payout_requests",
+          "package_chat_rooms",
+          "package_reviews",
+        ]}
       />
       <MerchantNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">

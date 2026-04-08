@@ -158,6 +158,14 @@ export default async function AdminProtectedLayout({
           "/admin/packages",
           "/admin/bookings",
         ]}
+        syncKeys={["redfeng-admin-merchants-refresh"]}
+        realtimeTables={[
+          "merchant_deletion_requests",
+          "merchants",
+          "packages",
+          "bookings",
+          "profiles",
+        ]}
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">

@@ -5,6 +5,7 @@ import { toneClass } from "@/lib/status-tones"
 import Link from "next/link"
 import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import MerchantReasonActionCard from "./MerchantReasonActionCard"
+import CrossTabRefreshSignal from "@/app/components/CrossTabRefreshSignal"
 import {
   approveMerchant,
   approveMerchantDeletion,
@@ -424,6 +425,12 @@ export default async function AdminMerchantsPage({
         </section>
 
       <section className="space-y-5">
+        {resolvedSearchParams.success || resolvedSearchParams.error ? (
+          <CrossTabRefreshSignal
+            storageKey="redfeng-admin-merchants-refresh"
+            value={resolvedSearchParams.success || resolvedSearchParams.error || "merchant-refresh"}
+          />
+        ) : null}
         {resolvedSearchParams.success ? (
           <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
             {resolvedSearchParams.success}

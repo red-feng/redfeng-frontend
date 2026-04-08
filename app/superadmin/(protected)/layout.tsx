@@ -64,6 +64,15 @@ export default async function SuperadminProtectedLayout({
           "/superadmin/finance-manager",
           "/admin/bookings",
         ]}
+        realtimeTables={[
+          "merchant_deletion_requests",
+          "merchants",
+          "packages",
+          "bookings",
+          "payout_requests",
+          "refund_requests",
+          "profiles",
+        ]}
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">
