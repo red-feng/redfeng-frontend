@@ -150,12 +150,12 @@ export default async function AdminMerchantsPage({
   const canRequestMerchantDeletion = ["admin", "superadmin"].includes(currentRole)
   const canReviewMerchantDeletion = ["operations_manager", "superadmin"].includes(currentRole)
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
-    supabase
+    adminSupabase
       .from("merchants")
       .select("*")
       .eq("verification_status", "pending")
       .order("created_at", { ascending: false }),
-    supabase
+    adminSupabase
       .from("merchants")
       .select("*")
       .in("verification_status", ["approved", "inactive", "deleted"])
@@ -167,7 +167,7 @@ export default async function AdminMerchantsPage({
   const activeMerchants = managed.filter((merchant) => merchant.verification_status === "approved")
   const allMerchantIds = [...new Set([...pending, ...managed].map((merchant) => merchant.id))]
   const { data: packagesData } = allMerchantIds.length
-    ? await supabase.from("packages").select("merchant_id, status").in("merchant_id", allMerchantIds)
+    ? await adminSupabase.from("packages").select("merchant_id, status").in("merchant_id", allMerchantIds)
     : { data: [] as Array<{ merchant_id: string | null; status: string | null }> }
   const packageStatsMap = new Map<
     string,

@@ -697,7 +697,7 @@ export async function requestMerchantDeletion(formData: FormData) {
     })
 
     revalidateMerchantPages()
-    backToMerchants(`Pengajuan hapus merchant ${merchant.brand_name || merchant.email || merchantId} berhasil dikirim ke operations manager.`, "success")
+    return backToMerchants(`Pengajuan hapus merchant ${merchant.brand_name || merchant.email || merchantId} berhasil dikirim ke operations manager.`, "success")
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
