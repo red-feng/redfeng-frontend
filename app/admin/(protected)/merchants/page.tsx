@@ -70,6 +70,12 @@ function fieldValue(value: string | null) {
   return value && value.trim() ? value : "-"
 }
 
+function fieldValueClassName(compact = false) {
+  return compact
+    ? "mt-2 break-words text-sm font-medium leading-6 text-slate-800"
+    : "mt-2 break-words text-sm font-medium text-slate-800"
+}
+
 function DocumentLink({
   href,
   label,
@@ -722,7 +728,7 @@ export default async function AdminMerchantsPage({
                   key={merchant.id}
                   className="rounded-[22px] border border-[#ece3d7] bg-[#fffdfa] p-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)] sm:rounded-[26px] sm:p-6"
                 >
-                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_272px] lg:items-start">
+                  <div className={`grid gap-6 ${pendingDeletionRequest ? "grid-cols-1" : "xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start"}`}>
                     <div className="min-w-0 flex-1 space-y-4">
                       <div className="flex flex-wrap items-center gap-3">
                         <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">
@@ -741,9 +747,9 @@ export default async function AdminMerchantsPage({
                           { label: "NIB", value: fieldValue(merchant.nib) },
                           { label: "NPWP Badan Usaha", value: fieldValue(merchant.npwp_company) },
                         ].map((item) => (
-                          <div key={item.label} className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3">
+                          <div key={item.label} className="min-w-0 rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
-                            <p className="mt-2 text-sm font-medium text-slate-800">{item.value}</p>
+                            <p className={fieldValueClassName()}>{item.value}</p>
                           </div>
                         ))}
                       </div>
@@ -803,65 +809,65 @@ export default async function AdminMerchantsPage({
                       </div>
                     </div>
 
-                    <div className="flex w-full flex-col gap-3 lg:w-[272px] lg:pt-[58px]">
+                    <div className={`flex min-w-0 w-full flex-col gap-3 ${pendingDeletionRequest ? "" : "xl:w-[340px] xl:pt-[58px]"}`}>
                       {pendingDeletionRequest ? (
                         <div className="overflow-hidden rounded-[24px] border border-amber-200 bg-amber-50/80 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
-                          <div className="border-b border-amber-200 px-5 py-4">
+                          <div className="border-b border-amber-200 px-5 py-5 sm:px-6">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-700">Pending deletion review</p>
                             <h4 className="mt-2 text-base font-semibold text-slate-950">Menunggu keputusan operations manager</h4>
                             <p className="mt-2 text-sm leading-6 text-slate-600">
                               Penghapusan merchant belum dijalankan. Request ini masih menunggu approve atau batal dari operations manager.
                             </p>
                           </div>
-                          <div className="space-y-4 px-5 py-4">
-                            <div className="rounded-[18px] border border-amber-200 bg-white/80 p-4">
+                          <div className="space-y-5 px-5 py-5 sm:px-6">
+                            <div className="rounded-[18px] border border-amber-200 bg-white/80 p-4 sm:p-5">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
-                              <p className="mt-3 text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
+                              <p className="mt-3 break-words text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
                             </div>
-                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4 sm:p-5">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ringkasan merchant</p>
-                              <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                              <div className="mt-3 grid gap-3 text-sm">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Brand</p>
-                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.brand_name || merchant.company_name)}</p>
+                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.brand_name || merchant.company_name)}</p>
                                 </div>
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Email</p>
-                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.email)}</p>
+                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.email)}</p>
                                 </div>
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Company</p>
-                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.company_name)}</p>
+                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.company_name)}</p>
                                 </div>
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                                  <p className="mt-2 font-medium text-slate-800">{getStatusLabel(merchant.verification_status)}</p>
+                                  <p className={fieldValueClassName(true)}>{getStatusLabel(merchant.verification_status)}</p>
                                 </div>
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NIB</p>
-                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.nib)}</p>
+                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.nib)}</p>
                                 </div>
-                                <div className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
+                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NPWP</p>
-                                  <p className="mt-2 font-medium text-slate-800">{fieldValue(merchant.npwp_company)}</p>
+                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.npwp_company)}</p>
                                 </div>
                               </div>
-                              <div className="mt-4 flex flex-wrap gap-3">
+                              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                                 <Link
                                   href={`/admin/merchants/${merchant.id}/profile`}
-                                  className="inline-flex items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
+                                  className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
                                 >
                                   Review profil merchant
                                 </Link>
                                 <Link
                                   href={`/admin/merchants/${merchant.id}`}
-                                  className="inline-flex items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
+                                  className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-center text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
                                 >
                                   Review paket merchant
                                 </Link>
                               </div>
                             </div>
-                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4 sm:p-5">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
                               {(() => {
                                 const stats = packageStatsMap.get(merchant.id) || {
@@ -888,11 +894,11 @@ export default async function AdminMerchantsPage({
                                         </div>
                                       ))}
                                     </div>
-                                    <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
-                                      Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
-                                    </div>
-                                  </>
-                                )
+                                     <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
+                                       Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
+                                     </div>
+                                   </>
+                                 )
                               })()}
                             </div>
                             {canReviewMerchantDeletion ? (
@@ -902,7 +908,7 @@ export default async function AdminMerchantsPage({
                                   <textarea
                                     name="reviewNote"
                                     placeholder="Catatan approval operations manager..."
-                                    className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                    className="min-h-[112px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
                                   />
                                   <ConfirmSubmitButton
                                     confirmMessage="Yakin ingin menyetujui penghapusan merchant ini? Semua data merchant dan paket terkait akan dihapus permanen."
@@ -917,7 +923,7 @@ export default async function AdminMerchantsPage({
                                   <textarea
                                     name="reviewNote"
                                     placeholder="Alasan pembatalan penghapusan..."
-                                    className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+                                    className="min-h-[112px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm leading-7 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
                                   />
                                   <ConfirmSubmitButton
                                     confirmMessage="Batalkan pengajuan penghapusan merchant ini?"
