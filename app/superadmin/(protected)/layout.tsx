@@ -73,6 +73,12 @@ export default async function SuperadminProtectedLayout({
           "refund_requests",
           "profiles",
         ]}
+        pathRealtimeDelayMs={{
+          "/superadmin/dashboard": 1200,
+          "/superadmin/operations-manager": 500,
+          "/superadmin/finance-manager": 500,
+          "/admin/bookings": 500,
+        }}
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">

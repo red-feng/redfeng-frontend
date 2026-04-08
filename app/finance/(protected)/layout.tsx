@@ -61,11 +61,19 @@ export default async function FinanceProtectedLayout({
           "/finance/payouts",
           "/finance/refunds",
         ]}
+        excludeOnPaths={[
+          "/finance/refunds",
+        ]}
         realtimeTables={[
           "payout_requests",
           "refund_requests",
           "bookings",
         ]}
+        pathRealtimeDelayMs={{
+          "/finance/dashboard": 1100,
+          "/finance/payouts": 400,
+          "/finance/refunds": 450,
+        }}
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-8 lg:px-10">

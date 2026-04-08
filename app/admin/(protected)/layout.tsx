@@ -166,6 +166,12 @@ export default async function AdminProtectedLayout({
           "bookings",
           "profiles",
         ]}
+        pathRealtimeDelayMs={{
+          "/admin/dashboard": 1200,
+          "/admin/merchants": 450,
+          "/admin/packages": 550,
+          "/admin/bookings": 500,
+        }}
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">

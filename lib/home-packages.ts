@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fetchLatestCurrencyRates } from "@/lib/currency-rates"
 import { type Locale } from "@/lib/i18n"
-import { localeCurrencyMap, normalizePackageCurrency, resolveLocalizedPackagePricing } from "@/lib/package-pricing"
+import { localeCurrencyMap, normalizePackageCurrency } from "@/lib/package-pricing"
 import { normalizeFacilityName } from "@/lib/facility-labels"
 
 export const localePriceRangeMap: Record<Locale, number> = {
@@ -124,42 +124,11 @@ async function attachLivePricingToPackages(
   locale: Locale,
 ) {
   const targetCurrency = localeCurrencyMap[locale]
-  const resolvedPricingByPackage = new Map<string, { currency: string; priceAdult: number; priceChild: number }>()
-
-  for (const pkg of packages) {
-    const exactLocalizedPricing = (pkg.package_translations || []).find(
-      (translation) =>
-        String(translation.language_code || "").trim().toLowerCase() === locale &&
-        normalizePackageCurrency(translation.currency) === targetCurrency,
-    )
-
-    if (exactLocalizedPricing) {
-      resolvedPricingByPackage.set(pkg.id, {
-        currency: targetCurrency,
-        priceAdult: Number(exactLocalizedPricing.price_adult || 0),
-        priceChild: Number(exactLocalizedPricing.price_child || 0),
-      })
-      continue
-    }
-
-    resolvedPricingByPackage.set(
-      pkg.id,
-      resolveLocalizedPackagePricing({
-        locale,
-        defaultLanguage: pkg.default_language,
-        publishedLanguages: pkg.published_languages,
-        baseCurrency: pkg.currency,
-        baseAdultPrice: pkg.price_adult,
-        baseChildPrice: pkg.price_child,
-        translations: pkg.package_translations,
-      }),
-    )
-  }
 
   const distinctBaseCurrencies = [
     ...new Set(
       packages
-        .map((pkg) => normalizePackageCurrency(resolvedPricingByPackage.get(pkg.id)?.currency || pkg.currency))
+        .map((pkg) => normalizePackageCurrency(pkg.currency))
         .filter((currency) => currency !== targetCurrency),
     ),
   ]
@@ -172,10 +141,9 @@ async function attachLivePricingToPackages(
   const ratesByCurrency = new Map(rateEntries)
 
   return packages.map((pkg) => {
-    const resolvedPricing = resolvedPricingByPackage.get(pkg.id)
-    const baseCurrency = normalizePackageCurrency(resolvedPricing?.currency || pkg.currency)
-    const baseAdultPrice = Number(resolvedPricing?.priceAdult ?? pkg.price_adult ?? 0)
-    const baseChildPrice = Number(resolvedPricing?.priceChild ?? pkg.price_child ?? 0)
+    const baseCurrency = normalizePackageCurrency(pkg.currency)
+    const baseAdultPrice = Number(pkg.price_adult ?? 0)
+    const baseChildPrice = Number(pkg.price_child ?? 0)
 
     if (baseCurrency === targetCurrency) {
       return {
@@ -229,7 +197,7 @@ const getFeaturedHomePackagesCached = unstable_cache(
     return localizedPackages.slice(0, 3)
   },
   ["featured-home-packages"],
-  { revalidate: 300 },
+  { revalidate: 60 },
 )
 
 export async function getFeaturedHomePackages(locale: Locale) {
@@ -264,30 +232,6 @@ const searchCountryIdsByNameCached = unstable_cache(
 
 async function searchCountryIdsByName(searchTerm: string) {
   return searchCountryIdsByNameCached(searchTerm)
-}
-
-const getLocalizedPriceRowsCached = unstable_cache(
-  async (locale: Locale, currency: string) => {
-    const supabase = createAdminClient()
-    const { data, error } = await supabase
-      .from("package_translations")
-      .select("package_id, price_adult")
-      .eq("language_code", locale)
-      .eq("currency", currency)
-
-    if (error) {
-      console.log("LOCALE PRICE QUERY ERROR:", error)
-      return [] as Array<{ package_id: string | null; price_adult: number | null }>
-    }
-
-    return ((data as Array<{ package_id: string | null; price_adult: number | null }> | null) || [])
-  },
-  ["localized-package-prices"],
-  { revalidate: 180 },
-)
-
-async function getLocalizedPriceRows(locale: Locale) {
-  return getLocalizedPriceRowsCached(locale, localeCurrencyMap[locale])
 }
 
 const getPackageIdsByFacilityIdsCached = unstable_cache(
@@ -407,7 +351,6 @@ export async function getHomePackages(
     name: facility.name,
   }))
   const pageSizeMode = options?.pageSizeMode ?? "single"
-  const buildInFilterValue = (values: string[]) => `(${values.map((value) => `"${value}"`).join(",")})`
 
   if (publicMerchantIds.size === 0) {
     return {
@@ -468,23 +411,6 @@ export async function getHomePackages(
       query = query.gte("duration", 4).lte("duration", 7)
     } else if (searchParams.duration === "8+") {
       query = query.gte("duration", 8)
-    }
-  }
-
-  if (hasPriceFilter) {
-    const localePriceRows = await getLocalizedPriceRows(locale)
-    if (localePriceRows.length > 0) {
-      const excludedPackageIds = localePriceRows
-        .filter((row) => {
-          const priceAdult = Number(row.price_adult || 0)
-          return priceAdult < minPriceParam || priceAdult > maxPriceParam
-        })
-        .map((row) => String(row.package_id || ""))
-        .filter(Boolean)
-
-      if (excludedPackageIds.length > 0) {
-        query = query.not("id", "in", buildInFilterValue(excludedPackageIds))
-      }
     }
   }
 

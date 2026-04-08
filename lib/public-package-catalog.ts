@@ -113,7 +113,7 @@ const getPublicCatalogDataCached = unstable_cache(
     }
   },
   ["public-catalog-data"],
-  { revalidate: 180 },
+  { revalidate: 60 },
 )
 
 export async function getPublicCatalogData(

@@ -62,6 +62,7 @@ const checkoutUiCopy = {
     fixedDepartureHint: "Jadwal keberangkatan untuk paket ini sudah tetap dan mengikuti tanggal yang ditentukan merchant.",
     localizedNotice: "Harga, currency, email, dan invoice mengikuti bahasa yang Anda pilih. Pembayaran gateway tetap diproses dalam {currency}.{exchangeDate}",
     localizedExchangeDate: " Kurs acuan: {date}.",
+    localizedSnapshot: "Nilai final booking akan dikunci saat checkout dibuat, jadi tidak berubah mengikuti kurs setelah booking tercatat.",
     packageSubtotal: "Subtotal paket ({currency})",
     paymentSubtotal: "Subtotal pembayaran ({currency})",
     adminFeeMethod: "Admin fee {method} ({percent}%)",
@@ -121,6 +122,7 @@ const checkoutUiCopy = {
     fixedDepartureHint: "The departure schedule for this package is fixed and follows the date set by the merchant.",
     localizedNotice: "Price, currency, email, and invoice follow the language you selected. The payment gateway still processes in {currency}.{exchangeDate}",
     localizedExchangeDate: " Reference rate date: {date}.",
+    localizedSnapshot: "The final booking amount is locked when checkout is created, so it will not keep changing with later exchange-rate movement.",
     packageSubtotal: "Package subtotal ({currency})",
     paymentSubtotal: "Payment subtotal ({currency})",
     adminFeeMethod: "Admin fee {method} ({percent}%)",
@@ -180,6 +182,7 @@ const checkoutUiCopy = {
     fixedDepartureHint: "此套餐的出发日期已固定，并遵循商家设定的日期。",
     localizedNotice: "价格、货币、邮件和发票都会跟随您选择的语言显示。支付网关仍以 {currency} 处理。{exchangeDate}",
     localizedExchangeDate: " 汇率日期：{date}。",
+    localizedSnapshot: "最终预订金额会在创建结账时锁定，因此不会在订单生成后继续随汇率波动而变化。",
     packageSubtotal: "套餐小计 ({currency})",
     paymentSubtotal: "付款小计 ({currency})",
     adminFeeMethod: "{method} 手续费 ({percent}%)",
@@ -762,6 +765,7 @@ export default function CheckoutClient({
                          ? formatCopy(ui.localizedExchangeDate, { date: paymentPricing.exchangeDate })
                          : "",
                      })}
+                     <p className="mt-2">{ui.localizedSnapshot}</p>
                   </div>
                   <div className="flex items-center justify-between">
                      <span>{formatCopy(ui.packageSubtotal, { currency: data.currency || "IDR" })}</span>

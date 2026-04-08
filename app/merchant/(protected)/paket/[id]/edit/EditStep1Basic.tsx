@@ -109,6 +109,48 @@ export default function EditStep1Basic({
             primary: "Harga sumber utama.",
             auto: "Nilai ini terisi otomatis dari kurs terbaru.",
           }
+  const pricingGuidance =
+    locale === "en"
+      ? {
+          merchantCurrency: "Base merchant currency",
+          merchantCurrencyHint: "This is the source currency stored for the package.",
+          adultInput: "Base adult price",
+          adultInputHint: "This base price is stored and used as the main source for live conversion.",
+          childInput: "Base child price",
+          childInputHint: "Optional base child price in the same source currency.",
+          panelTitle: "Live price preview by published language",
+          panelHint:
+            "Only the base currency and base prices above become the main pricing source. The values below are live previews for IDR, USD, and CNY.",
+          primary: "Stored as the main source price.",
+          auto: "Live preview from the latest exchange rate. This is not stored as a separate final source price.",
+        }
+      : locale === "zh"
+        ? {
+            merchantCurrency: "商家基础货币",
+            merchantCurrencyHint: "这是系统保存为套餐主价格来源的货币。",
+            adultInput: "成人基础价格",
+            adultInputHint: "该基础价格会被保存，并作为实时换算的主价格来源。",
+            childInput: "儿童基础价格",
+            childInputHint: "可选的儿童基础价格，与上面使用同一货币。",
+            panelTitle: "实时价格预览（按发布语言显示）",
+            panelHint:
+              "只有上方的基础货币与基础价格会成为主价格来源。下方显示的 IDR、USD、CNY 仅为实时预览。",
+            primary: "作为主价格来源保存。",
+            auto: "根据最新汇率生成的实时预览。这不是另一个独立保存的最终价格来源。",
+          }
+        : {
+            merchantCurrency: "Mata uang dasar merchant",
+            merchantCurrencyHint: "Ini adalah mata uang sumber utama yang disimpan untuk paket.",
+            adultInput: "Harga dasar dewasa",
+            adultInputHint: "Harga dasar ini disimpan dan dipakai sebagai sumber utama konversi live.",
+            childInput: "Harga dasar anak",
+            childInputHint: "Opsional, harga dasar anak dalam mata uang sumber yang sama.",
+            panelTitle: "Preview live price per bahasa publish",
+            panelHint:
+              "Hanya mata uang dasar dan harga dasar di atas yang menjadi sumber utama pricing paket. Nilai IDR, USD, dan CNY di bawah ini hanyalah preview live.",
+            primary: "Disimpan sebagai harga sumber utama.",
+            auto: "Preview live dari kurs terbaru. Nilai ini bukan sumber harga final terpisah yang disimpan.",
+          }
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const titleTargetLanguages = useMemo(
     () =>
@@ -565,7 +607,7 @@ export default function EditStep1Basic({
         <div className="md:col-span-2 space-y-3">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">{t.merchantCurrency}</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{pricingGuidance.merchantCurrency}</label>
               <select
                 name="base_currency"
                 value={baseCurrency}
@@ -578,9 +620,10 @@ export default function EditStep1Basic({
                   </option>
                 ))}
               </select>
+              <p className="mt-2 text-xs text-slate-500">{pricingGuidance.merchantCurrencyHint}</p>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">{t.adultPrice}</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{pricingGuidance.adultInput}</label>
               <input
                 name="base_price_adult"
                 inputMode="numeric"
@@ -590,9 +633,10 @@ export default function EditStep1Basic({
                 className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
                 required
               />
+              <p className="mt-2 text-xs text-slate-500">{pricingGuidance.adultInputHint}</p>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">{t.childPrice}</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">{pricingGuidance.childInput}</label>
               <input
                 name="base_price_child"
                 inputMode="numeric"
@@ -601,12 +645,13 @@ export default function EditStep1Basic({
                 placeholder={t.childPricePlaceholder}
                 className="w-full rounded-2xl border border-slate-300 p-3 outline-none focus:ring-2 focus:ring-orange-400"
               />
+              <p className="mt-2 text-xs text-slate-500">{pricingGuidance.childInputHint}</p>
             </div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <div className="mb-3 flex items-center justify-between gap-3">
               <p className="text-sm font-semibold text-slate-700">
-                {pricingText.title}
+                {pricingGuidance.panelTitle}
               </p>
               {ratesTimestamp && (
                 <p className="text-xs text-slate-500">
@@ -614,6 +659,7 @@ export default function EditStep1Basic({
                 </p>
               )}
             </div>
+            <p className="mb-3 text-xs leading-6 text-slate-500">{pricingGuidance.panelHint}</p>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {visibleLanguages.map((language) => {
                 const isDefaultPricingLanguage = language.code === normalizedDefaultLanguage
@@ -648,8 +694,8 @@ export default function EditStep1Basic({
                       </p>
                       <p className="pt-1 text-xs text-slate-500">
                         {isDefaultPricingLanguage
-                          ? pricingText.primary
-                          : pricingText.auto}
+                          ? pricingGuidance.primary
+                          : pricingGuidance.auto}
                       </p>
                     </div>
                     <input type="hidden" name={`currency_${language.code}`} value={pricingValues[language.code].currency || localeCurrencyMap[language.code]} />

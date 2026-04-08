@@ -63,10 +63,17 @@ export default async function CustomerLayout({
           "/customer/dashboard",
           "/booking",
         ]}
+        excludeOnPaths={[
+          "/booking/*/participants",
+        ]}
         realtimeTables={[
           "bookings",
           "package_chat_rooms",
         ]}
+        pathRealtimeDelayMs={{
+          "/customer/dashboard": 1000,
+          "/booking": 450,
+        }}
       />
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:px-10 md:py-5 lg:flex-row lg:items-center lg:justify-between">

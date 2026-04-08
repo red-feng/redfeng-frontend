@@ -231,6 +231,10 @@ export default async function MerchantLayout({
           "/merchant/review",
           "/merchant/kalender-booking",
         ]}
+        excludeOnPaths={[
+          "/merchant/paket/tambah",
+          "/merchant/paket/*/edit",
+        ]}
         realtimeTables={[
           "merchants",
           "packages",
@@ -239,6 +243,14 @@ export default async function MerchantLayout({
           "package_chat_rooms",
           "package_reviews",
         ]}
+        pathRealtimeDelayMs={{
+          "/merchant/dashboard": 1100,
+          "/merchant/pesanan": 400,
+          "/merchant/saldo-payout": 450,
+          "/merchant/chat": 250,
+          "/merchant/review": 700,
+          "/merchant/kalender-booking": 650,
+        }}
       />
       <MerchantNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">

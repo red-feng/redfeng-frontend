@@ -318,6 +318,9 @@ export default async function PaketPage({
           instant: "Instant",
           whyTitle: "Why guests love this",
           whyBody: "Curated itinerary, clear facilities, and a polished booking flow in your selected language.",
+          pricingNoteTitle: "Live localized pricing",
+          pricingNoteBody:
+            "Displayed prices follow the latest exchange rate for your selected language. Final booking amounts are snapshotted when checkout is created.",
           withWord: "with",
         }
       : activeLocale === "zh"
@@ -343,7 +346,27 @@ export default async function PaketPage({
             instant: "Instan",
             whyTitle: "Kenapa tamu menyukainya",
             whyBody: "Itinerary terkurasi, fasilitas jelas, dan alur booking yang rapi sesuai bahasa pilihan customer.",
+            pricingNoteTitle: "Harga lokal live",
+            pricingNoteBody:
+              "Harga yang tampil mengikuti kurs terbaru sesuai bahasa pilihan customer. Nilai final booking akan disnapshot saat checkout dibuat.",
             withWord: "dengan",
+          }
+  const pricingNoteCopy =
+    activeLocale === "en"
+      ? {
+          title: "Live localized pricing",
+          body:
+            "Displayed prices follow the latest exchange rate for your selected language. Final booking amounts are snapshotted when checkout is created.",
+        }
+      : activeLocale === "zh"
+        ? {
+            title: "实时本地化价格",
+            body: "当前显示价格会根据您所选语言使用最新汇率换算。最终预订金额会在创建结账时锁定并保存。",
+          }
+        : {
+            title: "Harga lokal live",
+            body:
+              "Harga yang tampil mengikuti kurs terbaru sesuai bahasa pilihan customer. Nilai final booking akan disnapshot saat checkout dibuat.",
           }
 
   const [
@@ -645,6 +668,10 @@ export default async function PaketPage({
               </div>
 
               <div className="space-y-3 p-4 text-sm text-slate-700 sm:p-5">
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-slate-700">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">{pricingNoteCopy.title}</p>
+                  <p className="mt-2 leading-6 text-sm text-blue-900">{pricingNoteCopy.body}</p>
+                </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                   <p>{t.duration}: {pkg.duration || 0} {t.day}</p>
                   <p className="mt-2">{participantLabel}: {pkg.minimal_peserta || 0} {t.people}</p>
