@@ -105,7 +105,7 @@ const copy: Record<Locale, InvoiceCopy> = {
     fullyPaid: "Fully Paid",
     terms: [
       "1. Invoice ini merupakan bukti pembayaran resmi customer kepada Red Feng untuk transaksi sesuai Booking ID yang tercantum.",
-      "2. Data booking, nominal pembayaran, dan detail paket pada invoice ini mengikuti data yang tercatat di sistem Red Feng pada saat transaksi berhasil dibuat.",
+      "2. Data booking, nominal pembayaran, detail paket, mata uang tampilan, dan snapshot kurs pada invoice ini mengikuti data yang tercatat di sistem Red Feng pada saat transaksi berhasil dibuat.",
       "3. Pembayaran dapat berupa DP, pelunasan, atau full payment sesuai metode yang dipilih saat checkout.",
       "4. Dana customer diterima dan dikelola terlebih dahulu oleh Red Feng sesuai mekanisme escrow dan proses operasional yang berlaku.",
       "5. Status pembayaran pada invoice ini berlaku pada saat invoice diterbitkan dan dapat berubah mengikuti pembaruan status transaksi di sistem.",
@@ -162,7 +162,7 @@ const copy: Record<Locale, InvoiceCopy> = {
     fullyPaid: "Fully Paid",
     terms: [
       "1. This invoice is official proof of customer payment to Red Feng for the transaction linked to the Booking ID shown here.",
-      "2. Booking data, payment amount, and package details on this invoice follow the records stored in the Red Feng system when the transaction is created.",
+      "2. Booking data, payment amount, package details, display currency, and exchange-rate snapshot on this invoice follow the records stored in the Red Feng system when the transaction is created.",
       "3. Payment may be made as a deposit, final settlement, or full payment based on the method selected at checkout.",
       "4. Customer funds are first received and managed by Red Feng in accordance with the applicable escrow and operational process.",
       "5. The payment status shown on this invoice is valid at the time of issuance and may change if the transaction status is updated in the system.",
@@ -219,7 +219,7 @@ const copy: Record<Locale, InvoiceCopy> = {
     fullyPaid: "已全额付款",
     terms: [
       "1. 本发票是客户向 Red Feng 支付与本预订编号相关交易款项的正式凭证。",
-      "2. 发票中的订单资料、付款金额及套餐详情，以交易成功创建时 Red Feng 系统记录为准。",
+      "2. 发票中的订单资料、付款金额、套餐详情、展示货币及汇率快照，以交易成功创建时 Red Feng 系统记录为准。",
       "3. 付款方式可为定金、尾款或全额付款，具体取决于结账时选择的方式。",
       "4. 客户资金将由 Red Feng 先行接收和管理，并遵循适用的托管及运营流程。",
       "5. 本发票所示付款状态仅代表开票时状态，后续可随系统交易更新而变化。",

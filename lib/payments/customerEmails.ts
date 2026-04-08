@@ -67,6 +67,8 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
       adminFee: "Admin fee customer",
       tax: "Pajak customer",
       paidAmount: "Nominal dibayar",
+      pricingSnapshot:
+        "Nominal pada email ini mengikuti snapshot kurs dan mata uang tampilan yang dikunci saat checkout atau pembayaran berhasil dibuat. Nilai tersebut tidak terus berubah mengikuti kurs setelah booking tercatat.",
       operationalFlow:
         "Tahap operasional berikutnya akan mengikuti alur Arrived, Picked up, Go, lalu Ready for Finance saat booking masuk ke antrean finance.",
       settlementDeadline: "Batas waktu pelunasan",
@@ -98,6 +100,8 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
       adminFee: "Customer admin fee",
       tax: "Customer tax",
       paidAmount: "Amount paid",
+      pricingSnapshot:
+        "The amounts in this email follow the exchange-rate and display-currency snapshot locked when checkout or payment is created. They do not keep changing with later exchange-rate movement.",
       operationalFlow:
         "The next operational stages will follow Arrived, Picked up, Go, and then Ready for Finance when the booking enters the finance queue.",
       settlementDeadline: "Final payment deadline",
@@ -129,6 +133,8 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
       adminFee: "客户管理费",
       tax: "客户税费",
       paidAmount: "已支付金额",
+      pricingSnapshot:
+        "本邮件中的金额以结账或付款创建时锁定的汇率与展示货币快照为准，后续不会继续随汇率波动而变化。",
       operationalFlow:
         "接下来的运营阶段将依次为 Arrived、Picked up、Go，随后订单进入财务队列时会显示为 Ready for Finance。",
       settlementDeadline: "尾款截止时间",
@@ -216,6 +222,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
           <p style="margin:0;"><strong>${copy.paidAmount}:</strong> ${formatMoney(payload.totalAmount, locale, payload.currency)}</p>
         </div>
 
+        <p style="margin:0 0 14px;">${copy.pricingSnapshot}</p>
         <p style="margin:0 0 14px;">${copy.operationalFlow}</p>
         ${payload.settlementDueLabel ? `<p style="margin:0 0 14px;"><strong>${copy.settlementDeadline}:</strong> ${payload.settlementDueLabel}</p>` : ""}
         <p style="margin:0 0 14px;">${copy.verificationLabel}: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
