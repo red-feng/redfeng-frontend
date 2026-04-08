@@ -824,9 +824,17 @@ export default async function AdminMerchantsPage({
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
                               <p className="mt-3 break-words text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
                             </div>
-                            <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ringkasan merchant</p>
-                              <div className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                            <details className="group rounded-[18px] border border-slate-200 bg-white/90 p-4">
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ringkasan merchant</p>
+                                  <p className="mt-2 text-sm text-slate-600">Buka detail merchant sebelum mengambil keputusan penghapusan.</p>
+                                </div>
+                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 text-slate-500 transition group-open:rotate-180">
+                                  v
+                                </span>
+                              </summary>
+                              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                                 <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Brand</p>
                                   <p className={fieldValueClassName(true)}>{fieldValue(merchant.brand_name || merchant.company_name)}</p>
@@ -866,7 +874,7 @@ export default async function AdminMerchantsPage({
                                   Review paket merchant
                                 </Link>
                               </div>
-                            </div>
+                            </details>
                             <div className="rounded-[18px] border border-slate-200 bg-white/90 p-4">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
                               {(() => {
