@@ -7,9 +7,11 @@ import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import MerchantReasonActionCard from "./MerchantReasonActionCard"
 import {
   approveMerchant,
+  approveMerchantDeletion,
+  cancelMerchantDeletion,
   reactivateMerchant,
   rejectMerchant,
-  deleteMerchant,
+  requestMerchantDeletion,
 } from "./actions"
 
 type MerchantRow = {
@@ -47,6 +49,21 @@ type OrphanMerchantProfileRow = {
   role: string | null
   email: string | null
   created_at: string | null
+}
+
+type MerchantDeletionRequestRow = {
+  id: string
+  merchant_id: string | null
+  profile_id: string | null
+  merchant_email: string | null
+  merchant_name: string | null
+  reason: string
+  status: string | null
+  review_note: string | null
+  requested_at: string | null
+  reviewed_at: string | null
+  requested_by: string | null
+  reviewed_by: string | null
 }
 
 function fieldValue(value: string | null) {
@@ -98,6 +115,12 @@ function normalizeText(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function getDeletionRequestKey(input: { merchantId?: string | null; profileId?: string | null }) {
+  if (input.merchantId) return `merchant:${input.merchantId}`
+  if (input.profileId) return `profile:${input.profileId}`
+  return null
+}
+
 export default async function AdminMerchantsPage({
   searchParams,
 }: {
@@ -116,7 +139,10 @@ export default async function AdminMerchantsPage({
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
+  const currentRole = String(currentProfile?.role || "").trim().toLowerCase()
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
+  const canRequestMerchantDeletion = ["admin", "superadmin"].includes(currentRole)
+  const canReviewMerchantDeletion = ["operations_manager", "superadmin"].includes(currentRole)
   const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
     supabase
       .from("merchants")
@@ -210,6 +236,30 @@ export default async function AdminMerchantsPage({
     email: authUserMap.get(profile.id)?.email || null,
     created_at: profile.created_at || authUserMap.get(profile.id)?.created_at || null,
   }))
+
+  const pendingDeletionRequestTargets = [
+    ...new Set(
+      [
+        ...managed.map((merchant) => merchant.id),
+        ...orphanMerchantProfiles.map((profile) => profile.id),
+      ].filter(Boolean),
+    ),
+  ]
+  const { data: pendingDeletionRequestsData } = pendingDeletionRequestTargets.length
+    ? await adminSupabase
+        .from("merchant_deletion_requests")
+        .select(
+          "id, merchant_id, profile_id, merchant_email, merchant_name, reason, status, review_note, requested_at, reviewed_at, requested_by, reviewed_by",
+        )
+        .eq("status", "pending")
+    : { data: [] as MerchantDeletionRequestRow[] }
+  const pendingDeletionRequestMap = new Map<string, MerchantDeletionRequestRow>()
+  for (const request of ((pendingDeletionRequestsData as MerchantDeletionRequestRow[] | null) || []) as MerchantDeletionRequestRow[]) {
+    const key = getDeletionRequestKey({ merchantId: request.merchant_id, profileId: request.profile_id })
+    if (key) {
+      pendingDeletionRequestMap.set(key, request)
+    }
+  }
 
   function matchesMerchant(merchant: MerchantRow) {
     const stats = packageStatsMap.get(merchant.id) || {
@@ -606,8 +656,8 @@ export default async function AdminMerchantsPage({
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Merchant aktif, nonaktif, dan hapus</h2>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-slate-500">
-              Nonaktif sementara memblok akses merchant ke dashboard. Hapus merchant di sini adalah soft delete:
-              akses merchant dihentikan, tetapi histori booking dan payout tidak dihapus dari database.
+              Nonaktif sementara memblok akses merchant ke dashboard. Penghapusan merchant memakai alur maker-checker:
+              admin mengajukan, lalu operations manager menyetujui atau membatalkan sebelum hard delete dijalankan.
             </p>
           </div>
 
@@ -620,7 +670,10 @@ export default async function AdminMerchantsPage({
             </section>
           ) : (
             <section className="grid gap-6">
-              {filteredManaged.map((merchant) => (
+              {filteredManaged.map((merchant) => {
+                const pendingDeletionRequest =
+                  pendingDeletionRequestMap.get(getDeletionRequestKey({ merchantId: merchant.id }) || "") || null
+                return (
                 <article
                   key={merchant.id}
                   className="rounded-[22px] border border-[#ece3d7] bg-[#fffdfa] p-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)] sm:rounded-[26px] sm:p-6"
@@ -707,6 +760,61 @@ export default async function AdminMerchantsPage({
                     </div>
 
                     <div className="flex w-full flex-col gap-3 lg:w-[272px] lg:pt-[58px]">
+                      {pendingDeletionRequest ? (
+                        <div className="overflow-hidden rounded-[24px] border border-amber-200 bg-amber-50/80 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
+                          <div className="border-b border-amber-200 px-5 py-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-amber-700">Pending deletion review</p>
+                            <h4 className="mt-2 text-base font-semibold text-slate-950">Menunggu keputusan operations manager</h4>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                              Penghapusan merchant belum dijalankan. Request ini masih menunggu approve atau batal dari operations manager.
+                            </p>
+                          </div>
+                          <div className="space-y-4 px-5 py-4">
+                            <div className="rounded-[18px] border border-amber-200 bg-white/80 p-4">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
+                              <p className="mt-3 text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
+                            </div>
+                            {canReviewMerchantDeletion ? (
+                              <>
+                                <form action={approveMerchantDeletion} className="space-y-3">
+                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                  <textarea
+                                    name="reviewNote"
+                                    placeholder="Catatan approval operations manager..."
+                                    className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                  />
+                                  <ConfirmSubmitButton
+                                    confirmMessage="Yakin ingin menyetujui penghapusan merchant ini? Semua data merchant dan paket terkait akan dihapus permanen."
+                                    pendingLabel="Sedang menghapus merchant..."
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                                  >
+                                    Setujui penghapusan
+                                  </ConfirmSubmitButton>
+                                </form>
+                                <form action={cancelMerchantDeletion} className="space-y-3">
+                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                  <textarea
+                                    name="reviewNote"
+                                    placeholder="Alasan pembatalan penghapusan..."
+                                    className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+                                  />
+                                  <ConfirmSubmitButton
+                                    confirmMessage="Batalkan pengajuan penghapusan merchant ini?"
+                                    pendingLabel="Sedang membatalkan..."
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                                  >
+                                    Batalkan penghapusan
+                                  </ConfirmSubmitButton>
+                                </form>
+                              </>
+                            ) : (
+                              <div className="rounded-[18px] border border-sky-200 bg-sky-50 p-4 text-sm leading-7 text-sky-700">
+                                Menunggu keputusan operations manager. Admin tidak bisa menghapus merchant ini sebelum request direview.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
                       {merchant.verification_status === "approved" && canExecuteAdminOps ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
                       ) : null}
@@ -737,10 +845,10 @@ export default async function AdminMerchantsPage({
                         </div>
                       ) : null}
 
-                      {merchant.verification_status !== "deleted" && canExecuteAdminOps ? (
+                      {merchant.verification_status !== "deleted" && canRequestMerchantDeletion && !pendingDeletionRequest ? (
                         <MerchantReasonActionCard merchantId={merchant.id} variant="delete" />
                       ) : null}
-                      {!canExecuteAdminOps ? (
+                      {!canExecuteAdminOps && !canReviewMerchantDeletion ? (
                         <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
                           Operations Manager hanya memonitor status merchant. Nonaktif, aktifkan kembali, dan hapus akses tetap dijalankan admin operasional.
                         </div>
@@ -748,7 +856,8 @@ export default async function AdminMerchantsPage({
                     </div>
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </section>
           )}
         </section>
@@ -774,7 +883,10 @@ export default async function AdminMerchantsPage({
             </section>
           ) : (
             <section className="grid gap-6">
-              {orphanMerchantProfiles.map((profile) => (
+              {orphanMerchantProfiles.map((profile) => {
+                const pendingDeletionRequest =
+                  pendingDeletionRequestMap.get(getDeletionRequestKey({ profileId: profile.id }) || "") || null
+                return (
                 <article
                   key={profile.id}
                   className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_20px_70px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-7"
@@ -795,39 +907,92 @@ export default async function AdminMerchantsPage({
                     </div>
 
                     <div className="flex h-full w-full min-w-0 flex-col rounded-[24px] border border-red-200 bg-red-50/80 p-5 lg:min-w-[320px]">
-                      {canExecuteAdminOps ? (
+                      {pendingDeletionRequest ? (
                         <>
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
-                            Hapus akses merchant
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
+                            Menunggu review penghapusan
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
-                            Action ini akan menghapus akun merchant ini secara permanen dari database karena data merchant-nya tidak ada.
+                            Akun merchant tanpa row merchants ini sudah diajukan untuk dihapus. Operations manager perlu menyetujui atau membatalkan request ini.
                           </p>
-                          <form action={deleteMerchant} className="mt-4 flex h-full flex-col space-y-4">
+                          <div className="mt-4 rounded-[18px] border border-amber-200 bg-white/80 p-4 text-sm leading-7 text-slate-700">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
+                            <p className="mt-3">{pendingDeletionRequest.reason}</p>
+                          </div>
+                          {canReviewMerchantDeletion ? (
+                            <div className="mt-4 space-y-4">
+                              <form action={approveMerchantDeletion} className="space-y-3">
+                                <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                <textarea
+                                  name="reviewNote"
+                                  placeholder="Catatan approval operations manager..."
+                                  className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
+                                />
+                                <ConfirmSubmitButton
+                                  confirmMessage="Yakin ingin menyetujui penghapusan akun merchant ini? Profile dan auth user akan dihapus permanen."
+                                  pendingLabel="Sedang menghapus..."
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                                >
+                                  Setujui penghapusan
+                                </ConfirmSubmitButton>
+                              </form>
+                              <form action={cancelMerchantDeletion} className="space-y-3">
+                                <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
+                                <textarea
+                                  name="reviewNote"
+                                  placeholder="Alasan pembatalan penghapusan..."
+                                  className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
+                                />
+                                <ConfirmSubmitButton
+                                  confirmMessage="Batalkan pengajuan penghapusan akun merchant ini?"
+                                  pendingLabel="Sedang membatalkan..."
+                                  className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                                >
+                                  Batalkan penghapusan
+                                </ConfirmSubmitButton>
+                              </form>
+                            </div>
+                          ) : (
+                            <div className="mt-4 text-sm leading-7 text-sky-700">
+                              Menunggu keputusan operations manager. Admin tidak bisa menghapus akun ini sebelum request direview.
+                            </div>
+                          )}
+                        </>
+                      ) : canRequestMerchantDeletion ? (
+                        <>
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
+                            Ajukan hapus akses merchant
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-700">
+                            Action ini mengirim pengajuan ke operations manager. Jika disetujui, akun auth dan profile merchant akan dihapus permanen dari database.
+                          </p>
+                          <form action={requestMerchantDeletion} className="mt-4 flex h-full flex-col space-y-4">
                             <input type="hidden" name="profileId" value={profile.id} />
                             <textarea
                               name="reason"
-                              placeholder="Alasan pencabutan akses merchant..."
+                              placeholder="Alasan pengajuan penghapusan merchant..."
                               required
                               className="min-h-[96px] w-full rounded-[18px] border border-red-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-red-400 focus:ring-4 focus:ring-red-100"
                             />
                             <ConfirmSubmitButton
-                              confirmMessage="Yakin ingin menghapus akun merchant ini secara permanen? Akun auth dan profile merchant akan dihapus dari database."
+                              confirmMessage="Kirim pengajuan hapus akun merchant ini ke operations manager?"
+                              pendingLabel="Mengirim pengajuan..."
                               className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
                             >
-                              Hapus akses merchant
+                              Ajukan hapus akses merchant
                             </ConfirmSubmitButton>
                           </form>
                         </>
                       ) : (
                         <div className="text-sm leading-7 text-sky-700">
-                          Operations Manager dapat menandai anomali role merchant, tetapi pencabutan akses tetap dijalankan admin operasional.
+                          Operations Manager dapat mereview pengajuan hapus akun merchant jika request sudah dibuat admin.
                         </div>
                       )}
                     </div>
                   </div>
                 </article>
-              ))}
+                )
+              })}
             </section>
           )}
         </section>

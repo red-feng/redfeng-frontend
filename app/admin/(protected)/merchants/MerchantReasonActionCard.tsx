@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react"
 import ConfirmSubmitButton from "./ConfirmSubmitButton"
-import { deactivateMerchant, deleteMerchant } from "./actions"
+import { deactivateMerchant, requestMerchantDeletion } from "./actions"
 
 type MerchantReasonActionCardProps = {
   merchantId: string
@@ -27,14 +27,14 @@ const COPY = {
       "bg-[linear-gradient(135deg,#f59e0b_0%,#f97316_100%)] shadow-[0_14px_30px_rgba(245,158,11,0.24)] hover:brightness-105",
   },
   delete: {
-    eyebrow: "Access Removal",
-    title: "Hapus merchant",
-    description: "Gunakan hanya jika merchant harus dihapus permanen dari database beserta data merchant yang terhubung.",
-    noteLabel: "Deletion reason + email to merchant",
-    placeholder: "Alasan penghapusan merchant. Isi ini juga dikirim ke email merchant...",
-    buttonLabel: "Hapus akses merchant",
-    modalTitle: "Hapus akses merchant",
-    modalDescription: "Isi alasan penghapusan lalu lanjutkan hard delete merchant ini dari database. Alasan ini juga dikirim ke email merchant.",
+    eyebrow: "Deletion Request",
+    title: "Ajukan hapus merchant",
+    description: "Gunakan jika merchant perlu diajukan untuk dihapus permanen. Penghapusan baru dijalankan setelah disetujui operations manager.",
+    noteLabel: "Reason for operations manager",
+    placeholder: "Alasan pengajuan hapus merchant. Isi ini akan dibaca operations manager saat mereview...",
+    buttonLabel: "Ajukan hapus merchant",
+    modalTitle: "Ajukan penghapusan merchant",
+    modalDescription: "Isi alasan penghapusan lalu kirim pengajuan ke operations manager. Merchant baru akan dihapus permanen setelah disetujui.",
     cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
     headerClass: "border-[#f3e4d2] text-rose-700",
     panelClass: "border-[#f3e4d2]",
@@ -48,12 +48,12 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
   const [open, setOpen] = useState(false)
   const textareaId = useId()
   const copy = COPY[variant]
-  const action = variant === "deactivate" ? deactivateMerchant : deleteMerchant
-  const submitLabel = variant === "deactivate" ? "Lanjutkan nonaktifkan" : "Lanjutkan hapus akses"
+  const action = variant === "deactivate" ? deactivateMerchant : requestMerchantDeletion
+  const submitLabel = variant === "deactivate" ? "Lanjutkan nonaktifkan" : "Kirim pengajuan hapus"
   const confirmMessage =
     variant === "deactivate"
       ? "Yakin ingin menonaktifkan merchant ini? Merchant tidak akan bisa mengakses dashboard sampai diaktifkan kembali."
-      : "Yakin ingin menghapus merchant ini secara permanen? Data merchant dan paket yang terhubung akan dihapus dari database."
+      : "Yakin ingin mengajukan penghapusan merchant ini? Operations manager akan meninjau sebelum merchant dihapus permanen."
 
   return (
     <>
@@ -114,6 +114,7 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
                 </button>
                 <ConfirmSubmitButton
                   confirmMessage={confirmMessage}
+                  pendingLabel={variant === "deactivate" ? "Sedang menonaktifkan..." : "Mengirim pengajuan..."}
                   className={`w-full rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition sm:w-auto ${copy.buttonClass}`}
                 >
                   {submitLabel}

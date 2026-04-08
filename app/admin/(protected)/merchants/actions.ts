@@ -98,6 +98,55 @@ async function getAdminActor() {
   }
 }
 
+async function getMerchantDeletionReviewer() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    throw new Error("Sesi reviewer tidak ditemukan.")
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  const role = String(profile?.role || "").trim().toLowerCase()
+  if (!["operations_manager", "superadmin"].includes(role)) {
+    throw new Error("Hanya operations manager atau superadmin yang dapat mereview penghapusan merchant.")
+  }
+
+  return {
+    id: user.id,
+    role,
+  }
+}
+
+async function findPendingDeletionRequest(
+  adminSupabase: ReturnType<typeof createAdminClient>,
+  target: { merchantId?: string; profileId?: string },
+) {
+  if (target.merchantId) {
+    const { data } = await adminSupabase
+      .from("merchant_deletion_requests")
+      .select("id")
+      .eq("merchant_id", target.merchantId)
+      .eq("status", "pending")
+      .maybeSingle()
+    return data
+  }
+
+  if (target.profileId) {
+    const { data } = await adminSupabase
+      .from("merchant_deletion_requests")
+      .select("id")
+      .eq("profile_id", target.profileId)
+      .eq("status", "pending")
+      .maybeSingle()
+    return data
+  }
+
+  return null
+}
+
 async function sendMerchantDecisionEmail({
   email,
   brandName,
@@ -590,13 +639,13 @@ export async function reactivateMerchant(formData: FormData) {
   backToMerchants(`Merchant ${merchantId} berhasil diaktifkan kembali.`, "success")
 }
 
-export async function deleteMerchant(formData: FormData) {
+export async function requestMerchantDeletion(formData: FormData) {
   const merchantId = ((formData.get("merchantId") as string) || "").trim()
   const profileId = ((formData.get("profileId") as string) || "").trim()
   const reason = ((formData.get("reason") as string) || "").trim()
 
   if ((!merchantId && !profileId) || !reason) {
-    backToMerchants("Alasan penghapusan wajib diisi.", "error")
+    backToMerchants("Alasan pengajuan hapus merchant wajib diisi.", "error")
   }
 
   const supabaseAdmin = createAdminClient()
@@ -610,27 +659,27 @@ export async function deleteMerchant(formData: FormData) {
       .maybeSingle()
 
     if (!merchant) {
-      console.error("Delete merchant error: merchant not found", merchantId)
+      console.error("Request merchant deletion error: merchant not found", merchantId)
       backToMerchants("Merchant tidak ditemukan.", "error")
     }
 
-    try {
-      await sendMerchantDecisionEmail({
-        email: merchant?.email ?? null,
-        brandName: merchant?.brand_name ?? null,
-        locale: merchant?.default_locale ?? "id",
-        type: "deleted",
-        reason,
-      })
-    } catch (emailError) {
-      console.error("Delete merchant email error:", emailError)
+    const existingRequest = await findPendingDeletionRequest(supabaseAdmin, { merchantId })
+    if (existingRequest) {
+      backToMerchants("Merchant ini sudah punya pengajuan hapus yang masih menunggu review operations manager.", "error")
     }
 
-    try {
-      await purgeMerchantAccountRecords(supabaseAdmin, merchantId, merchant.user_id)
-    } catch (deleteError) {
-      console.error("Delete merchant hard delete error:", deleteError)
-      backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
+    const { error: insertRequestError } = await supabaseAdmin.from("merchant_deletion_requests").insert({
+      merchant_id: merchantId,
+      profile_id: merchant.user_id,
+      merchant_email: merchant.email,
+      merchant_name: merchant.brand_name || merchant.email || merchantId,
+      reason,
+      requested_by: actor.id,
+    })
+
+    if (insertRequestError) {
+      console.error("Request merchant deletion insert error:", insertRequestError)
+      backToMerchants(insertRequestError.message || "Gagal membuat pengajuan hapus merchant.", "error")
     }
 
     await createAdminAuditLog({
@@ -638,19 +687,17 @@ export async function deleteMerchant(formData: FormData) {
       actorRole: actor.role,
       targetType: "merchant",
       targetId: merchantId,
-      action: "delete",
-      summary: `Merchant ${merchantId} dihapus permanen`,
+      action: "request_delete",
+      summary: `Pengajuan hapus merchant ${merchantId} dibuat admin`,
       metadata: {
-        mode: "permanent_delete",
+        mode: "deletion_request",
         reason,
         userId: merchant?.user_id ?? null,
       },
     })
 
     revalidateMerchantPages()
-    revalidatePath(`/admin/merchants/${merchantId}`)
-
-    backToMerchants(`Merchant ${merchant.brand_name || merchant.email || merchantId} berhasil dihapus permanen dari database.`, "success")
+    backToMerchants(`Pengajuan hapus merchant ${merchant.brand_name || merchant.email || merchantId} berhasil dikirim ke operations manager.`, "success")
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -675,34 +722,21 @@ export async function deleteMerchant(formData: FormData) {
     backToMerchants("Akun ini masih memiliki data merchant yang aktif, jadi tidak bisa dihapus dari blok anomali.", "error")
   }
 
-  const { error: deleteProfileError } = await supabaseAdmin
-    .from("profiles")
-    .delete()
-    .eq("id", profileId)
-    .eq("role", "merchant")
-
-  if (deleteProfileError) {
-    console.error("Delete orphan merchant profile delete error:", deleteProfileError)
-    backToMerchants(deleteProfileError.message || "Gagal menghapus profil merchant.", "error")
+  const existingRequest = await findPendingDeletionRequest(supabaseAdmin, { profileId })
+  if (existingRequest) {
+    backToMerchants("Akun merchant ini sudah punya pengajuan hapus yang masih menunggu review operations manager.", "error")
   }
 
-  const { error: deleteAuthError } = await supabaseAdmin.auth.admin.deleteUser(profileId)
-  if (deleteAuthError) {
-    console.error("Delete orphan merchant auth user error:", deleteAuthError)
-    backToMerchants(deleteAuthError.message || "Gagal menghapus akun auth merchant.", "error")
-  }
-
-  revalidateMerchantPages()
-
-  try {
-    await sendMerchantDecisionEmail({
-      email: profile.email ?? null,
-      brandName: null,
-      type: "deleted",
-      reason,
-    })
-  } catch (emailError) {
-    console.error("Delete orphan merchant profile email error:", emailError)
+  const { error: insertRequestError } = await supabaseAdmin.from("merchant_deletion_requests").insert({
+    profile_id: profileId,
+    merchant_email: profile.email,
+    merchant_name: profile.email || profileId,
+    reason,
+    requested_by: actor.id,
+  })
+  if (insertRequestError) {
+    console.error("Request orphan merchant deletion insert error:", insertRequestError)
+    backToMerchants(insertRequestError.message || "Gagal membuat pengajuan hapus akun merchant.", "error")
   }
 
   await createAdminAuditLog({
@@ -710,15 +744,197 @@ export async function deleteMerchant(formData: FormData) {
     actorRole: actor.role,
     targetType: "merchant",
     targetId: profileId,
-    action: "delete",
-    summary: `Akun merchant tanpa data merchant dihapus permanen untuk user ${profileId}`,
+    action: "request_delete",
+    summary: `Pengajuan hapus akun merchant tanpa row merchants dibuat untuk user ${profileId}`,
     metadata: {
-      mode: "permanent_delete",
+      mode: "deletion_request",
       reason,
       fallbackTarget: "profile_only_merchant",
     },
   })
 
-  backToMerchants(`Akun merchant ${profile.email || profileId} berhasil dihapus permanen dari database.`, "success")
+  revalidateMerchantPages()
+  backToMerchants(`Pengajuan hapus akun merchant ${profile.email || profileId} berhasil dikirim ke operations manager.`, "success")
+}
+
+export async function approveMerchantDeletion(formData: FormData) {
+  const requestId = String(formData.get("requestId") || "").trim()
+  const reviewNote = String(formData.get("reviewNote") || "").trim()
+
+  if (!requestId) {
+    backToMerchants("Request penghapusan merchant tidak ditemukan.", "error")
+  }
+
+  const supabaseAdmin = createAdminClient()
+  const reviewer = await getMerchantDeletionReviewer()
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_deletion_requests")
+    .select("id, merchant_id, profile_id, merchant_email, merchant_name, reason, status")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError || !request || request.status !== "pending") {
+    console.error("Approve merchant deletion request error:", requestError)
+    backToMerchants("Request penghapusan merchant tidak valid atau sudah diproses.", "error")
+  }
+
+  if (request.merchant_id) {
+    const { data: merchant } = await supabaseAdmin
+      .from("merchants")
+      .select("id, user_id, email, brand_name, default_locale")
+      .eq("id", request.merchant_id)
+      .maybeSingle()
+
+    if (!merchant) {
+      backToMerchants("Data merchant untuk request ini sudah tidak ditemukan.", "error")
+    }
+
+    try {
+      await sendMerchantDecisionEmail({
+        email: merchant.email ?? null,
+        brandName: merchant.brand_name ?? null,
+        locale: merchant.default_locale ?? "id",
+        type: "deleted",
+        reason: request.reason,
+      })
+    } catch (emailError) {
+      console.error("Approve merchant deletion email error:", emailError)
+    }
+
+    try {
+      await purgeMerchantAccountRecords(supabaseAdmin, request.merchant_id, merchant.user_id)
+    } catch (deleteError) {
+      console.error("Approve merchant deletion purge error:", deleteError)
+      backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
+    }
+  } else if (request.profile_id) {
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role, email")
+      .eq("id", request.profile_id)
+      .maybeSingle()
+
+    if (!profile || profile.role !== "merchant") {
+      backToMerchants("Profile merchant untuk request ini sudah tidak ditemukan.", "error")
+    }
+
+    const { error: deleteProfileError } = await supabaseAdmin
+      .from("profiles")
+      .delete()
+      .eq("id", request.profile_id)
+      .eq("role", "merchant")
+
+    if (deleteProfileError) {
+      backToMerchants(deleteProfileError.message || "Gagal menghapus profile merchant.", "error")
+    }
+
+    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(request.profile_id)
+    if (authDeleteError) {
+      backToMerchants(authDeleteError.message || "Gagal menghapus akun auth merchant.", "error")
+    }
+
+    try {
+      await sendMerchantDecisionEmail({
+        email: profile.email ?? null,
+        brandName: null,
+        type: "deleted",
+        reason: request.reason,
+      })
+    } catch (emailError) {
+      console.error("Approve orphan merchant deletion email error:", emailError)
+    }
+  } else {
+    backToMerchants("Request penghapusan merchant tidak punya target yang valid.", "error")
+  }
+
+  const { error: updateRequestError } = await supabaseAdmin
+    .from("merchant_deletion_requests")
+    .update({
+      status: "approved",
+      review_note: reviewNote || "Penghapusan merchant disetujui operations manager.",
+      reviewed_by: reviewer.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", requestId)
+    .eq("status", "pending")
+
+  if (updateRequestError) {
+    backToMerchants(updateRequestError.message || "Penghapusan merchant berhasil, tetapi status request gagal diperbarui.", "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: reviewer.id,
+    actorRole: reviewer.role,
+    targetType: "merchant",
+    targetId: request.merchant_id || request.profile_id || requestId,
+    action: "approve_delete_request",
+    summary: `Request penghapusan merchant ${request.id} disetujui operations manager`,
+    metadata: {
+      requestId: request.id,
+      reason: request.reason,
+      reviewNote: reviewNote || null,
+      targetMerchantId: request.merchant_id || null,
+      targetProfileId: request.profile_id || null,
+    },
+  })
+
+  revalidateMerchantPages()
+  backToMerchants(`Penghapusan merchant ${request.merchant_name || request.merchant_email || request.id} berhasil disetujui dan diproses permanen.`, "success")
+}
+
+export async function cancelMerchantDeletion(formData: FormData) {
+  const requestId = String(formData.get("requestId") || "").trim()
+  const reviewNote = String(formData.get("reviewNote") || "").trim()
+
+  if (!requestId) {
+    backToMerchants("Request penghapusan merchant tidak ditemukan.", "error")
+  }
+
+  const supabaseAdmin = createAdminClient()
+  const reviewer = await getMerchantDeletionReviewer()
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_deletion_requests")
+    .select("id, merchant_id, profile_id, merchant_email, merchant_name, reason, status")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError || !request || request.status !== "pending") {
+    console.error("Cancel merchant deletion request error:", requestError)
+    backToMerchants("Request penghapusan merchant tidak valid atau sudah diproses.", "error")
+  }
+
+  const { error: cancelError } = await supabaseAdmin
+    .from("merchant_deletion_requests")
+    .update({
+      status: "cancelled",
+      review_note: reviewNote || "Penghapusan merchant dibatalkan operations manager.",
+      reviewed_by: reviewer.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", requestId)
+    .eq("status", "pending")
+
+  if (cancelError) {
+    backToMerchants(cancelError.message || "Gagal membatalkan pengajuan hapus merchant.", "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: reviewer.id,
+    actorRole: reviewer.role,
+    targetType: "merchant",
+    targetId: request.merchant_id || request.profile_id || requestId,
+    action: "cancel_delete_request",
+    summary: `Request penghapusan merchant ${request.id} dibatalkan operations manager`,
+    metadata: {
+      requestId: request.id,
+      reason: request.reason,
+      reviewNote: reviewNote || null,
+      targetMerchantId: request.merchant_id || null,
+      targetProfileId: request.profile_id || null,
+    },
+  })
+
+  revalidateMerchantPages()
+  backToMerchants(`Pengajuan hapus merchant ${request.merchant_name || request.merchant_email || request.id} berhasil dibatalkan.`, "success")
 }
 
