@@ -960,13 +960,8 @@ export default async function AdminMerchantsPage({
                                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
                                   <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
                                 </div>
-                                <form action={finalizeMerchantDeletionCancellation} className="space-y-3">
+                                <form action={finalizeMerchantDeletionCancellation}>
                                   <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
-                                  <textarea
-                                    name="cancelNote"
-                                    placeholder="Catatan admin saat menutup pengajuan ini..."
-                                    className="min-h-[96px] w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                                  />
                                   <ConfirmSubmitButton
                                     confirmMessage="Tutup pengajuan penghapusan merchant ini sebagai dibatalkan?"
                                     pendingLabel="Sedang menutup pengajuan..."
@@ -1135,13 +1130,8 @@ export default async function AdminMerchantsPage({
                                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
                                 <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
                               </div>
-                              <form action={finalizeMerchantDeletionCancellation} className="space-y-3">
+                              <form action={finalizeMerchantDeletionCancellation}>
                                 <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
-                                <textarea
-                                  name="cancelNote"
-                                  placeholder="Catatan admin saat menutup pengajuan ini..."
-                                  className="min-h-[96px] w-full rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100"
-                                />
                                 <ConfirmSubmitButton
                                   confirmMessage="Tutup pengajuan penghapusan akun merchant ini sebagai dibatalkan?"
                                   pendingLabel="Sedang menutup pengajuan..."
