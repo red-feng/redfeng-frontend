@@ -3,6 +3,7 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { isImageAttachment } from "@/lib/chat/attachments"
 import { sendMerchantChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -55,6 +56,11 @@ function getChatText(locale: Locale) {
       unreadBadgeMigration: "Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
       customerRooms: "Customer Rooms",
       conversationList: "Daftar percakapan",
+      searchPlaceholder: "Cari customer, kode booking, atau paket...",
+      searchButton: "Cari",
+      clearSearch: "Reset",
+      searchResultLabel: "Hasil pencarian",
+      noSearchResult: "Tidak ada percakapan yang cocok dengan kata kunci ini.",
       newBadge: "baru",
       noPreBookingChats: "Belum ada chat customer dari halaman detail paket.",
       noPostBookingChats: "Tab ini siap digunakan. Percakapan booking akan muncul begitu room terhubung ke transaksi.",
@@ -72,6 +78,9 @@ function getChatText(locale: Locale) {
       activeTransaction: "Transaksi aktif",
       leadInquiry: "Lead / inquiry",
       noMessages: "Belum ada pesan di ruang chat ini.",
+      attachmentLabel: "Lampiran",
+      attachmentHint: "Maksimal 10 MB. Gambar, PDF, DOCX, XLSX, atau TXT.",
+      openAttachment: "Buka lampiran",
       replyPlaceholder: "Tulis balasan untuk customer...",
       sendButton: "Kirim",
     },
@@ -97,6 +106,11 @@ function getChatText(locale: Locale) {
       unreadBadgeMigration: "The new chat badge requires migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
       customerRooms: "Customer Rooms",
       conversationList: "Conversation list",
+      searchPlaceholder: "Search customer, booking code, or package...",
+      searchButton: "Search",
+      clearSearch: "Reset",
+      searchResultLabel: "Search results",
+      noSearchResult: "No conversations match this keyword.",
       newBadge: "new",
       noPreBookingChats: "There are no customer chats yet from the package detail page.",
       noPostBookingChats: "This tab is ready to use. Booking conversations will appear once the room is linked to a transaction.",
@@ -114,6 +128,9 @@ function getChatText(locale: Locale) {
       activeTransaction: "Active transaction",
       leadInquiry: "Lead / inquiry",
       noMessages: "There are no messages in this chat room yet.",
+      attachmentLabel: "Attachment",
+      attachmentHint: "Maximum 10 MB. Image, PDF, DOCX, XLSX, or TXT.",
+      openAttachment: "Open attachment",
       replyPlaceholder: "Write a reply for the customer...",
       sendButton: "Send",
     },
@@ -139,6 +156,11 @@ function getChatText(locale: Locale) {
       unreadBadgeMigration: "新消息徽标需要 migration `20260307_add_read_tracking_to_package_chat_rooms.sql`。",
       customerRooms: "客户会话",
       conversationList: "对话列表",
+      searchPlaceholder: "搜索客户、预订编号或套餐...",
+      searchButton: "搜索",
+      clearSearch: "重置",
+      searchResultLabel: "搜索结果",
+      noSearchResult: "没有找到匹配此关键词的会话。",
       newBadge: "新消息",
       noPreBookingChats: "来自套餐详情页的客户聊天暂时还没有。",
       noPostBookingChats: "此标签已准备就绪。一旦会话关联到交易，预订后的聊天就会显示在这里。",
@@ -156,6 +178,9 @@ function getChatText(locale: Locale) {
       activeTransaction: "进行中的交易",
       leadInquiry: "咨询 / 线索",
       noMessages: "该聊天房间里暂时还没有消息。",
+      attachmentLabel: "附件",
+      attachmentHint: "最大 10 MB。支持图片、PDF、DOCX、XLSX 或 TXT。",
+      openAttachment: "打开附件",
       replyPlaceholder: "输入发送给客户的回复...",
       sendButton: "发送",
     },  } satisfies Record<Locale, Record<string, string>>
@@ -168,6 +193,9 @@ type ChatMessageRow = {
   room_id: string
   sender_id: string
   message: string
+  attachment_url?: string | null
+  attachment_name?: string | null
+  attachment_mime_type?: string | null
   created_at: string | null
 }
 
@@ -181,6 +209,7 @@ type MerchantChatParams = {
   tab?: string
   room_id?: string
   error?: string
+  q?: string
 }
 
 function getBookingInfo(room: ChatRoomRow) {
@@ -220,6 +249,8 @@ export default async function MerchantChatPage({
   const activeTab = params.tab === "post" ? "post" : "pre"
   const requestedRoomId = params.room_id || ""
   const errorMessage = params.error || ""
+  const searchQuery = String(params.q || "").trim()
+  const normalizedSearchQuery = searchQuery.toLowerCase()
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -266,8 +297,25 @@ export default async function MerchantChatPage({
     roomsError = roomsWithBooking.error
   }
 
-  const preBookingRooms = allRooms.filter((room) => !room.booking_id)
-  const postBookingRooms = allRooms.filter((room) => Boolean(room.booking_id))
+  const packageIds = [...new Set(allRooms.map((room) => room.package_id))]
+  const { data: packageRows } = packageIds.length
+    ? await adminSupabase.from("packages").select("id, title, slug").in("id", packageIds)
+    : { data: [] as PackageRow[] }
+  const packageMap = new Map((packageRows || []).map((pkg: PackageRow) => [pkg.id, pkg]))
+
+  const matchesSearch = (room: ChatRoomRow) => {
+    if (!normalizedSearchQuery) return true
+    const booking = getBookingInfo(room)
+    const packageTitle = packageMap.get(room.package_id)?.title || ""
+    const haystack = [getCustomerLabel(room), booking?.booking_code || "", packageTitle]
+      .join(" ")
+      .toLowerCase()
+
+    return haystack.includes(normalizedSearchQuery)
+  }
+
+  const preBookingRooms = allRooms.filter((room) => !room.booking_id && matchesSearch(room))
+  const postBookingRooms = allRooms.filter((room) => Boolean(room.booking_id) && matchesSearch(room))
   const rooms = activeTab === "post" ? postBookingRooms : preBookingRooms
   const activeRoomId = requestedRoomId || rooms[0]?.id || ""
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
@@ -289,16 +337,10 @@ export default async function MerchantChatPage({
     }
   }
 
-  const packageIds = [...new Set(rooms.map((room) => room.package_id))]
-  const { data: packageRows } = packageIds.length
-    ? await adminSupabase.from("packages").select("id, title, slug").in("id", packageIds)
-    : { data: [] as PackageRow[] }
-  const packageMap = new Map((packageRows || []).map((pkg: PackageRow) => [pkg.id, pkg]))
-
   const { data: messagesData } = activeRoomId
     ? await adminSupabase
         .from("package_chat_messages")
-        .select("id, room_id, sender_id, message, created_at")
+        .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
         .eq("room_id", activeRoomId)
         .order("created_at", { ascending: true })
     : { data: [] as ChatMessageRow[] }
@@ -425,16 +467,52 @@ export default async function MerchantChatPage({
               </div>
               {unreadCount > 0 && (
                   <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">{unreadCount} {t.newBadge}</span>
-              )}
+                )}
             </div>
 
+            <form action="/merchant/chat" method="get" className="mt-4 flex gap-2">
+              <input type="hidden" name="tab" value={activeTab} />
+              <input
+                type="text"
+                name="q"
+                defaultValue={searchQuery}
+                placeholder={t.searchPlaceholder}
+                className="h-11 flex-1 rounded-[18px] border border-[#e6d8c2] bg-white px-4 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2"
+              />
+              <button
+                type="submit"
+                className="rounded-[18px] border border-orange-200 bg-orange-50 px-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
+              >
+                {t.searchButton}
+              </button>
+              {searchQuery ? (
+                <Link
+                  href={`/merchant/chat?tab=${activeTab}`}
+                  className="inline-flex items-center rounded-[18px] border border-[#e6d8c2] bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-700"
+                >
+                  {t.clearSearch}
+                </Link>
+              ) : null}
+            </form>
+
+            {searchQuery ? (
+              <p className="mt-3 text-xs font-medium text-slate-500">
+                {t.searchResultLabel}: <span className="text-slate-700">&quot;{searchQuery}&quot;</span>
+              </p>
+            ) : null}
+
             <div className="mt-4 space-y-3">
-              {rooms.length === 0 && activeTab === "pre" && (
+              {rooms.length === 0 && searchQuery && (
+                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
+                  {t.noSearchResult}
+                </div>
+              )}
+              {rooms.length === 0 && !searchQuery && activeTab === "pre" && (
                 <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
                   {t.noPreBookingChats}
                 </div>
               )}
-              {rooms.length === 0 && activeTab === "post" && (
+              {rooms.length === 0 && !searchQuery && activeTab === "post" && (
                 <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
                   {t.noPostBookingChats}
                 </div>
@@ -549,7 +627,41 @@ export default async function MerchantChatPage({
                           : "border border-[#eadfce] bg-white text-slate-700"
                       }`}
                     >
-                      <p className="whitespace-pre-line leading-7">{message.message}</p>
+                      {message.message ? (
+                        <p className="whitespace-pre-line leading-7">{message.message}</p>
+                      ) : null}
+                      {message.attachment_url ? (
+                        <div className={message.message ? "mt-3" : ""}>
+                          {isImageAttachment(message.attachment_mime_type) ? (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block overflow-hidden rounded-[18px] border border-white/20 bg-white/10"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={message.attachment_url}
+                                alt={message.attachment_name || t.attachmentLabel}
+                                className="max-h-64 w-full object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center rounded-[16px] border px-3 py-2 text-xs font-semibold transition ${
+                                mine
+                                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                              }`}
+                            >
+                              {message.attachment_name || t.openAttachment}
+                            </a>
+                          )}
+                        </div>
+                      ) : null}
                       <p className={`mt-2 text-[11px] ${mine ? "text-white/70" : "text-slate-400"}`}>
                         {formatDateTime(message.created_at)}
                       </p>
@@ -562,10 +674,22 @@ export default async function MerchantChatPage({
             <form action={sendMerchantChatMessage} className="border-t border-[#efe3d1] bg-white px-5 py-4 lg:px-6">
               <input type="hidden" name="room_id" value={activeRoomId} />
               <input type="hidden" name="tab" value={activeTab} />
+              <div className="mb-3">
+                <label className="flex flex-col gap-2 text-xs font-medium text-slate-500">
+                  <span>{t.attachmentLabel}</span>
+                  <input
+                    type="file"
+                    name="attachment"
+                    disabled={!activeRoomId}
+                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    className="block w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-700"
+                  />
+                </label>
+                <p className="mt-2 text-xs text-slate-400">{t.attachmentHint}</p>
+              </div>
               <div className="flex gap-3">
                 <textarea
                   name="message"
-                  required
                   disabled={!activeRoomId}
                   placeholder={t.replyPlaceholder}
                   className="h-24 flex-1 rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"

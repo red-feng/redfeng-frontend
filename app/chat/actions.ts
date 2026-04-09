@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { uploadChatAttachment } from "@/lib/chat/attachments"
 import { redirect } from "next/navigation"
 
 export async function sendChatMessage(formData: FormData) {
@@ -12,8 +13,10 @@ export async function sendChatMessage(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
   const bookingId = String(formData.get("booking_id") || "")
   const message = String(formData.get("message") || "").trim()
+  const attachmentFile = formData.get("attachment")
+  const attachment = attachmentFile instanceof File ? attachmentFile : null
 
-  if (!message) {
+  if (!message && (!attachment || attachment.size <= 0)) {
     const target = roomId
       ? bookingId
         ? `/chat?booking_id=${bookingId}&room_id=${roomId}`
@@ -23,7 +26,7 @@ export async function sendChatMessage(formData: FormData) {
         : packageId
           ? `/chat?package_id=${packageId}`
           : "/chat"
-    redirect(`${target}&error=Pesan tidak boleh kosong.`)
+    redirect(`${target}&error=Pesan atau lampiran wajib diisi.`)
   }
 
   const {
@@ -229,12 +232,25 @@ export async function sendChatMessage(formData: FormData) {
     redirect(`/chat?error=Anda tidak punya akses ke ruang chat ini.`)
   }
 
+  const uploadedAttachment = await uploadChatAttachment({
+    roomId: room.id,
+    senderId: user.id,
+    file: attachment,
+  })
+
+  if (uploadedAttachment.error) {
+    redirect(`/chat?room_id=${room.id}&error=${encodeURIComponent(uploadedAttachment.error)}`)
+  }
+
   const { error: insertError } = await adminSupabase
     .from("package_chat_messages")
     .insert({
       room_id: room.id,
       sender_id: user.id,
-      message,
+      message: message || "",
+      attachment_url: uploadedAttachment.attachment?.url || null,
+      attachment_name: uploadedAttachment.attachment?.name || null,
+      attachment_mime_type: uploadedAttachment.attachment?.mimeType || null,
     })
 
   if (insertError) {

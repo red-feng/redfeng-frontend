@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
+import { isImageAttachment } from "@/lib/chat/attachments"
 import { sendChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -23,6 +24,9 @@ type ChatMessageRow = {
   room_id: string
   sender_id: string
   message: string
+  attachment_url?: string | null
+  attachment_name?: string | null
+  attachment_mime_type?: string | null
   created_at: string | null
 }
 
@@ -275,7 +279,7 @@ export default async function ChatPage({
   const { data: messagesData, error: messagesError } = activeRoomId
     ? await adminSupabase
         .from("package_chat_messages")
-        .select("id, room_id, sender_id, message, created_at")
+        .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
         .eq("room_id", activeRoomId)
         .order("created_at", { ascending: true })
     : { data: [], error: null }
@@ -418,7 +422,41 @@ export default async function ChatPage({
                           : "border border-slate-200 bg-white text-slate-700"
                       }`}
                     >
-                      <p className="whitespace-pre-line leading-6">{message.message}</p>
+                      {message.message ? (
+                        <p className="whitespace-pre-line leading-6">{message.message}</p>
+                      ) : null}
+                      {message.attachment_url ? (
+                        <div className={message.message ? "mt-3" : ""}>
+                          {isImageAttachment(message.attachment_mime_type) ? (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block overflow-hidden rounded-[18px] border border-white/20 bg-white/10"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={message.attachment_url}
+                                alt={message.attachment_name || "Lampiran"}
+                                className="max-h-64 w-full object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center rounded-[16px] border px-3 py-2 text-xs font-semibold transition ${
+                                mine
+                                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                              }`}
+                            >
+                              {message.attachment_name || "Lampiran"}
+                            </a>
+                          )}
+                        </div>
+                      ) : null}
                       <p className={`mt-2 text-[11px] ${mine ? "text-slate-300" : "text-slate-400"}`}>
                         {message.created_at || ""}
                       </p>
@@ -432,10 +470,17 @@ export default async function ChatPage({
               <input type="hidden" name="room_id" value={activeRoomId} />
               <input type="hidden" name="package_id" value={draftPackageId} />
               <input type="hidden" name="booking_id" value={draftBookingId} />
+              <div className="mb-3">
+                <input
+                  type="file"
+                  name="attachment"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                  className="block w-full rounded-[18px] border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-700"
+                />
+              </div>
               <div className="flex gap-3">
                 <textarea
                   name="message"
-                  required
                   placeholder={t.writeMessage}
                   className="h-24 flex-1 rounded-[20px] border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
                 />
