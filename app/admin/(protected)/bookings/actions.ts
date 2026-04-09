@@ -1,11 +1,13 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
+import { runExpiredBookingCleanup } from "@/lib/bookings/draft-cleanup"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -101,4 +103,41 @@ export async function handoffBookingToFinance(formData: FormData) {
   })
 
   backToBookings("Booking berhasil dikirim ke finance dan sekarang berstatus Ready for Finance", "success")
+}
+
+export async function cleanupExpiredPendingBookings() {
+  const adminActor = await ensureAdmin()
+  const adminSupabase = createAdminClient()
+  const result = await runExpiredBookingCleanup(adminSupabase, new Date())
+
+  if (!result.ok) {
+    backToBookings(result.error || "Gagal menjalankan cleanup booking pending", "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: adminActor.user.id,
+    actorRole: adminActor.role,
+    targetType: "booking",
+    targetId: "expired_pending_cleanup",
+    action: "cleanup_expired_pending_bookings",
+    summary: `Cleanup booking pending dijalankan manual. ${result.deletedCount} booking dihapus, ${result.routedToRefundReviewCount} booking DP diarahkan ke refund review.`,
+    metadata: {
+      deletedCount: result.deletedCount,
+      routedToRefundReviewCount: result.routedToRefundReviewCount,
+      expiredByDeadlineCount: result.expiredByDeadlineCount,
+      expiredByDraftExpiryCount: result.expiredByDraftExpiryCount,
+      scannedCount: result.scannedCount,
+      source: "admin_booking_center_manual_cleanup",
+    },
+  })
+
+  revalidatePath("/admin/bookings")
+  revalidatePath("/admin/dashboard")
+  revalidatePath("/merchant/pesanan")
+  revalidatePath("/customer/dashboard")
+
+  backToBookings(
+    `Cleanup selesai. ${result.deletedCount} booking pending dihapus, ${result.routedToRefundReviewCount} booking DP diarahkan ke refund review, dari ${result.scannedCount} booking yang dipindai.`,
+    "success",
+  )
 }

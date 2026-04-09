@@ -57,7 +57,7 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
 ## Active cron schedule
 
 - `/api/cron/cleanup-booking-drafts`
-  - Runs every 5 minutes via `vercel.json`.
+  - Runs from `vercel.json` schedule `5 17 * * *` (around `00:05 WIB` each day).
   - Deletes expired draft bookings and H-3 overdue unpaid bookings, including related payment and participant records.
 
 ## Symptoms of missing variables

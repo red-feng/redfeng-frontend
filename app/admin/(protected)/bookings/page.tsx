@@ -6,7 +6,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
-import { handoffBookingToFinance } from "./actions"
+import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
 
 type BookingRow = {
   id: string
@@ -330,6 +330,8 @@ export default async function AdminBookingsPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
+  const successMessage = params.success ? String(params.success) : ""
+  const errorMessage = params.error ? String(params.error) : ""
   const activeProduct = normalizeProductFilter(params.product)
   const activeQueue = normalizeQueueFilter(params.queue)
   const activeFocus = normalizeAttentionFocus(params.focus)
@@ -468,6 +470,17 @@ export default async function AdminBookingsPage({
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        {successMessage ? (
+          <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            {successMessage}
+          </div>
+        ) : null}
+        {errorMessage ? (
+          <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            {errorMessage}
+          </div>
+        ) : null}
+
         <section className="rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
           <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
             Booking Center
@@ -715,15 +728,31 @@ export default async function AdminBookingsPage({
         </section>
 
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Booking normal yang sudah lunas dan urutan pickup lengkap akan masuk queue finance secara semi-otomatis. Admin tetap memantau dan bisa melakukan handoff manual jika diperlukan.
-            </p>
-            <p className="mt-2 text-xs leading-6 text-slate-500">
-              Urutan aktif: {sortOptions.find((option) => option.value === sortMode)?.label || "Booking terbaru"}.
-            </p>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Booking normal yang sudah lunas dan urutan pickup lengkap akan masuk queue finance secara semi-otomatis. Admin tetap memantau dan bisa melakukan handoff manual jika diperlukan.
+              </p>
+              <p className="mt-2 text-xs leading-6 text-slate-500">
+                Urutan aktif: {sortOptions.find((option) => option.value === sortMode)?.label || "Booking terbaru"}.
+              </p>
+            </div>
+            {canExecuteAdminOps ? (
+              <form action={cleanupExpiredPendingBookings} className="rounded-[20px] border border-[#f0ddc7] bg-[#fffaf3] p-3 lg:min-w-[320px]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manual cleanup</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Jalankan pembersihan booking pending yang sudah lewat H+1 agar data lama tidak terus tertinggal di database.
+                </p>
+                <button
+                  type="submit"
+                  className="mt-3 inline-flex w-full items-center justify-center rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Jalankan cleanup booking pending
+                </button>
+              </form>
+            ) : null}
           </div>
 
           {error ? (
