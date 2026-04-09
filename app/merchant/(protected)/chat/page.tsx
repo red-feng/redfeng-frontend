@@ -472,7 +472,7 @@ export default async function MerchantChatPage({
 
       <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
         <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4">
+          <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4 lg:flex lg:max-h-[calc(56vh+14rem)] lg:flex-col lg:overflow-hidden">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.customerRooms}</p>
@@ -547,7 +547,7 @@ export default async function MerchantChatPage({
               </p>
             ) : null}
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
               {rooms.length === 0 && searchQuery && (
                 <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
                   {t.noSearchResult}
