@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { buildHideRoomPatch } from "@/lib/chat/room-visibility"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -31,11 +32,12 @@ export async function POST(request: Request) {
   }
 
   let patch: Record<string, string> | null = null
+  const nowIso = new Date().toISOString()
 
   if (room.customer_id === user.id) {
-    patch = { customer_hidden_at: new Date().toISOString() }
+    patch = buildHideRoomPatch("customer", nowIso)
   } else if (room.merchant_user_id === user.id) {
-    patch = { merchant_hidden_at: new Date().toISOString() }
+    patch = buildHideRoomPatch("merchant", nowIso)
   }
 
   if (!patch) {

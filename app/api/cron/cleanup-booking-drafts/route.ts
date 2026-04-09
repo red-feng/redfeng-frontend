@@ -25,7 +25,7 @@ export async function GET(req: Request) {
     const now = new Date()
     const { data: bookingsToScan, error } = await supabase
       .from("bookings")
-      .select("id, user_id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time")
+      .select("id, user_id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time, created_at")
 
     if (error) {
       return NextResponse.json({ error: error.message || "Gagal membaca draft booking" }, { status: 500 })

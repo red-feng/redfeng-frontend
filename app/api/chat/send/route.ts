@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { uploadChatAttachment } from "@/lib/chat/attachments"
+import { buildReopenRoomPatch } from "@/lib/chat/room-visibility"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
@@ -252,24 +253,7 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString()
-  const roomUpdate =
-    room.merchant_user_id === user.id
-      ? {
-          updated_at: nowIso,
-          last_message_at: nowIso,
-          last_message_sender_id: user.id,
-          merchant_last_read_at: nowIso,
-          merchant_hidden_at: null,
-          customer_hidden_at: null,
-        }
-      : {
-          updated_at: nowIso,
-          last_message_at: nowIso,
-          last_message_sender_id: user.id,
-          customer_last_read_at: nowIso,
-          customer_hidden_at: null,
-          merchant_hidden_at: null,
-        }
+  const roomUpdate = buildReopenRoomPatch(room.merchant_user_id === user.id ? "merchant" : "customer", nowIso, user.id)
 
   const { error: updateRoomError } = await adminSupabase
     .from("package_chat_rooms")

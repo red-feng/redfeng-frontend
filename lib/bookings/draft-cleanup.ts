@@ -26,6 +26,7 @@ export function isDraftBookingDeletable(booking: {
 
 export function isBookingExpiredForNonPayment(
   booking: {
+    created_at?: string | null
     payment_status?: string | null
     booking_status?: string | null
     payment_type?: string | null
@@ -37,10 +38,18 @@ export function isBookingExpiredForNonPayment(
   const paymentStatus = normalizeStatus(booking.payment_status)
   const bookingStatus = normalizeStatus(booking.booking_status)
   const dueAt = getFinalPaymentDueAt(booking.pickup_date || null)
+  const createdAt =
+    booking.created_at && !Number.isNaN(new Date(booking.created_at).getTime()) ? new Date(booking.created_at) : null
 
   if (paymentStatus === "pending" || paymentStatus === "unpaid" || paymentStatus === "") {
     if (!isDraftBookingDeletable(booking)) {
       return false
+    }
+
+    if (createdAt) {
+      const hPlusOne = new Date(createdAt)
+      hPlusOne.setHours(hPlusOne.getHours() + 24)
+      return now.getTime() > hPlusOne.getTime()
     }
 
     if (dueAt) {
