@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
+import ChatLiveRefresh from "@/app/components/ChatLiveRefresh"
 import { sendChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -383,6 +384,7 @@ export default async function ChatPage({
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
+      <ChatLiveRefresh roomId={activeRoomId} delayMs={140} />
       <div className="mx-auto max-w-6xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">{t.title}</h1>
@@ -417,9 +419,9 @@ export default async function ChatPage({
 
         <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-            <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4">
+            <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4 lg:flex lg:max-h-[calc(56vh+12rem)] lg:flex-col lg:overflow-hidden">
               <h2 className="text-sm font-semibold text-slate-900">{t.chatRooms}</h2>
-              <div className="mt-4 space-y-3">
+              <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
                 {rooms.length === 0 && (
                   <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">
                     {t.noChats}
