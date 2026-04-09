@@ -3,8 +3,7 @@ import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { isImageAttachment } from "@/lib/chat/attachments"
-import { sendMerchantChatMessage } from "./actions"
+import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
 
 type ChatRoomRow = {
   id: string
@@ -232,28 +231,6 @@ function getCustomerLabel(room: ChatRoomRow) {
   return `Customer ${room.customer_id.slice(0, 8)}`
 }
 
-function isCompletedBooking(room: ChatRoomRow) {
-  const booking = getBookingInfo(room)
-  const bookingStatus = String(booking?.booking_status || "")
-    .trim()
-    .toLowerCase()
-
-  return bookingStatus === "completed" || bookingStatus === "done"
-}
-
-function formatDateTime(dateStr: string | null) {
-  if (!dateStr) return "-"
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-  return date.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
-
 export const dynamic = "force-dynamic"
 
 export default async function MerchantChatPage({
@@ -342,14 +319,6 @@ export default async function MerchantChatPage({
     if (activeFilter === "booking") return Boolean(room.booking_id)
     return true
   }
-
-  const unreadRoomsCount = allRooms.filter((room) => {
-    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
-    if (!room.last_message_at) return false
-    if (!room.merchant_last_read_at) return true
-    return room.last_message_at > room.merchant_last_read_at
-  }).length
-  const bookingRoomsCount = allRooms.filter((room) => Boolean(room.booking_id)).length
 
   const rooms = allRooms.filter((room) => matchesSearch(room) && matchesFilter(room))
   const activeRoomId = requestedRoomId || rooms[0]?.id || ""
@@ -470,304 +439,75 @@ export default async function MerchantChatPage({
         </div>
       )}
 
-      <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-        <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-          <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4 lg:flex lg:max-h-[calc(56vh+14rem)] lg:flex-col lg:overflow-hidden">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.customerRooms}</p>
-                <h2 className="mt-2 text-lg font-semibold text-slate-950">{t.conversationList}</h2>
-              </div>
-              {unreadCount > 0 && (
-                  <span className="rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white">{unreadCount} {t.newBadge}</span>
-                )}
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {[
-                { key: "all", label: t.allFilter, count: allRooms.length },
-                { key: "unread", label: t.unreadFilter, count: unreadRoomsCount },
-                { key: "booking", label: t.bookingFilter, count: bookingRoomsCount },
-              ].map((item) => {
-                const href = searchQuery
-                  ? `/merchant/chat?filter=${item.key}&q=${encodeURIComponent(searchQuery)}`
-                  : `/merchant/chat?filter=${item.key}`
-                const isActive = activeFilter === item.key
-                return (
-                  <Link
-                    key={item.key}
-                    href={href}
-                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
-                      isActive
-                        ? "border-orange-200 bg-orange-100 text-orange-700"
-                        : "border-[#e6d8c2] bg-white text-slate-600 hover:border-orange-200 hover:text-orange-700"
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        isActive ? "bg-white/80 text-orange-700" : "bg-slate-100 text-slate-500"
-                      }`}
-                    >
-                      {item.count}
-                    </span>
-                  </Link>
-                )
-              })}
-            </div>
-
-            <form action="/merchant/chat" method="get" className="mt-4 flex gap-2">
-              <input type="hidden" name="filter" value={activeFilter} />
-              <input
-                type="text"
-                name="q"
-                defaultValue={searchQuery}
-                placeholder={t.searchPlaceholder}
-                className="h-11 flex-1 rounded-[18px] border border-[#e6d8c2] bg-white px-4 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2"
-              />
-              <button
-                type="submit"
-                className="rounded-[18px] border border-orange-200 bg-orange-50 px-4 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
-              >
-                {t.searchButton}
-              </button>
-              {(searchQuery || activeFilter !== "all") ? (
-                <Link
-                  href="/merchant/chat"
-                  className="inline-flex items-center rounded-[18px] border border-[#e6d8c2] bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-700"
-                >
-                  {t.clearSearch}
-                </Link>
-              ) : null}
-            </form>
-
-            {searchQuery ? (
-              <p className="mt-3 text-xs font-medium text-slate-500">
-                {t.searchResultLabel}: <span className="text-slate-700">&quot;{searchQuery}&quot;</span>
-              </p>
-            ) : null}
-
-            <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
-              {rooms.length === 0 && searchQuery && (
-                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  {t.noSearchResult}
-                </div>
-              )}
-              {rooms.length === 0 && !searchQuery && (
-                <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  {t.noChats}
-                </div>
-              )}
-
-              {rooms.map((room) => {
-                const pkg = packageMap.get(room.package_id)
-                const booking = getBookingInfo(room)
-                const completedBooking = isCompletedBooking(room)
-                const hasUnread =
-                  room.last_message_sender_id &&
-                  room.last_message_sender_id !== user.id &&
-                  (!room.merchant_last_read_at ||
-                    (room.last_message_at || "") > room.merchant_last_read_at)
-
-                return (
-                  <div
-                    key={room.id}
-                    className={`rounded-[22px] border px-4 py-4 transition ${
-                      room.id === activeRoomId
-                        ? "border-orange-200 bg-[linear-gradient(135deg,#fff3e8_0%,#ffffff_100%)] shadow-sm"
-                        : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
-                    }`}
-                  >
-                    <Link href={`/merchant/chat?room_id=${room.id}`} className="block">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-950">{getCustomerLabel(room)}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                completedBooking
-                                  ? "bg-sky-100 text-sky-700"
-                                  : room.booking_id
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {completedBooking ? t.completedBooking : room.booking_id ? t.afterBooking : t.beforeBooking}
-                            </span>
-                            {hasUnread && (
-                              <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                                {t.newBadge}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-                        {t.packageLabel}: {pkg?.title || t.packageNotFound}
-                      </p>
-                      {room.booking_id && (
-                        <p className="mt-2 text-xs font-medium text-emerald-700">
-                          {t.bookingLabel}: {booking?.booking_code || room.booking_id}
-                        </p>
-                      )}
-                      <p className="mt-2 text-xs text-slate-500">
-                        {t.lastUpdated}: {formatDateTime(room.last_message_at || room.updated_at)}
-                      </p>
-                    </Link>
-                    {pkg?.slug && (
-                      <Link
-                        href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                        className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
-                      >
-                          {t.viewPackage}
-                      </Link>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </aside>
-
-          <section className="overflow-hidden rounded-[28px] border border-[#f3dbc3] bg-white">
-            <div className="border-b border-[#efe3d1] bg-[linear-gradient(180deg,#fff9f2_0%,#fffefc_100%)] px-5 py-5 lg:px-6">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-3xl">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.conversationFocus}</p>
-                  <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                    {activeRoom ? getCustomerLabel(activeRoom) : t.selectChatRoom}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {activeRoom ? packageMap.get(activeRoom.package_id)?.title || "-" : t.selectRoomToViewMerchant}
-                  </p>
-                  {activeRoom && packageMap.get(activeRoom.package_id)?.slug && (
-                    <Link
-                      href={`/packages/${encodeURIComponent(packageMap.get(activeRoom.package_id)?.slug || "")}`}
-                      className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
-                    >
-                      {t.viewPackageDetail}
-                    </Link>
-                  )}
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.threadType}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom ? (isCompletedBooking(activeRoom) ? t.completedBooking : activeRoom.booking_id ? t.afterBooking : t.beforeBooking) : t.beforeBooking}
-                    </p>
-                  </div>
-                  <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.statusLabel}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom
-                        ? isCompletedBooking(activeRoom)
-                          ? t.completedTransaction
-                          : activeRoom.booking_id
-                            ? t.activeTransaction
-                            : t.leadInquiry
-                        : t.leadInquiry}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="h-[56vh] space-y-4 overflow-y-auto bg-[#fffaf5] px-5 py-5 lg:px-6">
-              {messages.length === 0 && (
-                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  {t.noMessages}
-                </div>
-              )}
-
-              {messages.map((message) => {
-                const mine = message.sender_id === user.id
-                return (
-                  <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[82%] rounded-[24px] px-4 py-3 text-sm shadow-sm ${
-                        mine
-                          ? "bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] text-white"
-                          : "border border-[#eadfce] bg-white text-slate-700"
-                      }`}
-                    >
-                      {message.message ? (
-                        <p className="whitespace-pre-line leading-7">{message.message}</p>
-                      ) : null}
-                      {message.attachment_url ? (
-                        <div className={message.message ? "mt-3" : ""}>
-                          {isImageAttachment(message.attachment_mime_type) ? (
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block overflow-hidden rounded-[18px] border border-white/20 bg-white/10"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={message.attachment_url}
-                                alt={message.attachment_name || t.attachmentLabel}
-                                className="max-h-64 w-full object-cover"
-                              />
-                            </a>
-                          ) : (
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={`inline-flex items-center rounded-[16px] border px-3 py-2 text-xs font-semibold transition ${
-                                mine
-                                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
-                                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
-                              }`}
-                            >
-                              {message.attachment_name || t.openAttachment}
-                            </a>
-                          )}
-                        </div>
-                      ) : null}
-                      <p className={`mt-2 text-[11px] ${mine ? "text-white/70" : "text-slate-400"}`}>
-                        {formatDateTime(message.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <form action={sendMerchantChatMessage} className="border-t border-[#efe3d1] bg-white px-5 py-4 lg:px-6">
-              <input type="hidden" name="room_id" value={activeRoomId} />
-              <div className="mb-3">
-                <label className="flex flex-col gap-2 text-xs font-medium text-slate-500">
-                  <span>{t.attachmentLabel}</span>
-                  <input
-                    type="file"
-                    name="attachment"
-                    disabled={!activeRoomId}
-                    accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                    className="block w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-700"
-                  />
-                </label>
-                <p className="mt-2 text-xs text-slate-400">{t.attachmentHint}</p>
-              </div>
-              <div className="flex gap-3">
-                <textarea
-                  name="message"
-                  disabled={!activeRoomId}
-                  placeholder={t.replyPlaceholder}
-                  className="h-24 flex-1 rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
-                />
-                <button
-                  type="submit"
-                  disabled={!activeRoomId}
-                  className="self-end rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
-                >
-                  {t.sendButton}
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
-      </section>
+      <MerchantChatRealtimeClient
+        userId={user.id}
+        initialRooms={allRooms.map((room) => {
+          const pkg = packageMap.get(room.package_id)
+          const booking = getBookingInfo(room)
+          return {
+            id: room.id,
+            packageId: room.package_id,
+            packageTitle: pkg?.title || null,
+            packageSlug: pkg?.slug || null,
+            customerId: room.customer_id,
+            merchantUserId: room.merchant_user_id,
+            bookingId: room.booking_id || null,
+            bookingCode: booking?.booking_code || null,
+            bookingStatus: booking?.booking_status || null,
+            paymentStatus: booking?.payment_status || null,
+            customerName: booking?.customer_name || null,
+            updatedAt: room.updated_at || null,
+            lastMessageAt: room.last_message_at || null,
+            lastMessageSenderId: room.last_message_sender_id || null,
+            merchantLastReadAt: room.merchant_last_read_at || null,
+          }
+        })}
+        initialActiveRoomId={activeRoomId}
+        initialMessages={messages}
+        text={{
+          customerRooms: t.customerRooms,
+          conversationList: t.conversationList,
+          searchPlaceholder: t.searchPlaceholder,
+          searchButton: t.searchButton,
+          clearSearch: t.clearSearch,
+          allFilter: t.allFilter,
+          unreadFilter: t.unreadFilter,
+          bookingFilter: t.bookingFilter,
+          searchResultLabel: t.searchResultLabel,
+          noSearchResult: t.noSearchResult,
+          newBadge: t.newBadge,
+          noChats: t.noChats,
+          packageLabel: t.packageLabel,
+          packageNotFound: t.packageNotFound,
+          bookingLabel: t.bookingLabel,
+          lastUpdated: t.lastUpdated,
+          viewPackage: t.viewPackage,
+          conversationFocus: t.conversationFocus,
+          selectChatRoom: t.selectChatRoom,
+          selectRoomToViewMerchant: t.selectRoomToViewMerchant,
+          viewPackageDetail: t.viewPackageDetail,
+          threadType: t.threadType,
+          statusLabel: t.statusLabel,
+          activeTransaction: t.activeTransaction,
+          completedTransaction: t.completedTransaction,
+          leadInquiry: t.leadInquiry,
+          noMessages: t.noMessages,
+          attachmentLabel: t.attachmentLabel,
+          attachmentHint: t.attachmentHint,
+          replyPlaceholder: t.replyPlaceholder,
+          sendButton: t.sendButton,
+          beforeBooking: t.beforeBooking,
+          afterBooking: t.afterBooking,
+          completedBooking: t.completedBooking,
+          allChats: t.allChats,
+          totalRoomsOnInbox: t.totalRoomsOnInbox,
+          newChats: t.newChats,
+          unreadByMerchant: t.unreadByMerchant,
+          activeRoomMessages: t.activeRoomMessages,
+          currentConversation: t.currentConversation,
+          selectRoomToView: t.selectRoomToView,
+        }}
+      />
     </main>
   )
 }

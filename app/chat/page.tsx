@@ -1,11 +1,9 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
-import { isImageAttachment } from "@/lib/chat/attachments"
-import { sendChatMessage } from "./actions"
+import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
   id: string
@@ -118,15 +116,6 @@ export default async function ChatPage({
   function getBookingInfo(room: ChatRoomRow) {
     if (Array.isArray(room.bookings)) return room.bookings[0] || null
     return room.bookings || null
-  }
-
-  function isCompletedBooking(room: ChatRoomRow) {
-    const booking = getBookingInfo(room)
-    const bookingStatus = String(booking?.booking_status || "")
-      .trim()
-      .toLowerCase()
-
-    return bookingStatus === "completed" || bookingStatus === "done"
   }
 
   const supabase = await createClient()
@@ -370,17 +359,6 @@ export default async function ChatPage({
   }
 
   const messages = (messagesData as ChatMessageRow[] | null) || []
-  const activePackageForRoom = activeRoom ? packageMap.get(activeRoom.package_id) : null
-  const draftPackageId = activePackageForRoom?.id || activePackage?.id || packageId
-  const draftBookingId = activeRoom?.booking_id || bookingId
-
-  const unreadCount = rooms.filter((room) => {
-    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
-    if (!room.last_message_at) return false
-    if (!room.customer_last_read_at) return true
-    return room.last_message_at > room.customer_last_read_at
-  }).length
-
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
@@ -395,223 +373,53 @@ export default async function ChatPage({
           </div>
         )}
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{ui.allConversations}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{rooms.length}</p>
-            <p className="mt-2 text-xs text-slate-500">{ui.totalConversations}</p>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{ui.newChats}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-900">{unreadCount}</p>
-            <p className="mt-2 text-xs text-slate-500">{ui.unreadLabel}</p>
-          </div>
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{t.packageLabel}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">
-              {activePackageForRoom?.title || activePackage?.title || t.selectRoom}
-            </p>
-            <p className="mt-2 text-xs text-slate-500">{ui.activeRoomLabel}</p>
-          </div>
-        </section>
-
-        <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-            <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4 lg:flex lg:max-h-[calc(56vh+12rem)] lg:flex-col lg:overflow-hidden">
-              <h2 className="text-sm font-semibold text-slate-900">{t.chatRooms}</h2>
-              <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
-                {rooms.length === 0 && (
-                  <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">
-                    {t.noChats}
-                  </div>
-                )}
-                {rooms.map((room) => {
-                  const pkg = packageMap.get(room.package_id)
-                  const booking = getBookingInfo(room)
-                  const completedBooking = isCompletedBooking(room)
-                  const hasUnread =
-                    room.last_message_sender_id &&
-                    room.last_message_sender_id !== user.id &&
-                    (!room.customer_last_read_at ||
-                      (room.last_message_at || "") > room.customer_last_read_at)
-                  return (
-                    <Link
-                      key={room.id}
-                      href={`/chat?room_id=${room.id}`}
-                      className={`block rounded-[20px] border px-4 py-3 text-sm transition ${
-                        room.id === activeRoomId
-                          ? "border-orange-300 bg-orange-50 text-orange-700"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <span
-                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                completedBooking
-                                  ? "bg-sky-100 text-sky-700"
-                                  : room.booking_id
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {completedBooking ? completedBadgeLabel : room.booking_id ? ui.bookingBadge : ui.leadBadge}
-                            </span>
-                            {hasUnread && (
-                              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-                                {ui.newBadge}
-                              </span>
-                            )}
-                          </div>
-                          {room.booking_id && (
-                            <p className="mt-2 text-xs font-medium text-slate-500">
-                              {bookingLabel}: {booking?.booking_code || room.booking_id}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <p className="mt-2 text-xs text-slate-500">{room.updated_at || "-"}</p>
-                    </Link>
-                  )
-                })}
-              </div>
-          </aside>
-
-          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <p className="text-sm text-slate-500">{t.packageLabel}</p>
-              <p className="text-base font-semibold text-slate-900">
-                {activePackageForRoom?.title || activePackage?.title || t.selectRoom}
-              </p>
-              {activeRoom ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                      isCompletedBooking(activeRoom)
-                        ? "bg-sky-100 text-sky-700"
-                        : activeRoom.booking_id
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {isCompletedBooking(activeRoom)
-                      ? completedBadgeLabel
-                      : activeRoom.booking_id
-                        ? ui.bookingBadge
-                        : ui.leadBadge}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
-                    {isCompletedBooking(activeRoom)
-                      ? completedStatusLabel
-                      : activeRoom.booking_id
-                        ? activeStatusLabel
-                        : leadStatusLabel}
-                  </span>
-                </div>
-              ) : null}
-              {(activePackageForRoom?.slug || activePackage?.slug) && (
-                <Link
-                  href={`/packages/${encodeURIComponent(activePackageForRoom?.slug || activePackage?.slug || "")}`}
-                  className="mt-1 inline-block text-xs text-orange-600 hover:text-orange-700"
-                >
-                  {t.viewPackageDetail}
-                </Link>
-              )}
-            </div>
-
-            <div className="h-[56vh] space-y-3 overflow-y-auto bg-slate-50/50 px-5 py-4">
-              {messages.length === 0 && (
-                <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">
-                  {t.noMessages}
-                </div>
-              )}
-              {messages.map((message) => {
-                const mine = message.sender_id === user.id
-                return (
-                  <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[80%] rounded-[20px] px-4 py-3 text-sm shadow-sm ${
-                        mine
-                          ? "bg-slate-900 text-white"
-                          : "border border-slate-200 bg-white text-slate-700"
-                      }`}
-                    >
-                      {message.message ? (
-                        <p className="whitespace-pre-line leading-6">{message.message}</p>
-                      ) : null}
-                      {message.attachment_url ? (
-                        <div className={message.message ? "mt-3" : ""}>
-                          {isImageAttachment(message.attachment_mime_type) ? (
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block overflow-hidden rounded-[18px] border border-white/20 bg-white/10"
-                            >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={message.attachment_url}
-                                alt={message.attachment_name || "Lampiran"}
-                                className="max-h-64 w-full object-cover"
-                              />
-                            </a>
-                          ) : (
-                            <a
-                              href={message.attachment_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={`inline-flex items-center rounded-[16px] border px-3 py-2 text-xs font-semibold transition ${
-                                mine
-                                  ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
-                                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
-                              }`}
-                            >
-                              {message.attachment_name || "Lampiran"}
-                            </a>
-                          )}
-                        </div>
-                      ) : null}
-                      <p className={`mt-2 text-[11px] ${mine ? "text-slate-300" : "text-slate-400"}`}>
-                        {message.created_at || ""}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <form action={sendChatMessage} className="border-t border-slate-200 bg-white p-4">
-              <input type="hidden" name="room_id" value={activeRoomId} />
-              <input type="hidden" name="package_id" value={draftPackageId} />
-              <input type="hidden" name="booking_id" value={draftBookingId} />
-              <div className="mb-3">
-                <input
-                  type="file"
-                  name="attachment"
-                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                  className="block w-full rounded-[18px] border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-700"
-                />
-              </div>
-              <div className="flex gap-3">
-                <textarea
-                  name="message"
-                  placeholder={t.writeMessage}
-                  className="h-24 flex-1 rounded-[20px] border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
-                />
-                <button
-                  type="submit"
-                  disabled={!activeRoomId && !draftPackageId && !draftBookingId}
-                  className="self-end rounded-[20px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                >
-                  {t.send}
-                </button>
-              </div>
-            </form>
-          </section>
-          </div>
-        </section>
+        <CustomerChatRealtimeClient
+          locale={locale}
+          userId={user.id}
+          initialRooms={rooms.map((room) => {
+            const pkg = packageMap.get(room.package_id)
+            const booking = getBookingInfo(room)
+            return {
+              id: room.id,
+              packageId: room.package_id,
+              packageTitle: pkg?.title || null,
+              packageSlug: pkg?.slug || null,
+              customerId: room.customer_id,
+              merchantUserId: room.merchant_user_id,
+              bookingId: room.booking_id || null,
+              bookingCode: booking?.booking_code || null,
+              bookingStatus: booking?.booking_status || null,
+              customerName: booking?.customer_name || null,
+              updatedAt: room.updated_at || null,
+              lastMessageAt: room.last_message_at || null,
+              lastMessageSenderId: room.last_message_sender_id || null,
+              customerLastReadAt: room.customer_last_read_at || null,
+            }
+          })}
+          initialActiveRoomId={activeRoomId}
+          initialMessages={messages}
+          packageLabel={t.packageLabel}
+          packageFallback={t.packageFallback}
+          noChats={t.noChats}
+          noMessages={t.noMessages}
+          sendLabel={t.send}
+          writeMessageLabel={t.writeMessage}
+          viewPackageDetailLabel={t.viewPackageDetail}
+          title={t.chatRooms}
+          allConversations={ui.allConversations}
+          totalConversations={ui.totalConversations}
+          newChats={ui.newChats}
+          unreadLabel={ui.unreadLabel}
+          activeRoomLabel={ui.activeRoomLabel}
+          leadBadge={ui.leadBadge}
+          bookingBadge={ui.bookingBadge}
+          completedBadge={completedBadgeLabel}
+          activeStatus={activeStatusLabel}
+          completedStatus={completedStatusLabel}
+          leadStatus={leadStatusLabel}
+          newBadge={ui.newBadge}
+          bookingLabel={bookingLabel}
+        />
       </div>
     </main>
   )
