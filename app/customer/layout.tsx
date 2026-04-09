@@ -50,11 +50,30 @@ export default async function CustomerLayout({
   const customerCode = formatCustomerCode(user.id)
   const locale = normalizeLocale(await getCurrentLocale())
   const languageLabel = locale === "en" ? "Language" : locale === "zh" ? "语言" : "Bahasa"
+  const chatLabel = locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat"
   const languageOptions = [
     { value: "id" as const, label: "Bahasa Indonesia" },
     { value: "en" as const, label: "English" },
     { value: "zh" as const, label: "中文" },
   ]
+  const { data: chatRooms } = await supabase
+    .from("package_chat_rooms")
+    .select("id, last_message_at, last_message_sender_id, customer_last_read_at")
+    .eq("customer_id", user.id)
+    .order("updated_at", { ascending: false })
+
+  const customerChatBadgeCount =
+    ((chatRooms as Array<{
+      id: string
+      last_message_at: string | null
+      last_message_sender_id: string | null
+      customer_last_read_at: string | null
+    }> | null) || []).filter((room) => {
+      if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
+      if (!room.last_message_at) return false
+      if (!room.customer_last_read_at) return true
+      return room.last_message_at > room.customer_last_read_at
+    }).length
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
@@ -109,6 +128,17 @@ export default async function CustomerLayout({
               className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
             >
               Dashboard Customer
+            </Link>
+            <Link
+              href="/chat"
+              className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+            >
+              <span>{chatLabel}</span>
+              {customerChatBadgeCount > 0 ? (
+                <span className="rounded-full bg-orange-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                  {customerChatBadgeCount}
+                </span>
+              ) : null}
             </Link>
             <Link
               href="https://redfeng.co/"
