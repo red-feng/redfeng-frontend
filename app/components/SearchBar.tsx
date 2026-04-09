@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useMemo, useState, useTransition } from "react"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { formatTravelStyleLabel, isQuotaTravelStyle, travelStyleOptions } from "@/lib/travelStyles"
+import { formatTravelStyleLabel, travelStyleOptions } from "@/lib/travelStyles"
 
 type SearchBarProps = {
   locale: Locale
@@ -47,8 +47,6 @@ export default function SearchBar({
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
-  const [departureDate, setDepartureDate] = useState(searchParams.get("departure_date") || "")
-  const showDepartureDate = isQuotaTravelStyle(style)
   const countryOptions = useMemo(() => {
     const uniqueCountries = [...new Set(countries.map((value) => value.trim()).filter(Boolean))]
 
@@ -80,11 +78,7 @@ export default function SearchBar({
       params.delete("duration")
     }
 
-    if (showDepartureDate && departureDate) {
-      params.set("departure_date", departureDate)
-    } else {
-      params.delete("departure_date")
-    }
+    params.delete("departure_date")
 
     params.delete("page")
     const nextQuery = params.toString()
@@ -120,7 +114,7 @@ export default function SearchBar({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.95fr)_auto] xl:items-end">
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.75fr)_auto] xl:items-end">
             <label className="flex min-w-0 flex-col gap-2">
               <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500 sm:text-[11px]">
                 {t.countryLabel}
@@ -147,11 +141,7 @@ export default function SearchBar({
               <select
                 value={style}
                 onChange={(event) => {
-                  const nextStyle = event.target.value
-                  setStyle(nextStyle)
-                  if (!isQuotaTravelStyle(nextStyle)) {
-                    setDepartureDate("")
-                  }
+                  setStyle(event.target.value)
                 }}
                 disabled={isPending}
                 className="h-12 rounded-2xl border border-orange-100 bg-white/95 px-4 text-[14px] font-medium text-slate-800 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100 sm:h-14 sm:rounded-2xl sm:text-[15px]"
@@ -164,22 +154,6 @@ export default function SearchBar({
                 ))}
               </select>
             </label>
-
-            {showDepartureDate && (
-              <label className="flex min-w-0 flex-col gap-2 sm:col-span-2 xl:col-span-1">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500 sm:text-[11px]">
-                  {t.departureDateLabel}
-                </span>
-                <input
-                  type="date"
-                  value={departureDate}
-                  onChange={(event) => setDepartureDate(event.target.value)}
-                  disabled={isPending}
-                  className="h-12 rounded-2xl border border-orange-100 bg-white/95 px-4 text-[14px] font-medium text-slate-800 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)] outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100 sm:h-14 sm:rounded-2xl sm:text-[15px]"
-                  aria-label={t.departureDateLabel}
-                />
-              </label>
-            )}
 
             <label className="flex min-w-0 flex-col gap-2">
               <span className="text-[10px] font-semibold uppercase tracking-[0.32em] text-slate-500 sm:text-[11px]">
