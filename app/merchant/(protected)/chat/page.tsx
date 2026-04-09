@@ -38,9 +38,8 @@ function getChatText(locale: Locale) {
       heroBadge: "Merchant Inbox",
       heroTitle: "Percakapan customer yang siap ditangani dalam satu command center.",
       heroDescription: "Kelola pertanyaan sebelum booking, follow-up sesudah pembayaran, dan jaga response time merchant dengan inbox yang lebih rapi dan lebih siap untuk operasional OTA.",
-      preBookingChats: "Chat sebelum booking",
-      postBookingChats: "Chat sesudah booking",
-      totalRoomsOnActiveTab: "Total room pada tab aktif",
+      allChats: "Semua percakapan",
+      totalRoomsOnInbox: "Total room pada inbox merchant",
       newChats: "Chat baru",
       unreadByMerchant: "Belum dibaca merchant",
       activeRoomMessages: "Pesan dalam room aktif",
@@ -48,9 +47,9 @@ function getChatText(locale: Locale) {
       selectRoomToView: "Pilih room untuk melihat isi",
       businessSnapshot: "Business Snapshot",
       inboxLens: "Inbox Lens",
-      inboxLensDescription: "Gunakan tab untuk memisahkan lead pre-booking dan percakapan yang sudah terkait transaksi.",
-      beforeBooking: "Sebelum Booking",
-      afterBooking: "Sesudah Booking",
+      inboxLensDescription: "Semua percakapan customer kini ada dalam satu inbox, dengan badge yang membedakan lead biasa dan room yang sudah terkait booking.",
+      beforeBooking: "Lead",
+      afterBooking: "Booking aktif",
       loadRoomsError: "Gagal memuat ruang chat",
       afterBookingMigration: "Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
@@ -59,11 +58,13 @@ function getChatText(locale: Locale) {
       searchPlaceholder: "Cari customer, kode booking, atau paket...",
       searchButton: "Cari",
       clearSearch: "Reset",
+      allFilter: "Semua",
+      unreadFilter: "Unread",
+      bookingFilter: "Booking aktif",
       searchResultLabel: "Hasil pencarian",
       noSearchResult: "Tidak ada percakapan yang cocok dengan kata kunci ini.",
       newBadge: "baru",
-      noPreBookingChats: "Belum ada chat customer dari halaman detail paket.",
-      noPostBookingChats: "Tab ini siap digunakan. Percakapan booking akan muncul begitu room terhubung ke transaksi.",
+      noChats: "Belum ada percakapan customer untuk merchant ini.",
       packageLabel: "Paket",
       packageNotFound: "Paket tidak ditemukan",
       bookingLabel: "Booking",
@@ -88,9 +89,8 @@ function getChatText(locale: Locale) {
       heroBadge: "Merchant Inbox",
       heroTitle: "Customer conversations ready to be handled in one command center.",
       heroDescription: "Manage pre-booking questions, post-payment follow-ups, and merchant response time in a cleaner inbox built for OTA operations.",
-      preBookingChats: "Pre-booking chats",
-      postBookingChats: "Post-booking chats",
-      totalRoomsOnActiveTab: "Total rooms on the active tab",
+      allChats: "All conversations",
+      totalRoomsOnInbox: "Total rooms in the merchant inbox",
       newChats: "New chats",
       unreadByMerchant: "Not yet read by merchant",
       activeRoomMessages: "Messages in active room",
@@ -98,9 +98,9 @@ function getChatText(locale: Locale) {
       selectRoomToView: "Select a room to view its content",
       businessSnapshot: "Business Snapshot",
       inboxLens: "Inbox Lens",
-      inboxLensDescription: "Use tabs to separate pre-booking leads from conversations already tied to transactions.",
-      beforeBooking: "Before Booking",
-      afterBooking: "After Booking",
+      inboxLensDescription: "All customer conversations now live in one inbox, with badges that separate regular leads from booking-linked rooms.",
+      beforeBooking: "Lead",
+      afterBooking: "Active booking",
       loadRoomsError: "Failed to load chat rooms",
       afterBookingMigration: "The post-booking tab requires migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "The new chat badge requires migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
@@ -109,11 +109,13 @@ function getChatText(locale: Locale) {
       searchPlaceholder: "Search customer, booking code, or package...",
       searchButton: "Search",
       clearSearch: "Reset",
+      allFilter: "All",
+      unreadFilter: "Unread",
+      bookingFilter: "Active booking",
       searchResultLabel: "Search results",
       noSearchResult: "No conversations match this keyword.",
       newBadge: "new",
-      noPreBookingChats: "There are no customer chats yet from the package detail page.",
-      noPostBookingChats: "This tab is ready to use. Booking conversations will appear once the room is linked to a transaction.",
+      noChats: "There are no customer conversations for this merchant yet.",
       packageLabel: "Package",
       packageNotFound: "Package not found",
       bookingLabel: "Booking",
@@ -138,9 +140,8 @@ function getChatText(locale: Locale) {
       heroBadge: "商家收件箱",
       heroTitle: "在一个指挥中心中处理客户对话。",
       heroDescription: "更有条理地管理预订前咨询、付款后跟进以及商家回复效率，适配 OTA 日常运营。",
-      preBookingChats: "预订前聊天",
-      postBookingChats: "预订后聊天",
-      totalRoomsOnActiveTab: "当前标签中的会话数量",
+      allChats: "全部会话",
+      totalRoomsOnInbox: "商家收件箱中的会话总数",
       newChats: "新消息",
       unreadByMerchant: "商家尚未阅读",
       activeRoomMessages: "当前会话消息数",
@@ -148,9 +149,9 @@ function getChatText(locale: Locale) {
       selectRoomToView: "请选择一个会话查看内容",
       businessSnapshot: "业务概览",
       inboxLens: "收件箱视图",
-      inboxLensDescription: "使用标签区分预订前线索与已经关联到交易的对话。",
-      beforeBooking: "预订前",
-      afterBooking: "预订后",
+      inboxLensDescription: "所有客户对话现在集中在一个收件箱中，并通过徽标区分普通线索与已关联预订的会话。",
+      beforeBooking: "线索",
+      afterBooking: "进行中的预订",
       loadRoomsError: "加载聊天会话失败",
       afterBookingMigration: "预订后标签需要 migration `20260306_add_booking_id_to_package_chat_rooms.sql`。",
       unreadBadgeMigration: "新消息徽标需要 migration `20260307_add_read_tracking_to_package_chat_rooms.sql`。",
@@ -159,11 +160,13 @@ function getChatText(locale: Locale) {
       searchPlaceholder: "搜索客户、预订编号或套餐...",
       searchButton: "搜索",
       clearSearch: "重置",
+      allFilter: "全部",
+      unreadFilter: "未读",
+      bookingFilter: "进行中的预订",
       searchResultLabel: "搜索结果",
       noSearchResult: "没有找到匹配此关键词的会话。",
       newBadge: "新消息",
-      noPreBookingChats: "来自套餐详情页的客户聊天暂时还没有。",
-      noPostBookingChats: "此标签已准备就绪。一旦会话关联到交易，预订后的聊天就会显示在这里。",
+      noChats: "该商家暂时还没有客户会话。",
       packageLabel: "套餐",
       packageNotFound: "未找到套餐",
       bookingLabel: "预订",
@@ -206,10 +209,10 @@ type PackageRow = {
 }
 
 type MerchantChatParams = {
-  tab?: string
   room_id?: string
   error?: string
   q?: string
+  filter?: string
 }
 
 function getBookingInfo(room: ChatRoomRow) {
@@ -246,11 +249,11 @@ export default async function MerchantChatPage({
   const params = await searchParams
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getChatText(locale)
-  const activeTab = params.tab === "post" ? "post" : "pre"
   const requestedRoomId = params.room_id || ""
   const errorMessage = params.error || ""
   const searchQuery = String(params.q || "").trim()
   const normalizedSearchQuery = searchQuery.toLowerCase()
+  const activeFilter = params.filter === "unread" || params.filter === "booking" ? params.filter : "all"
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -314,9 +317,26 @@ export default async function MerchantChatPage({
     return haystack.includes(normalizedSearchQuery)
   }
 
-  const preBookingRooms = allRooms.filter((room) => !room.booking_id && matchesSearch(room))
-  const postBookingRooms = allRooms.filter((room) => Boolean(room.booking_id) && matchesSearch(room))
-  const rooms = activeTab === "post" ? postBookingRooms : preBookingRooms
+  const matchesFilter = (room: ChatRoomRow) => {
+    const hasUnread =
+      room.last_message_sender_id &&
+      room.last_message_sender_id !== user.id &&
+      (!room.merchant_last_read_at || (room.last_message_at || "") > room.merchant_last_read_at)
+
+    if (activeFilter === "unread") return Boolean(hasUnread)
+    if (activeFilter === "booking") return Boolean(room.booking_id)
+    return true
+  }
+
+  const unreadRoomsCount = allRooms.filter((room) => {
+    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
+    if (!room.last_message_at) return false
+    if (!room.merchant_last_read_at) return true
+    return room.last_message_at > room.merchant_last_read_at
+  }).length
+  const bookingRoomsCount = allRooms.filter((room) => Boolean(room.booking_id)).length
+
+  const rooms = allRooms.filter((room) => matchesSearch(room) && matchesFilter(room))
   const activeRoomId = requestedRoomId || rooms[0]?.id || ""
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
 
@@ -355,9 +375,9 @@ export default async function MerchantChatPage({
 
   const metricCards = [
     {
-      label: activeTab === "post" ? t.postBookingChats : t.preBookingChats,
+      label: t.allChats,
       value: String(rooms.length),
-      note: t.totalRoomsOnActiveTab,
+      note: t.totalRoomsOnInbox,
     },
     {
       label: t.newChats,
@@ -406,28 +426,6 @@ export default async function MerchantChatPage({
               <p className="mt-3 text-sm leading-6 text-white/90">
                 {t.inboxLensDescription}
               </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  href="/merchant/chat?tab=pre"
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    activeTab === "pre"
-                      ? "border-white bg-white text-orange-700"
-                      : "border-white/30 bg-white/10 text-white hover:bg-white/15"
-                  }`}
-                >
-                  {t.beforeBooking}
-                </Link>
-                <Link
-                  href="/merchant/chat?tab=post"
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    activeTab === "post"
-                      ? "border-white bg-white text-orange-700"
-                      : "border-white/30 bg-white/10 text-white hover:bg-white/15"
-                  }`}
-                >
-                  {t.afterBooking}
-                </Link>
-              </div>
             </div>
           </div>
         </div>
@@ -470,8 +468,41 @@ export default async function MerchantChatPage({
                 )}
             </div>
 
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { key: "all", label: t.allFilter, count: allRooms.length },
+                { key: "unread", label: t.unreadFilter, count: unreadRoomsCount },
+                { key: "booking", label: t.bookingFilter, count: bookingRoomsCount },
+              ].map((item) => {
+                const href = searchQuery
+                  ? `/merchant/chat?filter=${item.key}&q=${encodeURIComponent(searchQuery)}`
+                  : `/merchant/chat?filter=${item.key}`
+                const isActive = activeFilter === item.key
+                return (
+                  <Link
+                    key={item.key}
+                    href={href}
+                    className={`rounded-full border px-3 py-2 text-xs font-semibold transition ${
+                      isActive
+                        ? "border-orange-200 bg-orange-100 text-orange-700"
+                        : "border-[#e6d8c2] bg-white text-slate-600 hover:border-orange-200 hover:text-orange-700"
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                        isActive ? "bg-white/80 text-orange-700" : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {item.count}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+
             <form action="/merchant/chat" method="get" className="mt-4 flex gap-2">
-              <input type="hidden" name="tab" value={activeTab} />
+              <input type="hidden" name="filter" value={activeFilter} />
               <input
                 type="text"
                 name="q"
@@ -485,9 +516,9 @@ export default async function MerchantChatPage({
               >
                 {t.searchButton}
               </button>
-              {searchQuery ? (
+              {(searchQuery || activeFilter !== "all") ? (
                 <Link
-                  href={`/merchant/chat?tab=${activeTab}`}
+                  href="/merchant/chat"
                   className="inline-flex items-center rounded-[18px] border border-[#e6d8c2] bg-white px-4 text-sm font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-700"
                 >
                   {t.clearSearch}
@@ -507,14 +538,9 @@ export default async function MerchantChatPage({
                   {t.noSearchResult}
                 </div>
               )}
-              {rooms.length === 0 && !searchQuery && activeTab === "pre" && (
-                <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  {t.noPreBookingChats}
-                </div>
-              )}
-              {rooms.length === 0 && !searchQuery && activeTab === "post" && (
+              {rooms.length === 0 && !searchQuery && (
                 <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">
-                  {t.noPostBookingChats}
+                  {t.noChats}
                 </div>
               )}
 
@@ -536,14 +562,27 @@ export default async function MerchantChatPage({
                         : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
                     }`}
                   >
-                    <Link href={`/merchant/chat?tab=${activeTab}&room_id=${room.id}`} className="block">
+                    <Link href={`/merchant/chat?room_id=${room.id}`} className="block">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="text-sm font-semibold text-slate-950">{getCustomerLabel(room)}</p>
-                        {hasUnread && (
-                          <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
-                            {t.newBadge}
-                          </span>
-                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-950">{getCustomerLabel(room)}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                room.booking_id
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {room.booking_id ? t.afterBooking : t.beforeBooking}
+                            </span>
+                            {hasUnread && (
+                              <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
+                                {t.newBadge}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
                         {t.packageLabel}: {pkg?.title || t.packageNotFound}
@@ -673,7 +712,6 @@ export default async function MerchantChatPage({
 
             <form action={sendMerchantChatMessage} className="border-t border-[#efe3d1] bg-white px-5 py-4 lg:px-6">
               <input type="hidden" name="room_id" value={activeRoomId} />
-              <input type="hidden" name="tab" value={activeTab} />
               <div className="mb-3">
                 <label className="flex flex-col gap-2 text-xs font-medium text-slate-500">
                   <span>{t.attachmentLabel}</span>
