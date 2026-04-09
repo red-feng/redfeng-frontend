@@ -50,6 +50,11 @@ function titleCaseStatus(value: string | null) {
     .join(" ")
 }
 
+function isTripCompletedStatus(status: string | null) {
+  const normalized = normalizeStatus(status)
+  return normalized === "completed" || normalized === "done"
+}
+
 function getCustomerActionHint(
   booking: BookingRow,
   t: {
@@ -470,6 +475,9 @@ function resolvePaymentHeadline(status: string | null, locale: Locale) {
 function resolveTripStatusLabel(status: string | null, locale: Locale) {
   const normalized = normalizeStatus(status)
   const t = dashboardCopy[locale]
+  if (isTripCompletedStatus(status)) {
+    return locale === "en" ? "Trip completed" : locale === "zh" ? "行程已完成" : "Trip selesai"
+  }
   if (normalized === "merchant_arrived") return t.merchantArrived
   if (normalized === "customer_picked_up") return t.customerPickedUp
   if (normalized === "customer_picked_up_pending_final_payment") return t.customerPickedUp
@@ -495,7 +503,7 @@ function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
 
 function badgeClass(value: string | null, type: "payment" | "trip" | "escrow") {
   const normalized = normalizeStatus(value)
-  if (normalized === "paid" || normalized === "confirmed" || normalized === "paid_out") {
+  if (normalized === "paid" || normalized === "confirmed" || normalized === "paid_out" || isTripCompletedStatus(value)) {
     return toneClass("success")
   }
   if (normalized === "awaiting_admin_handoff" || normalized === "finance_review" || normalized === "payout_completed") {

@@ -99,6 +99,15 @@ function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function isTripCompletedStatus(status: string | null) {
+  const normalized = normalizeStatus(status)
+  return normalized === "completed" || normalized === "done"
+}
+
+function getTripCompletedLabel(locale: Locale) {
+  return locale === "en" ? "Trip Completed" : locale === "zh" ? "行程已完成" : "Trip Selesai"
+}
+
 const bookingPageCopy = {
   id: {
     loginRequired: "Silakan login untuk melihat booking Anda.",
@@ -413,6 +422,7 @@ function resolveEscrowStatusLabel(status: string | null, locale: Locale) {
 function resolveBookingStatusLabel(status: string | null, locale: Locale) {
   const normalized = normalizeStatus(status)
   const t = getBookingPageCopy(locale)
+  if (isTripCompletedStatus(status)) return getTripCompletedLabel(locale)
   if (normalized === "merchant_arrived") return t.awaitingPickup
   if (normalized === "customer_picked_up") return t.pickedUp
   if (normalized === "customer_picked_up_pending_final_payment") return t.pickedUp
@@ -446,6 +456,12 @@ function resolveJourneyPhase(booking: BookingDetailRow, locale: Locale) {
   const t = getBookingPageCopy(locale)
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: t.paidOut, tone: "border-violet-200 bg-violet-50 text-violet-700" }
+  }
+  if (normalizeStatus(booking.booking_status) === "payout_completed") {
+    return { label: t.paidOut, tone: "border-violet-200 bg-violet-50 text-violet-700" }
+  }
+  if (isTripCompletedStatus(booking.booking_status)) {
+    return { label: getTripCompletedLabel(locale), tone: "border-emerald-200 bg-emerald-50 text-emerald-700" }
   }
   if (
     normalizeStatus(booking.booking_status) === "awaiting_admin_handoff" ||

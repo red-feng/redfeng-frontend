@@ -84,6 +84,11 @@ function isVisiblePaidBooking(booking: BookingRow) {
   return paymentStatus === "paid" || paymentStatus === "dp_paid"
 }
 
+function isTripCompletedStatus(status: string | null) {
+  const normalized = normalizeStatus(status)
+  return normalized === "completed" || normalized === "done"
+}
+
 function isMatchingFilter(booking: BookingRow, filter: string) {
   const paymentStatus = normalizeStatus(booking.payment_status)
   const tripStatus = normalizeStatus(booking.booking_status)
@@ -93,7 +98,7 @@ function isMatchingFilter(booking: BookingRow, filter: string) {
   if (filter === "waiting-payment") return paymentStatus === "pending" || paymentStatus === "dp_paid"
   if (filter === "paid") return paymentStatus === "paid" || tripStatus === "confirmed" || booking.escrow_status === "held"
   if (filter === "done") {
-    return ["completed", "done", "awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(tripStatus)
+    return isTripCompletedStatus(booking.booking_status)
   }
   if (filter === "refund") return paymentStatus === "refund" || tripStatus === "refund"
   if (filter === "cancelled") return tripStatus === "cancelled" || paymentStatus === "cancelled"
@@ -113,7 +118,13 @@ function journeyPhase(booking: BookingRow, text: ReturnType<typeof getOrdersText
   if (normalizeStatus(booking.escrow_status) === "paid_out") {
     return { label: text.paidOut, tone: getJourneyStageTone("paid_out", "bordered") }
   }
-  if (["awaiting_admin_handoff", "finance_review", "finance_processing", "payout_completed"].includes(normalizeStatus(booking.booking_status))) {
+  if (normalizeStatus(booking.booking_status) === "payout_completed") {
+    return { label: text.paidOut, tone: getJourneyStageTone("paid_out", "bordered") }
+  }
+  if (isTripCompletedStatus(booking.booking_status)) {
+    return { label: text.tripCompleted, tone: getJourneyStageTone("go_confirmed", "bordered") }
+  }
+  if (["awaiting_admin_handoff", "finance_review", "finance_processing"].includes(normalizeStatus(booking.booking_status))) {
     return { label: text.readyForFinance, tone: getJourneyStageTone("ready_for_finance", "bordered") }
   }
   if (booking.merchant_picked_up_at) {
@@ -489,13 +500,14 @@ function getOrdersText(locale: Locale) {
       filterNew: "Pesanan Baru",
       filterWaitingPayment: "Menunggu Pembayaran",
       filterPaid: "Terbayar",
-      filterDone: "Selesai",
+      filterDone: "Trip Selesai",
       filterRefund: "Refund",
       filterCancelled: "Dibatalkan",
       loadError: "Gagal memuat data pesanan.",
       emptyState: "Belum ada data pada kategori ini.",
       paidOut: "Paid Out",
       readyForFinance: "Ready for Finance",
+      tripCompleted: "Trip Selesai",
       goConfirmed: "Go Confirmed",
       pickedUp: "Picked Up",
       awaitingPickup: "Awaiting Pickup",
@@ -541,13 +553,14 @@ function getOrdersText(locale: Locale) {
       filterNew: "New Orders",
       filterWaitingPayment: "Awaiting Payment",
       filterPaid: "Paid",
-      filterDone: "Completed",
+      filterDone: "Completed Trips",
       filterRefund: "Refund",
       filterCancelled: "Cancelled",
       loadError: "Failed to load order data.",
       emptyState: "There is no data in this category yet.",
       paidOut: "Paid Out",
       readyForFinance: "Ready for Finance",
+      tripCompleted: "Trip Completed",
       goConfirmed: "Go Confirmed",
       pickedUp: "Picked Up",
       awaitingPickup: "Awaiting Pickup",
@@ -593,13 +606,14 @@ function getOrdersText(locale: Locale) {
       filterNew: "新订单",
       filterWaitingPayment: "等待付款",
       filterPaid: "已付款",
-      filterDone: "已完成",
+      filterDone: "行程已完成",
       filterRefund: "退款",
       filterCancelled: "已取消",
       loadError: "加载订单数据失败。",
       emptyState: "该分类下暂时没有数据。",
       paidOut: "已结算",
       readyForFinance: "待财务处理",
+      tripCompleted: "行程已完成",
       goConfirmed: "Go 已确认",
       pickedUp: "已上车",
       awaitingPickup: "等待接送",
