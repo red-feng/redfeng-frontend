@@ -102,6 +102,11 @@ function getSafeErrorFromLocation() {
   return new URLSearchParams(window.location.search).get("error") || "";
 }
 
+function rememberActivePortal(portal: "customer" | "merchant") {
+  if (typeof document === "undefined") return;
+  document.cookie = `rf_active_portal=${portal}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+}
+
 function getCustomerModeCopy(locale: Locale, mode: Mode) {
   if (locale === "en") {
     return mode === "login"
@@ -225,11 +230,12 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const handleProviderAuth = async (provider: AuthProvider) => {
     setLoadingProvider(provider);
     setErrorMsg("");
+    rememberActivePortal("customer");
 
     const redirectTo =
       typeof window === "undefined"
         ? undefined
-        : `${window.location.origin}/auth/callback?next=${encodeURIComponent(safeNext)}`;
+        : `${window.location.origin}/auth/callback?portal=customer&next=${encodeURIComponent(safeNext)}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,

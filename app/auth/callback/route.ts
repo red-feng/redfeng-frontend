@@ -24,6 +24,7 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
   const requestedNext = searchParams.get("next")
+  const portal = String(searchParams.get("portal") || "").trim().toLowerCase()
   const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard"
 
   if (code) {
@@ -46,11 +47,27 @@ export async function GET(request: Request) {
           id: user.id,
           role: "customer",
         })
-        return NextResponse.redirect(new URL(safeNext, origin))
+        const response = NextResponse.redirect(new URL(safeNext, origin))
+        if (portal === "customer") {
+          response.cookies.set("rf_active_portal", "customer", {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+            sameSite: "lax",
+          })
+        }
+        return response
       }
 
       if (profile.role === "customer" || profile.role === "merchant") {
-        return NextResponse.redirect(new URL(safeNext, origin))
+        const response = NextResponse.redirect(new URL(safeNext, origin))
+        if (portal === "customer") {
+          response.cookies.set("rf_active_portal", "customer", {
+            path: "/",
+            maxAge: 60 * 60 * 24 * 30,
+            sameSite: "lax",
+          })
+        }
+        return response
       }
 
       if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "superadmin") {

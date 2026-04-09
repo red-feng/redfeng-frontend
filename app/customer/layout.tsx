@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { normalizeLocale } from "@/lib/i18n"
@@ -15,6 +16,7 @@ export default async function CustomerLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const cookieStore = await cookies()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -29,6 +31,8 @@ export default async function CustomerLayout({
     .eq("id", user.id)
     .maybeSingle()
 
+  const activePortal = cookieStore.get("rf_active_portal")?.value || ""
+
   if (!profile) {
     await supabase.from("profiles").upsert({
       id: user.id,
@@ -41,7 +45,9 @@ export default async function CustomerLayout({
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
   } else if (profile.role === "merchant") {
-    redirect("/merchant/dashboard")
+    if (activePortal !== "customer") {
+      redirect("/merchant/dashboard")
+    }
   } else if (profile.role !== "customer") {
     redirect("/login")
   }

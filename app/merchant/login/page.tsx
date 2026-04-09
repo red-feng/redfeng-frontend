@@ -99,6 +99,9 @@ export default function MerchantLogin() {
     }
 
     if (profile.role === "merchant") {
+      if (typeof document !== "undefined") {
+        document.cookie = `rf_active_portal=merchant; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`
+      }
       const { data: merchant } = await supabase
         .from("merchants")
         .select("verification_status")
