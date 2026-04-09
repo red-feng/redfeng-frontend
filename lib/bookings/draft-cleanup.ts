@@ -132,7 +132,7 @@ export async function runExpiredBookingCleanup(
   const { data: bookingsToScan, error } = await supabase
     .from("bookings")
     .select(
-      "id, customer_id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time, created_at",
+      "id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time, created_at",
     )
 
   if (error) {
@@ -209,7 +209,6 @@ export async function moveOverdueDpBookingToRefundQueue(
   supabase: SupabaseClient,
   booking: {
     id: string
-    customer_id?: string | null
     package_id?: string | null
     booking_code?: string | null
     customer_name?: string | null
@@ -256,6 +255,7 @@ export async function moveOverdueDpBookingToRefundQueue(
     .maybeSingle()
 
   let merchantId: string | null = null
+  let customerId: string | null = null
   if (booking.package_id) {
     const { data: packageRow } = await supabase
       .from("packages")
@@ -265,6 +265,16 @@ export async function moveOverdueDpBookingToRefundQueue(
 
     merchantId = packageRow?.merchant_id || null
   }
+
+  const { data: bookingRoom } = await supabase
+    .from("package_chat_rooms")
+    .select("customer_id")
+    .eq("booking_id", booking.id)
+    .not("customer_id", "is", null)
+    .limit(1)
+    .maybeSingle()
+
+  customerId = bookingRoom?.customer_id || null
 
   const dpAmount = Math.max(
     Number(booking.dp_amount || 0),
@@ -278,7 +288,7 @@ export async function moveOverdueDpBookingToRefundQueue(
       .from("refund_requests")
       .insert({
         booking_id: booking.id,
-        customer_id: booking.customer_id || null,
+        customer_id: customerId,
         merchant_id: merchantId,
         order_id: latestPayment?.order_id || booking.booking_code || booking.id,
         payment_method: booking.payment_method || null,
