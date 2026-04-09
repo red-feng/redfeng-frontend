@@ -4,7 +4,6 @@ import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
@@ -151,28 +150,6 @@ export default async function AdminProtectedLayout({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
-      <RoleAutoRefresh
-        onlyOnPaths={[
-          "/admin/dashboard",
-          "/admin/merchants",
-          "/admin/packages",
-          "/admin/bookings",
-        ]}
-        syncKeys={["redfeng-admin-merchants-refresh"]}
-        realtimeTables={[
-          "merchant_deletion_requests",
-          "merchants",
-          "packages",
-          "bookings",
-          "profiles",
-        ]}
-        pathRealtimeDelayMs={{
-          "/admin/dashboard": 1200,
-          "/admin/merchants": 450,
-          "/admin/packages": 550,
-          "/admin/bookings": 500,
-        }}
-      />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">
           <div className="flex flex-col gap-4">

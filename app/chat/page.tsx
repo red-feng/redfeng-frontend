@@ -5,7 +5,6 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
-import ChatLiveRefresh from "@/app/components/ChatLiveRefresh"
 import { sendChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -384,7 +383,6 @@ export default async function ChatPage({
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <ChatLiveRefresh roomId={activeRoomId} delayMs={140} />
       <div className="mx-auto max-w-6xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-2xl font-bold text-slate-900">{t.title}</h1>

@@ -4,7 +4,6 @@ import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isImageAttachment } from "@/lib/chat/attachments"
-import ChatLiveRefresh from "@/app/components/ChatLiveRefresh"
 import { sendMerchantChatMessage } from "./actions"
 
 type ChatRoomRow = {
@@ -409,7 +408,6 @@ export default async function MerchantChatPage({
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] p-6 md:p-10">
-      <ChatLiveRefresh roomId={activeRoomId} delayMs={140} />
       <section className="overflow-hidden rounded-[34px] border border-orange-100 bg-[linear-gradient(135deg,#983108_0%,#f76707_52%,#ffb357_100%)] text-white shadow-[0_28px_80px_rgba(194,65,12,0.24)]">
         <div className="grid gap-6 px-7 py-8 lg:grid-cols-[minmax(0,1.4fr)_420px] lg:px-10 lg:py-10">
           <div>

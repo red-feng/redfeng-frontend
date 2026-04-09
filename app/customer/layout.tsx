@@ -8,7 +8,6 @@ import { formatCustomerCode } from "@/lib/merchant-code"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 
 export default async function CustomerLayout({
   children,
@@ -77,23 +76,6 @@ export default async function CustomerLayout({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
-      <RoleAutoRefresh
-        onlyOnPaths={[
-          "/customer/dashboard",
-          "/booking",
-        ]}
-        excludeOnPaths={[
-          "/booking/*/participants",
-        ]}
-        realtimeTables={[
-          "bookings",
-          "package_chat_rooms",
-        ]}
-        pathRealtimeDelayMs={{
-          "/customer/dashboard": 1000,
-          "/booking": 450,
-        }}
-      />
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:px-10 md:py-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
