@@ -18,11 +18,13 @@ export default function ChatLiveRefresh({
   const refreshTimeoutRef = useRef<number | null>(null)
   const lastRefreshAtRef = useRef(0)
   const hasQueuedRefreshRef = useRef(false)
+  const lastTypingAtRef = useRef(0)
 
   useEffect(() => {
     const supabase = createClient()
 
     function isUserBusy() {
+      if (Date.now() - lastTypingAtRef.current < 4000) return true
       const activeElement = document.activeElement as HTMLElement | null
       if (!activeElement) return false
       const tagName = activeElement.tagName
@@ -79,14 +81,26 @@ export default function ChatLiveRefresh({
           window.clearTimeout(refreshTimeoutRef.current)
           refreshTimeoutRef.current = null
         }
-        runRefresh(true)
+        if (isUserBusy()) {
+          scheduleRefresh(Math.max(delayMs, 700))
+        } else {
+          runRefresh(true)
+        }
       }
     }
 
     function handleFocus() {
       if (hasQueuedRefreshRef.current) {
-        runRefresh(true)
+        if (isUserBusy()) {
+          scheduleRefresh(Math.max(delayMs, 700))
+        } else {
+          runRefresh(true)
+        }
       }
+    }
+
+    function handleTypingActivity() {
+      lastTypingAtRef.current = Date.now()
     }
 
     const channel = supabase.channel(`chat-live-refresh:${pathname}:${roomId || "all"}`)
@@ -115,6 +129,10 @@ export default function ChatLiveRefresh({
     channel.subscribe()
     document.addEventListener("visibilitychange", handleVisibilityChange)
     window.addEventListener("focus", handleFocus)
+    document.addEventListener("input", handleTypingActivity, true)
+    document.addEventListener("keydown", handleTypingActivity, true)
+    document.addEventListener("compositionstart", handleTypingActivity, true)
+    document.addEventListener("compositionend", handleTypingActivity, true)
 
     return () => {
       if (refreshTimeoutRef.current) {
@@ -123,6 +141,10 @@ export default function ChatLiveRefresh({
       }
       document.removeEventListener("visibilitychange", handleVisibilityChange)
       window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("input", handleTypingActivity, true)
+      document.removeEventListener("keydown", handleTypingActivity, true)
+      document.removeEventListener("compositionstart", handleTypingActivity, true)
+      document.removeEventListener("compositionend", handleTypingActivity, true)
       void supabase.removeChannel(channel)
     }
   }, [delayMs, pathname, roomId, router])

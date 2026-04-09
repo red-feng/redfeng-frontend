@@ -28,6 +28,7 @@ export default function RoleAutoRefresh({
   const lastRefreshAtRef = useRef(0)
   const refreshTimeoutRef = useRef<number | null>(null)
   const hasQueuedRefreshRef = useRef(false)
+  const lastTypingAtRef = useRef(0)
   const normalizedPaths = onlyOnPaths?.map(normalizePathPattern).filter(Boolean) || []
   const normalizedExcludedPaths = excludeOnPaths?.map(normalizePathPattern).filter(Boolean) || []
   const normalizedDelayEntries =
@@ -62,6 +63,7 @@ export default function RoleAutoRefresh({
     }
 
     function isUserBusy() {
+      if (Date.now() - lastTypingAtRef.current < 4000) return true
       const activeElement = document.activeElement as HTMLElement | null
       if (!activeElement) return false
       const tagName = activeElement.tagName
@@ -94,20 +96,36 @@ export default function RoleAutoRefresh({
             window.clearTimeout(refreshTimeoutRef.current)
             refreshTimeoutRef.current = null
           }
-          runRefresh(true)
+          if (isUserBusy()) {
+            scheduleRefresh(Math.max(activeRealtimeDelay, 1400))
+          } else {
+            runRefresh(true)
+          }
           return
         }
-        runRefresh(true)
+        if (isUserBusy()) {
+          scheduleRefresh(Math.max(activeRealtimeDelay, 1400))
+        } else {
+          runRefresh(true)
+        }
       }
     }
 
     function handleFocus() {
+      if (isUserBusy()) {
+        scheduleRefresh(Math.max(activeRealtimeDelay, 1400))
+        return
+      }
       runRefresh(true)
     }
 
     function handleInteractionSettled() {
       if (!hasQueuedRefreshRef.current) return
       scheduleRefresh(250)
+    }
+
+    function handleTypingActivity() {
+      lastTypingAtRef.current = Date.now()
     }
 
     function handleStorage(event: StorageEvent) {
@@ -147,6 +165,10 @@ export default function RoleAutoRefresh({
     document.addEventListener("focusin", handleInteractionSettled)
     document.addEventListener("focusout", handleInteractionSettled)
     document.addEventListener("change", handleInteractionSettled)
+    document.addEventListener("input", handleTypingActivity, true)
+    document.addEventListener("keydown", handleTypingActivity, true)
+    document.addEventListener("compositionstart", handleTypingActivity, true)
+    document.addEventListener("compositionend", handleTypingActivity, true)
 
     return () => {
       window.clearInterval(intervalId)
@@ -160,6 +182,10 @@ export default function RoleAutoRefresh({
       document.removeEventListener("focusin", handleInteractionSettled)
       document.removeEventListener("focusout", handleInteractionSettled)
       document.removeEventListener("change", handleInteractionSettled)
+      document.removeEventListener("input", handleTypingActivity, true)
+      document.removeEventListener("keydown", handleTypingActivity, true)
+      document.removeEventListener("compositionstart", handleTypingActivity, true)
+      document.removeEventListener("compositionend", handleTypingActivity, true)
       if (supabase && realtimeChannel) {
         void supabase.removeChannel(realtimeChannel)
       }

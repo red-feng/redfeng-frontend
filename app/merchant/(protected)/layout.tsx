@@ -227,7 +227,6 @@ export default async function MerchantLayout({
           "/merchant/dashboard",
           "/merchant/pesanan",
           "/merchant/saldo-payout",
-          "/merchant/chat",
           "/merchant/review",
           "/merchant/kalender-booking",
         ]}
@@ -247,7 +246,6 @@ export default async function MerchantLayout({
           "/merchant/dashboard": 1100,
           "/merchant/pesanan": 400,
           "/merchant/saldo-payout": 450,
-          "/merchant/chat": 250,
           "/merchant/review": 700,
           "/merchant/kalender-booking": 650,
         }}
