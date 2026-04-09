@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context";
 
 type AuthProvider = "google" | "facebook";
 type Mode = "login" | "register";
@@ -92,9 +93,9 @@ function getLocaleFromCookie(): Locale {
 }
 
 function getSafeNextFromLocation() {
-  if (typeof window === "undefined") return "/customer/dashboard";
+  if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
   const requestedNext = new URLSearchParams(window.location.search).get("next");
-  return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard";
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT;
 }
 
 function getSafeErrorFromLocation() {
@@ -104,7 +105,7 @@ function getSafeErrorFromLocation() {
 
 function rememberActivePortal(portal: "customer" | "merchant") {
   if (typeof document === "undefined") return;
-  document.cookie = `rf_active_portal=${portal}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  document.cookie = `${ACTIVE_PORTAL_COOKIE}=${portal}; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`;
 }
 
 function getCustomerModeCopy(locale: Locale, mode: Mode) {
@@ -220,8 +221,8 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const authError = errorMsg || searchError;
   const modeTabs = useMemo(
     () => [
-      { href: `/login${safeNext !== "/customer/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录" ? modeCopy.switchLabel : t.loginLink, active: mode === "login" },
-      { href: `/register${safeNext !== "/customer/dashboard" ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: mode === "register" ? modeCopy.switchLabel : t.registerLink, active: mode === "register" },
+      { href: `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录" ? modeCopy.switchLabel : t.loginLink, active: mode === "login" },
+      { href: `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: mode === "register" ? modeCopy.switchLabel : t.registerLink, active: mode === "register" },
     ],
     [mode, modeCopy.switchLabel, safeNext, t.loginLink, t.registerLink],
   );

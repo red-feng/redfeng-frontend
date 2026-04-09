@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { NextResponse } from "next/server"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 
 function getCustomerPortalRoleError(role: string | null | undefined) {
   const normalizedRole = String(role || "").trim().toLowerCase()
@@ -24,8 +25,8 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
   const requestedNext = searchParams.get("next")
-  const portal = String(searchParams.get("portal") || "").trim().toLowerCase()
-  const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : "/customer/dashboard"
+  const portal = normalizeActivePortal(searchParams.get("portal"))
+  const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT
 
   if (code) {
     const supabase = await createClient()
@@ -49,9 +50,9 @@ export async function GET(request: Request) {
         })
         const response = NextResponse.redirect(new URL(safeNext, origin))
         if (portal === "customer") {
-          response.cookies.set("rf_active_portal", "customer", {
+          response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
             path: "/",
-            maxAge: 60 * 60 * 24 * 30,
+            maxAge: ACTIVE_PORTAL_MAX_AGE,
             sameSite: "lax",
           })
         }
@@ -61,9 +62,9 @@ export async function GET(request: Request) {
       if (profile.role === "customer" || profile.role === "merchant") {
         const response = NextResponse.redirect(new URL(safeNext, origin))
         if (portal === "customer") {
-          response.cookies.set("rf_active_portal", "customer", {
+          response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
             path: "/",
-            maxAge: 60 * 60 * 24 * 30,
+            maxAge: ACTIVE_PORTAL_MAX_AGE,
             sameSite: "lax",
           })
         }

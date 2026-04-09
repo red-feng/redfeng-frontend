@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import PasswordField from "@/app/components/PasswordField"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, MERCHANT_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 
 const partnerPoints = [
@@ -100,7 +101,7 @@ export default function MerchantLogin() {
 
     if (profile.role === "merchant") {
       if (typeof document !== "undefined") {
-        document.cookie = `rf_active_portal=merchant; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`
+        document.cookie = `${ACTIVE_PORTAL_COOKIE}=merchant; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
       }
       const { data: merchant } = await supabase
         .from("merchants")
@@ -122,7 +123,7 @@ export default function MerchantLogin() {
         return
       }
 
-      router.push("/merchant/dashboard")
+      router.push(MERCHANT_PORTAL_DEFAULT_REDIRECT)
     } else {
       setError("Portal ini khusus untuk merchant.")
       await supabase.auth.signOut()

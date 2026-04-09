@@ -6,6 +6,7 @@ import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
+import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
@@ -22,7 +23,7 @@ export default async function CustomerLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login?next=/customer/dashboard")
+    redirect(`/login?next=${encodeURIComponent(CUSTOMER_PORTAL_DEFAULT_REDIRECT)}`)
   }
 
   const { data: profile } = await supabase
@@ -31,7 +32,7 @@ export default async function CustomerLayout({
     .eq("id", user.id)
     .maybeSingle()
 
-  const activePortal = cookieStore.get("rf_active_portal")?.value || ""
+  const activePortal = normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value)
 
   if (!profile) {
     await supabase.from("profiles").upsert({
