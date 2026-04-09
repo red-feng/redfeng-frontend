@@ -17,6 +17,18 @@ type ChatRoomRow = {
   last_message_at?: string | null
   last_message_sender_id?: string | null
   customer_last_read_at?: string | null
+  bookings?:
+    | {
+        booking_code: string | null
+        booking_status: string | null
+        customer_name?: string | null
+      }
+    | {
+        booking_code: string | null
+        booking_status: string | null
+        customer_name?: string | null
+      }[]
+    | null
 }
 
 type ChatMessageRow = {
@@ -51,6 +63,71 @@ export default async function ChatPage({
   const packageId = params.package_id || ""
   const bookingId = params.booking_id || ""
   const errorMessage = params.error || ""
+  const ui =
+    locale === "en"
+      ? {
+          allConversations: "All conversations",
+          totalConversations: "Total active conversations",
+          newChats: "New chats",
+          unreadLabel: "Unread",
+          activeRoomLabel: "Current active room",
+          leadBadge: "Inquiry",
+          bookingBadge: "Active booking",
+          completedBadge: "Completed booking",
+          activeStatus: "Active booking",
+          completedStatus: "Booking completed",
+          leadStatus: "Lead / inquiry",
+          newBadge: "New",
+        }
+      : locale === "zh"
+        ? {
+            allConversations: "全部会话",
+            totalConversations: "当前活跃会话总数",
+            newChats: "新消息",
+            unreadLabel: "未读",
+            activeRoomLabel: "当前活跃房间",
+            leadBadge: "咨询",
+            bookingBadge: "进行中的预订",
+            newBadge: "新消息",
+          }
+        : {
+            allConversations: "Semua percakapan",
+            totalConversations: "Total percakapan aktif",
+            newChats: "Chat baru",
+            unreadLabel: "Belum dibaca",
+            activeRoomLabel: "Room aktif saat ini",
+            leadBadge: "Lead",
+            bookingBadge: "Booking aktif",
+            completedBadge: "Booking selesai",
+            activeStatus: "Booking aktif",
+            completedStatus: "Booking selesai",
+            leadStatus: "Lead / inquiry",
+            newBadge: "Baru",
+          }
+
+  const completedBadgeLabel =
+    locale === "en" ? "Completed booking" : locale === "zh" ? "已完成预订" : "Booking selesai"
+  const activeStatusLabel =
+    locale === "en" ? "Active booking" : locale === "zh" ? "进行中的预订" : "Booking aktif"
+  const completedStatusLabel =
+    locale === "en" ? "Booking completed" : locale === "zh" ? "预订已完成" : "Booking selesai"
+  const leadStatusLabel =
+    locale === "en" ? "Lead / inquiry" : locale === "zh" ? "咨询 / 线索" : "Lead / inquiry"
+  const bookingLabel = locale === "en" ? "Booking" : locale === "zh" ? "预订" : "Booking"
+
+  function getBookingInfo(room: ChatRoomRow) {
+    if (Array.isArray(room.bookings)) return room.bookings[0] || null
+    return room.bookings || null
+  }
+
+  function isCompletedBooking(room: ChatRoomRow) {
+    const booking = getBookingInfo(room)
+    const bookingStatus = String(booking?.booking_status || "")
+      .trim()
+      .toLowerCase()
+
+    return bookingStatus === "completed" || bookingStatus === "done"
+  }
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -72,7 +149,6 @@ export default async function ChatPage({
 
   let activeRoomId = roomId
   let activePackage: PackageRow | null = null
-  const chatMode = bookingId ? "post" : "pre"
 
   if (!isMerchant && bookingId) {
     const { data: booking } = await adminSupabase
@@ -202,15 +278,13 @@ export default async function ChatPage({
   const roomQuery = adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, bookings(booking_code, booking_status, customer_name)",
     )
     .order("updated_at", { ascending: false })
 
   const roomResult = isMerchant
     ? await roomQuery.eq("merchant_user_id", user.id)
-    : chatMode === "post"
-      ? await roomQuery.eq("customer_id", user.id).not("booking_id", "is", null)
-      : await roomQuery.eq("customer_id", user.id).is("booking_id", null)
+    : await roomQuery.eq("customer_id", user.id)
 
   if (roomResult.error && roomResult.error.message.includes("last_message")) {
     const fallbackQuery = adminSupabase
@@ -219,9 +293,7 @@ export default async function ChatPage({
       .order("updated_at", { ascending: false })
     const fallbackResult = isMerchant
       ? await fallbackQuery.eq("merchant_user_id", user.id)
-      : chatMode === "post"
-        ? await fallbackQuery.eq("customer_id", user.id).not("booking_id", "is", null)
-        : await fallbackQuery.eq("customer_id", user.id).is("booking_id", null)
+      : await fallbackQuery.eq("customer_id", user.id)
     roomsData = fallbackResult.data as ChatRoomRow[] | null
     roomsError = fallbackResult.error
   } else {
@@ -325,21 +397,21 @@ export default async function ChatPage({
 
         <section className="mt-6 grid gap-4 md:grid-cols-3">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">{t.chatRooms}</p>
+            <p className="text-sm text-slate-500">{ui.allConversations}</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">{rooms.length}</p>
-            <p className="mt-2 text-xs text-slate-500">Total percakapan aktif</p>
+            <p className="mt-2 text-xs text-slate-500">{ui.totalConversations}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm text-slate-500">Chat Baru</p>
+            <p className="text-sm text-slate-500">{ui.newChats}</p>
             <p className="mt-2 text-3xl font-bold text-slate-900">{unreadCount}</p>
-            <p className="mt-2 text-xs text-slate-500">Belum dibaca</p>
+            <p className="mt-2 text-xs text-slate-500">{ui.unreadLabel}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.packageLabel}</p>
             <p className="mt-2 text-xl font-bold text-slate-900">
               {activePackageForRoom?.title || activePackage?.title || t.selectRoom}
             </p>
-            <p className="mt-2 text-xs text-slate-500">Room aktif saat ini</p>
+            <p className="mt-2 text-xs text-slate-500">{ui.activeRoomLabel}</p>
           </div>
         </section>
 
@@ -355,6 +427,8 @@ export default async function ChatPage({
                 )}
                 {rooms.map((room) => {
                   const pkg = packageMap.get(room.package_id)
+                  const booking = getBookingInfo(room)
+                  const completedBooking = isCompletedBooking(room)
                   const hasUnread =
                     room.last_message_sender_id &&
                     room.last_message_sender_id !== user.id &&
@@ -363,11 +437,7 @@ export default async function ChatPage({
                   return (
                     <Link
                       key={room.id}
-                      href={
-                        room.booking_id
-                          ? `/chat?booking_id=${room.booking_id}&room_id=${room.id}`
-                          : `/chat?room_id=${room.id}`
-                      }
+                      href={`/chat?room_id=${room.id}`}
                       className={`block rounded-[20px] border px-4 py-3 text-sm transition ${
                         room.id === activeRoomId
                           ? "border-orange-300 bg-orange-50 text-orange-700"
@@ -375,12 +445,32 @@ export default async function ChatPage({
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
-                        {hasUnread && (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
-                            Baru
-                          </span>
-                        )}
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 font-medium">{pkg?.title || t.packageFallback}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                completedBooking
+                                  ? "bg-sky-100 text-sky-700"
+                                  : room.booking_id
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {completedBooking ? completedBadgeLabel : room.booking_id ? ui.bookingBadge : ui.leadBadge}
+                            </span>
+                            {hasUnread && (
+                              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                {ui.newBadge}
+                              </span>
+                            )}
+                          </div>
+                          {room.booking_id && (
+                            <p className="mt-2 text-xs font-medium text-slate-500">
+                              {bookingLabel}: {booking?.booking_code || room.booking_id}
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <p className="mt-2 text-xs text-slate-500">{room.updated_at || "-"}</p>
                     </Link>
@@ -395,6 +485,32 @@ export default async function ChatPage({
               <p className="text-base font-semibold text-slate-900">
                 {activePackageForRoom?.title || activePackage?.title || t.selectRoom}
               </p>
+              {activeRoom ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                      isCompletedBooking(activeRoom)
+                        ? "bg-sky-100 text-sky-700"
+                        : activeRoom.booking_id
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {isCompletedBooking(activeRoom)
+                      ? completedBadgeLabel
+                      : activeRoom.booking_id
+                        ? ui.bookingBadge
+                        : ui.leadBadge}
+                  </span>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                    {isCompletedBooking(activeRoom)
+                      ? completedStatusLabel
+                      : activeRoom.booking_id
+                        ? activeStatusLabel
+                        : leadStatusLabel}
+                  </span>
+                </div>
+              ) : null}
               {(activePackageForRoom?.slug || activePackage?.slug) && (
                 <Link
                   href={`/packages/${encodeURIComponent(activePackageForRoom?.slug || activePackage?.slug || "")}`}

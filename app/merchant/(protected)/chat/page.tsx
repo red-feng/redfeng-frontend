@@ -50,6 +50,7 @@ function getChatText(locale: Locale) {
       inboxLensDescription: "Semua percakapan customer kini ada dalam satu inbox, dengan badge yang membedakan lead biasa dan room yang sudah terkait booking.",
       beforeBooking: "Lead",
       afterBooking: "Booking aktif",
+      completedBooking: "Booking selesai",
       loadRoomsError: "Gagal memuat ruang chat",
       afterBookingMigration: "Fitur tab sesudah booking membutuhkan migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "Badge chat baru membutuhkan migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
@@ -77,6 +78,7 @@ function getChatText(locale: Locale) {
       threadType: "Jenis Thread",
       statusLabel: "Status",
       activeTransaction: "Transaksi aktif",
+      completedTransaction: "Booking selesai",
       leadInquiry: "Lead / inquiry",
       noMessages: "Belum ada pesan di ruang chat ini.",
       attachmentLabel: "Lampiran",
@@ -101,6 +103,7 @@ function getChatText(locale: Locale) {
       inboxLensDescription: "All customer conversations now live in one inbox, with badges that separate regular leads from booking-linked rooms.",
       beforeBooking: "Lead",
       afterBooking: "Active booking",
+      completedBooking: "Completed booking",
       loadRoomsError: "Failed to load chat rooms",
       afterBookingMigration: "The post-booking tab requires migration `20260306_add_booking_id_to_package_chat_rooms.sql`.",
       unreadBadgeMigration: "The new chat badge requires migration `20260307_add_read_tracking_to_package_chat_rooms.sql`.",
@@ -128,6 +131,7 @@ function getChatText(locale: Locale) {
       threadType: "Thread Type",
       statusLabel: "Status",
       activeTransaction: "Active transaction",
+      completedTransaction: "Completed booking",
       leadInquiry: "Lead / inquiry",
       noMessages: "There are no messages in this chat room yet.",
       attachmentLabel: "Attachment",
@@ -152,6 +156,7 @@ function getChatText(locale: Locale) {
       inboxLensDescription: "所有客户对话现在集中在一个收件箱中，并通过徽标区分普通线索与已关联预订的会话。",
       beforeBooking: "线索",
       afterBooking: "进行中的预订",
+      completedBooking: "已完成预订",
       loadRoomsError: "加载聊天会话失败",
       afterBookingMigration: "预订后标签需要 migration `20260306_add_booking_id_to_package_chat_rooms.sql`。",
       unreadBadgeMigration: "新消息徽标需要 migration `20260307_add_read_tracking_to_package_chat_rooms.sql`。",
@@ -179,6 +184,7 @@ function getChatText(locale: Locale) {
       threadType: "会话类型",
       statusLabel: "状态",
       activeTransaction: "进行中的交易",
+      completedTransaction: "预订已完成",
       leadInquiry: "咨询 / 线索",
       noMessages: "该聊天房间里暂时还没有消息。",
       attachmentLabel: "附件",
@@ -224,6 +230,15 @@ function getCustomerLabel(room: ChatRoomRow) {
   const booking = getBookingInfo(room)
   if (booking?.customer_name) return booking.customer_name
   return `Customer ${room.customer_id.slice(0, 8)}`
+}
+
+function isCompletedBooking(room: ChatRoomRow) {
+  const booking = getBookingInfo(room)
+  const bookingStatus = String(booking?.booking_status || "")
+    .trim()
+    .toLowerCase()
+
+  return bookingStatus === "completed" || bookingStatus === "done"
 }
 
 function formatDateTime(dateStr: string | null) {
@@ -547,6 +562,7 @@ export default async function MerchantChatPage({
               {rooms.map((room) => {
                 const pkg = packageMap.get(room.package_id)
                 const booking = getBookingInfo(room)
+                const completedBooking = isCompletedBooking(room)
                 const hasUnread =
                   room.last_message_sender_id &&
                   room.last_message_sender_id !== user.id &&
@@ -569,12 +585,14 @@ export default async function MerchantChatPage({
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span
                               className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                                room.booking_id
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
+                                completedBooking
+                                  ? "bg-sky-100 text-sky-700"
+                                  : room.booking_id
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-slate-100 text-slate-600"
                               }`}
                             >
-                              {room.booking_id ? t.afterBooking : t.beforeBooking}
+                              {completedBooking ? t.completedBooking : room.booking_id ? t.afterBooking : t.beforeBooking}
                             </span>
                             {hasUnread && (
                               <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">
@@ -635,13 +653,19 @@ export default async function MerchantChatPage({
                   <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.threadType}</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom?.booking_id ? t.afterBooking : t.beforeBooking}
+                      {activeRoom ? (isCompletedBooking(activeRoom) ? t.completedBooking : activeRoom.booking_id ? t.afterBooking : t.beforeBooking) : t.beforeBooking}
                     </p>
                   </div>
                   <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.statusLabel}</p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {activeRoom?.booking_id ? t.activeTransaction : t.leadInquiry}
+                      {activeRoom
+                        ? isCompletedBooking(activeRoom)
+                          ? t.completedTransaction
+                          : activeRoom.booking_id
+                            ? t.activeTransaction
+                            : t.leadInquiry
+                        : t.leadInquiry}
                     </p>
                   </div>
                 </div>
