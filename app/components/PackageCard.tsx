@@ -2,7 +2,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
-import { formatPackageMoney, resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
+import { resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
+import PriceLiveClient from "@/app/components/PriceLiveClient"
 
 type PackageCardTranslation = {
   language_code?: string | null
@@ -64,7 +65,6 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const taxNotice = locale === "zh" ? "\u672a\u542b\u7a0e\u8d39" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
   const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
   const hasDescription = Boolean(translation?.description?.trim())
-  const hasChildPrice = Number(displayPricing.priceChild || 0) > 0
   const dayLabel = locale === "zh" ? "\u5929" : locale === "en" ? "days" : "hari"
   const availableLabel = locale === "zh" ? "\u53ef\u9884\u8ba2" : locale === "en" ? "Available now" : "Tersedia sekarang"
   const viewDetailLabel = locale === "zh" ? "\u67e5\u770b\u8be6\u60c5" : locale === "en" ? "View details" : "Lihat detail"
@@ -118,7 +118,17 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
               <div className="min-w-0">
                 <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{viewDetailLabel}</p>
                 <p className="mt-1 truncate text-base font-bold text-orange-600">
-                  {formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}
+                  <PriceLiveClient
+                    locale={locale}
+                    baseCurrency={pkg.currency}
+                    baseAdultPrice={pkg.price_adult}
+                    baseChildPrice={pkg.price_child ?? null}
+                    initialCurrency={displayPricing.currency}
+                    initialAdultPrice={displayPricing.priceAdult}
+                    initialChildPrice={displayPricing.priceChild}
+                    variant="mobile"
+                    childPriceLabel={childPriceLabel}
+                  />
                 </p>
               </div>
               <Link
@@ -150,13 +160,18 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
 
       <div className="hidden flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:flex md:w-[260px] md:border-l md:border-t-0 md:p-6">
         <div className="text-left md:text-right">
-          <div className="text-xl font-bold text-orange-600 sm:text-2xl">{formatPackageMoney(displayPricing.priceAdult, displayPricing.currency, locale)}</div>
-          <div className="mt-1 text-[11px] font-medium text-slate-500 sm:text-xs">{taxNotice}</div>
-          {hasChildPrice && (
-            <div className="mt-2 text-xs text-slate-500 sm:text-sm">
-              {childPriceLabel}: {formatPackageMoney(displayPricing.priceChild, displayPricing.currency, locale)}
-            </div>
-          )}
+          <PriceLiveClient
+            locale={locale}
+            baseCurrency={pkg.currency}
+            baseAdultPrice={pkg.price_adult}
+            baseChildPrice={pkg.price_child ?? null}
+            initialCurrency={displayPricing.currency}
+            initialAdultPrice={displayPricing.priceAdult}
+            initialChildPrice={displayPricing.priceChild}
+            variant="desktop"
+            childPriceLabel={childPriceLabel}
+            taxNotice={taxNotice}
+          />
         </div>
 
         <Link
