@@ -15,6 +15,7 @@ type PackageCardTranslation = {
 }
 
 type PackageCardData = {
+  id: string
   slug: string
   title?: string | null
   cover_image?: string | null
@@ -119,6 +120,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
                 <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{viewDetailLabel}</p>
                 <p className="mt-1 truncate text-base font-bold text-orange-600">
                   <PriceLiveClient
+                    packageId={pkg.id}
                     locale={locale}
                     baseCurrency={pkg.currency}
                     baseAdultPrice={pkg.price_adult}
@@ -161,6 +163,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       <div className="hidden flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:flex md:w-[260px] md:border-l md:border-t-0 md:p-6">
         <div className="text-left md:text-right">
           <PriceLiveClient
+            packageId={pkg.id}
             locale={locale}
             baseCurrency={pkg.currency}
             baseAdultPrice={pkg.price_adult}

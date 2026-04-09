@@ -2,15 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { type Locale } from "@/lib/i18n"
-import { convertPriceAmount, formatPackageMoney, localeCurrencyMap, normalizePackageCurrency } from "@/lib/package-pricing"
+import { convertPriceAmount, formatPackageMoney } from "@/lib/package-pricing"
 
 type LiveRatesResponse = {
-  baseCurrency?: string
-  date?: string | null
-  rates?: Record<string, number>
+  packageId?: string
+  baseCurrency?: string | null
+  baseAdultPrice?: number | null
+  baseChildPrice?: number | null
+  livePricing?: {
+    currency?: string
+    priceAdult?: number
+    priceChild?: number
+    exchangeDate?: string | null
+  }
 }
 
 type PriceLiveClientProps = {
+  packageId: string
   locale: Locale
   baseCurrency: string | null
   baseAdultPrice: number | null
@@ -24,24 +32,9 @@ type PriceLiveClientProps = {
   refreshMs?: number
 }
 
-function resolveLocalizedPrice(input: {
-  baseCurrency: string
-  targetCurrency: string
-  amount: number
-  rates: Record<string, number>
-}) {
-  if (input.baseCurrency === input.targetCurrency) {
-    return convertPriceAmount(input.amount, 1)
-  }
-
-  return convertPriceAmount(input.amount, Number(input.rates[input.targetCurrency] || 0))
-}
-
 export default function PriceLiveClient({
+  packageId,
   locale,
-  baseCurrency,
-  baseAdultPrice,
-  baseChildPrice,
   initialCurrency,
   initialAdultPrice,
   initialChildPrice,
@@ -50,11 +43,6 @@ export default function PriceLiveClient({
   taxNotice,
   refreshMs = 60000,
 }: PriceLiveClientProps) {
-  const normalizedBaseCurrency = normalizePackageCurrency(baseCurrency)
-  const targetCurrency = localeCurrencyMap[locale]
-  const safeAdultBasePrice = Number(baseAdultPrice || 0)
-  const safeChildBasePrice = Number(baseChildPrice || 0)
-
   const [displayState, setDisplayState] = useState({
     currency: initialCurrency,
     priceAdult: Number(initialAdultPrice || 0),
@@ -66,30 +54,21 @@ export default function PriceLiveClient({
 
     async function updateLivePrice() {
       try {
-        const response = await fetch(`/api/live-rates?base=${encodeURIComponent(normalizedBaseCurrency)}`, {
+        const response = await fetch(
+          `/api/package-live-price?packageId=${encodeURIComponent(packageId)}&locale=${encodeURIComponent(locale)}`,
+          {
           cache: "no-store",
-        })
+          },
+        )
 
         if (!response.ok) return
 
         const payload = (await response.json()) as LiveRatesResponse
-        const rates = payload.rates || {}
-        const resolvedCurrency = localeCurrencyMap[locale]
 
         const nextState = {
-          currency: resolvedCurrency,
-          priceAdult: resolveLocalizedPrice({
-            baseCurrency: normalizedBaseCurrency,
-            targetCurrency: resolvedCurrency,
-            amount: safeAdultBasePrice,
-            rates,
-          }),
-          priceChild: resolveLocalizedPrice({
-            baseCurrency: normalizedBaseCurrency,
-            targetCurrency: resolvedCurrency,
-            amount: safeChildBasePrice,
-            rates,
-          }),
+          currency: String(payload.livePricing?.currency || initialCurrency).trim().toUpperCase(),
+          priceAdult: convertPriceAmount(Number(payload.livePricing?.priceAdult || initialAdultPrice || 0), 1),
+          priceChild: convertPriceAmount(Number(payload.livePricing?.priceChild || initialChildPrice || 0), 1),
         }
 
         if (!cancelled) {
@@ -123,7 +102,7 @@ export default function PriceLiveClient({
       window.removeEventListener("visibilitychange", handleVisibilityChange)
       window.removeEventListener("focus", handleVisibilityChange)
     }
-  }, [locale, normalizedBaseCurrency, refreshMs, safeAdultBasePrice, safeChildBasePrice, targetCurrency])
+  }, [initialAdultPrice, initialChildPrice, initialCurrency, locale, packageId, refreshMs])
 
   const hasChildPrice = useMemo(() => Number(displayState.priceChild || 0) > 0, [displayState.priceChild])
   const formattedAdultPrice = formatPackageMoney(displayState.priceAdult, displayState.currency, locale)
