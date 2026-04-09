@@ -93,7 +93,7 @@ export async function runExpiredBookingCleanup(
   const { data: bookingsToScan, error } = await supabase
     .from("bookings")
     .select(
-      "id, user_id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time, created_at",
+      "id, customer_id, package_id, booking_code, customer_name, customer_email, total_amount, dp_amount, final_payment_amount, payment_method, gateway_payment_method, payment_status, booking_status, escrow_status, pickup_date, expiry_time, created_at",
     )
 
   if (error) {
@@ -157,7 +157,7 @@ export async function moveOverdueDpBookingToRefundQueue(
   supabase: SupabaseClient,
   booking: {
     id: string
-    user_id?: string | null
+    customer_id?: string | null
     package_id?: string | null
     booking_code?: string | null
     customer_name?: string | null
@@ -226,7 +226,7 @@ export async function moveOverdueDpBookingToRefundQueue(
       .from("refund_requests")
       .insert({
         booking_id: booking.id,
-        customer_id: booking.user_id || null,
+        customer_id: booking.customer_id || null,
         merchant_id: merchantId,
         order_id: latestPayment?.order_id || booking.booking_code || booking.id,
         payment_method: booking.payment_method || null,
