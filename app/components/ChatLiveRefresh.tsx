@@ -60,8 +60,16 @@ export default function ChatLiveRefresh({
       }, nextDelay)
     }
 
-    function handleRealtimeEvent() {
+    function handleRoomRealtimeEvent() {
       scheduleRefresh()
+    }
+
+    function handleMessageRealtimeEvent() {
+      if (isUserBusy()) {
+        scheduleRefresh(Math.max(delayMs, 320))
+        return
+      }
+      runRefresh(true)
     }
 
     function handleVisibilityChange() {
@@ -90,17 +98,18 @@ export default function ChatLiveRefresh({
         schema: "public",
         table: "package_chat_rooms",
       },
-      handleRealtimeEvent,
+      handleRoomRealtimeEvent,
     )
 
     channel.on(
       "postgres_changes",
       {
-        event: "*",
+        event: "INSERT",
         schema: "public",
         table: "package_chat_messages",
+        ...(roomId ? { filter: `room_id=eq.${roomId}` } : {}),
       },
-      handleRealtimeEvent,
+      handleMessageRealtimeEvent,
     )
 
     channel.subscribe()
