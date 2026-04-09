@@ -188,33 +188,51 @@ export default function MerchantChatRealtimeClient({
   )
 
   async function fetchRoomMeta(roomId: string) {
-    const response = await fetch(`/api/chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
-    if (!response.ok) return null
-    const payload = (await response.json()) as RoomMetaResponse
-    return payload.room || null
+    try {
+      const response = await fetch(`/api/chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
+      if (!response.ok) return null
+      const payload = (await response.json()) as RoomMetaResponse
+      return payload.room || null
+    } catch (error) {
+      console.error("Failed to fetch merchant chat room meta", error)
+      return null
+    }
   }
 
   async function fetchMessages(roomId: string) {
-    const { data } = await supabase
-      .from("package_chat_messages")
-      .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
-      .eq("room_id", roomId)
-      .order("created_at", { ascending: true })
+    try {
+      const { data, error } = await supabase
+        .from("package_chat_messages")
+        .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: true })
 
-    setMessagesByRoom((current) => ({ ...current, [roomId]: (data as MerchantChatMessage[] | null) || [] }))
+      if (error) {
+        console.error("Failed to fetch merchant chat messages", error)
+        return
+      }
+
+      setMessagesByRoom((current) => ({ ...current, [roomId]: (data as MerchantChatMessage[] | null) || [] }))
+    } catch (error) {
+      console.error("Failed to fetch merchant chat messages", error)
+    }
   }
 
   async function markRoomRead(roomId: string) {
     const nowIso = new Date().toISOString()
-    const { error } = await supabase
-      .from("package_chat_rooms")
-      .update({ merchant_last_read_at: nowIso })
-      .eq("id", roomId)
+    try {
+      const { error } = await supabase
+        .from("package_chat_rooms")
+        .update({ merchant_last_read_at: nowIso })
+        .eq("id", roomId)
 
-    if (!error) {
-      setRooms((current) =>
-        current.map((room) => (room.id === roomId ? { ...room, merchantLastReadAt: nowIso } : room)),
-      )
+      if (!error) {
+        setRooms((current) =>
+          current.map((room) => (room.id === roomId ? { ...room, merchantLastReadAt: nowIso } : room)),
+        )
+      }
+    } catch (error) {
+      console.error("Failed to mark merchant room as read", error)
     }
   }
 
@@ -238,24 +256,28 @@ export default function MerchantChatRealtimeClient({
       "postgres_changes",
       { event: "*", schema: "public", table: "package_chat_rooms" },
       async (payload) => {
-        const nextRoom = payload.new as { id?: string } | null
-        const previousRoom = payload.old as { id?: string } | null
-        const payloadRoomId = String(nextRoom?.id || previousRoom?.id || "").trim()
-        if (!payloadRoomId) return
+        try {
+          const nextRoom = payload.new as { id?: string } | null
+          const previousRoom = payload.old as { id?: string } | null
+          const payloadRoomId = String(nextRoom?.id || previousRoom?.id || "").trim()
+          if (!payloadRoomId) return
 
-        if (payload.eventType === "DELETE") {
-          setRooms((current) => current.filter((room) => room.id !== payloadRoomId))
-          return
+          if (payload.eventType === "DELETE") {
+            setRooms((current) => current.filter((room) => room.id !== payloadRoomId))
+            return
+          }
+
+          const room = await fetchRoomMeta(payloadRoomId)
+          if (!room) return
+
+          setRooms((current) => {
+            const next = current.filter((item) => item.id !== room.id)
+            next.push(room)
+            return sortRooms(next)
+          })
+        } catch (error) {
+          console.error("Failed to process merchant room realtime update", error)
         }
-
-        const room = await fetchRoomMeta(payloadRoomId)
-        if (!room) return
-
-        setRooms((current) => {
-          const next = current.filter((item) => item.id !== room.id)
-          next.push(room)
-          return sortRooms(next)
-        })
       },
     )
 
@@ -263,31 +285,35 @@ export default function MerchantChatRealtimeClient({
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "package_chat_messages" },
       async (payload) => {
-        const message = payload.new as MerchantChatMessage
-        if (!message?.room_id) return
+        try {
+          const message = payload.new as MerchantChatMessage
+          if (!message?.room_id) return
 
-        setMessagesByRoom((current) => {
-          const existing = current[message.room_id] || []
-          if (existing.some((item) => item.id === message.id)) {
-            return current
-          }
-          return {
-            ...current,
-            [message.room_id]: [...existing, message],
-          }
-        })
-
-        const room = await fetchRoomMeta(message.room_id)
-        if (room) {
-          setRooms((current) => {
-            const next = current.filter((item) => item.id !== room.id)
-            next.push(room)
-            return sortRooms(next)
+          setMessagesByRoom((current) => {
+            const existing = current[message.room_id] || []
+            if (existing.some((item) => item.id === message.id)) {
+              return current
+            }
+            return {
+              ...current,
+              [message.room_id]: [...existing, message],
+            }
           })
-        }
 
-        if (message.room_id === activeRoomId && message.sender_id !== userId) {
-          void markRoomRead(message.room_id)
+          const room = await fetchRoomMeta(message.room_id)
+          if (room) {
+            setRooms((current) => {
+              const next = current.filter((item) => item.id !== room.id)
+              next.push(room)
+              return sortRooms(next)
+            })
+          }
+
+          if (message.room_id === activeRoomId && message.sender_id !== userId) {
+            void markRoomRead(message.room_id)
+          }
+        } catch (error) {
+          console.error("Failed to process merchant message realtime update", error)
         }
       },
     )
