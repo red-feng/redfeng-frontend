@@ -259,12 +259,16 @@ export async function POST(request: Request) {
           last_message_at: nowIso,
           last_message_sender_id: user.id,
           merchant_last_read_at: nowIso,
+          merchant_hidden_at: null,
+          customer_hidden_at: null,
         }
       : {
           updated_at: nowIso,
           last_message_at: nowIso,
           last_message_sender_id: user.id,
           customer_last_read_at: nowIso,
+          customer_hidden_at: null,
+          merchant_hidden_at: null,
         }
 
   const { error: updateRoomError } = await adminSupabase

@@ -15,6 +15,7 @@ type ChatRoomRow = {
   last_message_at?: string | null
   last_message_sender_id?: string | null
   merchant_last_read_at?: string | null
+  merchant_hidden_at?: string | null
   bookings?:
     | {
         booking_code: string | null
@@ -262,9 +263,10 @@ export default async function MerchantChatPage({
   const roomsWithBooking = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, bookings(booking_code, payment_status, booking_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name)",
     )
     .eq("merchant_user_id", user.id)
+    .is("merchant_hidden_at", null)
     .order("updated_at", { ascending: false })
 
   let allRooms: ChatRoomRow[] = []
@@ -281,9 +283,10 @@ export default async function MerchantChatPage({
     const fallback = await adminSupabase
       .from("package_chat_rooms")
       .select(
-        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at",
+        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at",
       )
       .eq("merchant_user_id", user.id)
+      .is("merchant_hidden_at", null)
       .order("updated_at", { ascending: false })
     allRooms = (fallback.data as ChatRoomRow[] | null) || []
     roomsError = fallback.error
@@ -470,6 +473,8 @@ export default async function MerchantChatPage({
           searchPlaceholder: t.searchPlaceholder,
           searchButton: t.searchButton,
           clearSearch: t.clearSearch,
+          hideRoom: locale === "en" ? "Remove from list" : locale === "zh" ? "从列表移除" : "Hapus dari daftar",
+          hidingRoom: locale === "en" ? "Removing..." : locale === "zh" ? "正在移除..." : "Menghapus...",
           allFilter: t.allFilter,
           unreadFilter: t.unreadFilter,
           bookingFilter: t.bookingFilter,

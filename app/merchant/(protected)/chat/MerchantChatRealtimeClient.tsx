@@ -46,6 +46,8 @@ type MerchantChatRealtimeClientProps = {
     searchPlaceholder: string
     searchButton: string
     clearSearch: string
+    hideRoom: string
+    hidingRoom: string
     allFilter: string
     unreadFilter: string
     bookingFilter: string
@@ -133,6 +135,7 @@ export default function MerchantChatRealtimeClient({
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "booking">("all")
   const [draftMessage, setDraftMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [hidingRoomId, setHidingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
@@ -385,6 +388,39 @@ export default function MerchantChatRealtimeClient({
     }
   }
 
+  async function handleHideRoom(roomId: string) {
+    setErrorMessage("")
+    setHidingRoomId(roomId)
+    try {
+      const response = await fetch("/api/chat/hide-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId }),
+      })
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null
+      if (!response.ok) {
+        throw new Error(payload?.error || "Gagal menyembunyikan room.")
+      }
+
+      setRooms((current) => {
+        const next = current.filter((room) => room.id !== roomId)
+        if (activeRoomId === roomId) {
+          setActiveRoomId(next[0]?.id || "")
+        }
+        return next
+      })
+      setMessagesByRoom((current) => {
+        const next = { ...current }
+        delete next[roomId]
+        return next
+      })
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal menyembunyikan room.")
+    } finally {
+      setHidingRoomId("")
+    }
+  }
+
   return (
     <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
       <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
@@ -517,6 +553,14 @@ export default function MerchantChatRealtimeClient({
                       {t.viewPackage}
                     </Link>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={() => void handleHideRoom(room.id)}
+                    disabled={hidingRoomId === room.id}
+                    className="mt-3 block text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300"
+                  >
+                    {hidingRoomId === room.id ? t.hidingRoom : t.hideRoom}
+                  </button>
                 </div>
               )
             })}

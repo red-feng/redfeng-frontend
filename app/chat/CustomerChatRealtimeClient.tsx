@@ -63,6 +63,8 @@ type CustomerChatRealtimeClientProps = {
   leadStatus: string
   newBadge: string
   bookingLabel: string
+  hideRoomLabel: string
+  hidingRoomLabel: string
 }
 
 type RoomMetaResponse = {
@@ -110,6 +112,8 @@ export default function CustomerChatRealtimeClient({
   leadStatus,
   newBadge,
   bookingLabel,
+  hideRoomLabel,
+  hidingRoomLabel,
 }: CustomerChatRealtimeClientProps) {
   const supabase = useMemo(() => createClient(), [])
   const [rooms, setRooms] = useState<CustomerChatRoom[]>(() => sortRooms(initialRooms))
@@ -119,6 +123,7 @@ export default function CustomerChatRealtimeClient({
   )
   const [draftMessage, setDraftMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [hidingRoomId, setHidingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
@@ -346,6 +351,41 @@ export default function CustomerChatRealtimeClient({
     }
   }
 
+  async function handleHideRoom(roomId: string) {
+    setErrorMessage("")
+    setHidingRoomId(roomId)
+    try {
+      const response = await fetch("/api/chat/hide-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roomId }),
+      })
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null
+      if (!response.ok) {
+        throw new Error(
+          payload?.error || (locale === "en" ? "Failed to hide room." : locale === "zh" ? "移除会话失败。" : "Gagal menyembunyikan room."),
+        )
+      }
+
+      setRooms((current) => {
+        const next = current.filter((room) => room.id !== roomId)
+        if (activeRoomId === roomId) {
+          setActiveRoomId(next[0]?.id || "")
+        }
+        return next
+      })
+      setMessagesByRoom((current) => {
+        const next = { ...current }
+        delete next[roomId]
+        return next
+      })
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Failed to hide room.")
+    } finally {
+      setHidingRoomId("")
+    }
+  }
+
   return (
     <>
       <section className="mt-6 grid gap-4 md:grid-cols-3">
@@ -381,42 +421,47 @@ export default function CustomerChatRealtimeClient({
                   (!room.customerLastReadAt || (room.lastMessageAt || "") > room.customerLastReadAt)
 
                 return (
-                  <button
-                    key={room.id}
-                    type="button"
-                    onClick={() => setActiveRoomId(room.id)}
-                    className={`block w-full rounded-[20px] border px-4 py-3 text-left text-sm transition ${
-                      room.id === activeRoomId
-                        ? "border-orange-300 bg-orange-50 text-orange-700"
-                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="line-clamp-2 font-medium">{room.packageTitle || packageFallback}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                              completedBooking
-                                ? "bg-sky-100 text-sky-700"
-                                : activeBooking
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {completedBooking ? completedBadge : activeBooking ? bookingBadge : leadBadge}
-                          </span>
-                          {hasUnread ? <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">{newBadge}</span> : null}
+                  <div key={room.id} className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-slate-300">
+                    <button
+                      type="button"
+                      onClick={() => setActiveRoomId(room.id)}
+                      className={`block w-full text-left ${room.id === activeRoomId ? "text-orange-700" : ""}`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 font-medium">{room.packageTitle || packageFallback}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span
+                              className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                                completedBooking
+                                  ? "bg-sky-100 text-sky-700"
+                                  : activeBooking
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {completedBooking ? completedBadge : activeBooking ? bookingBadge : leadBadge}
+                            </span>
+                            {hasUnread ? <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">{newBadge}</span> : null}
+                          </div>
+                          {room.bookingId ? (
+                            <p className="mt-2 text-xs font-medium text-slate-500">
+                              {bookingLabel}: {room.bookingCode || room.bookingId}
+                            </p>
+                          ) : null}
                         </div>
-                        {room.bookingId ? (
-                          <p className="mt-2 text-xs font-medium text-slate-500">
-                            {bookingLabel}: {room.bookingCode || room.bookingId}
-                          </p>
-                        ) : null}
                       </div>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-500">{room.updatedAt || "-"}</p>
-                  </button>
+                      <p className="mt-2 text-xs text-slate-500">{room.updatedAt || "-"}</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleHideRoom(room.id)}
+                      disabled={hidingRoomId === room.id}
+                      className="mt-3 inline-flex text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300"
+                    >
+                      {hidingRoomId === room.id ? hidingRoomLabel : hideRoomLabel}
+                    </button>
+                  </div>
                 )
               })}
             </div>

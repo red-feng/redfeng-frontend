@@ -15,6 +15,7 @@ type ChatRoomRow = {
   last_message_at?: string | null
   last_message_sender_id?: string | null
   customer_last_read_at?: string | null
+  customer_hidden_at?: string | null
   bookings?:
     | {
         booking_code: string | null
@@ -269,8 +270,9 @@ export default async function ChatPage({
   const roomQuery = adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, bookings(booking_code, booking_status, payment_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
     )
+    .is("customer_hidden_at", null)
     .order("updated_at", { ascending: false })
 
   const roomResult = isMerchant
@@ -280,7 +282,8 @@ export default async function ChatPage({
   if (roomResult.error && roomResult.error.message.includes("last_message")) {
     const fallbackQuery = adminSupabase
       .from("package_chat_rooms")
-      .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at")
+      .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at, customer_hidden_at")
+      .is("customer_hidden_at", null)
       .order("updated_at", { ascending: false })
     const fallbackResult = isMerchant
       ? await fallbackQuery.eq("merchant_user_id", user.id)
@@ -419,10 +422,12 @@ export default async function ChatPage({
           completedBadge={completedBadgeLabel}
           activeStatus={activeStatusLabel}
           completedStatus={completedStatusLabel}
-          leadStatus={leadStatusLabel}
-          newBadge={ui.newBadge}
-          bookingLabel={bookingLabel}
-        />
+           leadStatus={leadStatusLabel}
+           newBadge={ui.newBadge}
+           bookingLabel={bookingLabel}
+           hideRoomLabel={locale === "en" ? "Remove from list" : locale === "zh" ? "从列表移除" : "Hapus dari daftar"}
+           hidingRoomLabel={locale === "en" ? "Removing..." : locale === "zh" ? "正在移除..." : "Menghapus..."}
+         />
       </div>
     </main>
   )
