@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { type Locale } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
+import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
 
 type CustomerChatRoom = {
   id: string
@@ -16,6 +17,7 @@ type CustomerChatRoom = {
   bookingId: string | null
   bookingCode: string | null
   bookingStatus: string | null
+  paymentStatus?: string | null
   customerName: string | null
   updatedAt: string | null
   lastMessageAt: string | null
@@ -71,11 +73,6 @@ type SendMessageResponse = {
   roomId?: string
   message?: CustomerChatMessage
   error?: string
-}
-
-function isCompletedBooking(room: CustomerChatRoom) {
-  const bookingStatus = String(room.bookingStatus || "").trim().toLowerCase()
-  return bookingStatus === "completed" || bookingStatus === "done"
 }
 
 function sortRooms(rooms: CustomerChatRoom[]) {
@@ -376,7 +373,8 @@ export default function CustomerChatRealtimeClient({
             <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
               {rooms.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noChats}</div> : null}
               {rooms.map((room) => {
-                const completedBooking = isCompletedBooking(room)
+                const completedBooking = isCompletedChatBooking(room)
+                const activeBooking = isActiveChatBooking(room)
                 const hasUnread =
                   room.lastMessageSenderId &&
                   room.lastMessageSenderId !== userId &&
@@ -401,12 +399,12 @@ export default function CustomerChatRealtimeClient({
                             className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                               completedBooking
                                 ? "bg-sky-100 text-sky-700"
-                                : room.bookingId
+                                : activeBooking
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-slate-100 text-slate-600"
                             }`}
                           >
-                            {completedBooking ? completedBadge : room.bookingId ? bookingBadge : leadBadge}
+                            {completedBooking ? completedBadge : activeBooking ? bookingBadge : leadBadge}
                           </span>
                           {hasUnread ? <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">{newBadge}</span> : null}
                         </div>
@@ -431,19 +429,19 @@ export default function CustomerChatRealtimeClient({
               {activeRoom ? (
                 <div className="mt-3 flex flex-wrap gap-2">
                   <span
-                    className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                      isCompletedBooking(activeRoom)
-                        ? "bg-sky-100 text-sky-700"
-                        : activeRoom.bookingId
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {isCompletedBooking(activeRoom) ? completedBadge : activeRoom.bookingId ? bookingBadge : leadBadge}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
-                    {isCompletedBooking(activeRoom) ? completedStatus : activeRoom.bookingId ? activeStatus : leadStatus}
-                  </span>
+                      className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                        isCompletedChatBooking(activeRoom)
+                          ? "bg-sky-100 text-sky-700"
+                          : isActiveChatBooking(activeRoom)
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      {isCompletedChatBooking(activeRoom) ? completedBadge : isActiveChatBooking(activeRoom) ? bookingBadge : leadBadge}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                      {isCompletedChatBooking(activeRoom) ? completedStatus : isActiveChatBooking(activeRoom) ? activeStatus : leadStatus}
+                    </span>
                 </div>
               ) : null}
               {activeRoom?.packageSlug ? (

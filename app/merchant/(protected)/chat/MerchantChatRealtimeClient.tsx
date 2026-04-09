@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { isImageAttachment } from "@/lib/chat/attachments"
+import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
 
 type MerchantChatRoom = {
   id: string
@@ -94,11 +95,6 @@ type SendMessageResponse = {
   error?: string
 }
 
-function isCompletedBooking(room: MerchantChatRoom) {
-  const bookingStatus = String(room.bookingStatus || "").trim().toLowerCase()
-  return bookingStatus === "completed" || bookingStatus === "done"
-}
-
 function sortRooms(rooms: MerchantChatRoom[]) {
   return [...rooms].sort((left, right) => {
     const leftDate = left.lastMessageAt || left.updatedAt || ""
@@ -152,7 +148,7 @@ export default function MerchantChatRealtimeClient({
       }).length,
     [rooms, userId],
   )
-  const bookingRoomsCount = useMemo(() => rooms.filter((room) => Boolean(room.bookingId)).length, [rooms])
+  const bookingRoomsCount = useMemo(() => rooms.filter((room) => isActiveChatBooking(room)).length, [rooms])
 
   const visibleRooms = useMemo(() => {
     return rooms.filter((room) => {
@@ -162,7 +158,7 @@ export default function MerchantChatRealtimeClient({
         (!room.merchantLastReadAt || (room.lastMessageAt || "") > room.merchantLastReadAt)
 
       if (activeFilter === "unread" && !hasUnread) return false
-      if (activeFilter === "booking" && !room.bookingId) return false
+      if (activeFilter === "booking" && !isActiveChatBooking(room)) return false
 
       if (!normalizedSearchQuery) return true
 
@@ -465,7 +461,8 @@ export default function MerchantChatRealtimeClient({
             {visibleRooms.length === 0 && !searchQuery ? <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">{t.noChats}</div> : null}
 
             {visibleRooms.map((room) => {
-              const completedBooking = isCompletedBooking(room)
+              const completedBooking = isCompletedChatBooking(room)
+              const activeBooking = isActiveChatBooking(room)
               const hasUnread =
                 room.lastMessageSenderId &&
                 room.lastMessageSenderId !== userId &&
@@ -489,12 +486,12 @@ export default function MerchantChatRealtimeClient({
                             className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                               completedBooking
                                 ? "bg-sky-100 text-sky-700"
-                                : room.bookingId
+                                : activeBooking
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {completedBooking ? t.completedBooking : room.bookingId ? t.afterBooking : t.beforeBooking}
+                             }`}
+                           >
+                            {completedBooking ? t.completedBooking : activeBooking ? t.afterBooking : t.beforeBooking}
                           </span>
                           {hasUnread ? <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">{t.newBadge}</span> : null}
                         </div>
@@ -551,19 +548,19 @@ export default function MerchantChatRealtimeClient({
                 <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.threadType}</p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {activeRoom ? (isCompletedBooking(activeRoom) ? t.completedBooking : activeRoom.bookingId ? t.afterBooking : t.beforeBooking) : t.beforeBooking}
+                    {activeRoom ? (isCompletedChatBooking(activeRoom) ? t.completedBooking : isActiveChatBooking(activeRoom) ? t.afterBooking : t.beforeBooking) : t.beforeBooking}
                   </p>
                 </div>
                 <div className="rounded-[20px] border border-[#efe3d1] bg-white px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.statusLabel}</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {activeRoom
-                      ? isCompletedBooking(activeRoom)
-                        ? t.completedTransaction
-                        : activeRoom.bookingId
-                          ? t.activeTransaction
-                          : t.leadInquiry
-                      : t.leadInquiry}
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {activeRoom
+                        ? isCompletedChatBooking(activeRoom)
+                          ? t.completedTransaction
+                          : isActiveChatBooking(activeRoom)
+                            ? t.activeTransaction
+                            : t.leadInquiry
+                        : t.leadInquiry}
                   </p>
                 </div>
               </div>
