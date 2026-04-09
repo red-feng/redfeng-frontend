@@ -123,6 +123,7 @@ export async function cleanupExpiredPendingBookings() {
     summary: `Cleanup booking pending dijalankan manual. ${result.deletedCount} booking dihapus, ${result.routedToRefundReviewCount} booking DP diarahkan ke refund review.`,
     metadata: {
       deletedCount: result.deletedCount,
+      retentionDeletedCount: result.retentionDeletedCount,
       routedToRefundReviewCount: result.routedToRefundReviewCount,
       expiredByDeadlineCount: result.expiredByDeadlineCount,
       expiredByDraftExpiryCount: result.expiredByDraftExpiryCount,
@@ -137,7 +138,7 @@ export async function cleanupExpiredPendingBookings() {
   revalidatePath("/customer/dashboard")
 
   backToBookings(
-    `Cleanup selesai. ${result.deletedCount} booking pending dihapus, ${result.routedToRefundReviewCount} booking DP diarahkan ke refund review, dari ${result.scannedCount} booking yang dipindai.`,
+    `Cleanup selesai. ${result.deletedCount} booking dihapus, ${result.retentionDeletedCount} di antaranya karena retensi 15 bulan, ${result.routedToRefundReviewCount} booking DP diarahkan ke refund review, dari ${result.scannedCount} booking yang dipindai.`,
     "success",
   )
 }

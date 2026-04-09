@@ -5,6 +5,14 @@ function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
 
+const FIFTEEN_MONTHS = 15
+
+function addMonths(date: Date, months: number) {
+  const next = new Date(date)
+  next.setMonth(next.getMonth() + months)
+  return next
+}
+
 export function isDraftBookingDeletable(booking: {
   payment_status?: string | null
   booking_status?: string | null
@@ -79,11 +87,42 @@ export async function deleteDraftBooking(
   supabase: SupabaseClient,
   bookingId: string,
 ) {
+  return deleteBookingWithRelations(supabase, bookingId)
+}
+
+export async function deleteBookingWithRelations(
+  supabase: SupabaseClient,
+  bookingId: string,
+) {
   await supabase.from("package_chat_rooms").delete().eq("booking_id", bookingId)
   await supabase.from("payments").delete().eq("booking_id", bookingId)
   await supabase.from("booking_participants").delete().eq("booking_id", bookingId)
 
   return supabase.from("bookings").delete().eq("id", bookingId)
+}
+
+export function isBookingPastRetentionWindow(
+  booking: {
+    created_at?: string | null
+    payment_status?: string | null
+  },
+  now = new Date(),
+) {
+  const createdAt =
+    booking.created_at && !Number.isNaN(new Date(booking.created_at).getTime()) ? new Date(booking.created_at) : null
+  if (!createdAt) return false
+
+  const paymentStatus = normalizeStatus(booking.payment_status)
+  const hasCustomerPayment =
+    paymentStatus === "paid" ||
+    paymentStatus === "dp_paid" ||
+    paymentStatus === "refund_pending_review" ||
+    paymentStatus === "refunded" ||
+    paymentStatus === "partial_refund"
+
+  if (!hasCustomerPayment) return false
+
+  return now.getTime() > addMonths(createdAt, FIFTEEN_MONTHS).getTime()
 }
 
 export async function runExpiredBookingCleanup(
@@ -101,6 +140,7 @@ export async function runExpiredBookingCleanup(
       ok: false as const,
       error: error.message || "Gagal membaca draft booking",
       deletedCount: 0,
+      retentionDeletedCount: 0,
       expiredByDeadlineCount: 0,
       expiredByDraftExpiryCount: 0,
       routedToRefundReviewCount: 0,
@@ -109,17 +149,28 @@ export async function runExpiredBookingCleanup(
   }
 
   let deletedCount = 0
+  let retentionDeletedCount = 0
   let expiredByDeadlineCount = 0
   let expiredByDraftExpiryCount = 0
   let routedToRefundReviewCount = 0
 
   for (const booking of bookingsToScan || []) {
+    const expiredByRetention = isBookingPastRetentionWindow(booking, now)
     const expiryTime = booking.expiry_time ? new Date(booking.expiry_time) : null
     const expiredByDraftExpiry =
       expiryTime instanceof Date && !Number.isNaN(expiryTime.getTime()) && now.getTime() > expiryTime.getTime()
     const expiredByDeadline = isBookingExpiredForNonPayment(booking, now)
 
-    if (!expiredByDraftExpiry && !expiredByDeadline) continue
+    if (!expiredByRetention && !expiredByDraftExpiry && !expiredByDeadline) continue
+
+    if (expiredByRetention) {
+      const { error: deleteRetentionError } = await deleteBookingWithRelations(supabase, booking.id)
+      if (!deleteRetentionError) {
+        deletedCount += 1
+        retentionDeletedCount += 1
+      }
+      continue
+    }
 
     const isOverdueDpBooking =
       ["dp_paid"].includes(String(booking.payment_status || "").trim().toLowerCase()) ||
@@ -145,6 +196,7 @@ export async function runExpiredBookingCleanup(
   return {
     ok: true as const,
     deletedCount,
+    retentionDeletedCount,
     expiredByDeadlineCount,
     expiredByDraftExpiryCount,
     routedToRefundReviewCount,

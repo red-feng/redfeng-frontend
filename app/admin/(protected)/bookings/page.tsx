@@ -5,6 +5,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/lib/bookings/draft-cleanup"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
 
@@ -420,6 +421,8 @@ export default async function AdminBookingsPage({
   const filteredInFinance = sortedBookings.filter(
     (booking) => normalizeStatus(booking.booking_status) === "finance_review",
   )
+  const cleanupPendingCount = bookings.filter((booking) => isBookingExpiredForNonPayment(booking)).length
+  const cleanupRetentionCount = bookings.filter((booking) => isBookingPastRetentionWindow(booking)).length
   const needsAttentionCount = productScopedBookings.filter((booking) => isNeedsAttentionBooking(booking)).length
   const paymentAttentionCount = productScopedBookings.filter(
     (booking) => isNeedsAttentionBooking(booking) && matchesAttentionFocus(booking, "payment"),
@@ -712,7 +715,7 @@ export default async function AdminBookingsPage({
           </section>
         )}
 
-        <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Total booking</p>
             <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{filteredBookings.length}</p>
@@ -724,6 +727,16 @@ export default async function AdminBookingsPage({
           <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Sedang di finance</p>
             <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{filteredInFinance.length}</p>
+          </div>
+          <div className="rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-600">Cleanup H+1</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{cleanupPendingCount}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-600">Booking pending yang sudah lewat H+1 dan siap dihapus.</p>
+          </div>
+          <div className="rounded-[22px] border border-sky-200 bg-sky-50 px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-sky-600">Retensi 15 Bulan</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 sm:text-3xl">{cleanupRetentionCount}</p>
+            <p className="mt-2 text-xs leading-5 text-slate-600">Booking berbayar yang sudah melewati masa simpan 15 bulan.</p>
           </div>
         </section>
 
@@ -743,13 +756,13 @@ export default async function AdminBookingsPage({
               <form action={cleanupExpiredPendingBookings} className="rounded-[20px] border border-[#f0ddc7] bg-[#fffaf3] p-3 lg:min-w-[320px]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manual cleanup</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Jalankan pembersihan booking pending yang sudah lewat H+1 agar data lama tidak terus tertinggal di database.
+                  Jalankan pembersihan booking pending yang sudah lewat H+1 dan booking berbayar yang sudah melewati retensi 15 bulan.
                 </p>
                 <button
                   type="submit"
                   className="mt-3 inline-flex w-full items-center justify-center rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  Jalankan cleanup booking pending
+                  Jalankan cleanup booking
                 </button>
               </form>
             ) : null}

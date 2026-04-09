@@ -31,6 +31,7 @@ export async function GET(req: Request) {
     return NextResponse.json({
       ok: true,
       deleted_count: result.deletedCount,
+      deleted_by_retention_count: result.retentionDeletedCount,
       routed_to_refund_review_count: result.routedToRefundReviewCount,
       deleted_by_h3_deadline_count: result.expiredByDeadlineCount,
       deleted_by_draft_expiry_count: result.expiredByDraftExpiryCount,
