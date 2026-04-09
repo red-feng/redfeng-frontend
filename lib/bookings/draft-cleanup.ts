@@ -5,7 +5,14 @@ function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
 
+// Booking retention policy is intentionally centralized here.
+// Keep this aligned with product rules:
+// 1. Unpaid booking must be hard-deleted after H+1.
+// 2. Paid booking must be retained for 15 months, then hard-deleted.
+// Do not re-implement these windows in page-level code.
+export const BOOKING_UNPAID_GRACE_HOURS = 24
 const FIFTEEN_MONTHS = 15
+export const BOOKING_PAID_RETENTION_MONTHS = FIFTEEN_MONTHS
 
 function addMonths(date: Date, months: number) {
   const next = new Date(date)
@@ -56,7 +63,7 @@ export function isBookingExpiredForNonPayment(
 
     if (createdAt) {
       const hPlusOne = new Date(createdAt)
-      hPlusOne.setHours(hPlusOne.getHours() + 24)
+      hPlusOne.setHours(hPlusOne.getHours() + BOOKING_UNPAID_GRACE_HOURS)
       return now.getTime() > hPlusOne.getTime()
     }
 
@@ -94,6 +101,8 @@ export async function deleteBookingWithRelations(
   supabase: SupabaseClient,
   bookingId: string,
 ) {
+  // Hard delete booking and all directly managed relations.
+  // This is used for both unpaid H+1 cleanup and paid-booking retention cleanup.
   await supabase.from("package_chat_rooms").delete().eq("booking_id", bookingId)
   await supabase.from("payments").delete().eq("booking_id", bookingId)
   await supabase.from("booking_participants").delete().eq("booking_id", bookingId)
@@ -122,7 +131,7 @@ export function isBookingPastRetentionWindow(
 
   if (!hasCustomerPayment) return false
 
-  return now.getTime() > addMonths(createdAt, FIFTEEN_MONTHS).getTime()
+  return now.getTime() > addMonths(createdAt, BOOKING_PAID_RETENTION_MONTHS).getTime()
 }
 
 export async function runExpiredBookingCleanup(
