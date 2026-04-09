@@ -210,7 +210,7 @@ export async function POST(request: Request) {
 
   const { data: room, error: roomError } = await adminSupabase
     .from("package_chat_rooms")
-    .select("id, customer_id, merchant_user_id")
+    .select("id, package_id, customer_id, merchant_user_id")
     .eq("id", roomId)
     .single()
 
@@ -220,6 +220,24 @@ export async function POST(request: Request) {
 
   if (room.customer_id !== user.id && room.merchant_user_id !== user.id) {
     return NextResponse.json({ error: "Anda tidak punya akses ke ruang chat ini." }, { status: 403 })
+  }
+
+  if (room.merchant_user_id === user.id) {
+    const { data: currentMerchantIds } = await adminSupabase
+      .from("merchants")
+      .select("id")
+      .eq("user_id", user.id)
+
+    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
+    const { data: pkg } = await adminSupabase
+      .from("packages")
+      .select("merchant_id")
+      .eq("id", room.package_id)
+      .maybeSingle()
+
+    if (!pkg?.merchant_id || !allowedMerchantIds.has(pkg.merchant_id)) {
+      return NextResponse.json({ error: "Anda tidak punya akses ke ruang chat merchant ini." }, { status: 403 })
+    }
   }
 
   const uploadedAttachment = await uploadChatAttachment({

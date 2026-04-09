@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   const { data: room, error } = await adminSupabase
     .from("package_chat_rooms")
-    .select("id, customer_id, merchant_user_id")
+    .select("id, package_id, customer_id, merchant_user_id")
     .eq("id", roomId)
     .single()
 
@@ -37,7 +37,21 @@ export async function POST(request: Request) {
   if (room.customer_id === user.id) {
     patch = buildHideRoomPatch("customer", nowIso)
   } else if (room.merchant_user_id === user.id) {
-    patch = buildHideRoomPatch("merchant", nowIso)
+    const { data: currentMerchantIds } = await adminSupabase
+      .from("merchants")
+      .select("id")
+      .eq("user_id", user.id)
+
+    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
+    const { data: pkg } = await adminSupabase
+      .from("packages")
+      .select("merchant_id")
+      .eq("id", room.package_id)
+      .maybeSingle()
+
+    if (pkg?.merchant_id && allowedMerchantIds.has(pkg.merchant_id)) {
+      patch = buildHideRoomPatch("merchant", nowIso)
+    }
   }
 
   if (!patch) {

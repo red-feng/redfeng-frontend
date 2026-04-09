@@ -30,6 +30,14 @@ type ChatRoomRow = {
         customer_name?: string | null
       }[]
     | null
+  packages?:
+    | {
+        merchant_id: string | null
+      }
+    | {
+        merchant_id: string | null
+      }[]
+    | null
 }
 
 function getChatText(locale: Locale) {
@@ -256,6 +264,14 @@ export default async function MerchantChatPage({
 
   if (!user) return null
 
+  const { data: currentMerchant } = await adminSupabase
+    .from("merchants")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (!currentMerchant?.id) return null
+
   let roomsError: { message: string } | null = null
   let bookingLinkReady = true
   let readTrackingReady = true
@@ -263,9 +279,10 @@ export default async function MerchantChatPage({
   const roomsWithBooking = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name), packages!inner(merchant_id)",
     )
     .eq("merchant_user_id", user.id)
+    .eq("packages.merchant_id", currentMerchant.id)
     .is("merchant_hidden_at", null)
     .order("updated_at", { ascending: false })
 
@@ -283,9 +300,10 @@ export default async function MerchantChatPage({
     const fallback = await adminSupabase
       .from("package_chat_rooms")
       .select(
-        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at",
+        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, packages!inner(merchant_id)",
       )
       .eq("merchant_user_id", user.id)
+      .eq("packages.merchant_id", currentMerchant.id)
       .is("merchant_hidden_at", null)
       .order("updated_at", { ascending: false })
     allRooms = (fallback.data as ChatRoomRow[] | null) || []
