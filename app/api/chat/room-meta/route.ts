@@ -2,10 +2,48 @@ import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
+import { getCurrentLocale } from "@/lib/locale"
+
+function getSystemPreviewText(
+  type: "package_inquiry" | "booking_linked",
+  locale: "id" | "en" | "zh",
+  audience: "customer" | "merchant",
+) {
+  if (type === "package_inquiry") {
+    if (audience === "merchant") {
+      return locale === "en"
+        ? "Customer asked about this package"
+        : locale === "zh"
+          ? "该客户正在咨询这个套餐"
+          : "Customer bertanya tentang paket ini"
+    }
+
+    return locale === "en"
+      ? "You asked about this package"
+      : locale === "zh"
+        ? "你正在咨询这个套餐"
+        : "Kamu menanyakan paket ini"
+  }
+
+  if (audience === "merchant") {
+    return locale === "en"
+      ? "Order linked in this chat"
+      : locale === "zh"
+        ? "此聊天已关联订单"
+        : "Pesanan sudah terhubung di chat ini"
+  }
+
+  return locale === "en"
+    ? "Your order is linked to this chat"
+    : locale === "zh"
+      ? "此聊天已关联订单"
+      : "Pesanan sudah terhubung ke chat ini"
+}
 
 export async function GET(request: Request) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
+  const locale = await getCurrentLocale()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -73,9 +111,9 @@ export async function GET(request: Request) {
     const parsedSystemMessage = parseChatSystemMessage(latestMessage?.message)
     const latestMessagePreview =
       parsedSystemMessage?.type === "package_inquiry"
-        ? "Customer asked about this package"
+        ? getSystemPreviewText("package_inquiry", locale, "merchant")
         : parsedSystemMessage?.type === "booking_linked"
-          ? "Order linked in this chat"
+          ? getSystemPreviewText("booking_linked", locale, "merchant")
           : latestMessage?.message || latestMessage?.attachment_name || null
 
     return NextResponse.json({
@@ -127,9 +165,9 @@ export async function GET(request: Request) {
   const parsedSystemMessage = parseChatSystemMessage(latestMessage?.message)
   const latestMessagePreview =
     parsedSystemMessage?.type === "package_inquiry"
-      ? "You asked about this package"
+      ? getSystemPreviewText("package_inquiry", locale, "customer")
       : parsedSystemMessage?.type === "booking_linked"
-        ? "Your order is linked to this chat"
+        ? getSystemPreviewText("booking_linked", locale, "customer")
         : latestMessage?.message || latestMessage?.attachment_name || null
 
   return NextResponse.json({

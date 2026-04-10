@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { isImageAttachment } from "@/lib/chat/attachments"
 import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
@@ -207,7 +207,7 @@ export default function MerchantChatRealtimeClient({
     [userId, visibleRooms],
   )
 
-  async function fetchRoomMeta(roomId: string) {
+  const fetchRoomMeta = useCallback(async (roomId: string) => {
     try {
       const response = await fetch(`/api/chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
       if (!response.ok) return null
@@ -217,9 +217,9 @@ export default function MerchantChatRealtimeClient({
       console.error("Failed to fetch merchant chat room meta", error)
       return null
     }
-  }
+  }, [])
 
-  async function fetchMessages(roomId: string) {
+  const fetchMessages = useCallback(async (roomId: string) => {
     try {
       const { data, error } = await supabase
         .from("package_chat_messages")
@@ -236,9 +236,9 @@ export default function MerchantChatRealtimeClient({
     } catch (error) {
       console.error("Failed to fetch merchant chat messages", error)
     }
-  }
+  }, [supabase])
 
-  async function markRoomRead(roomId: string) {
+  const markRoomRead = useCallback(async (roomId: string) => {
     const nowIso = new Date().toISOString()
     try {
       const { error } = await supabase
@@ -254,15 +254,13 @@ export default function MerchantChatRealtimeClient({
     } catch (error) {
       console.error("Failed to mark merchant room as read", error)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     if (!activeRoomId) return
-    if (!messagesByRoom[activeRoomId]) {
-      void fetchMessages(activeRoomId)
-    }
+    void fetchMessages(activeRoomId)
     void markRoomRead(activeRoomId)
-  }, [activeRoomId])
+  }, [activeRoomId, fetchMessages, markRoomRead])
 
   useEffect(() => {
     if (!threadRef.current) return
@@ -343,7 +341,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeRoomId, supabase, userId])
+  }, [activeRoomId, fetchRoomMeta, markRoomRead, supabase, userId])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
