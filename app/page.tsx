@@ -74,12 +74,12 @@ export default async function HomePage({
   const mobileCopy = {
     id: {
       searchPlaceholder: "Cari tour, hotel, atau pengalaman seru",
-      quickPillOne: "Promo keluarga",
+      quickPillOne: "Trending minggu ini",
       quickPillTwo: "Tour Hong Kong",
       quickPillThree: "Siap berangkat",
       menuTitle: "Layanan populer",
-      promoTitle: "Promo untukmu",
-      promoSubtitle: "Pilihan singkat yang cepat dibuka dari beranda mobile.",
+      promoTitle: "Paket wisata trending",
+      promoSubtitle: "Pilihan destinasi yang sedang paling sering dilihat dan dibuka dari beranda mobile.",
       moreLabel: "Lihat semuanya",
       featureTitle: "Paket unggulan RedFeng",
       featureBody: "Jelajahi paket yang paling sering dipilih untuk liburan singkat, keluarga, dan perjalanan internasional.",
@@ -87,12 +87,12 @@ export default async function HomePage({
     },
     en: {
       searchPlaceholder: "Search tours, hotels, or memorable experiences",
-      quickPillOne: "Family deals",
+      quickPillOne: "Trending this week",
       quickPillTwo: "Hong Kong tours",
       quickPillThree: "Ready to go",
       menuTitle: "Popular services",
-      promoTitle: "Promos for you",
-      promoSubtitle: "Fast picks designed for the mobile home experience.",
+      promoTitle: "Trending travel packages",
+      promoSubtitle: "Destinations that are getting the most attention from the mobile home feed.",
       moreLabel: "See all",
       featureTitle: "Featured RedFeng packages",
       featureBody: "Browse the trips most often chosen for quick getaways, families, and international travel.",
@@ -100,12 +100,12 @@ export default async function HomePage({
     },
     zh: {
       searchPlaceholder: "搜索旅游、酒店或精彩体验",
-      quickPillOne: "家庭优惠",
+      quickPillOne: "本周热门",
       quickPillTwo: "香港旅游",
       quickPillThree: "随时出发",
       menuTitle: "热门服务",
-      promoTitle: "为你推荐",
-      promoSubtitle: "为移动端首页准备的快捷精选内容。",
+      promoTitle: "热门旅游套餐",
+      promoSubtitle: "移动端首页中当前最受关注的旅游目的地。",
       moreLabel: "查看全部",
       featureTitle: "RedFeng 精选套餐",
       featureBody: "浏览最受欢迎的短途、家庭和国际旅行套餐。",
@@ -226,6 +226,41 @@ export default async function HomePage({
           <div className="pointer-events-none absolute inset-x-[-15%] top-[-120px] h-[240px] rounded-full bg-white/14 blur-3xl" />
           <div className="pointer-events-none absolute right-[-50px] top-[120px] h-40 w-40 rounded-full bg-[#ffd7a0]/20 blur-3xl" />
           <div className="mx-auto max-w-md">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[16px] bg-white/16 backdrop-blur">
+                  <Image src="/logo-redfeng.png" alt="Red Feng" width={44} height={44} className="h-7 w-auto" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-100/90">Red Feng Mobile</p>
+                  <p className="truncate text-sm font-semibold text-white">
+                    {locale === "en" ? "Travel, tours, and booking" : locale === "zh" ? "旅行、旅游与预订" : "Travel, tour, dan booking"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/packages"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur transition active:scale-95"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.9]">
+                    <path d="M12 5a6 6 0 0 0-6 6c0 4.5-2 5.5-2 5.5h16S18 15.5 18 11a6 6 0 0 0-6-6Z" />
+                    <path d="M10 19a2.2 2.2 0 0 0 4 0" />
+                  </svg>
+                  <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-[#32d0d5] ring-2 ring-[#d9581e]" />
+                </Link>
+                <Link
+                  href="/customer/dashboard"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/16 text-white backdrop-blur transition active:scale-95"
+                >
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.9]">
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 19c1.8-3 4.2-4.5 7-4.5S17.2 16 19 19" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+
             <div className="rounded-[22px] bg-white/96 px-4 py-3 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.45)]">
               <Link href="/packages" className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff4ec] text-[#ef5b2a]">
@@ -346,7 +381,7 @@ export default async function HomePage({
           <div className="mx-auto max-w-md">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ef5b2a]">Promo</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#ef5b2a]">Trending</p>
                 <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.03em] text-slate-950">{mobileCopy.promoTitle}</h2>
                 <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-slate-500">{mobileCopy.promoSubtitle}</p>
               </div>
@@ -385,7 +420,7 @@ export default async function HomePage({
                             index === 0 ? "bg-[#32d0d5] text-slate-950" : "bg-white/88 text-[#ef5b2a]"
                           }`}
                         >
-                          {index === 0 ? "RedFeng Pick" : index === 1 ? "Hot" : index === 2 ? "New" : "Deal"}
+                          {index === 0 ? "RedFeng Pick" : index === 1 ? "Trending" : index === 2 ? "Popular" : "Featured"}
                         </span>
                         <span className="rounded-full bg-slate-950/35 px-2 py-1 text-[10px] font-semibold text-white">
                           {index === 0 ? "Top" : `${index + 1}/4`}
@@ -409,10 +444,52 @@ export default async function HomePage({
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-center gap-1.5">
-              {mobileCarouselPackages.map((pkg, index) => (
-                <span key={pkg.id} className={`h-1.5 rounded-full ${index === 0 ? "w-6 bg-[#ef5b2a]" : "w-1.5 bg-slate-300"}`} />
-              ))}
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1.5">
+                {mobileCarouselPackages.map((pkg, index) => (
+                  <span key={pkg.id} className={`h-1.5 rounded-full ${index === 0 ? "w-6 bg-[#ef5b2a]" : "w-1.5 bg-slate-300"}`} />
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                <span>{locale === "en" ? "Swipe" : locale === "zh" ? "滑动" : "Geser"}</span>
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ef5b2a]">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                    <path d="M8 6l6 6-6 6" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-[24px] border border-[#ffd7bb] bg-[linear-gradient(135deg,#fff8f1_0%,#ffffff_55%,#fff3e8_100%)] p-4 shadow-[0_22px_48px_-34px_rgba(15,23,42,0.2)]">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#ef5b2a]">Trending Now</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {locale === "en"
+                      ? "Explore more trending trips"
+                      : locale === "zh"
+                        ? "继续探索更多热门旅行"
+                        : "Lanjut jelajahi paket yang lagi trending"}
+                  </p>
+                </div>
+                <Link
+                  href="/packages"
+                  className="shrink-0 rounded-full bg-[linear-gradient(90deg,#ef5b2a_0%,#f59e0b_100%)] px-3.5 py-2 text-[11px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,91,42,0.8)]"
+                >
+                  {mobileCopy.bottomCta}
+                </Link>
+              </div>
+              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {mobileMenuItems.slice(0, 5).map((item) => (
+                  <Link
+                    key={`quick-${item.label}`}
+                    href={item.href}
+                    className="shrink-0 rounded-full border border-[#ffd7bb] bg-white px-3 py-2 text-[11px] font-semibold text-slate-700 shadow-sm"
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {mobileHeroPackage ? (
@@ -432,7 +509,7 @@ export default async function HomePage({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/22 to-transparent" />
                     <div className="absolute right-3 top-3 rounded-full bg-[#ffd7bb] px-2 py-1 text-[10px] font-semibold text-[#b63a15]">
-                      {index === 0 ? "-18%" : index === 1 ? "Flash" : "Weekend"}
+                      {index === 0 ? "Trending" : index === 1 ? "Popular" : "Top Pick"}
                     </div>
                     <div className="absolute inset-x-3 bottom-3">
                       <p className="line-clamp-2 text-[14px] font-semibold leading-5 text-white">

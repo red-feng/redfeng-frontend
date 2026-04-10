@@ -57,6 +57,7 @@ export default async function CustomerLayout({
   const locale = normalizeLocale(await getCurrentLocale())
   const languageLabel = locale === "en" ? "Language" : locale === "zh" ? "语言" : "Bahasa"
   const chatLabel = locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat"
+  const settingsLabel = locale === "en" ? "Settings" : locale === "zh" ? "设置" : "Pengaturan"
   const languageOptions = [
     { value: "id" as const, label: "Bahasa Indonesia" },
     { value: "en" as const, label: "English" },
@@ -117,6 +118,12 @@ export default async function CustomerLayout({
               className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
             >
               Dashboard Customer
+            </Link>
+            <Link
+              href="/customer/settings"
+              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+            >
+              {settingsLabel}
             </Link>
             <Link
               href="/chat"

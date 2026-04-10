@@ -35,6 +35,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
     {
       href: "/",
       label: copy.home,
+      accent: "from-[#ef5b2a] to-[#f59e0b]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <path d="M3 10.5L12 3l9 7.5" />
@@ -45,6 +46,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
     {
       href: "/packages",
       label: copy.packages,
+      accent: "from-[#fb7185] to-[#ef5b2a]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <rect x="4" y="5" width="16" height="14" rx="3" />
@@ -55,6 +57,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
     {
       href: "/verifikasi-invoice",
       label: copy.verify,
+      accent: "from-[#38bdf8] to-[#06b6d4]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <path d="M7 4h8l4 4v11a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
@@ -65,6 +68,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
     {
       href: "/customer/dashboard",
       label: copy.account,
+      accent: "from-[#22c55e] to-[#84cc16]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <circle cx="12" cy="8" r="3.5" />
@@ -75,8 +79,9 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   ]
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[80] border-t border-slate-200/80 bg-white/95 px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 shadow-[0_-18px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur md:hidden">
-      <div className="mx-auto grid max-w-xl grid-cols-4 gap-2">
+    <nav className="fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
+      <div className="mx-auto max-w-xl rounded-[28px] border border-white/70 bg-white/96 px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.38)] backdrop-blur">
+        <div className="grid grid-cols-4 gap-1.5">
         {items.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -85,17 +90,25 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center rounded-2xl px-2 py-2.5 text-[11px] font-semibold transition ${
-                isActive
-                  ? "bg-orange-50 text-orange-600 shadow-[0_12px_28px_-18px_rgba(249,115,22,0.75)]"
-                  : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+              className={`flex flex-col items-center justify-center rounded-[22px] px-2 py-2 text-[11px] font-semibold transition ${
+                isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
               }`}
             >
-              {item.icon}
-              <span className="mt-1">{item.label}</span>
+              <span
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                  isActive
+                    ? `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(239,91,42,0.9)]`
+                    : "bg-slate-100 text-slate-500"
+                }`}
+              >
+                {item.icon}
+              </span>
+              <span className={`mt-1.5 ${isActive ? "font-bold" : "font-semibold"}`}>{item.label}</span>
+              {isActive ? <span className="mt-1 h-1 w-5 rounded-full bg-[#ef5b2a]" /> : <span className="mt-1 h-1 w-5 rounded-full bg-transparent" />}
             </Link>
           )
         })}
+        </div>
       </div>
     </nav>
   )
