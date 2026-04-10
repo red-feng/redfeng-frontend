@@ -3,7 +3,11 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
-import { buildPackageInquirySystemMessage, createSystemChatMessageIfMissing } from "@/lib/chat/system-messages"
+import {
+  buildPackageInquirySystemMessage,
+  createSystemChatMessageIfMissing,
+  parseChatSystemMessage,
+} from "@/lib/chat/system-messages"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -50,6 +54,13 @@ type PackageRow = {
   slug: string | null
   merchant_id: string | null
   cover_image: string | null
+}
+
+type MerchantRow = {
+  id: string
+  brand_name: string | null
+  company_name: string | null
+  logo_url: string | null
 }
 
 export const dynamic = "force-dynamic"
@@ -358,6 +369,7 @@ export default async function ChatPage({
   }
 
   const packageIds = [...new Set(rooms.map((room) => room.package_id))]
+  const roomIds = rooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
         .from("packages")
@@ -365,6 +377,40 @@ export default async function ChatPage({
         .in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((p: PackageRow) => [p.id, p]))
+  const merchantIds = [...new Set((packageRows || []).map((pkg) => pkg.merchant_id).filter(Boolean))]
+  const { data: merchantRows } = merchantIds.length
+    ? await adminSupabase
+        .from("merchants")
+        .select("id, brand_name, company_name, logo_url")
+        .in("id", merchantIds)
+    : { data: [] as MerchantRow[] }
+  const merchantMap = new Map((merchantRows || []).map((merchant: MerchantRow) => [merchant.id, merchant]))
+
+  const { data: latestMessageRows } = roomIds.length
+    ? await adminSupabase
+        .from("package_chat_messages")
+        .select("room_id, message, attachment_name, created_at")
+        .in("room_id", roomIds)
+        .order("created_at", { ascending: false })
+    : { data: [] as Array<{ room_id: string; message: string; attachment_name?: string | null; created_at?: string | null }> }
+
+  const latestMessageMap = new Map<string, { message: string; attachmentName: string | null }>()
+  for (const row of latestMessageRows || []) {
+    if (!row.room_id || latestMessageMap.has(row.room_id)) continue
+    const systemMessage = parseChatSystemMessage(row.message)
+    let preview = row.message || ""
+    if (systemMessage?.type === "package_inquiry") {
+      preview = locale === "en" ? "You asked about this package" : locale === "zh" ? "你正在咨询这个套餐" : "Kamu menanyakan paket ini"
+    } else if (systemMessage?.type === "booking_linked") {
+      preview = locale === "en" ? "Your order is linked to this chat" : locale === "zh" ? "此聊天已关联订单" : "Pesanan sudah terhubung ke chat ini"
+    } else if (!preview && row.attachment_name) {
+      preview = row.attachment_name
+    }
+    latestMessageMap.set(row.room_id, {
+      message: preview,
+      attachmentName: row.attachment_name || null,
+    })
+  }
 
   const { data: messagesData, error: messagesError } = activeRoomId
     ? await adminSupabase
@@ -407,6 +453,7 @@ export default async function ChatPage({
           userId={user.id}
           initialRooms={rooms.map((room) => {
             const pkg = packageMap.get(room.package_id)
+            const merchant = pkg?.merchant_id ? merchantMap.get(pkg.merchant_id) : null
             const booking = getBookingInfo(room)
             return {
               id: room.id,
@@ -414,6 +461,8 @@ export default async function ChatPage({
               packageTitle: pkg?.title || null,
               packageSlug: pkg?.slug || null,
               packageCoverImage: pkg?.cover_image || null,
+              merchantName: merchant?.brand_name || merchant?.company_name || null,
+              merchantLogoUrl: merchant?.logo_url || null,
               customerId: room.customer_id,
               merchantUserId: room.merchant_user_id,
                bookingId: room.booking_id || null,
@@ -421,7 +470,8 @@ export default async function ChatPage({
                bookingStatus: booking?.booking_status || null,
                paymentStatus: booking?.payment_status || null,
                customerName: booking?.customer_name || null,
-              updatedAt: room.updated_at || null,
+               lastMessagePreview: latestMessageMap.get(room.id)?.message || null,
+               updatedAt: room.updated_at || null,
               lastMessageAt: room.last_message_at || null,
               lastMessageSenderId: room.last_message_sender_id || null,
               customerLastReadAt: room.customer_last_read_at || null,

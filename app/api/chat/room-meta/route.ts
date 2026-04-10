@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -54,6 +55,28 @@ export async function GET(request: Request) {
     }
 
     const booking = Array.isArray(room.bookings) ? room.bookings[0] || null : room.bookings || null
+    const { data: merchant } = pkg?.merchant_id
+      ? await adminSupabase
+          .from("merchants")
+          .select("brand_name, company_name, logo_url")
+          .eq("id", pkg.merchant_id)
+          .maybeSingle()
+      : { data: null as { brand_name?: string | null; company_name?: string | null; logo_url?: string | null } | null }
+    const { data: latestMessage } = await adminSupabase
+      .from("package_chat_messages")
+      .select("message, attachment_name")
+      .eq("room_id", room.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const parsedSystemMessage = parseChatSystemMessage(latestMessage?.message)
+    const latestMessagePreview =
+      parsedSystemMessage?.type === "package_inquiry"
+        ? "Customer asked about this package"
+        : parsedSystemMessage?.type === "booking_linked"
+          ? "Order linked in this chat"
+          : latestMessage?.message || latestMessage?.attachment_name || null
 
     return NextResponse.json({
       room: {
@@ -62,6 +85,8 @@ export async function GET(request: Request) {
         packageTitle: pkg?.title || null,
         packageSlug: pkg?.slug || null,
         packageCoverImage: pkg?.cover_image || null,
+        merchantName: merchant?.brand_name || merchant?.company_name || null,
+        merchantLogoUrl: merchant?.logo_url || null,
         customerId: room.customer_id,
         merchantUserId: room.merchant_user_id,
         bookingId: room.booking_id || null,
@@ -69,6 +94,7 @@ export async function GET(request: Request) {
         bookingStatus: booking?.booking_status || null,
         paymentStatus: booking?.payment_status || null,
         customerName: booking?.customer_name || null,
+        lastMessagePreview: latestMessagePreview,
         updatedAt: room.updated_at || null,
         lastMessageAt: room.last_message_at || null,
         lastMessageSenderId: room.last_message_sender_id || null,
@@ -85,6 +111,26 @@ export async function GET(request: Request) {
     .maybeSingle()
 
   const booking = Array.isArray(room.bookings) ? room.bookings[0] || null : room.bookings || null
+  const { data: merchant } = await adminSupabase
+    .from("packages")
+    .select("merchant_id, merchants(brand_name, company_name, logo_url)")
+    .eq("id", room.package_id)
+    .maybeSingle()
+  const { data: latestMessage } = await adminSupabase
+    .from("package_chat_messages")
+    .select("message, attachment_name")
+    .eq("room_id", room.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const parsedSystemMessage = parseChatSystemMessage(latestMessage?.message)
+  const latestMessagePreview =
+    parsedSystemMessage?.type === "package_inquiry"
+      ? "You asked about this package"
+      : parsedSystemMessage?.type === "booking_linked"
+        ? "Your order is linked to this chat"
+        : latestMessage?.message || latestMessage?.attachment_name || null
 
   return NextResponse.json({
     room: {
@@ -93,6 +139,18 @@ export async function GET(request: Request) {
       packageTitle: pkg?.title || null,
       packageSlug: pkg?.slug || null,
       packageCoverImage: pkg?.cover_image || null,
+      merchantName:
+        Array.isArray((merchant as { merchants?: { brand_name?: string | null; company_name?: string | null } | null } | null)?.merchants)
+          ? null
+          : ((merchant as { merchants?: { brand_name?: string | null; company_name?: string | null; logo_url?: string | null } | null } | null)
+              ?.merchants?.brand_name ||
+            (merchant as { merchants?: { brand_name?: string | null; company_name?: string | null; logo_url?: string | null } | null } | null)
+              ?.merchants?.company_name ||
+            null),
+      merchantLogoUrl:
+        Array.isArray((merchant as { merchants?: { logo_url?: string | null } | null } | null)?.merchants)
+          ? null
+          : ((merchant as { merchants?: { logo_url?: string | null } | null } | null)?.merchants?.logo_url || null),
       customerId: room.customer_id,
       merchantUserId: room.merchant_user_id,
       bookingId: room.booking_id || null,
@@ -100,6 +158,7 @@ export async function GET(request: Request) {
       bookingStatus: booking?.booking_status || null,
       paymentStatus: booking?.payment_status || null,
       customerName: booking?.customer_name || null,
+      lastMessagePreview: latestMessagePreview,
       updatedAt: room.updated_at || null,
       lastMessageAt: room.last_message_at || null,
       lastMessageSenderId: room.last_message_sender_id || null,

@@ -21,6 +21,7 @@ type MerchantChatRoom = {
   bookingStatus: string | null
   paymentStatus: string | null
   customerName: string | null
+  lastMessagePreview: string | null
   updatedAt: string | null
   lastMessageAt: string | null
   lastMessageSenderId: string | null
@@ -130,6 +131,12 @@ function getPaymentBadgeLabel(paymentStatus: string | null | undefined) {
   if (normalized === "dp_paid") return "DP Paid"
   if (normalized === "pending" || normalized === "unpaid") return "Menunggu pembayaran"
   return "Booking terhubung"
+}
+
+function getMerchantRoomPreview(room: MerchantChatRoom) {
+  const preview = String(room.lastMessagePreview || "").trim()
+  if (preview) return preview
+  return "Belum ada pesan."
 }
 
 export default function MerchantChatRealtimeClient({
@@ -530,7 +537,24 @@ export default function MerchantChatRealtimeClient({
                   <button type="button" onClick={() => setActiveRoomId(room.id)} className="block w-full text-left">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-950">{room.customerName || `Customer ${room.customerId.slice(0, 8)}`}</p>
+                        <div className="flex items-start gap-3">
+                          {room.packageCoverImage ? (
+                            <Image
+                              src={room.packageCoverImage}
+                              alt={room.packageTitle || t.packageNotFound}
+                              width={48}
+                              height={48}
+                              unoptimized
+                              className="h-12 w-12 rounded-2xl object-cover"
+                            />
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-950">{room.customerName || `Customer ${room.customerId.slice(0, 8)}`}</p>
+                            <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
+                              {getMerchantRoomPreview(room)}
+                            </p>
+                          </div>
+                        </div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <span
                             className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
@@ -543,7 +567,7 @@ export default function MerchantChatRealtimeClient({
                            >
                             {completedBooking ? t.completedBooking : activeBooking ? t.afterBooking : t.beforeBooking}
                           </span>
-                          {hasUnread ? <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white">{t.newBadge}</span> : null}
+                          {hasUnread ? <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">{t.newBadge}</span> : null}
                         </div>
                       </div>
                     </div>
@@ -644,11 +668,12 @@ export default function MerchantChatRealtimeClient({
             {messages.map((message) => {
               const systemMessage = parseChatSystemMessage(message.message)
               if (systemMessage?.type === "package_inquiry") {
+                const inquiryBadge = "Inquiry paket"
                 const systemTimestamp = formatDateTime(message.created_at)
 
                 return (
                   <div key={message.id} className="flex justify-center">
-                    <div className="max-w-[88%] rounded-[20px] border border-[#eadfce] bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                    <div className="w-full max-w-[88%] rounded-[22px] border border-[#eadfce] bg-white p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
                       <div className="flex items-start gap-3">
                         {activeRoom?.packageCoverImage ? (
                           <Image
@@ -661,20 +686,23 @@ export default function MerchantChatRealtimeClient({
                           />
                         ) : null}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-950">{t.packageInquiryCard}</p>
-                          <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || t.packageNotFound}</p>
-                          {systemTimestamp ? (
-                            <div className="mt-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-[#fff3e8] px-2.5 py-1 text-[10px] font-semibold text-orange-700">
+                              {inquiryBadge}
+                            </span>
+                            {systemTimestamp ? (
                               <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                                 {systemTimestamp}
                               </span>
-                            </div>
-                          ) : null}
+                            ) : null}
+                          </div>
+                          <p className="mt-2 font-semibold leading-5 text-slate-950">{t.packageInquiryCard}</p>
+                          <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{activeRoom?.packageTitle || t.packageNotFound}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
                             {activeRoom?.packageSlug ? (
                               <Link
                                 href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
-                                className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                                className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                               >
                                 {t.viewPackageDetail}
                               </Link>
@@ -695,12 +723,13 @@ export default function MerchantChatRealtimeClient({
                     : isActiveChatBooking(activeRoom || {})
                       ? t.activeTransaction
                       : t.leadInquiry
+                const bookingBadge = "Pesanan terhubung"
                 const paymentBadgeLabel = getPaymentBadgeLabel(activeRoom?.paymentStatus)
                 const systemTimestamp = formatDateTime(message.created_at)
 
                 return (
                   <div key={message.id} className="flex justify-center">
-                    <div className="max-w-[88%] rounded-[20px] border border-[#f6d6b8] bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                    <div className="w-full max-w-[88%] rounded-[22px] border border-[#f4d6b8] bg-[linear-gradient(180deg,#fff9f2_0%,#ffffff_100%)] p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
                       <div className="flex items-start gap-3">
                         {activeRoom?.packageCoverImage ? (
                           <Image
@@ -713,9 +742,10 @@ export default function MerchantChatRealtimeClient({
                           />
                         ) : null}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-slate-950">{t.bookingCreatedCard}</p>
-                          <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || t.packageNotFound}</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-[#fff1e6] px-2.5 py-1 text-[10px] font-semibold text-orange-700">
+                              {bookingBadge}
+                            </span>
                             <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
                               {paymentBadgeLabel}
                             </span>
@@ -725,23 +755,27 @@ export default function MerchantChatRealtimeClient({
                               </span>
                             ) : null}
                           </div>
+                          <p className="mt-2 font-semibold leading-5 text-slate-950">{t.bookingCreatedCard}</p>
+                          <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{activeRoom?.packageTitle || t.packageNotFound}</p>
                         </div>
                       </div>
-                      <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">{t.bookingLabel}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">{bookingCode}</p>
-                      <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                      <div className="mt-3 rounded-[18px] border border-[#f3e1cf] bg-white px-3 py-2.5">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">{t.bookingLabel}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{bookingCode}</p>
+                        <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                      </div>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {activeRoom?.packageSlug ? (
                           <Link
                             href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
-                            className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                            className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                           >
                             {t.viewPackageDetail}
                           </Link>
                         ) : null}
                         <Link
                           href={`/booking/${encodeURIComponent(systemMessage.bookingId)}`}
-                          className="inline-flex rounded-full border border-[#eadfce] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fffaf5]"
+                          className="inline-flex rounded-full border border-[#eadfce] bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fffaf5]"
                         >
                           {t.viewBookingDetail}
                         </Link>

@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { type Locale } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
@@ -15,6 +15,8 @@ type CustomerChatRoom = {
   packageTitle: string | null
   packageSlug: string | null
   packageCoverImage: string | null
+  merchantName: string | null
+  merchantLogoUrl: string | null
   customerId: string
   merchantUserId: string
   bookingId: string | null
@@ -22,6 +24,7 @@ type CustomerChatRoom = {
   bookingStatus: string | null
   paymentStatus?: string | null
   customerName: string | null
+  lastMessagePreview: string | null
   updatedAt: string | null
   lastMessageAt: string | null
   lastMessageSenderId: string | null
@@ -50,6 +53,12 @@ function getPaymentBadgeLabel(paymentStatus: string | null | undefined, locale: 
     return locale === "en" ? "Awaiting Payment" : locale === "zh" ? "待付款" : "Menunggu pembayaran"
   }
   return locale === "en" ? "Booking Linked" : locale === "zh" ? "已关联订单" : "Booking terhubung"
+}
+
+function getCustomerRoomPreview(room: CustomerChatRoom, locale: Locale) {
+  const preview = String(room.lastMessagePreview || "").trim()
+  if (preview) return preview
+  return locale === "en" ? "No messages yet." : locale === "zh" ? "暂时还没有消息。" : "Belum ada pesan."
 }
 
 type CustomerChatMessage = {
@@ -169,7 +178,7 @@ export default function CustomerChatRealtimeClient({
     [rooms, userId],
   )
 
-  async function fetchRoomMeta(roomId: string) {
+  const fetchRoomMeta = useCallback(async (roomId: string) => {
     try {
       const response = await fetch(`/api/chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
       if (!response.ok) return null
@@ -179,9 +188,9 @@ export default function CustomerChatRealtimeClient({
       console.error("Failed to fetch customer chat room meta", error)
       return null
     }
-  }
+  }, [])
 
-  async function fetchMessages(roomId: string) {
+  const fetchMessages = useCallback(async (roomId: string) => {
     try {
       const { data, error } = await supabase
         .from("package_chat_messages")
@@ -199,9 +208,9 @@ export default function CustomerChatRealtimeClient({
     } catch (error) {
       console.error("Failed to fetch customer chat messages", error)
     }
-  }
+  }, [supabase])
 
-  async function markRoomRead(roomId: string) {
+  const markRoomRead = useCallback(async (roomId: string) => {
     const nowIso = new Date().toISOString()
     try {
       const { error } = await supabase
@@ -217,15 +226,13 @@ export default function CustomerChatRealtimeClient({
     } catch (error) {
       console.error("Failed to mark customer room as read", error)
     }
-  }
+  }, [supabase])
 
   useEffect(() => {
     if (!activeRoomId) return
-    if (!messagesByRoom[activeRoomId]) {
-      void fetchMessages(activeRoomId)
-    }
+    void fetchMessages(activeRoomId)
     void markRoomRead(activeRoomId)
-  }, [activeRoomId])
+  }, [activeRoomId, fetchMessages, markRoomRead])
 
   useEffect(() => {
     if (!threadRef.current) return
@@ -306,7 +313,7 @@ export default function CustomerChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeRoomId, supabase, userId])
+  }, [activeRoomId, fetchRoomMeta, markRoomRead, supabase, userId])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -456,7 +463,41 @@ export default function CustomerChatRealtimeClient({
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="line-clamp-2 font-medium">{room.packageTitle || packageFallback}</p>
+                          <div className="flex items-start gap-3">
+                            {room.packageCoverImage ? (
+                              <Image
+                                src={room.packageCoverImage}
+                                alt={room.packageTitle || packageFallback}
+                                width={48}
+                                height={48}
+                                unoptimized
+                                className="h-12 w-12 rounded-2xl object-cover"
+                              />
+                            ) : null}
+                            <div className="min-w-0 flex-1">
+                              {(room.merchantName || room.merchantLogoUrl) ? (
+                                <div className="mb-2 flex items-center gap-2">
+                                  {room.merchantLogoUrl ? (
+                                    <Image
+                                      src={room.merchantLogoUrl}
+                                      alt={room.merchantName || "Merchant"}
+                                      width={20}
+                                      height={20}
+                                      unoptimized
+                                      className="h-5 w-5 rounded-full object-cover"
+                                    />
+                                  ) : null}
+                                  <p className="truncate text-[11px] font-semibold text-slate-500">
+                                    {room.merchantName || "Merchant"}
+                                  </p>
+                                </div>
+                              ) : null}
+                              <p className="line-clamp-2 font-medium">{room.packageTitle || packageFallback}</p>
+                              <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
+                                {getCustomerRoomPreview(room, locale)}
+                              </p>
+                            </div>
+                          </div>
                           <div className="mt-2 flex flex-wrap gap-2">
                             <span
                               className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
@@ -469,7 +510,7 @@ export default function CustomerChatRealtimeClient({
                             >
                               {completedBooking ? completedBadge : activeBooking ? bookingBadge : leadBadge}
                             </span>
-                            {hasUnread ? <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-semibold text-white">{newBadge}</span> : null}
+                             {hasUnread ? <span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">{newBadge}</span> : null}
                           </div>
                           {room.bookingId ? (
                             <p className="mt-2 text-xs font-medium text-slate-500">
@@ -478,7 +519,7 @@ export default function CustomerChatRealtimeClient({
                           ) : null}
                         </div>
                       </div>
-                      <p className="mt-2 text-xs text-slate-500">{room.updatedAt || "-"}</p>
+                      <p className="mt-2 text-[11px] text-slate-400">{room.updatedAt || "-"}</p>
                     </button>
                     <button
                       type="button"
@@ -545,12 +586,14 @@ export default function CustomerChatRealtimeClient({
                       ? "You asked about this package"
                       : locale === "zh"
                         ? "你正在咨询这个套餐"
-                        : "Kamu bertanya tentang paket ini"
+                        : "Kamu menanyakan paket ini"
+                  const inquiryBadge =
+                    locale === "en" ? "Product inquiry" : locale === "zh" ? "套餐咨询" : "Inquiry paket"
                   const inquiryTime = formatSystemCardTime(message.created_at, locale)
 
                   return (
                     <div key={message.id} className="flex justify-center">
-                      <div className="max-w-[88%] rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                      <div className="w-full max-w-[88%] rounded-[22px] border border-[#e8dfd4] bg-white p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
                         <div className="flex items-start gap-3">
                           {activeRoom?.packageCoverImage ? (
                             <Image
@@ -563,20 +606,23 @@ export default function CustomerChatRealtimeClient({
                             />
                           ) : null}
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-900">{inquiryTitle}</p>
-                            <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || packageFallback}</p>
-                            {inquiryTime ? (
-                              <div className="mt-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-[#fff3e8] px-2.5 py-1 text-[10px] font-semibold text-orange-700">
+                                {inquiryBadge}
+                              </span>
+                              {inquiryTime ? (
                                 <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
                                   {inquiryTime}
                                 </span>
-                              </div>
-                            ) : null}
+                              ) : null}
+                            </div>
+                            <p className="mt-2 font-semibold leading-5 text-slate-900">{inquiryTitle}</p>
+                            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{activeRoom?.packageTitle || packageFallback}</p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {activeRoom?.packageSlug ? (
                                 <Link
                                   href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
-                                  className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                                  className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                                 >
                                   {viewPackageDetailLabel}
                                 </Link>
@@ -603,6 +649,8 @@ export default function CustomerChatRealtimeClient({
                       : locale === "zh"
                         ? "查看订单详情"
                         : "Lihat detail booking"
+                  const bookingBadge =
+                    locale === "en" ? "Order linked" : locale === "zh" ? "已关联订单" : "Pesanan terhubung"
                   const bookingStatusText =
                     isCompletedChatBooking(activeRoom || {})
                       ? completedStatus
@@ -614,9 +662,9 @@ export default function CustomerChatRealtimeClient({
 
                   return (
                     <div key={message.id} className="flex justify-center">
-                      <div className="max-w-[88%] rounded-[18px] border border-orange-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                      <div className="w-full max-w-[88%] rounded-[22px] border border-[#f4d6b8] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
                         <div className="flex items-start gap-3">
-                        {activeRoom?.packageCoverImage ? (
+                          {activeRoom?.packageCoverImage ? (
                             <Image
                               src={activeRoom.packageCoverImage}
                               alt={activeRoom.packageTitle || packageFallback}
@@ -627,9 +675,10 @@ export default function CustomerChatRealtimeClient({
                             />
                           ) : null}
                           <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-slate-900">{bookingTitle}</p>
-                            <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || packageFallback}</p>
-                            <div className="mt-2 flex flex-wrap gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-[#fff1e6] px-2.5 py-1 text-[10px] font-semibold text-orange-700">
+                                {bookingBadge}
+                              </span>
                               <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
                                 {paymentBadgeLabel}
                               </span>
@@ -639,23 +688,27 @@ export default function CustomerChatRealtimeClient({
                                 </span>
                               ) : null}
                             </div>
+                            <p className="mt-2 font-semibold leading-5 text-slate-900">{bookingTitle}</p>
+                            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{activeRoom?.packageTitle || packageFallback}</p>
                           </div>
                         </div>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">{bookingLabel}</p>
-                        <p className="mt-1 font-medium text-slate-900">{bookingCode}</p>
-                        <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                        <div className="mt-3 rounded-[18px] border border-[#f3e1cf] bg-white px-3 py-2.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">{bookingLabel}</p>
+                          <p className="mt-1 font-semibold text-slate-900">{bookingCode}</p>
+                          <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                        </div>
                         <div className="mt-3 flex flex-wrap gap-2">
                           {activeRoom?.packageSlug ? (
                             <Link
                               href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
-                              className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                              className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                             >
                               {viewPackageDetailLabel}
                             </Link>
                           ) : null}
                           <Link
                             href={`/booking/${encodeURIComponent(systemMessage.bookingId)}`}
-                            className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                           >
                             {bookingDetailLabel}
                           </Link>

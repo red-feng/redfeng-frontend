@@ -3,6 +3,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
 type ChatRoomRow = {
   id: string
@@ -314,10 +315,36 @@ export default async function MerchantChatPage({
   }
 
   const packageIds = [...new Set(allRooms.map((room) => room.package_id))]
+  const roomIds = allRooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase.from("packages").select("id, title, slug, cover_image").in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((pkg: PackageRow) => [pkg.id, pkg]))
+
+  const { data: latestMessageRows } = roomIds.length
+    ? await adminSupabase
+        .from("package_chat_messages")
+        .select("room_id, message, attachment_name, created_at")
+        .in("room_id", roomIds)
+        .order("created_at", { ascending: false })
+    : { data: [] as Array<{ room_id: string; message: string; attachment_name?: string | null; created_at?: string | null }> }
+
+  const latestMessageMap = new Map<string, string>()
+  for (const row of latestMessageRows || []) {
+    if (!row.room_id || latestMessageMap.has(row.room_id)) continue
+    const systemMessage = parseChatSystemMessage(row.message)
+    let preview = row.message || ""
+    if (systemMessage?.type === "package_inquiry") {
+      preview =
+        locale === "en" ? "Customer asked about this package" : locale === "zh" ? "该客户正在咨询这个套餐" : "Customer bertanya tentang paket ini"
+    } else if (systemMessage?.type === "booking_linked") {
+      preview =
+        locale === "en" ? "Order linked in this chat" : locale === "zh" ? "此聊天已关联订单" : "Pesanan sudah terhubung di chat ini"
+    } else if (!preview && row.attachment_name) {
+      preview = row.attachment_name
+    }
+    latestMessageMap.set(row.room_id, preview)
+  }
 
   const matchesSearch = (room: ChatRoomRow) => {
     if (!normalizedSearchQuery) return true
@@ -478,6 +505,7 @@ export default async function MerchantChatPage({
             bookingStatus: booking?.booking_status || null,
             paymentStatus: booking?.payment_status || null,
             customerName: booking?.customer_name || null,
+            lastMessagePreview: latestMessageMap.get(room.id) || null,
             updatedAt: room.updated_at || null,
             lastMessageAt: room.last_message_at || null,
             lastMessageSenderId: room.last_message_sender_id || null,
