@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getRequiredEnv } from "@/lib/env"
@@ -34,7 +34,53 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301)
   }
 
-  const res = NextResponse.next()
+  let res = NextResponse.next({
+    request: req,
+  })
+
+  const supabase = createServerClient(
+    getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+    getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          res = NextResponse.next({
+            request: req,
+          })
+          res.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: "",
+            ...options,
+          })
+          res = NextResponse.next({
+            request: req,
+          })
+          res.cookies.set({
+            name,
+            value: "",
+            ...options,
+          })
+        },
+      },
+    }
+  )
+
+  await supabase.auth.getUser()
 
   const isFinanceRoute = pathname.startsWith("/finance")
   const isSuperadminRoute = pathname.startsWith("/superadmin")
@@ -51,24 +97,6 @@ export async function proxy(req: NextRequest) {
   ) {
     return res
   }
-
-  const supabase = createServerClient(
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-    {
-      cookies: {
-        get(name) {
-          return req.cookies.get(name)?.value
-        },
-        set(name, value, options) {
-          res.cookies.set({ name, value, ...options })
-        },
-        remove(name, options) {
-          res.cookies.set({ name, value: "", ...options })
-        },
-      },
-    }
-  )
 
   const {
     data: { user },
