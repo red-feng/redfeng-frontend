@@ -8,11 +8,13 @@ type ModalType = "equipment" | "terms" | null
 
 export default function SidebarActions({
   chatHref,
+  chatBadgeCount,
   preparation,
   termsConditions,
   locale,
 }: {
   chatHref: string
+  chatBadgeCount: number
   preparation: string | null
   termsConditions: string | null
   locale: Locale
@@ -52,9 +54,14 @@ export default function SidebarActions({
           </button>
           <Link
             href={chatHref}
-            className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
           >
-            {tDetail.chat}
+            <span>{tDetail.chat}</span>
+            {chatBadgeCount > 0 ? (
+              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500 px-2 py-1 text-[11px] font-semibold leading-none text-white shadow-[0_10px_22px_rgba(244,63,94,0.28)]">
+                {chatBadgeCount > 99 ? "99+" : chatBadgeCount}
+              </span>
+            ) : null}
           </Link>
         </div>
       </section>

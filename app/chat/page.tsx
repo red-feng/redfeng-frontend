@@ -4,11 +4,13 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import {
-  buildPackageInquirySystemMessage,
-  createSystemChatMessageIfMissing,
-  parseChatSystemMessage,
-} from "@/lib/chat/system-messages"
+  ChatRoomFlowError,
+  ensureCustomerBookingChatRoom,
+  ensureCustomerPackageChatRoom,
+} from "@/lib/chat/customer-room"
+import { shouldUseMerchantChatPortal } from "@/lib/chat/customer-room-policy.mjs"
 import { ACTIVE_PORTAL_COOKIE, normalizeActivePortal } from "@/lib/portal-context"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
@@ -154,10 +156,12 @@ export default async function ChatPage({
     .eq("user_id", user.id)
     .maybeSingle()
   const activePortal = normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value)
-  const isMerchant = activePortal === "merchant" && !!merchantMe
+  const isMerchant = shouldUseMerchantChatPortal({
+    activePortal,
+    hasMerchantRecord: Boolean(merchantMe),
+  })
 
   let activeRoomId = roomId
-  let activePackage: PackageRow | null = null
 
   if (!isMerchant && bookingId) {
     const { data: booking } = await adminSupabase
@@ -167,139 +171,44 @@ export default async function ChatPage({
       .single()
 
     if (booking?.package_id && user.email && booking.customer_email === user.email) {
-      const { data: pkg } = await adminSupabase
-        .from("packages")
-        .select("id, title, slug, merchant_id, cover_image")
-        .eq("id", booking.package_id)
-        .single()
-      activePackage = (pkg as PackageRow | null) || null
-
-      if (activePackage?.merchant_id) {
-        const { data: merchantOwner } = await adminSupabase
-          .from("merchants")
-          .select("user_id")
-          .eq("id", activePackage.merchant_id)
-          .single()
-
-        if (merchantOwner?.user_id) {
-          const { data: existingRoom } = await adminSupabase
-            .from("package_chat_rooms")
-            .select("id")
-            .eq("booking_id", bookingId)
-            .eq("customer_id", user.id)
-            .eq("merchant_user_id", merchantOwner.user_id)
-            .maybeSingle()
-
-          if (existingRoom?.id) {
-            activeRoomId = existingRoom.id
-          } else {
-            const { data: packageRoom } = await adminSupabase
-              .from("package_chat_rooms")
-              .select("id")
-              .eq("package_id", booking.package_id)
-              .eq("customer_id", user.id)
-              .eq("merchant_user_id", merchantOwner.user_id)
-              .order("updated_at", { ascending: false })
-              .limit(1)
-              .maybeSingle()
-
-            if (packageRoom?.id) {
-              activeRoomId = packageRoom.id
-            }
-          }
-        }
+      try {
+        const targetRoom = await ensureCustomerBookingChatRoom(adminSupabase, {
+          bookingId,
+          customerId: user.id,
+          customerEmail: user.email,
+          senderId: user.id,
+          markCustomerRead: true,
+        })
+        activeRoomId = targetRoom.roomId
+      } catch (error) {
+        if (!(error instanceof ChatRoomFlowError)) throw error
       }
     }
   }
 
   if (!isMerchant && packageId && !bookingId) {
-    const { data: pkg } = await adminSupabase
-      .from("packages")
-      .select("id, title, slug, merchant_id, cover_image")
-      .eq("id", packageId)
-      .single()
-    activePackage = (pkg as PackageRow | null) || null
-
-    if (activePackage?.merchant_id) {
-      const { data: merchantOwner } = await adminSupabase
-        .from("merchants")
-        .select("user_id")
-        .eq("id", activePackage.merchant_id)
-        .single()
-
-      if (merchantOwner?.user_id) {
-        const { data: existingRoom } = await adminSupabase
-          .from("package_chat_rooms")
-          .select("id")
-          .eq("package_id", packageId)
-          .eq("customer_id", user.id)
-          .eq("merchant_user_id", merchantOwner.user_id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (existingRoom?.id) {
-          activeRoomId = existingRoom.id
-        } else {
-          const nowIso = new Date().toISOString()
-          let { data: newRoom, error: createRoomError } = await adminSupabase
-            .from("package_chat_rooms")
-            .insert({
-              package_id: packageId,
-              customer_id: user.id,
-              merchant_user_id: merchantOwner.user_id,
-              customer_last_read_at: nowIso,
-            })
-            .select("id")
-            .single()
-
-          if (createRoomError && createRoomError.message.includes("customer_last_read_at")) {
-            const fallbackRoom = await adminSupabase
-              .from("package_chat_rooms")
-              .insert({
-                package_id: packageId,
-                customer_id: user.id,
-                merchant_user_id: merchantOwner.user_id,
-              })
-              .select("id")
-              .single()
-            newRoom = fallbackRoom.data
-            createRoomError = fallbackRoom.error
-          }
-
-          if (createRoomError) {
-            const msg = createRoomError.message.includes("does not exist")
-              ? t.migrationMissing
-              : `${t.createRoomFailed}: ${createRoomError.message}`
-            return (
-              <main className="mx-auto max-w-3xl p-6">
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                  {msg}
-                </div>
-              </main>
-            )
-          }
-
-          if (!newRoom?.id) {
-            return (
-              <main className="mx-auto max-w-3xl p-6">
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-                  {t.createRoomFailed}
-                </div>
-              </main>
-            )
-          }
-
-          activeRoomId = newRoom.id
-
-          const systemMessage = buildPackageInquirySystemMessage({ packageId })
-          await createSystemChatMessageIfMissing(adminSupabase, {
-            roomId: newRoom.id,
-            senderId: user.id,
-            message: systemMessage,
-          })
-        }
-      }
+    try {
+      const targetRoom = await ensureCustomerPackageChatRoom(adminSupabase, {
+        packageId,
+        customerId: user.id,
+        senderId: user.id,
+        markCustomerRead: true,
+      })
+      activeRoomId = targetRoom.roomId
+    } catch (error) {
+      const msg =
+        error instanceof ChatRoomFlowError && error.code === "migration_missing"
+          ? t.migrationMissing
+          : error instanceof Error
+            ? `${t.createRoomFailed}: ${error.message}`
+            : t.createRoomFailed
+      return (
+        <main className="mx-auto max-w-3xl p-6">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            {msg}
+          </div>
+        </main>
+      )
     }
   }
 

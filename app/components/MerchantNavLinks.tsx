@@ -30,7 +30,13 @@ export default function MerchantNavLinks({
           >
             {item.label}
             {visibleBadgeCount > 0 && (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+              <span
+                className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white ${
+                  item.href === "/merchant/chat"
+                    ? "bg-rose-500 shadow-[0_10px_22px_rgba(244,63,94,0.3)]"
+                    : "bg-orange-500"
+                }`}
+              >
                 {visibleBadgeCount > 99 ? "99+" : visibleBadgeCount}
               </span>
             )}

@@ -7,6 +7,7 @@ import Gallery from "./Gallery"
 import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
+import { getCustomerTargetUnreadCount } from "@/lib/chat/customer-target-unread"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
@@ -502,6 +503,7 @@ export default async function PaketPage({
       : tags.map((tag) => tag.tag).slice(0, 4)
 
   let chatHref = `/chat?package_id=${encodeURIComponent(pkg.id)}`
+  let chatBadgeCount = 0
 
   if (user?.email) {
     const { data: latestBooking } = await supabase
@@ -516,6 +518,12 @@ export default async function PaketPage({
     if (latestBooking?.id) {
       chatHref = `/chat?booking_id=${encodeURIComponent(latestBooking.id)}`
     }
+
+    chatBadgeCount = await getCustomerTargetUnreadCount(supabase, {
+      customerId: user.id,
+      bookingId: latestBooking?.id || null,
+      packageId: pkg.id,
+    })
   }
 
   return (
@@ -715,6 +723,7 @@ export default async function PaketPage({
             </section>
             <SidebarActions
               chatHref={chatHref}
+              chatBadgeCount={chatBadgeCount}
               preparation={translation?.preparation || null}
               termsConditions={translation?.terms_conditions || null}
               locale={activeLocale}

@@ -8,7 +8,7 @@ import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
-import { buildBookingLinkedSystemMessage } from "@/lib/chat/system-messages"
+import { ChatRoomFlowError, ensureCustomerBookingChatRoom } from "@/lib/chat/customer-room"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -232,148 +232,19 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (pkg?.merchant_id) {
-      const { data: merchantOwner } = await supabase
-        .from("merchants")
-        .select("user_id")
-        .eq("id", pkg.merchant_id)
-        .maybeSingle()
-
-      if (merchantOwner?.user_id) {
-        let linkedRoomId: string | null = null
-        const { data: existingPostRoom } = await supabase
-          .from("package_chat_rooms")
-          .select("id")
-          .eq("booking_id", booking.id)
-          .eq("customer_id", user.id)
-          .eq("merchant_user_id", merchantOwner.user_id)
-          .maybeSingle()
-
-        if (!existingPostRoom?.id) {
-          const { data: packageRoom } = await supabase
-            .from("package_chat_rooms")
-            .select("id")
-            .eq("package_id", package_id)
-            .eq("customer_id", user.id)
-            .eq("merchant_user_id", merchantOwner.user_id)
-            .order("updated_at", { ascending: false })
-            .limit(1)
-            .maybeSingle()
-
-          if (packageRoom?.id) {
-            linkedRoomId = packageRoom.id
-            const { error: linkRoomError } = await supabase
-              .from("package_chat_rooms")
-              .update({
-                booking_id: booking.id,
-                updated_at: new Date().toISOString(),
-              })
-              .eq("id", packageRoom.id)
-
-            if (linkRoomError) {
-              if (linkRoomError.message.includes("booking_id")) {
-                console.error("Chat post-booking butuh migration terbaru:", linkRoomError.message)
-              } else {
-                console.error("Gagal menautkan booking ke room chat yang sudah ada:", linkRoomError.message)
-              }
-            }
-          } else {
-            const { error: createRoomError } = await supabase
-              .from("package_chat_rooms")
-              .insert({
-                package_id,
-                customer_id: user.id,
-                merchant_user_id: merchantOwner.user_id,
-                booking_id: booking.id,
-              })
-
-            if (createRoomError) {
-              if (createRoomError.message.includes("booking_id")) {
-                console.error("Chat post-booking butuh migration terbaru:", createRoomError.message)
-              } else {
-                console.error("Gagal membuat chat room booking:", createRoomError.message)
-              }
-            } else {
-              const { data: createdRoom } = await supabase
-                .from("package_chat_rooms")
-                .select("id")
-                .eq("booking_id", booking.id)
-                .eq("customer_id", user.id)
-                .eq("merchant_user_id", merchantOwner.user_id)
-                .limit(1)
-                .maybeSingle()
-              linkedRoomId = createdRoom?.id || null
-            }
-          }
-        } else {
-          linkedRoomId = existingPostRoom.id
-          const { error: touchRoomError } = await supabase
-            .from("package_chat_rooms")
-            .update({
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", existingPostRoom.id)
-
-          if (touchRoomError) {
-            console.error("Gagal refresh room booking:", touchRoomError.message)
-          }
-        }
-
-        const { data: existingRoom } = await supabase
-          .from("package_chat_rooms")
-          .select("id")
-          .eq("package_id", package_id)
-          .eq("customer_id", user.id)
-          .eq("merchant_user_id", merchantOwner.user_id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        if (existingRoom?.id) {
-          linkedRoomId = existingRoom.id
-          const { error: linkError } = await supabase
-            .from("package_chat_rooms")
-            .update({
-              booking_id: booking.id,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("id", existingRoom.id)
-
-          if (linkError) {
-            if (linkError.message.includes("booking_id")) {
-              console.error("Chat post-booking butuh migration terbaru:", linkError.message)
-            } else {
-              console.error("Gagal refresh room chat booking:", linkError.message)
-            }
-          }
-        }
-
-        if (linkedRoomId) {
-          const systemMessage = buildBookingLinkedSystemMessage({
-            bookingId: booking.id,
-            bookingCode: booking.booking_code || null,
-          })
-
-          const { data: existingSystemMessage } = await supabase
-            .from("package_chat_messages")
-            .select("id")
-            .eq("room_id", linkedRoomId)
-            .eq("message", systemMessage)
-            .limit(1)
-            .maybeSingle()
-
-          if (!existingSystemMessage?.id) {
-            const { error: systemMessageError } = await supabase
-              .from("package_chat_messages")
-              .insert({
-                room_id: linkedRoomId,
-                sender_id: user.id,
-                message: systemMessage,
-              })
-
-            if (systemMessageError) {
-              console.error("Gagal membuat system message booking di chat:", systemMessageError.message)
-            }
-          }
+      try {
+        await ensureCustomerBookingChatRoom(supabase, {
+          bookingId: booking.id,
+          customerId: user.id,
+          customerEmail: user.email || customer_email,
+          senderId: user.id,
+          touchUpdatedAt: true,
+        })
+      } catch (error) {
+        if (error instanceof ChatRoomFlowError && error.code === "migration_missing") {
+          console.error("Chat post-booking butuh migration terbaru:", error.message)
+        } else if (error instanceof Error) {
+          console.error("Gagal sinkronkan room chat booking:", error.message)
         }
       }
     }
