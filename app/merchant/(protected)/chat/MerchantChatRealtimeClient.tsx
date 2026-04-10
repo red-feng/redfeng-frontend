@@ -1,16 +1,19 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { isImageAttachment } from "@/lib/chat/attachments"
 import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
 type MerchantChatRoom = {
   id: string
   packageId: string
   packageTitle: string | null
   packageSlug: string | null
+  packageCoverImage: string | null
   customerId: string
   merchantUserId: string
   bookingId: string | null
@@ -84,6 +87,9 @@ type MerchantChatRealtimeClientProps = {
     activeRoomMessages: string
     currentConversation: string
     selectRoomToView: string
+    bookingCreatedCard: string
+    viewBookingDetail: string
+    packageInquiryCard: string
   }
 }
 
@@ -116,6 +122,14 @@ function formatDateTime(dateStr: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   })
+}
+
+function getPaymentBadgeLabel(paymentStatus: string | null | undefined) {
+  const normalized = String(paymentStatus || "").trim().toLowerCase()
+  if (normalized === "paid") return "Lunas"
+  if (normalized === "dp_paid") return "DP Paid"
+  if (normalized === "pending" || normalized === "unpaid") return "Menunggu pembayaran"
+  return "Booking terhubung"
 }
 
 export default function MerchantChatRealtimeClient({
@@ -586,6 +600,19 @@ export default function MerchantChatRealtimeClient({
                     {t.viewPackageDetail}
                   </Link>
                 ) : null}
+                {activeRoom?.bookingId ? (
+                  <div className="mt-3 rounded-[20px] border border-[#f6d6b8] bg-[#fff7ef] px-4 py-3 text-xs text-slate-700">
+                    <p className="font-semibold uppercase tracking-[0.18em] text-orange-600">{t.bookingLabel}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">{activeRoom.bookingCode || activeRoom.bookingId}</p>
+                    <p className="mt-1 text-slate-500">
+                      {isCompletedChatBooking(activeRoom)
+                        ? t.completedTransaction
+                        : isActiveChatBooking(activeRoom)
+                          ? t.activeTransaction
+                          : t.leadInquiry}
+                    </p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
@@ -615,6 +642,115 @@ export default function MerchantChatRealtimeClient({
             {messages.length === 0 ? <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">{t.noMessages}</div> : null}
 
             {messages.map((message) => {
+              const systemMessage = parseChatSystemMessage(message.message)
+              if (systemMessage?.type === "package_inquiry") {
+                const systemTimestamp = formatDateTime(message.created_at)
+
+                return (
+                  <div key={message.id} className="flex justify-center">
+                    <div className="max-w-[88%] rounded-[20px] border border-[#eadfce] bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        {activeRoom?.packageCoverImage ? (
+                          <Image
+                            src={activeRoom.packageCoverImage}
+                            alt={activeRoom.packageTitle || t.packageNotFound}
+                            width={56}
+                            height={56}
+                            unoptimized
+                            className="h-14 w-14 rounded-2xl object-cover"
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-950">{t.packageInquiryCard}</p>
+                          <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || t.packageNotFound}</p>
+                          {systemTimestamp ? (
+                            <div className="mt-2">
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                {systemTimestamp}
+                              </span>
+                            </div>
+                          ) : null}
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {activeRoom?.packageSlug ? (
+                              <Link
+                                href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                                className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                              >
+                                {t.viewPackageDetail}
+                              </Link>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
+              if (systemMessage?.type === "booking_linked") {
+                const bookingCode = systemMessage.bookingCode || activeRoom?.bookingCode || systemMessage.bookingId
+                const bookingStatusText =
+                  isCompletedChatBooking(activeRoom || {})
+                    ? t.completedTransaction
+                    : isActiveChatBooking(activeRoom || {})
+                      ? t.activeTransaction
+                      : t.leadInquiry
+                const paymentBadgeLabel = getPaymentBadgeLabel(activeRoom?.paymentStatus)
+                const systemTimestamp = formatDateTime(message.created_at)
+
+                return (
+                  <div key={message.id} className="flex justify-center">
+                    <div className="max-w-[88%] rounded-[20px] border border-[#f6d6b8] bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                      <div className="flex items-start gap-3">
+                        {activeRoom?.packageCoverImage ? (
+                          <Image
+                            src={activeRoom.packageCoverImage}
+                            alt={activeRoom.packageTitle || t.packageNotFound}
+                            width={56}
+                            height={56}
+                            unoptimized
+                            className="h-14 w-14 rounded-2xl object-cover"
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-slate-950">{t.bookingCreatedCard}</p>
+                          <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || t.packageNotFound}</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                              {paymentBadgeLabel}
+                            </span>
+                            {systemTimestamp ? (
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                {systemTimestamp}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">{t.bookingLabel}</p>
+                      <p className="mt-1 text-sm font-semibold text-slate-950">{bookingCode}</p>
+                      <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {activeRoom?.packageSlug ? (
+                          <Link
+                            href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                            className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                          >
+                            {t.viewPackageDetail}
+                          </Link>
+                        ) : null}
+                        <Link
+                          href={`/booking/${encodeURIComponent(systemMessage.bookingId)}`}
+                          className="inline-flex rounded-full border border-[#eadfce] bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fffaf5]"
+                        >
+                          {t.viewBookingDetail}
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
+
               const mine = message.sender_id === userId
               return (
                 <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>

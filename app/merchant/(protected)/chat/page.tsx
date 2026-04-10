@@ -1,5 +1,4 @@
-﻿import Link from "next/link"
-import { type Locale, normalizeLocale } from "@/lib/i18n"
+﻿import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -220,6 +219,7 @@ type PackageRow = {
   id: string
   title: string | null
   slug: string | null
+  cover_image: string | null
 }
 
 type MerchantChatParams = {
@@ -315,7 +315,7 @@ export default async function MerchantChatPage({
 
   const packageIds = [...new Set(allRooms.map((room) => room.package_id))]
   const { data: packageRows } = packageIds.length
-    ? await adminSupabase.from("packages").select("id, title, slug").in("id", packageIds)
+    ? await adminSupabase.from("packages").select("id, title, slug, cover_image").in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((pkg: PackageRow) => [pkg.id, pkg]))
 
@@ -470,6 +470,7 @@ export default async function MerchantChatPage({
             packageId: room.package_id,
             packageTitle: pkg?.title || null,
             packageSlug: pkg?.slug || null,
+            packageCoverImage: pkg?.cover_image || null,
             customerId: room.customer_id,
             merchantUserId: room.merchant_user_id,
             bookingId: room.booking_id || null,
@@ -529,6 +530,24 @@ export default async function MerchantChatPage({
           activeRoomMessages: t.activeRoomMessages,
           currentConversation: t.currentConversation,
           selectRoomToView: t.selectRoomToView,
+          bookingCreatedCard:
+            locale === "en"
+              ? "This customer has placed an order"
+              : locale === "zh"
+                ? "该客户已完成下单"
+                : "Customer ini sudah membuat booking",
+          viewBookingDetail:
+            locale === "en"
+              ? "View booking detail"
+              : locale === "zh"
+                ? "查看订单详情"
+                : "Lihat detail booking",
+          packageInquiryCard:
+            locale === "en"
+              ? "This customer asked about this package"
+              : locale === "zh"
+                ? "该客户正在咨询这个套餐"
+                : "Customer bertanya tentang paket ini",
         }}
       />
     </main>

@@ -103,7 +103,10 @@ export async function deleteBookingWithRelations(
 ) {
   // Hard delete booking and all directly managed relations.
   // This is used for both unpaid H+1 cleanup and paid-booking retention cleanup.
-  await supabase.from("package_chat_rooms").delete().eq("booking_id", bookingId)
+  await supabase
+    .from("package_chat_rooms")
+    .update({ booking_id: null })
+    .eq("booking_id", bookingId)
   await supabase.from("payments").delete().eq("booking_id", bookingId)
   await supabase.from("booking_participants").delete().eq("booking_id", bookingId)
 

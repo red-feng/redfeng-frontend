@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { uploadChatAttachment } from "@/lib/chat/attachments"
+import { buildPackageInquirySystemMessage, createSystemChatMessageIfMissing } from "@/lib/chat/system-messages"
 import { redirect } from "next/navigation"
 
 export async function sendChatMessage(formData: FormData) {
@@ -86,25 +87,29 @@ export async function sendChatMessage(formData: FormData) {
           .eq("package_id", booking.package_id)
           .eq("customer_id", user.id)
           .eq("merchant_user_id", merchantOwner.user_id)
-          .is("booking_id", null)
+          .order("updated_at", { ascending: false })
+          .limit(1)
           .maybeSingle()
 
         const nowIso = new Date().toISOString()
-        let { data: newRoom, error: createRoomError } = await adminSupabase
-          .from("package_chat_rooms")
-          .insert({
-            package_id: booking.package_id,
-            customer_id: user.id,
-            merchant_user_id: merchantOwner.user_id,
-            booking_id: bookingId,
-            source_room_id: sourceRoom?.id || null,
-            customer_last_read_at: nowIso,
-          })
-          .select("id")
-          .single()
+        if (sourceRoom?.id) {
+          const { error: linkRoomError } = await adminSupabase
+            .from("package_chat_rooms")
+            .update({
+              booking_id: bookingId,
+              customer_last_read_at: nowIso,
+              updated_at: nowIso,
+            })
+            .eq("id", sourceRoom.id)
 
-        if (createRoomError && createRoomError.message.includes("source_room_id")) {
-          const fallbackRoom = await adminSupabase
+          if (linkRoomError) {
+            const errorText = linkRoomError.message || "Ruang chat booking tidak dapat dipakai."
+            redirect(`/chat?booking_id=${bookingId}&error=${encodeURIComponent(errorText)}`)
+          }
+
+          roomId = sourceRoom.id
+        } else {
+          let { data: newRoom, error: createRoomError } = await adminSupabase
             .from("package_chat_rooms")
             .insert({
               package_id: booking.package_id,
@@ -115,36 +120,33 @@ export async function sendChatMessage(formData: FormData) {
             })
             .select("id")
             .single()
-          newRoom = fallbackRoom.data
-          createRoomError = fallbackRoom.error
-        }
 
-        if (createRoomError && createRoomError.message.includes("customer_last_read_at")) {
-          const fallbackRoom = await adminSupabase
-            .from("package_chat_rooms")
-            .insert({
-              package_id: booking.package_id,
-              customer_id: user.id,
-              merchant_user_id: merchantOwner.user_id,
-              booking_id: bookingId,
-              source_room_id: sourceRoom?.id || null,
-            })
-            .select("id")
-            .single()
-          newRoom = fallbackRoom.data
-          createRoomError = fallbackRoom.error
-        }
+          if (createRoomError && createRoomError.message.includes("customer_last_read_at")) {
+            const fallbackRoom = await adminSupabase
+              .from("package_chat_rooms")
+              .insert({
+                package_id: booking.package_id,
+                customer_id: user.id,
+                merchant_user_id: merchantOwner.user_id,
+                booking_id: bookingId,
+              })
+              .select("id")
+              .single()
+            newRoom = fallbackRoom.data
+            createRoomError = fallbackRoom.error
+          }
 
-        if (createRoomError && createRoomError.message.includes("booking_id")) {
-          redirect(`/chat?booking_id=${bookingId}&error=Chat sesudah booking butuh migration terbaru.`)
-        }
+          if (createRoomError && createRoomError.message.includes("booking_id")) {
+            redirect(`/chat?booking_id=${bookingId}&error=Chat sesudah booking butuh migration terbaru.`)
+          }
 
-        if (createRoomError || !newRoom?.id) {
-          const errorText = createRoomError?.message || "Ruang chat booking tidak dapat dibuat."
-          redirect(`/chat?booking_id=${bookingId}&error=${encodeURIComponent(errorText)}`)
-        }
+          if (createRoomError || !newRoom?.id) {
+            const errorText = createRoomError?.message || "Ruang chat booking tidak dapat dibuat."
+            redirect(`/chat?booking_id=${bookingId}&error=${encodeURIComponent(errorText)}`)
+          }
 
-        roomId = newRoom.id
+          roomId = newRoom.id
+        }
       }
     } else if (packageId) {
       const { data: pkg, error: packageError } = await adminSupabase
@@ -173,7 +175,8 @@ export async function sendChatMessage(formData: FormData) {
         .eq("package_id", packageId)
         .eq("customer_id", user.id)
         .eq("merchant_user_id", merchantOwner.user_id)
-        .is("booking_id", null)
+        .order("updated_at", { ascending: false })
+        .limit(1)
         .maybeSingle()
 
       if (existingRoom?.id) {
@@ -211,6 +214,13 @@ export async function sendChatMessage(formData: FormData) {
         }
 
         roomId = newRoom.id
+
+        const systemMessage = buildPackageInquirySystemMessage({ packageId })
+        await createSystemChatMessageIfMissing(adminSupabase, {
+          roomId: newRoom.id,
+          senderId: user.id,
+          message: systemMessage,
+        })
       }
     } else {
       redirect("/chat?error=Ruang chat tidak ditemukan.")

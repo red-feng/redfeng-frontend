@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import Image from "next/image"
@@ -122,6 +123,10 @@ export default async function PaketPage({
   const { slug: rawSlug } = await params
   const cookieLocale = await getCurrentLocale()
   const supabase = createAdminClient()
+  const authSupabase = await createClient()
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
 
   const slugCandidates = [
     rawSlug,
@@ -496,6 +501,23 @@ export default async function PaketPage({
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 4)
 
+  let chatHref = `/chat?package_id=${encodeURIComponent(pkg.id)}`
+
+  if (user?.email) {
+    const { data: latestBooking } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("package_id", pkg.id)
+      .eq("customer_email", user.email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (latestBooking?.id) {
+      chatHref = `/chat?booking_id=${encodeURIComponent(latestBooking.id)}`
+    }
+  }
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)] pb-36 md:pb-0">
       <PackageViewTracker packageId={pkg.id} />
@@ -692,7 +714,7 @@ export default async function PaketPage({
               </div>
             </section>
             <SidebarActions
-              packageId={pkg.id}
+              chatHref={chatHref}
               preparation={translation?.preparation || null}
               termsConditions={translation?.terms_conditions || null}
               locale={activeLocale}

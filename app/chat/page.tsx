@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries } from "@/lib/i18n"
+import { buildPackageInquirySystemMessage, createSystemChatMessageIfMissing } from "@/lib/chat/system-messages"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -48,6 +49,7 @@ type PackageRow = {
   title: string | null
   slug: string | null
   merchant_id: string | null
+  cover_image: string | null
 }
 
 export const dynamic = "force-dynamic"
@@ -152,7 +154,7 @@ export default async function ChatPage({
     if (booking?.package_id && user.email && booking.customer_email === user.email) {
       const { data: pkg } = await adminSupabase
         .from("packages")
-        .select("id, title, slug, merchant_id")
+        .select("id, title, slug, merchant_id, cover_image")
         .eq("id", booking.package_id)
         .single()
       activePackage = (pkg as PackageRow | null) || null
@@ -175,6 +177,20 @@ export default async function ChatPage({
 
           if (existingRoom?.id) {
             activeRoomId = existingRoom.id
+          } else {
+            const { data: packageRoom } = await adminSupabase
+              .from("package_chat_rooms")
+              .select("id")
+              .eq("package_id", booking.package_id)
+              .eq("customer_id", user.id)
+              .eq("merchant_user_id", merchantOwner.user_id)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (packageRoom?.id) {
+              activeRoomId = packageRoom.id
+            }
           }
         }
       }
@@ -184,7 +200,7 @@ export default async function ChatPage({
   if (!isMerchant && packageId && !bookingId) {
     const { data: pkg } = await adminSupabase
       .from("packages")
-      .select("id, title, slug, merchant_id")
+      .select("id, title, slug, merchant_id, cover_image")
       .eq("id", packageId)
       .single()
     activePackage = (pkg as PackageRow | null) || null
@@ -203,7 +219,8 @@ export default async function ChatPage({
           .eq("package_id", packageId)
           .eq("customer_id", user.id)
           .eq("merchant_user_id", merchantOwner.user_id)
-          .is("booking_id", null)
+          .order("updated_at", { ascending: false })
+          .limit(1)
           .maybeSingle()
 
         if (existingRoom?.id) {
@@ -259,6 +276,13 @@ export default async function ChatPage({
           }
 
           activeRoomId = newRoom.id
+
+          const systemMessage = buildPackageInquirySystemMessage({ packageId })
+          await createSystemChatMessageIfMissing(adminSupabase, {
+            roomId: newRoom.id,
+            senderId: user.id,
+            message: systemMessage,
+          })
         }
       }
     }
@@ -337,7 +361,7 @@ export default async function ChatPage({
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
         .from("packages")
-        .select("id, title, slug, merchant_id")
+        .select("id, title, slug, merchant_id, cover_image")
         .in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((p: PackageRow) => [p.id, p]))
@@ -389,6 +413,7 @@ export default async function ChatPage({
               packageId: room.package_id,
               packageTitle: pkg?.title || null,
               packageSlug: pkg?.slug || null,
+              packageCoverImage: pkg?.cover_image || null,
               customerId: room.customer_id,
               merchantUserId: room.merchant_user_id,
                bookingId: room.booking_id || null,

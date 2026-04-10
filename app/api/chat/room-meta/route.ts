@@ -45,7 +45,7 @@ export async function GET(request: Request) {
     const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
     const { data: pkg } = await adminSupabase
       .from("packages")
-      .select("id, title, slug, merchant_id")
+      .select("id, title, slug, merchant_id, cover_image")
       .eq("id", room.package_id)
       .maybeSingle()
 
@@ -61,6 +61,7 @@ export async function GET(request: Request) {
         packageId: room.package_id,
         packageTitle: pkg?.title || null,
         packageSlug: pkg?.slug || null,
+        packageCoverImage: pkg?.cover_image || null,
         customerId: room.customer_id,
         merchantUserId: room.merchant_user_id,
         bookingId: room.booking_id || null,
@@ -79,7 +80,7 @@ export async function GET(request: Request) {
 
   const { data: pkg } = await adminSupabase
     .from("packages")
-    .select("id, title, slug")
+    .select("id, title, slug, cover_image")
     .eq("id", room.package_id)
     .maybeSingle()
 
@@ -91,6 +92,7 @@ export async function GET(request: Request) {
       packageId: room.package_id,
       packageTitle: pkg?.title || null,
       packageSlug: pkg?.slug || null,
+      packageCoverImage: pkg?.cover_image || null,
       customerId: room.customer_id,
       merchantUserId: room.merchant_user_id,
       bookingId: room.booking_id || null,

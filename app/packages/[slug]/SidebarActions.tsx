@@ -7,12 +7,12 @@ import { dictionaries, type Locale } from "@/lib/i18n"
 type ModalType = "equipment" | "terms" | null
 
 export default function SidebarActions({
-  packageId,
+  chatHref,
   preparation,
   termsConditions,
   locale,
 }: {
-  packageId: string
+  chatHref: string
   preparation: string | null
   termsConditions: string | null
   locale: Locale
@@ -51,7 +51,7 @@ export default function SidebarActions({
             {tSidebar.terms}
           </button>
           <Link
-            href={`/chat?package_id=${packageId}`}
+            href={chatHref}
             className="block w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50/60"
           >
             {tDetail.chat}

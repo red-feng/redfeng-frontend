@@ -1,17 +1,20 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { type Locale } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
 import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
 type CustomerChatRoom = {
   id: string
   packageId: string
   packageTitle: string | null
   packageSlug: string | null
+  packageCoverImage: string | null
   customerId: string
   merchantUserId: string
   bookingId: string | null
@@ -23,6 +26,30 @@ type CustomerChatRoom = {
   lastMessageAt: string | null
   lastMessageSenderId: string | null
   customerLastReadAt: string | null
+}
+
+function formatSystemCardTime(value: string | null, locale: Locale) {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const language = locale === "zh" ? "zh-CN" : locale === "en" ? "en-US" : "id-ID"
+  return date.toLocaleString(language, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getPaymentBadgeLabel(paymentStatus: string | null | undefined, locale: Locale) {
+  const normalized = String(paymentStatus || "").trim().toLowerCase()
+  if (normalized === "paid") return locale === "en" ? "Paid" : locale === "zh" ? "已付款" : "Lunas"
+  if (normalized === "dp_paid") return locale === "en" ? "DP Paid" : locale === "zh" ? "已付定金" : "DP Paid"
+  if (normalized === "pending" || normalized === "unpaid") {
+    return locale === "en" ? "Awaiting Payment" : locale === "zh" ? "待付款" : "Menunggu pembayaran"
+  }
+  return locale === "en" ? "Booking Linked" : locale === "zh" ? "已关联订单" : "Booking terhubung"
 }
 
 type CustomerChatMessage = {
@@ -497,11 +524,147 @@ export default function CustomerChatRealtimeClient({
                   {viewPackageDetailLabel}
                 </Link>
               ) : null}
+              {activeRoom?.bookingId ? (
+                <div className="mt-3 rounded-[18px] border border-orange-200 bg-orange-50 px-3 py-3 text-xs text-slate-700">
+                  <p className="font-semibold text-orange-700">{bookingLabel}</p>
+                  <p className="mt-1 font-medium text-slate-900">{activeRoom.bookingCode || activeRoom.bookingId}</p>
+                  <p className="mt-1 text-slate-500">
+                    {isCompletedChatBooking(activeRoom) ? completedStatus : isActiveChatBooking(activeRoom) ? activeStatus : leadStatus}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div ref={threadRef} className="h-[56vh] space-y-3 overflow-y-auto bg-slate-50/50 px-5 py-4">
               {messages.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noMessages}</div> : null}
               {messages.map((message) => {
+                const systemMessage = parseChatSystemMessage(message.message)
+                if (systemMessage?.type === "package_inquiry") {
+                  const inquiryTitle =
+                    locale === "en"
+                      ? "You asked about this package"
+                      : locale === "zh"
+                        ? "你正在咨询这个套餐"
+                        : "Kamu bertanya tentang paket ini"
+                  const inquiryTime = formatSystemCardTime(message.created_at, locale)
+
+                  return (
+                    <div key={message.id} className="flex justify-center">
+                      <div className="max-w-[88%] rounded-[18px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                        <div className="flex items-start gap-3">
+                          {activeRoom?.packageCoverImage ? (
+                            <Image
+                              src={activeRoom.packageCoverImage}
+                              alt={activeRoom.packageTitle || packageFallback}
+                              width={56}
+                              height={56}
+                              unoptimized
+                              className="h-14 w-14 rounded-2xl object-cover"
+                            />
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900">{inquiryTitle}</p>
+                            <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || packageFallback}</p>
+                            {inquiryTime ? (
+                              <div className="mt-2">
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                  {inquiryTime}
+                                </span>
+                              </div>
+                            ) : null}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {activeRoom?.packageSlug ? (
+                                <Link
+                                  href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                                  className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                                >
+                                  {viewPackageDetailLabel}
+                                </Link>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
+                if (systemMessage?.type === "booking_linked") {
+                  const bookingCode = systemMessage.bookingCode || activeRoom?.bookingCode || systemMessage.bookingId
+                  const bookingTitle =
+                    locale === "en"
+                      ? "You asked about this booking"
+                      : locale === "zh"
+                        ? "你正在咨询这笔订单"
+                        : "Kamu menanyakan pesanan ini"
+                  const bookingDetailLabel =
+                    locale === "en"
+                      ? "View booking detail"
+                      : locale === "zh"
+                        ? "查看订单详情"
+                        : "Lihat detail booking"
+                  const bookingStatusText =
+                    isCompletedChatBooking(activeRoom || {})
+                      ? completedStatus
+                      : isActiveChatBooking(activeRoom || {})
+                        ? activeStatus
+                        : leadStatus
+                  const paymentBadgeLabel = getPaymentBadgeLabel(activeRoom?.paymentStatus, locale)
+                  const systemTimestamp = formatSystemCardTime(message.created_at, locale)
+
+                  return (
+                    <div key={message.id} className="flex justify-center">
+                      <div className="max-w-[88%] rounded-[18px] border border-orange-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
+                        <div className="flex items-start gap-3">
+                        {activeRoom?.packageCoverImage ? (
+                            <Image
+                              src={activeRoom.packageCoverImage}
+                              alt={activeRoom.packageTitle || packageFallback}
+                              width={56}
+                              height={56}
+                              unoptimized
+                              className="h-14 w-14 rounded-2xl object-cover"
+                            />
+                          ) : null}
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-slate-900">{bookingTitle}</p>
+                            <p className="mt-1 line-clamp-2 font-medium text-slate-700">{activeRoom?.packageTitle || packageFallback}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                {paymentBadgeLabel}
+                              </span>
+                              {systemTimestamp ? (
+                                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+                                  {systemTimestamp}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">{bookingLabel}</p>
+                        <p className="mt-1 font-medium text-slate-900">{bookingCode}</p>
+                        <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {activeRoom?.packageSlug ? (
+                            <Link
+                              href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                              className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                            >
+                              {viewPackageDetailLabel}
+                            </Link>
+                          ) : null}
+                          <Link
+                            href={`/booking/${encodeURIComponent(systemMessage.bookingId)}`}
+                            className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          >
+                            {bookingDetailLabel}
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+
                 const mine = message.sender_id === userId
                 return (
                   <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
