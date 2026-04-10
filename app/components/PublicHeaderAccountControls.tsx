@@ -93,9 +93,11 @@ export default function PublicHeaderAccountControls({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
+    } = supabase.auth.onAuthStateChange((event) => {
       void syncSession()
-      router.refresh()
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        router.refresh()
+      }
     })
 
     return () => {
