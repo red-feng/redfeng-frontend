@@ -147,7 +147,14 @@ export default async function ChatPage({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/login")
+    const nextTarget = bookingId
+      ? `/chat?booking_id=${encodeURIComponent(bookingId)}`
+      : packageId
+        ? `/chat?package_id=${encodeURIComponent(packageId)}`
+        : roomId
+          ? `/chat?room_id=${encodeURIComponent(roomId)}`
+          : "/chat"
+    redirect(`/login?next=${encodeURIComponent(nextTarget)}`)
   }
 
   const { data: merchantMe } = await adminSupabase
