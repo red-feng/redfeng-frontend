@@ -43,6 +43,7 @@ type MerchantChatRealtimeClientProps = {
   userId: string
   initialRooms: MerchantChatRoom[]
   initialActiveRoomId: string
+  initialSelectionWasExplicit: boolean
   initialMessages: MerchantChatMessage[]
   text: {
     customerRooms: string
@@ -143,6 +144,7 @@ export default function MerchantChatRealtimeClient({
   userId,
   initialRooms,
   initialActiveRoomId,
+  initialSelectionWasExplicit,
   initialMessages,
   text: t,
 }: MerchantChatRealtimeClientProps) {
@@ -160,6 +162,7 @@ export default function MerchantChatRealtimeClient({
   const [errorMessage, setErrorMessage] = useState("")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const shouldAutoMarkActiveRoomReadRef = useRef(initialSelectionWasExplicit)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const unreadRoomsCount = useMemo(
@@ -259,6 +262,10 @@ export default function MerchantChatRealtimeClient({
   useEffect(() => {
     if (!activeRoomId) return
     void fetchMessages(activeRoomId)
+    if (!shouldAutoMarkActiveRoomReadRef.current) {
+      shouldAutoMarkActiveRoomReadRef.current = true
+      return
+    }
     void markRoomRead(activeRoomId)
   }, [activeRoomId, fetchMessages, markRoomRead])
 
@@ -440,6 +447,12 @@ export default function MerchantChatRealtimeClient({
     }
   }
 
+  function handleSelectRoom(roomId: string) {
+    shouldAutoMarkActiveRoomReadRef.current = true
+    setActiveRoomId(roomId)
+    void markRoomRead(roomId)
+  }
+
   return (
     <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
       <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
@@ -534,7 +547,7 @@ export default function MerchantChatRealtimeClient({
                         : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
                   }`}
                 >
-                  <button type="button" onClick={() => setActiveRoomId(room.id)} className="block w-full text-left">
+                  <button type="button" onClick={() => handleSelectRoom(room.id)} className="block w-full text-left">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-start gap-3">

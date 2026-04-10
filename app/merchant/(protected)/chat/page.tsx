@@ -374,6 +374,7 @@ export default async function MerchantChatPage({
 
   if (
     activeRoom &&
+    requestedRoomId &&
     activeRoom.last_message_sender_id &&
     activeRoom.last_message_sender_id !== user.id &&
     (!activeRoom.merchant_last_read_at ||
@@ -513,6 +514,7 @@ export default async function MerchantChatPage({
           }
         })}
         initialActiveRoomId={activeRoomId}
+        initialSelectionWasExplicit={Boolean(requestedRoomId)}
         initialMessages={messages}
         text={{
           customerRooms: t.customerRooms,
