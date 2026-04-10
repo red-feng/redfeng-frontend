@@ -39,12 +39,16 @@ export default function PublicHeaderAccountControls({
   const accountLabel = isAuthenticated ? t.account : guestLoginLabel
 
   useEffect(() => {
+    let isMounted = true
+
     const syncSession = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession()
+        data: { user },
+      } = await supabase.auth.getUser()
 
-      if (!session?.user) {
+      if (!isMounted) return
+
+      if (!user) {
         setAccountRole("guest")
         setIsAuthenticated(false)
         return
@@ -53,8 +57,10 @@ export default function PublicHeaderAccountControls({
       const { data: profile } = await supabase
         .from("profiles")
         .select("role")
-        .eq("id", session.user.id)
+        .eq("id", user.id)
         .maybeSingle()
+
+      if (!isMounted) return
 
       const normalizedRole = String(profile?.role || "").trim().toLowerCase()
 
@@ -84,6 +90,18 @@ export default function PublicHeaderAccountControls({
     }
 
     void syncSession()
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      void syncSession()
+      router.refresh()
+    })
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   }, [pathname, redirectSuperadminFromHome, router, supabase])
 
   return (

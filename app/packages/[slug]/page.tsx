@@ -502,7 +502,8 @@ export default async function PaketPage({
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 4)
 
-  let chatHref = `/chat?package_id=${encodeURIComponent(pkg.id)}`
+  const packageChatTarget = `/chat?package_id=${encodeURIComponent(pkg.id)}`
+  let chatHref = user ? packageChatTarget : `/login?next=${encodeURIComponent(packageChatTarget)}`
   let chatBadgeCount = 0
 
   if (user?.email) {
@@ -516,7 +517,10 @@ export default async function PaketPage({
       .maybeSingle()
 
     if (latestBooking?.id) {
-      chatHref = `/chat?booking_id=${encodeURIComponent(latestBooking.id)}`
+      const bookingChatTarget = `/chat?booking_id=${encodeURIComponent(latestBooking.id)}`
+      chatHref = bookingChatTarget
+    } else {
+      chatHref = packageChatTarget
     }
 
     chatBadgeCount = await getCustomerTargetUnreadCount(supabase, {
