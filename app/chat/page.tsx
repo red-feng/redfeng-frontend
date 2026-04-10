@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
@@ -8,6 +9,7 @@ import {
   createSystemChatMessageIfMissing,
   parseChatSystemMessage,
 } from "@/lib/chat/system-messages"
+import { ACTIVE_PORTAL_COOKIE, normalizeActivePortal } from "@/lib/portal-context"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -71,6 +73,7 @@ export default async function ChatPage({
   searchParams: Promise<{ room_id?: string; package_id?: string; booking_id?: string; error?: string }>
 }) {
   const params = await searchParams
+  const cookieStore = await cookies()
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].chat
   const roomId = params.room_id || ""
@@ -150,7 +153,8 @@ export default async function ChatPage({
     .select("id")
     .eq("user_id", user.id)
     .maybeSingle()
-  const isMerchant = !!merchantMe
+  const activePortal = normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value)
+  const isMerchant = activePortal === "merchant" && !!merchantMe
 
   let activeRoomId = roomId
   let activePackage: PackageRow | null = null
