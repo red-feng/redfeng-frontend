@@ -529,7 +529,9 @@ export default function MerchantChatRealtimeClient({
                   className={`rounded-[22px] border px-4 py-4 transition ${
                     room.id === activeRoomId
                       ? "border-orange-200 bg-[linear-gradient(135deg,#fff3e8_0%,#ffffff_100%)] shadow-sm"
-                      : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
+                      : hasUnread
+                        ? "border-rose-200 bg-white shadow-[0_18px_40px_rgba(244,63,94,0.1)] hover:border-rose-300 hover:bg-[#fffdf9]"
+                        : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
                   }`}
                 >
                   <button type="button" onClick={() => setActiveRoomId(room.id)} className="block w-full text-left">
@@ -568,6 +570,12 @@ export default function MerchantChatRealtimeClient({
                           {hasUnread ? <span className="rounded-full bg-orange-600 px-2.5 py-1 text-[10px] font-semibold text-white shadow-sm">{t.newBadge}</span> : null}
                         </div>
                       </div>
+                      {hasUnread ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-semibold text-white shadow-[0_10px_24px_rgba(244,63,94,0.28)]">
+                          <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                          {t.newBadge}
+                        </span>
+                      ) : null}
                     </div>
                     <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
                       {t.packageLabel}: {room.packageTitle || t.packageNotFound}

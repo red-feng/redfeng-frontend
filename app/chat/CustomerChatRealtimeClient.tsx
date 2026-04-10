@@ -455,7 +455,14 @@ export default function CustomerChatRealtimeClient({
                   (!room.customerLastReadAt || (room.lastMessageAt || "") > room.customerLastReadAt)
 
                 return (
-                  <div key={room.id} className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-slate-300">
+                  <div
+                    key={room.id}
+                    className={`rounded-[20px] border bg-white px-4 py-3 text-sm text-slate-700 transition hover:border-slate-300 ${
+                      hasUnread
+                        ? "border-rose-200 shadow-[0_16px_36px_rgba(244,63,94,0.12)]"
+                        : "border-slate-200"
+                    }`}
+                  >
                     <button
                       type="button"
                       onClick={() => setActiveRoomId(room.id)}
@@ -518,6 +525,12 @@ export default function CustomerChatRealtimeClient({
                             </p>
                           ) : null}
                         </div>
+                        {hasUnread ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-semibold text-white shadow-[0_10px_24px_rgba(244,63,94,0.28)]">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                            {newBadge}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="mt-2 text-[11px] text-slate-400">{room.updatedAt || "-"}</p>
                     </button>
