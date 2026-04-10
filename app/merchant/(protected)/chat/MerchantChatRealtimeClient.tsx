@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { isImageAttachment } from "@/lib/chat/attachments"
+import { shouldMarkRoomReadOnActivation } from "@/lib/chat/auth-flow-policy.mjs"
 import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
@@ -262,12 +263,17 @@ export default function MerchantChatRealtimeClient({
   useEffect(() => {
     if (!activeRoomId) return
     void fetchMessages(activeRoomId)
-    if (!shouldAutoMarkActiveRoomReadRef.current) {
+    if (
+      !shouldMarkRoomReadOnActivation({
+        initialSelectionWasExplicit,
+        hasAlreadySkippedInitialAutoRead: shouldAutoMarkActiveRoomReadRef.current,
+      })
+    ) {
       shouldAutoMarkActiveRoomReadRef.current = true
       return
     }
     void markRoomRead(activeRoomId)
-  }, [activeRoomId, fetchMessages, markRoomRead])
+  }, [activeRoomId, fetchMessages, initialSelectionWasExplicit, markRoomRead])
 
   useEffect(() => {
     if (!threadRef.current) return
@@ -348,7 +354,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeRoomId, fetchRoomMeta, markRoomRead, supabase, userId])
+  }, [activeRoomId, fetchRoomMeta, initialSelectionWasExplicit, markRoomRead, supabase, userId])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()

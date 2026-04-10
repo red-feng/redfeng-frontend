@@ -1,5 +1,10 @@
 import assert from "node:assert/strict"
 import {
+  buildChatLoginNextTarget,
+  shouldMarkRoomReadOnActivation,
+  shouldRefreshPublicAuthShell,
+} from "../lib/chat/auth-flow-policy.mjs"
+import {
   decideBookingRoomResolution,
   decidePackageRoomResolution,
   shouldUseMerchantChatPortal,
@@ -90,6 +95,65 @@ runCase("merchant portal flag without merchant record stays false", () => {
       hasMerchantRecord: false,
     }),
     false,
+  )
+})
+
+runCase("chat login redirect prefers booking target", () => {
+  assert.equal(
+    buildChatLoginNextTarget({
+      bookingId: "booking-123",
+      packageId: "pkg-123",
+      roomId: "room-123",
+    }),
+    "/chat?booking_id=booking-123",
+  )
+})
+
+runCase("chat login redirect falls back to package target", () => {
+  assert.equal(
+    buildChatLoginNextTarget({
+      packageId: "pkg-123",
+      roomId: "room-123",
+    }),
+    "/chat?package_id=pkg-123",
+  )
+})
+
+runCase("public header refreshes only on meaningful auth events", () => {
+  assert.equal(shouldRefreshPublicAuthShell("SIGNED_IN"), true)
+  assert.equal(shouldRefreshPublicAuthShell("SIGNED_OUT"), true)
+  assert.equal(shouldRefreshPublicAuthShell("USER_UPDATED"), true)
+  assert.equal(shouldRefreshPublicAuthShell("TOKEN_REFRESHED"), false)
+  assert.equal(shouldRefreshPublicAuthShell("INITIAL_SESSION"), false)
+})
+
+runCase("merchant inbox does not auto-read first default room selection", () => {
+  assert.equal(
+    shouldMarkRoomReadOnActivation({
+      initialSelectionWasExplicit: false,
+      hasAlreadySkippedInitialAutoRead: false,
+    }),
+    false,
+  )
+})
+
+runCase("merchant inbox reads room after explicit selection", () => {
+  assert.equal(
+    shouldMarkRoomReadOnActivation({
+      initialSelectionWasExplicit: true,
+      hasAlreadySkippedInitialAutoRead: false,
+    }),
+    true,
+  )
+})
+
+runCase("merchant inbox reads room after initial auto-skip has passed", () => {
+  assert.equal(
+    shouldMarkRoomReadOnActivation({
+      initialSelectionWasExplicit: false,
+      hasAlreadySkippedInitialAutoRead: true,
+    }),
+    true,
   )
 })
 

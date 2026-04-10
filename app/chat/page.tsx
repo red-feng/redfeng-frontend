@@ -10,6 +10,7 @@ import {
   ensureCustomerBookingChatRoom,
   ensureCustomerPackageChatRoom,
 } from "@/lib/chat/customer-room"
+import { buildChatLoginNextTarget } from "@/lib/chat/auth-flow-policy.mjs"
 import { shouldUseMerchantChatPortal } from "@/lib/chat/customer-room-policy.mjs"
 import { ACTIVE_PORTAL_COOKIE, normalizeActivePortal } from "@/lib/portal-context"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
@@ -147,13 +148,7 @@ export default async function ChatPage({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    const nextTarget = bookingId
-      ? `/chat?booking_id=${encodeURIComponent(bookingId)}`
-      : packageId
-        ? `/chat?package_id=${encodeURIComponent(packageId)}`
-        : roomId
-          ? `/chat?room_id=${encodeURIComponent(roomId)}`
-          : "/chat"
+    const nextTarget = buildChatLoginNextTarget({ bookingId, packageId, roomId })
     redirect(`/login?next=${encodeURIComponent(nextTarget)}`)
   }
 

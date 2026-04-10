@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { shouldRefreshPublicAuthShell } from "@/lib/chat/auth-flow-policy.mjs"
 import SignOutButton from "@/app/components/SignOutButton"
 
 type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
@@ -95,7 +96,7 @@ export default function PublicHeaderAccountControls({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       void syncSession()
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+      if (shouldRefreshPublicAuthShell(event)) {
         router.refresh()
       }
     })
