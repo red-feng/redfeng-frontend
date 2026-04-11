@@ -284,11 +284,11 @@ async function sendMerchantDecisionEmail({
         "Sejak notifikasi ini diterbitkan, akun merchant tidak lagi dapat digunakan untuk mengakses area merchant maupun melanjutkan operasional di platform Red Feng. Jika Anda memerlukan penjelasan lebih lanjut, silakan hubungi tim Red Feng melalui kanal komunikasi resmi.",
       rejectedSubject: "RedFeng Merchant: Pengajuan Perlu Diperbaiki",
       rejectedIntro:
-        "Pengajuan merchant Anda belum dapat kami setujui pada tahap review saat ini dan masih memerlukan perbaikan.",
+        "Pengajuan merchant Anda belum disetujui oleh operations manager pada review final dan masih memerlukan perbaikan.",
       rejectedStatus: "Rejected / Revision Required",
-      rejectedReasonLabel: "Catatan admin",
+      rejectedReasonLabel: "Alasan operations manager",
       rejectedGuidance:
-        "Silakan masuk kembali ke akun merchant Anda, lakukan perbaikan sesuai catatan admin, lalu ajukan ulang untuk proses review berikutnya.",
+        "Silakan masuk kembali ke akun merchant Anda, lakukan perbaikan sesuai alasan operations manager, lalu ajukan ulang untuk proses review berikutnya.",
       rejectedDeadlineLabel: "Batas waktu revisi",
       accountSummary: "Ringkasan akun",
       merchantLabel: "Merchant",
@@ -324,11 +324,11 @@ async function sendMerchantDecisionEmail({
         "From the time this notice is issued, the merchant account can no longer be used to access the merchant area or continue operations on the Red Feng platform. If you require further clarification, please contact the Red Feng team through the official communication channel.",
       rejectedSubject: "RedFeng Merchant: Submission Requires Revision",
       rejectedIntro:
-        "Your merchant submission cannot be approved at this review stage and still requires revision.",
+        "Your merchant submission was not approved by the operations manager in the final review and still requires revision.",
       rejectedStatus: "Rejected / Revision Required",
-      rejectedReasonLabel: "Admin note",
+      rejectedReasonLabel: "Operations manager reason",
       rejectedGuidance:
-        "Please log back into your merchant account, make the necessary revisions based on the admin note, and submit it again for the next review process.",
+        "Please log back into your merchant account, make the necessary revisions based on the operations manager reason, and submit it again for the next review process.",
       rejectedDeadlineLabel: "Revision deadline",
       accountSummary: "Account summary",
       merchantLabel: "Merchant",
@@ -361,11 +361,11 @@ async function sendMerchantDecisionEmail({
       deletedGuidance:
         "自本通知发出起，该商家账号将无法继续访问商家区域，也无法在 Red Feng 平台继续开展业务。如需进一步说明，请通过 Red Feng 官方沟通渠道联系我们。",
       rejectedSubject: "RedFeng Merchant：申请需修改后重新提交",
-      rejectedIntro: "您的商家申请在本轮审核中暂未通过，仍需根据要求进行修改。",
+      rejectedIntro: "您的商家申请未通过运营经理的最终审核，仍需根据要求进行修改。",
       rejectedStatus: "Rejected / Revision Required",
-      rejectedReasonLabel: "管理员说明",
+      rejectedReasonLabel: "运营经理说明",
       rejectedGuidance:
-        "请重新登录商家账号，按照管理员说明完成修改后，再次提交进入下一轮审核。",
+        "请重新登录商家账号，按照运营经理说明完成修改后，再次提交进入下一轮审核。",
       rejectedDeadlineLabel: "修改截止时间",
       accountSummary: "账号摘要",
       merchantLabel: "商家",

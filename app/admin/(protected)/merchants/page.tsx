@@ -138,9 +138,9 @@ function getStatusBadge(status: string | null) {
 
 function getStatusLabel(status: string | null) {
   if (status === "approved") return "Aktif"
-  if (status === "awaiting_manager_approval") return "Menunggu approval manager"
-  if (status === "awaiting_manager_rejection") return "Menunggu keputusan reject manager"
-  if (status === "rejected") return "Revisi diminta manager"
+  if (status === "awaiting_manager_approval") return "Admin sudah ajukan, menunggu approval manager"
+  if (status === "awaiting_manager_rejection") return "Admin sudah ajukan, menunggu keputusan reject manager"
+  if (status === "rejected") return "Ditolak manager, menunggu revisi merchant"
   if (status === "inactive") return "Nonaktif sementara"
   if (status === "deleted") return "Dihapus"
   return status || "Tidak diketahui"
@@ -396,11 +396,11 @@ export default async function AdminMerchantsPage({
             </div>
             <div className="grid gap-3 rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Pending queue</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Admin review queue</p>
                 <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{pending.length}</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Manager review</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Manager decision queue</p>
                 <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{pendingMerchantReviewRequests.length}</p>
               </div>
               <div>
@@ -507,9 +507,9 @@ export default async function AdminMerchantsPage({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-700">Manager approval queue</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Keputusan final merchant oleh operations manager</h2>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">Queue keputusan final operations manager</h2>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Queue ini menampilkan merchant yang sudah direview admin dan menunggu keputusan final approve atau reject dari operations manager.
+                  Queue ini menampilkan merchant yang sudah diajukan admin dan sekarang menunggu keputusan final approve atau reject dari operations manager.
                 </p>
               </div>
               <div className="rounded-[18px] border border-emerald-200 bg-white/80 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -837,10 +837,10 @@ export default async function AdminMerchantsPage({
                         <>
                           <div className="rounded-[24px] border border-amber-200 bg-amber-50/80 p-5">
                             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-700">
-                              Sudah diajukan ke manager
+                              Sudah diajukan admin ke manager
                             </p>
                             <p className="mt-3 text-sm leading-7 text-slate-700">
-                              Merchant ini sedang menunggu keputusan final operations manager. Admin tidak bisa mengubah keputusan sampai request selesai diproses.
+                              Merchant ini sudah diajukan admin dan sedang menunggu keputusan final operations manager. Admin tidak bisa mengubah keputusan sampai request selesai diproses.
                             </p>
                             <div className="mt-4 rounded-[18px] border border-amber-200 bg-white p-4 text-sm leading-7 text-slate-700">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Rekomendasi admin</p>
@@ -867,7 +867,7 @@ export default async function AdminMerchantsPage({
                         </div>
                       ) : (
                         <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                          Merchant ini hanya bisa diajukan ke operations manager oleh admin operasional atau superadmin.
+                          Merchant ini hanya bisa diajukan ke operations manager oleh admin operasional atau superadmin sebagai pengaju review.
                         </div>
                       )}
                     </div>
@@ -935,12 +935,12 @@ export default async function AdminMerchantsPage({
                       </div>
                       {merchant.rejection_reason ? (
                         <div className="rounded-[18px] border border-[#efe3d5] bg-[#fff7ef] px-4 py-3 text-sm text-slate-600">
-                          {merchant.verification_status === "rejected" ? "Alasan operations manager" : "Catatan review"}: {merchant.rejection_reason}
+                          {merchant.verification_status === "rejected" ? "Alasan penolakan final dari operations manager" : "Catatan review"}: {merchant.rejection_reason}
                         </div>
                       ) : null}
                       {merchant.verification_status === "rejected" && merchant.revision_deadline_at ? (
                         <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                          Batas revisi merchant: {new Date(merchant.revision_deadline_at).toLocaleString("id-ID")}
+                          Merchant punya waktu revisi 7 hari sampai: {new Date(merchant.revision_deadline_at).toLocaleString("id-ID")}
                         </div>
                       ) : null}
 

@@ -13,12 +13,12 @@ const COPY = {
   approve: {
     eyebrow: "Manager Approval",
     title: "Ajukan approve ke manager",
-    description: "Kirim merchant ini ke operations manager untuk persetujuan final setelah review admin selesai.",
+    description: "Setelah review admin selesai, ajukan merchant ini ke operations manager untuk keputusan final approve.",
     noteLabel: "Catatan admin untuk manager",
     placeholder: "Catatan tambahan untuk operations manager, misalnya ringkasan hasil review atau hal penting yang sudah dicek...",
     buttonLabel: "Ajukan approve",
     modalTitle: "Ajukan merchant untuk approval final",
-    modalDescription: "Admin tidak lagi approve langsung. Kirim rekomendasi ini ke operations manager untuk keputusan final.",
+    modalDescription: "Admin tidak lagi approve langsung. Kirim rekomendasi review ini ke operations manager untuk keputusan final.",
     cardClass: "border-emerald-200 bg-emerald-50/80",
     textareaClass: "border-emerald-200 focus:border-emerald-400 focus:ring-emerald-100",
     buttonClass:
@@ -30,12 +30,12 @@ const COPY = {
   reject: {
     eyebrow: "Manager Rejection",
     title: "Ajukan reject ke manager",
-    description: "Gunakan jika menurut admin merchant perlu ditolak. Operations manager tetap memberi keputusan final dan alasan resmi.",
+    description: "Gunakan jika menurut admin merchant perlu ditolak. Operations manager tetap memberi keputusan final dan alasan resmi ke merchant.",
     noteLabel: "Catatan admin untuk manager",
     placeholder: "Tuliskan alasan dan konteks review yang perlu dibaca operations manager...",
     buttonLabel: "Ajukan reject",
     modalTitle: "Ajukan merchant untuk keputusan reject final",
-    modalDescription: "Operations manager akan memutuskan final dan, jika ditolak, alasan resminya akan dikirim ke merchant dan admin.",
+    modalDescription: "Operations manager akan memberi keputusan final. Jika ditolak, alasan resminya akan dikirim ke merchant dan admin, lalu merchant mendapat waktu revisi 7 hari.",
     cardClass: "border-rose-200 bg-rose-50/80",
     textareaClass: "border-rose-200 focus:border-rose-400 focus:ring-rose-100",
     buttonClass:
