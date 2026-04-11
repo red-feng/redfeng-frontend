@@ -3,6 +3,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
+import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { formatMerchantLocationLabel } from "@/lib/location-labels"
@@ -230,6 +231,11 @@ export default async function MerchantLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <MerchantNavSeenTracker />
+      <RoleAutoRefresh
+        intervalMs={3000}
+        realtimeTables={["package_chat_rooms", "package_chat_messages"]}
+        realtimeDelayMs={220}
+      />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1480px] px-4 py-4 sm:px-6 md:px-8 xl:px-10">
           <div className="flex flex-col gap-4">

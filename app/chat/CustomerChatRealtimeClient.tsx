@@ -72,6 +72,8 @@ type CustomerChatMessage = {
   created_at: string | null
 }
 
+type RealtimeStatus = "connecting" | "live" | "fallback"
+
 type CustomerChatRealtimeClientProps = {
   locale: Locale
   userId: string
@@ -161,6 +163,7 @@ export default function CustomerChatRealtimeClient({
   const [submitting, setSubmitting] = useState(false)
   const [hidingRoomId, setHidingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
 
@@ -308,12 +311,38 @@ export default function CustomerChatRealtimeClient({
       },
     )
 
-    channel.subscribe()
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setRealtimeStatus("live")
+        return
+      }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        setRealtimeStatus("fallback")
+        return
+      }
+      setRealtimeStatus("connecting")
+    })
 
     return () => {
       void supabase.removeChannel(channel)
     }
   }, [activeRoomId, fetchRoomMeta, markRoomRead, supabase, userId])
+
+  const realtimeBadge =
+    realtimeStatus === "live"
+      ? {
+          label: locale === "en" ? "Live" : locale === "zh" ? "实时连接" : "Live",
+          className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        }
+      : realtimeStatus === "fallback"
+        ? {
+            label: locale === "en" ? "Fallback Sync" : locale === "zh" ? "备用同步" : "Fallback sync",
+            className: "border-orange-200 bg-orange-50 text-orange-700",
+          }
+        : {
+            label: locale === "en" ? "Connecting" : locale === "zh" ? "连接中" : "Menghubungkan",
+            className: "border-amber-200 bg-amber-50 text-amber-700",
+          }
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -443,7 +472,12 @@ export default function CustomerChatRealtimeClient({
       <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4 lg:flex lg:max-h-[calc(56vh+12rem)] lg:flex-col lg:overflow-hidden">
-            <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${realtimeBadge.className}`}>
+                {realtimeBadge.label}
+              </span>
+            </div>
             <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
               {rooms.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noChats}</div> : null}
               {rooms.map((room) => {
