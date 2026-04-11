@@ -5,6 +5,7 @@ import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
+import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
 import { ADMIN_NAV_SECTION_TO_COLUMN } from "@/lib/admin-nav-seen"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 
@@ -182,6 +183,7 @@ export default async function AdminProtectedLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
       <AdminNavSeenTracker />
+      <SuperadminAdminRouteSeenBridge enabled={profile.role === "superadmin"} />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">
           <div className="flex flex-col gap-4">

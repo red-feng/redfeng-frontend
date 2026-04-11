@@ -1,10 +1,23 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
+import { FINANCE_NAV_SECTION_TO_COLUMN } from "@/lib/finance-nav-seen"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getRoleLabel, isFinancePortalRole } from "@/lib/internal-roles"
+
+function normalizeStatus(value: string | null) {
+  return String(value || "").trim().toLowerCase()
+}
+
+function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
+  if (!timestamp) return false
+  if (!seenAt) return true
+  return timestamp > seenAt
+}
 
 export default async function FinanceProtectedLayout({
   children,
@@ -12,6 +25,7 @@ export default async function FinanceProtectedLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
 
   const {
     data: { user },
@@ -38,22 +52,58 @@ export default async function FinanceProtectedLayout({
   const isFinanceManager = profile.role === "finance_manager"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
+  const [refundsResult, payoutsResult, seenStateResult] = await Promise.all([
+    adminSupabase
+      .from("refund_requests")
+      .select("id, status, created_at, updated_at"),
+    adminSupabase
+      .from("payout_requests")
+      .select("id, status, requested_at, processed_at, updated_at"),
+    adminSupabase
+      .from("finance_nav_seen_states")
+      .select("seen_refunds_at, seen_payouts_at")
+      .eq("finance_user_id", user.id)
+      .maybeSingle(),
+  ])
+
+  const seenState =
+    (seenStateResult.data as Partial<Record<(typeof FINANCE_NAV_SECTION_TO_COLUMN)[keyof typeof FINANCE_NAV_SECTION_TO_COLUMN], string | null>> | null) ||
+    null
+  const seenRefundsAt = seenState?.seen_refunds_at || undefined
+  const seenPayoutsAt = seenState?.seen_payouts_at || undefined
+
+  const refundRows =
+    ((refundsResult.data as Array<{ id: string; status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
+      (refund) =>
+        ["refund_requested", "refund_under_review", "refund_approved", "refund_processing_midtrans", "refund_processing_bank"].includes(
+          normalizeStatus(refund.status),
+        ),
+    )
+  const payoutRows =
+    ((payoutsResult.data as Array<{ id: string; status: string | null; requested_at: string | null; processed_at: string | null; updated_at: string | null }> | null) || []).filter(
+      (payout) => ["pending", "approved", "processing"].includes(normalizeStatus(payout.status)),
+    )
+
+  const refundBadgeCount = refundRows.filter((refund) => isNewerThan(refund.updated_at || refund.created_at, seenRefundsAt)).length
+  const payoutBadgeCount = payoutRows.filter((payout) => isNewerThan(payout.updated_at || payout.requested_at || payout.processed_at, seenPayoutsAt)).length
+
   const financeNav = isFinanceManager
       ? [
           { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/refunds", label: "Refund Queue" },
-          { href: "/finance/payouts", label: "Payout Queue" },
+          { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
+          { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
           { href: "/finance/settings", label: "Finance Settings" },
           { href: "/finance/team-accounts", label: "Team Accounts" },
         ]
       : [
           { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/refunds", label: "Refund Queue" },
-          { href: "/finance/payouts", label: "Payout Queue" },
+          { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
+          { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
         ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
+      <FinanceNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-4">
@@ -92,9 +142,14 @@ export default async function FinanceProtectedLayout({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                   >
                     {item.label}
+                    {Number(item.badgeCount || 0) > 0 ? (
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
+                        {Number(item.badgeCount) > 99 ? "99+" : Number(item.badgeCount)}
+                      </span>
+                    ) : null}
                   </Link>
                 ))}
               </div>
