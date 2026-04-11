@@ -18,7 +18,7 @@ export default async function CustomerSettingsPage() {
       currencyTitle: "Mata uang",
       currencyBody: "Harga live paket tetap mengikuti konteks customer dan locale aktif. Pengaturan currency terpisah bisa ditambahkan setelah modul multi-currency customer dibuka penuh.",
       currencyValue: "IDR",
-      accountBack: "Kembali ke dashboard",
+      accountBack: "Kembali ke akun",
       helperTitle: "Kenapa diletakkan di sini?",
       helperBody: "Supaya homepage mobile tetap fokus ke pencarian dan paket trending, sementara pengaturan bahasa tetap mudah ditemukan dari menu Akun seperti pola OTA/mobile commerce.",
     },
@@ -34,7 +34,7 @@ export default async function CustomerSettingsPage() {
       currencyTitle: "Currency",
       currencyBody: "Live package prices still follow customer context and the active locale. A dedicated customer multi-currency setting can be added later.",
       currencyValue: "IDR",
-      accountBack: "Back to dashboard",
+      accountBack: "Back to account",
       helperTitle: "Why is it here?",
       helperBody: "This keeps the mobile homepage focused on discovery and trending packages while language settings remain easy to find from the Account area, just like OTA apps.",
     },
@@ -50,7 +50,7 @@ export default async function CustomerSettingsPage() {
       currencyTitle: "货币",
       currencyBody: "套餐实时价格仍会根据用户上下文和当前语言环境显示。后续可再加入独立的客户多货币设置。",
       currencyValue: "IDR",
-      accountBack: "返回仪表板",
+      accountBack: "返回账户",
       helperTitle: "为什么放在这里？",
       helperBody: "这样首页可以继续专注在搜索和热门套餐，而语言设置依然能像 OTA 应用一样从账户区域轻松找到。",
     },
@@ -78,7 +78,7 @@ export default async function CustomerSettingsPage() {
               <p className="mt-3 text-sm leading-7 text-orange-50/92 sm:text-base">{copy.body}</p>
             </div>
             <Link
-              href="/customer/dashboard"
+              href="/customer"
               className="inline-flex items-center justify-center rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
               {copy.accountBack}

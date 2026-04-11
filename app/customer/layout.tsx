@@ -10,6 +10,7 @@ import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActive
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
+import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
 
 export default async function CustomerLayout({
   children,
@@ -58,6 +59,18 @@ export default async function CustomerLayout({
   const languageLabel = locale === "en" ? "Language" : locale === "zh" ? "语言" : "Bahasa"
   const chatLabel = locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat"
   const settingsLabel = locale === "en" ? "Settings" : locale === "zh" ? "设置" : "Pengaturan"
+  const accountLabel = locale === "en" ? "Account" : locale === "zh" ? "账户" : "Akun"
+  const bookingsLabel = locale === "en" ? "Bookings" : locale === "zh" ? "订单" : "Booking"
+  const backToSiteLabel = locale === "en" ? "Back to site" : locale === "zh" ? "返回网站" : "Kembali ke Situs"
+  const customerSpaceLabel = locale === "en" ? "Customer Space" : locale === "zh" ? "客户空间" : "Customer Space"
+  const customerHubTitle =
+    locale === "en" ? "RedFeng customer hub" : locale === "zh" ? "RedFeng 客户中心" : "Hub customer RedFeng"
+  const customerHubBody =
+    locale === "en"
+      ? "Account, bookings, chat, and preferences in one place."
+      : locale === "zh"
+        ? "账户、订单、聊天和偏好集中在一个地方。"
+        : "Akun, booking, chat, dan preferensi dalam satu tempat."
   const languageOptions = [
     { value: "id" as const, label: "Bahasa Indonesia" },
     { value: "en" as const, label: "English" },
@@ -80,73 +93,60 @@ export default async function CustomerLayout({
       if (!room.last_message_at) return false
       if (!room.customer_last_read_at) return true
       return room.last_message_at > room.customer_last_read_at
-    }).length
+      }).length
+
+  const navItems = [
+    { href: "/customer", label: accountLabel },
+    { href: "/customer/dashboard", label: bookingsLabel },
+    { href: "/customer/settings", label: settingsLabel },
+    { href: "/chat", label: chatLabel, badgeCount: customerChatBadgeCount },
+  ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:px-10 md:py-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/customer/dashboard" className="inline-flex items-center">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:px-10 md:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <Link href="/customer" className="inline-flex items-center">
               <Image
                 src="/logo-redfeng.png"
                 alt="RedFeng"
                 width={220}
                 height={64}
                 priority
-                className="h-11 w-auto sm:h-12 md:h-14 lg:h-16"
+                className="h-10 w-auto sm:h-11 md:h-12 lg:h-14"
               />
             </Link>
             <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
-            <div className="hidden lg:block">
+            <div className="min-w-0">
               <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
-                Customer Space
+                {customerSpaceLabel}
               </p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">Dashboard customer Red Feng</p>
-              <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">{customerCode}</p>
-              <p className="text-xs text-slate-500">Area booking, pembayaran, dan status perjalanan</p>
+              <p className="mt-2 truncate text-sm font-semibold text-slate-950">{customerHubTitle}</p>
+              <p className="mt-1 truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">{customerCode}</p>
+              <p className="hidden text-xs text-slate-500 lg:block">{customerHubBody}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <MerchantLanguageSwitcher
               locale={locale}
               label={languageLabel}
               options={languageOptions}
             />
             <Link
-              href="/customer/dashboard"
-              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-            >
-              Dashboard Customer
-            </Link>
-            <Link
-              href="/customer/settings"
-              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-            >
-              {settingsLabel}
-            </Link>
-            <Link
-              href="/chat"
-              className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-            >
-              <span>{chatLabel}</span>
-              {customerChatBadgeCount > 0 ? (
-                <span className="rounded-full bg-orange-600 px-2 py-0.5 text-[11px] font-semibold text-white">
-                  {customerChatBadgeCount}
-                </span>
-              ) : null}
-            </Link>
-            <Link
               href="https://redfeng.co/"
-              className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+              className="hidden rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600 lg:inline-flex"
             >
-              Kembali ke Situs
+              {backToSiteLabel}
             </Link>
             <SignOutButton
               redirectTo="https://app.redfeng.co/login"
-              className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 sm:px-4"
             />
           </div>
+          </div>
+          <CustomerHeaderNav items={navItems} />
         </div>
       </header>
       <div className="mx-auto w-full max-w-7xl">{children}</div>

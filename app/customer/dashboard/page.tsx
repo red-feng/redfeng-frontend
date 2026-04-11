@@ -717,26 +717,26 @@ export default async function CustomerDashboardPage() {
   ]
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-6 py-8 md:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <section className="overflow-hidden rounded-[36px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-8 py-9 text-white shadow-[0_36px_110px_rgba(146,64,14,0.18)] sm:px-10 lg:px-12">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8">
+        <section className="overflow-hidden rounded-[30px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_34%,#f97316_68%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_90px_rgba(146,64,14,0.18)] sm:rounded-[36px] sm:px-8 sm:py-9 sm:shadow-[0_36px_110px_rgba(146,64,14,0.18)] md:px-10 lg:px-12">
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
             <div>
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 {t.heroBadge}
               </span>
-              <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
+              <h1 className="mt-4 text-[30px] font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 {t.heroTitle}
               </h1>
-              <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/92">
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-orange-50/92 sm:mt-4 sm:text-base sm:leading-8">
                 {t.heroBody}
               </p>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:mt-8 sm:grid-cols-3 sm:gap-4">
                 {quickSignals.map((signal) => (
-                  <div key={signal.label} className="rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur">
+                  <div key={signal.label} className="rounded-[22px] border border-white/18 bg-white/10 p-4 backdrop-blur sm:rounded-[24px] sm:p-5">
                     <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/85">{signal.label}</p>
-                    <p className="mt-3 text-3xl font-semibold text-white">{signal.value}</p>
+                    <p className="mt-3 text-[28px] font-semibold text-white sm:text-3xl">{signal.value}</p>
                     <p className="mt-3 text-sm leading-6 text-orange-50/85">{signal.note}</p>
                   </div>
                 ))}
@@ -744,7 +744,7 @@ export default async function CustomerDashboardPage() {
             </div>
 
             <div className="grid gap-4">
-              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+              <div className="rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur sm:rounded-[28px] sm:p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.travelSnapshot}</p>
                 <p className="mt-4 text-3xl font-semibold text-white">{customerBookings.length}</p>
                 <p className="mt-2 text-sm leading-7 text-orange-50/85">
@@ -755,7 +755,7 @@ export default async function CustomerDashboardPage() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-white/18 bg-white/10 p-6 backdrop-blur">
+              <div className="rounded-[24px] border border-white/18 bg-white/10 p-5 backdrop-blur sm:rounded-[28px] sm:p-6">
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.quickActions}</p>
                 <div className="mt-5 grid gap-3">
                   <Link
@@ -776,16 +776,16 @@ export default async function CustomerDashboardPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-4">
           {summaryCards.map((card) => (
             <article
               key={card.label}
-              className="rounded-[28px] border border-[#f0ddc7] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]"
+              className="rounded-[24px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:px-5 sm:py-5"
             >
               <div className={`h-2 w-20 rounded-full bg-gradient-to-r ${card.tone}`} />
               <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{card.label}</p>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{card.value}</p>
-              <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
+              <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{card.value}</p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-500 sm:text-xs sm:leading-6">{card.note}</p>
             </article>
           ))}
         </section>

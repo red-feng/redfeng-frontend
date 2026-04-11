@@ -66,7 +66,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
       ),
     },
     {
-      href: "/customer/dashboard",
+      href: "/customer",
       label: copy.account,
       accent: "from-[#22c55e] to-[#84cc16]",
       icon: (
