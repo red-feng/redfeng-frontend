@@ -76,7 +76,6 @@ export default async function SuperadminProtectedLayout({
   const seenOpsAccountsAt = seenState?.seen_ops_accounts_at || undefined
   const seenFinanceAccountsAt = seenState?.seen_finance_accounts_at || undefined
   const seenSuperadminAccountsAt = seenState?.seen_superadmin_accounts_at || undefined
-  const seenBookingsAt = seenState?.seen_bookings_at || undefined
   const seenAuditLogAt = seenState?.seen_audit_log_at || undefined
 
   const financeReadyRows =
@@ -105,7 +104,7 @@ export default async function SuperadminProtectedLayout({
     const scope = String(log.metadata?.scope || "").trim().toLowerCase()
     return scope === "superadmin_accounts" && isNewerThan(log.created_at, seenSuperadminAccountsAt)
   }).length
-  const bookingsBadgeCount = financeReadyRows.filter((booking) => isNewerThan(booking.updated_at || booking.created_at, seenBookingsAt)).length
+  const bookingsBadgeCount = financeReadyRows.length
   const auditLogBadgeCount = auditLogs.filter((log) => isNewerThan(log.created_at, seenAuditLogAt)).length
 
   const navItems = [

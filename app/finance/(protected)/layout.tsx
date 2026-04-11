@@ -2,7 +2,6 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
-import { FINANCE_NAV_SECTION_TO_COLUMN } from "@/lib/finance-nav-seen"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -11,12 +10,6 @@ import { getRoleLabel, isFinancePortalRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
   return String(value || "").trim().toLowerCase()
-}
-
-function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
-  if (!timestamp) return false
-  if (!seenAt) return true
-  return timestamp > seenAt
 }
 
 export default async function FinanceProtectedLayout({
@@ -52,25 +45,14 @@ export default async function FinanceProtectedLayout({
   const isFinanceManager = profile.role === "finance_manager"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
-  const [refundsResult, payoutsResult, seenStateResult] = await Promise.all([
+  const [refundsResult, payoutsResult] = await Promise.all([
     adminSupabase
       .from("refund_requests")
       .select("id, status, created_at, updated_at"),
     adminSupabase
       .from("payout_requests")
       .select("id, status, requested_at, processed_at, updated_at"),
-    adminSupabase
-      .from("finance_nav_seen_states")
-      .select("seen_refunds_at, seen_payouts_at")
-      .eq("finance_user_id", user.id)
-      .maybeSingle(),
   ])
-
-  const seenState =
-    (seenStateResult.data as Partial<Record<(typeof FINANCE_NAV_SECTION_TO_COLUMN)[keyof typeof FINANCE_NAV_SECTION_TO_COLUMN], string | null>> | null) ||
-    null
-  const seenRefundsAt = seenState?.seen_refunds_at || undefined
-  const seenPayoutsAt = seenState?.seen_payouts_at || undefined
 
   const refundRows =
     ((refundsResult.data as Array<{ id: string; status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
@@ -84,8 +66,8 @@ export default async function FinanceProtectedLayout({
       (payout) => ["pending", "approved", "processing"].includes(normalizeStatus(payout.status)),
     )
 
-  const refundBadgeCount = refundRows.filter((refund) => isNewerThan(refund.updated_at || refund.created_at, seenRefundsAt)).length
-  const payoutBadgeCount = payoutRows.filter((payout) => isNewerThan(payout.updated_at || payout.requested_at || payout.processed_at, seenPayoutsAt)).length
+  const refundBadgeCount = refundRows.length
+  const payoutBadgeCount = payoutRows.length
 
   const financeNav = isFinanceManager
       ? [

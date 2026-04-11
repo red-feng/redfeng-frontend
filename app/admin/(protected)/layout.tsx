@@ -6,17 +6,10 @@ import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
 import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
-import { ADMIN_NAV_SECTION_TO_COLUMN } from "@/lib/admin-nav-seen"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
   return String(value || "").trim().toLowerCase()
-}
-
-function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
-  if (!timestamp) return false
-  if (!seenAt) return true
-  return timestamp > seenAt
 }
 
 export default async function AdminProtectedLayout({
@@ -57,7 +50,7 @@ export default async function AdminProtectedLayout({
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
 
-  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, seenStateResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id, created_at")
@@ -72,19 +65,7 @@ export default async function AdminProtectedLayout({
       .from("merchant_deletion_requests")
       .select("id, created_at")
       .eq("status", "pending"),
-    adminSupabase
-      .from("admin_nav_seen_states")
-      .select("seen_merchants_at, seen_packages_at, seen_bookings_at")
-      .eq("admin_user_id", user.id)
-      .maybeSingle(),
   ])
-
-  const seenState =
-    (seenStateResult.data as Partial<Record<(typeof ADMIN_NAV_SECTION_TO_COLUMN)[keyof typeof ADMIN_NAV_SECTION_TO_COLUMN], string | null>> | null) ||
-    null
-  const seenMerchantsAt = seenState?.seen_merchants_at || undefined
-  const seenPackagesAt = seenState?.seen_packages_at || undefined
-  const seenBookingsAt = seenState?.seen_bookings_at || undefined
 
   const pendingMerchantRows =
     (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
@@ -99,12 +80,13 @@ export default async function AdminProtectedLayout({
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
     )
 
-  const pendingMerchantsBadgeCount = pendingMerchantRows.filter((merchant) => isNewerThan(merchant.created_at, seenMerchantsAt)).length
-  const pendingMerchantDeletionBadgeCount = pendingMerchantDeletionRows.filter((request) =>
-    isNewerThan(request.created_at, seenMerchantsAt),
-  ).length
-  const pendingPackagesBadgeCount = pendingPackageRows.filter((pkg) => isNewerThan(pkg.updated_at, seenPackagesAt)).length
-  const financeReadyBadgeCount = financeReadyRows.filter((booking) => isNewerThan(booking.updated_at || booking.created_at, seenBookingsAt)).length
+  // Merchant directory badge should reflect the active registration queue, not a transient "seen" state.
+  // Keep it visible until each merchant is actually approved/rejected or the deletion request is resolved.
+  const pendingMerchantsBadgeCount = pendingMerchantRows.length
+  const pendingMerchantDeletionBadgeCount = pendingMerchantDeletionRows.length
+  // Package and booking badges should also stay visible while items remain in their active queue.
+  const pendingPackagesBadgeCount = pendingPackageRows.length
+  const financeReadyBadgeCount = financeReadyRows.length
 
   const adminNav = isOperationsManager
     ? [
