@@ -4,10 +4,18 @@ import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
+import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
+import { ADMIN_NAV_SECTION_TO_COLUMN } from "@/lib/admin-nav-seen"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 
 function normalizeStatus(value: string | null) {
   return String(value || "").trim().toLowerCase()
+}
+
+function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
+  if (!timestamp) return false
+  if (!seenAt) return true
+  return timestamp > seenAt
 }
 
 export default async function AdminProtectedLayout({
@@ -48,31 +56,54 @@ export default async function AdminProtectedLayout({
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
 
-  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, seenStateResult] = await Promise.all([
     adminSupabase
       .from("merchants")
-      .select("id", { count: "exact", head: true })
+      .select("id, created_at")
       .eq("verification_status", "pending"),
     adminSupabase
       .from("packages")
-      .select("id, status"),
+      .select("id, status, updated_at"),
     adminSupabase
       .from("bookings")
-      .select("id, booking_status"),
+      .select("id, booking_status, created_at, updated_at"),
     adminSupabase
       .from("merchant_deletion_requests")
-      .select("id", { count: "exact", head: true })
+      .select("id, created_at")
       .eq("status", "pending"),
+    adminSupabase
+      .from("admin_nav_seen_states")
+      .select("seen_merchants_at, seen_packages_at, seen_bookings_at")
+      .eq("admin_user_id", user.id)
+      .maybeSingle(),
   ])
 
-  const pendingMerchants = merchantResult.count || 0
-  const pendingMerchantDeletionRequests = merchantDeletionRequestResult.count || 0
-  const pendingPackages = ((packageResult.data as Array<{ id: string; status: string | null }> | null) || []).filter(
-    (pkg) => normalizeStatus(pkg.status) === "pending",
+  const seenState =
+    (seenStateResult.data as Partial<Record<(typeof ADMIN_NAV_SECTION_TO_COLUMN)[keyof typeof ADMIN_NAV_SECTION_TO_COLUMN], string | null>> | null) ||
+    null
+  const seenMerchantsAt = seenState?.seen_merchants_at || undefined
+  const seenPackagesAt = seenState?.seen_packages_at || undefined
+  const seenBookingsAt = seenState?.seen_bookings_at || undefined
+
+  const pendingMerchantRows =
+    (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
+  const pendingMerchantDeletionRows =
+    (merchantDeletionRequestResult.data as Array<{ id: string; created_at: string | null }> | null) || []
+  const pendingPackageRows =
+    ((packageResult.data as Array<{ id: string; status: string | null; updated_at: string | null }> | null) || []).filter(
+      (pkg) => normalizeStatus(pkg.status) === "pending",
+    )
+  const financeReadyRows =
+    ((bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+    )
+
+  const pendingMerchantsBadgeCount = pendingMerchantRows.filter((merchant) => isNewerThan(merchant.created_at, seenMerchantsAt)).length
+  const pendingMerchantDeletionBadgeCount = pendingMerchantDeletionRows.filter((request) =>
+    isNewerThan(request.created_at, seenMerchantsAt),
   ).length
-  const financeReadyCount = ((bookingResult.data as Array<{ id: string; booking_status: string | null }> | null) || []).filter(
-    (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
-  ).length
+  const pendingPackagesBadgeCount = pendingPackageRows.filter((pkg) => isNewerThan(pkg.updated_at, seenPackagesAt)).length
+  const financeReadyBadgeCount = financeReadyRows.filter((booking) => isNewerThan(booking.updated_at || booking.created_at, seenBookingsAt)).length
 
   const adminNav = isOperationsManager
     ? [
@@ -83,11 +114,11 @@ export default async function AdminProtectedLayout({
             {
               href: "/admin/merchants",
               label: "Merchant Directory",
-              badgeCount: pendingMerchants,
-              secondaryBadgeCount: pendingMerchantDeletionRequests,
+              badgeCount: pendingMerchantsBadgeCount,
+              secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
             },
-            { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
-            { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
+            { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
+            { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
             { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
           ],
         },
@@ -114,10 +145,10 @@ export default async function AdminProtectedLayout({
             {
               href: "/admin/merchants",
               label: "Merchant Directory",
-              badgeCount: pendingMerchants,
-              secondaryBadgeCount: pendingMerchantDeletionRequests,
+              badgeCount: pendingMerchantsBadgeCount,
+              secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
             },
-            { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackages },
+            { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
           ],
         },
         {
@@ -144,12 +175,13 @@ export default async function AdminProtectedLayout({
           label: "Kapal Pesiar",
           children: [{ href: "/admin/kapal-pesiar", label: "Workspace", badgeCount: 0 }],
         },
-        { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyCount },
+        { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
       ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
+      <AdminNavSeenTracker />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 md:px-8 lg:px-10">
           <div className="flex flex-col gap-4">

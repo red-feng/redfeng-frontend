@@ -1,6 +1,5 @@
 import Image from "next/image"
 import Link from "next/link"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
@@ -11,6 +10,7 @@ import { formatMerchantCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
+import { MERCHANT_NAV_SECTION_TO_COLUMN } from "@/lib/merchant-nav-seen"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { createClient } from "@/lib/supabase/server"
 
@@ -35,7 +35,6 @@ export default async function MerchantLayout({
 }) {
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
-  const cookieStore = await cookies()
   const locale = await getCurrentLocale()
   const t = getMerchantShellText(locale)
 
@@ -97,11 +96,6 @@ export default async function MerchantLayout({
     { city: merchant.city, province: merchant.province, country: "Indonesia" },
     locale,
   )
-  const seenPackagesAt = cookieStore.get("merchant_nav_seen_packages")?.value
-  const seenOrdersAt = cookieStore.get("merchant_nav_seen_orders")?.value
-  const seenCalendarAt = cookieStore.get("merchant_nav_seen_calendar")?.value
-  const seenPayoutAt = cookieStore.get("merchant_nav_seen_payout")?.value
-  const seenReviewAt = cookieStore.get("merchant_nav_seen_review")?.value
   const todayJakarta = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",
     year: "numeric",
@@ -117,7 +111,7 @@ export default async function MerchantLayout({
     day: "2-digit",
   }).format(tomorrowJakartaDate)
 
-  const [packageResult, chatRoomsResult, reviewResult] = await Promise.all([
+  const [packageResult, chatRoomsResult, reviewResult, seenStateResult] = await Promise.all([
     adminSupabase
       .from("packages")
       .select("id, status, reviewed_at")
@@ -132,7 +126,21 @@ export default async function MerchantLayout({
       .select("id, created_at, packages!inner(merchant_id)")
       .eq("packages.merchant_id", merchant.id)
       .order("created_at", { ascending: false }),
+    adminSupabase
+      .from("merchant_nav_seen_states")
+      .select("seen_packages_at, seen_orders_at, seen_calendar_at, seen_payout_at, seen_review_at")
+      .eq("merchant_user_id", user.id)
+      .maybeSingle(),
   ])
+
+  const seenState =
+    (seenStateResult.data as Partial<Record<(typeof MERCHANT_NAV_SECTION_TO_COLUMN)[keyof typeof MERCHANT_NAV_SECTION_TO_COLUMN], string | null>> | null) ||
+    null
+  const seenPackagesAt = seenState?.seen_packages_at || undefined
+  const seenOrdersAt = seenState?.seen_orders_at || undefined
+  const seenCalendarAt = seenState?.seen_calendar_at || undefined
+  const seenPayoutAt = seenState?.seen_payout_at || undefined
+  const seenReviewAt = seenState?.seen_review_at || undefined
 
   const merchantPackages = (packageResult.data as Array<{ id: string; status: string | null; reviewed_at: string | null }> | null) || []
   const packageIds = merchantPackages.map((pkg) => pkg.id)
