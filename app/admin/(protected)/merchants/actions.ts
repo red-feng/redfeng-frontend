@@ -24,6 +24,15 @@ function backToMerchants(message: string, type: "success" | "error"): never {
   redirectWithMessage("/admin/merchants", message, type)
 }
 
+function isMissingMerchantReviewRequestsTableError(error: { message?: string | null; code?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  return message.includes("merchant_review_requests") && message.includes("schema cache")
+}
+
+function getMerchantReviewRequestsUnavailableMessage() {
+  return "Fitur review manager merchant belum aktif karena migration database merchant_review_requests belum dijalankan di Supabase."
+}
+
 async function getAdminActor() {
   const supabase = await createClient()
   const {
@@ -68,12 +77,16 @@ async function getMerchantManagerReviewer() {
 }
 
 async function findPendingMerchantReviewRequest(adminSupabase: ReturnType<typeof createAdminClient>, merchantId: string) {
-  const { data } = await adminSupabase
+  const { data, error } = await adminSupabase
     .from("merchant_review_requests")
     .select("id, status, request_type, requested_by")
     .eq("merchant_id", merchantId)
     .eq("status", "pending")
     .maybeSingle()
+
+  if (error) {
+    throw error
+  }
 
   return data
 }
@@ -479,7 +492,16 @@ export async function submitMerchantApprovalRequest(formData: FormData) {
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
 
-  const existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  let existingRequest = null
+  try {
+    existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  } catch (error) {
+    console.error("Load merchant review request error:", error)
+    if (isMissingMerchantReviewRequestsTableError(error as { message?: string | null; code?: string | null })) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
+    backToMerchants("Gagal memeriksa request review merchant yang sedang berjalan.", "error")
+  }
   if (existingRequest) {
     backToMerchants("Merchant ini sudah punya request review yang masih menunggu keputusan operations manager.", "error")
   }
@@ -503,6 +525,9 @@ export async function submitMerchantApprovalRequest(formData: FormData) {
 
   if (requestError || !request?.id) {
     console.error("Submit merchant approval request error:", requestError)
+    if (isMissingMerchantReviewRequestsTableError(requestError)) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
     backToMerchants(requestError?.message || "Gagal mengirim request approval merchant ke operations manager.", "error")
   }
 
@@ -555,7 +580,16 @@ export async function submitMerchantRejectionRequest(formData: FormData) {
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
 
-  const existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  let existingRequest = null
+  try {
+    existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  } catch (error) {
+    console.error("Load merchant rejection review request error:", error)
+    if (isMissingMerchantReviewRequestsTableError(error as { message?: string | null; code?: string | null })) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
+    backToMerchants("Gagal memeriksa request review merchant yang sedang berjalan.", "error")
+  }
   if (existingRequest) {
     backToMerchants("Merchant ini sudah punya request review yang masih menunggu keputusan operations manager.", "error")
   }
@@ -579,6 +613,9 @@ export async function submitMerchantRejectionRequest(formData: FormData) {
 
   if (requestError || !request?.id) {
     console.error("Submit merchant rejection request error:", requestError)
+    if (isMissingMerchantReviewRequestsTableError(requestError)) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
     backToMerchants(requestError?.message || "Gagal mengirim request reject merchant ke operations manager.", "error")
   }
 
@@ -636,6 +673,11 @@ export async function approveMerchantReviewRequest(formData: FormData) {
     .eq("id", requestId)
     .maybeSingle()
 
+  if (requestError && isMissingMerchantReviewRequestsTableError(requestError)) {
+    console.error("Approve merchant review request schema error:", requestError)
+    backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+  }
+
   if (requestError || !request || request.status !== "pending") {
     console.error("Approve merchant review request error:", requestError)
     backToMerchants("Request review merchant tidak valid atau sudah diproses.", "error")
@@ -686,6 +728,9 @@ export async function approveMerchantReviewRequest(formData: FormData) {
     .eq("status", "pending")
 
   if (reviewUpdateError) {
+    if (isMissingMerchantReviewRequestsTableError(reviewUpdateError)) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
     backToMerchants(reviewUpdateError.message || "Merchant disetujui, tetapi status request review gagal diperbarui.", "error")
   }
 
@@ -741,6 +786,11 @@ export async function rejectMerchantReviewRequest(formData: FormData) {
     .eq("id", requestId)
     .maybeSingle()
 
+  if (requestError && isMissingMerchantReviewRequestsTableError(requestError)) {
+    console.error("Reject merchant review request schema error:", requestError)
+    backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+  }
+
   if (requestError || !request || request.status !== "pending") {
     console.error("Reject merchant review request error:", requestError)
     backToMerchants("Request review merchant tidak valid atau sudah diproses.", "error")
@@ -794,6 +844,9 @@ export async function rejectMerchantReviewRequest(formData: FormData) {
     .eq("status", "pending")
 
   if (reviewUpdateError) {
+    if (isMissingMerchantReviewRequestsTableError(reviewUpdateError)) {
+      backToMerchants(getMerchantReviewRequestsUnavailableMessage(), "error")
+    }
     backToMerchants(reviewUpdateError.message || "Merchant ditolak, tetapi status request review gagal diperbarui.", "error")
   }
 

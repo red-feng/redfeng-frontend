@@ -85,6 +85,11 @@ type MerchantReviewRequestRow = {
   reviewed_by: string | null
 }
 
+function isMissingMerchantReviewRequestsTableError(error: { message?: string | null; code?: string | null } | null | undefined) {
+  const message = String(error?.message || "").toLowerCase()
+  return message.includes("merchant_review_requests") && message.includes("schema cache")
+}
+
 function fieldValue(value: string | null) {
   return value && value.trim() ? value : "-"
 }
@@ -297,16 +302,22 @@ export default async function AdminMerchantsPage({
     }
   }
 
-  const { data: merchantReviewRequestsData } = allMerchantIds.length
+  const { data: merchantReviewRequestsData, error: merchantReviewRequestsError } = allMerchantIds.length
     ? await adminSupabase
         .from("merchant_review_requests")
         .select("id, merchant_id, request_type, status, admin_note, manager_reason, requested_at, reviewed_at, requested_by, reviewed_by")
         .in("merchant_id", allMerchantIds)
         .eq("status", "pending")
         .order("requested_at", { ascending: true })
-    : { data: [] as MerchantReviewRequestRow[] }
+    : { data: [] as MerchantReviewRequestRow[], error: null }
+  const merchantReviewRequestsUnavailable = isMissingMerchantReviewRequestsTableError(merchantReviewRequestsError)
+  if (merchantReviewRequestsError && !merchantReviewRequestsUnavailable) {
+    console.error("Load merchant review requests error:", merchantReviewRequestsError)
+  }
   const pendingMerchantReviewRequests =
-    (((merchantReviewRequestsData as MerchantReviewRequestRow[] | null) || []) as MerchantReviewRequestRow[])
+    merchantReviewRequestsUnavailable
+      ? ([] as MerchantReviewRequestRow[])
+      : ((((merchantReviewRequestsData as MerchantReviewRequestRow[] | null) || []) as MerchantReviewRequestRow[]))
   const pendingMerchantReviewMap = new Map<string, MerchantReviewRequestRow>()
   for (const request of pendingMerchantReviewRequests) {
     if (request.merchant_id) {
@@ -401,6 +412,11 @@ export default async function AdminMerchantsPage({
         </section>
 
         <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-6">
+          {merchantReviewRequestsUnavailable ? (
+            <div className="mb-4 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-800">
+              Fitur review manager merchant belum aktif di database production karena migration `merchant_review_requests` belum dijalankan di Supabase.
+            </div>
+          ) : null}
           <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_220px_auto]">
             <div>
               <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Cari merchant</label>
