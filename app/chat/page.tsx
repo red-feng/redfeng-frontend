@@ -13,6 +13,7 @@ import {
 import { buildChatLoginNextTarget } from "@/lib/chat/auth-flow-policy.mjs"
 import { shouldUseMerchantChatPortal } from "@/lib/chat/customer-room-policy.mjs"
 import { ACTIVE_PORTAL_COOKIE, normalizeActivePortal } from "@/lib/portal-context"
+import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -362,6 +363,12 @@ export default async function ChatPage({
             {errorMessage}
           </div>
         )}
+
+        <RoleAutoRefresh
+          intervalMs={3000}
+          realtimeTables={["package_chat_rooms", "package_chat_messages"]}
+          realtimeDelayMs={220}
+        />
 
         <CustomerChatRealtimeClient
           locale={locale}
