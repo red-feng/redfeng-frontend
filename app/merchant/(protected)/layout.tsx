@@ -12,22 +12,15 @@ import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { MERCHANT_NAV_SECTION_TO_COLUMN } from "@/lib/merchant-nav-seen"
+import {
+  MERCHANT_ACTIVE_PAYOUT_ESCROW_STATUSES,
+  MERCHANT_REVIEWED_PACKAGE_BADGE_STATUSES,
+  isNewerThan,
+  isStatusInSet,
+  latestTimestamp,
+} from "@/lib/nav-badge-policy"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { createClient } from "@/lib/supabase/server"
-
-function normalizeStatus(value: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
-
-function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
-  if (!timestamp) return false
-  if (!seenAt) return true
-  return timestamp > seenAt
-}
-
-function latestTimestamp(values: Array<string | null | undefined>) {
-  return values.filter(Boolean).sort().at(-1) || null
-}
 
 export default async function MerchantLayout({
   children,
@@ -146,8 +139,7 @@ export default async function MerchantLayout({
   const merchantPackages = (packageResult.data as Array<{ id: string; status: string | null; reviewed_at: string | null }> | null) || []
   const packageIds = merchantPackages.map((pkg) => pkg.id)
   const packageBadgeCount = merchantPackages.filter((pkg) => {
-    const status = normalizeStatus(pkg.status)
-    if (!["approved", "rejected"].includes(status)) return false
+    if (!isStatusInSet(pkg.status, MERCHANT_REVIEWED_PACKAGE_BADGE_STATUSES)) return false
     return isNewerThan(pkg.reviewed_at, seenPackagesAt)
   }).length
 
@@ -172,7 +164,7 @@ export default async function MerchantLayout({
     }> | null) || []
 
   const orderBadgeCount = bookings.filter(
-    (booking) => normalizeStatus(booking.booking_status) === "pending" && isNewerThan(booking.created_at, seenOrdersAt),
+    (booking) => isStatusInSet(booking.booking_status, ["pending"]) && isNewerThan(booking.created_at, seenOrdersAt),
   ).length
 
   const calendarBadgeCount =
@@ -181,11 +173,7 @@ export default async function MerchantLayout({
       : bookings.filter((booking) => booking.pickup_date === tomorrowJakarta).length
 
   const payoutBadgeCount = bookings.filter((booking) => {
-    const eligible =
-      normalizeStatus(booking.payment_status) === "paid" &&
-      ["awaiting_admin_handoff", "finance_review", "payout_processing", "paid_out"].includes(
-        normalizeStatus(booking.escrow_status),
-      )
+    const eligible = isStatusInSet(booking.payment_status, ["paid"]) && isStatusInSet(booking.escrow_status, MERCHANT_ACTIVE_PAYOUT_ESCROW_STATUSES)
     if (!eligible) return false
 
     return isNewerThan(

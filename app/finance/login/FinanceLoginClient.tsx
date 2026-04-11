@@ -6,7 +6,7 @@ import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import PasswordField from "@/app/components/PasswordField"
 import { createClient } from "@/lib/supabase/client"
 import { buildInternalFinanceEmail, normalizeInternalUsername } from "@/lib/internal-auth"
-import { isFinancePortalRole } from "@/lib/internal-roles"
+import { canAccessInternalPortal, getInternalPortalHomePath, normalizeRole } from "@/lib/internal-roles"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 import type { Locale } from "@/lib/i18n"
 
@@ -162,15 +162,15 @@ export default function FinanceLoginClient({ initialLocale }: { initialLocale: L
       return
     }
 
-    if (profile.role === "superadmin") {
+    if (normalizeRole(profile.role) === "superadmin") {
       setError(t.superadminOnly)
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    if (isFinancePortalRole(profile.role)) {
-      window.location.assign("/finance/dashboard")
+    if (canAccessInternalPortal("finance", profile.role)) {
+      window.location.assign(getInternalPortalHomePath("finance"))
       setLoading(false)
       return
     }

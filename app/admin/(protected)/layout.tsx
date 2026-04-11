@@ -7,10 +7,7 @@ import AdminNavLinks from "@/app/components/AdminNavLinks"
 import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
 import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
-
-function normalizeStatus(value: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
+import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES, isStatusInSet } from "@/lib/nav-badge-policy"
 
 export default async function AdminProtectedLayout({
   children,
@@ -73,11 +70,11 @@ export default async function AdminProtectedLayout({
     (merchantDeletionRequestResult.data as Array<{ id: string; created_at: string | null }> | null) || []
   const pendingPackageRows =
     ((packageResult.data as Array<{ id: string; status: string | null; updated_at: string | null }> | null) || []).filter(
-      (pkg) => normalizeStatus(pkg.status) === "pending",
+      (pkg) => isStatusInSet(pkg.status, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES),
     )
   const financeReadyRows =
     ((bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
-      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+      (booking) => isStatusInSet(booking.booking_status, ADMIN_ACTIVE_BOOKING_BADGE_STATUSES),
     )
 
   // Merchant directory badge should reflect the active registration queue, not a transient "seen" state.

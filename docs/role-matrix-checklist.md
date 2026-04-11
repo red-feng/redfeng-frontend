@@ -248,6 +248,7 @@ Tindak lanjut yang disarankan:
 
 - role matrix resmi: `docs/role-matrix.md`
 - checklist teknis: `docs/role-matrix-checklist.md`
+- checklist regresi portal internal: `docs/internal-portal-regression-checklist.md`
 - arsitektur lifecycle akun internal: `docs/internal-account-lifecycle.md`
 - audit role finance: `docs/finance-role-audit.md`
 - diagram role dan lifecycle akun: `docs/role-account-lifecycle-diagram.md`

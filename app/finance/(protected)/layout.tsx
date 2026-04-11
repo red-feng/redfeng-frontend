@@ -7,10 +7,7 @@ import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getRoleLabel, isFinancePortalRole } from "@/lib/internal-roles"
-
-function normalizeStatus(value: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
+import { FINANCE_ACTIVE_PAYOUT_BADGE_STATUSES, FINANCE_ACTIVE_REFUND_BADGE_STATUSES, isStatusInSet } from "@/lib/nav-badge-policy"
 
 export default async function FinanceProtectedLayout({
   children,
@@ -56,14 +53,11 @@ export default async function FinanceProtectedLayout({
 
   const refundRows =
     ((refundsResult.data as Array<{ id: string; status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
-      (refund) =>
-        ["refund_requested", "refund_under_review", "refund_approved", "refund_processing_midtrans", "refund_processing_bank"].includes(
-          normalizeStatus(refund.status),
-        ),
+      (refund) => isStatusInSet(refund.status, FINANCE_ACTIVE_REFUND_BADGE_STATUSES),
     )
   const payoutRows =
     ((payoutsResult.data as Array<{ id: string; status: string | null; requested_at: string | null; processed_at: string | null; updated_at: string | null }> | null) || []).filter(
-      (payout) => ["pending", "approved", "processing"].includes(normalizeStatus(payout.status)),
+      (payout) => isStatusInSet(payout.status, FINANCE_ACTIVE_PAYOUT_BADGE_STATUSES),
     )
 
   const refundBadgeCount = refundRows.length

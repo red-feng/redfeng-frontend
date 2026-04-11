@@ -8,6 +8,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
 import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
+import { isNewerThan } from "@/lib/nav-badge-policy"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
@@ -91,9 +92,7 @@ export default async function CustomerLayout({
       customer_last_read_at: string | null
     }> | null) || []).filter((room) => {
       if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
-      if (!room.last_message_at) return false
-      if (!room.customer_last_read_at) return true
-      return room.last_message_at > room.customer_last_read_at
+      return isNewerThan(room.last_message_at, room.customer_last_read_at || undefined)
       }).length
 
   const navItems = [

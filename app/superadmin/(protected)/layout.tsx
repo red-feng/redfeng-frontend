@@ -7,16 +7,7 @@ import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { SUPERADMIN_NAV_SECTION_TO_COLUMN } from "@/lib/superadmin-nav-seen"
-
-function normalizeStatus(value: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
-
-function isNewerThan(timestamp: string | null | undefined, seenAt: string | undefined) {
-  if (!timestamp) return false
-  if (!seenAt) return true
-  return timestamp > seenAt
-}
+import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, isNewerThan, isStatusInSet, normalizeStatus } from "@/lib/nav-badge-policy"
 
 export default async function SuperadminProtectedLayout({
   children,
@@ -80,7 +71,7 @@ export default async function SuperadminProtectedLayout({
 
   const financeReadyRows =
     ((bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
-      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+      (booking) => isStatusInSet(booking.booking_status, ADMIN_ACTIVE_BOOKING_BADGE_STATUSES),
     )
 
   const internalAccountLogs =
@@ -93,15 +84,15 @@ export default async function SuperadminProtectedLayout({
   const auditLogs = (auditLogsResult.data as Array<{ id: string; created_at: string | null }> | null) || []
 
   const opsAccountsBadgeCount = internalAccountLogs.filter((log) => {
-    const scope = String(log.metadata?.scope || "").trim().toLowerCase()
+    const scope = normalizeStatus(log.metadata?.scope)
     return scope === "operations_team" && isNewerThan(log.created_at, seenOpsAccountsAt)
   }).length
   const financeAccountsBadgeCount = internalAccountLogs.filter((log) => {
-    const scope = String(log.metadata?.scope || "").trim().toLowerCase()
+    const scope = normalizeStatus(log.metadata?.scope)
     return scope === "finance_team" && isNewerThan(log.created_at, seenFinanceAccountsAt)
   }).length
   const superadminAccountsBadgeCount = internalAccountLogs.filter((log) => {
-    const scope = String(log.metadata?.scope || "").trim().toLowerCase()
+    const scope = normalizeStatus(log.metadata?.scope)
     return scope === "superadmin_accounts" && isNewerThan(log.created_at, seenSuperadminAccountsAt)
   }).length
   const bookingsBadgeCount = financeReadyRows.length

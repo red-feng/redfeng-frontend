@@ -6,6 +6,7 @@ import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import PasswordField from "@/app/components/PasswordField"
 import { createClient } from "@/lib/supabase/client"
 import { buildInternalSuperadminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
+import { canAccessInternalPortal, getInternalPortalHomePath } from "@/lib/internal-roles"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 import type { Locale } from "@/lib/i18n"
 
@@ -144,14 +145,14 @@ export default function SuperadminLoginClient({ initialLocale }: { initialLocale
       .eq("id", data.user.id)
       .maybeSingle()
 
-    if (profile?.role !== "superadmin") {
+    if (!canAccessInternalPortal("superadmin", profile?.role)) {
       setError(t.wrongRole)
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    window.location.assign("/superadmin/dashboard")
+    window.location.assign(getInternalPortalHomePath("superadmin"))
   }
 
   return (
