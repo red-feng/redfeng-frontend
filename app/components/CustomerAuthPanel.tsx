@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
 import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context";
+import { readLocaleFromCookie } from "@/lib/locale-client";
 
 type AuthProvider = "google" | "facebook";
 type Mode = "login" | "register";
@@ -81,17 +83,6 @@ function getProviderLabel(provider: AuthProvider, t: ReturnType<typeof getLoginD
   }
 }
 
-function getLocaleFromCookie(): Locale {
-  if (typeof document === "undefined") return "id";
-  const cookie = document.cookie
-    .split(";")
-    .map((c) => c.trim())
-    .find((c) => c.startsWith("rf_locale="));
-  const value = cookie?.split("=")[1];
-  if (value === "en" || value === "zh") return value;
-  return "id";
-}
-
 function getSafeNextFromLocation() {
   if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
   const requestedNext = new URLSearchParams(window.location.search).get("next");
@@ -124,6 +115,27 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
             "Continue checkout without re-entering the same details",
             "Keep your trip history connected to one account",
           ],
+          trustTitle: "The customer experience stays focused and separate from internal portals.",
+          metrics: [
+            {
+              label: "Booking flow",
+              value: "1x",
+              description: "One customer account for checkout, dashboard, and travel history.",
+            },
+            {
+              label: "Support",
+              value: "24/7",
+              description: "Customer history stays connected so the team can respond faster.",
+            },
+            {
+              label: "Trust layer",
+              value: "OTA",
+              description: "The customer portal is separated from admin, finance, and merchant access.",
+            },
+          ],
+          registerHint: "If a customer account does not exist yet, Red Feng will create a new account when you continue this registration flow.",
+          forgotPassword: "Forgot password?",
+          andLabel: "and",
         }
       : {
           switchLabel: "Register",
@@ -138,7 +150,28 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
             "Keep payment and booking progress in one account",
             "Use one account across Red Feng customer pages",
           ],
-        }
+          trustTitle: "The customer experience stays focused and separate from internal portals.",
+          metrics: [
+            {
+              label: "Booking flow",
+              value: "1x",
+              description: "One customer account for checkout, dashboard, and travel history.",
+            },
+            {
+              label: "Support",
+              value: "24/7",
+              description: "Customer history stays connected so the team can respond faster.",
+            },
+            {
+              label: "Trust layer",
+              value: "OTA",
+              description: "The customer portal is separated from admin, finance, and merchant access.",
+            },
+          ],
+          registerHint: "If a customer account does not exist yet, Red Feng will create a new account when you continue this registration flow.",
+          forgotPassword: "Forgot password?",
+          andLabel: "and",
+        };
   }
 
   if (locale === "zh") {
@@ -146,31 +179,73 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
       ? {
           switchLabel: "登录",
           heroTitle: "登录后继续规划您的旅程。",
-          heroCopy: "使用一个客户账户查看订单、更快结账，并统一管理您的出行资料。",
+          heroCopy: "使用一个客户账号查看订单、更快结账，并统一管理您的出行资料。",
           cardEyebrow: "客户登录",
           cardTitle: "欢迎回来",
-          cardSubtitle: "使用 Google 或 Facebook 继续登录您的 Red Feng 客户账户。",
-          helperTitle: "客户账户权益",
+          cardSubtitle: "使用 Google 或 Facebook 继续登录您的 Red Feng 客户账号。",
+          helperTitle: "客户账号权益",
           helperItems: [
             "在一个面板中查看所有订单",
             "结账时无需重复填写相同信息",
-            "将您的出行记录保存在同一个账户中",
+            "将您的出行记录保存在同一个账号中",
           ],
+          trustTitle: "客户体验将保持专注，不会与内部门户混在一起。",
+          metrics: [
+            {
+              label: "预订流程",
+              value: "1x",
+              description: "一个客户账号即可用于结账、后台和行程历史。",
+            },
+            {
+              label: "支持",
+              value: "24/7",
+              description: "客户历史会持续保留，方便团队更快响应需求。",
+            },
+            {
+              label: "信任层",
+              value: "OTA",
+              description: "客户门户与管理员、财务和商家入口分离。",
+            },
+          ],
+          registerHint: "如果客户账号尚不存在，您继续此注册流程时 Red Feng 会自动创建新账号。",
+          forgotPassword: "忘记密码？",
+          andLabel: "和",
         }
       : {
           switchLabel: "注册",
-          heroTitle: "在结账前先创建您的客户账户。",
+          heroTitle: "请在结账前先创建您的客户账号。",
           heroCopy: "注册一次，即可让下一次预订更快，并将所有出行活动保存在同一个地方。",
           cardEyebrow: "客户注册",
-          cardTitle: "创建账户",
-          cardSubtitle: "使用 Google 或 Facebook，几秒钟内注册 Red Feng 客户账户。",
+          cardTitle: "创建账号",
+          cardSubtitle: "使用 Google 或 Facebook，几秒钟内注册 Red Feng 客户账号。",
           helperTitle: "为什么先注册",
           helperItems: [
             "保存旅客资料，方便下次预订",
-            "把付款和订单进度集中在一个账户中",
-            "在 Red Feng 客户页面使用同一个账户",
+            "把付款和订单进度集中在一个账号中",
+            "在 Red Feng 客户页面使用同一个账号",
           ],
-        }
+          trustTitle: "客户体验将保持专注，不会与内部门户混在一起。",
+          metrics: [
+            {
+              label: "预订流程",
+              value: "1x",
+              description: "一个客户账号即可用于结账、后台和行程历史。",
+            },
+            {
+              label: "支持",
+              value: "24/7",
+              description: "客户历史会持续保留，方便团队更快响应需求。",
+            },
+            {
+              label: "信任层",
+              value: "OTA",
+              description: "客户门户与管理员、财务和商家入口分离。",
+            },
+          ],
+          registerHint: "如果客户账号尚不存在，您继续此注册流程时 Red Feng 会自动创建新账号。",
+          forgotPassword: "忘记密码？",
+          andLabel: "和",
+        };
   }
 
   return mode === "login"
@@ -187,6 +262,27 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
           "Checkout lebih cepat tanpa isi data berulang",
           "Riwayat perjalanan tetap tersimpan di satu akun",
         ],
+        trustTitle: "Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.",
+        metrics: [
+          {
+            label: "Booking flow",
+            value: "1x",
+            description: "Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.",
+          },
+          {
+            label: "Support",
+            value: "24/7",
+            description: "Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.",
+          },
+          {
+            label: "Trust layer",
+            value: "OTA",
+            description: "Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.",
+          },
+        ],
+        registerHint: "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini.",
+        forgotPassword: "Lupa password?",
+        andLabel: "dan",
       }
     : {
         switchLabel: "Daftar",
@@ -201,12 +297,33 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
           "Satukan progress pembayaran dan booking dalam satu akun",
           "Pakai satu akun customer di seluruh halaman Red Feng",
         ],
-      }
+        trustTitle: "Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.",
+        metrics: [
+          {
+            label: "Booking flow",
+            value: "1x",
+            description: "Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.",
+          },
+          {
+            label: "Support",
+            value: "24/7",
+            description: "Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.",
+          },
+          {
+            label: "Trust layer",
+            value: "OTA",
+            description: "Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.",
+          },
+        ],
+        registerHint: "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini.",
+        forgotPassword: "Lupa password?",
+        andLabel: "dan",
+      };
 }
 
-export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
+export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode; initialLocale: Locale }) {
   const supabase = createClient();
-  const [locale] = useState<Locale>(() => getLocaleFromCookie());
+  const [locale] = useState<Locale>(() => initialLocale || readLocaleFromCookie());
   const [safeNext] = useState(getSafeNextFromLocation);
   const [searchError] = useState(getSafeErrorFromLocation);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
@@ -221,8 +338,19 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
   const authError = errorMsg || searchError;
   const modeTabs = useMemo(
     () => [
-      { href: `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录" ? modeCopy.switchLabel : t.loginLink, active: mode === "login" },
-      { href: `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`, label: mode === "register" ? modeCopy.switchLabel : t.registerLink, active: mode === "register" },
+      {
+        href: `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
+        label:
+          modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录"
+            ? modeCopy.switchLabel
+            : t.loginLink,
+        active: mode === "login",
+      },
+      {
+        href: `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
+        label: mode === "register" ? modeCopy.switchLabel : t.registerLink,
+        active: mode === "register",
+      },
     ],
     [mode, modeCopy.switchLabel, safeNext, t.loginLink, t.registerLink],
   );
@@ -279,61 +407,45 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
             </p>
 
             <div className="relative mt-10 grid gap-4 xl:grid-cols-3">
-              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Booking flow</p>
-                <p className="mt-3 text-3xl font-semibold">1x</p>
-                <p className="mt-2 text-sm text-orange-50/85">
-                  Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.
-                </p>
-              </div>
-              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Support</p>
-                <p className="mt-3 text-3xl font-semibold">24/7</p>
-                <p className="mt-2 text-sm text-orange-50/85">
-                  Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.
-                </p>
-              </div>
-              <div className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">Trust layer</p>
-                <p className="mt-3 text-3xl font-semibold">OTA</p>
-                <p className="mt-2 text-sm text-orange-50/85">
-                  Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.
-                </p>
-              </div>
+              {modeCopy.metrics.map((metric) => (
+                <div key={metric.label} className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">{metric.label}</p>
+                  <p className="mt-3 text-3xl font-semibold">{metric.value}</p>
+                  <p className="mt-2 text-sm text-orange-50/85">{metric.description}</p>
+                </div>
+              ))}
             </div>
 
             <div className="relative mt-auto pt-10">
               <div className="rounded-[30px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.34em] text-orange-100/80">
-                    {modeCopy.helperTitle}
-                  </p>
-                  <p className="mt-2 text-xl font-semibold">
-                    Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.
-                  </p>
-                </div>
-                <div className="grid h-20 w-20 place-items-center rounded-[26px] border border-white/20 bg-white/12 text-center text-sm font-semibold leading-tight text-white">
-                  Red
-                  <br />
-                  Feng
-                </div>
-              </div>
-
-              <div className="mt-6 grid gap-3">
-                {trustItems.map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-orange-50/90"
-                  >
-                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-xs font-bold text-orange-700">
-                      *
-                    </span>
-                    <span>{item}</span>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.34em] text-orange-100/80">
+                      {modeCopy.helperTitle}
+                    </p>
+                    <p className="mt-2 text-xl font-semibold">{modeCopy.trustTitle}</p>
                   </div>
-                ))}
+                  <div className="grid h-20 w-20 place-items-center rounded-[26px] border border-white/20 bg-white/12 text-center text-sm font-semibold leading-tight text-white">
+                    Red
+                    <br />
+                    Feng
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-3">
+                  {trustItems.map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-3 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-orange-50/90"
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-xs font-bold text-orange-700">
+                        *
+                      </span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
             </div>
           </div>
         </section>
@@ -341,6 +453,10 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
         <section className="flex items-center bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] px-6 py-10 sm:px-10 lg:px-12">
           <div className="mx-auto w-full max-w-xl">
             <div className="rounded-[32px] border border-orange-100 bg-white p-8 shadow-[0_24px_70px_rgba(148,64,14,0.08)] sm:p-10">
+              <div className="mb-4 flex justify-end">
+                <AuthLocaleDropdown locale={locale} />
+              </div>
+
               <div className="flex flex-wrap items-center gap-2 rounded-[22px] border border-orange-100 bg-[#fff8f1] p-2">
                 {modeTabs.map((tab) => (
                   <Link
@@ -387,9 +503,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
               </div>
 
               <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#fff9f2_0%,#fffdf9_100%)] px-5 py-4 text-sm leading-7 text-slate-600">
-                {mode === "login"
-                  ? t.autoCreateHint
-                  : "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini."}
+                {mode === "login" ? t.autoCreateHint : modeCopy.registerHint}
               </div>
 
               {authError ? (
@@ -404,7 +518,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
                     href="/forgot-password?next=/login"
                     className="text-sm font-medium text-orange-700 hover:text-orange-800"
                   >
-                    Lupa password?
+                    {modeCopy.forgotPassword}
                   </Link>
                 </div>
               ) : null}
@@ -414,7 +528,7 @@ export default function CustomerAuthPanel({ mode }: { mode: Mode }) {
                 <Link href="/terms" className="font-semibold text-orange-700 hover:text-orange-800">
                   {t.terms}
                 </Link>{" "}
-                dan{" "}
+                {modeCopy.andLabel}{" "}
                 <Link href="/privacy" className="font-semibold text-orange-700 hover:text-orange-800">
                   {t.privacy}
                 </Link>

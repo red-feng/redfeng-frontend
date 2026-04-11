@@ -1,5 +1,7 @@
-import CustomerAuthPanel from "@/app/components/CustomerAuthPanel";
+import CustomerAuthPanel from "@/app/components/CustomerAuthPanel"
+import { getCurrentLocale } from "@/lib/locale"
 
-export default function LoginPage() {
-  return <CustomerAuthPanel mode="login" />;
+export default async function LoginPage() {
+  const locale = await getCurrentLocale()
+  return <CustomerAuthPanel mode="login" initialLocale={locale} />
 }
