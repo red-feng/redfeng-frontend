@@ -8,12 +8,9 @@ export default function PendingPage() {
           <span className="inline-flex rounded-full border border-white/25 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
             Merchant Review
           </span>
-          <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Akun merchant Anda sedang diverifikasi
-          </h1>
+          <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">Akun merchant Anda sedang diverifikasi</h1>
           <p className="mt-4 max-w-2xl text-base leading-8 text-orange-50/90">
-            Tim admin Red Feng sedang meninjau data bisnis dan dokumen yang Anda kirim. Kami akan
-            melanjutkan setelah proses verifikasi internal selesai.
+            Tim Red Feng sedang meninjau data bisnis dan dokumen yang Anda kirim. Review berjalan bertahap dari admin ke operations manager sebelum akses merchant dibuka penuh.
           </p>
         </section>
 
@@ -21,31 +18,27 @@ export default function PendingPage() {
           <article className="rounded-[28px] border border-orange-100 bg-white p-6 shadow-[0_20px_50px_rgba(148,64,14,0.08)]">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
-                <span className="text-xl font-semibold">◔</span>
+                <span className="text-xl font-semibold">â—”</span>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
-                  Verification status
-                </p>
-                <p className="mt-1 text-2xl font-semibold text-slate-950">Pending admin review</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Verification status</p>
+                <p className="mt-1 text-2xl font-semibold text-slate-950">Internal review in progress</p>
               </div>
             </div>
             <p className="mt-5 text-sm leading-7 text-slate-600">
-              Selama status masih pending, Anda belum dapat mengakses merchant dashboard penuh. Jika
-              diperlukan, tim Red Feng akan menghubungi Anda melalui email bisnis yang terdaftar.
+              Selama status review masih berjalan, Anda belum dapat mengakses merchant dashboard penuh. Jika diperlukan, tim Red Feng akan menghubungi Anda melalui email bisnis yang terdaftar.
             </p>
           </article>
 
           <aside className="rounded-[28px] border border-slate-200 bg-slate-50/80 p-6">
             <div className="flex items-center gap-3 text-slate-900">
-              <span className="text-base font-semibold text-orange-700">◈</span>
-              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Next
-              </p>
+              <span className="text-base font-semibold text-orange-700">â—ˆ</span>
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Next</p>
             </div>
             <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-              <li>Admin akan memeriksa data perusahaan, legal, rekening, dan dokumen.</li>
-              <li>Jika ada revisi, Anda akan diarahkan untuk memperbaiki pengajuan.</li>
+              <li>Admin akan memeriksa data perusahaan, legal, rekening, dan dokumen lebih dulu.</li>
+              <li>Setelah itu operations manager memberi keputusan final approve atau meminta revisi.</li>
+              <li>Jika ada revisi, Anda akan diarahkan untuk memperbaiki pengajuan dalam batas waktu yang diberikan.</li>
               <li>Jika disetujui, akses merchant dashboard akan dibuka.</li>
             </ul>
             <Link
@@ -53,7 +46,7 @@ export default function PendingPage() {
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
             >
               Kembali ke beranda
-              <span aria-hidden="true">→</span>
+              <span aria-hidden="true">â†’</span>
             </Link>
           </aside>
         </section>

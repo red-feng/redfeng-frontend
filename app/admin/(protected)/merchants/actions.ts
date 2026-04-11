@@ -8,8 +8,8 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
-import { purgePackageRecords } from "@/lib/package-delete"
 import { redirectWithMessage } from "@/lib/internal-account-management"
+import { purgeMerchantAccountRecords } from "@/lib/merchant-review-cleanup"
 
 function revalidateMerchantPages() {
   revalidatePath("/admin/merchants")
@@ -22,59 +22,6 @@ function revalidateMerchantPages() {
 
 function backToMerchants(message: string, type: "success" | "error"): never {
   redirectWithMessage("/admin/merchants", message, type)
-}
-
-async function purgeMerchantAccountRecords(adminSupabase: ReturnType<typeof createAdminClient>, merchantId: string, userId?: string | null) {
-  const { data: packageRows, error: packageRowsError } = await adminSupabase
-    .from("packages")
-    .select("id")
-    .eq("merchant_id", merchantId)
-
-  if (packageRowsError) {
-    throw new Error(`Gagal memuat paket merchant: ${packageRowsError.message}`)
-  }
-
-  const packageIds = (((packageRows as Array<{ id: string }> | null) || []) as Array<{ id: string }>)
-    .map((item) => item.id)
-    .filter(Boolean)
-
-  for (const packageId of packageIds) {
-    await purgePackageRecords(adminSupabase, packageId)
-  }
-
-  const { error: refundDeleteError } = await adminSupabase
-    .from("refund_requests")
-    .delete()
-    .eq("merchant_id", merchantId)
-
-  if (refundDeleteError) {
-    throw new Error(`Gagal menghapus refund merchant: ${refundDeleteError.message}`)
-  }
-
-  const { error: merchantDeleteError } = await adminSupabase
-    .from("merchants")
-    .delete()
-    .eq("id", merchantId)
-
-  if (merchantDeleteError) {
-    throw new Error(`Gagal menghapus data merchant utama: ${merchantDeleteError.message}`)
-  }
-
-  if (!userId) return
-
-  const { error: profileDeleteError } = await adminSupabase
-    .from("profiles")
-    .delete()
-    .eq("id", userId)
-
-  if (profileDeleteError) {
-    throw new Error(`Gagal menghapus profil merchant: ${profileDeleteError.message}`)
-  }
-
-  const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(userId)
-  if (authDeleteError) {
-    throw new Error(`Gagal menghapus akun auth merchant: ${authDeleteError.message}`)
-  }
 }
 
 async function getAdminActor() {
@@ -98,7 +45,7 @@ async function getAdminActor() {
   }
 }
 
-async function getMerchantDeletionReviewer() {
+async function getMerchantManagerReviewer() {
   const supabase = await createClient()
   const {
     data: { user },
@@ -111,13 +58,24 @@ async function getMerchantDeletionReviewer() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   const role = String(profile?.role || "").trim().toLowerCase()
   if (!["operations_manager", "superadmin"].includes(role)) {
-    throw new Error("Hanya operations manager atau superadmin yang dapat mereview penghapusan merchant.")
+    throw new Error("Hanya operations manager atau superadmin yang dapat mereview merchant.")
   }
 
   return {
     id: user.id,
     role,
   }
+}
+
+async function findPendingMerchantReviewRequest(adminSupabase: ReturnType<typeof createAdminClient>, merchantId: string) {
+  const { data } = await adminSupabase
+    .from("merchant_review_requests")
+    .select("id, status, request_type, requested_by")
+    .eq("merchant_id", merchantId)
+    .eq("status", "pending")
+    .maybeSingle()
+
+  return data
 }
 
 async function findPendingDeletionRequest(
@@ -181,18 +139,64 @@ async function sendAdminDeletionReviewEmail({
   })
 }
 
+async function sendAdminMerchantReviewRejectionEmail({
+  email,
+  merchantName,
+  reason,
+  deadlineAt,
+}: {
+  email: string | null
+  merchantName: string
+  reason: string
+  deadlineAt: string
+}) {
+  if (!email) return
+
+  const resendApiKey = getOptionalEnv("RESEND_API_KEY")
+  if (!resendApiKey) {
+    console.error("RESEND_API_KEY not found")
+    return
+  }
+
+  const deadlineLabel = new Date(deadlineAt).toLocaleString("id-ID", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Asia/Jakarta",
+  })
+
+  const resend = new Resend(resendApiKey)
+  await resend.emails.send({
+    from: "RedFeng Admin <admin@redfeng.co>",
+    to: email,
+    subject: "RedFeng Internal: Merchant ditolak operations manager",
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+        <h2 style="margin:0 0 12px;">Halo Admin,</h2>
+        <p style="margin:0 0 14px;">Merchant <strong>${merchantName}</strong> ditolak oleh operations manager pada review final.</p>
+        <p style="margin:0 0 8px;"><strong>Alasan operations manager</strong></p>
+        <p style="margin:0 0 14px;">${reason}</p>
+        <p style="margin:0 0 8px;"><strong>Batas revisi merchant</strong></p>
+        <p style="margin:0 0 18px;">${deadlineLabel}</p>
+        <p style="margin:0;">Silakan pantau Merchant Directory. Jika merchant tidak memperbaiki data sampai batas waktu tersebut, akun akan dijadwalkan untuk dihapus permanen.</p>
+      </div>
+    `,
+  })
+}
+
 async function sendMerchantDecisionEmail({
   email,
   brandName,
   locale,
   type,
   reason,
+  deadlineAt,
 }: {
   email: string | null
   brandName: string | null
   locale?: string | null
   type: "approved" | "rejected" | "inactive" | "deleted"
   reason?: string
+  deadlineAt?: string
 }) {
   if (!email) return
 
@@ -232,6 +236,7 @@ async function sendMerchantDecisionEmail({
       rejectedStatus: string
       rejectedReasonLabel: string
       rejectedGuidance: string
+      rejectedDeadlineLabel: string
       accountSummary: string
       merchantLabel: string
       emailLabel: string
@@ -271,6 +276,7 @@ async function sendMerchantDecisionEmail({
       rejectedReasonLabel: "Catatan admin",
       rejectedGuidance:
         "Silakan masuk kembali ke akun merchant Anda, lakukan perbaikan sesuai catatan admin, lalu ajukan ulang untuk proses review berikutnya.",
+      rejectedDeadlineLabel: "Batas waktu revisi",
       accountSummary: "Ringkasan akun",
       merchantLabel: "Merchant",
       emailLabel: "Email akun",
@@ -310,6 +316,7 @@ async function sendMerchantDecisionEmail({
       rejectedReasonLabel: "Admin note",
       rejectedGuidance:
         "Please log back into your merchant account, make the necessary revisions based on the admin note, and submit it again for the next review process.",
+      rejectedDeadlineLabel: "Revision deadline",
       accountSummary: "Account summary",
       merchantLabel: "Merchant",
       emailLabel: "Account email",
@@ -346,6 +353,7 @@ async function sendMerchantDecisionEmail({
       rejectedReasonLabel: "管理员说明",
       rejectedGuidance:
         "请重新登录商家账号，按照管理员说明完成修改后，再次提交进入下一轮审核。",
+      rejectedDeadlineLabel: "修改截止时间",
       accountSummary: "账号摘要",
       merchantLabel: "商家",
       emailLabel: "账号邮箱",
@@ -355,6 +363,13 @@ async function sendMerchantDecisionEmail({
     },  }
   const copy = emailCopy[activeLocale]
   const resolvedReason = reason || copy.defaultReason
+  const deadlineText =
+    deadlineAt && type === "rejected"
+      ? new Date(deadlineAt).toLocaleString(
+          activeLocale === "id" ? "id-ID" : activeLocale === "zh" ? "zh-CN" : "en-US",
+          { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Jakarta" },
+        )
+      : ""
 
   if (type === "approved") {
     await resend.emails.send({
@@ -446,6 +461,7 @@ async function sendMerchantDecisionEmail({
         </ul>
         <p style="margin:0 0 8px;"><strong>${copy.rejectedReasonLabel}</strong></p>
         <p style="margin:0 0 14px;">${resolvedReason}</p>
+        ${deadlineText ? `<p style="margin:0 0 8px;"><strong>${copy.rejectedDeadlineLabel}</strong></p><p style="margin:0 0 14px;">${deadlineText}</p>` : ""}
         <p style="margin:0 0 18px;">${copy.rejectedGuidance}</p>
         <p style="margin:0;">${copy.closing}</p>
       </div>
@@ -453,8 +469,9 @@ async function sendMerchantDecisionEmail({
   })
 }
 
-export async function approveMerchant(formData: FormData) {
+export async function submitMerchantApprovalRequest(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
+  const adminNote = String(formData.get("reason") || "").trim()
   if (!merchantId) {
     backToMerchants("Merchant tidak ditemukan.", "error")
   }
@@ -462,35 +479,47 @@ export async function approveMerchant(formData: FormData) {
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
 
+  const existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  if (existingRequest) {
+    backToMerchants("Merchant ini sudah punya request review yang masih menunggu keputusan operations manager.", "error")
+  }
+
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("email, brand_name, default_locale")
+    .select("email, brand_name, default_locale, verification_status")
     .eq("id", merchantId)
     .maybeSingle()
+
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .insert({
+      merchant_id: merchantId,
+      request_type: "approve",
+      admin_note: adminNote || null,
+      requested_by: actor.id,
+    })
+    .select("id")
+    .single()
+
+  if (requestError || !request?.id) {
+    console.error("Submit merchant approval request error:", requestError)
+    backToMerchants(requestError?.message || "Gagal mengirim request approval merchant ke operations manager.", "error")
+  }
 
   const { error } = await supabaseAdmin
     .from("merchants")
     .update({
-      verification_status: "approved",
-      rejection_reason: null,
-      verified_at: new Date().toISOString(),
+      verification_status: "awaiting_manager_approval",
+      admin_reviewed_at: new Date().toISOString(),
+      admin_reviewed_by: actor.id,
+      manager_review_requested_at: new Date().toISOString(),
+      manager_review_request_id: request.id,
     })
     .eq("id", merchantId)
 
   if (error) {
-    console.error("Approve error:", error)
-    backToMerchants(error.message || "Gagal menyetujui merchant.", "error")
-  }
-
-  try {
-    await sendMerchantDecisionEmail({
-      email: merchant?.email ?? null,
-      brandName: merchant?.brand_name ?? null,
-      locale: merchant?.default_locale ?? "id",
-      type: "approved",
-    })
-  } catch (emailError) {
-    console.error("Approve merchant email error:", emailError)
+    console.error("Update merchant after approval request error:", error)
+    backToMerchants(error.message || "Request approval terkirim, tetapi status merchant gagal diperbarui.", "error")
   }
 
   revalidateMerchantPages()
@@ -500,57 +529,73 @@ export async function approveMerchant(formData: FormData) {
     actorRole: actor.role,
     targetType: "merchant",
     targetId: merchantId,
-    action: "approve",
-    summary: `Merchant ${merchantId} disetujui admin`,
+    action: "submit_for_manager_approval",
+    summary: `Merchant ${merchantId} diajukan admin ke operations manager untuk approval`,
     metadata: {
-      status: "approved",
+      requestId: request.id,
+      requestType: "approve",
+      previousStatus: merchant?.verification_status ?? null,
+      status: "awaiting_manager_approval",
+      adminNote: adminNote || null,
       brandName: merchant?.brand_name ?? null,
     },
   })
 
-  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil disetujui.`, "success")
+  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil diajukan ke operations manager untuk approval final.`, "success")
 }
 
-export async function rejectMerchant(formData: FormData) {
+export async function submitMerchantRejectionRequest(formData: FormData) {
   const merchantId = formData.get("merchantId") as string
-  const reason = formData.get("reason") as string
+  const reason = String(formData.get("reason") || "").trim()
 
   if (!merchantId || !reason) {
-    backToMerchants("Merchant dan alasan penolakan wajib diisi.", "error")
+    backToMerchants("Merchant dan alasan pengajuan reject ke operations manager wajib diisi.", "error")
   }
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
 
+  const existingRequest = await findPendingMerchantReviewRequest(supabaseAdmin, merchantId)
+  if (existingRequest) {
+    backToMerchants("Merchant ini sudah punya request review yang masih menunggu keputusan operations manager.", "error")
+  }
+
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("email, brand_name, default_locale")
+    .select("email, brand_name, default_locale, verification_status")
     .eq("id", merchantId)
     .maybeSingle()
+
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .insert({
+      merchant_id: merchantId,
+      request_type: "reject",
+      admin_note: reason,
+      requested_by: actor.id,
+    })
+    .select("id")
+    .single()
+
+  if (requestError || !request?.id) {
+    console.error("Submit merchant rejection request error:", requestError)
+    backToMerchants(requestError?.message || "Gagal mengirim request reject merchant ke operations manager.", "error")
+  }
 
   const { error } = await supabaseAdmin
     .from("merchants")
     .update({
-      verification_status: "rejected",
-      rejection_reason: reason,
+      verification_status: "awaiting_manager_rejection",
+      admin_reviewed_at: new Date().toISOString(),
+      admin_reviewed_by: actor.id,
+      manager_review_requested_at: new Date().toISOString(),
+      manager_review_request_id: request.id,
     })
     .eq("id", merchantId)
 
   if (error) {
-    console.error("Reject error:", error)
-    backToMerchants(error.message || "Gagal menolak merchant.", "error")
-  }
-
-  try {
-    await sendMerchantDecisionEmail({
-      email: merchant?.email ?? null,
-      brandName: merchant?.brand_name ?? null,
-      locale: merchant?.default_locale ?? "id",
-      type: "rejected",
-      reason,
-    })
-  } catch (emailError) {
-    console.error("Reject merchant email error:", emailError)
+    console.error("Update merchant after rejection request error:", error)
+    backToMerchants(error.message || "Request rejection terkirim, tetapi status merchant gagal diperbarui.", "error")
   }
 
   revalidateMerchantPages()
@@ -560,16 +605,249 @@ export async function rejectMerchant(formData: FormData) {
     actorRole: actor.role,
     targetType: "merchant",
     targetId: merchantId,
-    action: "reject",
-    summary: `Merchant ${merchantId} ditolak admin`,
+    action: "submit_for_manager_rejection",
+    summary: `Merchant ${merchantId} diajukan admin ke operations manager untuk rejection review`,
     metadata: {
-      status: "rejected",
+      requestId: request.id,
+      requestType: "reject",
+      previousStatus: merchant?.verification_status ?? null,
+      status: "awaiting_manager_rejection",
       reason,
       brandName: merchant?.brand_name ?? null,
     },
   })
 
-  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil ditolak.`, "success")
+  backToMerchants(`Merchant ${merchant?.brand_name || merchant?.email || merchantId} berhasil diajukan ke operations manager untuk keputusan reject final.`, "success")
+}
+
+export async function approveMerchantReviewRequest(formData: FormData) {
+  const requestId = String(formData.get("requestId") || "").trim()
+  const reviewNote = String(formData.get("reviewNote") || "").trim()
+
+  if (!requestId) {
+    backToMerchants("Request review merchant tidak ditemukan.", "error")
+  }
+
+  const supabaseAdmin = createAdminClient()
+  const reviewer = await getMerchantManagerReviewer()
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .select("id, merchant_id, request_type, admin_note, requested_by, status")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError || !request || request.status !== "pending") {
+    console.error("Approve merchant review request error:", requestError)
+    backToMerchants("Request review merchant tidak valid atau sudah diproses.", "error")
+  }
+
+  const { data: merchant } = await supabaseAdmin
+    .from("merchants")
+    .select("id, email, brand_name, default_locale")
+    .eq("id", request.merchant_id)
+    .maybeSingle()
+
+  if (!merchant) {
+    backToMerchants("Data merchant untuk request ini tidak ditemukan.", "error")
+  }
+
+  const now = new Date().toISOString()
+  const { error: merchantError } = await supabaseAdmin
+    .from("merchants")
+    .update({
+      verification_status: "approved",
+      rejection_reason: null,
+      verified_at: now,
+      manager_decision: "approved",
+      manager_decided_at: now,
+      manager_decided_by: reviewer.id,
+      manager_rejection_reason: null,
+      revision_requested_at: null,
+      revision_deadline_at: null,
+      expired_at: null,
+      purge_scheduled_at: null,
+    })
+    .eq("id", request.merchant_id)
+
+  if (merchantError) {
+    console.error("Approve merchant final decision error:", merchantError)
+    backToMerchants(merchantError.message || "Gagal menyetujui merchant.", "error")
+  }
+
+  const { error: reviewUpdateError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .update({
+      status: "approved",
+      manager_reason: reviewNote || null,
+      reviewed_by: reviewer.id,
+      reviewed_at: now,
+    })
+    .eq("id", requestId)
+    .eq("status", "pending")
+
+  if (reviewUpdateError) {
+    backToMerchants(reviewUpdateError.message || "Merchant disetujui, tetapi status request review gagal diperbarui.", "error")
+  }
+
+  try {
+    await sendMerchantDecisionEmail({
+      email: merchant.email ?? null,
+      brandName: merchant.brand_name ?? null,
+      locale: merchant.default_locale ?? "id",
+      type: "approved",
+    })
+  } catch (emailError) {
+    console.error("Approve merchant final email error:", emailError)
+  }
+
+  revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: reviewer.id,
+    actorRole: reviewer.role,
+    targetType: "merchant",
+    targetId: request.merchant_id,
+    action: "manager_approve_merchant",
+    summary: `Merchant ${request.merchant_id} disetujui operations manager`,
+    metadata: {
+      requestId: request.id,
+      requestType: request.request_type,
+      adminNote: request.admin_note || null,
+      reviewNote: reviewNote || null,
+      status: "approved",
+      brandName: merchant.brand_name ?? null,
+    },
+  })
+
+  backToMerchants(`Merchant ${merchant.brand_name || merchant.email || request.merchant_id} berhasil disetujui oleh operations manager.`, "success")
+}
+
+export async function rejectMerchantReviewRequest(formData: FormData) {
+  const requestId = String(formData.get("requestId") || "").trim()
+  const reviewNote = String(formData.get("reviewNote") || "").trim()
+
+  if (!requestId) {
+    backToMerchants("Request review merchant tidak ditemukan.", "error")
+  }
+  if (!reviewNote) {
+    backToMerchants("Alasan penolakan dari operations manager wajib diisi.", "error")
+  }
+
+  const supabaseAdmin = createAdminClient()
+  const reviewer = await getMerchantManagerReviewer()
+  const { data: request, error: requestError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .select("id, merchant_id, request_type, admin_note, requested_by, status")
+    .eq("id", requestId)
+    .maybeSingle()
+
+  if (requestError || !request || request.status !== "pending") {
+    console.error("Reject merchant review request error:", requestError)
+    backToMerchants("Request review merchant tidak valid atau sudah diproses.", "error")
+  }
+
+  const { data: merchant } = await supabaseAdmin
+    .from("merchants")
+    .select("id, email, brand_name, default_locale")
+    .eq("id", request.merchant_id)
+    .maybeSingle()
+
+  if (!merchant) {
+    backToMerchants("Data merchant untuk request ini tidak ditemukan.", "error")
+  }
+
+  const nowDate = new Date()
+  const deadlineDate = new Date(nowDate.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const now = nowDate.toISOString()
+  const deadlineAt = deadlineDate.toISOString()
+
+  const { error: merchantError } = await supabaseAdmin
+    .from("merchants")
+    .update({
+      verification_status: "rejected",
+      rejection_reason: reviewNote,
+      manager_decision: "rejected",
+      manager_decided_at: now,
+      manager_decided_by: reviewer.id,
+      manager_rejection_reason: reviewNote,
+      revision_requested_at: now,
+      revision_deadline_at: deadlineAt,
+      purge_scheduled_at: deadlineAt,
+    })
+    .eq("id", request.merchant_id)
+
+  if (merchantError) {
+    console.error("Reject merchant final decision error:", merchantError)
+    backToMerchants(merchantError.message || "Gagal menolak merchant.", "error")
+  }
+
+  const { error: reviewUpdateError } = await supabaseAdmin
+    .from("merchant_review_requests")
+    .update({
+      status: "rejected",
+      manager_reason: reviewNote,
+      reviewed_by: reviewer.id,
+      reviewed_at: now,
+      expires_at: deadlineAt,
+    })
+    .eq("id", requestId)
+    .eq("status", "pending")
+
+  if (reviewUpdateError) {
+    backToMerchants(reviewUpdateError.message || "Merchant ditolak, tetapi status request review gagal diperbarui.", "error")
+  }
+
+  try {
+    await sendMerchantDecisionEmail({
+      email: merchant.email ?? null,
+      brandName: merchant.brand_name ?? null,
+      locale: merchant.default_locale ?? "id",
+      type: "rejected",
+      reason: reviewNote,
+      deadlineAt,
+    })
+  } catch (emailError) {
+    console.error("Reject merchant final email error:", emailError)
+  }
+
+  if (request.requested_by) {
+    const { data: requestedByAuth, error: requestedByAuthError } = await supabaseAdmin.auth.admin.getUserById(request.requested_by)
+    if (requestedByAuthError) {
+      console.error("Load requesting admin auth user error:", requestedByAuthError)
+    }
+    try {
+      await sendAdminMerchantReviewRejectionEmail({
+        email: requestedByAuth?.user?.email || null,
+        merchantName: merchant.brand_name || merchant.email || request.merchant_id,
+        reason: reviewNote,
+        deadlineAt,
+      })
+    } catch (emailError) {
+      console.error("Reject merchant admin email error:", emailError)
+    }
+  }
+
+  revalidateMerchantPages()
+
+  await createAdminAuditLog({
+    actorId: reviewer.id,
+    actorRole: reviewer.role,
+    targetType: "merchant",
+    targetId: request.merchant_id,
+    action: "manager_reject_merchant",
+    summary: `Merchant ${request.merchant_id} ditolak operations manager`,
+    metadata: {
+      requestId: request.id,
+      requestType: request.request_type,
+      adminNote: request.admin_note || null,
+      managerReason: reviewNote,
+      revisionDeadlineAt: deadlineAt,
+      status: "rejected",
+      brandName: merchant.brand_name ?? null,
+    },
+  })
+
+  backToMerchants(`Merchant ${merchant.brand_name || merchant.email || request.merchant_id} berhasil ditolak oleh operations manager. Alasan sudah dikirim ke merchant dan admin.`, "success")
 }
 
 export async function deactivateMerchant(formData: FormData) {
@@ -814,7 +1092,7 @@ export async function approveMerchantDeletion(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const reviewer = await getMerchantDeletionReviewer()
+  const reviewer = await getMerchantManagerReviewer()
   const { data: request, error: requestError } = await supabaseAdmin
     .from("merchant_deletion_requests")
     .select("id, merchant_id, profile_id, merchant_email, merchant_name, reason, status")
@@ -829,7 +1107,7 @@ export async function approveMerchantDeletion(formData: FormData) {
   if (request.merchant_id) {
     const { data: merchant } = await supabaseAdmin
       .from("merchants")
-      .select("id, user_id, email, brand_name, default_locale")
+      .select("id, user_id, email, brand_name, default_locale, ktp_file_url, npwp_file_url, nib_file_url, logo_url")
       .eq("id", request.merchant_id)
       .maybeSingle()
 
@@ -850,7 +1128,14 @@ export async function approveMerchantDeletion(formData: FormData) {
     }
 
     try {
-      await purgeMerchantAccountRecords(supabaseAdmin, request.merchant_id, merchant.user_id)
+      await purgeMerchantAccountRecords(supabaseAdmin, {
+        id: request.merchant_id,
+        user_id: merchant.user_id,
+        ktp_file_url: merchant.ktp_file_url ?? null,
+        npwp_file_url: merchant.npwp_file_url ?? null,
+        nib_file_url: merchant.nib_file_url ?? null,
+        logo_url: merchant.logo_url ?? null,
+      })
     } catch (deleteError) {
       console.error("Approve merchant deletion purge error:", deleteError)
       backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
@@ -942,7 +1227,7 @@ export async function rejectMerchantDeletion(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const reviewer = await getMerchantDeletionReviewer()
+  const reviewer = await getMerchantManagerReviewer()
   const { data: request, error: requestError } = await supabaseAdmin
     .from("merchant_deletion_requests")
     .select("id, merchant_id, profile_id, merchant_email, merchant_name, reason, status, requested_by")

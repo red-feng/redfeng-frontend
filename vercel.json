@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/cleanup-booking-drafts",
       "schedule": "5 17 * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-expired-merchant-revisions",
+      "schedule": "20 17 * * *"
     }
   ]
 }
