@@ -186,10 +186,6 @@ export default function CompanyStep({
         </label>
       </div>
 
-      <div className="rounded-[24px] border border-orange-100 bg-[#fff9f2] px-5 py-4 text-sm leading-7 text-slate-600">
-        Gunakan nama perusahaan dan brand yang sama dengan dokumen legal untuk mempercepat proses review admin.
-      </div>
-
       <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
         <div>
           {errorMsg ? <p className="text-sm text-red-600">{errorMsg}</p> : null}
