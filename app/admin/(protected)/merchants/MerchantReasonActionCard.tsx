@@ -12,11 +12,11 @@ type MerchantReasonActionCardProps = {
 const COPY = {
   deactivate: {
     eyebrow: "Temporary Block",
-    title: "Nonaktif sementara",
+    title: "Nonaktifkan",
     description: "Gunakan jika merchant perlu dihentikan sementara tanpa menghapus histori operasional.",
     noteLabel: "Admin note + email to merchant",
     placeholder: "Alasan nonaktif sementara. Jika diisi, isi ini juga dikirim ke email merchant...",
-    buttonLabel: "Nonaktifkan merchant",
+    buttonLabel: "Nonaktifkan",
     modalTitle: "Nonaktifkan merchant sementara",
     modalDescription: "Tambahkan catatan untuk internal dan notifikasi merchant. Jika diisi, alasan ini juga dikirim ke email merchant.",
     cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
@@ -28,11 +28,11 @@ const COPY = {
   },
   delete: {
     eyebrow: "Deletion Request",
-    title: "Ajukan hapus merchant",
+    title: "Ajukan",
     description: "Gunakan jika merchant perlu diajukan untuk dihapus permanen. Admin hanya mengajukan, lalu operations manager memberi keputusan final.",
     noteLabel: "Alasan admin untuk operations manager",
     placeholder: "Alasan pengajuan hapus merchant. Isi ini akan dibaca operations manager saat mereview...",
-    buttonLabel: "Ajukan hapus merchant",
+    buttonLabel: "Ajukan",
     modalTitle: "Ajukan penghapusan merchant",
     modalDescription: "Isi alasan penghapusan lalu kirim pengajuan ke operations manager. Merchant baru akan dihapus permanen setelah manager menyetujui keputusan final.",
     cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
@@ -49,7 +49,7 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
   const textareaId = useId()
   const copy = COPY[variant]
   const action = variant === "deactivate" ? deactivateMerchant : requestMerchantDeletion
-  const submitLabel = variant === "deactivate" ? "Lanjutkan nonaktifkan" : "Kirim pengajuan hapus"
+  const submitLabel = variant === "deactivate" ? "Nonaktifkan" : "Ajukan"
   const confirmMessage =
     variant === "deactivate"
       ? "Yakin ingin menonaktifkan merchant ini? Merchant tidak akan bisa mengakses dashboard sampai diaktifkan kembali."

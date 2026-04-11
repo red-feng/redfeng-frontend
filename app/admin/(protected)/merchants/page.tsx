@@ -567,13 +567,13 @@ export default async function AdminMerchantsPage({
                               href={`/admin/merchants/${merchant.id}/profile`}
                               className="inline-flex items-center justify-center rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
                             >
-                              Review profil merchant
+                              Profil
                             </Link>
                             <Link
                               href={`/admin/merchants/${merchant.id}`}
                               className="inline-flex items-center justify-center rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
                             >
-                              Review paket merchant
+                              Paket
                             </Link>
                           </div>
                         </div>
@@ -581,17 +581,12 @@ export default async function AdminMerchantsPage({
                         <div className="space-y-4 rounded-[22px] border border-[#f2dcc1] bg-[#fffdfa] p-5">
                           <form action={approveMerchantReviewRequest} className="space-y-3">
                             <input type="hidden" name="requestId" value={request.id} />
-                            <textarea
-                              name="reviewNote"
-                              placeholder="Catatan final approval untuk internal, opsional..."
-                              className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                            />
                             <ConfirmSubmitButton
                               confirmMessage="Setujui merchant ini sebagai keputusan final operations manager?"
                               pendingLabel="Sedang menyetujui merchant..."
                               className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
                             >
-                              Setujui merchant
+                              Setujui
                             </ConfirmSubmitButton>
                           </form>
 
@@ -608,7 +603,7 @@ export default async function AdminMerchantsPage({
                               pendingLabel="Sedang menolak merchant..."
                               className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                             >
-                              Tolak merchant
+                              Tolak
                             </ConfirmSubmitButton>
                           </form>
                         </div>
@@ -955,7 +950,7 @@ export default async function AdminMerchantsPage({
                               href={`/admin/merchants/${merchant.id}/profile`}
                               className="inline-flex items-center justify-center rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
                             >
-                              Profil merchant
+                              Profil
                             </Link>
                             <Link
                               href={`/admin/merchants/${merchant.id}`}
@@ -1051,13 +1046,13 @@ export default async function AdminMerchantsPage({
                                   href={`/admin/merchants/${merchant.id}/profile`}
                                   className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
                                 >
-                                  Review profil merchant
+                                  Profil
                                 </Link>
                                 <Link
                                   href={`/admin/merchants/${merchant.id}`}
                                   className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-center text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
                                 >
-                                  Review paket merchant
+                                  Paket
                                 </Link>
                               </div>
                             </details>
@@ -1117,7 +1112,7 @@ export default async function AdminMerchantsPage({
                                     pendingLabel="Sedang menghapus merchant..."
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
                                   >
-                                    Setujui penghapusan
+                                    Setujui
                                   </ConfirmSubmitButton>
                                 </form>
                                 <form action={rejectMerchantDeletion} className="space-y-3">
@@ -1132,14 +1127,14 @@ export default async function AdminMerchantsPage({
                                     pendingLabel="Sedang menolak..."
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                                   >
-                                    Tolak penghapusan
+                                    Tolak
                                   </ConfirmSubmitButton>
                                 </form>
                               </>
                             ) : pendingDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && (currentUserId === pendingDeletionRequest.requested_by || currentRole === "superadmin") ? (
                               <div className="space-y-3">
                                 <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan manager</p>
                                   <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
                                 </div>
                                 <form action={finalizeMerchantDeletionCancellation}>
@@ -1149,7 +1144,7 @@ export default async function AdminMerchantsPage({
                                     pendingLabel="Sedang menutup pengajuan..."
                                     className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                                   >
-                                    Batalkan penghapusan
+                                    Batalkan
                                   </ConfirmSubmitButton>
                                 </form>
                               </div>
@@ -1186,7 +1181,7 @@ export default async function AdminMerchantsPage({
                             <form action={reactivateMerchant} className="mt-auto pt-4">
                               <input type="hidden" name="merchantId" value={merchant.id} />
                               <button className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#059669_0%,#10b981_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(16,185,129,0.24)] transition hover:brightness-105">
-                                Aktifkan merchant
+                                Aktifkan
                               </button>
                             </form>
                           </div>
@@ -1287,7 +1282,7 @@ export default async function AdminMerchantsPage({
                                   pendingLabel="Sedang menghapus..."
                                   className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
                                 >
-                                  Setujui penghapusan
+                                  Setujui
                                 </ConfirmSubmitButton>
                               </form>
                               <form action={rejectMerchantDeletion} className="space-y-3">
@@ -1302,14 +1297,14 @@ export default async function AdminMerchantsPage({
                                   pendingLabel="Sedang menolak..."
                                   className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                                 >
-                                  Tolak penghapusan
+                                  Tolak
                                 </ConfirmSubmitButton>
                               </form>
                             </div>
                           ) : pendingDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && (currentUserId === pendingDeletionRequest.requested_by || currentRole === "superadmin") ? (
                             <div className="mt-4 space-y-3">
                               <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan operations manager</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan manager</p>
                                 <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
                               </div>
                               <form action={finalizeMerchantDeletionCancellation}>
@@ -1319,7 +1314,7 @@ export default async function AdminMerchantsPage({
                                   pendingLabel="Sedang menutup pengajuan..."
                                   className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                                 >
-                                  Batalkan penghapusan
+                                  Batalkan
                                 </ConfirmSubmitButton>
                               </form>
                             </div>
@@ -1334,7 +1329,7 @@ export default async function AdminMerchantsPage({
                       ) : canRequestMerchantDeletion ? (
                         <>
                           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-red-700">
-                            Ajukan hapus akses merchant
+                            Ajukan
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
                             Action ini mengirim pengajuan ke operations manager. Jika disetujui, akun auth dan profile merchant akan dihapus permanen dari database.
@@ -1352,7 +1347,7 @@ export default async function AdminMerchantsPage({
                               pendingLabel="Mengirim pengajuan..."
                               className="mt-auto inline-flex items-center justify-center gap-2 rounded-[18px] bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
                             >
-                              Ajukan hapus akses merchant
+                              Ajukan
                             </ConfirmSubmitButton>
                           </form>
                         </>

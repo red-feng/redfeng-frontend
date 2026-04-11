@@ -261,12 +261,13 @@ async function sendMerchantDecisionEmail({
     id: {
       greeting: "Halo",
       approvedSubject: "RedFeng Merchant: Akun Anda Disetujui",
-      approvedIntro: "Kami informasikan bahwa akun merchant Anda telah disetujui oleh tim Red Feng.",
+      approvedIntro:
+        "Dengan senang hati kami informasikan bahwa registrasi merchant Anda telah disetujui setelah melalui proses review internal Red Feng.",
       approvedStatus: "Approved",
       approvedGuidance:
-        "Anda sudah dapat masuk ke dashboard merchant untuk melengkapi profil bisnis, mengelola paket, dan melanjutkan operasional di platform Red Feng.",
+        "Akun merchant Anda kini sudah aktif dan dapat digunakan untuk masuk ke dashboard merchant, melengkapi profil bisnis, mengelola paket, serta melanjutkan operasional di platform Red Feng.",
       approvedReminder:
-        "Mohon pastikan seluruh data profil, dokumen, rekening payout, dan paket yang ditampilkan selalu sesuai dengan ketentuan operasional Red Feng.",
+        "Mohon pastikan seluruh data profil, dokumen legal, rekening payout, dan paket yang ditampilkan selalu akurat, mutakhir, dan sesuai dengan ketentuan operasional Red Feng.",
       inactiveSubject: "RedFeng Merchant: Akses Merchant Dinonaktifkan Sementara",
       inactiveIntro:
         "Kami informasikan bahwa akses merchant Anda saat ini dinonaktifkan sementara oleh tim Red Feng.",
@@ -301,12 +302,13 @@ async function sendMerchantDecisionEmail({
     en: {
       greeting: "Hello",
       approvedSubject: "RedFeng Merchant: Your Account Has Been Approved",
-      approvedIntro: "We would like to inform you that your merchant account has been approved by the Red Feng team.",
+      approvedIntro:
+        "We are pleased to inform you that your merchant registration has been approved after completing Red Feng's internal review process.",
       approvedStatus: "Approved",
       approvedGuidance:
-        "You may now access the merchant dashboard to complete your business profile, manage packages, and continue your operations on the Red Feng platform.",
+        "Your merchant account is now active and ready to access the merchant dashboard, complete your business profile, manage packages, and continue your operations on the Red Feng platform.",
       approvedReminder:
-        "Please ensure that your business profile, supporting documents, payout account, and package information remain accurate and compliant with Red Feng operational standards.",
+        "Please ensure that your business profile, legal documents, payout account, and package information remain accurate, up to date, and compliant with Red Feng operational standards.",
       inactiveSubject: "RedFeng Merchant: Merchant Access Temporarily Disabled",
       inactiveIntro:
         "We would like to inform you that your merchant access has been temporarily disabled by the Red Feng team.",
@@ -341,12 +343,12 @@ async function sendMerchantDecisionEmail({
     zh: {
       greeting: "您好",
       approvedSubject: "RedFeng Merchant：您的账号已获批准",
-      approvedIntro: "谨此通知，您的商家账号已通过 Red Feng 团队审核。",
+      approvedIntro: "我们很高兴地通知您，您的商家注册已顺利通过 Red Feng 的内部审核流程。",
       approvedStatus: "Approved",
       approvedGuidance:
-        "您现在可以登录商家后台，完善企业资料、管理套餐，并继续在 Red Feng 平台开展业务。",
+        "您的商家账号现已正式启用，可以登录商家后台，完善企业资料、管理套餐，并继续在 Red Feng 平台开展业务。",
       approvedReminder:
-        "请确保您的企业资料、证明文件、结算账户以及套餐信息始终准确无误，并符合 Red Feng 的运营标准。",
+        "请确保您的企业资料、法律文件、结算账户以及套餐信息始终准确、最新，并符合 Red Feng 的运营标准。",
       inactiveSubject: "RedFeng Merchant：商家权限已被临时停用",
       inactiveIntro: "谨此通知，您的商家权限目前已被 Red Feng 团队临时停用。",
       inactiveStatus: "Inactive",
@@ -659,7 +661,6 @@ export async function submitMerchantRejectionRequest(formData: FormData) {
 
 export async function approveMerchantReviewRequest(formData: FormData) {
   const requestId = String(formData.get("requestId") || "").trim()
-  const reviewNote = String(formData.get("reviewNote") || "").trim()
 
   if (!requestId) {
     backToMerchants("Request review merchant tidak ditemukan.", "error")
@@ -720,7 +721,7 @@ export async function approveMerchantReviewRequest(formData: FormData) {
     .from("merchant_review_requests")
     .update({
       status: "approved",
-      manager_reason: reviewNote || null,
+      manager_reason: null,
       reviewed_by: reviewer.id,
       reviewed_at: now,
     })
@@ -758,7 +759,6 @@ export async function approveMerchantReviewRequest(formData: FormData) {
       requestId: request.id,
       requestType: request.request_type,
       adminNote: request.admin_note || null,
-      reviewNote: reviewNote || null,
       status: "approved",
       brandName: merchant.brand_name ?? null,
     },
