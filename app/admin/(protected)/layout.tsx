@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
 import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES, isStatusInSet } from "@/lib/nav-badge-policy"
 
@@ -47,7 +48,7 @@ export default async function AdminProtectedLayout({
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
 
-  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult] = await Promise.all([
+  const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, internalChatUnreadBadgeCount] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id, created_at")
@@ -62,6 +63,7 @@ export default async function AdminProtectedLayout({
       .from("merchant_deletion_requests")
       .select("id, created_at")
       .eq("status", "pending"),
+    getInternalChatUnreadBadgeCount(adminSupabase, user.id),
   ])
 
   const pendingMerchantRows =
@@ -88,7 +90,7 @@ export default async function AdminProtectedLayout({
   const adminNav = isOperationsManager
       ? [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
-        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: 0 },
+        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         {
           label: "Operational Review",
           children: [
@@ -119,7 +121,7 @@ export default async function AdminProtectedLayout({
       ]
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
-        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: 0 },
+        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         {
           label: "Paket Tour",
           children: [

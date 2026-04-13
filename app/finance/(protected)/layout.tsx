@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -42,13 +43,14 @@ export default async function FinanceProtectedLayout({
   const isFinanceManager = profile.role === "finance_manager"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
-  const [refundsResult, payoutsResult] = await Promise.all([
+  const [refundsResult, payoutsResult, internalChatUnreadBadgeCount] = await Promise.all([
     adminSupabase
       .from("refund_requests")
       .select("id, status, created_at, updated_at"),
     adminSupabase
       .from("payout_requests")
       .select("id, status, requested_at, processed_at, updated_at"),
+    getInternalChatUnreadBadgeCount(adminSupabase, user.id),
   ])
 
   const refundRows =
@@ -66,7 +68,7 @@ export default async function FinanceProtectedLayout({
   const financeNav = isFinanceManager
       ? [
           { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/internal-chat", label: "Internal Chat" },
+          { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
           { href: "/finance/settings", label: "Finance Settings" },
@@ -74,7 +76,7 @@ export default async function FinanceProtectedLayout({
         ]
       : [
           { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/internal-chat", label: "Internal Chat" },
+          { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
         ]

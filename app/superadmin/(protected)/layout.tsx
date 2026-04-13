@@ -3,6 +3,7 @@ import SignOutButton from "@/app/components/SignOutButton"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import SuperadminNavSeenTracker from "@/app/components/SuperadminNavSeenTracker"
 import { formatAdminCode } from "@/lib/merchant-code"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -38,7 +39,7 @@ export default async function SuperadminProtectedLayout({
     redirect(`/superadmin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
-  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult] = await Promise.all([
+  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount] = await Promise.all([
     adminSupabase
       .from("superadmin_nav_seen_states")
       .select("seen_ops_accounts_at, seen_finance_accounts_at, seen_superadmin_accounts_at, seen_bookings_at, seen_audit_log_at")
@@ -59,6 +60,7 @@ export default async function SuperadminProtectedLayout({
       .in("action", ["create_account", "reset_password", "delete_account"])
       .order("created_at", { ascending: false })
       .limit(200),
+    getInternalChatUnreadBadgeCount(adminSupabase, user.id),
   ])
 
   const seenState =
@@ -100,7 +102,7 @@ export default async function SuperadminProtectedLayout({
 
   const navItems = [
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
-    { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: 0 },
+    { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
     {
       label: "Manager Dashboard Preview",
       children: [
