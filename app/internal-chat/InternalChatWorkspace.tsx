@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import InternalChatRealtimeClient from "@/app/internal-chat/InternalChatRealtimeClient"
 import {
   getInternalProfileById,
@@ -99,12 +98,6 @@ export default async function InternalChatWorkspace({ portal, searchParams }: Pr
             {params.error}
           </div>
         ) : null}
-
-        <RoleAutoRefresh
-          intervalMs={3000}
-          realtimeTables={["internal_chat_rooms", "internal_chat_messages", "internal_chat_room_members"]}
-          realtimeDelayMs={200}
-        />
 
         <InternalChatRealtimeClient
           userId={user.id}
