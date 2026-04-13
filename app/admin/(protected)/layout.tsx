@@ -86,8 +86,9 @@ export default async function AdminProtectedLayout({
   const financeReadyBadgeCount = financeReadyRows.length
 
   const adminNav = isOperationsManager
-    ? [
+      ? [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
+        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: 0 },
         {
           label: "Operational Review",
           children: [
@@ -118,6 +119,7 @@ export default async function AdminProtectedLayout({
       ]
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
+        { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: 0 },
         {
           label: "Paket Tour",
           children: [

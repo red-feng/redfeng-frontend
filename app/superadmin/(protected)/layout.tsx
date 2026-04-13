@@ -100,6 +100,7 @@ export default async function SuperadminProtectedLayout({
 
   const navItems = [
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
+    { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: 0 },
     {
       label: "Manager Dashboard Preview",
       children: [

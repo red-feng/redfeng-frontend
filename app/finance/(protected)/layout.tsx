@@ -66,6 +66,7 @@ export default async function FinanceProtectedLayout({
   const financeNav = isFinanceManager
       ? [
           { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/internal-chat", label: "Internal Chat" },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
           { href: "/finance/settings", label: "Finance Settings" },
@@ -73,6 +74,7 @@ export default async function FinanceProtectedLayout({
         ]
       : [
           { href: "/finance/dashboard", label: "Dashboard" },
+          { href: "/finance/internal-chat", label: "Internal Chat" },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
         ]
