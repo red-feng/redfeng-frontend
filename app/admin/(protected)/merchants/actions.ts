@@ -10,6 +10,14 @@ import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { redirectWithMessage } from "@/lib/internal-account-management"
 import { purgeMerchantAccountRecords } from "@/lib/merchant-review-cleanup"
+import {
+  canDecideMerchantDeletionReview,
+  canDecideMerchantRegistrationReview,
+  canRequestMerchantDeletionReview,
+  canRequestMerchantRegistrationReview,
+  MERCHANT_DELETION_ROLES,
+  MERCHANT_REVIEW_ROLES,
+} from "@/lib/merchant-review-policy"
 
 function revalidateMerchantPages() {
   revalidatePath("/admin/merchants")
@@ -67,13 +75,45 @@ async function getMerchantManagerReviewer() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   const role = String(profile?.role || "").trim().toLowerCase()
   if (!["operations_manager", "superadmin"].includes(role)) {
-    throw new Error("Hanya operations manager atau superadmin yang dapat mereview merchant.")
+    backToMerchants("Hanya operations manager atau superadmin yang dapat mereview request ini.", "error")
   }
 
   return {
     id: user.id,
     role,
   }
+}
+
+async function getMerchantReviewRequester() {
+  const actor = await getMerchantDeletionRequester()
+  if (!canRequestMerchantRegistrationReview(actor.role)) {
+    backToMerchants(`Hanya ${MERCHANT_REVIEW_ROLES.requester} yang dapat mengajukan review registrasi merchant.`, "error")
+  }
+  return actor
+}
+
+async function getMerchantRegistrationReviewer() {
+  const reviewer = await getMerchantDeletionReviewer()
+  if (!canDecideMerchantRegistrationReview(reviewer.role)) {
+    backToMerchants(`Hanya ${MERCHANT_REVIEW_ROLES.decider.replace("_", " ")} yang dapat memutuskan registrasi merchant baru.`, "error")
+  }
+  return reviewer
+}
+
+async function getMerchantDeletionRequester() {
+  const actor = await getAdminActor()
+  if (!canRequestMerchantDeletionReview(actor.role)) {
+    backToMerchants(`Hanya ${MERCHANT_DELETION_ROLES.requester} yang dapat mengajukan penghapusan merchant.`, "error")
+  }
+  return actor
+}
+
+async function getMerchantDeletionReviewer() {
+  const reviewer = await getMerchantManagerReviewer()
+  if (!canDecideMerchantDeletionReview(reviewer.role)) {
+    backToMerchants(`Hanya ${MERCHANT_DELETION_ROLES.decider.replace("_", " ")} yang dapat memutuskan penghapusan merchant.`, "error")
+  }
+  return reviewer
 }
 
 async function findPendingMerchantReviewRequest(adminSupabase: ReturnType<typeof createAdminClient>, merchantId: string) {
@@ -492,7 +532,7 @@ export async function submitMerchantApprovalRequest(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const actor = await getAdminActor()
+  const actor = await getMerchantReviewRequester()
 
   let existingRequest = null
   try {
@@ -580,7 +620,7 @@ export async function submitMerchantRejectionRequest(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const actor = await getAdminActor()
+  const actor = await getMerchantReviewRequester()
 
   let existingRequest = null
   try {
@@ -667,7 +707,7 @@ export async function approveMerchantReviewRequest(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const reviewer = await getMerchantManagerReviewer()
+  const reviewer = await getMerchantRegistrationReviewer()
   const { data: request, error: requestError } = await supabaseAdmin
     .from("merchant_review_requests")
     .select("id, merchant_id, request_type, admin_note, requested_by, status")
@@ -779,7 +819,7 @@ export async function rejectMerchantReviewRequest(formData: FormData) {
   }
 
   const supabaseAdmin = createAdminClient()
-  const reviewer = await getMerchantManagerReviewer()
+  const reviewer = await getMerchantRegistrationReviewer()
   const { data: request, error: requestError } = await supabaseAdmin
     .from("merchant_review_requests")
     .select("id, merchant_id, request_type, admin_note, requested_by, status")
@@ -1353,6 +1393,9 @@ export async function finalizeMerchantDeletionCancellation(formData: FormData) {
 
   const supabaseAdmin = createAdminClient()
   const actor = await getAdminActor()
+  if (!canRequestMerchantDeletionReview(actor.role)) {
+    backToMerchants(`Hanya ${MERCHANT_DELETION_ROLES.requester} yang dapat menutup pengajuan penghapusan merchant yang ditolak manager.`, "error")
+  }
   const { data: request, error: requestError } = await supabaseAdmin
     .from("merchant_deletion_requests")
     .select("id, merchant_id, profile_id, merchant_email, merchant_name, reason, review_note, status, requested_by, reviewed_at")
@@ -1364,8 +1407,8 @@ export async function finalizeMerchantDeletionCancellation(formData: FormData) {
     backToMerchants("Request penghapusan merchant tidak valid atau belum ditolak operations manager.", "error")
   }
 
-  if (actor.role !== "superadmin" && request.requested_by && request.requested_by !== actor.id) {
-    backToMerchants("Hanya admin pengaju atau superadmin yang dapat menutup pengajuan yang ditolak manager.", "error")
+  if (request.requested_by && request.requested_by !== actor.id) {
+    backToMerchants("Hanya admin pengaju yang dapat menutup pengajuan yang ditolak manager.", "error")
   }
 
   const { error: cancelError } = await supabaseAdmin

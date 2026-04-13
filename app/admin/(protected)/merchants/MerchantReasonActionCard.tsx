@@ -3,6 +3,7 @@
 import { useId, useState } from "react"
 import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import { deactivateMerchant, requestMerchantDeletion } from "./actions"
+import { MERCHANT_REVIEW_BUTTONS } from "@/lib/merchant-review-policy"
 
 type MerchantReasonActionCardProps = {
   merchantId: string
@@ -28,11 +29,11 @@ const COPY = {
   },
   delete: {
     eyebrow: "Deletion Request",
-    title: "Ajukan",
+    title: MERCHANT_REVIEW_BUTTONS.submit,
     description: "Gunakan jika merchant perlu diajukan untuk dihapus permanen. Admin hanya mengajukan, lalu operations manager memberi keputusan final.",
     noteLabel: "Alasan admin untuk operations manager",
     placeholder: "Alasan pengajuan hapus merchant. Isi ini akan dibaca operations manager saat mereview...",
-    buttonLabel: "Ajukan",
+    buttonLabel: MERCHANT_REVIEW_BUTTONS.submit,
     modalTitle: "Ajukan penghapusan merchant",
     modalDescription: "Isi alasan penghapusan lalu kirim pengajuan ke operations manager. Merchant baru akan dihapus permanen setelah manager menyetujui keputusan final.",
     cardClass: "border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]",
@@ -49,7 +50,7 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
   const textareaId = useId()
   const copy = COPY[variant]
   const action = variant === "deactivate" ? deactivateMerchant : requestMerchantDeletion
-  const submitLabel = variant === "deactivate" ? "Nonaktifkan" : "Ajukan"
+  const submitLabel = variant === "deactivate" ? "Nonaktifkan" : MERCHANT_REVIEW_BUTTONS.submit
   const confirmMessage =
     variant === "deactivate"
       ? "Yakin ingin menonaktifkan merchant ini? Merchant tidak akan bisa mengakses dashboard sampai diaktifkan kembali."

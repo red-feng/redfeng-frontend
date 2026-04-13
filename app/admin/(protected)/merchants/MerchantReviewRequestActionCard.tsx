@@ -3,6 +3,7 @@
 import { useId, useState } from "react"
 import ConfirmSubmitButton from "./ConfirmSubmitButton"
 import { submitMerchantApprovalRequest, submitMerchantRejectionRequest } from "./actions"
+import { MERCHANT_REVIEW_BUTTONS } from "@/lib/merchant-review-policy"
 
 type MerchantReviewRequestActionCardProps = {
   merchantId: string
@@ -16,14 +17,14 @@ const COPY = {
     description: "Setelah review admin selesai, ajukan merchant ini ke operations manager untuk keputusan final approve.",
     noteLabel: "Catatan admin untuk manager",
     placeholder: "Catatan tambahan untuk operations manager, misalnya ringkasan hasil review atau hal penting yang sudah dicek...",
-    buttonLabel: "Ajukan",
+    buttonLabel: MERCHANT_REVIEW_BUTTONS.submit,
     modalTitle: "Ajukan merchant untuk approval final",
     modalDescription: "Admin tidak lagi approve langsung. Kirim rekomendasi review ini ke operations manager untuk keputusan final.",
     cardClass: "border-emerald-200 bg-emerald-50/80",
     textareaClass: "border-emerald-200 focus:border-emerald-400 focus:ring-emerald-100",
     buttonClass:
       "bg-emerald-600 shadow-[0_14px_30px_rgba(5,150,105,0.22)] hover:bg-emerald-700",
-    submitLabel: "Ajukan",
+    submitLabel: MERCHANT_REVIEW_BUTTONS.submit,
     pendingLabel: "Mengirim request approval...",
     confirmMessage: "Kirim merchant ini ke operations manager untuk approval final?",
   },
@@ -33,14 +34,14 @@ const COPY = {
     description: "Gunakan jika menurut admin merchant perlu ditolak. Operations manager tetap memberi keputusan final dan alasan resmi ke merchant.",
     noteLabel: "Catatan admin untuk manager",
     placeholder: "Tuliskan alasan dan konteks review yang perlu dibaca operations manager...",
-    buttonLabel: "Tolak",
+    buttonLabel: MERCHANT_REVIEW_BUTTONS.reject,
     modalTitle: "Ajukan merchant untuk keputusan reject final",
     modalDescription: "Operations manager akan memberi keputusan final. Jika ditolak, alasan resminya akan dikirim ke merchant dan admin, lalu merchant mendapat waktu revisi 7 hari.",
     cardClass: "border-rose-200 bg-rose-50/80",
     textareaClass: "border-rose-200 focus:border-rose-400 focus:ring-rose-100",
     buttonClass:
       "bg-rose-600 shadow-[0_14px_30px_rgba(225,29,72,0.22)] hover:bg-rose-700",
-    submitLabel: "Ajukan",
+    submitLabel: MERCHANT_REVIEW_BUTTONS.submit,
     pendingLabel: "Mengirim request rejection...",
     confirmMessage: "Kirim merchant ini ke operations manager untuk diputuskan reject final?",
   },
