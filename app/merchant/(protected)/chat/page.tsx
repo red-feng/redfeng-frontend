@@ -2,7 +2,6 @@
 import { getCurrentLocale } from "@/lib/locale"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
@@ -488,12 +487,6 @@ export default async function MerchantChatPage({
           {t.unreadBadgeMigration}
         </div>
       )}
-
-      <RoleAutoRefresh
-        intervalMs={3000}
-        realtimeTables={["package_chat_rooms", "package_chat_messages"]}
-        realtimeDelayMs={220}
-      />
 
       <MerchantChatRealtimeClient
         userId={user.id}
