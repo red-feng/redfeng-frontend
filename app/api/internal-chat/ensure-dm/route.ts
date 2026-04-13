@@ -5,7 +5,6 @@ import {
   getInternalChatRoomMetaForUser,
   getInternalProfileById,
   markInternalRoomRead,
-  syncInternalChatGroupMemberships,
 } from "@/lib/internal-chat"
 import { createClient } from "@/lib/supabase/server"
 
@@ -32,7 +31,6 @@ export async function POST(request: Request) {
   }
 
   try {
-    await syncInternalChatGroupMemberships(adminSupabase)
     const roomId = await ensureInternalDirectRoom(adminSupabase, user.id, targetUserId)
     await markInternalRoomRead(adminSupabase, roomId, user.id)
     const room = await getInternalChatRoomMetaForUser(adminSupabase, roomId, user.id)

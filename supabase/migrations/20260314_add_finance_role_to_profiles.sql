@@ -46,5 +46,5 @@ begin
 
   alter table public.profiles
     add constraint profiles_role_check
-    check (role in ('customer', 'merchant', 'admin', 'superadmin', 'finance'));
+    check (role in ('customer', 'merchant', 'admin', 'operations_manager', 'finance', 'finance_manager', 'superadmin'));
 end $$;

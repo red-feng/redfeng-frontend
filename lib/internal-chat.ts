@@ -1,4 +1,4 @@
-import { getRoleLabel, isInternalRole, type InternalRole } from "@/lib/internal-roles"
+import { getRoleLabel, isInternalRole } from "@/lib/internal-roles"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
 
@@ -39,17 +39,9 @@ type InternalChatMessageRow = {
   created_at: string | null
 }
 
-type GroupRoomDefinition = {
-  code: string
-  name: string
-  description: string
-  allowedRoles: readonly InternalRole[]
-}
-
 export type InternalChatRoomItem = {
   id: string
-  roomScope: "group" | "dm"
-  groupCode: string | null
+  roomScope: "dm"
   title: string
   subtitle: string | null
   participantCount: number
@@ -69,48 +61,6 @@ export type InternalChatUserOption = {
   id: string
   username: string
   role: string
-}
-
-const GROUP_ROOMS: readonly GroupRoomDefinition[] = [
-  {
-    code: "all_internal",
-    name: "All Internal",
-    description: "Room semua akun internal Red Feng",
-    allowedRoles: ["admin", "operations_manager", "finance", "finance_manager", "superadmin"],
-  },
-  {
-    code: "ops_managers",
-    name: "Ops Managers",
-    description: "Room khusus operations manager",
-    allowedRoles: ["operations_manager"],
-  },
-  {
-    code: "finance_managers",
-    name: "Finance Managers",
-    description: "Room khusus finance manager",
-    allowedRoles: ["finance_manager"],
-  },
-  {
-    code: "superadmins",
-    name: "Superadmins",
-    description: "Room khusus antar superadmin",
-    allowedRoles: ["superadmin"],
-  },
-  {
-    code: "superadmin_managers",
-    name: "Superadmin + Managers",
-    description: "Room superadmin dengan semua manager",
-    allowedRoles: ["superadmin", "operations_manager", "finance_manager"],
-  },
-] as const
-
-function normalizeRole(role: string | null | undefined) {
-  return String(role || "").trim().toLowerCase()
-}
-
-function isEligibleForGroup(role: string | null | undefined, allowedRoles: readonly InternalRole[]) {
-  const normalized = normalizeRole(role)
-  return allowedRoles.includes(normalized as InternalRole)
 }
 
 function buildDirectRoomKey(leftUserId: string, rightUserId: string) {
@@ -159,117 +109,6 @@ export async function getInternalProfileById(adminSupabase: AdminSupabase, userI
   return profile
 }
 
-async function ensureGroupRooms(adminSupabase: AdminSupabase) {
-  const { data: existingRows, error: existingError } = await adminSupabase
-    .from("internal_chat_rooms")
-    .select("id, group_code")
-    .eq("room_scope", "group")
-    .in(
-      "group_code",
-      GROUP_ROOMS.map((room) => room.code),
-    )
-
-  if (existingError) {
-    throw new Error(existingError.message || "Gagal membaca room group internal.")
-  }
-
-  const existing = new Map<string, string>()
-  for (const row of (existingRows as Array<{ id: string; group_code: string | null }> | null) || []) {
-    if (row.group_code) existing.set(row.group_code, row.id)
-  }
-
-  const missing = GROUP_ROOMS.filter((room) => !existing.has(room.code))
-  if (missing.length > 0) {
-    const { data: inserted, error: insertError } = await adminSupabase
-      .from("internal_chat_rooms")
-      .insert(
-        missing.map((room) => ({
-          room_scope: "group",
-          group_code: room.code,
-          name: room.name,
-          description: room.description,
-        })),
-      )
-      .select("id, group_code")
-
-    if (insertError) {
-      throw new Error(insertError.message || "Gagal membuat room group internal.")
-    }
-
-    for (const row of (inserted as Array<{ id: string; group_code: string | null }> | null) || []) {
-      if (row.group_code) existing.set(row.group_code, row.id)
-    }
-  }
-
-  return existing
-}
-
-export async function syncInternalChatGroupMemberships(adminSupabase: AdminSupabase) {
-  const [profiles, groupRoomMap] = await Promise.all([getInternalProfiles(adminSupabase), ensureGroupRooms(adminSupabase)])
-
-  const expectedByRoom = new Map<string, Set<string>>()
-  for (const room of GROUP_ROOMS) {
-    const roomId = groupRoomMap.get(room.code)
-    if (!roomId) continue
-
-    const members = new Set<string>()
-    for (const profile of profiles) {
-      if (isEligibleForGroup(profile.role, room.allowedRoles)) {
-        members.add(profile.id)
-      }
-    }
-    expectedByRoom.set(roomId, members)
-  }
-
-  const upserts: Array<{ room_id: string; user_id: string }> = []
-  for (const [roomId, users] of expectedByRoom) {
-    for (const userId of users) {
-      upserts.push({ room_id: roomId, user_id: userId })
-    }
-  }
-
-  if (upserts.length > 0) {
-    const { error } = await adminSupabase
-      .from("internal_chat_room_members")
-      .upsert(upserts, { onConflict: "room_id,user_id", ignoreDuplicates: true })
-    if (error) {
-      throw new Error(error.message || "Gagal sinkron member room internal.")
-    }
-  }
-
-  const roomIds = [...expectedByRoom.keys()]
-  if (roomIds.length > 0) {
-    const { data: existingMembers, error: existingMembersError } = await adminSupabase
-      .from("internal_chat_room_members")
-      .select("room_id, user_id")
-      .in("room_id", roomIds)
-
-    if (existingMembersError) {
-      throw new Error(existingMembersError.message || "Gagal membaca member room internal.")
-    }
-
-    const staleByRoom = new Map<string, string[]>()
-    for (const member of (existingMembers as Array<{ room_id: string; user_id: string }> | null) || []) {
-      const expectedUsers = expectedByRoom.get(member.room_id)
-      if (!expectedUsers || expectedUsers.has(member.user_id)) continue
-      const staleForRoom = staleByRoom.get(member.room_id) || []
-      staleForRoom.push(member.user_id)
-      staleByRoom.set(member.room_id, staleForRoom)
-    }
-
-    for (const [roomId, userIds] of staleByRoom) {
-      if (userIds.length === 0) continue
-      const { error } = await adminSupabase
-        .from("internal_chat_room_members")
-        .delete()
-        .eq("room_id", roomId)
-        .in("user_id", userIds)
-      if (error) {
-        throw new Error(error.message || "Gagal membersihkan member room internal.")
-      }
-    }
-  }
-}
 
 export async function ensureInternalDirectRoom(
   adminSupabase: AdminSupabase,
@@ -410,6 +249,7 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
     .from("internal_chat_rooms")
     .select("id, room_scope, group_code, name, description, updated_at, last_message_at, last_message_sender_id")
     .in("id", roomIds)
+    .eq("room_scope", "dm")
 
   if (roomsError) {
     throw new Error(roomsError.message || "Gagal membaca room internal.")
@@ -451,22 +291,15 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
   const result: InternalChatRoomItem[] = rooms.map((room) => {
     const roomMembers = memberMap.get(room.id) || []
     const latest = latestMessageMap.get(room.id)
-    const isGroup = room.room_scope === "group"
     const otherMember = roomMembers.find((member) => member.user_id !== userId) || null
     const otherProfile = otherMember ? profileMap.get(otherMember.user_id) || null : null
-    const groupTitle = room.name || "Internal Group"
     const dmTitle = otherProfile?.username || `User ${String(otherMember?.user_id || "").slice(0, 8)}`
-    const subtitle = isGroup
-      ? room.description || "Room internal"
-      : otherProfile?.role
-        ? getRoleLabel(otherProfile.role)
-        : null
+    const subtitle = otherProfile?.role ? getRoleLabel(otherProfile.role) : null
 
     return {
       id: room.id,
-      roomScope: isGroup ? "group" : "dm",
-      groupCode: room.group_code || null,
-      title: isGroup ? groupTitle : dmTitle,
+      roomScope: "dm",
+      title: dmTitle,
       subtitle,
       participantCount: roomMembers.length,
       updatedAt: room.updated_at || null,
@@ -474,9 +307,9 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
       lastMessageSenderId: room.last_message_sender_id || null,
       currentUserLastReadAt: readMap.get(room.id) || null,
       lastMessagePreview: latest?.message || null,
-      otherUserId: isGroup ? null : otherMember?.user_id || null,
-      otherUsername: isGroup ? null : otherProfile?.username || null,
-      otherUserRole: isGroup ? null : otherProfile?.role || null,
+      otherUserId: otherMember?.user_id || null,
+      otherUsername: otherProfile?.username || null,
+      otherUserRole: otherProfile?.role || null,
     }
   })
 

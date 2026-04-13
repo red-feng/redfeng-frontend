@@ -7,7 +7,6 @@ import {
   loadInternalChatMessagesForUser,
   loadInternalChatRoomsForUser,
   markInternalRoomRead,
-  syncInternalChatGroupMemberships,
 } from "@/lib/internal-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -22,19 +21,19 @@ const PORTAL_HEADLINES: Record<Props["portal"], { badge: string; title: string; 
     badge: "Admin Internal Chat",
     title: "Komunikasi internal realtime untuk tim operasional.",
     description:
-      "Gunakan room group untuk koordinasi lintas tim dan chat pribadi untuk follow-up cepat antar akun internal.",
+      "Gunakan chat pribadi antar akun internal untuk koordinasi cepat lintas role.",
   },
   finance: {
     badge: "Finance Internal Chat",
     title: "Komunikasi internal realtime untuk tim finance.",
     description:
-      "Sinkronkan keputusan payout, refund, dan koordinasi lintas role lewat room group dan chat pribadi internal.",
+      "Sinkronkan keputusan payout, refund, dan koordinasi lintas role lewat chat pribadi internal.",
   },
   superadmin: {
     badge: "Superadmin Internal Chat",
-    title: "Command center chat internal lintas semua manager.",
+    title: "Chat internal pribadi lintas semua manager.",
     description:
-      "Superadmin dapat memantau room group utama dan berkomunikasi langsung dengan semua role internal dalam satu inbox.",
+      "Superadmin dapat berkomunikasi langsung dengan semua role internal dalam satu inbox japri.",
   },
 }
 
@@ -57,7 +56,6 @@ export default async function InternalChatWorkspace({ portal, searchParams }: Pr
     redirect(`/${portal}/login`)
   }
 
-  await syncInternalChatGroupMemberships(adminSupabase)
   const rooms = await loadInternalChatRoomsForUser(adminSupabase, user.id)
   const requestedRoomId = String(params.room_id || "").trim()
   const activeRoomId = requestedRoomId || rooms[0]?.id || ""

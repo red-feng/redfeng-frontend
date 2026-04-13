@@ -83,8 +83,7 @@ export default function InternalChatRealtimeClient({
     return room.lastMessageAt > room.currentUserLastReadAt
   }).length
 
-  const groupRooms = rooms.filter((room) => room.roomScope === "group").length
-  const directRooms = rooms.filter((room) => room.roomScope === "dm").length
+  const directRooms = rooms.length
 
   async function fetchRoomMeta(roomId: string) {
     try {
@@ -312,18 +311,14 @@ export default function InternalChatRealtimeClient({
 
   return (
     <section className="mt-8 rounded-[30px] border border-[#ecd9c2] bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-[20px] border border-[#f1dfc8] bg-[#fffaf3] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">Semua room</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">Semua chat</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">{rooms.length}</p>
         </div>
         <div className="rounded-[20px] border border-[#f1dfc8] bg-[#fffaf3] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">Belum dibaca</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">{unreadCount}</p>
-        </div>
-        <div className="rounded-[20px] border border-[#f1dfc8] bg-[#fffaf3] p-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">Room Group</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-950">{groupRooms}</p>
         </div>
         <div className="rounded-[20px] border border-[#f1dfc8] bg-[#fffaf3] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">Chat Pribadi</p>
@@ -341,8 +336,8 @@ export default function InternalChatRealtimeClient({
         <aside className="rounded-[24px] border border-[#ecd9c2] bg-[#fffaf3] p-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Internal Rooms</p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-950">Group & Japri</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Internal Chat</p>
+              <h2 className="mt-1 text-lg font-semibold text-slate-950">Japri</h2>
             </div>
             <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${realtimeBadge.className}`}>
               {realtimeBadge.label}
@@ -413,10 +408,10 @@ export default function InternalChatRealtimeClient({
         <section className="overflow-hidden rounded-[24px] border border-[#ecd9c2] bg-white">
           <div className="border-b border-[#f0e2cf] bg-[#fffaf3] px-5 py-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">
-              {activeRoom?.roomScope === "group" ? "Room Group" : "Chat Pribadi"}
+              Chat Pribadi
             </p>
             <h3 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-              {activeRoom?.title || "Pilih room chat"}
+              {activeRoom?.title || "Pilih chat"}
             </h3>
             {activeRoom?.subtitle ? <p className="mt-2 text-sm text-slate-600">{activeRoom.subtitle}</p> : null}
           </div>
@@ -424,7 +419,7 @@ export default function InternalChatRealtimeClient({
           <div ref={threadRef} className="h-[58vh] space-y-3 overflow-y-auto bg-[#fffdf9] px-5 py-5">
             {!activeRoom ? (
               <div className="rounded-[18px] border border-[#ead8bf] bg-white px-4 py-3 text-sm text-slate-600">
-                Pilih room di kiri untuk mulai chat.
+                Pilih chat di kiri untuk mulai chat.
               </div>
             ) : activeMessages.length === 0 ? (
               <div className="rounded-[18px] border border-[#ead8bf] bg-white px-4 py-3 text-sm text-slate-600">

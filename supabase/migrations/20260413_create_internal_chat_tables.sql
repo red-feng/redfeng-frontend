@@ -2,7 +2,7 @@ create extension if not exists pgcrypto;
 
 create table if not exists public.internal_chat_rooms (
   id uuid primary key default gen_random_uuid(),
-  room_scope text not null check (room_scope in ('group', 'dm')),
+  room_scope text not null default 'dm' check (room_scope in ('dm')),
   group_code text,
   room_key text,
   name text,
@@ -13,10 +13,6 @@ create table if not exists public.internal_chat_rooms (
   last_message_at timestamptz,
   last_message_sender_id uuid references auth.users(id) on delete set null
 );
-
-create unique index if not exists internal_chat_rooms_group_code_idx
-  on public.internal_chat_rooms (group_code)
-  where room_scope = 'group' and group_code is not null;
 
 create unique index if not exists internal_chat_rooms_room_key_idx
   on public.internal_chat_rooms (room_key)
@@ -46,15 +42,6 @@ create table if not exists public.internal_chat_messages (
 
 create index if not exists internal_chat_messages_room_created_idx
   on public.internal_chat_messages (room_id, created_at asc);
-
-insert into public.internal_chat_rooms (room_scope, group_code, name, description)
-values
-  ('group', 'all_internal', 'All Internal', 'Room semua akun internal Red Feng'),
-  ('group', 'ops_managers', 'Ops Managers', 'Room khusus operations manager'),
-  ('group', 'finance_managers', 'Finance Managers', 'Room khusus finance manager'),
-  ('group', 'superadmins', 'Superadmins', 'Room khusus antar superadmin'),
-  ('group', 'superadmin_managers', 'Superadmin + Managers', 'Room superadmin dengan semua manager')
-on conflict do nothing;
 
 alter table public.internal_chat_rooms enable row level security;
 alter table public.internal_chat_room_members enable row level security;
