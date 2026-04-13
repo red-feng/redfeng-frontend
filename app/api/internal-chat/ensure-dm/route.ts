@@ -36,9 +36,11 @@ export async function POST(request: Request) {
     const room = await getInternalChatRoomMetaForUser(adminSupabase, roomId, user.id)
     return NextResponse.json({ roomId, room })
   } catch (error) {
+    const message = error instanceof Error ? error.message : "Gagal membuka chat pribadi."
+    const status = message.includes("tidak diizinkan") ? 403 : 500
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Gagal membuka chat pribadi." },
-      { status: 500 },
+      { error: message },
+      { status },
     )
   }
 }

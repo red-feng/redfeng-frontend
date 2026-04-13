@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { getInternalProfileById, markInternalRoomRead } from "@/lib/internal-chat"
+import {
+  canInternalUsersDirectMessage,
+  getInternalProfileById,
+  markInternalRoomRead,
+} from "@/lib/internal-chat"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
@@ -42,6 +46,25 @@ export async function POST(request: Request) {
   }
   if (!memberRow) {
     return NextResponse.json({ error: "Anda tidak punya akses ke room ini." }, { status: 403 })
+  }
+
+  const { data: roomMembers, error: roomMembersError } = await adminSupabase
+    .from("internal_chat_room_members")
+    .select("user_id")
+    .eq("room_id", roomId)
+
+  if (roomMembersError) {
+    return NextResponse.json({ error: roomMembersError.message || "Gagal memuat member room." }, { status: 500 })
+  }
+
+  const otherMember = ((roomMembers as { user_id: string }[] | null) || []).find((row) => row.user_id !== user.id)
+  if (!otherMember?.user_id) {
+    return NextResponse.json({ error: "Room pribadi tidak valid." }, { status: 400 })
+  }
+
+  const targetProfile = await getInternalProfileById(adminSupabase, otherMember.user_id)
+  if (!targetProfile || !canInternalUsersDirectMessage(profile.role, targetProfile.role)) {
+    return NextResponse.json({ error: "Role ini tidak diizinkan untuk chat langsung." }, { status: 403 })
   }
 
   const { data: insertedMessage, error: insertError } = await adminSupabase
