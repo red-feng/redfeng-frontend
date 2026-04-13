@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import {
-  canInternalUsersDirectMessage,
+  canInternalUsersDirectMessageLocked,
   getInternalProfileById,
   markInternalRoomRead,
 } from "@/lib/internal-chat"
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   }
 
   const targetProfile = await getInternalProfileById(adminSupabase, otherMember.user_id)
-  if (!targetProfile || !canInternalUsersDirectMessage(profile.role, targetProfile.role)) {
+  if (!targetProfile || !canInternalUsersDirectMessageLocked(profile.role, targetProfile.role)) {
     return NextResponse.json({ error: "Role ini tidak diizinkan untuk chat langsung." }, { status: 403 })
   }
 

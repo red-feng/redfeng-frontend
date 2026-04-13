@@ -65,13 +65,13 @@ export type InternalChatUserOption = {
   role: string
 }
 
-const INTERNAL_DIRECT_ALLOWED_TARGETS: Record<InternalRoleCode, readonly InternalRoleCode[]> = {
+const INTERNAL_DIRECT_ALLOWED_TARGETS = {
   superadmin: ["superadmin", "operations_manager", "finance_manager"],
   operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager"],
   finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager"],
   admin: ["operations_manager", "admin", "finance"],
   finance: ["finance_manager", "finance", "admin"],
-}
+} as const satisfies Record<InternalRoleCode, readonly InternalRoleCode[]>
 
 function normalizeInternalRoleCode(role: string | null | undefined): InternalRoleCode | null {
   const normalized = String(role || "").trim().toLowerCase()
@@ -95,6 +95,16 @@ export function canInternalUsersDirectMessage(
   const target = normalizeInternalRoleCode(targetRole)
   if (!actor || !target) return false
   return INTERNAL_DIRECT_ALLOWED_TARGETS[actor].includes(target)
+}
+
+export function canInternalUsersDirectMessageLocked(
+  actorRole: string | null | undefined,
+  targetRole: string | null | undefined,
+) {
+  return (
+    canInternalUsersDirectMessage(actorRole, targetRole) &&
+    canInternalUsersDirectMessage(targetRole, actorRole)
+  )
 }
 
 function buildDirectRoomKey(leftUserId: string, rightUserId: string) {
@@ -162,7 +172,7 @@ export async function ensureInternalDirectRoom(
     throw new Error("Chat pribadi hanya untuk akun internal yang valid.")
   }
 
-  if (!canInternalUsersDirectMessage(profiles[0].role, profiles[1].role)) {
+  if (!canInternalUsersDirectMessageLocked(profiles[0].role, profiles[1].role)) {
     throw new Error("Role ini tidak diizinkan untuk chat langsung.")
   }
 
@@ -353,7 +363,7 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
     }
   }).filter((room) => {
     if (!room.otherUserRole) return false
-    return canInternalUsersDirectMessage(currentUserRole, room.otherUserRole)
+    return canInternalUsersDirectMessageLocked(currentUserRole, room.otherUserRole)
   })
 
   return sortRoomsByActivity(result)
@@ -398,7 +408,7 @@ export async function listInternalChatUsers(adminSupabase: AdminSupabase, curren
   const currentUserRole = currentUserProfile?.role || null
   return profiles
     .filter((profile) => profile.id !== currentUserId)
-    .filter((profile) => canInternalUsersDirectMessage(currentUserRole, profile.role))
+    .filter((profile) => canInternalUsersDirectMessageLocked(currentUserRole, profile.role))
     .map((profile) => ({
       id: profile.id,
       username: profile.username || `user-${profile.id.slice(0, 8)}`,
