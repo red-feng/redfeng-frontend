@@ -9,6 +9,7 @@ Dokumen ini melengkapi:
 
 - [role-matrix.md](./role-matrix.md)
 - [role-matrix-checklist.md](./role-matrix-checklist.md)
+- [ui-microcopy-guideline.md](./ui-microcopy-guideline.md)
 
 ## Source Of Truth
 

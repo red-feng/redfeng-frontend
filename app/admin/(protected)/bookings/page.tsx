@@ -518,7 +518,7 @@ export default async function AdminBookingsPage({
           <form className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_260px_auto]">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Search</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Cari booking lebih cepat</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Cari booking</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Pencarian mencakup booking code, nama customer, judul package, dan nama merchant untuk booking Paket Tour.
               </p>
@@ -536,7 +536,7 @@ export default async function AdminBookingsPage({
 
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Sort</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Urutkan queue kerja</h2>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Urutkan</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Pilih urutan yang paling cocok untuk mode kerja admin hari ini.
               </p>
@@ -569,7 +569,7 @@ export default async function AdminBookingsPage({
 
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter produk</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Booking Center tetap gabungan, bisa dipilah per produk</h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Queue gabungan, filter per produk</h2>
           <div className="mt-5 flex flex-wrap gap-2">
             {productFilters.map((filter) => {
               const isActive = activeProduct === filter.value
@@ -743,8 +743,8 @@ export default async function AdminBookingsPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking Center queue</p>
-              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pantau booking sebelum dan sesudah auto-queue ke finance</h2>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Queue booking</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Pantau booking ke finance</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 Booking normal yang sudah lunas dan urutan pickup lengkap akan masuk queue finance secara semi-otomatis. Admin tetap memantau dan bisa melakukan handoff manual jika diperlukan.
               </p>
@@ -754,7 +754,7 @@ export default async function AdminBookingsPage({
             </div>
             {canExecuteAdminOps ? (
               <form action={cleanupExpiredPendingBookings} className="rounded-[20px] border border-[#f0ddc7] bg-[#fffaf3] p-3 lg:min-w-[320px]">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Manual cleanup</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Cleanup</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Jalankan pembersihan booking pending yang sudah lewat H+1 dan booking berbayar yang sudah melewati retensi 15 bulan.
                 </p>
@@ -762,7 +762,7 @@ export default async function AdminBookingsPage({
                   type="submit"
                   className="mt-3 inline-flex w-full items-center justify-center rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                  Jalankan cleanup booking
+                  Cleanup
                 </button>
               </form>
             ) : null}
@@ -890,7 +890,7 @@ export default async function AdminBookingsPage({
                         href={`/admin/bookings/${booking.id}`}
                         className="rounded-[20px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
                       >
-                        Buka detail booking
+                        Detail
                       </Link>
                       {canExecuteAdminOps ? (
                         <form action={handoffBookingToFinance}>
@@ -900,7 +900,7 @@ export default async function AdminBookingsPage({
                             disabled={!ready}
                             className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                           >
-                            Kirim ke Finance Manual
+                            Ajukan
                           </button>
                         </form>
                       ) : (

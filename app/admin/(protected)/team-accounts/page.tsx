@@ -84,13 +84,13 @@ export default async function AdminTeamAccountsPage({
               className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
             >
               <input type="hidden" name="return_to" value={basePath} />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create admin account</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Akun baru</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                Buat akun operasional baru
+                Buat akun operasional
               </h2>
               <div className="mt-6 space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Username akun operasional</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Username</label>
                   <input
                     name="username"
                     type="text"
@@ -100,7 +100,7 @@ export default async function AdminTeamAccountsPage({
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Role operasional</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Role</label>
                   <select
                     name="role"
                     defaultValue="admin"
@@ -122,13 +122,13 @@ export default async function AdminTeamAccountsPage({
                   />
                 </div>
                 <button className="rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                  Buat akun operasional
+                  Buat
                 </button>
               </div>
             </form>
 
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Reporting line</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Alur peran</p>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                 <p>1. Operations manager memimpin admin team dan menyusun laporan operasional untuk superadmin.</p>
                 <p>2. Superadmin membaca laporan tersebut sebagai ringkasan resmi kinerja merchant, package, dan booking.</p>
@@ -141,7 +141,7 @@ export default async function AdminTeamAccountsPage({
           </div>
 
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Operations team directory</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Direktori tim</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Daftar akun operasional</h2>
             <div className="mt-6 space-y-4">
               {teamProfiles.length === 0 ? (
@@ -153,7 +153,7 @@ export default async function AdminTeamAccountsPage({
                   <div key={profile.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Username akun</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Username</p>
                         <h3 className="mt-2 text-xl font-semibold text-slate-950">{profile.username || "(tanpa username)"}</h3>
                         <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-orange-600">
                           {formatAdminCode(profile.id)}
@@ -174,14 +174,14 @@ export default async function AdminTeamAccountsPage({
                             className="w-full rounded-[16px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                           />
                           <button className="w-full rounded-[16px] border border-orange-200 bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50">
-                            Reset password
+                            Reset
                           </button>
                         </form>
                         <form action={deleteAdminAccount}>
                           <input type="hidden" name="adminId" value={profile.id} />
                           <input type="hidden" name="return_to" value={basePath} />
                           <button className="w-full rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
-                            Hapus akun operasional
+                            Hapus
                           </button>
                         </form>
                       </div>

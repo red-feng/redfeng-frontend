@@ -192,7 +192,7 @@ export default async function AdminPackagesPage({
                   href={`/admin/packages/${pkg.id}`}
                   className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
                 >
-                  Review detail paket
+                  Detail
                 </Link>
 
                 {canExecuteAdminOps ? (
@@ -200,7 +200,7 @@ export default async function AdminPackagesPage({
                     <form action={approvePackage}>
                       <input type="hidden" name="packageId" value={pkg.id} />
                       <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                        Setujui paket
+                        Setujui
                       </button>
                     </form>
 
@@ -213,7 +213,7 @@ export default async function AdminPackagesPage({
                         className="h-24 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2 sm:h-28"
                       />
                       <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                        Tolak paket
+                        Tolak
                       </button>
                     </form>
                   </>
@@ -230,7 +230,7 @@ export default async function AdminPackagesPage({
                       confirmMessage="Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan."
                       className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                     >
-                      Hapus permanen dari database
+                      Hapus
                     </ConfirmSubmitButton>
                   </form>
                 ) : (

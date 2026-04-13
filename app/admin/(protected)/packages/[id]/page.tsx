@@ -446,7 +446,7 @@ export default async function Page({
                       }}
                     >
                       <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                        Setujui Paket
+                        Setujui
                       </button>
                     </form>
 
@@ -468,7 +468,7 @@ export default async function Page({
                         className="mt-2 h-32 w-full rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm outline-none ring-orange-500 transition focus:bg-white focus:ring-2"
                       />
                       <button className="mt-3 w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                        Tolak Paket
+                        Tolak
                       </button>
                     </form>
                   </>
@@ -490,7 +490,7 @@ export default async function Page({
                       confirmMessage="Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan."
                       className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                     >
-                      Hapus Permanen dari Database
+                      Hapus
                     </ConfirmSubmitButton>
                   </form>
                 ) : (

@@ -111,7 +111,7 @@ export default function AdminMerchantPackageBulkClient({
                 disabled={!packages.length || allSelected}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Pilih semua di tab ini
+                Pilih semua
               </button>
               <button
                 type="button"
@@ -119,7 +119,7 @@ export default function AdminMerchantPackageBulkClient({
                 disabled={!selectedIds.length}
                 className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Kosongkan pilihan
+                Kosongkan
               </button>
             </div>
 
@@ -135,14 +135,14 @@ export default function AdminMerchantPackageBulkClient({
                 disabled={!selectedIds.length}
                 className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Setujui paket terpilih
+                Setujui
               </button>
               <button
                 formAction={bulkRejectPackages}
                 disabled={!selectedIds.length}
                 className="rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Tolak paket terpilih
+                Tolak
               </button>
               <button
                 formAction={bulkDeletePackages}
@@ -154,7 +154,7 @@ export default function AdminMerchantPackageBulkClient({
                 }}
                 className="rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Hapus permanen paket terpilih
+                Hapus
               </button>
             </div>
           </>
@@ -217,7 +217,7 @@ export default function AdminMerchantPackageBulkClient({
                 href={`/admin/packages/${pkg.id}`}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
               >
-                Review detail paket
+                Detail
               </Link>
 
               {readOnly ? (
@@ -229,7 +229,7 @@ export default function AdminMerchantPackageBulkClient({
                   <form action={approvePackage}>
                     <input type="hidden" name="packageId" value={pkg.id} />
                     <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
-                      Setujui paket
+                      Setujui
                     </button>
                   </form>
 
@@ -242,7 +242,7 @@ export default function AdminMerchantPackageBulkClient({
                       className="h-20 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm outline-none ring-orange-500 transition focus:ring-2 sm:h-24"
                     />
                     <button className="w-full rounded-xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700">
-                      Tolak paket
+                      Tolak
                     </button>
                   </form>
 
@@ -256,7 +256,7 @@ export default function AdminMerchantPackageBulkClient({
                       }}
                       className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
                     >
-                      Hapus permanen dari database
+                      Hapus
                     </button>
                   </form>
                 </>

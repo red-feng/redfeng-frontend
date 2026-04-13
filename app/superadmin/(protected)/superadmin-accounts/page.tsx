@@ -80,9 +80,9 @@ export default async function SuperadminAccountsPage({
               className="rounded-[32px] border border-violet-200/50 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]"
             >
               <input type="hidden" name="return_to" value="/superadmin/superadmin-accounts" />
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Create superadmin account</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Akun baru</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                Buat akun superadmin baru
+                Buat akun superadmin
               </h2>
               <div className="mt-6 space-y-4">
                 <div>
@@ -107,13 +107,13 @@ export default async function SuperadminAccountsPage({
                   />
                 </div>
                 <button className="rounded-[20px] bg-violet-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-violet-800">
-                  Buat akun superadmin
+                  Buat
                 </button>
               </div>
             </form>
 
             <div className="rounded-[32px] border border-violet-200/50 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Guard rails</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Aturan</p>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
                 <p>1. Panel ini hanya untuk akun superadmin, tidak dipakai membuat admin, manager, atau finance team.</p>
                 <p>2. Superadmin yang sedang dipakai login tidak bisa dihapus dari panel ini agar akses utama tidak terputus.</p>
@@ -126,7 +126,7 @@ export default async function SuperadminAccountsPage({
           </div>
 
           <div className="rounded-[32px] border border-violet-200/50 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Superadmin directory</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Direktori superadmin</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Daftar akun superadmin</h2>
             <div className="mt-6 space-y-4">
               {otherSuperadmins.length === 0 ? (
@@ -138,7 +138,7 @@ export default async function SuperadminAccountsPage({
                   <div key={profile.id} className="rounded-[24px] border border-violet-100 bg-violet-50/30 p-5">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Username akun</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-violet-600">Username</p>
                         <h3 className="mt-2 text-xl font-semibold text-slate-950">{profile.username || "(tanpa username)"}</h3>
                         <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-violet-700">
                           {formatAdminCode(profile.id)}
@@ -159,14 +159,14 @@ export default async function SuperadminAccountsPage({
                             className="w-full rounded-[16px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-violet-500 transition focus:ring-2"
                           />
                           <button className="w-full rounded-[16px] border border-violet-200 bg-white px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-50">
-                            Reset password
+                            Reset
                           </button>
                         </form>
                         <form action={deleteSuperadminAccount}>
                           <input type="hidden" name="superadminId" value={profile.id} />
                           <input type="hidden" name="return_to" value="/superadmin/superadmin-accounts" />
                           <button className="w-full rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
-                            Hapus akun superadmin
+                            Hapus
                           </button>
                         </form>
                       </div>

@@ -766,7 +766,7 @@ export default async function AdminBookingDetailPage({
                     disabled={!ready}
                     className="rounded-[20px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
-                    Kirim ke Finance Manual
+                    Ajukan
                   </button>
                 </form>
               ) : (
