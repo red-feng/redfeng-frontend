@@ -65,13 +65,13 @@ export type InternalChatUserOption = {
   role: string
 }
 
-const INTERNAL_DIRECT_ALLOWED_TARGETS = {
+const INTERNAL_DIRECT_ALLOWED_TARGETS: Record<InternalRoleCode, readonly InternalRoleCode[]> = {
   superadmin: ["superadmin", "operations_manager", "finance_manager"],
   operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager"],
   finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager"],
   admin: ["operations_manager", "admin", "finance"],
   finance: ["finance_manager", "finance", "admin"],
-} as const satisfies Record<InternalRoleCode, readonly InternalRoleCode[]>
+}
 
 function normalizeInternalRoleCode(role: string | null | undefined): InternalRoleCode | null {
   const normalized = String(role || "").trim().toLowerCase()
@@ -346,10 +346,10 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
     const dmTitle = otherProfile?.username || `User ${String(otherMember?.user_id || "").slice(0, 8)}`
     const subtitle = otherProfile?.role ? getRoleLabel(otherProfile.role) : null
 
-    return {
-      id: room.id,
-      roomScope: "dm",
-      title: dmTitle,
+      return {
+        id: room.id,
+        roomScope: "dm" as const,
+        title: dmTitle,
       subtitle,
       participantCount: roomMembers.length,
       updatedAt: room.updated_at || null,
