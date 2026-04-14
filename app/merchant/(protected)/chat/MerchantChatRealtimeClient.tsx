@@ -488,10 +488,20 @@ export default function MerchantChatRealtimeClient({
     void markRoomRead(roomId)
   }
 
+  function handleDraftKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return
+    event.preventDefault()
+    if (submitting || !activeRoomId || !draftMessage.trim()) return
+    const form = event.currentTarget.form
+    if (form) {
+      form.requestSubmit()
+    }
+  }
+
   return (
-    <section className="mt-8 rounded-[32px] border border-[#f3dbc3] bg-white/80 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-      <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="rounded-[28px] border border-[#f3dbc3] bg-[#fffaf3] p-4 lg:flex lg:max-h-[calc(56vh+14rem)] lg:flex-col lg:overflow-hidden">
+    <section className="mt-8 overflow-hidden rounded-[32px] border border-[#f3dbc3] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+      <div className="grid h-[78vh] min-h-[660px] gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <aside className="border-r border-[#efe3d1] bg-[#f8f9fa] p-4 lg:flex lg:h-full lg:flex-col lg:overflow-hidden">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.customerRooms}</p>
@@ -664,8 +674,8 @@ export default function MerchantChatRealtimeClient({
           </div>
         </aside>
 
-        <section className="overflow-hidden rounded-[28px] border border-[#f3dbc3] bg-white">
-          <div className="border-b border-[#efe3d1] bg-[linear-gradient(180deg,#fff9f2_0%,#fffefc_100%)] px-5 py-5 lg:px-6">
+        <section className="flex h-full flex-col overflow-hidden bg-[#efeae2]">
+          <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-5 py-4 lg:px-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.conversationFocus}</p>
@@ -721,7 +731,7 @@ export default function MerchantChatRealtimeClient({
             </div>
           </div>
 
-          <div ref={threadRef} className="h-[56vh] space-y-4 overflow-y-auto bg-[#fffaf5] px-5 py-5 lg:px-6">
+          <div ref={threadRef} className="flex-1 space-y-4 overflow-y-auto bg-[#efeae2] px-5 py-5 lg:px-6">
             {messages.length === 0 ? <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">{t.noMessages}</div> : null}
 
             {messages.map((message) => {
@@ -848,9 +858,9 @@ export default function MerchantChatRealtimeClient({
               return (
                 <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div
-                    className={`max-w-[82%] rounded-[24px] px-4 py-3 text-sm shadow-sm ${
+                    className={`max-w-[82%] rounded-[16px] px-4 py-3 text-sm shadow-sm ${
                       mine
-                        ? "bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] text-white"
+                        ? "bg-[#d9fdd3] text-slate-800"
                         : "border border-[#eadfce] bg-white text-slate-700"
                     }`}
                   >
@@ -887,14 +897,14 @@ export default function MerchantChatRealtimeClient({
                         )}
                       </div>
                     ) : null}
-                    <p className={`mt-2 text-[11px] ${mine ? "text-white/70" : "text-slate-400"}`}>{formatDateTime(message.created_at)}</p>
+                    <p className="mt-2 text-right text-[11px] text-slate-400">{formatDateTime(message.created_at)}</p>
                   </div>
                 </div>
               )
             })}
           </div>
 
-          <form onSubmit={handleSendMessage} className="border-t border-[#efe3d1] bg-white px-5 py-4 lg:px-6">
+          <form onSubmit={handleSendMessage} className="border-t border-[#efe3d1] bg-[#f0f2f5] px-5 py-4 lg:px-6">
             {errorMessage ? <div className="mb-3 rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{errorMessage}</div> : null}
             <div className="mb-3">
               <label className="flex flex-col gap-2 text-xs font-medium text-slate-500">
@@ -914,14 +924,15 @@ export default function MerchantChatRealtimeClient({
               <textarea
                 value={draftMessage}
                 onChange={(event) => setDraftMessage(event.target.value)}
+                onKeyDown={handleDraftKeyDown}
                 disabled={!activeRoomId}
                 placeholder={t.replyPlaceholder}
-                className="h-24 flex-1 rounded-[22px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+                className="h-12 max-h-28 min-h-12 flex-1 rounded-[14px] border border-[#dcd2c3] bg-white px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
               />
               <button
                 type="submit"
                 disabled={submitting || !activeRoomId}
-                className="self-end rounded-[22px] bg-[linear-gradient(135deg,#a33a0b_0%,#f76707_100%)] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_34px_rgba(194,65,12,0.22)] transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
+                className="self-end rounded-[14px] bg-[#ff6a00] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {submitting ? "..." : t.sendButton}
               </button>

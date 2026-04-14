@@ -449,6 +449,16 @@ export default function CustomerChatRealtimeClient({
     }
   }
 
+  function handleDraftKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key !== "Enter" || event.shiftKey) return
+    event.preventDefault()
+    if (submitting || !activeRoomId || !draftMessage.trim()) return
+    const form = event.currentTarget.form
+    if (form) {
+      form.requestSubmit()
+    }
+  }
+
   return (
     <>
       <section className="mt-6 grid gap-4 md:grid-cols-3">
@@ -469,9 +479,9 @@ export default function CustomerChatRealtimeClient({
         </div>
       </section>
 
-      <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className="rounded-[24px] border border-slate-200 bg-slate-50/60 p-4 lg:flex lg:max-h-[calc(56vh+12rem)] lg:flex-col lg:overflow-hidden">
+      <section className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div className="grid h-[78vh] min-h-[620px] gap-0 lg:grid-cols-[300px_minmax(0,1fr)]">
+          <aside className="border-r border-slate-200 bg-[#f8f9fa] p-4 lg:flex lg:h-full lg:flex-col lg:overflow-hidden">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
               <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${realtimeBadge.className}`}>
@@ -582,8 +592,8 @@ export default function CustomerChatRealtimeClient({
             </div>
           </aside>
 
-          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-            <div className="border-b border-slate-200 px-5 py-4">
+          <section className="flex h-full flex-col overflow-hidden bg-[#efeae2]">
+            <div className="border-b border-slate-200 bg-[#f0f2f5] px-5 py-4">
               <p className="text-sm text-slate-500">{packageLabel}</p>
               <p className="text-base font-semibold text-slate-900">{activeRoom?.packageTitle || packageFallback}</p>
               {activeRoom ? (
@@ -623,7 +633,7 @@ export default function CustomerChatRealtimeClient({
               ) : null}
             </div>
 
-            <div ref={threadRef} className="h-[56vh] space-y-3 overflow-y-auto bg-slate-50/50 px-5 py-4">
+            <div ref={threadRef} className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-5 py-4">
               {messages.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noMessages}</div> : null}
               {messages.map((message) => {
                 const systemMessage = parseChatSystemMessage(message.message)
@@ -769,8 +779,8 @@ export default function CustomerChatRealtimeClient({
                 return (
                   <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[80%] rounded-[20px] px-4 py-3 text-sm shadow-sm ${
-                        mine ? "bg-slate-900 text-white" : "border border-slate-200 bg-white text-slate-700"
+                      className={`max-w-[80%] rounded-[14px] px-4 py-3 text-sm shadow-sm ${
+                        mine ? "bg-[#d9fdd3] text-slate-800" : "border border-slate-200 bg-white text-slate-700"
                       }`}
                     >
                       {message.message ? <p className="whitespace-pre-line leading-6">{message.message}</p> : null}
@@ -806,14 +816,14 @@ export default function CustomerChatRealtimeClient({
                           )}
                         </div>
                       ) : null}
-                      <p className={`mt-2 text-[11px] ${mine ? "text-slate-300" : "text-slate-400"}`}>{message.created_at || ""}</p>
+                      <p className="mt-2 text-right text-[11px] text-slate-400">{message.created_at || ""}</p>
                     </div>
                   </div>
                 )
               })}
             </div>
 
-            <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-white p-4">
+            <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-[#f0f2f5] p-4">
               {errorMessage ? <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{errorMessage}</div> : null}
               <div className="mb-3">
                 <input
@@ -828,13 +838,14 @@ export default function CustomerChatRealtimeClient({
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
+                  onKeyDown={handleDraftKeyDown}
                   placeholder={writeMessageLabel}
-                  className="h-24 flex-1 rounded-[20px] border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
+                  className="h-12 max-h-28 min-h-12 flex-1 rounded-[14px] border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
                 />
                 <button
                   type="submit"
                   disabled={submitting || !activeRoomId}
-                  className="self-end rounded-[20px] bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="self-end rounded-[14px] bg-[#ff6a00] px-5 py-3 text-sm font-semibold text-white hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {submitting ? "..." : sendLabel}
                 </button>
