@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { extractPackageChatAttachmentPath, getPackageChatAttachmentBucket } from "@/lib/chat/attachment-path"
+import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -31,29 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 })
   }
 
-  let canDelete = false
-
-  if (room.customer_id === user.id) {
-    canDelete = true
-  } else if (room.merchant_user_id === user.id) {
-    const { data: currentMerchantIds } = await adminSupabase
-      .from("merchants")
-      .select("id")
-      .eq("user_id", user.id)
-
-    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
-    const { data: pkg } = await adminSupabase
-      .from("packages")
-      .select("merchant_id")
-      .eq("id", room.package_id)
-      .maybeSingle()
-
-    if (pkg?.merchant_id && allowedMerchantIds.has(pkg.merchant_id)) {
-      canDelete = true
-    }
-  }
-
-  if (!canDelete) {
+  if (!(await resolvePackageChatActorRole(adminSupabase, user.id, room))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

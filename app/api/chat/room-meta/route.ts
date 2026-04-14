@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
@@ -71,32 +72,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 })
   }
 
-  if (room.customer_id !== user.id && room.merchant_user_id !== user.id) {
+  const actorRole = await resolvePackageChatActorRole(adminSupabase, user.id, room)
+  if (!actorRole) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  if (room.customer_id === user.id && room.customer_hidden_at) {
+  if (actorRole === "customer" && room.customer_hidden_at) {
     return NextResponse.json({ error: "Room hidden" }, { status: 404 })
   }
 
-  if (room.merchant_user_id === user.id && room.merchant_hidden_at) {
+  if (actorRole === "merchant" && room.merchant_hidden_at) {
     return NextResponse.json({ error: "Room hidden" }, { status: 404 })
   }
 
-  if (room.merchant_user_id === user.id) {
-    const { data: currentMerchantIds } = await adminSupabase
-      .from("merchants")
-      .select("id")
-      .eq("user_id", user.id)
-
-    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
+  if (actorRole === "merchant") {
     const { data: pkg } = await adminSupabase
       .from("packages")
       .select("id, title, slug, merchant_id, cover_image")
       .eq("id", room.package_id)
       .maybeSingle()
 
-    if (!pkg?.merchant_id || !allowedMerchantIds.has(pkg.merchant_id)) {
+    if (!pkg?.merchant_id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 

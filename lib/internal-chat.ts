@@ -10,6 +10,15 @@ type InternalProfileRow = {
 
 type InternalRoleCode = "admin" | "operations_manager" | "finance" | "finance_manager" | "superadmin"
 
+export const INTERNAL_CHAT_ROLE_POLICY_VERSION = "2026-04-14"
+const INTERNAL_CHAT_LOCKED_ROLES = Object.freeze([
+  "admin",
+  "operations_manager",
+  "finance",
+  "finance_manager",
+  "superadmin",
+] as const)
+
 type InternalChatRoomRow = {
   id: string
   room_scope: string
@@ -70,13 +79,13 @@ export type InternalChatUserOption = {
 
 export const INTERNAL_CHAT_PAGE_SIZE = 50
 
-const INTERNAL_DIRECT_ALLOWED_TARGETS: Record<InternalRoleCode, readonly InternalRoleCode[]> = {
+const INTERNAL_DIRECT_ALLOWED_TARGETS: Readonly<Record<InternalRoleCode, readonly InternalRoleCode[]>> = Object.freeze({
   superadmin: ["superadmin", "operations_manager", "finance_manager"],
   operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager"],
   finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager"],
   admin: ["operations_manager", "admin", "finance"],
   finance: ["finance_manager", "finance", "admin"],
-}
+})
 
 function normalizeInternalRoleCode(role: string | null | undefined): InternalRoleCode | null {
   const normalized = String(role || "").trim().toLowerCase()
@@ -126,11 +135,10 @@ function sortRoomsByActivity(rooms: InternalChatRoomItem[]) {
 }
 
 async function getInternalProfiles(adminSupabase: AdminSupabase) {
-  const roles = ["admin", "operations_manager", "finance", "finance_manager", "superadmin"]
   const { data, error } = await adminSupabase
     .from("profiles")
     .select("id, username, role")
-    .in("role", roles)
+    .in("role", [...INTERNAL_CHAT_LOCKED_ROLES])
 
   if (error) {
     throw new Error(error.message || "Gagal membaca profil internal.")

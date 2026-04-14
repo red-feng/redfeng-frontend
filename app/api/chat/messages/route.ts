@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
@@ -48,24 +49,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 })
   }
 
-  let hasAccess = room.customer_id === user.id
-  if (!hasAccess && room.merchant_user_id === user.id) {
-    const { data: currentMerchantIds } = await adminSupabase
-      .from("merchants")
-      .select("id")
-      .eq("user_id", user.id)
-
-    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
-    const { data: pkg } = await adminSupabase
-      .from("packages")
-      .select("merchant_id")
-      .eq("id", room.package_id)
-      .maybeSingle()
-
-    hasAccess = Boolean(pkg?.merchant_id && allowedMerchantIds.has(pkg.merchant_id))
-  }
-
-  if (!hasAccess) {
+  const actorRole = await resolvePackageChatActorRole(adminSupabase, user.id, room)
+  if (!actorRole) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 

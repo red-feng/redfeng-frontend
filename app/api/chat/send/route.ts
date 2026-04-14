@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { uploadChatAttachment } from "@/lib/chat/attachments"
+import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
 import { buildReopenRoomPatch } from "@/lib/chat/room-visibility"
 import {
   ChatRoomFlowError,
@@ -78,26 +79,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ruang chat tidak valid." }, { status: 400 })
   }
 
-  if (room.customer_id !== user.id && room.merchant_user_id !== user.id) {
+  const actorRole = await resolvePackageChatActorRole(adminSupabase, user.id, room)
+  if (!actorRole) {
     return NextResponse.json({ error: "Anda tidak punya akses ke ruang chat ini." }, { status: 403 })
-  }
-
-  if (room.merchant_user_id === user.id) {
-    const { data: currentMerchantIds } = await adminSupabase
-      .from("merchants")
-      .select("id")
-      .eq("user_id", user.id)
-
-    const allowedMerchantIds = new Set((currentMerchantIds || []).map((item) => item.id))
-    const { data: pkg } = await adminSupabase
-      .from("packages")
-      .select("merchant_id")
-      .eq("id", room.package_id)
-      .maybeSingle()
-
-    if (!pkg?.merchant_id || !allowedMerchantIds.has(pkg.merchant_id)) {
-      return NextResponse.json({ error: "Anda tidak punya akses ke ruang chat merchant ini." }, { status: 403 })
-    }
   }
 
   const uploadedAttachment = await uploadChatAttachment({
@@ -131,7 +115,7 @@ export async function POST(request: Request) {
   }
 
   const nowIso = new Date().toISOString()
-  const roomUpdate = buildReopenRoomPatch(room.merchant_user_id === user.id ? "merchant" : "customer", nowIso, user.id)
+  const roomUpdate = buildReopenRoomPatch(actorRole, nowIso, user.id)
 
   const { error: updateRoomError } = await adminSupabase
     .from("package_chat_rooms")

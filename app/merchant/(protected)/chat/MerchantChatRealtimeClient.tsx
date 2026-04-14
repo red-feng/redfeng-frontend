@@ -1000,7 +1000,7 @@ export default function MerchantChatRealtimeClient({
                   <div
                     className={`max-w-[82%] rounded-[16px] px-4 py-3 text-sm shadow-sm ${
                       mine
-                        ? "bg-[#d9fdd3] text-slate-800"
+                        ? "border border-[#ffd7b5] bg-[#ffe8d2] text-[#7a3412]"
                         : "border border-[#eadfce] bg-white text-slate-700"
                     }`}
                   >
@@ -1028,7 +1028,7 @@ export default function MerchantChatRealtimeClient({
                             rel="noreferrer"
                             className={`inline-flex items-center rounded-[16px] border px-3 py-2 text-xs font-semibold transition ${
                               mine
-                                ? "border-white/20 bg-white/10 text-white hover:bg-white/15"
+                                ? "border-[#ffcfa9] bg-[#fff2e7] text-[#9a3412] hover:bg-[#ffe4cf]"
                                 : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
                             }`}
                           >
