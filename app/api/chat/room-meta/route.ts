@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   const { data: room, error } = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, bookings(booking_code, booking_status, payment_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, merchant_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
     )
     .eq("id", roomId)
     .single()
@@ -73,6 +73,14 @@ export async function GET(request: Request) {
 
   if (room.customer_id !== user.id && room.merchant_user_id !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  if (room.customer_id === user.id && room.customer_hidden_at) {
+    return NextResponse.json({ error: "Room hidden" }, { status: 404 })
+  }
+
+  if (room.merchant_user_id === user.id && room.merchant_hidden_at) {
+    return NextResponse.json({ error: "Room hidden" }, { status: 404 })
   }
 
   if (room.merchant_user_id === user.id) {
