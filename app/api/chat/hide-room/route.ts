@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { buildHideRoomPatch } from "@/lib/chat/room-visibility"
+import { extractPackageChatAttachmentPath, getPackageChatAttachmentBucket } from "@/lib/chat/attachment-path"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -31,11 +31,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Room not found" }, { status: 404 })
   }
 
-  let patch: Record<string, string> | null = null
-  const nowIso = new Date().toISOString()
+  let canDelete = false
 
   if (room.customer_id === user.id) {
-    patch = buildHideRoomPatch("customer", nowIso)
+    canDelete = true
   } else if (room.merchant_user_id === user.id) {
     const { data: currentMerchantIds } = await adminSupabase
       .from("merchants")
@@ -50,22 +49,49 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (pkg?.merchant_id && allowedMerchantIds.has(pkg.merchant_id)) {
-      patch = buildHideRoomPatch("merchant", nowIso)
+      canDelete = true
     }
   }
 
-  if (!patch) {
+  if (!canDelete) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { error: updateError } = await adminSupabase
-    .from("package_chat_rooms")
-    .update(patch)
-    .eq("id", roomId)
+  const { data: messageAttachments, error: attachmentsError } = await adminSupabase
+    .from("package_chat_messages")
+    .select("attachment_url")
+    .eq("room_id", roomId)
 
-  if (updateError) {
-    return NextResponse.json({ error: updateError.message || "Failed to hide room" }, { status: 500 })
+  if (attachmentsError) {
+    return NextResponse.json({ error: attachmentsError.message || "Failed to read room attachments" }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, roomId })
+  const attachmentPaths = [...new Set(
+    ((messageAttachments as Array<{ attachment_url?: string | null }> | null) || [])
+      .map((row) => extractPackageChatAttachmentPath(row.attachment_url))
+      .filter((path): path is string => Boolean(path)),
+  )]
+
+  if (attachmentPaths.length > 0) {
+    const bucket = getPackageChatAttachmentBucket()
+    const chunkSize = 100
+    for (let index = 0; index < attachmentPaths.length; index += chunkSize) {
+      const chunk = attachmentPaths.slice(index, index + chunkSize)
+      const { error: storageError } = await adminSupabase.storage.from(bucket).remove(chunk)
+      if (storageError) {
+        return NextResponse.json({ error: storageError.message || "Failed to delete room attachments" }, { status: 500 })
+      }
+    }
+  }
+
+  const { error: deleteError } = await adminSupabase
+    .from("package_chat_rooms")
+    .delete()
+    .eq("id", roomId)
+
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message || "Failed to delete room" }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, roomId, deleted: true })
 }
