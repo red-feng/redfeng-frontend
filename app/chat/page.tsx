@@ -25,6 +25,7 @@ type ChatRoomRow = {
   last_message_at?: string | null
   last_message_sender_id?: string | null
   customer_last_read_at?: string | null
+  merchant_last_read_at?: string | null
   customer_hidden_at?: string | null
   bookings?:
     | {
@@ -220,7 +221,7 @@ export default async function ChatPage({
   const roomQuery = adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
     )
     .is("customer_hidden_at", null)
     .order("updated_at", { ascending: false })
@@ -390,6 +391,7 @@ export default async function ChatPage({
               lastMessageAt: room.last_message_at || null,
               lastMessageSenderId: room.last_message_sender_id || null,
               customerLastReadAt: room.customer_last_read_at || null,
+              merchantLastReadAt: room.merchant_last_read_at || null,
             }
           })}
           initialActiveRoomId={activeRoomId}

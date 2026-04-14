@@ -27,6 +27,7 @@ type MerchantChatRoom = {
   lastMessageAt: string | null
   lastMessageSenderId: string | null
   merchantLastReadAt: string | null
+  customerLastReadAt: string | null
 }
 
 type MerchantChatMessage = {
@@ -141,6 +142,24 @@ function getMerchantRoomPreview(room: MerchantChatRoom) {
   const preview = String(room.lastMessagePreview || "").trim()
   if (preview) return preview
   return "Belum ada pesan."
+}
+
+function getAvatarInitial(name: string | null | undefined, fallback = "U") {
+  const text = String(name || "").trim()
+  if (!text) return fallback
+  return text.charAt(0).toUpperCase()
+}
+
+function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string | null) {
+  if (!createdAt) return "✓"
+  if (!otherPartyLastReadAt) return "✓"
+
+  const createdTs = Date.parse(createdAt)
+  const readTs = Date.parse(otherPartyLastReadAt)
+  if (Number.isNaN(createdTs) || Number.isNaN(readTs)) {
+    return otherPartyLastReadAt >= createdAt ? "✓✓" : "✓"
+  }
+  return readTs >= createdTs ? "✓✓" : "✓"
 }
 
 export default function MerchantChatRealtimeClient({
@@ -601,23 +620,16 @@ export default function MerchantChatRealtimeClient({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-start gap-3">
-                          {room.packageCoverImage ? (
-                            <Image
-                              src={room.packageCoverImage}
-                              alt={room.packageTitle || t.packageNotFound}
-                              width={48}
-                              height={48}
-                              unoptimized
-                              className="h-12 w-12 rounded-2xl object-cover"
-                            />
-                          ) : null}
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-950">{room.customerName || `Customer ${room.customerId.slice(0, 8)}`}</p>
-                            <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
-                              {getMerchantRoomPreview(room)}
-                            </p>
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ffe7d1] text-sm font-semibold text-[#a54d00]">
+                              {getAvatarInitial(room.customerName, "C")}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-slate-950">{room.customerName || `Customer ${room.customerId.slice(0, 8)}`}</p>
+                              <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
+                                {room.lastMessageSenderId === userId ? `✓ ${getMerchantRoomPreview(room)}` : getMerchantRoomPreview(room)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
                         <div className="mt-2 flex flex-wrap gap-2">
                           <span
                             className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
@@ -854,9 +866,11 @@ export default function MerchantChatRealtimeClient({
                 )
               }
 
-              const mine = message.sender_id === userId
-              return (
-                <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                const mine = message.sender_id === userId
+                const receipt = mine ? getReadReceipt(message.created_at, activeRoom?.customerLastReadAt || null) : ""
+                const receiptClass = receipt === "✓✓" ? "text-sky-600" : "text-slate-500"
+                return (
+                  <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-[82%] rounded-[16px] px-4 py-3 text-sm shadow-sm ${
                       mine
@@ -897,7 +911,10 @@ export default function MerchantChatRealtimeClient({
                         )}
                       </div>
                     ) : null}
-                    <p className="mt-2 text-right text-[11px] text-slate-400">{formatDateTime(message.created_at)}</p>
+                    <p className="mt-2 text-right text-[11px] text-slate-400">
+                      {formatDateTime(message.created_at)}
+                      {mine ? <span className={`ml-1 font-semibold ${receiptClass}`}>{receipt}</span> : null}
+                    </p>
                   </div>
                 </div>
               )

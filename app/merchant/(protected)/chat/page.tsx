@@ -15,6 +15,7 @@ type ChatRoomRow = {
   last_message_at?: string | null
   last_message_sender_id?: string | null
   merchant_last_read_at?: string | null
+  customer_last_read_at?: string | null
   merchant_hidden_at?: string | null
   bookings?:
     | {
@@ -280,7 +281,7 @@ export default async function MerchantChatPage({
   const roomsWithBooking = await adminSupabase
     .from("package_chat_rooms")
     .select(
-      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name), packages!inner(merchant_id)",
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, customer_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name), packages!inner(merchant_id)",
     )
     .eq("merchant_user_id", user.id)
     .eq("packages.merchant_id", currentMerchant.id)
@@ -301,7 +302,7 @@ export default async function MerchantChatPage({
     const fallback = await adminSupabase
       .from("package_chat_rooms")
       .select(
-        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, merchant_hidden_at, packages!inner(merchant_id)",
+        "id, package_id, customer_id, merchant_user_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, customer_last_read_at, merchant_hidden_at, packages!inner(merchant_id)",
       )
       .eq("merchant_user_id", user.id)
       .eq("packages.merchant_id", currentMerchant.id)
@@ -511,6 +512,7 @@ export default async function MerchantChatPage({
             lastMessageAt: room.last_message_at || null,
             lastMessageSenderId: room.last_message_sender_id || null,
             merchantLastReadAt: room.merchant_last_read_at || null,
+            customerLastReadAt: room.customer_last_read_at || null,
           }
         })}
         initialActiveRoomId={activeRoomId}

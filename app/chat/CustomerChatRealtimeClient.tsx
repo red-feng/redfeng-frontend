@@ -29,6 +29,7 @@ type CustomerChatRoom = {
   lastMessageAt: string | null
   lastMessageSenderId: string | null
   customerLastReadAt: string | null
+  merchantLastReadAt: string | null
 }
 
 function formatSystemCardTime(value: string | null, locale: Locale) {
@@ -59,6 +60,38 @@ function getCustomerRoomPreview(room: CustomerChatRoom, locale: Locale) {
   const preview = String(room.lastMessagePreview || "").trim()
   if (preview) return preview
   return locale === "en" ? "No messages yet." : locale === "zh" ? "暂时还没有消息。" : "Belum ada pesan."
+}
+
+function formatMessageTime(value: string | null, locale: Locale) {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  const language = locale === "zh" ? "zh-CN" : locale === "en" ? "en-US" : "id-ID"
+  return date.toLocaleString(language, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getAvatarInitial(name: string | null | undefined, fallback = "M") {
+  const text = String(name || "").trim()
+  if (!text) return fallback
+  return text.charAt(0).toUpperCase()
+}
+
+function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string | null) {
+  if (!createdAt) return "✓"
+  if (!otherPartyLastReadAt) return "✓"
+
+  const createdTs = Date.parse(createdAt)
+  const readTs = Date.parse(otherPartyLastReadAt)
+  if (Number.isNaN(createdTs) || Number.isNaN(readTs)) {
+    return otherPartyLastReadAt >= createdAt ? "✓✓" : "✓"
+  }
+  return readTs >= createdTs ? "✓✓" : "✓"
 }
 
 type CustomerChatMessage = {
@@ -515,16 +548,9 @@ export default function CustomerChatRealtimeClient({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <div className="flex items-start gap-3">
-                            {room.packageCoverImage ? (
-                              <Image
-                                src={room.packageCoverImage}
-                                alt={room.packageTitle || packageFallback}
-                                width={48}
-                                height={48}
-                                unoptimized
-                                className="h-12 w-12 rounded-2xl object-cover"
-                              />
-                            ) : null}
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e8f3ff] text-sm font-semibold text-[#1f4a8a]">
+                              {getAvatarInitial(room.merchantName, "M")}
+                            </div>
                             <div className="min-w-0 flex-1">
                               {(room.merchantName || room.merchantLogoUrl) ? (
                                 <div className="mb-2 flex items-center gap-2">
@@ -545,7 +571,9 @@ export default function CustomerChatRealtimeClient({
                               ) : null}
                               <p className="line-clamp-2 font-medium">{room.packageTitle || packageFallback}</p>
                               <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
-                                {getCustomerRoomPreview(room, locale)}
+                                {room.lastMessageSenderId === userId
+                                  ? `✓ ${getCustomerRoomPreview(room, locale)}`
+                                  : getCustomerRoomPreview(room, locale)}
                               </p>
                             </div>
                           </div>
@@ -576,7 +604,7 @@ export default function CustomerChatRealtimeClient({
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-2 text-[11px] text-slate-400">{room.updatedAt || "-"}</p>
+                      <p className="mt-2 text-[11px] text-slate-400">{formatMessageTime(room.lastMessageAt || room.updatedAt, locale) || "-"}</p>
                     </button>
                     <button
                       type="button"
@@ -776,6 +804,8 @@ export default function CustomerChatRealtimeClient({
                 }
 
                 const mine = message.sender_id === userId
+                const receipt = mine ? getReadReceipt(message.created_at, activeRoom?.merchantLastReadAt || null) : ""
+                const receiptClass = receipt === "✓✓" ? "text-sky-600" : "text-slate-500"
                 return (
                   <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
@@ -816,7 +846,10 @@ export default function CustomerChatRealtimeClient({
                           )}
                         </div>
                       ) : null}
-                      <p className="mt-2 text-right text-[11px] text-slate-400">{message.created_at || ""}</p>
+                      <p className="mt-2 text-right text-[11px] text-slate-400">
+                        {formatMessageTime(message.created_at, locale)}
+                        {mine ? <span className={`ml-1 font-semibold ${receiptClass}`}>{receipt}</span> : null}
+                      </p>
                     </div>
                   </div>
                 )
