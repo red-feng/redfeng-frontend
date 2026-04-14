@@ -22,6 +22,11 @@ type SendMessageResponse = {
   error?: string
 }
 
+type SnapshotResponse = {
+  rooms?: InternalChatRoomItem[]
+  messages?: InternalChatMessageItem[]
+}
+
 type Props = {
   userId: string
   initialRooms: InternalChatRoomItem[]
@@ -212,6 +217,61 @@ export default function InternalChatRealtimeClient({
       void supabase.removeChannel(channel)
     }
   }, [activeRoomId, markRoomRead, supabase, userId])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const fetchSnapshot = async (forceRoomId?: string) => {
+      try {
+        const roomId = String(forceRoomId || activeRoomId || "").trim()
+        const query = roomId ? `?roomId=${encodeURIComponent(roomId)}` : ""
+        const response = await fetch(`/api/internal-chat/snapshot${query}`, { cache: "no-store" })
+        if (!response.ok || cancelled) return
+
+        const payload = (await response.json()) as SnapshotResponse
+        const nextRooms = sortRooms(payload.rooms || [])
+        if (!cancelled) {
+          setRooms(nextRooms)
+        }
+
+        const resolvedActiveRoomId = roomId || nextRooms[0]?.id || ""
+        if (!cancelled && !activeRoomId && resolvedActiveRoomId) {
+          setActiveRoomId(resolvedActiveRoomId)
+        }
+
+        if (resolvedActiveRoomId && Array.isArray(payload.messages) && !cancelled) {
+          setMessagesByRoom((current) => ({
+            ...current,
+            [resolvedActiveRoomId]: payload.messages || [],
+          }))
+        }
+      } catch {}
+    }
+
+    void fetchSnapshot()
+    const intervalId = window.setInterval(() => {
+      void fetchSnapshot()
+    }, 2500)
+
+    const handleFocus = () => {
+      void fetchSnapshot()
+    }
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void fetchSnapshot()
+      }
+    }
+
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [activeRoomId])
 
   async function handleCreateDirectRoom() {
     if (!selectedTargetUserId) return

@@ -58,60 +58,27 @@ export default function AdminNavLinks({
   useEffect(() => {
     let active = true
     let debounceTimer: number | null = null
+    let pollTimer: number | null = null
 
     const fetchUnreadInternalChatCount = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user || !active) return
-
-      const { data: memberRows, error: memberError } = await supabase
-        .from("internal_chat_room_members")
-        .select("room_id, last_read_at")
-        .eq("user_id", user.id)
-
-      if (memberError || !active) return
-
-      const memberships = (memberRows as Array<{ room_id: string; last_read_at: string | null }> | null) || []
-      const roomIds = memberships.map((member) => member.room_id)
-
-      if (roomIds.length === 0) {
-        setLiveInternalChatBadgeCount(0)
-        return
-      }
-
-      const { data: roomRows, error: roomError } = await supabase
-        .from("internal_chat_rooms")
-        .select("id, last_message_at, last_message_sender_id")
-        .in("id", roomIds)
-        .eq("room_scope", "dm")
-
-      if (roomError || !active) return
-
-      const roomMap = new Map<string, { last_message_at: string | null; last_message_sender_id: string | null }>()
-      for (const room of (roomRows as Array<{ id: string; last_message_at: string | null; last_message_sender_id: string | null }> | null) || []) {
-        roomMap.set(room.id, {
-          last_message_at: room.last_message_at,
-          last_message_sender_id: room.last_message_sender_id,
-        })
-      }
-
-      let unreadCount = 0
-      for (const member of memberships) {
-        const room = roomMap.get(member.room_id)
-        if (!room?.last_message_at) continue
-        if (!room.last_message_sender_id || room.last_message_sender_id === user.id) continue
-        if (!member.last_read_at || Date.parse(room.last_message_at) > Date.parse(member.last_read_at)) {
-          unreadCount += 1
+      try {
+        const response = await fetch("/api/internal-chat/unread-count", { cache: "no-store" })
+        if (!response.ok || !active) return
+        const payload = (await response.json()) as { unreadCount?: number }
+        if (active) {
+          setLiveInternalChatBadgeCount(Number(payload.unreadCount || 0))
         }
-      }
-
-      if (active) {
-        setLiveInternalChatBadgeCount(unreadCount)
+      } catch {
+        if (active) {
+          setLiveInternalChatBadgeCount((current) => current ?? 0)
+        }
       }
     }
 
     void fetchUnreadInternalChatCount()
+    pollTimer = window.setInterval(() => {
+      void fetchUnreadInternalChatCount()
+    }, 4000)
 
     const channel = supabase.channel("internal-chat-nav-badge-live")
 
@@ -154,6 +121,9 @@ export default function AdminNavLinks({
       active = false
       if (debounceTimer) {
         window.clearTimeout(debounceTimer)
+      }
+      if (pollTimer) {
+        window.clearInterval(pollTimer)
       }
       void supabase.removeChannel(channel)
     }
