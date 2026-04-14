@@ -221,6 +221,7 @@ export default async function MerchantLayout({
       <MerchantNavSeenTracker />
       <RoleAutoRefresh
         intervalMs={3000}
+        excludeOnPaths={["/merchant/chat"]}
         realtimeTables={["package_chat_rooms", "package_chat_messages"]}
         realtimeDelayMs={220}
       />
