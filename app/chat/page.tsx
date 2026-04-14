@@ -70,6 +70,7 @@ type MerchantRow = {
 }
 
 export const dynamic = "force-dynamic"
+const CHAT_PAGE_SIZE = 50
 
 export default async function ChatPage({
   searchParams,
@@ -333,7 +334,9 @@ export default async function ChatPage({
         .from("package_chat_messages")
         .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
         .eq("room_id", activeRoomId)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(CHAT_PAGE_SIZE + 1)
     : { data: [], error: null }
 
   if (messagesError) {
@@ -349,7 +352,16 @@ export default async function ChatPage({
     )
   }
 
-  const messages = (messagesData as ChatMessageRow[] | null) || []
+  const descMessages = (messagesData as ChatMessageRow[] | null) || []
+  const initialHasMore = descMessages.length > CHAT_PAGE_SIZE
+  const limitedMessages = initialHasMore ? descMessages.slice(0, CHAT_PAGE_SIZE) : descMessages
+  const messages = [...limitedMessages].sort((left, right) => {
+    const leftDate = left.created_at || ""
+    const rightDate = right.created_at || ""
+    if (leftDate === rightDate) return left.id.localeCompare(right.id)
+    return leftDate.localeCompare(rightDate)
+  })
+  const initialOldestCreatedAt = messages[0]?.created_at || null
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
@@ -396,6 +408,8 @@ export default async function ChatPage({
           })}
           initialActiveRoomId={activeRoomId}
           initialMessages={messages}
+          initialHasMore={initialHasMore}
+          initialOldestCreatedAt={initialOldestCreatedAt}
           packageLabel={t.packageLabel}
           packageFallback={t.packageFallback}
           noChats={t.noChats}

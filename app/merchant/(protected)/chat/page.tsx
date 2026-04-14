@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
+const CHAT_PAGE_SIZE = 50
+
 type ChatRoomRow = {
   id: string
   package_id: string
@@ -396,9 +398,20 @@ export default async function MerchantChatPage({
         .from("package_chat_messages")
         .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
         .eq("room_id", activeRoomId)
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(CHAT_PAGE_SIZE + 1)
     : { data: [] as ChatMessageRow[] }
-  const messages = (messagesData as ChatMessageRow[] | null) || []
+  const descMessages = (messagesData as ChatMessageRow[] | null) || []
+  const initialHasMore = descMessages.length > CHAT_PAGE_SIZE
+  const limitedMessages = initialHasMore ? descMessages.slice(0, CHAT_PAGE_SIZE) : descMessages
+  const messages = [...limitedMessages].sort((left, right) => {
+    const leftDate = left.created_at || ""
+    const rightDate = right.created_at || ""
+    if (leftDate === rightDate) return left.id.localeCompare(right.id)
+    return leftDate.localeCompare(rightDate)
+  })
+  const initialOldestCreatedAt = messages[0]?.created_at || null
 
   const unreadCount = rooms.filter((room) => {
     if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
@@ -518,6 +531,8 @@ export default async function MerchantChatPage({
         initialActiveRoomId={activeRoomId}
         initialSelectionWasExplicit={Boolean(requestedRoomId)}
         initialMessages={messages}
+        initialHasMore={initialHasMore}
+        initialOldestCreatedAt={initialOldestCreatedAt}
         text={{
           customerRooms: t.customerRooms,
           conversationList: t.conversationList,

@@ -113,6 +113,8 @@ type CustomerChatRealtimeClientProps = {
   initialRooms: CustomerChatRoom[]
   initialActiveRoomId: string
   initialMessages: CustomerChatMessage[]
+  initialHasMore: boolean
+  initialOldestCreatedAt: string | null
   packageLabel: string
   packageFallback: string
   noChats: string
@@ -148,6 +150,13 @@ type SendMessageResponse = {
   error?: string
 }
 
+type ChatMessagesPageResponse = {
+  messages?: CustomerChatMessage[]
+  hasMore?: boolean
+  oldestCreatedAt?: string | null
+  error?: string
+}
+
 function sortRooms(rooms: CustomerChatRoom[]) {
   return [...rooms].sort((left, right) => {
     const leftDate = left.lastMessageAt || left.updatedAt || ""
@@ -162,6 +171,8 @@ export default function CustomerChatRealtimeClient({
   initialRooms,
   initialActiveRoomId,
   initialMessages,
+  initialHasMore,
+  initialOldestCreatedAt,
   packageLabel,
   packageFallback,
   noChats,
@@ -192,6 +203,16 @@ export default function CustomerChatRealtimeClient({
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, CustomerChatMessage[]>>(() =>
     initialActiveRoomId ? { [initialActiveRoomId]: initialMessages } : {},
   )
+  const [loadedRoomIds, setLoadedRoomIds] = useState<Record<string, true>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: true } : {},
+  )
+  const [hasMoreByRoom, setHasMoreByRoom] = useState<Record<string, boolean>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: initialHasMore } : {},
+  )
+  const [oldestByRoom, setOldestByRoom] = useState<Record<string, string | null>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: initialOldestCreatedAt } : {},
+  )
+  const [loadingOlderByRoom, setLoadingOlderByRoom] = useState<Record<string, boolean>>({})
   const [draftMessage, setDraftMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [hidingRoomId, setHidingRoomId] = useState("")
@@ -199,9 +220,15 @@ export default function CustomerChatRealtimeClient({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const previousRoomRef = useRef("")
+  const previousLastMessageIdRef = useRef("")
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
   const messages = messagesByRoom[activeRoomId] || []
+  const messagesLength = messages.length
+  const lastMessageId = messages[messagesLength - 1]?.id || ""
+  const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
+  const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
 
   const unreadCount = useMemo(
     () =>
@@ -226,25 +253,90 @@ export default function CustomerChatRealtimeClient({
     }
   }, [])
 
-  const fetchMessages = useCallback(async (roomId: string) => {
+  const fetchMessagesPage = useCallback(async (roomId: string, beforeCreatedAt?: string | null) => {
+    const search = new URLSearchParams({ roomId })
+    if (beforeCreatedAt) {
+      search.set("beforeCreatedAt", beforeCreatedAt)
+    }
+    const response = await fetch(`/api/chat/messages?${search.toString()}`, { cache: "no-store" })
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as ChatMessagesPageResponse | null
+      throw new Error(payload?.error || "Failed to fetch customer chat messages.")
+    }
+    return (await response.json()) as ChatMessagesPageResponse
+  }, [])
+
+  const fetchLatestMessages = useCallback(async (roomId: string) => {
     try {
-      const { data, error } = await supabase
-        .from("package_chat_messages")
-        .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
-        .eq("room_id", roomId)
-        .order("created_at", { ascending: true })
-
-      if (error) {
-        console.error("Failed to fetch customer chat messages", error)
-        return
-      }
-
-      const nextMessages = (data as CustomerChatMessage[] | null) || []
+      const payload = await fetchMessagesPage(roomId)
+      const nextMessages = (payload.messages || []).slice().sort((left, right) => {
+        const leftDate = left.created_at || ""
+        const rightDate = right.created_at || ""
+        if (leftDate === rightDate) return left.id.localeCompare(right.id)
+        return leftDate.localeCompare(rightDate)
+      })
       setMessagesByRoom((current) => ({ ...current, [roomId]: nextMessages }))
+      setLoadedRoomIds((current) => ({ ...current, [roomId]: true }))
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload.hasMore) }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]: payload.oldestCreatedAt || nextMessages[0]?.created_at || null,
+      }))
     } catch (error) {
       console.error("Failed to fetch customer chat messages", error)
     }
-  }, [supabase])
+  }, [fetchMessagesPage])
+
+  const loadOlderMessages = useCallback(async (roomId: string) => {
+    if (!roomId) return
+    if (loadingOlderByRoom[roomId]) return
+    if (!hasMoreByRoom[roomId]) return
+    const beforeCreatedAt = oldestByRoom[roomId]
+    if (!beforeCreatedAt) return
+
+    const container = threadRef.current
+    const prevHeight = container?.scrollHeight || 0
+    const prevTop = container?.scrollTop || 0
+
+    setLoadingOlderByRoom((current) => ({ ...current, [roomId]: true }))
+    try {
+      const payload = await fetchMessagesPage(roomId, beforeCreatedAt)
+      const olderMessages = payload.messages || []
+      if (olderMessages.length > 0) {
+        setMessagesByRoom((current) => {
+          const existing = current[roomId] || []
+          const merged = new Map<string, CustomerChatMessage>()
+          for (const item of olderMessages) merged.set(item.id, item)
+          for (const item of existing) merged.set(item.id, item)
+          const next = [...merged.values()].sort((left, right) => {
+            const leftDate = left.created_at || ""
+            const rightDate = right.created_at || ""
+            if (leftDate === rightDate) return left.id.localeCompare(right.id)
+            return leftDate.localeCompare(rightDate)
+          })
+          return { ...current, [roomId]: next }
+        })
+
+        requestAnimationFrame(() => {
+          const nextContainer = threadRef.current
+          if (!nextContainer) return
+          const nextHeight = nextContainer.scrollHeight
+          nextContainer.scrollTop = Math.max(0, nextHeight - prevHeight + prevTop)
+        })
+      }
+
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload.hasMore) }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]: payload.oldestCreatedAt || olderMessages[0]?.created_at || current[roomId] || null,
+      }))
+    } catch (error) {
+      console.error("Failed to fetch older customer chat messages", error)
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: false }))
+    } finally {
+      setLoadingOlderByRoom((current) => ({ ...current, [roomId]: false }))
+    }
+  }, [fetchMessagesPage, hasMoreByRoom, loadingOlderByRoom, oldestByRoom])
 
   const markRoomRead = useCallback(async (roomId: string) => {
     const nowIso = new Date().toISOString()
@@ -266,14 +358,23 @@ export default function CustomerChatRealtimeClient({
 
   useEffect(() => {
     if (!activeRoomId) return
-    void fetchMessages(activeRoomId)
+    if (!loadedRoomIds[activeRoomId]) {
+      void fetchLatestMessages(activeRoomId)
+    }
     void markRoomRead(activeRoomId)
-  }, [activeRoomId, fetchMessages, markRoomRead])
+  }, [activeRoomId, fetchLatestMessages, loadedRoomIds, markRoomRead])
 
   useEffect(() => {
-    if (!threadRef.current) return
-    threadRef.current.scrollTop = threadRef.current.scrollHeight
-  }, [messages.length, activeRoomId])
+    const container = threadRef.current
+    if (!container) return
+    const roomChanged = previousRoomRef.current !== activeRoomId
+    const hasNewLastMessage = Boolean(lastMessageId) && previousLastMessageIdRef.current !== lastMessageId
+    if (roomChanged || hasNewLastMessage) {
+      container.scrollTop = container.scrollHeight
+    }
+    previousRoomRef.current = activeRoomId
+    previousLastMessageIdRef.current = lastMessageId
+  }, [activeRoomId, lastMessageId, messagesLength])
 
   useEffect(() => {
     const channel = supabase.channel(`customer-chat-live:${userId}`)
@@ -482,6 +583,12 @@ export default function CustomerChatRealtimeClient({
     }
   }
 
+  function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
+    if (!activeRoomId || !activeHasMore || activeLoadingOlder) return
+    if (event.currentTarget.scrollTop > 80) return
+    void loadOlderMessages(activeRoomId)
+  }
+
   function handleDraftKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
@@ -661,7 +768,25 @@ export default function CustomerChatRealtimeClient({
               ) : null}
             </div>
 
-            <div ref={threadRef} className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-5 py-4">
+            <div
+              ref={threadRef}
+              onScroll={handleThreadScroll}
+              className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-5 py-4"
+            >
+              {activeRoom && activeLoadingOlder ? (
+                <div className="flex justify-center">
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                    Memuat pesan lama...
+                  </span>
+                </div>
+              ) : null}
+              {activeRoom && !activeHasMore && messages.length > 0 ? (
+                <div className="flex justify-center">
+                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                    Awal percakapan
+                  </span>
+                </div>
+              ) : null}
               {messages.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noMessages}</div> : null}
               {messages.map((message) => {
                 const systemMessage = parseChatSystemMessage(message.message)
