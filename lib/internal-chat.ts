@@ -65,6 +65,8 @@ export type InternalChatUserOption = {
   role: string
 }
 
+export const INTERNAL_CHAT_PAGE_SIZE = 50
+
 const INTERNAL_DIRECT_ALLOWED_TARGETS: Record<InternalRoleCode, readonly InternalRoleCode[]> = {
   superadmin: ["superadmin", "operations_manager", "finance_manager"],
   operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager"],
@@ -395,6 +397,70 @@ export async function loadInternalChatMessagesForUser(adminSupabase: AdminSupaba
   }
 
   return (messages as InternalChatMessageItem[] | null) || []
+}
+
+export async function loadInternalChatMessagesPageForUser(
+  adminSupabase: AdminSupabase,
+  roomId: string,
+  userId: string,
+  options?: {
+    beforeCreatedAt?: string | null
+    limit?: number
+  },
+) {
+  const { data: memberRow, error: memberError } = await adminSupabase
+    .from("internal_chat_room_members")
+    .select("room_id")
+    .eq("room_id", roomId)
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (memberError) {
+    throw new Error(memberError.message || "Gagal verifikasi akses room internal.")
+  }
+  if (!memberRow) {
+    throw new Error("Anda tidak punya akses ke room internal ini.")
+  }
+
+  const requestedLimit = Number(options?.limit || INTERNAL_CHAT_PAGE_SIZE)
+  const safeLimit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.trunc(requestedLimit), 10), 200)
+    : INTERNAL_CHAT_PAGE_SIZE
+
+  let query = adminSupabase
+    .from("internal_chat_messages")
+    .select("id, room_id, sender_id, message, created_at")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(safeLimit + 1)
+
+  const beforeCreatedAt = String(options?.beforeCreatedAt || "").trim()
+  if (beforeCreatedAt) {
+    query = query.lt("created_at", beforeCreatedAt)
+  }
+
+  const { data: rows, error: messagesError } = await query
+
+  if (messagesError) {
+    throw new Error(messagesError.message || "Gagal membaca pesan room internal.")
+  }
+
+  const descRows = (rows as InternalChatMessageItem[] | null) || []
+  const hasMore = descRows.length > safeLimit
+  const limited = hasMore ? descRows.slice(0, safeLimit) : descRows
+  const messages = [...limited].sort((left, right) => {
+    const leftDate = left.created_at || ""
+    const rightDate = right.created_at || ""
+    if (leftDate === rightDate) return left.id.localeCompare(right.id)
+    return leftDate.localeCompare(rightDate)
+  })
+
+  return {
+    messages,
+    hasMore,
+    oldestCreatedAt: messages[0]?.created_at || null,
+  }
 }
 
 export async function getInternalChatRoomMetaForUser(adminSupabase: AdminSupabase, roomId: string, userId: string) {

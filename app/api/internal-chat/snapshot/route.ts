@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import {
+  INTERNAL_CHAT_PAGE_SIZE,
   getInternalProfileById,
-  loadInternalChatMessagesForUser,
+  loadInternalChatMessagesPageForUser,
   loadInternalChatRoomsForUser,
 } from "@/lib/internal-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -29,11 +30,18 @@ export async function GET(request: Request) {
   try {
     const rooms = await loadInternalChatRoomsForUser(adminSupabase, user.id)
     const shouldLoadMessages = roomId && rooms.some((room) => room.id === roomId)
-    const messages = shouldLoadMessages
-      ? await loadInternalChatMessagesForUser(adminSupabase, roomId, user.id)
-      : []
+    const page = shouldLoadMessages
+      ? await loadInternalChatMessagesPageForUser(adminSupabase, roomId, user.id, {
+          limit: INTERNAL_CHAT_PAGE_SIZE,
+        })
+      : { messages: [], hasMore: false, oldestCreatedAt: null as string | null }
 
-    return NextResponse.json({ rooms, messages })
+    return NextResponse.json({
+      rooms,
+      messages: page.messages,
+      hasMore: page.hasMore,
+      oldestCreatedAt: page.oldestCreatedAt,
+    })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal memuat snapshot chat internal."
     return NextResponse.json({ error: message }, { status: 500 })

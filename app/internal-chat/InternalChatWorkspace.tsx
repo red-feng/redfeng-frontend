@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation"
 import InternalChatRealtimeClient from "@/app/internal-chat/InternalChatRealtimeClient"
 import {
+  INTERNAL_CHAT_PAGE_SIZE,
   getInternalProfileById,
   listInternalChatUsers,
-  loadInternalChatMessagesForUser,
+  loadInternalChatMessagesPageForUser,
   loadInternalChatRoomsForUser,
   markInternalRoomRead,
 } from "@/lib/internal-chat"
@@ -72,9 +73,12 @@ export default async function InternalChatWorkspace({ portal, searchParams }: Pr
     activeRoom.currentUserLastReadAt = readIso
   }
 
-  const messages = activeRoomId
-    ? await loadInternalChatMessagesForUser(adminSupabase, activeRoomId, user.id)
-    : []
+  const initialPage = activeRoomId
+    ? await loadInternalChatMessagesPageForUser(adminSupabase, activeRoomId, user.id, {
+        limit: INTERNAL_CHAT_PAGE_SIZE,
+      })
+    : { messages: [], hasMore: false, oldestCreatedAt: null as string | null }
+  const messages = initialPage.messages
   const users = await listInternalChatUsers(adminSupabase, user.id)
   const headline = PORTAL_HEADLINES[portal]
 
@@ -103,6 +107,8 @@ export default async function InternalChatWorkspace({ portal, searchParams }: Pr
           userId={user.id}
           initialRooms={rooms}
           initialMessages={messages}
+          initialHasMore={initialPage.hasMore}
+          initialOldestCreatedAt={initialPage.oldestCreatedAt}
           initialActiveRoomId={activeRoomId}
           availableUsers={users}
         />

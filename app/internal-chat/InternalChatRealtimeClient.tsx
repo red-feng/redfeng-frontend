@@ -25,12 +25,23 @@ type SendMessageResponse = {
 type SnapshotResponse = {
   rooms?: InternalChatRoomItem[]
   messages?: InternalChatMessageItem[]
+  hasMore?: boolean
+  oldestCreatedAt?: string | null
+}
+
+type MessagesPageResponse = {
+  messages?: InternalChatMessageItem[]
+  hasMore?: boolean
+  oldestCreatedAt?: string | null
+  error?: string
 }
 
 type Props = {
   userId: string
   initialRooms: InternalChatRoomItem[]
   initialMessages: InternalChatMessageItem[]
+  initialHasMore: boolean
+  initialOldestCreatedAt: string | null
   initialActiveRoomId: string
   availableUsers: InternalChatUserOption[]
 }
@@ -83,17 +94,31 @@ export default function InternalChatRealtimeClient({
   userId,
   initialRooms,
   initialMessages,
+  initialHasMore,
+  initialOldestCreatedAt,
   initialActiveRoomId,
   availableUsers,
 }: Props) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const previousRoomRef = useRef("")
+  const previousLastMessageIdRef = useRef("")
   const [rooms, setRooms] = useState<InternalChatRoomItem[]>(() => sortRooms(initialRooms))
   const [activeRoomId, setActiveRoomId] = useState(initialActiveRoomId)
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, InternalChatMessageItem[]>>(() =>
     initialActiveRoomId ? { [initialActiveRoomId]: initialMessages } : {},
   )
+  const [loadedRoomIds, setLoadedRoomIds] = useState<Record<string, true>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: true } : {},
+  )
+  const [hasMoreByRoom, setHasMoreByRoom] = useState<Record<string, boolean>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: initialHasMore } : {},
+  )
+  const [oldestByRoom, setOldestByRoom] = useState<Record<string, string | null>>(() =>
+    initialActiveRoomId ? { [initialActiveRoomId]: initialOldestCreatedAt } : {},
+  )
+  const [loadingOlderByRoom, setLoadingOlderByRoom] = useState<Record<string, boolean>>({})
   const [draftMessage, setDraftMessage] = useState("")
   const [selectedTargetUserId, setSelectedTargetUserId] = useState(availableUsers[0]?.id || "")
   const [sending, setSending] = useState(false)
@@ -101,10 +126,13 @@ export default function InternalChatRealtimeClient({
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [roomSearch, setRoomSearch] = useState("")
-  const [viewMode, setViewMode] = useState<"kotak" | "panjang">("panjang")
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
   const activeMessages = messagesByRoom[activeRoomId] || []
+  const activeMessagesLength = activeMessages.length
+  const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
+  const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
+  const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
 
   const unreadCount = rooms.filter((room) => {
     if (!room.lastMessageSenderId || room.lastMessageSenderId === userId) return false
@@ -122,21 +150,6 @@ export default function InternalChatRealtimeClient({
       })
     : rooms
 
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem("internal-chat-view-mode")
-      if (stored === "kotak" || stored === "panjang") {
-        setViewMode(stored)
-      }
-    } catch {}
-  }, [])
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("internal-chat-view-mode", viewMode)
-    } catch {}
-  }, [viewMode])
-
   async function fetchRoomMeta(roomId: string) {
     try {
       const response = await fetch(`/api/internal-chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
@@ -148,16 +161,81 @@ export default function InternalChatRealtimeClient({
     }
   }
 
-  const fetchMessages = useCallback(async (roomId: string) => {
-    const { data, error } = await supabase
-      .from("internal_chat_messages")
-      .select("id, room_id, sender_id, message, created_at")
-      .eq("room_id", roomId)
-      .order("created_at", { ascending: true })
+  const fetchMessagesPage = useCallback(async (roomId: string, beforeCreatedAt?: string | null) => {
+    const search = new URLSearchParams({ roomId })
+    if (beforeCreatedAt) {
+      search.set("beforeCreatedAt", beforeCreatedAt)
+    }
+    const response = await fetch(`/api/internal-chat/messages?${search.toString()}`, { cache: "no-store" })
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as MessagesPageResponse | null
+      throw new Error(payload?.error || "Gagal memuat pesan chat internal.")
+    }
+    return (await response.json()) as MessagesPageResponse
+  }, [])
 
-    if (error) return
-    setMessagesByRoom((current) => ({ ...current, [roomId]: (data as InternalChatMessageItem[] | null) || [] }))
-  }, [supabase])
+  const fetchLatestMessages = useCallback(async (roomId: string) => {
+    try {
+      const payload = await fetchMessagesPage(roomId)
+      const nextMessages = sortMessages(payload.messages || [])
+      setMessagesByRoom((current) => ({ ...current, [roomId]: nextMessages }))
+      setLoadedRoomIds((current) => ({ ...current, [roomId]: true }))
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload.hasMore) }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]: payload.oldestCreatedAt || nextMessages[0]?.created_at || null,
+      }))
+    } catch {}
+  }, [fetchMessagesPage])
+
+  const loadOlderMessages = useCallback(async (roomId: string) => {
+    if (!roomId) return
+    if (loadingOlderByRoom[roomId]) return
+    if (!hasMoreByRoom[roomId]) return
+
+    const beforeCreatedAt = oldestByRoom[roomId]
+    if (!beforeCreatedAt) return
+
+    const container = threadRef.current
+    const previousHeight = container?.scrollHeight || 0
+    const previousTop = container?.scrollTop || 0
+
+    setLoadingOlderByRoom((current) => ({ ...current, [roomId]: true }))
+    try {
+      const payload = await fetchMessagesPage(roomId, beforeCreatedAt)
+      const olderMessages = sortMessages(payload.messages || [])
+      if (olderMessages.length > 0) {
+        setMessagesByRoom((current) => {
+          const existing = current[roomId] || []
+          return {
+            ...current,
+            [roomId]: mergeMessages(olderMessages, existing),
+          }
+        })
+
+        requestAnimationFrame(() => {
+          const nextContainer = threadRef.current
+          if (!nextContainer) return
+          const nextHeight = nextContainer.scrollHeight
+          nextContainer.scrollTop = Math.max(0, nextHeight - previousHeight + previousTop)
+        })
+      }
+
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload.hasMore) }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]:
+          payload.oldestCreatedAt ||
+          olderMessages[0]?.created_at ||
+          current[roomId] ||
+          null,
+      }))
+    } catch {
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: false }))
+    } finally {
+      setLoadingOlderByRoom((current) => ({ ...current, [roomId]: false }))
+    }
+  }, [fetchMessagesPage, hasMoreByRoom, loadingOlderByRoom, oldestByRoom])
 
   const markRoomRead = useCallback(async (roomId: string) => {
     const nowIso = new Date().toISOString()
@@ -182,14 +260,27 @@ export default function InternalChatRealtimeClient({
 
   useEffect(() => {
     if (!activeRoomId) return
-    void fetchMessages(activeRoomId)
+    if (!loadedRoomIds[activeRoomId]) {
+      void fetchLatestMessages(activeRoomId)
+    }
     void markRoomRead(activeRoomId)
-  }, [activeRoomId, fetchMessages, markRoomRead])
+  }, [activeRoomId, fetchLatestMessages, loadedRoomIds, markRoomRead])
 
   useEffect(() => {
-    if (!threadRef.current) return
-    threadRef.current.scrollTop = threadRef.current.scrollHeight
-  }, [activeMessages.length, activeRoomId])
+    const container = threadRef.current
+    if (!container) return
+
+    const roomChanged = previousRoomRef.current !== activeRoomId
+    const hasNewLatestMessage =
+      Boolean(activeLastMessageId) && previousLastMessageIdRef.current !== activeLastMessageId
+
+    if (roomChanged || hasNewLatestMessage) {
+      container.scrollTop = container.scrollHeight
+    }
+
+    previousRoomRef.current = activeRoomId
+    previousLastMessageIdRef.current = activeLastMessageId
+  }, [activeLastMessageId, activeRoomId, activeMessagesLength])
 
   useEffect(() => {
     const channel = supabase.channel(`internal-chat-live:${userId}`)
@@ -287,9 +378,25 @@ export default function InternalChatRealtimeClient({
         }
 
         if (resolvedActiveRoomId && Array.isArray(payload.messages) && !cancelled) {
+          const nextMessages = payload.messages || []
           setMessagesByRoom((current) => ({
             ...current,
-            [resolvedActiveRoomId]: mergeMessages(current[resolvedActiveRoomId] || [], payload.messages || []),
+            [resolvedActiveRoomId]: mergeMessages(current[resolvedActiveRoomId] || [], nextMessages),
+          }))
+          setLoadedRoomIds((current) => ({ ...current, [resolvedActiveRoomId]: true }))
+          setHasMoreByRoom((current) => ({
+            ...current,
+            [resolvedActiveRoomId]: typeof payload.hasMore === "boolean"
+              ? payload.hasMore
+              : current[resolvedActiveRoomId] || false,
+          }))
+          setOldestByRoom((current) => ({
+            ...current,
+            [resolvedActiveRoomId]:
+              payload.oldestCreatedAt ||
+              current[resolvedActiveRoomId] ||
+              nextMessages[0]?.created_at ||
+              null,
           }))
         }
       } catch {}
@@ -353,7 +460,7 @@ export default function InternalChatRealtimeClient({
       }
 
       setActiveRoomId(payload.roomId)
-      await fetchMessages(payload.roomId)
+      await fetchLatestMessages(payload.roomId)
       await markRoomRead(payload.roomId)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Gagal membuka chat pribadi.")
@@ -419,6 +526,12 @@ export default function InternalChatRealtimeClient({
     }
   }
 
+  function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
+    if (!activeRoomId || !activeHasMore || activeLoadingOlder) return
+    if (event.currentTarget.scrollTop > 80) return
+    void loadOlderMessages(activeRoomId)
+  }
+
   const realtimeBadge =
     realtimeStatus === "live"
       ? { label: "Live", className: "border-emerald-200 bg-emerald-50 text-emerald-700" }
@@ -426,50 +539,15 @@ export default function InternalChatRealtimeClient({
         ? { label: "Fallback", className: "border-orange-200 bg-orange-50 text-orange-700" }
         : { label: "Menghubungkan", className: "border-amber-200 bg-amber-50 text-amber-700" }
 
-  const isBoxMode = viewMode === "kotak"
-
   return (
     <section className="mt-8 overflow-hidden rounded-[30px] border border-[#e9dccb] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-      <div className="flex items-center justify-end gap-2 border-b border-[#efe3d1] bg-[#fffaf5] px-4 py-2.5">
-        <span className="text-xs font-semibold text-slate-500">Mode tampilan:</span>
-        <button
-          type="button"
-          onClick={() => setViewMode("kotak")}
-          className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition ${
-            isBoxMode
-              ? "bg-orange-500 text-white"
-              : "border border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-          }`}
-        >
-          Kotak
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode("panjang")}
-          className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition ${
-            !isBoxMode
-              ? "bg-orange-500 text-white"
-              : "border border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
-          }`}
-        >
-          Panjang
-        </button>
-      </div>
       {errorMessage ? (
         <div className="border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {errorMessage}
         </div>
       ) : null}
-      <div
-        className={`grid gap-0 lg:grid-cols-[330px_minmax(0,1fr)] ${
-          isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
-        }`}
-      >
-        <aside
-          className={`flex flex-col border-r border-[#efe3d1] bg-[#f8f9fa] ${
-            isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
-          }`}
-        >
+      <div className="grid h-[78vh] min-h-[640px] gap-0 lg:grid-cols-[330px_minmax(0,1fr)]">
+        <aside className="flex h-[78vh] min-h-[640px] min-w-0 min-h-0 flex-col border-r border-[#efe3d1] bg-[#f8f9fa]">
           <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-4 py-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-800">Internal Chat</p>
@@ -509,7 +587,7 @@ export default function InternalChatRealtimeClient({
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 py-2">
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
             {visibleRooms.map((room) => {
               const active = room.id === activeRoomId
               const hasUnread =
@@ -546,11 +624,7 @@ export default function InternalChatRealtimeClient({
           </div>
         </aside>
 
-        <section
-          className={`flex flex-col bg-[#efeae2] ${
-            isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
-          }`}
-        >
+        <section className="flex h-[78vh] min-h-[640px] min-w-0 min-h-0 flex-col bg-[#efeae2]">
           <div className="sticky top-0 z-10 border-b border-[#efe3d1] bg-[#f0f2f5] px-5 py-3">
             <p className="text-base font-semibold text-slate-900">{activeRoom?.title || "Pilih chat"}</p>
             <p className="text-xs text-slate-500">{activeRoom?.subtitle || "Chat pribadi internal"}</p>
@@ -558,10 +632,23 @@ export default function InternalChatRealtimeClient({
 
           <div
             ref={threadRef}
-            className={`space-y-2 bg-[#efeae2] px-4 py-4 ${
-              isBoxMode ? "flex-1 overflow-y-auto" : ""
-            }`}
+            onScroll={handleThreadScroll}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 bg-[#efeae2] px-4 py-4"
           >
+            {activeRoom && activeLoadingOlder ? (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                  Memuat pesan lama...
+                </span>
+              </div>
+            ) : null}
+            {activeRoom && !activeHasMore && activeMessages.length > 0 ? (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                  Awal percakapan
+                </span>
+              </div>
+            ) : null}
             {!activeRoom ? (
               <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Pilih chat di kiri untuk mulai.</div>
             ) : activeMessages.length === 0 ? (
