@@ -5,6 +5,7 @@ import {
   getInternalProfileById,
   markInternalRoomRead,
 } from "@/lib/internal-chat"
+import { uploadInternalChatAttachment } from "@/lib/internal-chat-attachments"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
@@ -26,12 +27,14 @@ export async function POST(request: Request) {
   const formData = await request.formData()
   const roomId = String(formData.get("room_id") || "").trim()
   const message = String(formData.get("message") || "").trim()
+  const attachmentFile = formData.get("attachment")
+  const attachment = attachmentFile instanceof File ? attachmentFile : null
 
   if (!roomId) {
     return NextResponse.json({ error: "Ruang chat tidak valid." }, { status: 400 })
   }
-  if (!message) {
-    return NextResponse.json({ error: "Pesan wajib diisi." }, { status: 400 })
+  if (!message && (!attachment || attachment.size <= 0)) {
+    return NextResponse.json({ error: "Pesan atau lampiran wajib diisi." }, { status: 400 })
   }
 
   const { data: memberRow, error: memberError } = await adminSupabase
@@ -67,14 +70,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Role ini tidak diizinkan untuk chat langsung." }, { status: 403 })
   }
 
+  const uploadedAttachment = await uploadInternalChatAttachment({
+    roomId,
+    senderId: user.id,
+    file: attachment,
+  })
+  if (uploadedAttachment.error) {
+    return NextResponse.json({ error: uploadedAttachment.error }, { status: 400 })
+  }
+
   const { data: insertedMessage, error: insertError } = await adminSupabase
     .from("internal_chat_messages")
     .insert({
       room_id: roomId,
       sender_id: user.id,
-      message,
+      message: message || "",
+      attachment_url: uploadedAttachment.attachment?.url || null,
+      attachment_name: uploadedAttachment.attachment?.name || null,
+      attachment_mime_type: uploadedAttachment.attachment?.mimeType || null,
     })
-    .select("id, room_id, sender_id, message, created_at")
+    .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
     .single()
 
   if (insertError || !insertedMessage) {

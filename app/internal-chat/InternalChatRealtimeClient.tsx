@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { isInternalChatImageAttachment } from "@/lib/internal-chat-attachments"
 import type { InternalChatMessageItem, InternalChatRoomItem, InternalChatUserOption } from "@/lib/internal-chat"
 
 type RealtimeStatus = "connecting" | "live" | "fallback"
@@ -102,6 +103,7 @@ export default function InternalChatRealtimeClient({
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
   const [rooms, setRooms] = useState<InternalChatRoomItem[]>(() => sortRooms(initialRooms))
@@ -472,8 +474,9 @@ export default function InternalChatRealtimeClient({
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!activeRoomId) return
-    if (!draftMessage.trim()) {
-      setErrorMessage("Pesan wajib diisi.")
+    const attachment = fileInputRef.current?.files?.[0] || null
+    if (!draftMessage.trim() && !attachment) {
+      setErrorMessage("Pesan atau lampiran wajib diisi.")
       return
     }
 
@@ -483,6 +486,7 @@ export default function InternalChatRealtimeClient({
       const formData = new FormData()
       formData.set("room_id", activeRoomId)
       formData.set("message", draftMessage.trim())
+      if (attachment) formData.set("attachment", attachment)
 
       const response = await fetch("/api/internal-chat/send", {
         method: "POST",
@@ -509,6 +513,9 @@ export default function InternalChatRealtimeClient({
       }
 
       setDraftMessage("")
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Gagal kirim chat internal.")
     } finally {
@@ -663,7 +670,39 @@ export default function InternalChatRealtimeClient({
                         mine ? "bg-[#d9fdd3] text-slate-800" : "bg-white text-slate-700"
                       }`}
                     >
-                      <p className="whitespace-pre-line leading-6">{message.message}</p>
+                      {message.message ? <p className="whitespace-pre-line leading-6">{message.message}</p> : null}
+                      {message.attachment_url ? (
+                        <div className={message.message ? "mt-3" : ""}>
+                          {isInternalChatImageAttachment(message.attachment_mime_type) ? (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block overflow-hidden rounded-[12px] border border-white/20 bg-white/10"
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={message.attachment_url}
+                                alt={message.attachment_name || "Lampiran"}
+                                className="max-h-64 w-full object-cover"
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              href={message.attachment_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className={`inline-flex items-center rounded-[12px] border px-3 py-2 text-xs font-semibold transition ${
+                                mine
+                                  ? "border-white/20 bg-white/10 text-slate-700 hover:bg-white/20"
+                                  : "border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100"
+                              }`}
+                            >
+                              {message.attachment_name || "Lampiran"}
+                            </a>
+                          )}
+                        </div>
+                      ) : null}
                       <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
                     </div>
                   </div>
@@ -673,6 +712,16 @@ export default function InternalChatRealtimeClient({
           </div>
 
           <form onSubmit={handleSendMessage} className="sticky bottom-0 border-t border-[#efe3d1] bg-[#f0f2f5] px-4 py-3">
+            <div className="mb-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                name="attachment"
+                disabled={!activeRoom}
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                className="block w-full rounded-[12px] border border-[#dcd2c3] bg-white px-3 py-2 text-xs text-slate-600 file:mr-2 file:rounded-full file:border-0 file:bg-orange-100 file:px-2 file:py-1 file:text-[11px] file:font-semibold file:text-orange-700 disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
+            </div>
             <div className="flex items-end gap-2">
               <textarea
                 value={draftMessage}

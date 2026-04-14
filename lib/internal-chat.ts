@@ -38,6 +38,9 @@ type InternalChatMessageRow = {
   room_id: string
   sender_id: string
   message: string
+  attachment_url?: string | null
+  attachment_name?: string | null
+  attachment_mime_type?: string | null
   created_at: string | null
 }
 
@@ -388,7 +391,7 @@ export async function loadInternalChatMessagesForUser(adminSupabase: AdminSupaba
 
   const { data: messages, error: messagesError } = await adminSupabase
     .from("internal_chat_messages")
-    .select("id, room_id, sender_id, message, created_at")
+    .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
     .eq("room_id", roomId)
     .order("created_at", { ascending: true })
 
@@ -429,7 +432,7 @@ export async function loadInternalChatMessagesPageForUser(
 
   let query = adminSupabase
     .from("internal_chat_messages")
-    .select("id, room_id, sender_id, message, created_at")
+    .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
     .eq("room_id", roomId)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
