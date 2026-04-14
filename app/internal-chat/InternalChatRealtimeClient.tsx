@@ -101,6 +101,7 @@ export default function InternalChatRealtimeClient({
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [roomSearch, setRoomSearch] = useState("")
+  const [viewMode, setViewMode] = useState<"kotak" | "panjang">("panjang")
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
   const activeMessages = messagesByRoom[activeRoomId] || []
@@ -120,6 +121,21 @@ export default function InternalChatRealtimeClient({
         return haystack.includes(normalizedRoomSearch)
       })
     : rooms
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("internal-chat-view-mode")
+      if (stored === "kotak" || stored === "panjang") {
+        setViewMode(stored)
+      }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("internal-chat-view-mode", viewMode)
+    } catch {}
+  }, [viewMode])
 
   async function fetchRoomMeta(roomId: string) {
     try {
@@ -410,15 +426,50 @@ export default function InternalChatRealtimeClient({
         ? { label: "Fallback", className: "border-orange-200 bg-orange-50 text-orange-700" }
         : { label: "Menghubungkan", className: "border-amber-200 bg-amber-50 text-amber-700" }
 
+  const isBoxMode = viewMode === "kotak"
+
   return (
     <section className="mt-8 overflow-hidden rounded-[30px] border border-[#e9dccb] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+      <div className="flex items-center justify-end gap-2 border-b border-[#efe3d1] bg-[#fffaf5] px-4 py-2.5">
+        <span className="text-xs font-semibold text-slate-500">Mode tampilan:</span>
+        <button
+          type="button"
+          onClick={() => setViewMode("kotak")}
+          className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition ${
+            isBoxMode
+              ? "bg-orange-500 text-white"
+              : "border border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+          }`}
+        >
+          Kotak
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode("panjang")}
+          className={`rounded-[10px] px-3 py-1.5 text-xs font-semibold transition ${
+            !isBoxMode
+              ? "bg-orange-500 text-white"
+              : "border border-orange-200 bg-white text-orange-700 hover:bg-orange-50"
+          }`}
+        >
+          Panjang
+        </button>
+      </div>
       {errorMessage ? (
         <div className="border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
           {errorMessage}
         </div>
       ) : null}
-      <div className="grid h-[78vh] min-h-[640px] gap-0 lg:grid-cols-[330px_minmax(0,1fr)]">
-        <aside className="flex h-full flex-col border-r border-[#efe3d1] bg-[#f8f9fa]">
+      <div
+        className={`grid gap-0 lg:grid-cols-[330px_minmax(0,1fr)] ${
+          isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
+        }`}
+      >
+        <aside
+          className={`flex flex-col border-r border-[#efe3d1] bg-[#f8f9fa] ${
+            isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
+          }`}
+        >
           <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-4 py-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-800">Internal Chat</p>
@@ -495,13 +546,22 @@ export default function InternalChatRealtimeClient({
           </div>
         </aside>
 
-        <section className="flex h-full flex-col bg-[#efeae2]">
+        <section
+          className={`flex flex-col bg-[#efeae2] ${
+            isBoxMode ? "h-[78vh] min-h-[640px]" : "min-h-[680px]"
+          }`}
+        >
           <div className="sticky top-0 z-10 border-b border-[#efe3d1] bg-[#f0f2f5] px-5 py-3">
             <p className="text-base font-semibold text-slate-900">{activeRoom?.title || "Pilih chat"}</p>
             <p className="text-xs text-slate-500">{activeRoom?.subtitle || "Chat pribadi internal"}</p>
           </div>
 
-          <div ref={threadRef} className="flex-1 space-y-2 overflow-y-auto bg-[#efeae2] px-4 py-4">
+          <div
+            ref={threadRef}
+            className={`space-y-2 bg-[#efeae2] px-4 py-4 ${
+              isBoxMode ? "flex-1 overflow-y-auto" : ""
+            }`}
+          >
             {!activeRoom ? (
               <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Pilih chat di kiri untuk mulai.</div>
             ) : activeMessages.length === 0 ? (
