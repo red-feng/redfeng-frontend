@@ -8,6 +8,7 @@ import {
   isValidInternalUsername,
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
+import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat-bootstrap"
 
 function resolveReturnTo(formData: FormData, fallbackPath: string) {
   const returnTo = String(formData.get("return_to") || "").trim()
@@ -39,7 +40,7 @@ async function ensureSuperadminOperator() {
 
 export async function createSuperadminAccount(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/superadmin/superadmin-accounts")
-  await ensureSuperadminOperator()
+  const actorId = await ensureSuperadminOperator()
 
   const username = normalizeInternalUsername(String(formData.get("username") || ""))
   const password = String(formData.get("password") || "")
@@ -95,6 +96,13 @@ export async function createSuperadminAccount(formData: FormData) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
     redirectWithMessage(returnTo, profileError.message, "error")
   }
+  await bootstrapInternalChatForNewAccount({
+    adminSupabase,
+    actorId,
+    actorRole: "superadmin",
+    createdUserId: createdUser.user.id,
+    createdRole: "superadmin",
+  })
 
   redirectWithMessage(returnTo, `Akun superadmin ${username} berhasil dibuat`, "success")
 }

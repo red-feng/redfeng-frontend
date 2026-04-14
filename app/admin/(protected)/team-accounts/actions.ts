@@ -8,6 +8,7 @@ import {
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
 import { isAdminManagedRole } from "@/lib/internal-roles"
+import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat-bootstrap"
 import {
   formatAccountErrorMessage,
   getInternalManagerActor,
@@ -96,6 +97,13 @@ export async function createAdminAccount(formData: FormData) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
     redirectWithMessage(returnTo, formatAccountErrorMessage(profileError.message, requestedRole), "error")
   }
+  await bootstrapInternalChatForNewAccount({
+    adminSupabase,
+    actorId: actor.id,
+    actorRole: actor.role,
+    createdUserId: createdUser.user.id,
+    createdRole: requestedRole,
+  })
 
   const roleLabel = requestedRole === "operations_manager" ? "operations manager" : "admin"
   await createAdminAuditLog({

@@ -1,5 +1,5 @@
-import Link from "next/link"
 import { redirect } from "next/navigation"
+import AdminNavLinks from "@/app/components/AdminNavLinks"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
@@ -117,22 +117,7 @@ export default async function FinanceProtectedLayout({
               </div>
             </div>
             <nav className="overflow-x-auto pb-1">
-              <div className="flex min-w-max gap-2">
-                {financeNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                  >
-                    {item.label}
-                    {Number(item.badgeCount || 0) > 0 ? (
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white">
-                        {Number(item.badgeCount) > 99 ? "99+" : Number(item.badgeCount)}
-                      </span>
-                    ) : null}
-                  </Link>
-                ))}
-              </div>
+              <AdminNavLinks items={financeNav} />
             </nav>
           </div>
         </div>

@@ -2,7 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 type AdminNavChild = {
   href: string
@@ -39,13 +40,124 @@ export default function AdminNavLinks({
 }: {
   items: AdminNavItem[]
 }) {
+  const supabase = useMemo(() => createClient(), [])
   const pathname = usePathname()
   const normalizeHref = (href: string) => href.split("?")[0]
+  const isInternalChatHref = (href: string) => normalizeHref(href).endsWith("/internal-chat")
   const activeGroupLabel =
     items.find((item) => item.children?.some((child) => pathname.startsWith(normalizeHref(child.href))))?.label || null
   const [openGroupLabel, setOpenGroupLabel] = useState<string | null>(activeGroupLabel)
+  const [liveInternalChatBadgeCount, setLiveInternalChatBadgeCount] = useState<number | null>(null)
   const visibleGroupLabel = openGroupLabel || activeGroupLabel
   const visibleChildren = items.find((item) => item.label === visibleGroupLabel)?.children || []
+  const resolveBadgeCount = (baseCount: number, href?: string) => {
+    if (!href || !isInternalChatHref(href)) return baseCount
+    return liveInternalChatBadgeCount ?? baseCount
+  }
+
+  useEffect(() => {
+    let active = true
+    let debounceTimer: number | null = null
+
+    const fetchUnreadInternalChatCount = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user || !active) return
+
+      const { data: memberRows, error: memberError } = await supabase
+        .from("internal_chat_room_members")
+        .select("room_id, last_read_at")
+        .eq("user_id", user.id)
+
+      if (memberError || !active) return
+
+      const memberships = (memberRows as Array<{ room_id: string; last_read_at: string | null }> | null) || []
+      const roomIds = memberships.map((member) => member.room_id)
+
+      if (roomIds.length === 0) {
+        setLiveInternalChatBadgeCount(0)
+        return
+      }
+
+      const { data: roomRows, error: roomError } = await supabase
+        .from("internal_chat_rooms")
+        .select("id, last_message_at, last_message_sender_id")
+        .in("id", roomIds)
+        .eq("room_scope", "dm")
+
+      if (roomError || !active) return
+
+      const roomMap = new Map<string, { last_message_at: string | null; last_message_sender_id: string | null }>()
+      for (const room of (roomRows as Array<{ id: string; last_message_at: string | null; last_message_sender_id: string | null }> | null) || []) {
+        roomMap.set(room.id, {
+          last_message_at: room.last_message_at,
+          last_message_sender_id: room.last_message_sender_id,
+        })
+      }
+
+      let unreadCount = 0
+      for (const member of memberships) {
+        const room = roomMap.get(member.room_id)
+        if (!room?.last_message_at) continue
+        if (!room.last_message_sender_id || room.last_message_sender_id === user.id) continue
+        if (!member.last_read_at || Date.parse(room.last_message_at) > Date.parse(member.last_read_at)) {
+          unreadCount += 1
+        }
+      }
+
+      if (active) {
+        setLiveInternalChatBadgeCount(unreadCount)
+      }
+    }
+
+    void fetchUnreadInternalChatCount()
+
+    const channel = supabase.channel("internal-chat-nav-badge-live")
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "internal_chat_messages" },
+      () => {
+        if (debounceTimer) window.clearTimeout(debounceTimer)
+        debounceTimer = window.setTimeout(() => {
+          void fetchUnreadInternalChatCount()
+        }, 180)
+      },
+    )
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "internal_chat_room_members" },
+      () => {
+        if (debounceTimer) window.clearTimeout(debounceTimer)
+        debounceTimer = window.setTimeout(() => {
+          void fetchUnreadInternalChatCount()
+        }, 180)
+      },
+    )
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "internal_chat_rooms" },
+      () => {
+        if (debounceTimer) window.clearTimeout(debounceTimer)
+        debounceTimer = window.setTimeout(() => {
+          void fetchUnreadInternalChatCount()
+        }, 180)
+      },
+    )
+
+    channel.subscribe()
+
+    return () => {
+      active = false
+      if (debounceTimer) {
+        window.clearTimeout(debounceTimer)
+      }
+      void supabase.removeChannel(channel)
+    }
+  }, [supabase])
 
   return (
     <div className="space-y-3">
@@ -58,7 +170,10 @@ export default function AdminNavLinks({
           const isHighlighted = isActiveLink || isActiveGroup || visibleGroupLabel === item.label
 
           if (item.children) {
-            const totalPrimaryBadgeCount = item.children.reduce((total, child) => total + Number(child.badgeCount || 0), 0)
+            const totalPrimaryBadgeCount = item.children.reduce(
+              (total, child) => total + resolveBadgeCount(Number(child.badgeCount || 0), child.href),
+              0,
+            )
             const totalSecondaryBadgeCount = item.children.reduce((total, child) => total + Number(child.secondaryBadgeCount || 0), 0)
 
             return (
@@ -94,7 +209,7 @@ export default function AdminNavLinks({
                 }`}
               >
                 {item.label}
-                {renderBadge(Number(item.badgeCount || 0), "primary")}
+                {renderBadge(resolveBadgeCount(Number(item.badgeCount || 0), item.href), "primary")}
                 {renderBadge(Number(item.secondaryBadgeCount || 0), "danger")}
               </Link>
             )
@@ -115,7 +230,7 @@ export default function AdminNavLinks({
         <div className="flex min-w-max flex-wrap gap-2 rounded-[22px] border border-[#ecd9c2] bg-[#fffaf3] p-2">
           {visibleChildren.map((child) => {
             const isActive = pathname.startsWith(normalizeHref(child.href))
-            const visiblePrimaryBadgeCount = Number(child.badgeCount || 0)
+              const visiblePrimaryBadgeCount = resolveBadgeCount(Number(child.badgeCount || 0), child.href)
             const visibleSecondaryBadgeCount = Number(child.secondaryBadgeCount || 0)
 
             return (

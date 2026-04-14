@@ -8,6 +8,7 @@ import {
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
 import { isFinanceManagedRole } from "@/lib/internal-roles"
+import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat-bootstrap"
 import {
   formatAccountErrorMessage,
   getInternalManagerActor,
@@ -91,6 +92,13 @@ export async function createFinanceAccount(formData: FormData) {
     await adminSupabase.auth.admin.deleteUser(createdUser.user.id)
     redirectWithMessage(returnTo, formatAccountErrorMessage(profileError.message, requestedRole), "error")
   }
+  await bootstrapInternalChatForNewAccount({
+    adminSupabase,
+    actorId: actor.id,
+    actorRole: actor.role,
+    createdUserId: createdUser.user.id,
+    createdRole: requestedRole,
+  })
 
   const roleLabel = requestedRole === "finance_manager" ? "finance manager" : "finance"
   await createAdminAuditLog({
