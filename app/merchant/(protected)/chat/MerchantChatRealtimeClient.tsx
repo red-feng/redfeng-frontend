@@ -649,7 +649,7 @@ export default function MerchantChatRealtimeClient({
 
   return (
     <section className="mt-4 overflow-hidden rounded-none border border-[#f3dbc3] bg-white shadow-none md:mt-8 md:rounded-[32px] md:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-      <div className="grid h-[78vh] min-h-[660px] gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid h-[100dvh] min-h-[100dvh] gap-0 md:h-[78vh] md:min-h-[660px] lg:grid-cols-[340px_minmax(0,1fr)]">
         <aside
           className={`border-r border-[#efe3d1] bg-white p-0 lg:flex lg:h-full lg:flex-col lg:overflow-hidden lg:bg-[#f8f9fa] lg:p-4 ${
             mobileThreadOpen ? "hidden lg:flex" : "block"
@@ -657,14 +657,13 @@ export default function MerchantChatRealtimeClient({
         >
           <div className="border-b border-[#ececec] bg-white px-4 pb-3 pt-4 lg:hidden">
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleBackToRoomList}
-                className="text-xl leading-none text-[#e8650a]"
-                aria-label="Kembali"
-              >
-                ←
-              </button>
+              <Image
+                src="/redfeng-favicon.png"
+                alt="RedFeng"
+                width={26}
+                height={26}
+                className="h-[26px] w-[26px]"
+              />
               <h2 className="text-[33px] font-semibold tracking-[-0.02em] text-slate-900">Chat</h2>
             </div>
             <div className="mt-3 rounded-[8px] bg-[#f1f1f1] px-3 py-2">
