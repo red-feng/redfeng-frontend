@@ -139,6 +139,19 @@ function formatDateTime(dateStr: string | null) {
   })
 }
 
+function formatInboxDate(dateStr: string | null) {
+  if (!dateStr) return "-"
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return "-"
+  const now = new Date()
+  const sameYear = now.getFullYear() === date.getFullYear()
+  return date.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    ...(sameYear ? {} : { year: "2-digit" }),
+  })
+}
+
 function getPaymentBadgeLabel(paymentStatus: string | null | undefined) {
   const normalized = String(paymentStatus || "").trim().toLowerCase()
   if (normalized === "paid") return "Lunas"
@@ -204,6 +217,7 @@ export default function MerchantChatRealtimeClient({
   const [hidingRoomId, setHidingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
+  const [mobileThreadOpen, setMobileThreadOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
   const shouldAutoMarkActiveRoomReadRef = useRef(initialSelectionWasExplicit)
@@ -588,6 +602,9 @@ export default function MerchantChatRealtimeClient({
         const next = current.filter((room) => room.id !== roomId)
         if (activeRoomId === roomId) {
           setActiveRoomId(next[0]?.id || "")
+          if (next.length === 0) {
+            setMobileThreadOpen(false)
+          }
         }
         return next
       })
@@ -606,7 +623,12 @@ export default function MerchantChatRealtimeClient({
   function handleSelectRoom(roomId: string) {
     shouldAutoMarkActiveRoomReadRef.current = true
     setActiveRoomId(roomId)
+    setMobileThreadOpen(true)
     void markRoomRead(roomId)
+  }
+
+  function handleBackToRoomList() {
+    setMobileThreadOpen(false)
   }
 
   function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
@@ -626,10 +648,37 @@ export default function MerchantChatRealtimeClient({
   }
 
   return (
-    <section className="mt-8 overflow-hidden rounded-[32px] border border-[#f3dbc3] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+    <section className="mt-4 overflow-hidden rounded-none border border-[#f3dbc3] bg-white shadow-none md:mt-8 md:rounded-[32px] md:shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
       <div className="grid h-[78vh] min-h-[660px] gap-0 lg:grid-cols-[340px_minmax(0,1fr)]">
-        <aside className="border-r border-[#efe3d1] bg-[#f8f9fa] p-4 lg:flex lg:h-full lg:flex-col lg:overflow-hidden">
-          <div className="flex items-center justify-between gap-3">
+        <aside
+          className={`border-r border-[#efe3d1] bg-white p-0 lg:flex lg:h-full lg:flex-col lg:overflow-hidden lg:bg-[#f8f9fa] lg:p-4 ${
+            mobileThreadOpen ? "hidden lg:flex" : "block"
+          }`}
+        >
+          <div className="border-b border-[#ececec] bg-white px-4 pb-3 pt-4 lg:hidden">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleBackToRoomList}
+                className="text-xl leading-none text-[#e8650a]"
+                aria-label="Kembali"
+              >
+                ←
+              </button>
+              <h2 className="text-[33px] font-semibold tracking-[-0.02em] text-slate-900">Chat</h2>
+            </div>
+            <div className="mt-3 rounded-[8px] bg-[#f1f1f1] px-3 py-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="⌕  Cari Kontak, Penjual, & Pesan"
+                className="h-8 w-full bg-transparent text-[14px] text-slate-700 outline-none placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          <div className="hidden items-center justify-between gap-3 lg:flex">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.customerRooms}</p>
               <h2 className="mt-2 text-lg font-semibold text-slate-950">{t.conversationList}</h2>
@@ -642,7 +691,7 @@ export default function MerchantChatRealtimeClient({
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mt-4 hidden flex-wrap gap-2 lg:flex">
             {[
               { key: "all" as const, label: t.allFilter, count: rooms.length },
               { key: "unread" as const, label: t.unreadFilter, count: unreadRoomsCount },
@@ -666,7 +715,7 @@ export default function MerchantChatRealtimeClient({
             ))}
           </div>
 
-          <div className="mt-4 flex gap-2">
+          <div className="mt-4 hidden gap-2 lg:flex">
             <input
               type="text"
               value={searchQuery}
@@ -696,12 +745,12 @@ export default function MerchantChatRealtimeClient({
           </div>
 
           {searchQuery ? (
-            <p className="mt-3 text-xs font-medium text-slate-500">
+            <p className="mt-3 hidden text-xs font-medium text-slate-500 lg:block">
               {t.searchResultLabel}: <span className="text-slate-700">&quot;{searchQuery}&quot;</span>
             </p>
           ) : null}
 
-          <div className="mt-4 space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+          <div className="space-y-0 lg:mt-4 lg:space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
             {visibleRooms.length === 0 && searchQuery ? <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-4 text-sm leading-6 text-slate-600">{t.noSearchResult}</div> : null}
             {visibleRooms.length === 0 && !searchQuery ? <div className="rounded-[22px] border border-dashed border-[#e3d4be] bg-white px-4 py-4 text-sm leading-6 text-slate-600">{t.noChats}</div> : null}
 
@@ -716,16 +765,31 @@ export default function MerchantChatRealtimeClient({
               return (
                 <div
                   key={room.id}
-                  className={`rounded-[22px] border px-4 py-4 transition ${
-                    room.id === activeRoomId
-                      ? "border-orange-200 bg-[linear-gradient(135deg,#fff3e8_0%,#ffffff_100%)] shadow-sm"
-                      : hasUnread
-                        ? "border-rose-200 bg-white shadow-[0_18px_40px_rgba(244,63,94,0.1)] hover:border-rose-300 hover:bg-[#fffdf9]"
-                        : "border-[#eadfce] bg-white hover:border-orange-200 hover:bg-[#fffdf9]"
+                  className={`border-b border-[#ececec] bg-white px-4 py-3.5 last:border-b-0 lg:rounded-[22px] lg:border lg:px-4 lg:py-4 lg:transition ${
+                    room.id === activeRoomId ? "bg-[#fffaf5]" : ""
                   }`}
                 >
                   <button type="button" onClick={() => handleSelectRoom(room.id)} className="block w-full text-left">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-3 lg:hidden">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe7d1] text-[15px] font-semibold text-[#a54d00]">
+                          {getAvatarInitial(room.customerName, "C")}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-[18px] font-semibold leading-tight text-slate-900">
+                            {room.customerName || `Customer ${room.customerId.slice(0, 8)}`}
+                          </p>
+                          <p className="mt-1 truncate text-[15px] text-slate-500">
+                            {getMerchantRoomPreview(room)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 pt-1 text-[13px] text-slate-400">
+                        {formatInboxDate(room.lastMessageAt || room.updatedAt)}
+                      </span>
+                    </div>
+
+                    <div className="hidden items-start justify-between gap-3 lg:flex">
                       <div className="min-w-0">
                         <div className="flex items-start gap-3">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ffe7d1] text-sm font-semibold text-[#a54d00]">
@@ -775,7 +839,7 @@ export default function MerchantChatRealtimeClient({
                   {room.packageSlug ? (
                     <Link
                       href={`/packages/${encodeURIComponent(room.packageSlug)}`}
-                      className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
+                      className="mt-3 hidden text-xs font-semibold text-orange-600 transition hover:text-orange-700 lg:inline-flex"
                     >
                       {t.viewPackage}
                     </Link>
@@ -784,7 +848,7 @@ export default function MerchantChatRealtimeClient({
                     type="button"
                     onClick={() => void handleHideRoom(room.id)}
                     disabled={hidingRoomId === room.id}
-                    className="mt-3 block text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300"
+                    className="mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:block"
                   >
                     {hidingRoomId === room.id ? t.hidingRoom : t.hideRoom}
                   </button>
@@ -794,8 +858,21 @@ export default function MerchantChatRealtimeClient({
           </div>
         </aside>
 
-        <section className="flex h-full flex-col overflow-hidden bg-[#efeae2]">
-          <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-5 py-4 lg:px-6">
+        <section className={`h-full flex-col overflow-hidden bg-[#efeae2] ${mobileThreadOpen ? "flex" : "hidden lg:flex"}`}>
+          <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-4 py-3 lg:px-5 lg:py-4 lg:px-6">
+            <div className="mb-2 flex items-center gap-3 lg:hidden">
+              <button
+                type="button"
+                onClick={handleBackToRoomList}
+                className="text-xl leading-none text-[#e8650a]"
+                aria-label="Kembali ke daftar chat"
+              >
+                ←
+              </button>
+              <p className="truncate text-base font-semibold text-slate-900">
+                {activeRoom ? activeRoom.customerName || `Customer ${activeRoom.customerId.slice(0, 8)}` : "Chat"}
+              </p>
+            </div>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.conversationFocus}</p>
