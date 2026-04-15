@@ -8,6 +8,7 @@ export function buildLockedMerchantChatRedirect(params: {
   if (params.roomId) search.set("room_id", params.roomId)
   if (params.packageId) search.set("package_id", params.packageId)
   if (params.bookingId) search.set("booking_id", params.bookingId)
+  search.set("portal", "merchant")
   if (params.errorMessage) search.set("error", params.errorMessage)
 
   const query = search.toString()

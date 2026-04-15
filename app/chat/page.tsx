@@ -190,6 +190,7 @@ export default async function ChatPage({
     if (roomId) nextSearch.set("room_id", roomId)
     if (packageId) nextSearch.set("package_id", packageId)
     if (bookingId) nextSearch.set("booking_id", bookingId)
+    nextSearch.set("portal", MERCHANT_PORTAL_LOCK)
     if (errorMessage) nextSearch.set("error", errorMessage)
     nextSearch.set("redirected", "merchant_portal")
     const target = nextSearch.toString() ? `/merchant/chat?${nextSearch.toString()}` : "/merchant/chat"

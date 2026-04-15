@@ -252,8 +252,8 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
             <Link
               href={
                 linkedRoom?.id
-                  ? `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&room_id=${encodeURIComponent(linkedRoom.id)}`
-                  : `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}`
+                  ? `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&room_id=${encodeURIComponent(linkedRoom.id)}&portal=merchant`
+                  : `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&portal=merchant`
               }
               className="rounded-[18px] bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
             >

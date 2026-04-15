@@ -50,11 +50,11 @@ export async function sendMerchantChatMessage(formData: FormData) {
   const attachment = attachmentFile instanceof File ? attachmentFile : null
 
   if (!roomId) {
-    redirect(`/merchant/chat?tab=${tab}&error=${encodeURIComponent(t.roomNotFound)}`)
+    redirect(`/merchant/chat?tab=${tab}&portal=merchant&error=${encodeURIComponent(t.roomNotFound)}`)
   }
 
   if (!message && (!attachment || attachment.size <= 0)) {
-    redirect(`/merchant/chat?tab=${tab}&room_id=${roomId}&error=${encodeURIComponent(t.messageOrAttachmentRequired)}`)
+    redirect(`/merchant/chat?tab=${tab}&portal=merchant&room_id=${roomId}&error=${encodeURIComponent(t.messageOrAttachmentRequired)}`)
   }
 
   const {
@@ -72,7 +72,7 @@ export async function sendMerchantChatMessage(formData: FormData) {
     .single()
 
   if (roomError || !room || room.merchant_user_id !== user.id) {
-    redirect(`/merchant/chat?tab=${tab}&error=${encodeURIComponent(t.roomInvalid)}`)
+    redirect(`/merchant/chat?tab=${tab}&portal=merchant&error=${encodeURIComponent(t.roomInvalid)}`)
   }
 
   const uploadedAttachment = await uploadChatAttachment({
@@ -82,7 +82,7 @@ export async function sendMerchantChatMessage(formData: FormData) {
   })
 
   if (uploadedAttachment.error) {
-    redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}&error=${encodeURIComponent(uploadedAttachment.error)}`)
+    redirect(`/merchant/chat?tab=${tab}&portal=merchant&room_id=${room.id}&error=${encodeURIComponent(uploadedAttachment.error)}`)
   }
 
   const { error: insertError } = await adminSupabase
@@ -100,7 +100,7 @@ export async function sendMerchantChatMessage(formData: FormData) {
     const text = insertError.message.includes("does not exist")
       ? t.tableMissing
       : `${t.sendFailed}: ${insertError.message}`
-    redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}&error=${encodeURIComponent(text)}`)
+    redirect(`/merchant/chat?tab=${tab}&portal=merchant&room_id=${room.id}&error=${encodeURIComponent(text)}`)
   }
 
   const roomUpdate = {
@@ -122,6 +122,6 @@ export async function sendMerchantChatMessage(formData: FormData) {
       .eq("id", room.id)
   }
 
-  redirect(`/merchant/chat?tab=${tab}&room_id=${room.id}`)
+  redirect(`/merchant/chat?tab=${tab}&portal=merchant&room_id=${room.id}`)
 }
 
