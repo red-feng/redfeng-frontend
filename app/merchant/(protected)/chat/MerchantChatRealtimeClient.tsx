@@ -242,6 +242,7 @@ export default function MerchantChatRealtimeClient({
   const shouldAutoMarkActiveRoomReadRef = useRef(initialSelectionWasExplicit)
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
+  const activeRoomIdRef = useRef(initialActiveRoomId)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const unreadRoomsCount = useMemo(
@@ -282,6 +283,10 @@ export default function MerchantChatRealtimeClient({
   const lastMessageId = messages[messagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
   const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
+
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId
+  }, [activeRoomId])
   const unreadCount = useMemo(
     () =>
       visibleRooms.filter((room) => {
@@ -497,7 +502,7 @@ export default function MerchantChatRealtimeClient({
             })
           }
 
-          if (message.room_id === activeRoomId && message.sender_id !== userId) {
+          if (message.room_id === activeRoomIdRef.current && message.sender_id !== userId) {
             void markRoomRead(message.room_id)
           }
         } catch (error) {
@@ -521,7 +526,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeRoomId, fetchRoomMeta, initialSelectionWasExplicit, markRoomRead, supabase, userId])
+  }, [fetchRoomMeta, markRoomRead, supabase, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"

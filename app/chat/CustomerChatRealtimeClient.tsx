@@ -257,6 +257,7 @@ export default function CustomerChatRealtimeClient({
   const roomListRef = useRef<HTMLDivElement | null>(null)
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
+  const activeRoomIdRef = useRef(initialActiveRoomId)
 
   const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
   const messages = messagesByRoom[activeRoomId] || []
@@ -264,6 +265,10 @@ export default function CustomerChatRealtimeClient({
   const lastMessageId = messages[messagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
   const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
+
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId
+  }, [activeRoomId])
 
   const unreadCount = useMemo(
     () =>
@@ -478,7 +483,7 @@ export default function CustomerChatRealtimeClient({
             })
           }
 
-          if (message.room_id === activeRoomId && message.sender_id !== userId) {
+          if (message.room_id === activeRoomIdRef.current && message.sender_id !== userId) {
             void markRoomRead(message.room_id)
           }
         } catch (error) {
@@ -502,7 +507,7 @@ export default function CustomerChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeRoomId, fetchRoomMeta, markRoomRead, supabase, userId])
+  }, [fetchRoomMeta, markRoomRead, supabase, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"
