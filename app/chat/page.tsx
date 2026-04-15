@@ -73,7 +73,13 @@ const CHAT_ROOM_PAGE_SIZE = 30
 export default async function ChatPage({
   searchParams,
 }: {
-  searchParams: Promise<{ room_id?: string; package_id?: string; booking_id?: string; error?: string }>
+  searchParams: Promise<{
+    room_id?: string
+    package_id?: string
+    booking_id?: string
+    portal?: string
+    error?: string
+  }>
 }) {
   const params = await searchParams
   const locale = await getCurrentLocale()
@@ -81,6 +87,7 @@ export default async function ChatPage({
   const roomId = params.room_id || ""
   const packageId = params.package_id || ""
   const bookingId = params.booking_id || ""
+  const requestedPortal = String(params.portal || "").trim().toLowerCase()
   const errorMessage = params.error || ""
   const ui =
     locale === "en"
@@ -158,7 +165,7 @@ export default async function ChatPage({
     .maybeSingle()
   const isMerchant = Boolean(merchantMe?.id)
 
-  if (isMerchant) {
+  if (isMerchant && requestedPortal !== "customer") {
     const nextSearch = new URLSearchParams()
     if (roomId) nextSearch.set("room_id", roomId)
     if (packageId) nextSearch.set("package_id", packageId)

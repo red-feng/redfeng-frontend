@@ -840,7 +840,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
               </a>
             ) : null}
             <Link
-              href={`/chat?booking_id=${encodeURIComponent(booking.id)}`}
+              href={`/chat?booking_id=${encodeURIComponent(booking.id)}&portal=customer`}
               className="inline-flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
             >
               <span>{chatLabel}</span>
