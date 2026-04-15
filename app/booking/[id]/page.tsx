@@ -573,9 +573,9 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <RoleAutoRefresh
-        intervalMs={3000}
-        realtimeTables={["package_chat_rooms", "package_chat_messages"]}
-        realtimeDelayMs={220}
+        intervalMs={30000}
+        realtimeTables={["bookings", "booking_participants"]}
+        realtimeDelayMs={1200}
       />
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
