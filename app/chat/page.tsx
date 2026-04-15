@@ -363,9 +363,9 @@ export default async function ChatPage({
   })
   const initialOldestCreatedAt = messages[0]?.created_at || null
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <div className="mx-auto max-w-6xl">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-0 md:p-10">
+      <div className="max-w-6xl md:mx-auto">
+        <section className="hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:block">
           <h1 className="text-2xl font-bold text-slate-900">{t.title}</h1>
           <p className="mt-1 text-sm text-slate-500">{isMerchant ? t.merchantInbox : t.customerInbox}</p>
         </section>

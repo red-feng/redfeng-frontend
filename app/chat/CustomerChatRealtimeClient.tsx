@@ -821,10 +821,11 @@ export default function CustomerChatRealtimeClient({
                   {activeRoom?.merchantName || "Chat"}
                 </p>
               </div>
-              <p className="text-sm text-slate-500">{packageLabel}</p>
-              <p className="text-base font-semibold text-slate-900">{activeRoom?.packageTitle || packageFallback}</p>
+              <p className="truncate text-xs text-slate-500 lg:hidden">{activeRoom?.packageTitle || packageFallback}</p>
+              <p className="hidden text-sm text-slate-500 lg:block">{packageLabel}</p>
+              <p className="hidden text-base font-semibold text-slate-900 lg:block">{activeRoom?.packageTitle || packageFallback}</p>
               {activeRoom ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 hidden flex-wrap gap-2 lg:flex">
                   <span
                       className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
                         isCompletedChatBooking(activeRoom)
@@ -844,13 +845,13 @@ export default function CustomerChatRealtimeClient({
               {activeRoom?.packageSlug ? (
                 <Link
                   href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
-                  className="mt-1 inline-block text-xs text-orange-600 hover:text-orange-700"
+                  className="mt-1 hidden text-xs text-orange-600 hover:text-orange-700 lg:inline-block"
                 >
                   {viewPackageDetailLabel}
                 </Link>
               ) : null}
               {activeRoom?.bookingId ? (
-                <div className="mt-3 rounded-[18px] border border-orange-200 bg-orange-50 px-3 py-3 text-xs text-slate-700">
+                <div className="mt-3 hidden rounded-[18px] border border-orange-200 bg-orange-50 px-3 py-3 text-xs text-slate-700 lg:block">
                   <p className="font-semibold text-orange-700">{bookingLabel}</p>
                   <p className="mt-1 font-medium text-slate-900">{activeRoom.bookingCode || activeRoom.bookingId}</p>
                   <p className="mt-1 text-slate-500">
@@ -863,7 +864,7 @@ export default function CustomerChatRealtimeClient({
             <div
               ref={threadRef}
               onScroll={handleThreadScroll}
-              className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-5 py-4"
+              className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-3 py-3 lg:px-5 lg:py-4"
             >
               {activeRoom && activeLoadingOlder ? (
                 <div className="flex justify-center">
@@ -1075,29 +1076,29 @@ export default function CustomerChatRealtimeClient({
               })}
             </div>
 
-            <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-[#f0f2f5] p-4">
-              {errorMessage ? <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{errorMessage}</div> : null}
-              <div className="mb-3">
+            <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-[#f0f2f5] px-3 py-2 lg:p-4">
+              {errorMessage ? <div className="mb-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 lg:mb-3 lg:rounded-2xl lg:px-4 lg:py-3 lg:text-sm">{errorMessage}</div> : null}
+              <div className="mb-2 lg:mb-3">
                 <input
                   ref={fileInputRef}
                   type="file"
                   name="attachment"
                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                  className="block w-full rounded-[18px] border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 file:mr-3 file:rounded-full file:border-0 file:bg-orange-100 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-orange-700"
+                  className="block w-full rounded-[12px] border border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 file:mr-2 file:rounded-full file:border-0 file:bg-orange-100 file:px-2 file:py-1 file:text-[11px] file:font-semibold file:text-orange-700 lg:rounded-[18px] lg:px-4 lg:py-3 lg:text-sm lg:file:mr-3 lg:file:px-3 lg:file:py-1.5 lg:file:text-xs"
                 />
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2 lg:gap-3">
                 <textarea
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
                   onKeyDown={handleDraftKeyDown}
                   placeholder={writeMessageLabel}
-                  className="h-12 max-h-28 min-h-12 flex-1 rounded-[14px] border border-slate-300 p-3 text-sm outline-none ring-orange-500 focus:ring-2"
+                  className="h-11 max-h-24 min-h-11 flex-1 rounded-[12px] border border-slate-300 bg-white px-3 py-2 text-sm outline-none ring-orange-500 focus:ring-2 lg:h-12 lg:max-h-28 lg:min-h-12 lg:rounded-[14px] lg:p-3"
                 />
                 <button
                   type="submit"
                   disabled={submitting || !activeRoomId}
-                  className="self-end rounded-[14px] bg-[#ff6a00] px-5 py-3 text-sm font-semibold text-white hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  className="self-end rounded-full bg-[#ff6a00] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300 lg:rounded-[14px] lg:px-5 lg:py-3"
                 >
                   {submitting ? "..." : sendLabel}
                 </button>
