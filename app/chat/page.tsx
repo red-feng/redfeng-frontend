@@ -285,10 +285,9 @@ export default async function ChatPage({
       )
       .eq("id", activeRoomId)
       .is("customer_hidden_at", null)
-      .maybeSingle()
     const requestedRoomResult = isMerchant
-      ? await requestedRoomQuery.eq("merchant_user_id", user.id)
-      : await requestedRoomQuery.eq("customer_id", user.id)
+      ? await requestedRoomQuery.eq("merchant_user_id", user.id).maybeSingle()
+      : await requestedRoomQuery.eq("customer_id", user.id).maybeSingle()
 
     if (requestedRoomResult.data) {
       initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
