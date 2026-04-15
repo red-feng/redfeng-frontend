@@ -69,6 +69,7 @@ type MerchantRow = {
 export const dynamic = "force-dynamic"
 const CHAT_PAGE_SIZE = 50
 const CHAT_ROOM_PAGE_SIZE = 30
+const CUSTOMER_PORTAL_LOCK = "customer"
 
 export default async function ChatPage({
   searchParams,
@@ -164,8 +165,12 @@ export default async function ChatPage({
     .eq("user_id", user.id)
     .maybeSingle()
   const isMerchant = Boolean(merchantMe?.id)
+  const redirectedToCustomerChat = isMerchant && requestedPortal === CUSTOMER_PORTAL_LOCK
 
-  if (isMerchant && requestedPortal !== "customer") {
+  // Routing lock:
+  // - merchant account defaults to merchant chat
+  // - explicit portal=customer keeps customer chat flow (from customer booking detail CTA)
+  if (isMerchant && requestedPortal !== CUSTOMER_PORTAL_LOCK) {
     const nextSearch = new URLSearchParams()
     if (roomId) nextSearch.set("room_id", roomId)
     if (packageId) nextSearch.set("package_id", packageId)
@@ -412,6 +417,16 @@ export default async function ChatPage({
         {errorMessage && (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
             {errorMessage}
+          </div>
+        )}
+
+        {redirectedToCustomerChat && (
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+            {locale === "en"
+              ? "You have been redirected to Customer Chat for the booking detail flow."
+              : locale === "zh"
+                ? "您已被自动重定向到客户聊天流程。"
+                : "Anda telah dialihkan ke Customer Chat untuk alur detail booking."}
           </div>
         )}
 

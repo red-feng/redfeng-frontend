@@ -511,10 +511,10 @@ export default async function MerchantChatPage({
       {redirectedFromCustomerChat && (
         <div className="mt-4 rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
           {locale === "en"
-            ? "Redirected to Merchant Chat for consistent room context."
+            ? "You have been redirected to Merchant Chat to keep the conversation context consistent."
             : locale === "zh"
-              ? "已自动切换到商家聊天，以保持会话上下文一致。"
-              : "Dialihkan otomatis ke Merchant Chat agar konteks room tetap konsisten."}
+              ? "您已被自动重定向到商家聊天，以保持会话上下文一致。"
+              : "Anda telah dialihkan ke Merchant Chat untuk menjaga konteks percakapan tetap konsisten."}
         </div>
       )}
 
