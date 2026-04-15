@@ -220,10 +220,11 @@ export default async function MerchantLayout({
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <MerchantNavSeenTracker />
       <RoleAutoRefresh
-        intervalMs={3000}
+        intervalMs={30000}
         excludeOnPaths={["/merchant/chat"]}
         realtimeTables={["package_chat_rooms", "package_chat_messages"]}
         realtimeDelayMs={220}
+        disableOnMobile
       />
       <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1480px] px-4 py-4 sm:px-6 md:px-8 xl:px-10">
