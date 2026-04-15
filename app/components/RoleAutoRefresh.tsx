@@ -12,6 +12,7 @@ type RoleAutoRefreshProps = {
   realtimeTables?: string[]
   realtimeDelayMs?: number
   pathRealtimeDelayMs?: Record<string, number>
+  disableOnMobile?: boolean
 }
 
 export default function RoleAutoRefresh({
@@ -22,6 +23,7 @@ export default function RoleAutoRefresh({
   realtimeTables,
   realtimeDelayMs = 700,
   pathRealtimeDelayMs,
+  disableOnMobile = false,
 }: RoleAutoRefreshProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -42,6 +44,7 @@ export default function RoleAutoRefresh({
 
   useEffect(() => {
     if (!shouldRefreshThisPath) return
+    if (disableOnMobile && window.matchMedia("(max-width: 767px)").matches) return
     const normalizedSyncKeys = syncKeys?.map((key) => key.trim()).filter(Boolean) || []
     const normalizedRealtimeTables = realtimeTables?.map((table) => table.trim()).filter(Boolean) || []
     const supabase = normalizedRealtimeTables.length ? createClient() : null
@@ -85,9 +88,12 @@ export default function RoleAutoRefresh({
       }, delayMs)
     }
 
-    const intervalId = window.setInterval(() => {
-      runRefresh()
-    }, intervalMs)
+    const intervalId =
+      intervalMs > 0
+        ? window.setInterval(() => {
+            runRefresh()
+          }, intervalMs)
+        : null
 
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
@@ -171,7 +177,9 @@ export default function RoleAutoRefresh({
     document.addEventListener("compositionend", handleTypingActivity, true)
 
     return () => {
-      window.clearInterval(intervalId)
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
       if (refreshTimeoutRef.current) {
         window.clearTimeout(refreshTimeoutRef.current)
         refreshTimeoutRef.current = null
@@ -190,7 +198,7 @@ export default function RoleAutoRefresh({
         void supabase.removeChannel(realtimeChannel)
       }
     }
-  }, [activeRealtimeDelay, intervalMs, pathname, realtimeTables, router, shouldRefreshThisPath, syncKeys])
+  }, [activeRealtimeDelay, disableOnMobile, intervalMs, pathname, realtimeTables, router, shouldRefreshThisPath, syncKeys])
 
   return null
 }

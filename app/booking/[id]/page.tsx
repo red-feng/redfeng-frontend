@@ -576,6 +576,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         intervalMs={30000}
         realtimeTables={["bookings", "booking_participants"]}
         realtimeDelayMs={1200}
+        disableOnMobile
       />
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
