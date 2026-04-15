@@ -71,6 +71,7 @@ type MerchantRow = {
 
 export const dynamic = "force-dynamic"
 const CHAT_PAGE_SIZE = 50
+const CHAT_ROOM_PAGE_SIZE = 30
 
 export default async function ChatPage({
   searchParams,
@@ -226,6 +227,8 @@ export default async function ChatPage({
     )
     .is("customer_hidden_at", null)
     .order("updated_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(CHAT_ROOM_PAGE_SIZE + 1)
 
   const roomResult = isMerchant
     ? await roomQuery.eq("merchant_user_id", user.id)
@@ -237,6 +240,8 @@ export default async function ChatPage({
       .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at, customer_hidden_at")
       .is("customer_hidden_at", null)
       .order("updated_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(CHAT_ROOM_PAGE_SIZE + 1)
     const fallbackResult = isMerchant
       ? await fallbackQuery.eq("merchant_user_id", user.id)
       : await fallbackQuery.eq("customer_id", user.id)
@@ -260,13 +265,41 @@ export default async function ChatPage({
     )
   }
 
-  const rooms = roomsData || []
+  const roomRows = roomsData || []
+  const initialRoomsHasMore = roomRows.length > CHAT_ROOM_PAGE_SIZE
+  const roomFirstPage = initialRoomsHasMore ? roomRows.slice(0, CHAT_ROOM_PAGE_SIZE) : roomRows
+  let initialRooms = roomFirstPage
+  const initialRoomsCursor =
+    initialRoomsHasMore && roomFirstPage.length > 0
+      ? {
+          updatedAt: roomFirstPage[roomFirstPage.length - 1]?.updated_at || "",
+          roomId: roomFirstPage[roomFirstPage.length - 1]?.id || "",
+        }
+      : null
 
-  if (!activeRoomId && rooms.length > 0) {
-    activeRoomId = rooms[0].id
+  if (activeRoomId && !initialRooms.some((room) => room.id === activeRoomId)) {
+    const requestedRoomQuery = adminSupabase
+      .from("package_chat_rooms")
+      .select(
+        "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
+      )
+      .eq("id", activeRoomId)
+      .is("customer_hidden_at", null)
+      .maybeSingle()
+    const requestedRoomResult = isMerchant
+      ? await requestedRoomQuery.eq("merchant_user_id", user.id)
+      : await requestedRoomQuery.eq("customer_id", user.id)
+
+    if (requestedRoomResult.data) {
+      initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
+    }
   }
 
-  const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
+  if (!activeRoomId && initialRooms.length > 0) {
+    activeRoomId = initialRooms[0].id
+  }
+
+  const activeRoom = initialRooms.find((room) => room.id === activeRoomId) || null
 
   if (
     activeRoom &&
@@ -285,8 +318,8 @@ export default async function ChatPage({
     }
   }
 
-  const packageIds = [...new Set(rooms.map((room) => room.package_id))]
-  const roomIds = rooms.map((room) => room.id)
+  const packageIds = [...new Set(initialRooms.map((room) => room.package_id))]
+  const roomIds = initialRooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
         .from("packages")
@@ -379,7 +412,7 @@ export default async function ChatPage({
         <CustomerChatRealtimeClient
           locale={locale}
           userId={user.id}
-          initialRooms={rooms.map((room) => {
+          initialRooms={initialRooms.map((room) => {
             const pkg = packageMap.get(room.package_id)
             const merchant = pkg?.merchant_id ? merchantMap.get(pkg.merchant_id) : null
             const booking = getBookingInfo(room)
@@ -403,9 +436,11 @@ export default async function ChatPage({
               lastMessageAt: room.last_message_at || null,
               lastMessageSenderId: room.last_message_sender_id || null,
               customerLastReadAt: room.customer_last_read_at || null,
-              merchantLastReadAt: room.merchant_last_read_at || null,
+               merchantLastReadAt: room.merchant_last_read_at || null,
             }
           })}
+          initialRoomsHasMore={initialRoomsHasMore}
+          initialRoomsCursor={initialRoomsCursor}
           initialActiveRoomId={activeRoomId}
           initialMessages={messages}
           initialHasMore={initialHasMore}

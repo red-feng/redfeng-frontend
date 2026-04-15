@@ -120,11 +120,17 @@ type CustomerChatMessage = {
 }
 
 type RealtimeStatus = "connecting" | "live" | "fallback"
+type RoomCursor = {
+  updatedAt: string
+  roomId: string
+}
 
 type CustomerChatRealtimeClientProps = {
   locale: Locale
   userId: string
   initialRooms: CustomerChatRoom[]
+  initialRoomsHasMore: boolean
+  initialRoomsCursor: RoomCursor | null
   initialActiveRoomId: string
   initialMessages: CustomerChatMessage[]
   initialHasMore: boolean
@@ -170,6 +176,12 @@ type ChatMessagesPageResponse = {
   oldestCreatedAt?: string | null
   error?: string
 }
+type RoomsPageResponse = {
+  rooms?: CustomerChatRoom[]
+  hasMore?: boolean
+  nextCursor?: RoomCursor | null
+  error?: string
+}
 
 function sortRooms(rooms: CustomerChatRoom[]) {
   return [...rooms].sort((left, right) => {
@@ -183,6 +195,8 @@ export default function CustomerChatRealtimeClient({
   locale,
   userId,
   initialRooms,
+  initialRoomsHasMore,
+  initialRoomsCursor,
   initialActiveRoomId,
   initialMessages,
   initialHasMore,
@@ -234,8 +248,12 @@ export default function CustomerChatRealtimeClient({
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [roomSearch, setRoomSearch] = useState("")
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false)
+  const [roomsHasMore, setRoomsHasMore] = useState(initialRoomsHasMore)
+  const [roomsCursor, setRoomsCursor] = useState<RoomCursor | null>(initialRoomsCursor)
+  const [loadingMoreRooms, setLoadingMoreRooms] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const roomListRef = useRef<HTMLDivElement | null>(null)
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
 
@@ -619,6 +637,45 @@ export default function CustomerChatRealtimeClient({
     setMobileThreadOpen(false)
   }
 
+  async function loadMoreRooms() {
+    if (loadingMoreRooms || !roomsHasMore || !roomsCursor?.updatedAt || !roomsCursor?.roomId) return
+    setLoadingMoreRooms(true)
+    try {
+      const search = new URLSearchParams({
+        mode: "customer",
+        limit: "30",
+        beforeUpdatedAt: roomsCursor.updatedAt,
+        beforeRoomId: roomsCursor.roomId,
+      })
+      const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
+      const payload = (await response.json()) as RoomsPageResponse
+      if (!response.ok) {
+        throw new Error(payload.error || "Gagal memuat room berikutnya.")
+      }
+      const nextRooms = payload.rooms || []
+      setRooms((current) => {
+        const map = new Map<string, CustomerChatRoom>()
+        for (const row of current) map.set(row.id, row)
+        for (const row of nextRooms) map.set(row.id, row)
+        return sortRooms([...map.values()])
+      })
+      setRoomsHasMore(Boolean(payload.hasMore))
+      setRoomsCursor(payload.nextCursor || null)
+    } catch (error) {
+      console.error("Failed to load more customer rooms", error)
+      setRoomsHasMore(false)
+    } finally {
+      setLoadingMoreRooms(false)
+    }
+  }
+
+  function handleRoomListScroll(event: React.UIEvent<HTMLDivElement>) {
+    const node = event.currentTarget
+    const remaining = node.scrollHeight - node.scrollTop - node.clientHeight
+    if (remaining > 120) return
+    void loadMoreRooms()
+  }
+
   function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
     if (!activeRoomId || !activeHasMore || activeLoadingOlder) return
     if (event.currentTarget.scrollTop > 80) return
@@ -658,8 +715,8 @@ export default function CustomerChatRealtimeClient({
       <section className="mt-4 overflow-hidden rounded-none border border-slate-200 bg-white shadow-none md:mt-8 md:rounded-[28px] md:shadow-sm">
         <div className="grid h-[100dvh] min-h-[100dvh] gap-0 md:h-[82vh] md:min-h-[620px] lg:grid-cols-[300px_minmax(0,1fr)]">
           <aside
-            className={`border-r border-slate-200 bg-white p-0 lg:flex lg:h-full lg:flex-col lg:overflow-hidden lg:bg-[#f8f9fa] lg:p-4 ${
-              mobileThreadOpen ? "hidden lg:flex" : "block"
+            className={`h-full min-h-0 flex-col border-r border-slate-200 bg-white p-0 lg:overflow-hidden lg:bg-[#f8f9fa] lg:p-4 ${
+              mobileThreadOpen ? "hidden lg:flex" : "flex"
             }`}
           >
             <div className="border-b border-[#ececec] bg-white px-4 pb-3 pt-4 lg:hidden">
@@ -667,11 +724,11 @@ export default function CustomerChatRealtimeClient({
                 <Image
                   src="/redfeng-favicon.png"
                   alt="RedFeng"
-                  width={26}
-                  height={26}
-                  className="h-[26px] w-[26px]"
+                  width={34}
+                  height={34}
+                  className="h-[34px] w-[34px]"
                 />
-                <h2 className="text-[33px] font-semibold tracking-[-0.02em] text-slate-900">Chat</h2>
+                <h2 className="text-[26px] font-semibold tracking-[-0.01em] text-slate-900">Chat</h2>
               </div>
               <div className="mt-3 rounded-[8px] bg-[#f1f1f1] px-3 py-2">
                 <input
@@ -689,7 +746,11 @@ export default function CustomerChatRealtimeClient({
                 {realtimeBadge.label}
               </span>
             </div>
-            <div className="space-y-0 lg:mt-4 lg:space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+            <div
+              ref={roomListRef}
+              onScroll={handleRoomListScroll}
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-0 lg:mt-4 lg:space-y-3 lg:pr-1"
+            >
               {visibleRooms.length === 0 ? <div className="rounded-[20px] border border-slate-200 bg-white p-4 text-sm text-slate-500">{noChats}</div> : null}
               {visibleRooms.map((room) => {
                 const completedBooking = isCompletedChatBooking(room)
@@ -802,6 +863,14 @@ export default function CustomerChatRealtimeClient({
                   </div>
                 )
               })}
+              {loadingMoreRooms ? (
+                <div className="px-4 py-3 text-xs text-slate-500">Memuat room berikutnya...</div>
+              ) : null}
+              {!loadingMoreRooms && !roomsHasMore && visibleRooms.length > 0 ? (
+                <div className="px-4 py-3 text-center text-[11px] font-medium text-slate-400">
+                  Semua room sudah dimuat
+                </div>
+              ) : null}
             </div>
           </aside>
 

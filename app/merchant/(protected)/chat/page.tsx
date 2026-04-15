@@ -6,6 +6,7 @@ import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 
 const CHAT_PAGE_SIZE = 50
+const CHAT_ROOM_PAGE_SIZE = 30
 
 type ChatRoomRow = {
   id: string
@@ -238,12 +239,6 @@ function getBookingInfo(room: ChatRoomRow) {
   return room.bookings || null
 }
 
-function getCustomerLabel(room: ChatRoomRow) {
-  const booking = getBookingInfo(room)
-  if (booking?.customer_name) return booking.customer_name
-  return `Customer ${room.customer_id.slice(0, 8)}`
-}
-
 export const dynamic = "force-dynamic"
 
 export default async function MerchantChatPage({
@@ -256,9 +251,6 @@ export default async function MerchantChatPage({
   const t = getChatText(locale)
   const requestedRoomId = params.room_id || ""
   const errorMessage = params.error || ""
-  const searchQuery = String(params.q || "").trim()
-  const normalizedSearchQuery = searchQuery.toLowerCase()
-  const activeFilter = params.filter === "unread" || params.filter === "booking" ? params.filter : "all"
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -289,6 +281,8 @@ export default async function MerchantChatPage({
     .eq("packages.merchant_id", currentMerchant.id)
     .is("merchant_hidden_at", null)
     .order("updated_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(CHAT_ROOM_PAGE_SIZE + 1)
 
   let allRooms: ChatRoomRow[] = []
   if (roomsWithBooking.error) {
@@ -310,6 +304,8 @@ export default async function MerchantChatPage({
       .eq("packages.merchant_id", currentMerchant.id)
       .is("merchant_hidden_at", null)
       .order("updated_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(CHAT_ROOM_PAGE_SIZE + 1)
     allRooms = (fallback.data as ChatRoomRow[] | null) || []
     roomsError = fallback.error
   } else {
@@ -317,8 +313,36 @@ export default async function MerchantChatPage({
     roomsError = roomsWithBooking.error
   }
 
-  const packageIds = [...new Set(allRooms.map((room) => room.package_id))]
-  const roomIds = allRooms.map((room) => room.id)
+  const initialRoomsHasMore = allRooms.length > CHAT_ROOM_PAGE_SIZE
+  const roomFirstPage = initialRoomsHasMore ? allRooms.slice(0, CHAT_ROOM_PAGE_SIZE) : allRooms
+  let initialRooms = roomFirstPage
+  const initialRoomsCursor =
+    initialRoomsHasMore && roomFirstPage.length > 0
+      ? {
+          updatedAt: roomFirstPage[roomFirstPage.length - 1]?.updated_at || "",
+          roomId: roomFirstPage[roomFirstPage.length - 1]?.id || "",
+        }
+      : null
+
+  if (requestedRoomId && !initialRooms.some((room) => room.id === requestedRoomId)) {
+    const requestedRoomResult = await adminSupabase
+      .from("package_chat_rooms")
+      .select(
+        "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, merchant_last_read_at, customer_last_read_at, merchant_hidden_at, bookings(booking_code, payment_status, booking_status, customer_name), packages!inner(merchant_id)",
+      )
+      .eq("id", requestedRoomId)
+      .eq("merchant_user_id", user.id)
+      .eq("packages.merchant_id", currentMerchant.id)
+      .is("merchant_hidden_at", null)
+      .maybeSingle()
+
+    if (requestedRoomResult.data) {
+      initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
+    }
+  }
+
+  const packageIds = [...new Set(initialRooms.map((room) => room.package_id))]
+  const roomIds = initialRooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase.from("packages").select("id, title, slug, cover_image").in("id", packageIds)
     : { data: [] as PackageRow[] }
@@ -349,31 +373,8 @@ export default async function MerchantChatPage({
     latestMessageMap.set(row.room_id, preview)
   }
 
-  const matchesSearch = (room: ChatRoomRow) => {
-    if (!normalizedSearchQuery) return true
-    const booking = getBookingInfo(room)
-    const packageTitle = packageMap.get(room.package_id)?.title || ""
-    const haystack = [getCustomerLabel(room), booking?.booking_code || "", packageTitle]
-      .join(" ")
-      .toLowerCase()
-
-    return haystack.includes(normalizedSearchQuery)
-  }
-
-  const matchesFilter = (room: ChatRoomRow) => {
-    const hasUnread =
-      room.last_message_sender_id &&
-      room.last_message_sender_id !== user.id &&
-      (!room.merchant_last_read_at || (room.last_message_at || "") > room.merchant_last_read_at)
-
-    if (activeFilter === "unread") return Boolean(hasUnread)
-    if (activeFilter === "booking") return Boolean(room.booking_id)
-    return true
-  }
-
-  const rooms = allRooms.filter((room) => matchesSearch(room) && matchesFilter(room))
-  const activeRoomId = requestedRoomId || rooms[0]?.id || ""
-  const activeRoom = rooms.find((room) => room.id === activeRoomId) || null
+  const activeRoomId = requestedRoomId || initialRooms[0]?.id || ""
+  const activeRoom = initialRooms.find((room) => room.id === activeRoomId) || null
 
   if (
     activeRoom &&
@@ -413,7 +414,7 @@ export default async function MerchantChatPage({
   })
   const initialOldestCreatedAt = messages[0]?.created_at || null
 
-  const unreadCount = rooms.filter((room) => {
+  const unreadCount = initialRooms.filter((room) => {
     if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
     if (!room.last_message_at) return false
     if (!room.merchant_last_read_at) return true
@@ -423,7 +424,7 @@ export default async function MerchantChatPage({
   const metricCards = [
     {
       label: t.allChats,
-      value: String(rooms.length),
+      value: String(initialRooms.length),
       note: t.totalRoomsOnInbox,
     },
     {
@@ -504,7 +505,7 @@ export default async function MerchantChatPage({
 
       <MerchantChatRealtimeClient
         userId={user.id}
-        initialRooms={allRooms.map((room) => {
+        initialRooms={initialRooms.map((room) => {
           const pkg = packageMap.get(room.package_id)
           const booking = getBookingInfo(room)
           return {
@@ -528,6 +529,8 @@ export default async function MerchantChatPage({
             customerLastReadAt: room.customer_last_read_at || null,
           }
         })}
+        initialRoomsHasMore={initialRoomsHasMore}
+        initialRoomsCursor={initialRoomsCursor}
         initialActiveRoomId={activeRoomId}
         initialSelectionWasExplicit={Boolean(requestedRoomId)}
         initialMessages={messages}
