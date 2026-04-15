@@ -12,7 +12,6 @@ import { isNewerThan } from "@/lib/nav-badge-policy"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 
 export default async function CustomerLayout({
   children,
@@ -104,12 +103,6 @@ export default async function CustomerLayout({
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
-      <RoleAutoRefresh
-        intervalMs={30000}
-        realtimeTables={["package_chat_rooms", "package_chat_messages"]}
-        realtimeDelayMs={220}
-        disableOnMobile
-      />
       <header className="sticky top-0 z-40 border-b border-orange-100 bg-white/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:px-10 md:py-4">
           <div className="flex items-center justify-between gap-3">

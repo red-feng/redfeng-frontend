@@ -2,7 +2,6 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import Link from "next/link"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
-import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatPackageMoney } from "@/lib/package-pricing"
@@ -572,12 +571,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
-      <RoleAutoRefresh
-        intervalMs={30000}
-        realtimeTables={["bookings", "booking_participants"]}
-        realtimeDelayMs={1200}
-        disableOnMobile
-      />
       <div className="mx-auto max-w-4xl">
         <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold text-slate-900">{openedFromCheckout ? t.bookingConfirmation : t.bookingSuccess}</h1>
