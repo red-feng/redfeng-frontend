@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { type Locale } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
-import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
+import { isActiveChatBooking, isCompletedChatBooking, isVisiblePaidChatBooking } from "@/lib/chat/booking-room-status"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 
@@ -1007,7 +1007,7 @@ export default function CustomerChatRealtimeClient({
                   )
                 }
 
-                if (systemMessage?.type === "booking_linked") {
+                if (systemMessage?.type === "booking_linked" && isVisiblePaidChatBooking(activeRoom || {})) {
                   const bookingCode = systemMessage.bookingCode || activeRoom?.bookingCode || systemMessage.bookingId
                   const bookingTitle =
                     locale === "en"

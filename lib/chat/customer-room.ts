@@ -11,6 +11,7 @@ type BookingChatRow = {
   package_id: string | null
   customer_email: string | null
   booking_code?: string | null
+  payment_status?: string | null
 }
 
 type PackageMerchantRow = {
@@ -103,6 +104,11 @@ function classifyRoomMutationError(
   return new ChatRoomFlowError("room_create_failed", text || fallbackMessage)
 }
 
+function isPaidBookingStatus(value: string | null | undefined) {
+  const normalized = String(value || "").trim().toLowerCase()
+  return normalized === "paid" || normalized === "dp_paid"
+}
+
 export async function ensureCustomerPackageChatRoom(
   supabase: SupabaseClient,
   params: {
@@ -179,7 +185,7 @@ export async function ensureCustomerBookingChatRoom(
 ) {
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
-    .select("id, package_id, customer_email, booking_code")
+    .select("id, package_id, customer_email, booking_code, payment_status")
     .eq("id", params.bookingId)
     .single<BookingChatRow>()
 
@@ -200,8 +206,19 @@ export async function ensureCustomerBookingChatRoom(
     hasExistingBookingRoom: Boolean(existingBookingRoom?.id),
     hasExistingPackageRoom: false,
   })
+  const shouldCreateBookingMarker = isPaidBookingStatus(booking.payment_status)
 
   if (bookingStrategy === "reuse_booking_room" && existingBookingRoom?.id) {
+    if (shouldCreateBookingMarker) {
+      await createSystemChatMessageIfMissing(supabase, {
+        roomId: existingBookingRoom.id,
+        senderId: params.senderId,
+        message: buildBookingLinkedSystemMessage({
+          bookingId: params.bookingId,
+          bookingCode: booking.booking_code || null,
+        }),
+      })
+    }
     if (params.touchUpdatedAt) {
       await supabase
         .from("package_chat_rooms")
@@ -248,14 +265,16 @@ export async function ensureCustomerBookingChatRoom(
       throw new ChatRoomFlowError(code, linkRoomError.message || "Ruang chat booking tidak dapat dipakai.")
     }
 
-    await createSystemChatMessageIfMissing(supabase, {
-      roomId: sourceRoomId,
-      senderId: params.senderId,
-      message: buildBookingLinkedSystemMessage({
-        bookingId: params.bookingId,
-        bookingCode: booking.booking_code || null,
-      }),
-    })
+    if (shouldCreateBookingMarker) {
+      await createSystemChatMessageIfMissing(supabase, {
+        roomId: sourceRoomId,
+        senderId: params.senderId,
+        message: buildBookingLinkedSystemMessage({
+          bookingId: params.bookingId,
+          bookingCode: booking.booking_code || null,
+        }),
+      })
+    }
 
     return {
       roomId: sourceRoomId,
@@ -302,14 +321,16 @@ export async function ensureCustomerBookingChatRoom(
     throw classifyRoomMutationError(createRoomError?.message, "Ruang chat booking tidak dapat dibuat.")
   }
 
-  await createSystemChatMessageIfMissing(supabase, {
-    roomId: newRoom.id,
-    senderId: params.senderId,
-    message: buildBookingLinkedSystemMessage({
-      bookingId: params.bookingId,
-      bookingCode: booking.booking_code || null,
-    }),
-  })
+  if (shouldCreateBookingMarker) {
+    await createSystemChatMessageIfMissing(supabase, {
+      roomId: newRoom.id,
+      senderId: params.senderId,
+      message: buildBookingLinkedSystemMessage({
+        bookingId: params.bookingId,
+        bookingCode: booking.booking_code || null,
+      }),
+    })
+  }
 
   return {
     roomId: newRoom.id,
