@@ -69,11 +69,49 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data: room, error: roomError } = await adminSupabase
-    .from("package_chat_rooms")
-    .select("id, package_id, customer_id, merchant_user_id")
-    .eq("id", roomId)
-    .single()
+  const resolveRoomById = async (id: string) =>
+    adminSupabase
+      .from("package_chat_rooms")
+      .select("id, package_id, customer_id, merchant_user_id")
+      .eq("id", id)
+      .single()
+
+  let { data: room, error: roomError } = await resolveRoomById(roomId)
+
+  if (roomError || !room) {
+    if (bookingId) {
+      try {
+        const targetRoom = await ensureCustomerBookingChatRoom(adminSupabase, {
+          bookingId,
+          customerId: user.id,
+          customerEmail: user.email,
+          senderId: user.id,
+          markCustomerRead: true,
+        })
+        roomId = targetRoom.roomId
+      } catch {
+        // keep old error handling below
+      }
+    } else if (packageId) {
+      try {
+        const targetRoom = await ensureCustomerPackageChatRoom(adminSupabase, {
+          packageId,
+          customerId: user.id,
+          senderId: user.id,
+          markCustomerRead: true,
+        })
+        roomId = targetRoom.roomId
+      } catch {
+        // keep old error handling below
+      }
+    }
+
+    if (roomId) {
+      const fallbackLookup = await resolveRoomById(roomId)
+      room = fallbackLookup.data
+      roomError = fallbackLookup.error
+    }
+  }
 
   if (roomError || !room) {
     return NextResponse.json({ error: "Ruang chat tidak valid." }, { status: 400 })
