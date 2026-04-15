@@ -922,7 +922,7 @@ export default async function CustomerDashboardPage() {
                           {t.viewBooking}
                         </Link>
                         <Link
-                          href={`/chat?booking_id=${booking.id}`}
+                          href={`/chat?booking_id=${booking.id}&portal=customer`}
                           className="rounded-2xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100"
                         >
                           {t.postBookingChat}
