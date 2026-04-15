@@ -952,7 +952,14 @@ export default function MerchantChatRealtimeClient({
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {activeRoom ? activeRoom.packageTitle || "-" : t.selectRoomToViewMerchant}
                 </p>
-                {activeRoom?.packageSlug ? (
+                {activeRoom?.bookingId ? (
+                  <Link
+                    href={`/merchant/booking/${encodeURIComponent(activeRoom.bookingId)}`}
+                    className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
+                  >
+                    {t.viewBookingDetail}
+                  </Link>
+                ) : activeRoom?.packageSlug ? (
                   <Link
                     href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
                     className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
@@ -1128,7 +1135,7 @@ export default function MerchantChatRealtimeClient({
                           </Link>
                         ) : null}
                         <Link
-                          href={`/booking/${encodeURIComponent(systemMessage.bookingId)}`}
+                          href={`/merchant/booking/${encodeURIComponent(systemMessage.bookingId)}`}
                           className="inline-flex rounded-full border border-[#eadfce] bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fffaf5]"
                         >
                           {t.viewBookingDetail}

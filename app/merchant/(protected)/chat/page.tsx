@@ -229,6 +229,7 @@ type PackageRow = {
 
 type MerchantChatParams = {
   room_id?: string
+  booking_id?: string
   error?: string
   q?: string
   filter?: string
@@ -249,7 +250,8 @@ export default async function MerchantChatPage({
   const params = await searchParams
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getChatText(locale)
-  const requestedRoomId = params.room_id || ""
+  let requestedRoomId = params.room_id || ""
+  const requestedBookingId = params.booking_id || ""
   const errorMessage = params.error || ""
 
   const supabase = await createClient()
@@ -267,6 +269,22 @@ export default async function MerchantChatPage({
     .maybeSingle()
 
   if (!currentMerchant?.id) return null
+
+  if (!requestedRoomId && requestedBookingId) {
+    const roomByBooking = await adminSupabase
+      .from("package_chat_rooms")
+      .select("id")
+      .eq("merchant_user_id", user.id)
+      .eq("booking_id", requestedBookingId)
+      .order("updated_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (!roomByBooking.error && roomByBooking.data?.id) {
+      requestedRoomId = roomByBooking.data.id
+    }
+  }
 
   let roomsError: { message: string } | null = null
   let bookingLinkReady = true

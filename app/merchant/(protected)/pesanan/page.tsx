@@ -459,7 +459,7 @@ export default async function MerchantOrdersPage({
                         </button>
                       </form>
                       <Link
-                        href={`/booking/${booking.id}`}
+                        href={`/merchant/booking/${booking.id}`}
                         className="rounded-[20px] border border-slate-200 bg-white px-4 py-3 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
                         {t.customerDetail}
