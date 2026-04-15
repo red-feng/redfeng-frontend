@@ -3,6 +3,9 @@ import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
+import { createClient } from "@/lib/supabase/server"
+
+type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
 
 type PublicHeaderProps = {
   locale: Locale
@@ -10,7 +13,32 @@ type PublicHeaderProps = {
   redirectSuperadminFromHome?: boolean
 }
 
-export default function PublicHeader({ locale, languageOptions, redirectSuperadminFromHome = false }: PublicHeaderProps) {
+export default async function PublicHeader({ locale, languageOptions, redirectSuperadminFromHome = false }: PublicHeaderProps) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  let initialRole: AccountRole = "guest"
+
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle()
+    const normalizedRole = String(profile?.role || "").trim().toLowerCase()
+
+    if (normalizedRole === "superadmin") {
+      initialRole = "superadmin"
+    } else if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
+      initialRole = "admin"
+    } else if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
+      initialRole = "finance"
+    } else {
+      initialRole = "customer"
+    }
+  }
+
   const t = dictionaries[locale].header
   const availableLocales =
     languageOptions && languageOptions.length > 0 ? languageOptions : (["id", "en", "zh"] as Locale[])
@@ -31,7 +59,11 @@ export default function PublicHeader({ locale, languageOptions, redirectSuperadm
               />
             </a>
 
-            <PublicHeaderAccountControls locale={locale} redirectSuperadminFromHome={redirectSuperadminFromHome} />
+            <PublicHeaderAccountControls
+              locale={locale}
+              redirectSuperadminFromHome={redirectSuperadminFromHome}
+              initialRole={initialRole}
+            />
           </div>
 
           <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">

@@ -13,9 +13,11 @@ type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
 export default function PublicHeaderAccountControls({
   locale,
   redirectSuperadminFromHome = false,
+  initialRole = "guest",
 }: {
   locale: Locale
   redirectSuperadminFromHome?: boolean
+  initialRole?: AccountRole
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -24,8 +26,8 @@ export default function PublicHeaderAccountControls({
   const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
   const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
   const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
-  const [accountRole, setAccountRole] = useState<AccountRole>("guest")
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [accountRole, setAccountRole] = useState<AccountRole>(initialRole)
+  const [isAuthenticated, setIsAuthenticated] = useState(initialRole !== "guest")
 
   const accountHref =
     accountRole === "superadmin"
@@ -105,7 +107,7 @@ export default function PublicHeaderAccountControls({
       isMounted = false
       subscription.unsubscribe()
     }
-  }, [pathname, redirectSuperadminFromHome, router, supabase])
+  }, [initialRole, pathname, redirectSuperadminFromHome, router, supabase])
 
   return (
     <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
