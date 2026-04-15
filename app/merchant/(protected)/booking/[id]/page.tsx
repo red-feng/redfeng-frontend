@@ -29,6 +29,10 @@ type BookingRow = {
   package_id: string | null
 }
 
+type ChatRoomRow = {
+  id: string
+}
+
 function titleCaseStatus(value: string | null) {
   const normalized = normalizeStatus(value)
   if (!normalized) return "-"
@@ -168,6 +172,16 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
     return <div className="p-6 text-sm text-rose-700">{t.bookingNotFound}</div>
   }
 
+  const { data: linkedRoom } = await adminSupabase
+    .from("package_chat_rooms")
+    .select("id")
+    .eq("merchant_user_id", user.id)
+    .eq("booking_id", booking.id)
+    .order("updated_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(1)
+    .maybeSingle<ChatRoomRow>()
+
   const participantCount = Number(booking.adult_count || 0) + Number(booking.child_count || 0)
   const paymentType = normalizeStatus(booking.payment_type) === "dp" ? t.dpPayment : t.fullPayment
 
@@ -236,7 +250,11 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href={`/merchant/chat?booking_id=${encodeURIComponent(booking.id)}`}
+              href={
+                linkedRoom?.id
+                  ? `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&room_id=${encodeURIComponent(linkedRoom.id)}`
+                  : `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}`
+              }
               className="rounded-[18px] bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
             >
               {t.openChat}

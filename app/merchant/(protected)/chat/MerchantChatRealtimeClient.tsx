@@ -179,6 +179,15 @@ function getMerchantRoomPreview(room: MerchantChatRoom) {
   return "Belum ada pesan."
 }
 
+function getCustomerDisplayName(room: MerchantChatRoom | null) {
+  if (!room) return "Customer"
+  const explicitName = String(room.customerName || "").trim()
+  if (explicitName) return explicitName
+  const customerId = String(room.customerId || "").trim()
+  if (customerId) return `Customer ${customerId.slice(0, 8)}`
+  return "Customer"
+}
+
 function getAvatarInitial(name: string | null | undefined, fallback = "U") {
   const text = String(name || "").trim()
   if (!text) return fallback
@@ -269,7 +278,7 @@ export default function MerchantChatRealtimeClient({
 
       if (!normalizedSearchQuery) return true
 
-      const haystack = [room.customerName || `Customer ${room.customerId.slice(0, 8)}`, room.bookingCode || "", room.packageTitle || ""]
+      const haystack = [getCustomerDisplayName(room), room.bookingCode || "", room.packageTitle || ""]
         .join(" ")
         .toLowerCase()
 
@@ -843,7 +852,7 @@ export default function MerchantChatRealtimeClient({
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-[18px] font-semibold leading-tight text-slate-900">
-                            {room.customerName || `Customer ${room.customerId.slice(0, 8)}`}
+                            {getCustomerDisplayName(room)}
                           </p>
                           <p className="mt-1 truncate text-[15px] text-slate-500">
                             {getMerchantRoomPreview(room)}
@@ -862,7 +871,7 @@ export default function MerchantChatRealtimeClient({
                               {getAvatarInitial(room.customerName, "C")}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-slate-950">{room.customerName || `Customer ${room.customerId.slice(0, 8)}`}</p>
+                              <p className="text-sm font-semibold text-slate-950">{getCustomerDisplayName(room)}</p>
                               <p className={`mt-2 line-clamp-2 text-xs leading-5 ${hasUnread ? "text-slate-700" : "text-slate-500"}`}>
                                 {room.lastMessageSenderId === userId ? `✓ ${getMerchantRoomPreview(room)}` : getMerchantRoomPreview(room)}
                               </p>
@@ -943,16 +952,16 @@ export default function MerchantChatRealtimeClient({
               >
                 ←
               </button>
-              <p className="truncate text-base font-semibold text-slate-900">
-                {activeRoom ? activeRoom.customerName || `Customer ${activeRoom.customerId.slice(0, 8)}` : "Chat"}
-              </p>
+                <p className="truncate text-base font-semibold text-slate-900">
+                  {activeRoom ? getCustomerDisplayName(activeRoom) : "Chat"}
+                </p>
             </div>
             <p className="truncate text-xs text-slate-500 lg:hidden">{activeRoom?.packageTitle || t.packageNotFound}</p>
             <div className="hidden flex-col gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{t.conversationFocus}</p>
                 <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
-                  {activeRoom ? activeRoom.customerName || `Customer ${activeRoom.customerId.slice(0, 8)}` : t.selectChatRoom}
+                  {activeRoom ? getCustomerDisplayName(activeRoom) : t.selectChatRoom}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {activeRoom ? activeRoom.packageTitle || "-" : t.selectRoomToViewMerchant}
