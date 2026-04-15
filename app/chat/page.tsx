@@ -166,6 +166,16 @@ export default async function ChatPage({
     hasMerchantRecord: Boolean(merchantMe),
   })
 
+  if (isMerchant) {
+    const nextSearch = new URLSearchParams()
+    if (roomId) nextSearch.set("room_id", roomId)
+    if (packageId) nextSearch.set("package_id", packageId)
+    if (bookingId) nextSearch.set("booking_id", bookingId)
+    if (errorMessage) nextSearch.set("error", errorMessage)
+    const target = nextSearch.toString() ? `/merchant/chat?${nextSearch.toString()}` : "/merchant/chat"
+    redirect(target)
+  }
+
   let activeRoomId = roomId
 
   if (!isMerchant && bookingId) {
