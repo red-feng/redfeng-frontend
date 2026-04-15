@@ -225,7 +225,6 @@ export default async function ChatPage({
     .select(
       "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
     )
-    .is("customer_hidden_at", null)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(CHAT_ROOM_PAGE_SIZE + 1)
@@ -238,7 +237,6 @@ export default async function ChatPage({
     const fallbackQuery = adminSupabase
       .from("package_chat_rooms")
       .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at, customer_hidden_at")
-      .is("customer_hidden_at", null)
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(CHAT_ROOM_PAGE_SIZE + 1)
@@ -284,7 +282,6 @@ export default async function ChatPage({
         "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
       )
       .eq("id", activeRoomId)
-      .is("customer_hidden_at", null)
     const requestedRoomResult = isMerchant
       ? await requestedRoomQuery.eq("merchant_user_id", user.id).maybeSingle()
       : await requestedRoomQuery.eq("customer_id", user.id).maybeSingle()
@@ -465,8 +462,8 @@ export default async function ChatPage({
            leadStatus={leadStatusLabel}
            newBadge={ui.newBadge}
            bookingLabel={bookingLabel}
-           hideRoomLabel={locale === "en" ? "Remove from list" : locale === "zh" ? "从列表移除" : "Hapus dari daftar"}
-           hidingRoomLabel={locale === "en" ? "Removing..." : locale === "zh" ? "正在移除..." : "Menghapus..."}
+           hideRoomLabel={locale === "en" ? "Delete permanently" : locale === "zh" ? "永久删除" : "Hapus permanen"}
+           hidingRoomLabel={locale === "en" ? "Deleting..." : locale === "zh" ? "删除中..." : "Menghapus permanen..."}
          />
       </div>
     </main>

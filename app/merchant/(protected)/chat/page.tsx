@@ -297,7 +297,6 @@ export default async function MerchantChatPage({
     )
     .eq("merchant_user_id", user.id)
     .eq("packages.merchant_id", currentMerchant.id)
-    .is("merchant_hidden_at", null)
     .order("updated_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(CHAT_ROOM_PAGE_SIZE + 1)
@@ -320,7 +319,6 @@ export default async function MerchantChatPage({
       )
       .eq("merchant_user_id", user.id)
       .eq("packages.merchant_id", currentMerchant.id)
-      .is("merchant_hidden_at", null)
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(CHAT_ROOM_PAGE_SIZE + 1)
@@ -351,7 +349,6 @@ export default async function MerchantChatPage({
       .eq("id", requestedRoomId)
       .eq("merchant_user_id", user.id)
       .eq("packages.merchant_id", currentMerchant.id)
-      .is("merchant_hidden_at", null)
       .maybeSingle()
 
     if (requestedRoomResult.data) {
@@ -560,8 +557,8 @@ export default async function MerchantChatPage({
           searchPlaceholder: t.searchPlaceholder,
           searchButton: t.searchButton,
           clearSearch: t.clearSearch,
-          hideRoom: locale === "en" ? "Remove from list" : locale === "zh" ? "从列表移除" : "Hapus dari daftar",
-          hidingRoom: locale === "en" ? "Removing..." : locale === "zh" ? "正在移除..." : "Menghapus...",
+          hideRoom: locale === "en" ? "Delete permanently" : locale === "zh" ? "永久删除" : "Hapus permanen",
+          hidingRoom: locale === "en" ? "Deleting..." : locale === "zh" ? "删除中..." : "Menghapus permanen...",
           allFilter: t.allFilter,
           unreadFilter: t.unreadFilter,
           bookingFilter: t.bookingFilter,

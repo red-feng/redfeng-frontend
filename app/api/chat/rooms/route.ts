@@ -134,14 +134,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ rooms: [], hasMore: false, nextCursor: null })
     }
 
-    query = query
-      .eq("merchant_user_id", user.id)
-      .eq("merchant_hidden_at", null)
-      .eq("customer_hidden_at", null)
+    query = query.eq("merchant_user_id", user.id)
   } else {
-    query = query
-      .eq("customer_id", user.id)
-      .is("customer_hidden_at", null)
+    query = query.eq("customer_id", user.id)
   }
 
   const { data: roomRows, error: roomsError } = await query

@@ -77,14 +77,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  if (actorRole === "customer" && room.customer_hidden_at) {
-    return NextResponse.json({ error: "Room hidden" }, { status: 404 })
-  }
-
-  if (actorRole === "merchant" && room.merchant_hidden_at) {
-    return NextResponse.json({ error: "Room hidden" }, { status: 404 })
-  }
-
   if (actorRole === "merchant") {
     const { data: pkg } = await adminSupabase
       .from("packages")
