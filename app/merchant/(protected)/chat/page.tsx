@@ -230,6 +230,7 @@ type PackageRow = {
 type MerchantChatParams = {
   room_id?: string
   booking_id?: string
+  redirected?: string
   error?: string
   q?: string
   filter?: string
@@ -252,6 +253,7 @@ export default async function MerchantChatPage({
   const t = getChatText(locale)
   let requestedRoomId = params.room_id || ""
   const requestedBookingId = params.booking_id || ""
+  const redirectedFromCustomerChat = params.redirected === "merchant_portal"
   const errorMessage = params.error || ""
 
   const supabase = await createClient()
@@ -503,6 +505,16 @@ export default async function MerchantChatPage({
       {errorMessage && (
         <div className="mt-4 rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">
           {errorMessage}
+        </div>
+      )}
+
+      {redirectedFromCustomerChat && (
+        <div className="mt-4 rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">
+          {locale === "en"
+            ? "Redirected to Merchant Chat for consistent room context."
+            : locale === "zh"
+              ? "已自动切换到商家聊天，以保持会话上下文一致。"
+              : "Dialihkan otomatis ke Merchant Chat agar konteks room tetap konsisten."}
         </div>
       )}
 

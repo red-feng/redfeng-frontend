@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import { cookies } from "next/headers"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
@@ -11,8 +10,6 @@ import {
   ensureCustomerPackageChatRoom,
 } from "@/lib/chat/customer-room"
 import { buildChatLoginNextTarget } from "@/lib/chat/auth-flow-policy.mjs"
-import { shouldUseMerchantChatPortal } from "@/lib/chat/customer-room-policy.mjs"
-import { ACTIVE_PORTAL_COOKIE, normalizeActivePortal } from "@/lib/portal-context"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -79,7 +76,6 @@ export default async function ChatPage({
   searchParams: Promise<{ room_id?: string; package_id?: string; booking_id?: string; error?: string }>
 }) {
   const params = await searchParams
-  const cookieStore = await cookies()
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].chat
   const roomId = params.room_id || ""
@@ -160,11 +156,7 @@ export default async function ChatPage({
     .select("id")
     .eq("user_id", user.id)
     .maybeSingle()
-  const activePortal = normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value)
-  const isMerchant = shouldUseMerchantChatPortal({
-    activePortal,
-    hasMerchantRecord: Boolean(merchantMe),
-  })
+  const isMerchant = Boolean(merchantMe?.id)
 
   if (isMerchant) {
     const nextSearch = new URLSearchParams()
@@ -172,6 +164,7 @@ export default async function ChatPage({
     if (packageId) nextSearch.set("package_id", packageId)
     if (bookingId) nextSearch.set("booking_id", bookingId)
     if (errorMessage) nextSearch.set("error", errorMessage)
+    nextSearch.set("redirected", "merchant_portal")
     const target = nextSearch.toString() ? `/merchant/chat?${nextSearch.toString()}` : "/merchant/chat"
     redirect(target)
   }
