@@ -70,6 +70,7 @@ export const dynamic = "force-dynamic"
 const CHAT_PAGE_SIZE = 50
 const CHAT_ROOM_PAGE_SIZE = 30
 const CUSTOMER_PORTAL_LOCK = "customer"
+const MERCHANT_PORTAL_LOCK = "merchant"
 
 export default async function ChatPage({
   searchParams,
@@ -170,7 +171,21 @@ export default async function ChatPage({
   // Routing lock:
   // - merchant account defaults to merchant chat
   // - explicit portal=customer keeps customer chat flow (from customer booking detail CTA)
-  if (isMerchant && requestedPortal !== CUSTOMER_PORTAL_LOCK) {
+  const hasExplicitCustomerIntent = requestedPortal === CUSTOMER_PORTAL_LOCK
+  const hasExplicitMerchantIntent = requestedPortal === MERCHANT_PORTAL_LOCK
+  const hasChatTargetContext = Boolean(roomId || packageId || bookingId)
+
+  // Merchant redirect lock:
+  // - redirect merchant only when explicitly merchant, or when there is no
+  //   chat target context from customer flow.
+  // - keep customer flow when portal=customer, or when package/booking target
+  //   is present without explicit merchant intent.
+  const shouldRedirectMerchant =
+    isMerchant &&
+    !hasExplicitCustomerIntent &&
+    (hasExplicitMerchantIntent || !hasChatTargetContext)
+
+  if (shouldRedirectMerchant) {
     const nextSearch = new URLSearchParams()
     if (roomId) nextSearch.set("room_id", roomId)
     if (packageId) nextSearch.set("package_id", packageId)
