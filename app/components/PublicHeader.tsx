@@ -4,8 +4,7 @@ import { dictionaries, type Locale } from "@/lib/i18n"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
 import { createClient } from "@/lib/supabase/server"
-
-type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
+import { resolvePublicAccountRole, type PublicAccountRole } from "@/lib/login-role-lock"
 
 type PublicHeaderProps = {
   locale: Locale
@@ -18,7 +17,7 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  let initialRole: AccountRole = "guest"
+  let initialRole: PublicAccountRole = "guest"
 
   if (user) {
     const { data: profile } = await supabase
@@ -26,17 +25,7 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
       .select("role")
       .eq("id", user.id)
       .maybeSingle()
-    const normalizedRole = String(profile?.role || "").trim().toLowerCase()
-
-    if (normalizedRole === "superadmin") {
-      initialRole = "superadmin"
-    } else if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
-      initialRole = "admin"
-    } else if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
-      initialRole = "finance"
-    } else {
-      initialRole = "customer"
-    }
+    initialRole = resolvePublicAccountRole(profile?.role)
   }
 
   const t = dictionaries[locale].header

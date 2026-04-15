@@ -8,6 +8,7 @@ import { type Locale } from "@/lib/i18n"
 import { isImageAttachment } from "@/lib/chat/attachments"
 import { isActiveChatBooking, isCompletedChatBooking } from "@/lib/chat/booking-room-status"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
+import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 
 type CustomerChatRoom = {
   id: string
@@ -874,8 +875,8 @@ export default function CustomerChatRealtimeClient({
             </div>
           </aside>
 
-          <section className={`h-full flex-col overflow-hidden bg-[#efeae2] ${mobileThreadOpen ? "flex" : "hidden lg:flex"}`}>
-            <div className="border-b border-slate-200 bg-[#f0f2f5] px-4 py-3 lg:px-5 lg:py-4">
+          <section className={`h-full flex-col overflow-hidden ${CHAT_DESIGN_LOCK.threadBackground} ${mobileThreadOpen ? "flex" : "hidden lg:flex"}`}>
+            <div className={`border-b border-slate-200 ${CHAT_DESIGN_LOCK.panelBackground} px-4 py-3 lg:px-5 lg:py-4`}>
               <div className="mb-2 flex items-center gap-3 lg:hidden">
                 <button
                   type="button"
@@ -932,7 +933,7 @@ export default function CustomerChatRealtimeClient({
             <div
               ref={threadRef}
               onScroll={handleThreadScroll}
-              className="flex-1 space-y-3 overflow-y-auto bg-[#efeae2] px-3 py-3 lg:px-5 lg:py-4"
+              className={`flex-1 space-y-3 overflow-y-auto ${CHAT_DESIGN_LOCK.threadBackground} px-3 py-3 lg:px-5 lg:py-4`}
             >
               {activeRoom && activeLoadingOlder ? (
                 <div className="flex justify-center">
@@ -1096,9 +1097,7 @@ export default function CustomerChatRealtimeClient({
                   <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[80%] rounded-[14px] px-4 py-3 text-sm shadow-sm ${
-                        mine
-                          ? "border border-[#ffd7b5] bg-[#ffe8d2] text-[#7a3412]"
-                          : "border border-slate-200 bg-white text-slate-700"
+                        mine ? CHAT_DESIGN_LOCK.ownBubble : CHAT_DESIGN_LOCK.peerBubble
                       }`}
                     >
                       {message.message ? <p className="whitespace-pre-line leading-6">{message.message}</p> : null}
@@ -1144,7 +1143,7 @@ export default function CustomerChatRealtimeClient({
               })}
             </div>
 
-            <form onSubmit={handleSendMessage} className="border-t border-slate-200 bg-[#f0f2f5] px-3 py-2 lg:p-4">
+            <form onSubmit={handleSendMessage} className={`border-t border-slate-200 ${CHAT_DESIGN_LOCK.panelBackground} px-3 py-2 lg:p-4`}>
               {errorMessage ? <div className="mb-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 lg:mb-3 lg:rounded-2xl lg:px-4 lg:py-3 lg:text-sm">{errorMessage}</div> : null}
               <div className="mb-2 lg:mb-3">
                 <input

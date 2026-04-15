@@ -5,8 +5,11 @@ import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { type Locale } from "@/lib/i18n"
 import { createClient } from "@/lib/supabase/client"
-
-type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
+import {
+  getPublicAccountHomePath,
+  resolvePublicAccountRole,
+  type PublicAccountRole,
+} from "@/lib/login-role-lock"
 
 type PublicMobileNavProps = {
   locale: Locale
@@ -15,7 +18,7 @@ type PublicMobileNavProps = {
 export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   const pathname = usePathname()
   const [supabase] = useState(() => createClient())
-  const [accountRole, setAccountRole] = useState<AccountRole>("guest")
+  const [accountRole, setAccountRole] = useState<PublicAccountRole>("guest")
 
   useEffect(() => {
     let isMounted = true
@@ -40,22 +43,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
 
       if (!isMounted) return
 
-      const normalizedRole = String(profile?.role || "").trim().toLowerCase()
-
-      if (normalizedRole === "superadmin") {
-        setAccountRole("superadmin")
-        return
-      }
-      if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
-        setAccountRole("admin")
-        return
-      }
-      if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
-        setAccountRole("finance")
-        return
-      }
-
-      setAccountRole("customer")
+      setAccountRole(resolvePublicAccountRole(profile?.role))
     }
 
     void syncSession()
@@ -73,15 +61,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   }, [supabase])
 
   const accountHref =
-    accountRole === "superadmin"
-      ? "/superadmin/dashboard"
-      : accountRole === "admin"
-        ? "/admin/dashboard"
-        : accountRole === "finance"
-          ? "/finance/dashboard"
-          : accountRole === "customer"
-            ? "/customer/dashboard"
-            : "/login?next=%2Fcustomer%2Fdashboard"
+    accountRole === "guest" ? "/login?next=%2Fcustomer%2Fdashboard" : getPublicAccountHomePath(accountRole)
 
   const copy = {
     id: {

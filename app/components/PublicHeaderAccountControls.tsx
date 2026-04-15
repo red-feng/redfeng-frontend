@@ -7,8 +7,11 @@ import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { shouldRefreshPublicAuthShell } from "@/lib/chat/auth-flow-policy.mjs"
 import SignOutButton from "@/app/components/SignOutButton"
-
-type AccountRole = "guest" | "customer" | "admin" | "finance" | "superadmin"
+import {
+  getPublicAccountHomePath,
+  resolvePublicAccountRole,
+  type PublicAccountRole,
+} from "@/lib/login-role-lock"
 
 export default function PublicHeaderAccountControls({
   locale,
@@ -17,7 +20,7 @@ export default function PublicHeaderAccountControls({
 }: {
   locale: Locale
   redirectSuperadminFromHome?: boolean
-  initialRole?: AccountRole
+  initialRole?: PublicAccountRole
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -26,19 +29,10 @@ export default function PublicHeaderAccountControls({
   const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
   const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
   const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
-  const [accountRole, setAccountRole] = useState<AccountRole>(initialRole)
+  const [accountRole, setAccountRole] = useState<PublicAccountRole>(initialRole)
   const [isAuthenticated, setIsAuthenticated] = useState(initialRole !== "guest")
 
-  const accountHref =
-    accountRole === "superadmin"
-      ? "/superadmin/dashboard"
-      : accountRole === "admin"
-        ? "/admin/dashboard"
-        : accountRole === "finance"
-          ? "/finance/dashboard"
-          : accountRole === "customer"
-            ? "/customer/dashboard"
-            : "/login"
+  const accountHref = accountRole === "guest" ? "/login" : getPublicAccountHomePath(accountRole)
   const accountLabel = isAuthenticated ? t.account : guestLoginLabel
 
   useEffect(() => {
@@ -65,31 +59,12 @@ export default function PublicHeaderAccountControls({
 
       if (!isMounted) return
 
-      const normalizedRole = String(profile?.role || "").trim().toLowerCase()
-
-      if (normalizedRole === "superadmin") {
-        setAccountRole("superadmin")
-        setIsAuthenticated(true)
-        if (redirectSuperadminFromHome && pathname === "/") {
-          router.replace("/superadmin/dashboard")
-        }
-        return
-      }
-
-      if (normalizedRole === "admin" || normalizedRole === "operations_manager") {
-        setAccountRole("admin")
-        setIsAuthenticated(true)
-        return
-      }
-
-      if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
-        setAccountRole("finance")
-        setIsAuthenticated(true)
-        return
-      }
-
-      setAccountRole("customer")
+      const resolvedRole = resolvePublicAccountRole(profile?.role)
+      setAccountRole(resolvedRole)
       setIsAuthenticated(true)
+      if (resolvedRole === "superadmin" && redirectSuperadminFromHome && pathname === "/") {
+        router.replace(getPublicAccountHomePath("superadmin"))
+      }
     }
 
     void syncSession()
