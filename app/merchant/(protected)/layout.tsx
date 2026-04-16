@@ -6,6 +6,7 @@ import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
 import RoleAutoRefresh from "@/app/components/RoleAutoRefresh"
 import SignOutButton from "@/app/components/SignOutButton"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
+import MerchantAdminHelpWidget from "@/app/components/MerchantAdminHelpWidget"
 import { formatMerchantLocationLabel } from "@/lib/location-labels"
 import { formatMerchantCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
@@ -289,6 +290,7 @@ export default async function MerchantLayout({
       </header>
 
       <div className="mx-auto w-full max-w-[1480px] px-0 sm:px-2 xl:px-4">{children}</div>
+      <MerchantAdminHelpWidget locale={locale} merchantLabel={merchantLabel} merchantCode={merchantCode} />
     </div>
   )
 }
