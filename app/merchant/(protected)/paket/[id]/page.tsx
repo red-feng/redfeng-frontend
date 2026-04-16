@@ -121,7 +121,6 @@ function getCopy(locale: Locale) {
   if (locale === "en") {
     return {
       title: "Merchant Package Detail",
-      subtitle: "Complete operational view for merchant. Separated from customer package page.",
       packageId: "Package ID",
       packageStatus: "Package status",
       duration: "Duration",
@@ -142,7 +141,6 @@ function getCopy(locale: Locale) {
   if (locale === "zh") {
     return {
       title: "Merchant Package Detail",
-      subtitle: "Complete operational view for merchant. Separated from customer package page.",
       packageId: "Package ID",
       packageStatus: "Package status",
       duration: "Duration",
@@ -162,7 +160,6 @@ function getCopy(locale: Locale) {
   }
   return {
     title: "Detail Paket Merchant",
-    subtitle: "Tampilan operasional lengkap untuk merchant. Terpisah dari halaman detail paket customer.",
     packageId: "ID Paket",
     packageStatus: "Status paket",
     duration: "Durasi",
@@ -313,7 +310,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       <div className="mx-auto max-w-6xl">
         <section className="rounded-[28px] bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_48%,#fb923c_100%)] p-6 text-white shadow-[0_22px_60px_-36px_rgba(154,52,18,0.9)] md:p-8">
           <h1 className="text-3xl font-semibold tracking-[-0.03em]">{copy.title}</h1>
-          <p className="mt-2 text-sm text-orange-50/95">{copy.subtitle}</p>
           <p className="mt-4 text-lg font-semibold">{displayTitle}</p>
           <p className="mt-1 text-sm text-orange-50/95">{routeText}</p>
           <div className="mt-5 flex flex-wrap gap-3">
