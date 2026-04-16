@@ -1,6 +1,6 @@
-import Image from "next/image"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import Gallery from "@/app/packages/[slug]/Gallery"
 import PackageTabs from "@/app/packages/[slug]/PackageTabs"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
@@ -357,29 +357,14 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
           <div className="space-y-6">
             <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm">
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.gallery}</p>
-              <Image
-                src={coverImage}
-                alt={displayTitle}
-                width={1600}
-                height={900}
-                unoptimized
-                className="h-[240px] w-full rounded-[16px] object-cover md:h-[420px]"
+              <Gallery
+                locale={activeLocale}
+                images={
+                  galleryImages.length > 0
+                    ? galleryImages
+                    : [{ id: `cover-${pkg.id}`, image_url: coverImage }]
+                }
               />
-              {galleryImages.length > 1 ? (
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  {galleryImages.slice(0, 8).map((image) => (
-                    <Image
-                      key={image.id}
-                      src={image.image_url}
-                      alt={displayTitle}
-                      width={320}
-                      height={220}
-                      unoptimized
-                      className="h-16 w-full rounded-xl object-cover md:h-24"
-                    />
-                  ))}
-                </div>
-              ) : null}
             </section>
 
             <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
