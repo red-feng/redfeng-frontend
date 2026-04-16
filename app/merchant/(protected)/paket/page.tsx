@@ -332,9 +332,9 @@ export default async function MerchantPackagePage({
                         {t.deletePackage}
                       </button>
                     </form>
-                    {pkg.slug ? (
+                    {pkg.id ? (
                       <Link
-                        href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                        href={`/merchant/paket/${encodeURIComponent(pkg.id)}?portal=merchant`}
                         className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
                         {t.viewPackage}

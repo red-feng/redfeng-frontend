@@ -206,6 +206,19 @@ function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string |
   return readTs >= createdTs ? "✓✓" : "✓"
 }
 
+function buildMerchantPackageDetailHref(params: {
+  packageId: string
+  roomId?: string | null
+}) {
+  const search = new URLSearchParams()
+  if (params.roomId) search.set("room_id", params.roomId)
+  search.set("portal", "merchant")
+  const query = search.toString()
+  return query
+    ? `/merchant/paket/${encodeURIComponent(params.packageId)}?${query}`
+    : `/merchant/paket/${encodeURIComponent(params.packageId)}`
+}
+
 export default function MerchantChatRealtimeClient({
   userId,
   initialRooms,
@@ -911,9 +924,12 @@ export default function MerchantChatRealtimeClient({
                       {t.lastUpdated}: {formatDateTime(room.lastMessageAt || room.updatedAt)}
                     </p>
                   </button>
-                  {room.packageSlug ? (
+                  {room.packageId ? (
                     <Link
-                      href={`/packages/${encodeURIComponent(room.packageSlug)}`}
+                      href={buildMerchantPackageDetailHref({
+                        packageId: room.packageId,
+                        roomId: room.id,
+                      })}
                       className="mt-3 hidden text-xs font-semibold text-orange-600 transition hover:text-orange-700 lg:inline-flex"
                     >
                       {t.viewPackage}
@@ -973,9 +989,12 @@ export default function MerchantChatRealtimeClient({
                   >
                     {t.viewBookingDetail}
                   </Link>
-                ) : activeRoom?.packageSlug ? (
+                ) : activeRoom?.packageId ? (
                   <Link
-                    href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                    href={buildMerchantPackageDetailHref({
+                      packageId: activeRoom.packageId,
+                      roomId: activeRoom.id,
+                    })}
                     className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
                   >
                     {t.viewPackageDetail}
@@ -1074,9 +1093,12 @@ export default function MerchantChatRealtimeClient({
                           <p className="mt-2 font-semibold leading-5 text-slate-950">{t.packageInquiryCard}</p>
                           <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-600">{activeRoom?.packageTitle || t.packageNotFound}</p>
                           <div className="mt-3 flex flex-wrap gap-2">
-                            {activeRoom?.packageSlug ? (
+                            {activeRoom?.packageId ? (
                               <Link
-                                href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                                href={buildMerchantPackageDetailHref({
+                                  packageId: activeRoom.packageId,
+                                  roomId: activeRoom.id,
+                                })}
                                 className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                               >
                                 {t.viewPackageDetail}
@@ -1140,9 +1162,12 @@ export default function MerchantChatRealtimeClient({
                         <p className="mt-1 text-xs text-slate-500">{bookingStatusText}</p>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {activeRoom?.packageSlug ? (
+                        {activeRoom?.packageId ? (
                           <Link
-                            href={`/packages/${encodeURIComponent(activeRoom.packageSlug)}`}
+                            href={buildMerchantPackageDetailHref({
+                              packageId: activeRoom.packageId,
+                              roomId: activeRoom.id,
+                            })}
                             className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
                           >
                             {t.viewPackageDetail}
