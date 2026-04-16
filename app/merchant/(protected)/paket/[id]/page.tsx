@@ -122,6 +122,7 @@ function getCopy(locale: Locale) {
     return {
       title: "Merchant Package Detail",
       subtitle: "Complete operational view for merchant. Separated from customer package page.",
+      packageId: "Package ID",
       packageStatus: "Package status",
       duration: "Duration",
       participant: "Minimum participant",
@@ -143,6 +144,7 @@ function getCopy(locale: Locale) {
     return {
       title: "Merchant Package Detail",
       subtitle: "Complete operational view for merchant. Separated from customer package page.",
+      packageId: "Package ID",
       packageStatus: "Package status",
       duration: "Duration",
       participant: "Minimum participant",
@@ -163,6 +165,7 @@ function getCopy(locale: Locale) {
   return {
     title: "Detail Paket Merchant",
     subtitle: "Tampilan operasional lengkap untuk merchant. Terpisah dari halaman detail paket customer.",
+    packageId: "ID Paket",
     packageStatus: "Status paket",
     duration: "Durasi",
     participant: "Minimal peserta",
@@ -331,7 +334,9 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
 
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-orange-100 bg-white p-5 md:col-span-2">
-            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageStatus}</p>
+            <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageId}</p>
+            <p className="mt-2 break-all text-sm font-semibold text-slate-900">{pkg.id}</p>
+            <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageStatus}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">{pkg.status || "-"}</p>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.duration}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">
