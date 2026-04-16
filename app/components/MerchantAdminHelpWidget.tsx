@@ -37,6 +37,8 @@ type WidgetCopy = {
   adminReplyLabel: string
   helperNote: string
   openThread: string
+  muteLabel: string
+  unmuteLabel: string
 }
 
 type SupportMessage = {
@@ -59,6 +61,11 @@ type SendMessagePayload = {
 }
 
 type RealtimeStatus = "connecting" | "live" | "fallback"
+
+type UnreadCountPayload = {
+  unreadCount?: number
+  error?: string
+}
 
 const copyByLocale: Record<string, WidgetCopy> = {
   id: {
@@ -86,6 +93,8 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminReplyLabel: "Admin Red Feng",
     helperNote: "Percakapan ini tersimpan agar follow-up merchant lebih rapi.",
     openThread: "Buka bantuan admin",
+    muteLabel: "Mute",
+    unmuteLabel: "Unmute",
   },
   en: {
     launcher: "Admin help",
@@ -112,6 +121,8 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminReplyLabel: "Red Feng Admin",
     helperNote: "This conversation is saved so merchant follow-up stays organized.",
     openThread: "Open admin help",
+    muteLabel: "Mute",
+    unmuteLabel: "Unmute",
   },
   zh: {
     launcher: "Admin help",
@@ -138,8 +149,12 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminReplyLabel: "Red Feng Admin",
     helperNote: "This conversation is saved so merchant follow-up stays organized.",
     openThread: "Open admin help",
+    muteLabel: "Mute",
+    unmuteLabel: "Unmute",
   },
 }
+
+const MERCHANT_SUPPORT_SOUND_PREF_KEY = "merchant-support-sound-enabled"
 
 function buildMailtoHref(input: { merchantLabel: string; merchantCode: string }) {
   const subject = `Merchant Support - ${input.merchantLabel} (${input.merchantCode})`
@@ -175,7 +190,11 @@ export default function MerchantAdminHelpWidget({
   const [loaded, setLoaded] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [soundEnabled, setSoundEnabled] = useState(true)
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const previousUnreadCountRef = useRef(0)
+  const audioEnabledRef = useRef(false)
 
   const t = copyByLocale[locale] || copyByLocale.id
   const mailtoHref = useMemo(() => buildMailtoHref({ merchantLabel, merchantCode }), [merchantCode, merchantLabel])
@@ -193,6 +212,18 @@ export default function MerchantAdminHelpWidget({
     [t.errorLoad],
   )
 
+  const fetchUnreadCount = useMemo(
+    () => async () => {
+      const response = await fetch("/api/merchant-support/unread-count", { cache: "no-store" })
+      const payload = (await response.json().catch(() => null)) as UnreadCountPayload | null
+      if (!response.ok) {
+        throw new Error(payload?.error || "Gagal memuat unread merchant support.")
+      }
+      return Number(payload?.unreadCount || 0)
+    },
+    [],
+  )
+
   useEffect(() => {
     if (!open) return
 
@@ -205,6 +236,7 @@ export default function MerchantAdminHelpWidget({
         if (cancelled) return
         setMessages(payload?.messages || [])
         setLoaded(true)
+        setUnreadCount(0)
         setErrorMessage("")
       } catch (error) {
         if (cancelled) return
@@ -240,7 +272,88 @@ export default function MerchantAdminHelpWidget({
   }, [messages, open])
 
   useEffect(() => {
-    if (!open) return
+    if (typeof window === "undefined") return
+    const savedPreference = window.localStorage.getItem(MERCHANT_SUPPORT_SOUND_PREF_KEY)
+    if (savedPreference === "false") {
+      setSoundEnabled(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (open) {
+      audioEnabledRef.current = true
+    }
+  }, [open])
+
+  useEffect(() => {
+    const previousUnreadCount = previousUnreadCountRef.current
+    if (
+      unreadCount > previousUnreadCount &&
+      soundEnabled &&
+      audioEnabledRef.current &&
+      typeof window !== "undefined" &&
+      document.visibilityState === "visible"
+    ) {
+      try {
+        const AudioContextCtor =
+          window.AudioContext ||
+          (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+
+        if (AudioContextCtor) {
+          const audioContext = new AudioContextCtor()
+          const oscillator = audioContext.createOscillator()
+          const gainNode = audioContext.createGain()
+          oscillator.type = "sine"
+          oscillator.frequency.setValueAtTime(880, audioContext.currentTime)
+          gainNode.gain.setValueAtTime(0.0001, audioContext.currentTime)
+          gainNode.gain.exponentialRampToValueAtTime(0.05, audioContext.currentTime + 0.02)
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.18)
+          oscillator.connect(gainNode)
+          gainNode.connect(audioContext.destination)
+          oscillator.start(audioContext.currentTime)
+          oscillator.stop(audioContext.currentTime + 0.18)
+          window.setTimeout(() => {
+            void audioContext.close().catch(() => {})
+          }, 260)
+        }
+      } catch {}
+    }
+    previousUnreadCountRef.current = unreadCount
+  }, [soundEnabled, unreadCount])
+
+  function toggleSoundEnabled() {
+    const nextValue = !soundEnabled
+    setSoundEnabled(nextValue)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MERCHANT_SUPPORT_SOUND_PREF_KEY, nextValue ? "true" : "false")
+    }
+    if (nextValue) {
+      audioEnabledRef.current = true
+    }
+  }
+
+  useEffect(() => {
+    if (hideOnChatPage) return
+
+    let cancelled = false
+
+    async function loadUnreadCount() {
+      try {
+        const nextCount = await fetchUnreadCount()
+        if (!cancelled) {
+          setUnreadCount(nextCount)
+        }
+      } catch {}
+    }
+
+    void loadUnreadCount()
+    return () => {
+      cancelled = true
+    }
+  }, [fetchUnreadCount, hideOnChatPage])
+
+  useEffect(() => {
+    if (hideOnChatPage) return
 
     const channel = supabase.channel(`merchant-support-live:${merchantCode}`)
 
@@ -248,6 +361,13 @@ export default function MerchantAdminHelpWidget({
       "postgres_changes",
       { event: "*", schema: "public", table: "merchant_support_messages" },
       async () => {
+        try {
+          const nextUnreadCount = await fetchUnreadCount()
+          setUnreadCount(nextUnreadCount)
+        } catch {}
+
+        if (!open) return
+
         try {
           const payload = await fetchRoom()
           setMessages(payload?.messages || [])
@@ -263,6 +383,13 @@ export default function MerchantAdminHelpWidget({
       "postgres_changes",
       { event: "*", schema: "public", table: "merchant_support_rooms" },
       async () => {
+        try {
+          const nextUnreadCount = await fetchUnreadCount()
+          setUnreadCount(nextUnreadCount)
+        } catch {}
+
+        if (!open) return
+
         try {
           const payload = await fetchRoom()
           setMessages(payload?.messages || [])
@@ -287,7 +414,7 @@ export default function MerchantAdminHelpWidget({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [fetchRoom, merchantCode, open, supabase, t.errorLoad])
+  }, [fetchRoom, fetchUnreadCount, hideOnChatPage, merchantCode, open, supabase, t.errorLoad])
 
   if (hideOnChatPage) return null
 
@@ -315,6 +442,7 @@ export default function MerchantAdminHelpWidget({
       setMessages((current) => [...current, payload.message as SupportMessage])
       setDraft("")
       setLoaded(true)
+      setUnreadCount(0)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Gagal mengirim pesan bantuan.")
     } finally {
@@ -388,6 +516,15 @@ export default function MerchantAdminHelpWidget({
                     </div>
                     <div className="mt-3 rounded-[18px] border border-orange-100 bg-[#fff7ef] px-4 py-3 text-sm leading-6 text-slate-700">
                       {t.adminMessage}
+                    </div>
+                    <div className="mt-3">
+                      <button
+                        type="button"
+                        onClick={toggleSoundEnabled}
+                        className="inline-flex items-center rounded-full border border-orange-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700 transition hover:bg-orange-50"
+                      >
+                        {soundEnabled ? t.muteLabel : t.unmuteLabel}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -502,11 +639,25 @@ export default function MerchantAdminHelpWidget({
         <button
           type="button"
           aria-label={t.launcher}
-          onClick={() => setOpen((current) => !current)}
+          onClick={() => {
+            audioEnabledRef.current = true
+            setOpen((current) => !current)
+          }}
           className="group flex items-center gap-3 rounded-full border border-orange-200/80 bg-white/95 px-3 py-3 shadow-[0_20px_50px_rgba(146,64,14,0.2)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:border-orange-300"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fff1df_0%,#ffd8ae_100%)] shadow-[0_14px_28px_rgba(249,115,22,0.22)]">
+          <span className="relative flex h-12 w-12 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fff1df_0%,#ffd8ae_100%)] shadow-[0_14px_28px_rgba(249,115,22,0.22)]">
+            {unreadCount > 0 ? (
+              <>
+                <span className="absolute inset-[-5px] rounded-full border border-rose-300/80 animate-ping" />
+                <span className="absolute inset-[-9px] rounded-full bg-rose-200/30 blur-md" />
+              </>
+            ) : null}
             <Image src="/redfeng-favicon.png" alt="Red Feng" width={28} height={28} className="h-7 w-7 object-contain" />
+            {unreadCount > 0 ? (
+              <span className="absolute -right-1 -top-1 inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500 px-2 py-1 text-[11px] font-semibold leading-none text-white shadow-[0_10px_24px_rgba(244,63,94,0.28)]">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            ) : null}
           </span>
           <span className="hidden text-left sm:block">
             <span className="block text-sm font-semibold text-slate-950">{t.launcher}</span>
