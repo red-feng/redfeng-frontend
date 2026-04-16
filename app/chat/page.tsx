@@ -174,6 +174,7 @@ export default async function ChatPage({
   const hasExplicitCustomerIntent = requestedPortal === CUSTOMER_PORTAL_LOCK
   const hasExplicitMerchantIntent = requestedPortal === MERCHANT_PORTAL_LOCK
   const hasChatTargetContext = Boolean(roomId || packageId || bookingId)
+  const isCustomerMode = !isMerchant || hasExplicitCustomerIntent
 
   // Merchant redirect lock:
   // - redirect merchant only when explicitly merchant, or when there is no
@@ -199,7 +200,7 @@ export default async function ChatPage({
 
   let activeRoomId = roomId
 
-  if (!isMerchant && bookingId) {
+  if (isCustomerMode && bookingId) {
     const { data: booking } = await adminSupabase
       .from("bookings")
       .select("id, package_id, customer_email")
@@ -222,7 +223,7 @@ export default async function ChatPage({
     }
   }
 
-  if (!isMerchant && packageId && !bookingId) {
+  if (isCustomerMode && packageId && !bookingId) {
     try {
       const targetRoom = await ensureCustomerPackageChatRoom(adminSupabase, {
         packageId,
@@ -260,9 +261,9 @@ export default async function ChatPage({
     .order("id", { ascending: false })
     .limit(CHAT_ROOM_PAGE_SIZE + 1)
 
-  const roomResult = isMerchant
-    ? await roomQuery.eq("merchant_user_id", user.id)
-    : await roomQuery.eq("customer_id", user.id)
+  const roomResult = isCustomerMode
+    ? await roomQuery.eq("customer_id", user.id)
+    : await roomQuery.eq("merchant_user_id", user.id)
 
   if (roomResult.error && roomResult.error.message.includes("last_message")) {
     const fallbackQuery = adminSupabase
@@ -271,9 +272,9 @@ export default async function ChatPage({
       .order("updated_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(CHAT_ROOM_PAGE_SIZE + 1)
-    const fallbackResult = isMerchant
-      ? await fallbackQuery.eq("merchant_user_id", user.id)
-      : await fallbackQuery.eq("customer_id", user.id)
+    const fallbackResult = isCustomerMode
+      ? await fallbackQuery.eq("customer_id", user.id)
+      : await fallbackQuery.eq("merchant_user_id", user.id)
     roomsData = fallbackResult.data as ChatRoomRow[] | null
     roomsError = fallbackResult.error
   } else {
@@ -313,9 +314,9 @@ export default async function ChatPage({
         "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
       )
       .eq("id", activeRoomId)
-    const requestedRoomResult = isMerchant
-      ? await requestedRoomQuery.eq("merchant_user_id", user.id).maybeSingle()
-      : await requestedRoomQuery.eq("customer_id", user.id).maybeSingle()
+    const requestedRoomResult = isCustomerMode
+      ? await requestedRoomQuery.eq("customer_id", user.id).maybeSingle()
+      : await requestedRoomQuery.eq("merchant_user_id", user.id).maybeSingle()
 
     if (requestedRoomResult.data) {
       initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
@@ -427,7 +428,7 @@ export default async function ChatPage({
       <div className="max-w-6xl md:mx-auto">
         <section className="hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm md:block">
           <h1 className="text-2xl font-bold text-slate-900">{t.title}</h1>
-          <p className="mt-1 text-sm text-slate-500">{isMerchant ? t.merchantInbox : t.customerInbox}</p>
+          <p className="mt-1 text-sm text-slate-500">{isCustomerMode ? t.customerInbox : t.merchantInbox}</p>
         </section>
 
         {errorMessage && (
