@@ -374,7 +374,6 @@ export default async function PaketPage({
             body:
               "Harga yang tampil mengikuti kurs terbaru sesuai bahasa pilihan customer. Nilai final booking akan disnapshot saat checkout dibuat.",
           }
-
   const [
     translationResult,
     localizedPricing,

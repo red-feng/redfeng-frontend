@@ -136,7 +136,6 @@ function getCopy(locale: Locale) {
       openMerchantChat: "Open merchant chat",
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
-      description: "Description",
       quickActions: "Quick actions",
     }
   }
@@ -158,7 +157,6 @@ function getCopy(locale: Locale) {
       openMerchantChat: "Open merchant chat",
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
-      description: "Description",
       quickActions: "Quick actions",
     }
   }
@@ -179,7 +177,6 @@ function getCopy(locale: Locale) {
     openMerchantChat: "Buka chat merchant",
     packageNotFound: "Paket tidak ditemukan atau bukan milik merchant ini.",
     gallery: "Galeri",
-    description: "Deskripsi",
     quickActions: "Aksi cepat",
   }
 }
@@ -390,9 +387,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
             </section>
 
             <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.description}</p>
-              <p className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">{translation?.description || "-"}</p>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
                   {formatTravelStyleLabel(pkg.travel_style, activeLocale)}
                 </span>
