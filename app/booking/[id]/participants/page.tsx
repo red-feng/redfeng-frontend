@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { saveBookingParticipants } from "../actions"
 import { getCurrentLocale } from "@/lib/locale"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
 
@@ -150,7 +151,7 @@ export default async function BookingParticipantsPage({
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-500">{t.participantData}</p>
           <h1 className="mt-3 text-3xl font-bold text-slate-900">{t.completeAllParticipants}</h1>
           <p className="mt-2 text-sm text-slate-500">
-            Booking {booking.booking_code || booking.id} atas nama {booking.customer_name || t.customerFallback} {t.bookingNeedsParticipants}
+            Booking {formatBookingCode(booking.booking_code, booking.id)} atas nama {booking.customer_name || t.customerFallback} {t.bookingNeedsParticipants}
           </p>
         </section>
 

@@ -159,7 +159,7 @@ export default async function AdminTeamAccountsPage({
                           {formatAdminCode(profile.id)}
                         </p>
                         <p className="mt-2 text-xs text-slate-500">{getRoleLabel(profile.role)}</p>
-                        <p className="mt-2 text-xs text-slate-500">ID akun: {profile.id}</p>
+                        <p className="mt-2 text-xs text-slate-500">Kode akun: {formatAdminCode(profile.id)}</p>
                       </div>
                       <div className="flex flex-col gap-3 md:min-w-[260px]">
                         <form action={resetAdminPassword} className="space-y-3">

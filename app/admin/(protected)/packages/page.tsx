@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { formatMerchantCode, formatPackageCode } from "@/lib/merchant-code"
 import { toneClass } from "@/lib/status-tones"
 import ConfirmSubmitButton from "../merchants/ConfirmSubmitButton"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
@@ -17,13 +18,6 @@ type PackageRow = {
   created_at: string | null
   reviewed_at: string | null
   rejection_reason: string | null
-}
-
-function formatPackageCode(packageCode: string | null, packageId: string) {
-  if (packageCode && packageCode.trim()) return packageCode
-  const compact = packageId.replace(/-/g, "").toUpperCase()
-  if (compact.length < 14) return `PKG-${compact}`
-  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
 }
 
 type MerchantRow = {
@@ -94,7 +88,7 @@ export default async function AdminPackagesPage({
   const merchantMap = new Map(
     (((merchantsData as MerchantRow[] | null) || []) as MerchantRow[]).map((merchant) => [
       merchant.id,
-      merchant.brand_name || merchant.company_name || merchant.id,
+      merchant.brand_name || merchant.company_name || formatMerchantCode(merchant.id),
     ]),
   )
 
@@ -157,7 +151,7 @@ export default async function AdminPackagesPage({
                         {formatStatus(pkg.status)}
                       </span>
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                        Merchant: {pkg.merchant_id ? merchantMap.get(pkg.merchant_id) || pkg.merchant_id : "-"}
+                        Merchant: {pkg.merchant_id ? merchantMap.get(pkg.merchant_id) || formatMerchantCode(pkg.merchant_id) : "-"}
                       </span>
                       {pkg.merchant_id ? (
                         <Link

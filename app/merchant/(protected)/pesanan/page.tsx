@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { markMerchantArrived, markMerchantGo } from "./actions"
 import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
 
@@ -381,7 +382,7 @@ export default async function MerchantOrdersPage({
                     <div className="space-y-3">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">{t.bookingId}</p>
-                        <p className="mt-2 text-xl font-semibold text-slate-950">{booking.booking_code || booking.id}</p>
+                        <p className="mt-2 text-xl font-semibold text-slate-950">{formatBookingCode(booking.booking_code, booking.id)}</p>
                       </div>
                       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">

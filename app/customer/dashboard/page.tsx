@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { formatCustomerCode } from "@/lib/merchant-code"
+import { formatBookingCode, formatCustomerCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
@@ -834,9 +834,9 @@ export default async function CustomerDashboardPage() {
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">{t.booking}</p>
                           <h3 className="mt-2 text-xl font-semibold text-slate-950">
-                            {pkg?.title || booking.booking_code || booking.id}
+                            {pkg?.title || formatBookingCode(booking.booking_code, booking.id)}
                           </h3>
-                          <p className="mt-2 text-sm text-slate-500">{t.code}: {booking.booking_code || booking.id}</p>
+                          <p className="mt-2 text-sm text-slate-500">{t.code}: {formatBookingCode(booking.booking_code, booking.id)}</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           <span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(booking.payment_status, "payment")}`}>

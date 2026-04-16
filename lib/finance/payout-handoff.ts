@@ -1,4 +1,5 @@
 import { calculateMerchantPayout, getFinanceSettings, resolveCustomerAdminFeePercent } from "@/lib/finance/settings"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
@@ -143,7 +144,7 @@ export async function createFinancePayoutHandoff(
     bank_account_number: redFlagCheck.merchant.bank_account_number,
     bank_account_holder: redFlagCheck.merchant.bank_account_holder,
     status: "pending",
-    note: `${notePrefix} untuk booking ${booking.booking_code || booking.id}. Basis payout subtotal paket ${payout.grossAmount}, komisi ${payout.redfengCommissionAmount}, biaya transfer ${payout.merchantTransferFee}.`,
+    note: `${notePrefix} untuk booking ${formatBookingCode(booking.booking_code, booking.id)}. Basis payout subtotal paket ${payout.grossAmount}, komisi ${payout.redfengCommissionAmount}, biaya transfer ${payout.merchantTransferFee}.`,
     gross_booking_amount: payout.grossAmount,
     redfeng_commission_percent: payout.redfengCommissionPercent,
     redfeng_commission_amount: payout.redfengCommissionAmount,

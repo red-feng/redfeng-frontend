@@ -14,6 +14,7 @@ import {
   canRequestMerchantRegistrationReview,
   MERCHANT_REVIEW_BUTTONS,
 } from "@/lib/merchant-review-policy"
+import { formatInternalUserCode } from "@/lib/merchant-code"
 import {
   approveMerchantReviewRequest,
   approveMerchantDeletion,
@@ -1250,7 +1251,7 @@ export default async function AdminMerchantsPage({
                         </span>
                       </div>
                       <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
-                        <p>Profile ID: <span className="font-medium text-slate-800">{profile.id}</span></p>
+                        <p>Kode Profil: <span className="font-medium text-slate-800">{formatInternalUserCode(profile.id)}</span></p>
                         <p>Role: <span className="font-medium text-slate-800">{fieldValue(profile.role)}</span></p>
                         <p>Dibuat: <span className="font-medium text-slate-800">{profile.created_at ? new Date(profile.created_at).toLocaleString("id-ID") : "-"}</span></p>
                       </div>

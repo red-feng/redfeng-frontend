@@ -1,4 +1,5 @@
 import { getRoleLabel, isInternalRole } from "@/lib/internal-roles"
+import { formatInternalUserCode } from "@/lib/merchant-code"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
 
@@ -356,7 +357,7 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
     const latest = latestMessageMap.get(room.id)
     const otherMember = roomMembers.find((member) => member.user_id !== userId) || null
     const otherProfile = otherMember ? profileMap.get(otherMember.user_id) || null : null
-    const dmTitle = otherProfile?.username || `User ${String(otherMember?.user_id || "").slice(0, 8)}`
+    const dmTitle = otherProfile?.username || formatInternalUserCode(otherMember?.user_id || null)
     const subtitle = otherProfile?.role ? getRoleLabel(otherProfile.role) : null
 
       return {
@@ -488,7 +489,7 @@ export async function listInternalChatUsers(adminSupabase: AdminSupabase, curren
     .filter((profile) => canInternalUsersDirectMessageLocked(currentUserRole, profile.role))
     .map((profile) => ({
       id: profile.id,
-      username: profile.username || `user-${profile.id.slice(0, 8)}`,
+      username: profile.username || formatInternalUserCode(profile.id),
       role: getRoleLabel(profile.role),
     }))
     .sort((left, right) => left.username.localeCompare(right.username))

@@ -10,6 +10,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { formatPackageMoney, resolvePackageTranslation } from "@/lib/package-pricing"
 import { parseHighlights } from "@/lib/packages/highlights"
+import { formatPackageCode } from "@/lib/merchant-code"
 import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 import { createClient } from "@/lib/supabase/server"
 
@@ -118,12 +119,6 @@ function formatDate(value: string | null, locale: Locale) {
   if (Number.isNaN(date.getTime())) return value
   const lang = locale === "zh" ? "zh-CN" : locale === "en" ? "en-US" : "id-ID"
   return date.toLocaleDateString(lang, { day: "2-digit", month: "long", year: "numeric" })
-}
-
-function formatPackageIdLabel(packageId: string) {
-  const compact = packageId.replace(/-/g, "").toUpperCase()
-  if (compact.length < 14) return `PKG-${compact}`
-  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
 }
 
 function getCopy(locale: Locale) {
@@ -328,7 +323,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
 
   const displayTitle = translation?.title || pkg.title || "Detail Paket"
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
-  const packageIdLabel = pkg.package_code || formatPackageIdLabel(pkg.id)
+  const packageIdLabel = formatPackageCode(pkg.package_code, pkg.id)
   const routeText = `${countryMap.get(pkg.origin_country_id || "") || "-"} - ${pkg.origin_province || "-"} to ${
     countryMap.get(pkg.destination_country_id || "") || "-"
   } - ${pkg.destination_province || "-"}`

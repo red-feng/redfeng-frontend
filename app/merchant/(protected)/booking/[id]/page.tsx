@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { getCurrentLocale } from "@/lib/locale"
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
 
@@ -197,7 +198,7 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t.bookingCode}</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">{booking.booking_code || booking.id}</p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">{formatBookingCode(booking.booking_code, booking.id)}</p>
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{t.packageLabel}</p>

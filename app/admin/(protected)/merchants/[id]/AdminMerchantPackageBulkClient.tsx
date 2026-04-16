@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useMemo, useState } from "react"
+import { formatPackageCode } from "@/lib/merchant-code"
 import { toneClass } from "@/lib/status-tones"
 import {
   approvePackage,
@@ -22,13 +23,6 @@ type PackageRow = {
   created_at: string | null
   reviewed_at: string | null
   rejection_reason: string | null
-}
-
-function formatPackageCode(packageCode: string | null, packageId: string) {
-  if (packageCode && packageCode.trim()) return packageCode
-  const compact = packageId.replace(/-/g, "").toUpperCase()
-  if (compact.length < 14) return `PKG-${compact}`
-  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
 }
 
 function statusTone(status: string | null) {

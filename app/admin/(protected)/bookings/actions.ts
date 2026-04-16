@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { formatBookingCode } from "@/lib/merchant-code"
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { runExpiredBookingCleanup } from "@/lib/bookings/draft-cleanup"
 
@@ -92,9 +93,9 @@ export async function handoffBookingToFinance(formData: FormData) {
     targetType: "booking",
     targetId: booking.id,
     action: "handoff_to_finance",
-    summary: `Booking ${booking.booking_code || booking.id} dikirim ke finance`,
+    summary: `Booking ${formatBookingCode(booking.booking_code, booking.id)} dikirim ke finance`,
     metadata: {
-      bookingCode: booking.booking_code,
+      bookingCode: formatBookingCode(booking.booking_code, booking.id),
       payoutAmount: queueResult.payoutAmount,
       grossAmount: queueResult.grossAmount,
       merchantId: queueResult.merchantId,

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { isFinanceApprovalRole, isFinanceExecutionRole } from "@/lib/internal-roles"
 import { getCurrentLocale } from "@/lib/locale"
-import { formatMerchantCode } from "@/lib/merchant-code"
+import { formatBookingCode, formatMerchantCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { updatePayoutStatus } from "./actions"
 
@@ -324,7 +324,7 @@ export default async function FinancePayoutsPage({
                             {merchant?.email || "Email merchant belum tersedia"}
                           </p>
                           <p className="mt-2 text-sm leading-7 text-slate-500">
-                            {booking ? `Booking ${booking.booking_code || booking.id} • ${booking.customer_name || "-"}` : "Permintaan payout manual / lama"}
+                            {booking ? `Booking ${formatBookingCode(booking.booking_code, booking.id)} • ${booking.customer_name || "-"}` : "Permintaan payout manual / lama"}
                           </p>
                         </div>
                         <div className="flex flex-col items-end gap-2">

@@ -11,6 +11,7 @@ import {
   isFinalPaymentOverdue,
 } from "@/lib/booking/final-payment-deadline"
 import { getCustomerTargetUnreadCount } from "@/lib/chat/customer-target-unread"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
 
@@ -608,7 +609,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.bookingCode}</p>
-            <p className="mt-2 text-xl font-bold text-slate-900">{booking.booking_code || booking.id}</p>
+            <p className="mt-2 text-xl font-bold text-slate-900">{formatBookingCode(booking.booking_code, booking.id)}</p>
           </div>
           <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">{t.total}</p>

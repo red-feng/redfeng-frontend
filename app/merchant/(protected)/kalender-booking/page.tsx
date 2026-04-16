@@ -5,6 +5,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import { isBookingExpiredForNonPayment } from "@/lib/bookings/draft-cleanup"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
 
@@ -507,7 +508,7 @@ export default async function MerchantBookingCalendarPage() {
                           return (
                             <tr key={booking.id} className="hover:bg-[#fffdf9]">
                               <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
-                                {booking.booking_code || booking.id}
+                                {formatBookingCode(booking.booking_code, booking.id)}
                               </td>
                               <td className="border-b border-[#f3ebdf] p-4">{booking.customer_name || "-"}</td>
                               <td className="border-b border-[#f3ebdf] p-4">{formatDate(booking.pickup_date)}</td>

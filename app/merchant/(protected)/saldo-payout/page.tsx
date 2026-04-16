@@ -2,6 +2,7 @@
 import { type Locale, normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPayoutRequestTone, normalizeStatus } from "@/lib/status-tones"
+import { formatBookingCode } from "@/lib/merchant-code"
 import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
@@ -549,7 +550,7 @@ export default async function MerchantSaldoPayoutPage({
                       {availableBookings.map((booking) => (
                         <tr key={booking.id} className="hover:bg-[#fffdf9]">
                           <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
-                            {booking.booking_code || booking.id.slice(0, 8)}
+                            {formatBookingCode(booking.booking_code, booking.id)}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
                             {packageMap.get(booking.package_id || "") || t.packageUntitled}
@@ -609,7 +610,7 @@ export default async function MerchantSaldoPayoutPage({
                       {heldBookings.map((booking) => (
                         <tr key={booking.id} className="hover:bg-[#fffdf9]">
                           <td className="border-b border-[#f3ebdf] p-4 font-medium text-slate-950">
-                            {booking.booking_code || booking.id.slice(0, 8)}
+                            {formatBookingCode(booking.booking_code, booking.id)}
                           </td>
                           <td className="border-b border-[#f3ebdf] p-4 text-slate-700">
                             {packageMap.get(booking.package_id || "") || t.packageUntitled}

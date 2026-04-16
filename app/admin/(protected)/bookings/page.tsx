@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/lib/bookings/draft-cleanup"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
@@ -795,7 +796,7 @@ export default async function AdminBookingsPage({
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                          {booking.booking_code || booking.id}
+                          {formatBookingCode(booking.booking_code, booking.id)}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">{packageTitle}</h3>
                         <p className="mt-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-700">

@@ -4,6 +4,7 @@ import {
   getFinanceSettings,
   resolveCustomerAdminFeePercent,
 } from "@/lib/finance/settings"
+import { formatBookingCode } from "@/lib/merchant-code"
 
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
@@ -127,7 +128,7 @@ export async function queueBookingToFinance({
     bank_account_number: merchant.bank_account_number,
     bank_account_holder: merchant.bank_account_holder,
     status: "pending",
-    note: buildQueueNote(source, booking.booking_code || booking.id, payout),
+    note: buildQueueNote(source, formatBookingCode(booking.booking_code, booking.id), payout),
     gross_booking_amount: payout.grossAmount,
     redfeng_commission_percent: payout.redfengCommissionPercent,
     redfeng_commission_amount: payout.redfengCommissionAmount,

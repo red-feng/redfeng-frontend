@@ -160,7 +160,7 @@ export default async function FinanceTeamAccountsPage({
                           {formatFinanceCode(profile.id)}
                         </p>
                         <p className="mt-2 text-xs text-slate-500">{getRoleLabel(profile.role)}</p>
-                        <p className="mt-2 text-xs text-slate-500">ID akun: {profile.id}</p>
+                        <p className="mt-2 text-xs text-slate-500">Kode akun: {formatFinanceCode(profile.id)}</p>
                       </div>
                       <div className="flex flex-col gap-3 md:min-w-[260px]">
                         <form action={resetFinancePassword} className="space-y-3">

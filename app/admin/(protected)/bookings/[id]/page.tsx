@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { handoffBookingToFinance } from "../actions"
@@ -577,7 +578,7 @@ export default async function AdminBookingDetailPage({
               <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
                 Booking Detail
               </p>
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">{booking.booking_code || booking.id}</h1>
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">{formatBookingCode(booking.booking_code, booking.id)}</h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
                 Detail lengkap booking untuk investigasi admin, pengecekan auto-queue finance, dan koordinasi ke merchant atau finance.
               </p>

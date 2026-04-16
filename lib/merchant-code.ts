@@ -27,8 +27,18 @@ export function formatFinanceCode(financeId: string | null | undefined) {
   return formatIdentityCode("RFF", financeId, "RFF-UNASSIGNED")
 }
 
+export function formatInternalUserCode(userId: string | null | undefined) {
+  return formatIdentityCode("RFU", userId, "RFU-UNASSIGNED")
+}
+
 export function formatPackageCode(packageCode: string | null | undefined, packageId: string | null | undefined) {
   const explicitCode = String(packageCode || "").trim().toUpperCase()
   if (explicitCode) return explicitCode
   return formatIdentityCode("PKG", packageId, "PKG-UNASSIGNED")
+}
+
+export function formatBookingCode(bookingCode: string | null | undefined, bookingId: string | null | undefined) {
+  const explicitCode = String(bookingCode || "").trim().toUpperCase()
+  if (explicitCode) return explicitCode
+  return formatIdentityCode("BKG", bookingId, "BKG-UNASSIGNED")
 }

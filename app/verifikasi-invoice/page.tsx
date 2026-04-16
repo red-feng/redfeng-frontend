@@ -1,7 +1,7 @@
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
 import { getCurrentLocale } from "@/lib/locale"
-import { formatMerchantCode } from "@/lib/merchant-code"
+import { formatBookingCode, formatMerchantCode } from "@/lib/merchant-code"
 import { normalizeLocale } from "@/lib/i18n"
 import { formatPackageMoney, resolvePackageTranslation } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -703,7 +703,7 @@ export default async function VerificationPage({ searchParams }: VerificationPag
               </div>
               <div className="rounded-[28px] border border-orange-100 bg-white p-5 shadow-sm">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Booking ID</p>
-                <p className="mt-3 text-xl font-semibold text-slate-900">{verification.booking.booking_code || verification.booking.id}</p>
+                <p className="mt-3 text-xl font-semibold text-slate-900">{formatBookingCode(verification.booking.booking_code, verification.booking.id)}</p>
                  <p className="mt-2 text-sm text-slate-500">
                    {formatText(t.createdOn, { date: formatDate(verification.booking.created_at, locale) })}
                  </p>

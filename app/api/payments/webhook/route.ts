@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
-import { formatMerchantCode } from "@/lib/merchant-code"
+import { formatBookingCode, formatMerchantCode } from "@/lib/merchant-code"
 import { sendCustomerPaymentEmail } from "@/lib/payments/customerEmails"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline"
@@ -263,7 +263,8 @@ export async function POST(req: Request) {
 
       try {
         const emailLocale = normalizeLocale(booking.customer_locale || inferCustomerLocaleFromBooking(booking))
-        const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(booking.booking_code || booking.id)}`
+        const bookingCode = formatBookingCode(booking.booking_code, booking.id)
+        const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(bookingCode)}`
         const { data: packageRow } = booking.package_id
           ? await supabase.from("packages").select("title, merchant_id").eq("id", booking.package_id).maybeSingle()
           : { data: null as { title?: string | null; merchant_id?: string | null } | null }
@@ -291,7 +292,7 @@ export async function POST(req: Request) {
           localizedPackageRow?.published_languages,
         )
         await sendCustomerPaymentEmail({
-          bookingCode: booking.booking_code || booking.id,
+          bookingCode,
           customerName: booking.customer_name || null,
           customerEmail: booking.customer_email || null,
           locale: emailLocale,
