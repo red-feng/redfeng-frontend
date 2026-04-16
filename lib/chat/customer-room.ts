@@ -126,6 +126,11 @@ export async function ensureCustomerPackageChatRoom(
   })
 
   if (decidePackageRoomResolution({ hasExistingPackageRoom: Boolean(existingRoomId) }) === "reuse_package_room") {
+    await createSystemChatMessageIfMissing(supabase, {
+      roomId: existingRoomId as string,
+      senderId: params.senderId,
+      message: buildPackageInquirySystemMessage({ packageId: params.packageId }),
+    })
     return { roomId: existingRoomId as string, created: false, merchantUserId }
   }
 
