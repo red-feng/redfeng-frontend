@@ -18,20 +18,33 @@ export async function sendChatMessage(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
   const bookingId = String(formData.get("booking_id") || "")
   const message = String(formData.get("message") || "").trim()
+  const portal = "customer"
   const attachmentFile = formData.get("attachment")
   const attachment = attachmentFile instanceof File ? attachmentFile : null
 
+  const buildCustomerChatTarget = (params: {
+    roomId?: string
+    bookingId?: string
+    packageId?: string
+    error?: string
+  }) => {
+    const search = new URLSearchParams()
+    if (params.roomId) search.set("room_id", params.roomId)
+    if (params.bookingId) search.set("booking_id", params.bookingId)
+    if (params.packageId) search.set("package_id", params.packageId)
+    search.set("portal", portal)
+    if (params.error) search.set("error", params.error)
+    return `/chat?${search.toString()}`
+  }
+
   if (!message && (!attachment || attachment.size <= 0)) {
-    const target = roomId
-      ? bookingId
-        ? `/chat?booking_id=${bookingId}&room_id=${roomId}`
-        : `/chat?room_id=${roomId}`
-      : bookingId
-        ? `/chat?booking_id=${bookingId}`
-        : packageId
-          ? `/chat?package_id=${packageId}`
-          : "/chat"
-    redirect(`${target}&error=Pesan atau lampiran wajib diisi.`)
+    const target = buildCustomerChatTarget({
+      roomId: roomId || undefined,
+      bookingId: bookingId || undefined,
+      packageId: packageId || undefined,
+      error: "Pesan atau lampiran wajib diisi.",
+    })
+    redirect(target)
   }
 
   const {
@@ -60,7 +73,12 @@ export async function sendChatMessage(formData: FormData) {
             : error instanceof Error
               ? error.message
               : "Ruang chat booking tidak dapat dipakai."
-        redirect(`/chat?booking_id=${bookingId}&error=${encodeURIComponent(message)}`)
+        redirect(
+          buildCustomerChatTarget({
+            bookingId,
+            error: message,
+          }),
+        )
       }
     } else if (packageId) {
       try {
@@ -73,10 +91,15 @@ export async function sendChatMessage(formData: FormData) {
         roomId = targetRoom.roomId
       } catch (error) {
         const message = error instanceof Error ? error.message : "Ruang chat tidak dapat dibuat."
-        redirect(`/chat?package_id=${packageId}&error=${encodeURIComponent(message)}`)
+        redirect(
+          buildCustomerChatTarget({
+            packageId,
+            error: message,
+          }),
+        )
       }
     } else {
-      redirect("/chat?error=Ruang chat tidak ditemukan.")
+      redirect(buildCustomerChatTarget({ error: "Ruang chat tidak ditemukan." }))
     }
   }
 
@@ -125,12 +148,12 @@ export async function sendChatMessage(formData: FormData) {
   }
 
   if (roomError || !room) {
-    redirect(`/chat?error=Ruang chat tidak valid.`)
+    redirect(buildCustomerChatTarget({ error: "Ruang chat tidak valid." }))
   }
 
   const isParticipant = room.customer_id === user.id || room.merchant_user_id === user.id
   if (!isParticipant) {
-    redirect(`/chat?error=Anda tidak punya akses ke ruang chat ini.`)
+    redirect(buildCustomerChatTarget({ error: "Anda tidak punya akses ke ruang chat ini." }))
   }
 
   const uploadedAttachment = await uploadChatAttachment({
@@ -140,7 +163,12 @@ export async function sendChatMessage(formData: FormData) {
   })
 
   if (uploadedAttachment.error) {
-    redirect(`/chat?room_id=${room.id}&error=${encodeURIComponent(uploadedAttachment.error)}`)
+    redirect(
+      buildCustomerChatTarget({
+        roomId: room.id,
+        error: uploadedAttachment.error,
+      }),
+    )
   }
 
   const { error: insertError } = await adminSupabase
@@ -159,7 +187,12 @@ export async function sendChatMessage(formData: FormData) {
       insertError.message.includes("does not exist")
         ? "Tabel chat belum tersedia. Jalankan migration chat terlebih dulu."
         : `Gagal kirim pesan: ${insertError.message}`
-    redirect(`/chat?room_id=${room.id}&error=${encodeURIComponent(messageText)}`)
+    redirect(
+      buildCustomerChatTarget({
+        roomId: room.id,
+        error: messageText,
+      }),
+    )
   }
 
   const roomUpdate = {
@@ -181,5 +214,9 @@ export async function sendChatMessage(formData: FormData) {
       .eq("id", room.id)
   }
 
-  redirect(`/chat?room_id=${room.id}`)
+  redirect(
+    buildCustomerChatTarget({
+      roomId: room.id,
+    }),
+  )
 }

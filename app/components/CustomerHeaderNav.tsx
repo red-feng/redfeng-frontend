@@ -11,14 +11,16 @@ type Item = {
 
 export default function CustomerHeaderNav({ items }: { items: Item[] }) {
   const pathname = usePathname()
+  const getPathOnly = (href: string) => href.split("?")[0] || href
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 sm:gap-3">
       {items.map((item) => {
+        const itemPath = getPathOnly(item.href)
         const isActive =
-          item.href === "/chat"
+          itemPath === "/chat"
             ? pathname === "/chat"
-            : pathname === item.href || pathname.startsWith(`${item.href}/`)
+            : pathname === itemPath || pathname.startsWith(`${itemPath}/`)
 
         return (
           <Link

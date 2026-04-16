@@ -98,7 +98,7 @@ export default async function CustomerLayout({
     { href: "/customer", label: accountLabel },
     { href: "/customer/dashboard", label: bookingsLabel },
     { href: "/customer/settings", label: settingsLabel },
-    { href: "/chat", label: chatLabel, badgeCount: customerChatBadgeCount },
+    { href: "/chat?portal=customer", label: chatLabel, badgeCount: customerChatBadgeCount },
   ]
 
   return (

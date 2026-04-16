@@ -123,7 +123,7 @@ export default async function CustomerAccountHubPage() {
     {
       title: copy.chatTitle,
       body: copy.chatBody,
-      href: "/chat",
+      href: "/chat?portal=customer",
       action: copy.chat,
       tone: "bg-[linear-gradient(135deg,#eefaff_0%,#f9fdff_100%)]",
       iconTone: "bg-[#ecfeff] text-[#0891b2]",

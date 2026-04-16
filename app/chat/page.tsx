@@ -172,19 +172,12 @@ export default async function ChatPage({
   // - merchant account defaults to merchant chat
   // - explicit portal=customer keeps customer chat flow (from customer booking detail CTA)
   const hasExplicitCustomerIntent = requestedPortal === CUSTOMER_PORTAL_LOCK
-  const hasExplicitMerchantIntent = requestedPortal === MERCHANT_PORTAL_LOCK
-  const hasChatTargetContext = Boolean(roomId || packageId || bookingId)
   const isCustomerMode = !isMerchant || hasExplicitCustomerIntent
 
-  // Merchant redirect lock:
-  // - redirect merchant only when explicitly merchant, or when there is no
-  //   chat target context from customer flow.
-  // - keep customer flow when portal=customer, or when package/booking target
-  //   is present without explicit merchant intent.
-  const shouldRedirectMerchant =
-    isMerchant &&
-    !hasExplicitCustomerIntent &&
-    (hasExplicitMerchantIntent || !hasChatTargetContext)
+  // Hard portal lock:
+  // - any merchant-capable account is routed to merchant chat by default
+  // - only explicit portal=customer can keep customer chat mode
+  const shouldRedirectMerchant = isMerchant && !hasExplicitCustomerIntent
 
   if (shouldRedirectMerchant) {
     const nextSearch = new URLSearchParams()
