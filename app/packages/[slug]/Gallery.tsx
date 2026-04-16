@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import type { Locale } from "@/lib/i18n"
 
 interface GalleryImage {
@@ -9,29 +9,14 @@ interface GalleryImage {
   image_url: string
 }
 
-export default function Gallery({ images, locale = "id" }: { images: GalleryImage[]; locale?: Locale }) {
+type GalleryProps = {
+  images: GalleryImage[]
+  locale?: Locale
+}
+
+export default function Gallery(props: GalleryProps) {
+  const { images } = props
   const [current, setCurrent] = useState(0)
-  const copy = useMemo(
-    () =>
-      locale === "en"
-        ? {
-            featured: "Featured Gallery",
-            journey: "Visual Journey",
-            caption: "Discover the atmosphere, scenery, and signature moments waiting across this itinerary.",
-          }
-        : locale === "zh"
-          ? {
-              featured: "精选图库",
-              journey: "视觉旅程",
-              caption: "探索这段行程中的氛围、风景与值得期待的精彩时刻。",
-            }
-          : {
-              featured: "Galeri Unggulan",
-              journey: "Perjalanan Visual",
-              caption: "Temukan suasana, lanskap, dan momen utama yang menanti di sepanjang itinerary ini.",
-            },
-    [locale],
-  )
 
   const next = () => {
     setCurrent((prev) => (prev + 1) % images.length)
@@ -66,23 +51,8 @@ export default function Gallery({ images, locale = "id" }: { images: GalleryImag
           />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(15,23,42,0.08)_38%,rgba(15,23,42,0.58)_100%)]" />
-
-        <div className="absolute left-5 top-5 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white backdrop-blur">
-          {copy.featured}
-        </div>
-
         <div className="absolute bottom-5 right-5 rounded-full border border-white/35 bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur">
           {current + 1} / {images.length}
-        </div>
-
-        <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-          <div className="max-w-2xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">{copy.journey}</p>
-            <p className="mt-2 text-lg font-medium leading-7 text-white md:text-2xl">
-              {copy.caption}
-            </p>
-          </div>
         </div>
 
         {images.length > 1 && (
