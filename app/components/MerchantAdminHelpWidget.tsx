@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 type MerchantAdminHelpWidgetProps = {
   locale: string
@@ -56,6 +57,8 @@ type SendMessagePayload = {
   message?: SupportMessage
   error?: string
 }
+
+type RealtimeStatus = "connecting" | "live" | "fallback"
 
 const copyByLocale: Record<string, WidgetCopy> = {
   id: {
@@ -161,6 +164,8 @@ export default function MerchantAdminHelpWidget({
   merchantLabel,
   merchantCode,
 }: MerchantAdminHelpWidgetProps) {
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<SupportMessage[]>([])
@@ -169,11 +174,24 @@ export default function MerchantAdminHelpWidget({
   const [sending, setSending] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const threadRef = useRef<HTMLDivElement | null>(null)
 
   const t = copyByLocale[locale] || copyByLocale.id
   const mailtoHref = useMemo(() => buildMailtoHref({ merchantLabel, merchantCode }), [merchantCode, merchantLabel])
   const hideOnChatPage = pathname === "/merchant/chat"
+
+  const fetchRoom = useMemo(
+    () => async () => {
+      const response = await fetch("/api/merchant-support/room", { cache: "no-store" })
+      const payload = (await response.json().catch(() => null)) as SupportRoomPayload | null
+      if (!response.ok) {
+        throw new Error(payload?.error || t.errorLoad)
+      }
+      return payload
+    },
+    [t.errorLoad],
+  )
 
   useEffect(() => {
     if (!open) return
@@ -183,11 +201,7 @@ export default function MerchantAdminHelpWidget({
     async function loadRoom() {
       try {
         setLoading(true)
-        const response = await fetch("/api/merchant-support/room", { cache: "no-store" })
-        const payload = (await response.json().catch(() => null)) as SupportRoomPayload | null
-        if (!response.ok) {
-          throw new Error(payload?.error || t.errorLoad)
-        }
+        const payload = await fetchRoom()
         if (cancelled) return
         setMessages(payload?.messages || [])
         setLoaded(true)
@@ -203,15 +217,20 @@ export default function MerchantAdminHelpWidget({
     }
 
     void loadRoom()
-    const intervalId = window.setInterval(() => {
-      void loadRoom()
-    }, 15000)
+    let intervalId: number | null = null
+    if (realtimeStatus === "fallback") {
+      intervalId = window.setInterval(() => {
+        void loadRoom()
+      }, 5000)
+    }
 
     return () => {
       cancelled = true
-      window.clearInterval(intervalId)
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
     }
-  }, [open, t.errorLoad])
+  }, [fetchRoom, open, realtimeStatus, t.errorLoad])
 
   useEffect(() => {
     if (!open) return
@@ -219,6 +238,56 @@ export default function MerchantAdminHelpWidget({
     if (!container) return
     container.scrollTop = container.scrollHeight
   }, [messages, open])
+
+  useEffect(() => {
+    if (!open) return
+
+    const channel = supabase.channel(`merchant-support-live:${merchantCode}`)
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "merchant_support_messages" },
+      async () => {
+        try {
+          const payload = await fetchRoom()
+          setMessages(payload?.messages || [])
+          setLoaded(true)
+          setErrorMessage("")
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : t.errorLoad)
+        }
+      },
+    )
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "merchant_support_rooms" },
+      async () => {
+        try {
+          const payload = await fetchRoom()
+          setMessages(payload?.messages || [])
+          setLoaded(true)
+          setErrorMessage("")
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : t.errorLoad)
+        }
+      },
+    )
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setRealtimeStatus("live")
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        setRealtimeStatus("fallback")
+      } else {
+        setRealtimeStatus("connecting")
+      }
+    })
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [fetchRoom, merchantCode, open, supabase, t.errorLoad])
 
   if (hideOnChatPage) return null
 
@@ -303,7 +372,20 @@ export default function MerchantAdminHelpWidget({
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-950">{t.adminName}</p>
-                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-600">{t.adminRole}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-600">{t.adminRole}</p>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                          realtimeStatus === "live"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : realtimeStatus === "fallback"
+                              ? "border-orange-200 bg-orange-50 text-orange-700"
+                              : "border-amber-200 bg-amber-50 text-amber-700"
+                        }`}
+                      >
+                        {realtimeStatus === "live" ? "Live" : realtimeStatus === "fallback" ? "Fallback" : "Connecting"}
+                      </span>
+                    </div>
                     <div className="mt-3 rounded-[18px] border border-orange-100 bg-[#fff7ef] px-4 py-3 text-sm leading-6 text-slate-700">
                       {t.adminMessage}
                     </div>

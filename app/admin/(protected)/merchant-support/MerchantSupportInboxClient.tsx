@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 type MerchantSupportRoomItem = {
   id: string
@@ -41,6 +42,8 @@ type SendPayload = {
   error?: string
 }
 
+type RealtimeStatus = "connecting" | "live" | "fallback"
+
 function formatDateTime(value: string | null) {
   if (!value) return "-"
   const date = new Date(value)
@@ -79,6 +82,8 @@ export default function MerchantSupportInboxClient({
   initialMessages: MerchantSupportMessage[]
   initialActiveRoomId: string
 }) {
+  const supabaseRef = useRef(createClient())
+  const supabase = supabaseRef.current
   const [rooms, setRooms] = useState(initialRooms)
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, MerchantSupportMessage[]>>(
     initialActiveRoomId ? { [initialActiveRoomId]: initialMessages } : {},
@@ -88,11 +93,28 @@ export default function MerchantSupportInboxClient({
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const threadRef = useRef<HTMLDivElement | null>(null)
 
   const activeRoom = useMemo(() => rooms.find((room) => room.id === activeRoomId) || null, [activeRoomId, rooms])
   const activeMessages = useMemo(() => messagesByRoom[activeRoomId] || [], [activeRoomId, messagesByRoom])
   const unreadCount = useMemo(() => rooms.filter((room) => hasUnread(room)).length, [rooms])
+  const fetchSnapshot = useMemo(
+    () => async (targetRoomId?: string) => {
+      const query = targetRoomId
+        ? `?roomId=${encodeURIComponent(targetRoomId)}`
+        : activeRoomId
+          ? `?roomId=${encodeURIComponent(activeRoomId)}`
+          : ""
+      const response = await fetch(`/api/admin/merchant-support/snapshot${query}`, { cache: "no-store" })
+      const payload = (await response.json().catch(() => null)) as SnapshotPayload | null
+      if (!response.ok) {
+        throw new Error(payload?.error || "Gagal memuat merchant support.")
+      }
+      return payload
+    },
+    [activeRoomId],
+  )
 
   useEffect(() => {
     const container = threadRef.current
@@ -106,12 +128,7 @@ export default function MerchantSupportInboxClient({
     async function loadSnapshot(targetRoomId?: string) {
       try {
         setLoading(true)
-        const query = targetRoomId ? `?roomId=${encodeURIComponent(targetRoomId)}` : activeRoomId ? `?roomId=${encodeURIComponent(activeRoomId)}` : ""
-        const response = await fetch(`/api/admin/merchant-support/snapshot${query}`, { cache: "no-store" })
-        const payload = (await response.json().catch(() => null)) as SnapshotPayload | null
-        if (!response.ok) {
-          throw new Error(payload?.error || "Gagal memuat merchant support.")
-        }
+        const payload = await fetchSnapshot(targetRoomId)
         if (cancelled) return
         const nextRooms = payload?.rooms || []
         const nextActiveRoomId = String(payload?.activeRoomId || targetRoomId || activeRoomId || nextRooms[0]?.id || "")
@@ -135,27 +152,90 @@ export default function MerchantSupportInboxClient({
     }
 
     void loadSnapshot()
-    const intervalId = window.setInterval(() => {
-      void loadSnapshot()
-    }, 12000)
+    let intervalId: number | null = null
+    if (realtimeStatus === "fallback") {
+      intervalId = window.setInterval(() => {
+        void loadSnapshot()
+      }, 5000)
+    }
 
     return () => {
       cancelled = true
-      window.clearInterval(intervalId)
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
     }
-  }, [activeRoomId])
+  }, [activeRoomId, fetchSnapshot, realtimeStatus])
+
+  useEffect(() => {
+    const channel = supabase.channel("admin-merchant-support-live")
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "merchant_support_messages" },
+      async () => {
+        try {
+          const payload = await fetchSnapshot()
+          const nextRooms = payload?.rooms || []
+          const nextActiveRoomId = String(payload?.activeRoomId || activeRoomId || nextRooms[0]?.id || "")
+          setRooms(nextRooms)
+          if (nextActiveRoomId) {
+            setActiveRoomId(nextActiveRoomId)
+            setMessagesByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]: payload?.messages || [],
+            }))
+          }
+          setErrorMessage("")
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Gagal memuat merchant support.")
+        }
+      },
+    )
+
+    channel.on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "merchant_support_rooms" },
+      async () => {
+        try {
+          const payload = await fetchSnapshot()
+          const nextRooms = payload?.rooms || []
+          const nextActiveRoomId = String(payload?.activeRoomId || activeRoomId || nextRooms[0]?.id || "")
+          setRooms(nextRooms)
+          if (nextActiveRoomId) {
+            setActiveRoomId(nextActiveRoomId)
+            setMessagesByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]: payload?.messages || [],
+            }))
+          }
+          setErrorMessage("")
+        } catch (error) {
+          setErrorMessage(error instanceof Error ? error.message : "Gagal memuat merchant support.")
+        }
+      },
+    )
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setRealtimeStatus("live")
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        setRealtimeStatus("fallback")
+      } else {
+        setRealtimeStatus("connecting")
+      }
+    })
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [activeRoomId, fetchSnapshot, supabase])
 
   async function selectRoom(roomId: string) {
     setActiveRoomId(roomId)
     try {
       setLoading(true)
-      const response = await fetch(`/api/admin/merchant-support/snapshot?roomId=${encodeURIComponent(roomId)}`, {
-        cache: "no-store",
-      })
-      const payload = (await response.json().catch(() => null)) as SnapshotPayload | null
-      if (!response.ok) {
-        throw new Error(payload?.error || "Gagal membuka room merchant support.")
-      }
+      const payload = await fetchSnapshot(roomId)
       setRooms(payload?.rooms || [])
       setMessagesByRoom((current) => ({
         ...current,
@@ -220,9 +300,22 @@ export default function MerchantSupportInboxClient({
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Merchant support rooms</p>
           <div className="mt-3 flex items-center justify-between gap-3">
             <h2 className="text-xl font-semibold text-slate-950">Inbox merchant</h2>
-            <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
-              {unreadCount} unread
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                  realtimeStatus === "live"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : realtimeStatus === "fallback"
+                      ? "border-orange-200 bg-orange-50 text-orange-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                }`}
+              >
+                {realtimeStatus === "live" ? "Live" : realtimeStatus === "fallback" ? "Fallback" : "Connecting"}
+              </span>
+              <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
+                {unreadCount} unread
+              </span>
+            </div>
           </div>
           <p className="mt-2 text-sm leading-6 text-slate-500">
             Semua pesan bantuan dari merchant terkumpul di sini untuk follow-up operasional.
