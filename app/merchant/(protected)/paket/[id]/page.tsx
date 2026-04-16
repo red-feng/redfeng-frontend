@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import Gallery from "@/app/packages/[slug]/Gallery"
 import PackageTabs from "@/app/packages/[slug]/PackageTabs"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
@@ -185,6 +186,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const locale = normalizeLocale(await getCurrentLocale())
   const copy = getCopy(locale)
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
 
   const {
     data: { user },
@@ -194,7 +196,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const { data: merchant } = await supabase.from("merchants").select("id").eq("user_id", user.id).maybeSingle()
   if (!merchant?.id) notFound()
 
-  const { data: pkg } = await supabase
+  const { data: pkg } = await adminSupabase
     .from("packages")
     .select(
       "id, slug, title, status, travel_style, departure_date, duration, minimal_peserta, price_adult, price_child, currency, default_language, published_languages, cover_image, origin_country_id, origin_province, destination_country_id, destination_province, created_at, updated_at",
@@ -229,7 +231,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
     itineraryDaysResult,
     countriesResult,
   ] = await Promise.all([
-    supabase
+    adminSupabase
       .from("package_translations")
       .select(
         "language_code, title, description, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child",
@@ -244,9 +246,9 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       baseAdultPrice: pkg.price_adult,
       baseChildPrice: pkg.price_child,
     }),
-    supabase.from("package_details").select("meeting_point, map_embed").eq("package_id", pkg.id).maybeSingle<PackageDetailRow>(),
-    supabase.from("package_images").select("id, image_url").eq("package_id", pkg.id),
-    supabase
+    adminSupabase.from("package_details").select("meeting_point, map_embed").eq("package_id", pkg.id).maybeSingle<PackageDetailRow>(),
+    adminSupabase.from("package_images").select("id, image_url").eq("package_id", pkg.id),
+    adminSupabase
       .from("package_facilities")
       .select(
         `
@@ -255,8 +257,8 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       `,
       )
       .eq("package_id", pkg.id),
-    supabase.from("package_tags").select("id, tag").eq("package_id", pkg.id),
-    supabase
+    adminSupabase.from("package_tags").select("id, tag").eq("package_id", pkg.id),
+    adminSupabase
       .from("package_itinerary_days")
       .select(
         `
@@ -273,7 +275,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       )
       .eq("package_id", pkg.id)
       .order("day_number", { ascending: true }),
-    supabase
+    adminSupabase
       .from("countries")
       .select("id, name")
       .in("id", [pkg.origin_country_id, pkg.destination_country_id].filter(Boolean)),
