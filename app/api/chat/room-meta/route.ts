@@ -80,7 +80,7 @@ export async function GET(request: Request) {
   if (actorRole === "merchant") {
     const { data: pkg } = await adminSupabase
       .from("packages")
-      .select("id, title, slug, merchant_id, cover_image")
+      .select("id, package_code, title, slug, merchant_id, cover_image")
       .eq("id", room.package_id)
       .maybeSingle()
 
@@ -116,6 +116,7 @@ export async function GET(request: Request) {
       room: {
         id: room.id,
         packageId: room.package_id,
+        packageCode: pkg?.package_code || null,
         packageTitle: pkg?.title || null,
         packageSlug: pkg?.slug || null,
         packageCoverImage: pkg?.cover_image || null,
@@ -140,7 +141,7 @@ export async function GET(request: Request) {
 
   const { data: pkg } = await adminSupabase
     .from("packages")
-    .select("id, title, slug, cover_image")
+    .select("id, package_code, title, slug, cover_image")
     .eq("id", room.package_id)
     .maybeSingle()
 
@@ -170,6 +171,7 @@ export async function GET(request: Request) {
     room: {
       id: room.id,
       packageId: room.package_id,
+      packageCode: pkg?.package_code || null,
       packageTitle: pkg?.title || null,
       packageSlug: pkg?.slug || null,
       packageCoverImage: pkg?.cover_image || null,

@@ -8,6 +8,7 @@ import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
 import ConfirmSubmitButton from "../../merchants/ConfirmSubmitButton"
 import { redirect } from "next/navigation"
+import { formatPackageCode } from "@/lib/merchant-code"
 
 type CountryRow = {
   id: string
@@ -140,6 +141,7 @@ export default async function Page({
   if (pkg.package_code && id !== pkg.package_code) {
     redirect(`/admin/packages/${encodeURIComponent(pkg.package_code)}`)
   }
+  const packageInternalId = pkg.id
 
   const { data: merchant } = await supabase
     .from("merchants")
@@ -168,7 +170,7 @@ export default async function Page({
     .select(
       "language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights",
     )
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
   const translations = (translationRows as TranslationRow[] | null) || []
   const sortedTranslations = [...translations].sort((a, b) => {
     if (a.language_code === pkg.default_language) return -1
@@ -180,13 +182,13 @@ export default async function Page({
   const { data: detail } = await supabase
     .from("package_details")
     .select("*")
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
     .maybeSingle()
 
   const { data: galleryData } = await supabase
     .from("package_images")
     .select("id, image_url")
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
   const galleryImages = (galleryData as GalleryRow[] | null) || []
 
   const { data: facilitiesData } = await supabase
@@ -195,13 +197,13 @@ export default async function Page({
       facility_id,
       facilities ( name )
     `)
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
   const facilities = (facilitiesData as PackageFacilityRow[] | null) || []
 
   const { data: tagsData } = await supabase
     .from("package_tags")
     .select("*")
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
   const tags = (tagsData as TagRow[] | null) || []
 
   const { data: itineraryDaysData } = await supabase
@@ -210,7 +212,7 @@ export default async function Page({
       *,
       package_itinerary_routes (*)
     `)
-    .eq("package_id", id)
+    .eq("package_id", packageInternalId)
     .order("day_number", { ascending: true })
   const itineraryDays = (itineraryDaysData as ItineraryDayRow[] | null) || []
   const itineraryDayIds = itineraryDays.map((day) => day.id)
@@ -276,7 +278,7 @@ export default async function Page({
                   {primaryTranslation?.title || pkg.title}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Merchant: {merchant?.company_name || "-"} | ID Paket: {pkg.package_code || pkg.id}
+                  Merchant: {merchant?.company_name || "-"} | ID Paket: {formatPackageCode(pkg.package_code, pkg.id)}
                 </p>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{statusSummary(pkg.status)}</p>
               </div>
@@ -457,7 +459,7 @@ export default async function Page({
                       className="mt-4"
                       action={async () => {
                         "use server"
-                        await approvePackage(id)
+                        await approvePackage(packageInternalId)
                       }}
                     >
                       <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
@@ -470,7 +472,7 @@ export default async function Page({
                       action={async (formData) => {
                         "use server"
                         const reason = formData.get("reason") as string
-                        await rejectPackage(id, reason)
+                        await rejectPackage(packageInternalId, reason)
                       }}
                     >
                       <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -498,7 +500,7 @@ export default async function Page({
                     className="mt-4"
                     action={async () => {
                       "use server"
-                      await deletePackage(id)
+                      await deletePackage(packageInternalId)
                     }}
                   >
                     <ConfirmSubmitButton

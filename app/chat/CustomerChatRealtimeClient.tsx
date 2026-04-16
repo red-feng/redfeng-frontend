@@ -13,6 +13,7 @@ import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 type CustomerChatRoom = {
   id: string
   packageId: string
+  packageCode: string | null
   packageTitle: string | null
   packageSlug: string | null
   packageCoverImage: string | null

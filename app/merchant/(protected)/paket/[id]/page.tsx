@@ -338,7 +338,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       : tags.map((tag) => tag.tag).slice(0, 6)
 
   const chatSearch = new URLSearchParams()
-  chatSearch.set("package_id", pkg.id)
   chatSearch.set("portal", "merchant")
   const roomIdValue = sp.room_id
   if (typeof roomIdValue === "string" && roomIdValue) {
@@ -357,7 +356,10 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
             <Link href="/merchant/paket" className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">
               {copy.backToList}
             </Link>
-            <Link href={`/merchant/paket/${encodeURIComponent(pkg.id)}/edit`} className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">
+            <Link
+              href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`}
+              className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
+            >
               {copy.editPackage}
             </Link>
             <Link href={merchantChatHref} className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">

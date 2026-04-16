@@ -222,6 +222,7 @@ type ChatMessageRow = {
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   slug: string | null
   cover_image: string | null
@@ -361,7 +362,7 @@ export default async function MerchantChatPage({
   const packageIds = [...new Set(initialRooms.map((room) => room.package_id))]
   const roomIds = initialRooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
-    ? await adminSupabase.from("packages").select("id, title, slug, cover_image").in("id", packageIds)
+    ? await adminSupabase.from("packages").select("id, package_code, title, slug, cover_image").in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((pkg: PackageRow) => [pkg.id, pkg]))
 
@@ -538,6 +539,7 @@ export default async function MerchantChatPage({
           return {
             id: room.id,
             packageId: room.package_id,
+            packageCode: pkg?.package_code || null,
             packageTitle: pkg?.title || null,
             packageSlug: pkg?.slug || null,
             packageCoverImage: pkg?.cover_image || null,

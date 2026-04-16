@@ -9,10 +9,12 @@ import { shouldMarkRoomReadOnActivation } from "@/lib/chat/auth-flow-policy.mjs"
 import { isActiveChatBooking, isCompletedChatBooking, isVisiblePaidChatBooking } from "@/lib/chat/booking-room-status"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
+import { formatCustomerCode } from "@/lib/merchant-code"
 
 type MerchantChatRoom = {
   id: string
   packageId: string
+  packageCode: string | null
   packageTitle: string | null
   packageSlug: string | null
   packageCoverImage: string | null
@@ -184,7 +186,7 @@ function getCustomerDisplayName(room: MerchantChatRoom | null) {
   const explicitName = String(room.customerName || "").trim()
   if (explicitName) return explicitName
   const customerId = String(room.customerId || "").trim()
-  if (customerId) return `Customer ${customerId.slice(0, 8)}`
+  if (customerId) return formatCustomerCode(customerId)
   return "Customer"
 }
 
@@ -207,7 +209,7 @@ function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string |
 }
 
 function buildMerchantPackageDetailHref(params: {
-  packageId: string
+  packageRef: string
   roomId?: string | null
 }) {
   const search = new URLSearchParams()
@@ -215,8 +217,8 @@ function buildMerchantPackageDetailHref(params: {
   search.set("portal", "merchant")
   const query = search.toString()
   return query
-    ? `/merchant/paket/${encodeURIComponent(params.packageId)}?${query}`
-    : `/merchant/paket/${encodeURIComponent(params.packageId)}`
+    ? `/merchant/paket/${encodeURIComponent(params.packageRef)}?${query}`
+    : `/merchant/paket/${encodeURIComponent(params.packageRef)}`
 }
 
 export default function MerchantChatRealtimeClient({
@@ -927,7 +929,7 @@ export default function MerchantChatRealtimeClient({
                   {room.packageId ? (
                     <Link
                       href={buildMerchantPackageDetailHref({
-                        packageId: room.packageId,
+                        packageRef: room.packageCode || room.packageId,
                         roomId: room.id,
                       })}
                       className="mt-3 hidden text-xs font-semibold text-orange-600 transition hover:text-orange-700 lg:inline-flex"
@@ -992,7 +994,7 @@ export default function MerchantChatRealtimeClient({
                 ) : activeRoom?.packageId ? (
                   <Link
                     href={buildMerchantPackageDetailHref({
-                      packageId: activeRoom.packageId,
+                      packageRef: activeRoom.packageCode || activeRoom.packageId,
                       roomId: activeRoom.id,
                     })}
                     className="mt-3 inline-flex text-xs font-semibold text-orange-600 transition hover:text-orange-700"
@@ -1096,7 +1098,7 @@ export default function MerchantChatRealtimeClient({
                             {activeRoom?.packageId ? (
                               <Link
                                 href={buildMerchantPackageDetailHref({
-                                  packageId: activeRoom.packageId,
+                                  packageRef: activeRoom.packageCode || activeRoom.packageId,
                                   roomId: activeRoom.id,
                                 })}
                                 className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"
@@ -1165,7 +1167,7 @@ export default function MerchantChatRealtimeClient({
                         {activeRoom?.packageId ? (
                           <Link
                             href={buildMerchantPackageDetailHref({
-                              packageId: activeRoom.packageId,
+                              packageRef: activeRoom.packageCode || activeRoom.packageId,
                               roomId: activeRoom.id,
                             })}
                             className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700 transition hover:bg-orange-100"

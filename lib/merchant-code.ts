@@ -26,3 +26,9 @@ export function formatAdminCode(adminId: string | null | undefined) {
 export function formatFinanceCode(financeId: string | null | undefined) {
   return formatIdentityCode("RFF", financeId, "RFF-UNASSIGNED")
 }
+
+export function formatPackageCode(packageCode: string | null | undefined, packageId: string | null | undefined) {
+  const explicitCode = String(packageCode || "").trim().toUpperCase()
+  if (explicitCode) return explicitCode
+  return formatIdentityCode("PKG", packageId, "PKG-UNASSIGNED")
+}

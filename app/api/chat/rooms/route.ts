@@ -37,6 +37,7 @@ type ChatRoomRow = {
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   slug: string | null
   merchant_id: string | null
@@ -158,7 +159,7 @@ export async function GET(request: Request) {
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
         .from("packages")
-        .select("id, title, slug, merchant_id, cover_image")
+        .select("id, package_code, title, slug, merchant_id, cover_image")
         .in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((p: PackageRow) => [p.id, p]))
@@ -203,6 +204,7 @@ export async function GET(request: Request) {
     return {
       id: room.id,
       packageId: room.package_id,
+      packageCode: pkg?.package_code || null,
       packageTitle: pkg?.title || null,
       packageSlug: pkg?.slug || null,
       packageCoverImage: pkg?.cover_image || null,

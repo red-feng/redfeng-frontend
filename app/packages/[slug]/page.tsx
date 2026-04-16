@@ -24,6 +24,7 @@ export const dynamic = "force-dynamic"
 
 type PackageRow = {
   id: string
+  package_code: string | null
   slug: string
   merchant_id: string | null
   title: string | null
@@ -144,6 +145,7 @@ export default async function PaketPage({
       .from("packages")
       .select(`
         id,
+        package_code,
         slug,
         merchant_id,
         title,
@@ -174,6 +176,7 @@ export default async function PaketPage({
         .from("packages")
         .select(`
           id,
+          package_code,
           slug,
           merchant_id,
           title,
@@ -220,6 +223,7 @@ export default async function PaketPage({
         .from("packages")
         .select(`
           id,
+          package_code,
           slug,
           merchant_id,
           title,
@@ -251,6 +255,7 @@ export default async function PaketPage({
           .from("packages")
           .select(`
             id,
+            package_code,
             slug,
             merchant_id,
             title,
@@ -460,7 +465,7 @@ export default async function PaketPage({
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 4)
 
-  const packageChatTarget = `/chat?package_id=${encodeURIComponent(pkg.id)}&portal=customer`
+  const packageChatTarget = `/chat?package_id=${encodeURIComponent(pkg.package_code || pkg.id)}&portal=customer`
   let chatHref = user ? packageChatTarget : `/login?next=${encodeURIComponent(packageChatTarget)}`
   let chatBadgeCount = 0
 

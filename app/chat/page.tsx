@@ -53,6 +53,7 @@ type ChatMessageRow = {
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   slug: string | null
   merchant_id: string | null
@@ -87,7 +88,7 @@ export default async function ChatPage({
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].chat
   const roomId = params.room_id || ""
-  const packageId = params.package_id || ""
+  const packageRef = params.package_id || ""
   const bookingId = params.booking_id || ""
   const requestedPortal = String(params.portal || "").trim().toLowerCase()
   const errorMessage = params.error || ""
@@ -156,7 +157,7 @@ export default async function ChatPage({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    const nextTarget = buildChatLoginNextTarget({ bookingId, packageId, roomId })
+    const nextTarget = buildChatLoginNextTarget({ bookingId, packageId: packageRef, roomId })
     redirect(`/login?next=${encodeURIComponent(nextTarget)}`)
   }
 
@@ -182,7 +183,7 @@ export default async function ChatPage({
   if (shouldRedirectMerchant) {
     const nextSearch = new URLSearchParams()
     if (roomId) nextSearch.set("room_id", roomId)
-    if (packageId) nextSearch.set("package_id", packageId)
+    if (packageRef) nextSearch.set("package_id", packageRef)
     if (bookingId) nextSearch.set("booking_id", bookingId)
     nextSearch.set("portal", MERCHANT_PORTAL_LOCK)
     if (errorMessage) nextSearch.set("error", errorMessage)
@@ -216,10 +217,23 @@ export default async function ChatPage({
     }
   }
 
-  if (isCustomerMode && packageId && !bookingId) {
+  let resolvedPackageId = packageRef
+  if (packageRef) {
+    const { data: packageByCode } = await adminSupabase
+      .from("packages")
+      .select("id")
+      .eq("package_code", packageRef)
+      .maybeSingle()
+
+    if (packageByCode?.id) {
+      resolvedPackageId = packageByCode.id
+    }
+  }
+
+  if (isCustomerMode && resolvedPackageId && !bookingId) {
     try {
       const targetRoom = await ensureCustomerPackageChatRoom(adminSupabase, {
-        packageId,
+        packageId: resolvedPackageId,
         customerId: user.id,
         senderId: user.id,
         markCustomerRead: true,
@@ -343,9 +357,9 @@ export default async function ChatPage({
   const roomIds = initialRooms.map((room) => room.id)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
-        .from("packages")
-        .select("id, title, slug, merchant_id, cover_image")
-        .in("id", packageIds)
+      .from("packages")
+      .select("id, package_code, title, slug, merchant_id, cover_image")
+      .in("id", packageIds)
     : { data: [] as PackageRow[] }
   const packageMap = new Map((packageRows || []).map((p: PackageRow) => [p.id, p]))
   const merchantIds = [...new Set((packageRows || []).map((pkg) => pkg.merchant_id).filter(Boolean))]
@@ -450,6 +464,7 @@ export default async function ChatPage({
             return {
               id: room.id,
               packageId: room.package_id,
+              packageCode: pkg?.package_code || null,
               packageTitle: pkg?.title || null,
               packageSlug: pkg?.slug || null,
               packageCoverImage: pkg?.cover_image || null,

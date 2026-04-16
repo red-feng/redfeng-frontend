@@ -16,6 +16,26 @@ type EditPackagePageProps = {
   searchParams: Promise<{ step?: string; error?: string }>
 }
 
+type EditablePackage = {
+  id: string
+  package_code: string | null
+  title: string | null
+  travel_style: string | null
+  departure_date: string | null
+  origin_country_id: string | null
+  origin_province: string | null
+  destination_country_id: string | null
+  destination_province: string | null
+  currency: string | null
+  minimal_peserta: number | null
+  duration: number | null
+  price_adult: number | null
+  price_child: number | null
+  status: string | null
+  default_language: string | null
+  published_languages?: string[] | null
+}
+
 function getStepLabel(step: string, locale: ReturnType<typeof normalizeLocale>) {
   const t = getMerchantWizardText(locale)
   if (step === "1") return t.basicInfoStep
@@ -52,56 +72,73 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     return <div className="p-10">Data merchant tidak ditemukan.</div>
   }
 
-  const [{ data: countries }, pkgWithPublishedResult] = await Promise.all([
-    adminSupabase.from("countries").select("id, name").order("name"),
-    adminSupabase
+  const packageSelect =
+    "id, package_code, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language, published_languages"
+  const packageSelectLegacy =
+    "id, package_code, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language"
+
+  const pkgByCodeResult = await adminSupabase
+    .from("packages")
+    .select(packageSelect)
+    .eq("package_code", routeId)
+    .eq("merchant_id", merchant.id)
+    .maybeSingle()
+
+  const pkgByIdResult = pkgByCodeResult.data
+    ? { data: null, error: null }
+    : await adminSupabase
+        .from("packages")
+        .select(packageSelect)
+        .eq("id", routeId)
+        .eq("merchant_id", merchant.id)
+        .maybeSingle()
+
+  let pkg = (pkgByCodeResult.data || pkgByIdResult.data) as EditablePackage | null
+  let packageError = pkgByCodeResult.error || pkgByIdResult.error
+
+  if (!pkg && packageError && packageError.message.includes("published_languages")) {
+    const legacyByCode = await adminSupabase
       .from("packages")
-      .select("id, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language, published_languages")
-      .eq("id", id)
+      .select(packageSelectLegacy)
+      .eq("package_code", routeId)
       .eq("merchant_id", merchant.id)
-      .single(),
-  ])
+      .maybeSingle()
 
-  let pkg = pkgWithPublishedResult.data as {
-    id: string
-    title: string | null
-    travel_style: string | null
-    departure_date: string | null
-    origin_country_id: string | null
-    origin_province: string | null
-    destination_country_id: string | null
-    destination_province: string | null
-    currency: string | null
-    minimal_peserta: number | null
-    duration: number | null
-    price_adult: number | null
-    price_child: number | null
-    status: string | null
-    default_language: string | null
-    published_languages?: string[] | null
-  } | null
-  let packageError = pkgWithPublishedResult.error
+    const legacyById = legacyByCode.data
+      ? { data: null, error: null }
+      : await adminSupabase
+          .from("packages")
+          .select(packageSelectLegacy)
+          .eq("id", routeId)
+          .eq("merchant_id", merchant.id)
+          .maybeSingle()
 
-  if (packageError && packageError.message.includes("published_languages")) {
-    const legacyResult = await adminSupabase
-      .from("packages")
-      .select("id, title, travel_style, departure_date, origin_country_id, origin_province, destination_country_id, destination_province, currency, minimal_peserta, duration, price_adult, price_child, status, default_language")
-      .eq("id", id)
-      .eq("merchant_id", merchant.id)
-      .single()
-
-    pkg = legacyResult.data
+    const legacyData = legacyByCode.data || legacyById.data
+    pkg = legacyData
       ? ({
-          ...legacyResult.data,
-          published_languages: [legacyResult.data.default_language || "id"],
-        } as typeof pkg)
+          ...legacyData,
+          published_languages: [legacyData.default_language || "id"],
+        } as EditablePackage)
       : null
-    packageError = legacyResult.error
+    packageError = legacyByCode.error || legacyById.error
   }
 
   if (packageError || !pkg) {
     return <div className="p-10">Paket tidak ditemukan atau tidak bisa diakses.</div>
   }
+
+  if (pkg.package_code && routeId !== pkg.package_code) {
+    const qs = new URLSearchParams()
+    Object.entries(resolvedSearchParams).forEach(([key, value]) => {
+      if (value) qs.set(key, value)
+    })
+    const query = qs.toString()
+    redirect(`/merchant/paket/${encodeURIComponent(pkg.package_code)}/edit${query ? `?${query}` : ""}`)
+  }
+
+  const packageRouteRef = pkg.package_code || pkg.id
+  const packageInternalId = pkg.id
+  const { data: countries } = await adminSupabase.from("countries").select("id, name").order("name")
 
   if (pkg.status === "pending" || pkg.status === "rejected") {
     return (
@@ -118,16 +155,16 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     adminSupabase
       .from("package_translations")
       .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
-      .eq("package_id", id),
+      .eq("package_id", packageInternalId),
     adminSupabase
       .from("package_details")
       .select("meeting_point, map_embed")
-      .eq("package_id", id)
+      .eq("package_id", packageInternalId)
       .maybeSingle(),
     adminSupabase
       .from("package_tags")
       .select("tag")
-      .eq("package_id", id),
+      .eq("package_id", packageInternalId),
     adminSupabase
       .from("facilities")
       .select("id, name, category")
@@ -135,11 +172,11 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     adminSupabase
       .from("package_facilities")
       .select("facility_id")
-      .eq("package_id", id),
+      .eq("package_id", packageInternalId),
     adminSupabase
       .from("package_itinerary_days")
       .select("id, day_number, day_title, package_itinerary_routes(id, pickup_time, route, description)")
-      .eq("package_id", id)
+      .eq("package_id", packageInternalId)
       .order("day_number", { ascending: true }),
   ])
 
@@ -321,7 +358,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           {stepItems.map((step) => (
             <Link
               key={step.key}
-              href={`/merchant/paket/${id}/edit?step=${step.key}`}
+              href={`/merchant/paket/${encodeURIComponent(packageRouteRef)}/edit?step=${step.key}`}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 activeStep === step.key
                   ? "bg-slate-900 text-white"
@@ -343,7 +380,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       <section className="mt-8 rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
         {activeStep === "1" && (
           <EditStep1Basic
-            packageId={id}
+            packageId={packageInternalId}
             countries={(countries || []) as Array<{ id: string; name: string }>}
             uiLocale={uiLocale}
             initialData={{
@@ -389,7 +426,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
 
         {activeStep === "2" && (
           <EditStep2Details
-            packageId={id}
+            packageId={packageInternalId}
             defaultLanguage={pkg.default_language || "id"}
             publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
             uiLocale={uiLocale}
@@ -400,7 +437,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
 
         {activeStep === "3" && (
             <EditStep3Facilities
-              packageId={id}
+              packageId={packageInternalId}
               facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string; category: string }>}
               selectedFacilityIds={selectedFacilityIds}
               defaultLanguage={pkg.default_language || "id"}
@@ -411,7 +448,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
 
         {activeStep === "4" && (
           <EditStep4Itinerary
-            packageId={id}
+            packageId={packageInternalId}
             initialDays={initialItineraryDays}
             defaultLanguage={pkg.default_language || "id"}
             publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
@@ -421,7 +458,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
 
         {activeStep === "5" && (
           <EditStep5Review
-            packageId={id}
+            packageId={packageInternalId}
             defaultLanguage={pkg.default_language || "id"}
             uiLocale={uiLocale}
           />
