@@ -2,6 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import Gallery from "@/app/packages/[slug]/Gallery"
 import PackageTabs from "@/app/packages/[slug]/PackageTabs"
+import MerchantSidebarInfo from "./MerchantSidebarInfo"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
@@ -430,6 +431,11 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
                 {copy.openMerchantChat}
               </Link>
             </section>
+            <MerchantSidebarInfo
+              locale={activeLocale}
+              preparation={translation?.preparation || null}
+              termsConditions={translation?.terms_conditions || null}
+            />
           </aside>
         </div>
       </div>
