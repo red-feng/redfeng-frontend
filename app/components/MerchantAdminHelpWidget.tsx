@@ -468,8 +468,8 @@ export default function MerchantAdminHelpWidget({
     <div className="pointer-events-none fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6">
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         {open ? (
-          <section className="w-[min(92vw,400px)] overflow-hidden rounded-[28px] border border-orange-200/80 bg-[linear-gradient(180deg,rgba(255,250,243,0.98)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_28px_80px_rgba(146,64,14,0.22)] backdrop-blur-xl">
-            <div className="relative overflow-hidden border-b border-orange-100 bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_56%,#fdba74_100%)] px-5 py-5 text-white">
+          <section className="flex max-h-[calc(100vh-7.5rem)] w-[min(92vw,400px)] flex-col overflow-hidden rounded-[28px] border border-orange-200/80 bg-[linear-gradient(180deg,rgba(255,250,243,0.98)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_28px_80px_rgba(146,64,14,0.22)] backdrop-blur-xl sm:max-h-[calc(100vh-8.5rem)]">
+            <div className="relative shrink-0 overflow-hidden border-b border-orange-100 bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_56%,#fdba74_100%)] px-5 py-5 text-white">
               <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-4">
@@ -492,144 +492,145 @@ export default function MerchantAdminHelpWidget({
               </div>
             </div>
 
-            <div className="space-y-4 p-5">
-              <div className="rounded-[24px] border border-[#f1dcc5] bg-white p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fff0df_0%,#ffe1bf_100%)] shadow-[0_10px_24px_rgba(249,115,22,0.18)]">
-                    <Image src="/redfeng-favicon.png" alt="Red Feng" width={26} height={26} className="h-6 w-6 object-contain" />
-                  </div>
-                  <div className="min-w-0 flex-1">
+            <div className="shrink-0 border-b border-[#f3e5d2] bg-[#fffaf4]/95 px-5 py-4 backdrop-blur">
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fff0df_0%,#ffe1bf_100%)] shadow-[0_10px_24px_rgba(249,115,22,0.18)]">
+                  <Image src="/redfeng-favicon.png" alt="Red Feng" width={26} height={26} className="h-6 w-6 object-contain" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold text-slate-950">{t.adminName}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-2">
-                      <p className="text-xs font-medium uppercase tracking-[0.18em] text-orange-600">{t.adminRole}</p>
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-                          realtimeStatus === "live"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : realtimeStatus === "fallback"
-                              ? "border-orange-200 bg-orange-50 text-orange-700"
-                              : "border-amber-200 bg-amber-50 text-amber-700"
-                        }`}
-                      >
-                        {realtimeStatus === "live" ? "Live" : realtimeStatus === "fallback" ? "Fallback" : "Connecting"}
-                      </span>
-                    </div>
-                    <div className="mt-3 rounded-[18px] border border-orange-100 bg-[#fff7ef] px-4 py-3 text-sm leading-6 text-slate-700">
-                      {t.adminMessage}
-                    </div>
-                    <div className="mt-3">
-                      <button
-                        type="button"
-                        onClick={toggleSoundEnabled}
-                        className="inline-flex items-center rounded-full border border-orange-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700 transition hover:bg-orange-50"
-                      >
-                        {soundEnabled ? t.muteLabel : t.unmuteLabel}
-                      </button>
-                    </div>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
+                        realtimeStatus === "live"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                          : realtimeStatus === "fallback"
+                            ? "border-orange-200 bg-orange-50 text-orange-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                    >
+                      {realtimeStatus === "live" ? "Live" : realtimeStatus === "fallback" ? "Fallback" : "Connecting"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-orange-600">{t.adminRole}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{t.responseLabel}: {t.responseValue}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleSoundEnabled}
+                  className="inline-flex shrink-0 items-center rounded-full border border-orange-200 bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700 transition hover:bg-orange-50"
+                >
+                  {soundEnabled ? t.muteLabel : t.unmuteLabel}
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {t.chips.map((chip) => (
+                  <span
+                    key={chip}
+                    className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-hidden bg-[#f6f1ea]">
+              <div
+                ref={threadRef}
+                className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.72),transparent_34%),linear-gradient(180deg,#f8f4ee_0%,#f2ece4_100%)] px-3 py-3 sm:px-4 sm:py-4"
+              >
+                <div className="w-full rounded-[22px] border border-[#e8dfd4] bg-white p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(15,23,42,0.08)]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{t.merchantLabel}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-orange-600">{merchantCode}</p>
+                </div>
+
+                <div className="flex justify-start">
+                  <div className="w-full max-w-[88%] rounded-[22px] border border-[#f4d6b8] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-3 text-sm text-slate-700 shadow-[0_12px_28px_rgba(249,115,22,0.12)]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">{t.adminReplyLabel}</p>
+                    <p className="mt-2 whitespace-pre-line leading-6">{t.adminMessage}</p>
                   </div>
                 </div>
-              </div>
 
-              <div className="rounded-[24px] border border-[#f1e6d7] bg-[#fffdf9] p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{t.responseLabel}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{t.responseValue}</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {t.chips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700"
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-                <p className="mt-4 text-xs leading-6 text-slate-500">{t.helperNote}</p>
-              </div>
-
-              <div className="rounded-[24px] border border-[#f1e6d7] bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{t.merchantLabel}</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
-                <p className="mt-1 text-xs font-medium uppercase tracking-[0.2em] text-orange-600">{merchantCode}</p>
-              </div>
-
-              <div className="overflow-hidden rounded-[24px] border border-[#f1e6d7] bg-white">
-                <div
-                  ref={threadRef}
-                  className="max-h-[260px] space-y-3 overflow-y-auto bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] px-4 py-4"
-                >
-                  {loading && !loaded ? <p className="text-sm text-slate-500">{t.loading}</p> : null}
-                  {!loading && messages.length === 0 ? <p className="text-sm leading-6 text-slate-500">{t.emptyState}</p> : null}
-                  {messages.map((message) => {
-                    if (message.sender_role === "system") {
-                      return (
-                        <div key={message.id} className="flex justify-center">
-                          <div className="max-w-[92%] rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-center text-xs font-medium text-orange-700">
-                            {message.message}
-                          </div>
-                        </div>
-                      )
-                    }
-
-                    const mine = message.sender_role === "merchant"
+                {loading && !loaded ? <p className="text-sm text-slate-500">{t.loading}</p> : null}
+                {!loading && messages.length === 0 ? <p className="text-sm leading-6 text-slate-500">{t.emptyState}</p> : null}
+                {!loading && messages.length > 0 ? (
+                  <div className="flex justify-center">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">Awal percakapan</span>
+                  </div>
+                ) : null}
+                {messages.map((message) => {
+                  if (message.sender_role === "system") {
                     return (
-                      <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div
-                          className={`max-w-[85%] rounded-[20px] px-4 py-3 shadow-sm ${
-                            mine
-                              ? "bg-[linear-gradient(135deg,#ea580c_0%,#fb923c_100%)] text-white"
-                              : "border border-[#eedfcc] bg-white text-slate-700"
-                          }`}
-                        >
-                          <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${mine ? "text-orange-100" : "text-orange-600"}`}>
-                            {mine ? t.youLabel : t.adminReplyLabel}
-                          </p>
-                          <p className="mt-2 whitespace-pre-line text-sm leading-6">{message.message}</p>
-                          <p className={`mt-2 text-[11px] ${mine ? "text-orange-100/90" : "text-slate-400"}`}>
-                            {formatTimeLabel(message.created_at)}
-                          </p>
+                      <div key={message.id} className="flex justify-center">
+                        <div className="max-w-[92%] rounded-full border border-slate-200 bg-white px-4 py-2 text-center text-xs font-medium text-slate-500 shadow-sm">
+                          {message.message}
                         </div>
                       </div>
                     )
-                  })}
+                  }
+
+                  const mine = message.sender_role === "merchant"
+                  return (
+                    <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`w-full max-w-[88%] rounded-[22px] p-3 text-sm shadow-[0_12px_28px_rgba(15,23,42,0.08)] ${
+                          mine
+                            ? "border border-[#f4d6b8] bg-[linear-gradient(180deg,#fff9f2_0%,#ffffff_100%)] text-slate-700 shadow-[0_12px_28px_rgba(249,115,22,0.12)]"
+                            : "border border-[#e8dfd4] bg-white text-slate-700"
+                        }`}
+                      >
+                        <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${mine ? "text-orange-700" : "text-orange-600"}`}>
+                          {mine ? t.youLabel : t.adminReplyLabel}
+                        </p>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-6">{message.message}</p>
+                        <p className={`mt-2 text-[11px] ${mine ? "text-orange-600/80" : "text-slate-400"}`}>
+                          {formatTimeLabel(message.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="shrink-0 border-t border-[#e7ddd1] bg-[#f8f3ed]/95 px-4 py-4 backdrop-blur">
+              <p className="mb-3 text-xs leading-5 text-slate-500">{t.helperNote}</p>
+              {errorMessage ? (
+                <div className="mb-3 rounded-[16px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">
+                  {errorMessage}
                 </div>
+              ) : null}
 
-                <div className="border-t border-[#f1e6d7] px-4 py-4">
-                  {errorMessage ? (
-                    <div className="mb-3 rounded-[16px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">
-                      {errorMessage}
-                    </div>
-                  ) : null}
-
-                  <div className="flex flex-col gap-3">
-                    <textarea
-                      value={draft}
-                      onChange={(event) => setDraft(event.target.value)}
-                      placeholder={t.inputPlaceholder}
-                      className="min-h-24 w-full rounded-[18px] border border-[#e7d8c5] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2"
-                    />
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <button
-                        type="button"
-                        onClick={() => void handleSendMessage()}
-                        disabled={sending || !draft.trim()}
-                        className="inline-flex flex-1 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ea580c_0%,#f97316_100%)] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(249,115,22,0.24)] transition hover:translate-y-[-1px] hover:shadow-[0_22px_36px_rgba(249,115,22,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {sending ? t.sending : t.primaryAction}
-                      </button>
-                      <a
-                        href={mailtoHref}
-                        className="inline-flex items-center justify-center rounded-[18px] border border-[#ead8c0] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-white hover:text-orange-600"
-                      >
-                        {t.emailAction}
-                      </a>
-                      <Link
-                        href="/merchant/chat"
-                        className="inline-flex items-center justify-center rounded-[18px] border border-[#ead8c0] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-white hover:text-orange-600"
-                      >
-                        {t.secondaryAction}
-                      </Link>
-                    </div>
-                  </div>
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder={t.inputPlaceholder}
+                  className="min-h-24 w-full rounded-[20px] border border-[#ddd3c7] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                />
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => void handleSendMessage()}
+                    disabled={sending || !draft.trim()}
+                    className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ea580c_0%,#f97316_100%)] px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(249,115,22,0.24)] transition hover:translate-y-[-1px] hover:shadow-[0_22px_36px_rgba(249,115,22,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {sending ? t.sending : t.primaryAction}
+                  </button>
+                  <a
+                    href={mailtoHref}
+                    className="inline-flex items-center justify-center rounded-[18px] border border-[#ead8c0] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-white hover:text-orange-600"
+                  >
+                    {t.emailAction}
+                  </a>
+                  <Link
+                    href="/merchant/chat"
+                    className="inline-flex items-center justify-center rounded-[18px] border border-[#ead8c0] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-white hover:text-orange-600"
+                  >
+                    {t.secondaryAction}
+                  </Link>
                 </div>
               </div>
             </div>
