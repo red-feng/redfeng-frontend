@@ -20,6 +20,7 @@ type MerchantPackageDetailPageProps = {
 
 type PackageRow = {
   id: string
+  package_code: string | null
   slug: string | null
   title: string | null
   status: string | null
@@ -119,6 +120,12 @@ function formatDate(value: string | null, locale: Locale) {
   return date.toLocaleDateString(lang, { day: "2-digit", month: "long", year: "numeric" })
 }
 
+function formatPackageIdLabel(packageId: string) {
+  const compact = packageId.replace(/-/g, "").toUpperCase()
+  if (compact.length < 14) return `PKG-${compact}`
+  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
+}
+
 function getCopy(locale: Locale) {
   if (locale === "en") {
     return {
@@ -200,7 +207,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const { data: pkg } = await adminSupabase
     .from("packages")
     .select(
-      "id, slug, title, status, travel_style, departure_date, duration, minimal_peserta, price_adult, price_child, currency, default_language, published_languages, cover_image, origin_country_id, origin_province, destination_country_id, destination_province, created_at, updated_at",
+      "id, package_code, slug, title, status, travel_style, departure_date, duration, minimal_peserta, price_adult, price_child, currency, default_language, published_languages, cover_image, origin_country_id, origin_province, destination_country_id, destination_province, created_at, updated_at",
     )
     .eq("id", id)
     .eq("merchant_id", merchant.id)
@@ -294,6 +301,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
 
   const displayTitle = translation?.title || pkg.title || "Detail Paket"
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
+  const packageIdLabel = pkg.package_code || formatPackageIdLabel(pkg.id)
   const routeText = `${countryMap.get(pkg.origin_country_id || "") || "-"} - ${pkg.origin_province || "-"} to ${
     countryMap.get(pkg.destination_country_id || "") || "-"
   } - ${pkg.destination_province || "-"}`
@@ -331,7 +339,10 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
         <section className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl border border-orange-100 bg-white p-5 md:col-span-2">
             <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageId}</p>
-            <p className="mt-2 break-all text-sm font-semibold text-slate-900">{pkg.id}</p>
+            <p className="mt-2 text-sm font-semibold text-slate-900">{packageIdLabel}</p>
+            <p className="mt-1 break-all font-mono text-[11px] text-slate-500" title={pkg.id}>
+              {pkg.id}
+            </p>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageStatus}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">{pkg.status || "-"}</p>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.duration}</p>
