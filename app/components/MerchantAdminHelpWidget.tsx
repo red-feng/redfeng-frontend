@@ -20,7 +20,6 @@ type WidgetCopy = {
   adminName: string
   adminRole: string
   adminMessage: string
-  chips: string[]
   responseLabel: string
   responseValue: string
   primaryAction: string
@@ -76,7 +75,6 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminName: "Tim Admin Red Feng",
     adminRole: "Merchant support",
     adminMessage: "Halo, kami siap bantu untuk review paket, klarifikasi operasional, dan follow-up kendala merchant.",
-    chips: ["Review paket", "Kendala booking", "Payout", "Verifikasi akun"],
     responseLabel: "Estimasi respons",
     responseValue: "< 15 menit pada jam operasional",
     primaryAction: "Kirim pesan",
@@ -104,7 +102,6 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminName: "Red Feng Admin Team",
     adminRole: "Merchant support",
     adminMessage: "Hello, we are ready to help with package reviews, operational clarification, and merchant issue follow-up.",
-    chips: ["Package review", "Booking issue", "Payout", "Account verification"],
     responseLabel: "Response time",
     responseValue: "< 15 minutes during working hours",
     primaryAction: "Send message",
@@ -132,7 +129,6 @@ const copyByLocale: Record<string, WidgetCopy> = {
     adminName: "Red Feng Admin Team",
     adminRole: "Merchant support",
     adminMessage: "Hello, we are ready to help with package reviews, operational clarification, and merchant issue follow-up.",
-    chips: ["Package review", "Booking issue", "Payout", "Account verification"],
     responseLabel: "Response time",
     responseValue: "< 15 minutes during working hours",
     primaryAction: "Send message",
@@ -468,8 +464,8 @@ export default function MerchantAdminHelpWidget({
     <div className="pointer-events-none fixed bottom-5 right-4 z-50 sm:bottom-6 sm:right-6">
       <div className="pointer-events-auto flex flex-col items-end gap-3">
         {open ? (
-          <section className="flex max-h-[calc(100vh-7.5rem)] w-[min(92vw,400px)] flex-col overflow-hidden rounded-[28px] border border-orange-200/80 bg-[linear-gradient(180deg,rgba(255,250,243,0.98)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_28px_80px_rgba(146,64,14,0.22)] backdrop-blur-xl sm:max-h-[calc(100vh-8.5rem)]">
-            <div className="relative shrink-0 overflow-hidden border-b border-orange-100 bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_56%,#fdba74_100%)] px-5 py-5 text-white">
+          <section className="flex h-[min(74vh,680px)] max-h-[calc(100vh-8.75rem)] w-[min(92vw,392px)] flex-col overflow-hidden rounded-[28px] border border-orange-200/80 bg-[linear-gradient(180deg,rgba(255,250,243,0.98)_0%,rgba(255,255,255,0.98)_100%)] shadow-[0_28px_80px_rgba(146,64,14,0.22)] backdrop-blur-xl sm:max-h-[calc(100vh-9rem)]">
+            <div className="relative shrink-0 overflow-hidden border-b border-orange-100 bg-[linear-gradient(135deg,#9a3412_0%,#ea580c_56%,#fdba74_100%)] px-5 py-4 text-white">
               <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/10 blur-2xl" />
               <div className="relative">
                 <div className="flex items-start justify-between gap-4">
@@ -477,8 +473,8 @@ export default function MerchantAdminHelpWidget({
                     <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-50">
                       {t.badge}
                     </span>
-                    <h2 className="mt-3 text-xl font-semibold tracking-tight">{t.title}</h2>
-                    <p className="mt-2 text-sm leading-6 text-orange-50/90">{t.subtitle}</p>
+                    <h2 className="mt-3 text-lg font-semibold tracking-tight">{t.title}</h2>
+                    <p className="mt-2 text-sm leading-5 text-orange-50/90">{t.subtitle}</p>
                   </div>
                   <button
                     type="button"
@@ -492,7 +488,7 @@ export default function MerchantAdminHelpWidget({
               </div>
             </div>
 
-            <div className="shrink-0 border-b border-[#f3e5d2] bg-[#fffaf4]/95 px-5 py-4 backdrop-blur">
+            <div className="shrink-0 border-b border-[#f3e5d2] bg-[#fffaf4]/95 px-5 py-3.5 backdrop-blur">
               <div className="flex items-start gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fff0df_0%,#ffe1bf_100%)] shadow-[0_10px_24px_rgba(249,115,22,0.18)]">
                   <Image src="/redfeng-favicon.png" alt="Red Feng" width={26} height={26} className="h-6 w-6 object-contain" />
@@ -522,16 +518,6 @@ export default function MerchantAdminHelpWidget({
                 >
                   {soundEnabled ? t.muteLabel : t.unmuteLabel}
                 </button>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {t.chips.map((chip) => (
-                  <span
-                    key={chip}
-                    className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-semibold text-orange-700"
-                  >
-                    {chip}
-                  </span>
-                ))}
               </div>
             </div>
 
@@ -595,8 +581,8 @@ export default function MerchantAdminHelpWidget({
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-[#e7ddd1] bg-[#f8f3ed]/95 px-4 py-4 backdrop-blur">
-              <p className="mb-3 text-xs leading-5 text-slate-500">{t.helperNote}</p>
+            <div className="shrink-0 border-t border-[#e7ddd1] bg-[#f8f3ed]/95 px-4 py-3.5 backdrop-blur">
+              <p className="mb-2 text-xs leading-5 text-slate-500">{t.helperNote}</p>
               {errorMessage ? (
                 <div className="mb-3 rounded-[16px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-5 text-rose-700">
                   {errorMessage}
