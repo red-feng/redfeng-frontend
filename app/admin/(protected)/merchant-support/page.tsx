@@ -60,11 +60,13 @@ export default async function AdminMerchantSupportPage({
           </p>
         </section>
 
-        <MerchantSupportInboxClient
-          initialRooms={patchedRooms}
-          initialMessages={initialMessages}
-          initialActiveRoomId={activeRoomId}
-        />
+        <div className="min-h-0">
+          <MerchantSupportInboxClient
+            initialRooms={patchedRooms}
+            initialMessages={initialMessages}
+            initialActiveRoomId={activeRoomId}
+          />
+        </div>
       </div>
     </main>
   )

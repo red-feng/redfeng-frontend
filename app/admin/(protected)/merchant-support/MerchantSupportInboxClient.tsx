@@ -293,168 +293,163 @@ export default function MerchantSupportInboxClient({
     }
   }
 
+  const realtimeBadge =
+    realtimeStatus === "live"
+      ? { label: "Live", className: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+      : realtimeStatus === "fallback"
+        ? { label: "Fallback", className: "border-orange-200 bg-orange-50 text-orange-700" }
+        : { label: "Menghubungkan", className: "border-amber-200 bg-amber-50 text-amber-700" }
+
   return (
-    <section className="mt-6 grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-      <div className="overflow-hidden rounded-[28px] border border-[#efd9c0] bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
-        <div className="border-b border-[#f1e2cf] px-5 py-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Merchant support rooms</p>
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <h2 className="text-xl font-semibold text-slate-950">Inbox merchant</h2>
-            <div className="flex items-center gap-2">
-              <span
-                className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${
-                  realtimeStatus === "live"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : realtimeStatus === "fallback"
-                      ? "border-orange-200 bg-orange-50 text-orange-700"
-                      : "border-amber-200 bg-amber-50 text-amber-700"
-                }`}
-              >
-                {realtimeStatus === "live" ? "Live" : realtimeStatus === "fallback" ? "Fallback" : "Connecting"}
-              </span>
-              <span className="rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white">
-                {unreadCount} unread
-              </span>
+    <section className="mt-8 overflow-hidden rounded-[30px] border border-[#e9dccb] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+      {errorMessage ? (
+        <div className="border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          {errorMessage}
+        </div>
+      ) : null}
+      <div className="grid h-[78vh] min-h-[640px] gap-0 lg:grid-cols-[330px_minmax(0,1fr)]">
+        <aside className="flex h-[78vh] min-h-[640px] min-w-0 min-h-0 flex-col border-r border-[#efe3d1] bg-[#f8f9fa]">
+          <div className="border-b border-[#efe3d1] bg-[#f0f2f5] px-4 py-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-800">Merchant Support</p>
+              <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${realtimeBadge.className}`}>{realtimeBadge.label}</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-500">Room: {rooms.length} | Unread: {unreadCount}</p>
+          </div>
+
+          <div className="border-b border-[#efe3d1] bg-white px-3 py-3">
+            <div className="rounded-[12px] border border-[#e1d8ca] bg-[#fffdf9] px-3 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-500">Merchant support desk</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Semua kendala merchant terkait verifikasi, paket, booking, dan payout terkumpul di inbox ini.
+              </p>
             </div>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Semua pesan bantuan dari merchant terkumpul di sini untuk follow-up operasional.
-          </p>
-        </div>
 
-        <div className="max-h-[720px] overflow-y-auto p-3">
-          {rooms.length === 0 ? (
-            <div className="rounded-[22px] border border-[#f1e2cf] bg-[#fffaf3] px-4 py-4 text-sm text-slate-600">
-              Belum ada room bantuan merchant.
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {rooms.map((room) => {
-                const isActive = room.id === activeRoomId
+          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            {rooms.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-slate-500">Belum ada room bantuan merchant.</div>
+            ) : (
+              rooms.map((room) => {
+                const active = room.id === activeRoomId
                 const unread = hasUnread(room)
+
                 return (
                   <button
                     key={room.id}
                     type="button"
                     onClick={() => void selectRoom(room.id)}
-                    className={`w-full rounded-[22px] border p-4 text-left transition ${
-                      isActive
-                        ? "border-orange-200 bg-[#fff7ef] shadow-[0_12px_28px_rgba(249,115,22,0.10)]"
-                        : "border-[#f1e2cf] bg-white hover:border-orange-200 hover:bg-[#fffaf4]"
+                    className={`mb-1 w-full rounded-[12px] px-3 py-3 text-left transition ${
+                      active ? "bg-[#fff2e8]" : "hover:bg-[#f4f5f7]"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-950">{room.merchantLabel}</p>
-                        <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">{room.merchantCode}</p>
+                        <p className="truncate text-sm font-semibold text-slate-900">{room.merchantLabel}</p>
+                        <p className="mt-0.5 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-600">{room.merchantCode}</p>
+                        <p className="mt-1 truncate text-xs text-slate-500">{room.lastMessagePreview || "Belum ada pesan."}</p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {unread ? <span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-semibold text-white">new</span> : null}
-                        <span className="text-[11px] text-slate-400">{formatRoomDate(room.lastMessageAt || room.updatedAt)}</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <span className="text-[10px] text-slate-400">{formatRoomDate(room.lastMessageAt || room.updatedAt)}</span>
+                        {unread ? <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold text-white">1+</span> : null}
                       </div>
                     </div>
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{room.lastMessagePreview || "Belum ada pesan."}</p>
                   </button>
                 )
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+              })
+            )}
+          </div>
+        </aside>
 
-      <div className="overflow-hidden rounded-[28px] border border-[#efd9c0] bg-white shadow-[0_22px_60px_rgba(15,23,42,0.08)]">
-        <div className="border-b border-[#f1e2cf] px-5 py-5">
-          {activeRoom ? (
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Active merchant</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-950">{activeRoom.merchantLabel}</h2>
-                <p className="mt-2 text-sm text-slate-500">{activeRoom.merchantCode}</p>
-                <p className="mt-1 text-sm text-slate-500">{activeRoom.merchantEmail || "Email merchant belum tersedia"}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
+        <section className="flex h-[78vh] min-h-[640px] min-w-0 min-h-0 flex-col bg-[#efeae2]">
+          <div className="sticky top-0 z-10 border-b border-[#efe3d1] bg-[#f0f2f5] px-5 py-3">
+            {activeRoom ? (
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-base font-semibold text-slate-900">{activeRoom.merchantLabel}</p>
+                  <p className="text-xs text-slate-500">{activeRoom.merchantCode} • {activeRoom.merchantEmail || "Email merchant belum tersedia"}</p>
+                </div>
                 <Link
                   href={`/admin/merchants/${encodeURIComponent(activeRoom.merchantId)}`}
-                  className="rounded-full border border-[#ead8c0] bg-[#fffaf4] px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
+                  className="inline-flex self-start rounded-full border border-[#e1d8ca] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
                 >
                   Buka profil merchant
                 </Link>
               </div>
-            </div>
-          ) : (
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Active merchant</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Pilih room bantuan</h2>
-            </div>
-          )}
-        </div>
+            ) : (
+              <>
+                <p className="text-base font-semibold text-slate-900">Pilih chat</p>
+                <p className="text-xs text-slate-500">Inbox bantuan merchant</p>
+              </>
+            )}
+          </div>
 
-        <div ref={threadRef} className="max-h-[520px] space-y-3 overflow-y-auto bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] px-5 py-5">
-          {loading && activeMessages.length === 0 ? (
-            <p className="text-sm text-slate-500">Memuat percakapan merchant support...</p>
-          ) : null}
-          {!loading && !activeRoom ? <p className="text-sm text-slate-500">Belum ada room yang dipilih.</p> : null}
-          {activeRoom && activeMessages.length === 0 ? <p className="text-sm text-slate-500">Belum ada pesan di room ini.</p> : null}
+          <div
+            ref={threadRef}
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 bg-[#efeae2] px-4 py-4"
+          >
+            {loading && activeMessages.length === 0 ? (
+              <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Memuat percakapan merchant support...</div>
+            ) : null}
+            {!loading && !activeRoom ? (
+              <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Pilih room di kiri untuk mulai.</div>
+            ) : null}
+            {activeRoom && activeMessages.length === 0 ? (
+              <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Belum ada pesan di room ini.</div>
+            ) : null}
 
-          {activeMessages.map((message) => {
-            if (message.sender_role === "system") {
+            {activeMessages.map((message) => {
+              if (message.sender_role === "system") {
+                return (
+                  <div key={message.id} className="flex justify-center">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                      {message.message}
+                    </span>
+                  </div>
+                )
+              }
+
+              const mine = message.sender_role === "admin"
               return (
-                <div key={message.id} className="flex justify-center">
-                  <div className="rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-medium text-orange-700">
-                    {message.message}
+                <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${
+                      mine
+                        ? "border border-[#ffd7b5] bg-[#ffe8d2] text-[#7a3412]"
+                        : "bg-white text-slate-700"
+                    }`}
+                  >
+                    <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${mine ? "text-[#9a3412]" : "text-slate-500"}`}>
+                      {mine ? "Admin Red Feng" : activeRoom?.merchantLabel || "Merchant"}
+                    </p>
+                    <p className="mt-1 whitespace-pre-line leading-6">{message.message}</p>
+                    <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
                   </div>
                 </div>
               )
-            }
+            })}
+          </div>
 
-            const mine = message.sender_role === "admin"
-            return (
-              <div key={message.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[82%] rounded-[22px] px-4 py-3 shadow-sm ${
-                    mine
-                      ? "bg-[linear-gradient(135deg,#0f172a_0%,#334155_100%)] text-white"
-                      : "border border-[#eedfcc] bg-white text-slate-700"
-                  }`}
-                >
-                  <p className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${mine ? "text-slate-200" : "text-orange-600"}`}>
-                    {mine ? "Admin Red Feng" : activeRoom?.merchantLabel || "Merchant"}
-                  </p>
-                  <p className="mt-2 whitespace-pre-line text-sm leading-6">{message.message}</p>
-                  <p className={`mt-2 text-[11px] ${mine ? "text-slate-300" : "text-slate-400"}`}>{formatDateTime(message.created_at)}</p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        <div className="border-t border-[#f1e2cf] px-5 py-5">
-          {errorMessage ? (
-            <div className="mb-3 rounded-[16px] border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-              {errorMessage}
-            </div>
-          ) : null}
-
-          <div className="flex flex-col gap-3">
-            <textarea
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              disabled={!activeRoomId}
-              placeholder={activeRoomId ? "Tulis balasan untuk merchant..." : "Pilih room bantuan lebih dulu"}
-              className="min-h-28 w-full rounded-[18px] border border-[#e7d8c5] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
-            />
-            <div className="flex justify-end">
+          <div className="sticky bottom-0 border-t border-[#efe3d1] bg-[#f0f2f5] px-4 py-3">
+            <div className="flex items-end gap-2">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                disabled={!activeRoomId}
+                placeholder={activeRoomId ? "Tulis balasan untuk merchant..." : "Pilih room bantuan lebih dulu"}
+                className="h-12 max-h-28 min-h-12 flex-1 rounded-[12px] border border-[#dcd2c3] bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
+              />
               <button
                 type="button"
                 onClick={() => void sendReply()}
                 disabled={!activeRoomId || !draft.trim() || sending}
-                className="rounded-[18px] bg-[linear-gradient(135deg,#ea580c_0%,#f97316_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_30px_rgba(249,115,22,0.24)] transition hover:translate-y-[-1px] hover:shadow-[0_22px_36px_rgba(249,115,22,0.28)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-12 rounded-[12px] bg-[#ff6a00] px-5 text-sm font-semibold text-white transition hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                {sending ? "Mengirim..." : "Kirim balasan"}
+                {sending ? "..." : "Kirim"}
               </button>
             </div>
           </div>
-        </div>
+        </section>
       </div>
     </section>
   )
