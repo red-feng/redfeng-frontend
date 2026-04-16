@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getCurrentLocale } from "@/lib/locale"
@@ -26,7 +27,7 @@ function getStepLabel(step: string, locale: ReturnType<typeof normalizeLocale>) 
 }
 
 export default async function EditPackagePage({ params, searchParams }: EditPackagePageProps) {
-  const { id } = await params
+  const { id: routeId } = await params
   const resolvedSearchParams = await searchParams
   const uiLocale = await getCurrentLocale()
   const activeStep = ["1", "2", "3", "4", "5"].includes(resolvedSearchParams.step || "")

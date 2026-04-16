@@ -14,6 +14,7 @@ import {
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   status: string | null
   currency: string | null
@@ -21,6 +22,13 @@ type PackageRow = {
   created_at: string | null
   reviewed_at: string | null
   rejection_reason: string | null
+}
+
+function formatPackageCode(packageCode: string | null, packageId: string) {
+  if (packageCode && packageCode.trim()) return packageCode
+  const compact = packageId.replace(/-/g, "").toUpperCase()
+  if (compact.length < 14) return `PKG-${compact}`
+  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
 }
 
 function statusTone(status: string | null) {
@@ -186,7 +194,7 @@ export default function AdminMerchantPackageBulkClient({
                   {statusLabel(pkg.status)}
                 </span>
                 <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                  Package ID: {pkg.id}
+                  Package ID: {formatPackageCode(pkg.package_code, pkg.id)}
                 </span>
               </div>
 
@@ -214,7 +222,7 @@ export default function AdminMerchantPackageBulkClient({
 
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
               <Link
-                href={`/admin/packages/${pkg.id}`}
+                href={`/admin/packages/${encodeURIComponent(pkg.package_code || pkg.id)}`}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
               >
                 Detail

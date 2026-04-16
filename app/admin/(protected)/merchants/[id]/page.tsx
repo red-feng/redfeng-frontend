@@ -8,6 +8,7 @@ import AdminMerchantPackageBulkClient from "./AdminMerchantPackageBulkClient"
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   status: string | null
   currency: string | null
@@ -85,7 +86,7 @@ export default async function AdminMerchantPackagesPage({
 
   const { data: packagesData } = await supabase
     .from("packages")
-    .select("id, title, status, currency, price_adult, created_at, reviewed_at, rejection_reason")
+    .select("id, package_code, title, status, currency, price_adult, created_at, reviewed_at, rejection_reason")
     .eq("merchant_id", id)
     .order("created_at", { ascending: false })
 
@@ -94,7 +95,7 @@ export default async function AdminMerchantPackagesPage({
     .filter((pkg) => (activeFilter === "all" ? true : pkg.status === activeFilter))
     .filter((pkg) => {
       if (!query) return true
-      return [pkg.title || "", pkg.id, pkg.rejection_reason || ""].some((value) => value.toLowerCase().includes(query))
+      return [pkg.title || "", pkg.package_code || "", pkg.rejection_reason || ""].some((value) => value.toLowerCase().includes(query))
     })
     .sort((a, b) => {
       if (sortMode === "reviewed_desc") {
@@ -246,7 +247,7 @@ export default async function AdminMerchantPackagesPage({
                   type="text"
                   name="q"
                   defaultValue={resolvedSearchParams.q || ""}
-                  placeholder="Judul paket, package ID, atau catatan revisi"
+                  placeholder="Judul paket, kode paket, atau catatan revisi"
                   className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                 />
               </div>

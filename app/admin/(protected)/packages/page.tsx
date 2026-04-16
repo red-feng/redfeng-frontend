@@ -8,6 +8,7 @@ import { approvePackage, deletePackage, rejectPackage } from "./actions"
 
 type PackageRow = {
   id: string
+  package_code: string | null
   merchant_id: string | null
   title: string | null
   status: string | null
@@ -16,6 +17,13 @@ type PackageRow = {
   created_at: string | null
   reviewed_at: string | null
   rejection_reason: string | null
+}
+
+function formatPackageCode(packageCode: string | null, packageId: string) {
+  if (packageCode && packageCode.trim()) return packageCode
+  const compact = packageId.replace(/-/g, "").toUpperCase()
+  if (compact.length < 14) return `PKG-${compact}`
+  return `PKG-${compact.slice(0, 8)}-${compact.slice(-6)}`
 }
 
 type MerchantRow = {
@@ -72,7 +80,7 @@ export default async function AdminPackagesPage({
 
   const { data: packagesData } = await supabase
     .from("packages")
-    .select("id, merchant_id, title, status, price_adult, currency, created_at, reviewed_at, rejection_reason")
+    .select("id, package_code, merchant_id, title, status, price_adult, currency, created_at, reviewed_at, rejection_reason")
     .eq("status", "pending")
     .order("created_at", { ascending: false })
 
@@ -162,7 +170,7 @@ export default async function AdminPackagesPage({
                     </div>
 
                     <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pkg.title || "Tanpa judul"}</h2>
-                    <p className="mt-2 text-sm text-slate-500">Package ID: {pkg.id}</p>
+                    <p className="mt-2 text-sm text-slate-500">Package ID: {formatPackageCode(pkg.package_code, pkg.id)}</p>
                   </div>
 
                   <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:w-auto">
@@ -189,7 +197,7 @@ export default async function AdminPackagesPage({
 
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
                 <Link
-                  href={`/admin/packages/${pkg.id}`}
+                  href={`/admin/packages/${encodeURIComponent(pkg.package_code || pkg.id)}`}
                   className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
                 >
                   Detail

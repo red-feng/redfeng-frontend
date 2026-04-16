@@ -7,6 +7,7 @@ import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import AdminPackageReviewTabs from "./AdminPackageReviewTabs"
 import ConfirmSubmitButton from "../../merchants/ConfirmSubmitButton"
+import { redirect } from "next/navigation"
 
 type CountryRow = {
   id: string
@@ -118,13 +119,27 @@ export default async function Page({
     : { data: null }
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
 
-  const { data: pkg } = await supabase
+  const { data: pkgByCode } = await supabase
     .from("packages")
     .select("*")
-    .eq("id", id)
-    .single()
+    .eq("package_code", id)
+    .maybeSingle()
+
+  const { data: pkgById } = pkgByCode
+    ? { data: null }
+    : await supabase
+        .from("packages")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle()
+
+  const pkg = pkgByCode || pkgById
 
   if (!pkg) return <div className="p-8">Paket tidak ditemukan</div>
+
+  if (pkg.package_code && id !== pkg.package_code) {
+    redirect(`/admin/packages/${encodeURIComponent(pkg.package_code)}`)
+  }
 
   const { data: merchant } = await supabase
     .from("merchants")
@@ -261,7 +276,7 @@ export default async function Page({
                   {primaryTranslation?.title || pkg.title}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Merchant: {merchant?.company_name || "-"} | ID Paket: {pkg.id}
+                  Merchant: {merchant?.company_name || "-"} | ID Paket: {pkg.package_code || pkg.id}
                 </p>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{statusSummary(pkg.status)}</p>
               </div>

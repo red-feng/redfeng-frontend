@@ -8,6 +8,7 @@ import { deletePackage, pullPackageToDraft, togglePackageStatus } from "./action
 
 type PackageRow = {
   id: string
+  package_code: string | null
   title: string | null
   slug: string | null
   price_adult: number | null
@@ -84,7 +85,7 @@ export default async function MerchantPackagePage({
 
   let query = supabase
     .from("packages")
-    .select("id, title, slug, price_adult, status, travel_style, created_at, updated_at, rejection_reason")
+    .select("id, package_code, title, slug, price_adult, status, travel_style, created_at, updated_at, rejection_reason")
     .eq("merchant_id", merchant.id)
     .order("created_at", { ascending: false })
 
@@ -316,7 +317,7 @@ export default async function MerchantPackagePage({
                     )}
                     {pkg.status !== "pending" && pkg.status !== "rejected" && (
                       <Link
-                        href={`/merchant/paket/${pkg.id}/edit`}
+                        href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`}
                         className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
                         {t.editPackage}
@@ -334,7 +335,7 @@ export default async function MerchantPackagePage({
                     </form>
                     {pkg.id ? (
                       <Link
-                        href={`/merchant/paket/${encodeURIComponent(pkg.id)}?portal=merchant`}
+                        href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}?portal=merchant`}
                         className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
                         {t.viewPackage}

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import Gallery from "@/app/packages/[slug]/Gallery"
 import PackageTabs from "@/app/packages/[slug]/PackageTabs"
 import MerchantSidebarInfo from "./MerchantSidebarInfo"
@@ -15,7 +15,7 @@ import { createClient } from "@/lib/supabase/server"
 
 type MerchantPackageDetailPageProps = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ room_id?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
 type PackageRow = {
@@ -204,14 +204,26 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const { data: merchant } = await supabase.from("merchants").select("id").eq("user_id", user.id).maybeSingle()
   if (!merchant?.id) notFound()
 
-  const { data: pkg } = await adminSupabase
+  const packageSelect =
+    "id, package_code, slug, title, status, travel_style, departure_date, duration, minimal_peserta, price_adult, price_child, currency, default_language, published_languages, cover_image, origin_country_id, origin_province, destination_country_id, destination_province, created_at, updated_at"
+
+  const { data: pkgByCode } = await adminSupabase
     .from("packages")
-    .select(
-      "id, package_code, slug, title, status, travel_style, departure_date, duration, minimal_peserta, price_adult, price_child, currency, default_language, published_languages, cover_image, origin_country_id, origin_province, destination_country_id, destination_province, created_at, updated_at",
-    )
-    .eq("id", id)
+    .select(packageSelect)
+    .eq("package_code", id)
     .eq("merchant_id", merchant.id)
     .maybeSingle<PackageRow>()
+
+  const { data: pkgById } = pkgByCode
+    ? { data: null as PackageRow | null }
+    : await adminSupabase
+        .from("packages")
+        .select(packageSelect)
+        .eq("id", id)
+        .eq("merchant_id", merchant.id)
+        .maybeSingle<PackageRow>()
+
+  const pkg = pkgByCode || pkgById
 
   if (!pkg) {
     return (
@@ -219,6 +231,21 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{copy.packageNotFound}</div>
       </main>
     )
+  }
+
+  if (pkg.package_code && id !== pkg.package_code) {
+    const qs = new URLSearchParams()
+    Object.entries(sp).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach((v) => {
+          if (v) qs.append(key, v)
+        })
+      } else if (value) {
+        qs.set(key, value)
+      }
+    })
+    const query = qs.toString()
+    redirect(`/merchant/paket/${encodeURIComponent(pkg.package_code)}${query ? `?${query}` : ""}`)
   }
 
   const defaultLocale = toSupportedLocale(pkg.default_language) || "id"
@@ -313,7 +340,10 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const chatSearch = new URLSearchParams()
   chatSearch.set("package_id", pkg.id)
   chatSearch.set("portal", "merchant")
-  if (sp.room_id) chatSearch.set("room_id", sp.room_id)
+  const roomIdValue = sp.room_id
+  if (typeof roomIdValue === "string" && roomIdValue) {
+    chatSearch.set("room_id", roomIdValue)
+  }
   const merchantChatHref = `/merchant/chat?${chatSearch.toString()}`
 
   return (
@@ -340,9 +370,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
           <div className="rounded-2xl border border-orange-100 bg-white p-5 md:col-span-2">
             <p className="text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageId}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">{packageIdLabel}</p>
-            <p className="mt-1 break-all font-mono text-[11px] text-slate-500" title={pkg.id}>
-              {pkg.id}
-            </p>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.packageStatus}</p>
             <p className="mt-2 text-sm font-semibold text-slate-900">{pkg.status || "-"}</p>
             <p className="mt-4 text-xs uppercase tracking-[0.22em] text-slate-500">{copy.duration}</p>
