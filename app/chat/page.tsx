@@ -512,10 +512,11 @@ export default async function ChatPage({
            leadStatus={leadStatusLabel}
            newBadge={ui.newBadge}
            bookingLabel={bookingLabel}
-           hideRoomLabel={locale === "en" ? "Delete permanently" : locale === "zh" ? "永久删除" : "Hapus permanen"}
-           hidingRoomLabel={locale === "en" ? "Deleting..." : locale === "zh" ? "删除中..." : "Menghapus permanen..."}
+           deleteRoomLabel={locale === "en" ? "Delete room" : locale === "zh" ? "????" : "Hapus room"}
+           deletingRoomLabel={locale === "en" ? "Deleting room..." : locale === "zh" ? "?????..." : "Menghapus room..."}
          />
       </div>
     </main>
   )
 }
+

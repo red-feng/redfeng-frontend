@@ -70,8 +70,8 @@ type MerchantChatRealtimeClientProps = {
     searchPlaceholder: string
     searchButton: string
     clearSearch: string
-    hideRoom: string
-    hidingRoom: string
+    deleteRoom: string
+    deletingRoom: string
     allFilter: string
     unreadFilter: string
     bookingFilter: string
@@ -214,6 +214,18 @@ function getAvatarInitial(name: string | null | undefined, fallback = "U") {
   return text.charAt(0).toUpperCase()
 }
 
+function normalizeDeleteRoomLabel(label: string) {
+  const text = String(label || "").trim()
+  if (!text) return "Hapus room"
+  if (text === "Delete permanently") return "Delete room"
+  if (text === "Deleting...") return "Deleting room..."
+  if (text === "Hapus permanen") return "Hapus room"
+  if (text === "Menghapus permanen...") return "Menghapus room..."
+  if (text === "永久删除") return "删除房间"
+  if (text === "删除中...") return "删除房间中..."
+  return text
+}
+
 function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string | null) {
   if (!createdAt) return "✓"
   if (!otherPartyLastReadAt) return "✓"
@@ -271,7 +283,7 @@ export default function MerchantChatRealtimeClient({
   const [activeFilter, setActiveFilter] = useState<"all" | "unread" | "booking">("all")
   const [draftMessage, setDraftMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [hidingRoomId, setHidingRoomId] = useState("")
+  const [deletingRoomId, setDeletingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [mobileThreadOpen, setMobileThreadOpen] = useState(false)
@@ -751,9 +763,9 @@ export default function MerchantChatRealtimeClient({
 
   async function handleHideRoom(roomId: string) {
     setErrorMessage("")
-    setHidingRoomId(roomId)
+    setDeletingRoomId(roomId)
     try {
-      const response = await fetch("/api/chat/hide-room", {
+      const response = await fetch("/api/chat/delete-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId }),
@@ -781,7 +793,7 @@ export default function MerchantChatRealtimeClient({
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Gagal menyembunyikan room.")
     } finally {
-      setHidingRoomId("")
+      setDeletingRoomId("")
     }
   }
 
@@ -1190,10 +1202,10 @@ export default function MerchantChatRealtimeClient({
                   <button
                     type="button"
                     onClick={() => void handleHideRoom(room.id)}
-                    disabled={hidingRoomId === room.id}
+                    disabled={deletingRoomId === room.id}
                     className="mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:block"
                   >
-                    {hidingRoomId === room.id ? t.hidingRoom : t.hideRoom}
+                    {deletingRoomId === room.id ? normalizeDeleteRoomLabel(t.deletingRoom) : normalizeDeleteRoomLabel(t.deleteRoom)}
                   </button>
                 </div>
               )

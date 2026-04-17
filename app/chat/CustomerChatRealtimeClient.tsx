@@ -98,6 +98,18 @@ function getAvatarInitial(name: string | null | undefined, fallback = "M") {
   return text.charAt(0).toUpperCase()
 }
 
+function normalizeDeleteRoomLabel(label: string) {
+  const text = String(label || "").trim()
+  if (!text) return "Hapus room"
+  if (text === "Delete permanently") return "Delete room"
+  if (text === "Deleting...") return "Deleting room..."
+  if (text === "Hapus permanen") return "Hapus room"
+  if (text === "Menghapus permanen...") return "Menghapus room..."
+  if (text.includes("永久")) return "删除房间"
+  if (text.includes("删除中")) return "删除房间中..."
+  return text
+}
+
 function getReadReceipt(createdAt: string | null, otherPartyLastReadAt: string | null) {
   if (!createdAt) return "✓"
   if (!otherPartyLastReadAt) return "✓"
@@ -160,8 +172,8 @@ type CustomerChatRealtimeClientProps = {
   leadStatus: string
   newBadge: string
   bookingLabel: string
-  hideRoomLabel: string
-  hidingRoomLabel: string
+  deleteRoomLabel: string
+  deletingRoomLabel: string
 }
 
 type RoomMetaResponse = {
@@ -226,8 +238,8 @@ export default function CustomerChatRealtimeClient({
   leadStatus,
   newBadge,
   bookingLabel,
-  hideRoomLabel,
-  hidingRoomLabel,
+  deleteRoomLabel,
+  deletingRoomLabel,
 }: CustomerChatRealtimeClientProps) {
   const supabase = useMemo(() => createClient(), [])
   const [rooms, setRooms] = useState<CustomerChatRoom[]>(() => sortRooms(initialRooms))
@@ -247,7 +259,7 @@ export default function CustomerChatRealtimeClient({
   const [loadingOlderByRoom, setLoadingOlderByRoom] = useState<Record<string, boolean>>({})
   const [draftMessage, setDraftMessage] = useState("")
   const [submitting, setSubmitting] = useState(false)
-  const [hidingRoomId, setHidingRoomId] = useState("")
+  const [deletingRoomId, setDeletingRoomId] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [roomSearch, setRoomSearch] = useState("")
@@ -601,9 +613,9 @@ export default function CustomerChatRealtimeClient({
 
   async function handleHideRoom(roomId: string) {
     setErrorMessage("")
-    setHidingRoomId(roomId)
+    setDeletingRoomId(roomId)
     try {
-      const response = await fetch("/api/chat/hide-room", {
+      const response = await fetch("/api/chat/delete-room", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId }),
@@ -633,7 +645,7 @@ export default function CustomerChatRealtimeClient({
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Failed to hide room.")
     } finally {
-      setHidingRoomId("")
+      setDeletingRoomId("")
     }
   }
 
@@ -942,10 +954,10 @@ export default function CustomerChatRealtimeClient({
                     <button
                       type="button"
                       onClick={() => void handleHideRoom(room.id)}
-                      disabled={hidingRoomId === room.id}
+                      disabled={deletingRoomId === room.id}
                       className="mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:inline-flex"
                     >
-                      {hidingRoomId === room.id ? hidingRoomLabel : hideRoomLabel}
+                      {deletingRoomId === room.id ? normalizeDeleteRoomLabel(deletingRoomLabel) : normalizeDeleteRoomLabel(deleteRoomLabel)}
                     </button>
                   </div>
                 )
