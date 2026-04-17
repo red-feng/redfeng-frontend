@@ -50,6 +50,8 @@ type RoomCursor = {
   roomId: string
 }
 
+const FALLBACK_SYNC_INTERVAL_MS = 4000
+
 type MerchantChatRealtimeClientProps = {
   userId: string
   initialRooms: MerchantChatRoom[]
@@ -267,6 +269,7 @@ export default function MerchantChatRealtimeClient({
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
   const activeRoomIdRef = useRef(initialActiveRoomId)
+  const fallbackSyncInFlightRef = useRef(false)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const unreadRoomsCount = useMemo(
@@ -710,6 +713,83 @@ export default function MerchantChatRealtimeClient({
       setLoadingMoreRooms(false)
     }
   }
+
+  const refreshRoomsSnapshot = useCallback(async () => {
+    const limit = String(Math.min(Math.max(rooms.length, 30), 100))
+    const search = new URLSearchParams({
+      mode: "merchant",
+      limit,
+    })
+    const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
+    const payload = (await response.json()) as RoomsPageResponse
+    if (!response.ok) {
+      throw new Error(payload.error || "Gagal menyegarkan daftar room.")
+    }
+
+    const nextRooms = payload.rooms || []
+    setRooms(sortRooms(nextRooms))
+    setRoomsHasMore(Boolean(payload.hasMore))
+    setRoomsCursor(payload.nextCursor || null)
+
+    if (activeRoomIdRef.current) {
+      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
+      if (!hasActiveRoom) {
+        setActiveRoomId(nextRooms[0]?.id || "")
+        if (nextRooms.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+    }
+  }, [rooms.length])
+
+  useEffect(() => {
+    if (realtimeStatus !== "fallback") return
+
+    let intervalId: number | null = null
+
+    const runFallbackSync = async () => {
+      if (fallbackSyncInFlightRef.current) return
+      if (document.visibilityState === "hidden") return
+
+      fallbackSyncInFlightRef.current = true
+      try {
+        await refreshRoomsSnapshot()
+        if (activeRoomIdRef.current) {
+          await fetchLatestMessages(activeRoomIdRef.current)
+        }
+      } catch (error) {
+        console.error("Failed to run merchant fallback sync", error)
+      } finally {
+        fallbackSyncInFlightRef.current = false
+      }
+    }
+
+    void runFallbackSync()
+    intervalId = window.setInterval(() => {
+      void runFallbackSync()
+    }, FALLBACK_SYNC_INTERVAL_MS)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return
+      void runFallbackSync()
+    }
+
+    const handleFocus = () => {
+      void runFallbackSync()
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+      fallbackSyncInFlightRef.current = false
+    }
+  }, [fetchLatestMessages, realtimeStatus, refreshRoomsSnapshot])
 
   function handleRoomListScroll(event: React.UIEvent<HTMLDivElement>) {
     const node = event.currentTarget
