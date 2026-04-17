@@ -38,17 +38,16 @@ export async function POST(request: Request) {
   }
 
   const lineageAnchorIds = [...new Set([room.id, room.source_room_id].filter((value): value is string => Boolean(value)))]
+  const relatedRoomFilters = [
+    `and(package_id.eq.${room.package_id},customer_id.eq.${room.customer_id},merchant_user_id.eq.${room.merchant_user_id})`,
+    lineageAnchorIds.length > 0 ? `id.in.(${lineageAnchorIds.join(",")})` : "",
+    lineageAnchorIds.length > 0 ? `source_room_id.in.(${lineageAnchorIds.join(",")})` : "",
+  ].filter(Boolean)
+
   const { data: relatedRooms, error: relatedRoomsError } = await adminSupabase
     .from("package_chat_rooms")
     .select("id")
-    .or(
-      [
-        lineageAnchorIds.length > 0 ? `id.in.(${lineageAnchorIds.join(",")})` : "",
-        lineageAnchorIds.length > 0 ? `source_room_id.in.(${lineageAnchorIds.join(",")})` : "",
-      ]
-        .filter(Boolean)
-        .join(","),
-    )
+    .or(relatedRoomFilters.join(","))
 
   if (relatedRoomsError) {
     return NextResponse.json({ error: relatedRoomsError.message || "Failed to resolve related rooms" }, { status: 500 })
