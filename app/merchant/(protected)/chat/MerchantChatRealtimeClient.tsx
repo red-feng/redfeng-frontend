@@ -792,7 +792,9 @@ export default function MerchantChatRealtimeClient({
       removeRoomLocally(roomId)
       await refreshRoomsSnapshot()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room.")
+      const nextErrorMessage = error instanceof Error ? error.message : "Gagal menghapus room."
+      setErrorMessage(nextErrorMessage)
+      window.alert(nextErrorMessage)
     } finally {
       setDeletingRoomId("")
     }

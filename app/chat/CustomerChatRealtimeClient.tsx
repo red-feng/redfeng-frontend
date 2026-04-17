@@ -677,15 +677,16 @@ export default function CustomerChatRealtimeClient({
       removeRoomLocally(roomId)
       await refreshRoomsSnapshot()
     } catch (error) {
-      setErrorMessage(
+      const nextErrorMessage =
         error instanceof Error
           ? error.message
           : locale === "en"
             ? "Failed to delete room."
             : locale === "zh"
               ? "删除房间失败。"
-              : "Gagal menghapus room.",
-      )
+              : "Gagal menghapus room."
+      setErrorMessage(nextErrorMessage)
+      window.alert(nextErrorMessage)
     } finally {
       setDeletingRoomId("")
     }
