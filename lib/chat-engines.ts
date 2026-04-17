@@ -12,6 +12,18 @@ export const INTERNAL_CHAT_ENGINE = Object.freeze({
   realtimeTables: ["internal_chat_rooms", "internal_chat_room_members", "internal_chat_messages"] as const,
 })
 
+export const COMMERCE_CHAT_ENGINE = Object.freeze({
+  key: "commerce-chat",
+  navHrefSuffix: "/chat",
+  unreadCountEndpoint: "/api/commerce-chat/unread-count",
+  threadsEndpoint: "/api/commerce-chat/threads",
+  threadEndpoint: "/api/commerce-chat/thread",
+  messagesEndpoint: "/api/commerce-chat/messages",
+  sendEndpoint: "/api/commerce-chat/send",
+  realtimeChannelPrefix: "commerce-chat-live",
+  realtimeTables: ["commerce_chat_threads", "commerce_chat_messages"] as const,
+})
+
 export const MERCHANT_SUPPORT_ENGINE = Object.freeze({
   key: "merchant-support",
   navHrefSuffix: "/merchant-support",
@@ -25,4 +37,3 @@ export const MERCHANT_SUPPORT_ENGINE = Object.freeze({
   adminRealtimeChannel: "admin-merchant-support-live",
   realtimeTables: ["merchant_support_rooms", "merchant_support_messages"] as const,
 })
-

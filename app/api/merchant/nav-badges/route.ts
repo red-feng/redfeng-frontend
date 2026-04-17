@@ -8,6 +8,7 @@ import {
   isStatusInSet,
   latestTimestamp,
 } from "@/lib/nav-badge-policy"
+import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 
 export async function GET() {
   const supabase = await createClient()
@@ -141,12 +142,14 @@ export async function GET() {
     ((reviewResult.data as Array<{ id: string; created_at: string | null }> | null) || []).filter((review) =>
       isNewerThan(review.created_at, seenState?.seen_review_at || undefined),
     ).length
+  const commerceChatBadgeCount = await getCommerceChatUnreadBadgeCount(adminSupabase, user.id)
 
   return NextResponse.json({
     badgeCounts: {
       "/merchant/dashboard": 0,
       "/merchant/paket": packageBadgeCount,
       "/merchant/pesanan": orderBadgeCount,
+      "/merchant/chat": commerceChatBadgeCount,
       "/merchant/statistik": 0,
       "/merchant/kalender-booking": calendarBadgeCount,
       "/merchant/saldo-payout": payoutBadgeCount,

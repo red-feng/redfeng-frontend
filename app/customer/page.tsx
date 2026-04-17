@@ -25,6 +25,9 @@ export default async function CustomerAccountHubPage() {
       dashboardTitle: "Dashboard Booking",
       dashboardBody: "Pantau booking, pembayaran, pickup, dan progress trip Anda.",
       dashboard: "Buka dashboard",
+      chatTitle: "Chat merchant",
+      chatBody: "Lanjutkan inquiry paket dan simpan semua percakapan customer-merchant dalam satu inbox commerce.",
+      chat: "Buka chat",
       exploreTitle: "Jelajahi Paket",
       exploreBody: "Cari paket wisata terbaru, trending, dan paket unggulan langsung dari katalog.",
       explore: "Buka katalog",
@@ -47,6 +50,9 @@ export default async function CustomerAccountHubPage() {
       dashboardTitle: "Booking Dashboard",
       dashboardBody: "Track bookings, payments, pickup progress, and trip activity.",
       dashboard: "Open dashboard",
+      chatTitle: "Merchant chat",
+      chatBody: "Continue package inquiries and keep customer-merchant conversations in one commerce inbox.",
+      chat: "Open chat",
       exploreTitle: "Explore Packages",
       exploreBody: "Browse the latest, trending, and featured travel packages directly from the catalog.",
       explore: "Open catalog",
@@ -97,6 +103,20 @@ export default async function CustomerAccountHubPage() {
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <path d="M4 19h16" />
           <path d="M7 16V9M12 16V5M17 16v-7" />
+        </svg>
+      ),
+    },
+    {
+      title: copy.chatTitle,
+      body: copy.chatBody,
+      href: "/chat",
+      action: copy.chat,
+      tone: "bg-[linear-gradient(135deg,#fff5ec_0%,#fffef9_100%)]",
+      iconTone: "bg-[#fff0e7] text-[#f97316]",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+          <path d="M7 10h10M7 14h6" />
+          <path d="M6 5h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-4 3v-3H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
         </svg>
       ),
     },

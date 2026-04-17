@@ -638,6 +638,12 @@ export default async function PaketPage({
                 >
                   {t.bookingNow}
                 </Link>
+                <Link
+                  href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
+                  className="block w-full rounded-[22px] border border-orange-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-orange-700 shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-orange-300 hover:bg-orange-50"
+                >
+                  {activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
+                </Link>
               </div>
             </section>
             <SidebarActions
@@ -653,6 +659,8 @@ export default async function PaketPage({
         href={`/checkout/${encodeURIComponent(pkg.slug)}`}
         label={t.bookingNow}
         summary={displayTitle}
+        secondaryHref={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
+        secondaryLabel={activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
       />
       <PublicMobileNav locale={activeLocale} />
     </main>

@@ -8,6 +8,8 @@ import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
 import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
@@ -18,6 +20,7 @@ export default async function CustomerLayout({
   children: React.ReactNode
 }) {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
   const cookieStore = await cookies()
   const {
     data: { user },
@@ -78,6 +81,7 @@ export default async function CustomerLayout({
   const navItems = [
     { href: "/customer", label: accountLabel },
     { href: "/customer/dashboard", label: bookingsLabel },
+    { href: "/chat", label: locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat", badgeCount: await getCommerceChatUnreadBadgeCount(adminSupabase, user.id) },
     { href: "/customer/settings", label: settingsLabel },
   ]
 

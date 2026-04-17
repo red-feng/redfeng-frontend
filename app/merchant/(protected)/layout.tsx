@@ -20,6 +20,7 @@ import {
   latestTimestamp,
 } from "@/lib/nav-badge-policy"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
+import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function MerchantLayout({
@@ -186,11 +187,13 @@ export default async function MerchantLayout({
     ((reviewResult.data as Array<{ id: string; created_at: string | null }> | null) || []).filter((review) =>
       isNewerThan(review.created_at, seenReviewAt),
     ).length
+  const commerceChatBadgeCount = await getCommerceChatUnreadBadgeCount(adminSupabase, user.id)
 
   const merchantNav = [
     { href: "/merchant/dashboard", label: t.nav.dashboard, badgeCount: 0 },
     { href: "/merchant/paket", label: t.nav.packages, badgeCount: packageBadgeCount },
     { href: "/merchant/pesanan", label: t.nav.orders, badgeCount: orderBadgeCount },
+    { href: "/merchant/chat", label: locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat", badgeCount: commerceChatBadgeCount },
     { href: "/merchant/statistik", label: t.nav.statistics, badgeCount: 0 },
     { href: "/merchant/kalender-booking", label: t.nav.calendar, badgeCount: calendarBadgeCount },
     { href: "/merchant/saldo-payout", label: t.nav.payout, badgeCount: payoutBadgeCount },

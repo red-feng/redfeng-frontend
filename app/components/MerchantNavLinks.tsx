@@ -123,7 +123,7 @@ export default function MerchantNavLinks({
     }
 
     const channel = supabase.channel(`merchant-nav-badges:${pathname}`)
-    ;["packages", "bookings", "package_reviews", "merchant_nav_seen_states"].forEach((table) => {
+    ;["packages", "bookings", "package_reviews", "merchant_nav_seen_states", "commerce_chat_threads", "commerce_chat_messages"].forEach((table) => {
       channel.on(
         "postgres_changes",
         {
