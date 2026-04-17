@@ -4,8 +4,8 @@ import {
   canInternalUsersDirectMessageLocked,
   getInternalProfileById,
   markInternalRoomRead,
-} from "@/lib/internal-chat"
-import { uploadInternalChatAttachment } from "@/lib/internal-chat-attachments"
+} from "@/lib/internal-chat/index"
+import { uploadInternalChatAttachment } from "@/lib/internal-chat/attachments"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {

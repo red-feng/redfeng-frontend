@@ -65,7 +65,7 @@ function createPackageAccessMock(params: {
   }
 }
 
-const internalChatPath = fileURLToPath(new URL("../lib/internal-chat.ts", import.meta.url))
+const internalChatPath = fileURLToPath(new URL("../lib/internal-chat/core.ts", import.meta.url))
 const internalChatSource = readFileSync(internalChatPath, "utf8")
 
 async function main() {

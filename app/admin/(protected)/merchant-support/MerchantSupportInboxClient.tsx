@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
 import { createClient } from "@/lib/supabase/client"
 
 type MerchantSupportRoomItem = {
@@ -106,7 +107,7 @@ export default function MerchantSupportInboxClient({
         : activeRoomId
           ? `?roomId=${encodeURIComponent(activeRoomId)}`
           : ""
-      const response = await fetch(`/api/admin/merchant-support/snapshot${query}`, { cache: "no-store" })
+      const response = await fetch(`${MERCHANT_SUPPORT_ENGINE.adminSnapshotEndpoint}${query}`, { cache: "no-store" })
       const payload = (await response.json().catch(() => null)) as SnapshotPayload | null
       if (!response.ok) {
         throw new Error(payload?.error || "Gagal memuat merchant support.")
@@ -168,11 +169,11 @@ export default function MerchantSupportInboxClient({
   }, [activeRoomId, fetchSnapshot, realtimeStatus])
 
   useEffect(() => {
-    const channel = supabase.channel("admin-merchant-support-live")
+    const channel = supabase.channel(MERCHANT_SUPPORT_ENGINE.adminRealtimeChannel)
 
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "merchant_support_messages" },
+      { event: "*", schema: "public", table: MERCHANT_SUPPORT_ENGINE.realtimeTables[1] },
       async () => {
         try {
           const payload = await fetchSnapshot()
@@ -195,7 +196,7 @@ export default function MerchantSupportInboxClient({
 
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "merchant_support_rooms" },
+      { event: "*", schema: "public", table: MERCHANT_SUPPORT_ENGINE.realtimeTables[0] },
       async () => {
         try {
           const payload = await fetchSnapshot()
@@ -256,7 +257,7 @@ export default function MerchantSupportInboxClient({
     try {
       setSending(true)
       setErrorMessage("")
-      const response = await fetch("/api/admin/merchant-support/send", {
+      const response = await fetch(MERCHANT_SUPPORT_ENGINE.adminSendEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

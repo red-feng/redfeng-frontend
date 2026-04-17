@@ -3,7 +3,7 @@ import {
   INTERNAL_CHAT_PAGE_SIZE,
   getInternalProfileById,
   loadInternalChatMessagesPageForUser,
-} from "@/lib/internal-chat"
+} from "@/lib/internal-chat/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

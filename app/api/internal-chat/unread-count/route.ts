@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
-import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
-import { getInternalProfileById } from "@/lib/internal-chat"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
+import { getInternalProfileById } from "@/lib/internal-chat/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

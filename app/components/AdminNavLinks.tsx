@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { INTERNAL_CHAT_ENGINE, MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
 
 type AdminNavChild = {
   href: string
@@ -43,91 +44,104 @@ export default function AdminNavLinks({
   const supabase = useMemo(() => createClient(), [])
   const pathname = usePathname()
   const normalizeHref = (href: string) => href.split("?")[0]
-  const isInternalChatHref = (href: string) => normalizeHref(href).endsWith("/internal-chat")
+  const realtimeBadgeConfigs = useMemo(
+    () => [
+      {
+        key: INTERNAL_CHAT_ENGINE.key,
+        hrefSuffix: INTERNAL_CHAT_ENGINE.navHrefSuffix,
+        unreadEndpoint: INTERNAL_CHAT_ENGINE.unreadCountEndpoint,
+        channelName: INTERNAL_CHAT_ENGINE.navRealtimeChannel,
+        tables: [...INTERNAL_CHAT_ENGINE.realtimeTables],
+      },
+      {
+        key: MERCHANT_SUPPORT_ENGINE.key,
+        hrefSuffix: MERCHANT_SUPPORT_ENGINE.navHrefSuffix,
+        unreadEndpoint: MERCHANT_SUPPORT_ENGINE.adminUnreadCountEndpoint,
+        channelName: `${MERCHANT_SUPPORT_ENGINE.adminRealtimeChannel}-nav`,
+        tables: [...MERCHANT_SUPPORT_ENGINE.realtimeTables],
+      },
+    ],
+    [],
+  )
   const activeGroupLabel =
     items.find((item) => item.children?.some((child) => pathname.startsWith(normalizeHref(child.href))))?.label || null
   const [openGroupLabel, setOpenGroupLabel] = useState<string | null>(activeGroupLabel)
-  const [liveInternalChatBadgeCount, setLiveInternalChatBadgeCount] = useState<number | null>(null)
+  const [liveBadgeCounts, setLiveBadgeCounts] = useState<Record<string, number | null>>({})
   const visibleGroupLabel = openGroupLabel || activeGroupLabel
   const visibleChildren = items.find((item) => item.label === visibleGroupLabel)?.children || []
+  const resolveRealtimeBadgeConfig = (href?: string) =>
+    realtimeBadgeConfigs.find((config) => href && normalizeHref(href).endsWith(config.hrefSuffix)) || null
   const resolveBadgeCount = (baseCount: number, href?: string) => {
-    if (!href || !isInternalChatHref(href)) return baseCount
-    return liveInternalChatBadgeCount ?? baseCount
+    const config = resolveRealtimeBadgeConfig(href)
+    if (!config) return baseCount
+    return liveBadgeCounts[config.key] ?? baseCount
   }
 
   useEffect(() => {
     let active = true
-    let debounceTimer: number | null = null
-    let pollTimer: number | null = null
-
-    const fetchUnreadInternalChatCount = async () => {
-      try {
-        const response = await fetch("/api/internal-chat/unread-count", { cache: "no-store" })
-        if (!response.ok || !active) return
-        const payload = (await response.json()) as { unreadCount?: number }
-        if (active) {
-          setLiveInternalChatBadgeCount(Number(payload.unreadCount || 0))
-        }
-      } catch {
-        if (active) {
-          setLiveInternalChatBadgeCount((current) => current ?? 0)
+    const debounceTimers = new Map<string, number>()
+    const pollTimers = new Map<string, number>()
+    const channels = realtimeBadgeConfigs.map((config) => {
+      const fetchUnreadCount = async () => {
+        try {
+          const response = await fetch(config.unreadEndpoint, { cache: "no-store" })
+          if (!response.ok || !active) return
+          const payload = (await response.json()) as { unreadCount?: number }
+          if (active) {
+            setLiveBadgeCounts((current) => ({
+              ...current,
+              [config.key]: Number(payload.unreadCount || 0),
+            }))
+          }
+        } catch {
+          if (active) {
+            setLiveBadgeCounts((current) => ({
+              ...current,
+              [config.key]: current[config.key] ?? 0,
+            }))
+          }
         }
       }
-    }
 
-    void fetchUnreadInternalChatCount()
-    pollTimer = window.setInterval(() => {
-      void fetchUnreadInternalChatCount()
-    }, 4000)
+      void fetchUnreadCount()
+      pollTimers.set(
+        config.key,
+        window.setInterval(() => {
+          void fetchUnreadCount()
+        }, 4000),
+      )
 
-    const channel = supabase.channel("internal-chat-nav-badge-live")
+      const channel = supabase.channel(config.channelName)
+      for (const table of config.tables) {
+        channel.on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          const currentTimer = debounceTimers.get(config.key)
+          if (currentTimer) window.clearTimeout(currentTimer)
+          debounceTimers.set(
+            config.key,
+            window.setTimeout(() => {
+              void fetchUnreadCount()
+            }, 180),
+          )
+        })
+      }
 
-    channel.on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "internal_chat_messages" },
-      () => {
-        if (debounceTimer) window.clearTimeout(debounceTimer)
-        debounceTimer = window.setTimeout(() => {
-          void fetchUnreadInternalChatCount()
-        }, 180)
-      },
-    )
-
-    channel.on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "internal_chat_room_members" },
-      () => {
-        if (debounceTimer) window.clearTimeout(debounceTimer)
-        debounceTimer = window.setTimeout(() => {
-          void fetchUnreadInternalChatCount()
-        }, 180)
-      },
-    )
-
-    channel.on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "internal_chat_rooms" },
-      () => {
-        if (debounceTimer) window.clearTimeout(debounceTimer)
-        debounceTimer = window.setTimeout(() => {
-          void fetchUnreadInternalChatCount()
-        }, 180)
-      },
-    )
-
-    channel.subscribe()
+      channel.subscribe()
+      return channel
+    })
 
     return () => {
       active = false
-      if (debounceTimer) {
-        window.clearTimeout(debounceTimer)
+      for (const timerId of debounceTimers.values()) {
+        window.clearTimeout(timerId)
       }
-      if (pollTimer) {
-        window.clearInterval(pollTimer)
+      for (const timerId of pollTimers.values()) {
+        window.clearInterval(timerId)
       }
-      void supabase.removeChannel(channel)
+      for (const channel of channels) {
+        void supabase.removeChannel(channel)
+      }
     }
-  }, [supabase])
+  }, [realtimeBadgeConfigs, supabase])
 
   return (
     <div className="space-y-3">

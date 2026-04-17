@@ -8,7 +8,7 @@ import {
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
 import { isFinanceManagedRole } from "@/lib/internal-roles"
-import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat-bootstrap"
+import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
 import {
   formatAccountErrorMessage,
   getInternalManagerActor,

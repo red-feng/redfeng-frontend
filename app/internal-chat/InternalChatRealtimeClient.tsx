@@ -1,9 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { INTERNAL_CHAT_ENGINE } from "@/lib/chat-engines"
 import { createClient } from "@/lib/supabase/client"
-import { isInternalChatImageAttachment } from "@/lib/internal-chat-attachments"
-import type { InternalChatMessageItem, InternalChatRoomItem, InternalChatUserOption } from "@/lib/internal-chat"
+import { isInternalChatImageAttachment } from "@/lib/internal-chat/attachments"
+import type { InternalChatMessageItem, InternalChatRoomItem, InternalChatUserOption } from "@/lib/internal-chat/index"
 
 type RealtimeStatus = "connecting" | "live" | "fallback"
 
@@ -154,7 +155,7 @@ export default function InternalChatRealtimeClient({
 
   async function fetchRoomMeta(roomId: string) {
     try {
-      const response = await fetch(`/api/internal-chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
+      const response = await fetch(`${INTERNAL_CHAT_ENGINE.roomMetaEndpoint}?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
       if (!response.ok) return null
       const payload = (await response.json()) as RoomMetaResponse
       return payload.room || null
@@ -168,7 +169,7 @@ export default function InternalChatRealtimeClient({
     if (beforeCreatedAt) {
       search.set("beforeCreatedAt", beforeCreatedAt)
     }
-    const response = await fetch(`/api/internal-chat/messages?${search.toString()}`, { cache: "no-store" })
+    const response = await fetch(`${INTERNAL_CHAT_ENGINE.messagesEndpoint}?${search.toString()}`, { cache: "no-store" })
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as MessagesPageResponse | null
       throw new Error(payload?.error || "Gagal memuat pesan chat internal.")
@@ -285,11 +286,11 @@ export default function InternalChatRealtimeClient({
   }, [activeLastMessageId, activeRoomId, activeMessagesLength])
 
   useEffect(() => {
-    const channel = supabase.channel(`internal-chat-live:${userId}`)
+    const channel = supabase.channel(`${INTERNAL_CHAT_ENGINE.realtimeChannelPrefix}:${userId}`)
 
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "internal_chat_rooms" },
+      { event: "*", schema: "public", table: INTERNAL_CHAT_ENGINE.realtimeTables[0] },
       async (payload) => {
         const nextRoom = payload.new as { id?: string } | null
         const prevRoom = payload.old as { id?: string } | null
@@ -314,7 +315,7 @@ export default function InternalChatRealtimeClient({
 
     channel.on(
       "postgres_changes",
-      { event: "INSERT", schema: "public", table: "internal_chat_messages" },
+      { event: "INSERT", schema: "public", table: INTERNAL_CHAT_ENGINE.realtimeTables[2] },
       async (payload) => {
         const message = payload.new as InternalChatMessageItem
         if (!message?.room_id) return
@@ -365,7 +366,7 @@ export default function InternalChatRealtimeClient({
       try {
         const roomId = String(forceRoomId || activeRoomId || "").trim()
         const query = roomId ? `?roomId=${encodeURIComponent(roomId)}` : ""
-        const response = await fetch(`/api/internal-chat/snapshot${query}`, { cache: "no-store" })
+        const response = await fetch(`${INTERNAL_CHAT_ENGINE.snapshotEndpoint}${query}`, { cache: "no-store" })
         if (!response.ok || cancelled) return
 
         const payload = (await response.json()) as SnapshotResponse
@@ -434,7 +435,7 @@ export default function InternalChatRealtimeClient({
     setCreatingDm(true)
     setErrorMessage("")
     try {
-      const response = await fetch("/api/internal-chat/ensure-dm", {
+      const response = await fetch(INTERNAL_CHAT_ENGINE.ensureDmEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ targetUserId: selectedTargetUserId }),
@@ -488,7 +489,7 @@ export default function InternalChatRealtimeClient({
       formData.set("message", draftMessage.trim())
       if (attachment) formData.set("attachment", attachment)
 
-      const response = await fetch("/api/internal-chat/send", {
+      const response = await fetch(INTERNAL_CHAT_ENGINE.sendEndpoint, {
         method: "POST",
         body: formData,
       })

@@ -4,7 +4,7 @@ import {
   getMerchantSupportContextForUser,
   markMerchantSupportRoomReadByMerchant,
   notifyAdminAboutMerchantSupportMessage,
-} from "@/lib/merchant-support"
+} from "@/lib/merchant-support/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

@@ -65,3 +65,4 @@ export async function getInternalChatUnreadBadgeCount(adminSupabase: AdminSupaba
 
   return unreadCount
 }
+

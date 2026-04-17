@@ -4,7 +4,7 @@ import {
   getInternalProfileById,
   loadInternalChatMessagesPageForUser,
   loadInternalChatRoomsForUser,
-} from "@/lib/internal-chat"
+} from "@/lib/internal-chat/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

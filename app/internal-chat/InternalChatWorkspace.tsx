@@ -7,7 +7,7 @@ import {
   loadInternalChatMessagesPageForUser,
   loadInternalChatRoomsForUser,
   markInternalRoomRead,
-} from "@/lib/internal-chat"
+} from "@/lib/internal-chat/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

@@ -1,7 +1,7 @@
 import {
   canInternalUsersDirectMessageLocked,
   ensureInternalDirectRoom,
-} from "@/lib/internal-chat"
+} from "@/lib/internal-chat/core"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
 

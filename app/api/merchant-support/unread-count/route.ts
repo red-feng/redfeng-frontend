@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getMerchantSupportContextForUser } from "@/lib/merchant-support"
+import { getMerchantSupportContextForUser } from "@/lib/merchant-support/index"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 

@@ -8,7 +8,7 @@ import {
   isValidInternalUsername,
   normalizeInternalUsername,
 } from "@/lib/internal-auth"
-import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat-bootstrap"
+import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
 
 function resolveReturnTo(formData: FormData, fallbackPath: string) {
   const returnTo = String(formData.get("return_to") || "").trim()

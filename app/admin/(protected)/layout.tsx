@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/server"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
 import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
-import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat-badge"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
-import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support"
+import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support/index"
 import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES, isStatusInSet } from "@/lib/nav-badge-policy"
 
 export default async function AdminProtectedLayout({

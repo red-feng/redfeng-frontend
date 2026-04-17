@@ -167,7 +167,6 @@ export async function getInternalProfileById(adminSupabase: AdminSupabase, userI
   return profile
 }
 
-
 export async function ensureInternalDirectRoom(
   adminSupabase: AdminSupabase,
   actorUserId: string,
@@ -352,33 +351,35 @@ export async function loadInternalChatRoomsForUser(adminSupabase: AdminSupabase,
 
   const currentUserRole = profileMap.get(userId)?.role || null
 
-  const result: InternalChatRoomItem[] = rooms.map((room) => {
-    const roomMembers = memberMap.get(room.id) || []
-    const latest = latestMessageMap.get(room.id)
-    const otherMember = roomMembers.find((member) => member.user_id !== userId) || null
-    const otherProfile = otherMember ? profileMap.get(otherMember.user_id) || null : null
-    const dmTitle = otherProfile?.username || formatInternalUserCode(otherMember?.user_id || null)
-    const subtitle = otherProfile?.role ? getRoleLabel(otherProfile.role) : null
+  const result: InternalChatRoomItem[] = rooms
+    .map((room) => {
+      const roomMembers = memberMap.get(room.id) || []
+      const latest = latestMessageMap.get(room.id)
+      const otherMember = roomMembers.find((member) => member.user_id !== userId) || null
+      const otherProfile = otherMember ? profileMap.get(otherMember.user_id) || null : null
+      const dmTitle = otherProfile?.username || formatInternalUserCode(otherMember?.user_id || null)
+      const subtitle = otherProfile?.role ? getRoleLabel(otherProfile.role) : null
 
       return {
         id: room.id,
         roomScope: "dm" as const,
         title: dmTitle,
-      subtitle,
-      participantCount: roomMembers.length,
-      updatedAt: room.updated_at || null,
-      lastMessageAt: room.last_message_at || null,
-      lastMessageSenderId: room.last_message_sender_id || null,
-      currentUserLastReadAt: readMap.get(room.id) || null,
-      lastMessagePreview: latest?.message || null,
-      otherUserId: otherMember?.user_id || null,
-      otherUsername: otherProfile?.username || null,
-      otherUserRole: otherProfile?.role || null,
-    }
-  }).filter((room) => {
-    if (!room.otherUserRole) return false
-    return canInternalUsersDirectMessageLocked(currentUserRole, room.otherUserRole)
-  })
+        subtitle,
+        participantCount: roomMembers.length,
+        updatedAt: room.updated_at || null,
+        lastMessageAt: room.last_message_at || null,
+        lastMessageSenderId: room.last_message_sender_id || null,
+        currentUserLastReadAt: readMap.get(room.id) || null,
+        lastMessagePreview: latest?.message || null,
+        otherUserId: otherMember?.user_id || null,
+        otherUsername: otherProfile?.username || null,
+        otherUserRole: otherProfile?.role || null,
+      }
+    })
+    .filter((room) => {
+      if (!room.otherUserRole) return false
+      return canInternalUsersDirectMessageLocked(currentUserRole, room.otherUserRole)
+    })
 
   return sortRoomsByActivity(result)
 }
@@ -494,3 +495,4 @@ export async function listInternalChatUsers(adminSupabase: AdminSupabase, curren
     }))
     .sort((left, right) => left.username.localeCompare(right.username))
 }
+

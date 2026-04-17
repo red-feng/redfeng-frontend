@@ -3,6 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
 import { createClient } from "@/lib/supabase/client"
 
 type MerchantAdminHelpWidgetProps = {
@@ -196,7 +197,7 @@ export default function MerchantAdminHelpWidget({
 
   const fetchRoom = useMemo(
     () => async () => {
-      const response = await fetch("/api/merchant-support/room", { cache: "no-store" })
+      const response = await fetch(MERCHANT_SUPPORT_ENGINE.merchantRoomEndpoint, { cache: "no-store" })
       const payload = (await response.json().catch(() => null)) as SupportRoomPayload | null
       if (!response.ok) {
         throw new Error(payload?.error || t.errorLoad)
@@ -208,7 +209,7 @@ export default function MerchantAdminHelpWidget({
 
   const fetchUnreadCount = useMemo(
     () => async () => {
-      const response = await fetch("/api/merchant-support/unread-count", { cache: "no-store" })
+      const response = await fetch(MERCHANT_SUPPORT_ENGINE.merchantUnreadCountEndpoint, { cache: "no-store" })
       const payload = (await response.json().catch(() => null)) as UnreadCountPayload | null
       if (!response.ok) {
         throw new Error(payload?.error || "Gagal memuat unread merchant support.")
@@ -349,11 +350,11 @@ export default function MerchantAdminHelpWidget({
   useEffect(() => {
     if (hideOnChatPage) return
 
-    const channel = supabase.channel(`merchant-support-live:${merchantCode}`)
+    const channel = supabase.channel(`${MERCHANT_SUPPORT_ENGINE.realtimeChannelPrefix}:${merchantCode}`)
 
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "merchant_support_messages" },
+      { event: "*", schema: "public", table: MERCHANT_SUPPORT_ENGINE.realtimeTables[1] },
       async () => {
         try {
           const nextUnreadCount = await fetchUnreadCount()
@@ -375,7 +376,7 @@ export default function MerchantAdminHelpWidget({
 
     channel.on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "merchant_support_rooms" },
+      { event: "*", schema: "public", table: MERCHANT_SUPPORT_ENGINE.realtimeTables[0] },
       async () => {
         try {
           const nextUnreadCount = await fetchUnreadCount()
@@ -420,7 +421,7 @@ export default function MerchantAdminHelpWidget({
       setSending(true)
       setErrorMessage("")
 
-      const response = await fetch("/api/merchant-support/send", {
+      const response = await fetch(MERCHANT_SUPPORT_ENGINE.merchantSendEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

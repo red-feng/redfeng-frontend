@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { getInternalChatRoomMetaForUser, getInternalProfileById } from "@/lib/internal-chat"
+import { getInternalChatRoomMetaForUser, getInternalProfileById } from "@/lib/internal-chat/index"
 import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: Request) {

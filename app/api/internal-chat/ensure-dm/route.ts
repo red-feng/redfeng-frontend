@@ -5,7 +5,7 @@ import {
   getInternalChatRoomMetaForUser,
   getInternalProfileById,
   markInternalRoomRead,
-} from "@/lib/internal-chat"
+} from "@/lib/internal-chat/index"
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: Request) {
