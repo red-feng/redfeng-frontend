@@ -790,6 +790,7 @@ export default function MerchantChatRealtimeClient({
       }
 
       removeRoomLocally(roomId)
+      clearMerchantChatSelectionParams()
       await refreshRoomsSnapshot()
     } catch (error) {
       const nextErrorMessage = error instanceof Error ? error.message : "Gagal menghapus room."
@@ -806,6 +807,15 @@ export default function MerchantChatRealtimeClient({
     const confirmed = window.confirm("Yakin hapus room ini secara permanen?")
     if (!confirmed) return
     void handleHideRoom(roomId)
+  }
+
+  function clearMerchantChatSelectionParams() {
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    url.searchParams.delete("room_id")
+    url.searchParams.delete("booking_id")
+    url.searchParams.set("deleted_room", "1")
+    window.history.replaceState({}, "", `${url.pathname}?${url.searchParams.toString()}`)
   }
 
   function handleRoomCardKeyDown(event: React.KeyboardEvent<HTMLDivElement>, roomId: string) {

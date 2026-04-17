@@ -233,6 +233,7 @@ type MerchantChatParams = {
   booking_id?: string
   redirected?: string
   error?: string
+  deleted_room?: string
   q?: string
   filter?: string
 }
@@ -256,6 +257,7 @@ export default async function MerchantChatPage({
   const requestedBookingId = params.booking_id || ""
   const redirectedFromCustomerChat = params.redirected === "merchant_portal"
   const errorMessage = params.error || ""
+  const deletedRoomMarker = params.deleted_room === "1"
 
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
@@ -273,7 +275,7 @@ export default async function MerchantChatPage({
 
   if (!currentMerchant?.id) return null
 
-  if (!requestedRoomId && requestedBookingId) {
+  if (!requestedRoomId && requestedBookingId && !deletedRoomMarker) {
     const roomByBooking = await adminSupabase
       .from("package_chat_rooms")
       .select("id")
@@ -343,7 +345,7 @@ export default async function MerchantChatPage({
         }
       : null
 
-  if (requestedRoomId && !initialRooms.some((room) => room.id === requestedRoomId)) {
+  if (requestedRoomId && !deletedRoomMarker && !initialRooms.some((room) => room.id === requestedRoomId)) {
     const requestedRoomResult = await adminSupabase
       .from("package_chat_rooms")
       .select(
