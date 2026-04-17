@@ -69,13 +69,59 @@ export async function POST(request: Request) {
     }
   }
 
-  const { error: deleteRoomError } = await adminSupabase
+  const { data: deletedRooms, error: deleteRoomError } = await adminSupabase
     .from("package_chat_rooms")
     .delete()
+    .select("id")
     .eq("id", roomId)
 
   if (deleteRoomError) {
     return NextResponse.json({ error: deleteRoomError.message || "Failed to delete room" }, { status: 500 })
+  }
+
+  const deletedRoomId = ((deletedRooms as Array<{ id?: string }> | null) || [])[0]?.id || null
+  if (!deletedRoomId) {
+    const { data: remainingRoom, error: remainingRoomError } = await adminSupabase
+      .from("package_chat_rooms")
+      .select("id")
+      .eq("id", roomId)
+      .maybeSingle()
+
+    if (remainingRoomError) {
+      return NextResponse.json(
+        { error: remainingRoomError.message || "Failed to verify room deletion" },
+        { status: 500 },
+      )
+    }
+
+    if (remainingRoom?.id) {
+      return NextResponse.json(
+        { error: "Room masih ada di database setelah proses hapus." },
+        { status: 409 },
+      )
+    }
+
+    return NextResponse.json(
+      { error: "Delete room tidak menghapus row mana pun." },
+      { status: 409 },
+    )
+  }
+
+  const { data: remainingRoomAfterDelete, error: verifyDeleteError } = await adminSupabase
+    .from("package_chat_rooms")
+    .select("id")
+    .eq("id", roomId)
+    .maybeSingle()
+
+  if (verifyDeleteError) {
+    return NextResponse.json({ error: verifyDeleteError.message || "Failed to verify room deletion" }, { status: 500 })
+  }
+
+  if (remainingRoomAfterDelete?.id) {
+    return NextResponse.json(
+      { error: "Room muncul lagi sesaat setelah dihapus." },
+      { status: 409 },
+    )
   }
 
   return NextResponse.json({
