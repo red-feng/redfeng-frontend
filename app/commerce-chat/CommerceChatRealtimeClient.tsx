@@ -49,6 +49,8 @@ type Props = {
   }
 }
 
+type SendPhase = "idle" | "compressing" | "uploading"
+
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
     const leftDate = left.lastMessageAt || left.updatedAt || left.createdAt || ""
@@ -92,6 +94,82 @@ function buildClientMessageId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
+function sanitizeUploadName(name: string, fallbackExtension: string) {
+  const base = String(name || "attachment")
+    .replace(/\.[^.]+$/, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(-80) || "attachment"
+
+  return `${base}.${fallbackExtension}`
+}
+
+async function loadImageElement(file: File) {
+  const objectUrl = URL.createObjectURL(file)
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const nextImage = new Image()
+      nextImage.onload = () => resolve(nextImage)
+      nextImage.onerror = () => reject(new Error("Gagal membaca gambar lampiran."))
+      nextImage.src = objectUrl
+    })
+    return image
+  } finally {
+    URL.revokeObjectURL(objectUrl)
+  }
+}
+
+async function optimizeAttachmentBeforeSend(file: File | null) {
+  if (!file || file.size <= 0) return file
+
+  const mimeType = String(file.type || "").toLowerCase()
+  const shouldOptimizeImage =
+    (mimeType === "image/png" || mimeType === "image/jpeg" || mimeType === "image/webp") &&
+    file.size > 700 * 1024
+
+  if (!shouldOptimizeImage) {
+    return file
+  }
+
+  const image = await loadImageElement(file)
+  const maxDimension = 1920
+  const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight))
+  const targetWidth = Math.max(1, Math.round(image.naturalWidth * scale))
+  const targetHeight = Math.max(1, Math.round(image.naturalHeight * scale))
+
+  const canvas = document.createElement("canvas")
+  canvas.width = targetWidth
+  canvas.height = targetHeight
+  const context = canvas.getContext("2d")
+  if (!context) {
+    return file
+  }
+
+  context.drawImage(image, 0, 0, targetWidth, targetHeight)
+
+  const preferredMimeType = mimeType === "image/png" ? "image/webp" : mimeType
+  const quality = preferredMimeType === "image/jpeg" || preferredMimeType === "image/webp" ? 0.82 : undefined
+
+  const optimizedBlob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob), preferredMimeType, quality)
+  })
+
+  if (!optimizedBlob) {
+    return file
+  }
+
+  if (optimizedBlob.size >= file.size * 0.9) {
+    return file
+  }
+
+  const extension = preferredMimeType === "image/webp" ? "webp" : preferredMimeType === "image/jpeg" ? "jpg" : "png"
+  return new File([optimizedBlob], sanitizeUploadName(file.name, extension), {
+    type: preferredMimeType,
+    lastModified: Date.now(),
+  })
+}
+
 export default function CommerceChatRealtimeClient({
   userId,
   portal,
@@ -129,6 +207,7 @@ export default function CommerceChatRealtimeClient({
   const [threadSearch, setThreadSearch] = useState("")
   const [draftMessage, setDraftMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [sendPhase, setSendPhase] = useState<SendPhase>("idle")
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
 
@@ -435,16 +514,21 @@ export default function CommerceChatRealtimeClient({
     }
 
     setSending(true)
+    setSendPhase(attachment ? "compressing" : "uploading")
     setErrorMessage("")
     const clientMessageId = buildClientMessageId()
 
     try {
+      const preparedAttachment = await optimizeAttachmentBeforeSend(attachment)
       const formData = new FormData()
       formData.set("thread_id", activeThreadId)
       formData.set("message", draftMessage.trim())
       formData.set("client_message_id", clientMessageId)
-      if (attachment) formData.set("attachment", attachment)
+      if (preparedAttachment) {
+        formData.set("attachment", preparedAttachment)
+      }
 
+      setSendPhase("uploading")
       const response = await fetch(COMMERCE_CHAT_ENGINE.sendEndpoint, {
         method: "POST",
         body: formData,
@@ -477,6 +561,7 @@ export default function CommerceChatRealtimeClient({
       setErrorMessage(error instanceof Error ? error.message : "Gagal kirim pesan chat.")
     } finally {
       setSending(false)
+      setSendPhase("idle")
     }
   }
 
@@ -712,7 +797,7 @@ export default function CommerceChatRealtimeClient({
                   disabled={!activeThread || sending}
                   className="h-12 rounded-[12px] bg-[#ff6a00] px-5 text-sm font-semibold text-white transition hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  {sending ? "..." : "Kirim"}
+                  {sending ? (sendPhase === "compressing" ? "Siapkan..." : "Upload...") : "Kirim"}
                 </button>
               </div>
             </form>
