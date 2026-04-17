@@ -300,6 +300,29 @@ export default function CustomerChatRealtimeClient({
     })
   }, [])
 
+  const removeRoomsLocally = useCallback((roomIds: string[]) => {
+    const targets = new Set(roomIds.filter(Boolean))
+    if (targets.size === 0) return
+
+    setRooms((current) => {
+      const next = current.filter((room) => !targets.has(room.id))
+      if (activeRoomIdRef.current && targets.has(activeRoomIdRef.current)) {
+        setActiveRoomId(next[0]?.id || "")
+        if (next.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+      return next
+    })
+    setMessagesByRoom((current) => {
+      const next = { ...current }
+      for (const roomId of targets) {
+        delete next[roomId]
+      }
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId
   }, [activeRoomId])
@@ -667,14 +690,14 @@ export default function CustomerChatRealtimeClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ roomId }),
       })
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null
+      const payload = (await response.json().catch(() => null)) as { error?: string; deletedRoomIds?: string[] } | null
       if (!response.ok) {
         throw new Error(
           payload?.error || (locale === "en" ? "Failed to delete room." : locale === "zh" ? "删除房间失败。" : "Gagal menghapus room."),
         )
       }
 
-      removeRoomLocally(roomId)
+      removeRoomsLocally(payload?.deletedRoomIds?.length ? payload.deletedRoomIds : [roomId])
       clearChatBootstrapParams()
       await refreshRoomsSnapshot()
     } catch (error) {
