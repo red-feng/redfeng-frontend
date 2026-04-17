@@ -481,13 +481,7 @@ export default async function MerchantDashboardPage() {
                       <p className="text-base font-semibold text-slate-950 sm:text-lg">{menu.label}</p>
                       <p className="mt-2 text-sm leading-6 text-slate-600 sm:leading-7">{menu.note}</p>
                     </div>
-                    {menu.key === "chat" && unreadChats > 0 ? (
-                      <span className="rounded-full bg-rose-500 px-2.5 py-1 text-xs font-semibold text-white">
-                        {unreadChats}
-                      </span>
-                    ) : (
-                      <span className="text-sm text-orange-500 transition group-hover:text-orange-700">â†’</span>
-                    )}
+                    <span className="text-sm text-orange-500 transition group-hover:text-orange-700">â†’</span>
                   </div>
                 </Link>
               ))}
