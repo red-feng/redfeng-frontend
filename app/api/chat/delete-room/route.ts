@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
   const { data: room, error } = await adminSupabase
     .from("package_chat_rooms")
-    .select("id, package_id, customer_id, merchant_user_id")
+    .select("id, package_id, customer_id, merchant_user_id, source_room_id")
     .eq("id", roomId)
     .single()
 
@@ -37,10 +37,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const lineageAnchorIds = [...new Set([room.id, room.source_room_id].filter((value): value is string => Boolean(value)))]
+  const { data: relatedRooms, error: relatedRoomsError } = await adminSupabase
+    .from("package_chat_rooms")
+    .select("id")
+    .or(
+      [
+        lineageAnchorIds.length > 0 ? `id.in.(${lineageAnchorIds.join(",")})` : "",
+        lineageAnchorIds.length > 0 ? `source_room_id.in.(${lineageAnchorIds.join(",")})` : "",
+      ]
+        .filter(Boolean)
+        .join(","),
+    )
+
+  if (relatedRoomsError) {
+    return NextResponse.json({ error: relatedRoomsError.message || "Failed to resolve related rooms" }, { status: 500 })
+  }
+
+  const roomIdsToDelete = [
+    ...new Set((((relatedRooms as Array<{ id?: string }> | null) || []).map((item) => item.id).filter((value): value is string => Boolean(value)))),
+  ]
+
+  if (roomIdsToDelete.length === 0) {
+    return NextResponse.json({ error: "Room target tidak ditemukan untuk dihapus." }, { status: 404 })
+  }
+
   const { data: messageAttachments, error: attachmentsError } = await adminSupabase
     .from("package_chat_messages")
     .select("id, attachment_url")
-    .eq("room_id", roomId)
+    .in("room_id", roomIdsToDelete)
 
   if (attachmentsError) {
     return NextResponse.json({ error: attachmentsError.message || "Failed to read room attachments" }, { status: 500 })
@@ -73,19 +98,18 @@ export async function POST(request: Request) {
     .from("package_chat_rooms")
     .delete()
     .select("id")
-    .eq("id", roomId)
+    .in("id", roomIdsToDelete)
 
   if (deleteRoomError) {
     return NextResponse.json({ error: deleteRoomError.message || "Failed to delete room" }, { status: 500 })
   }
 
-  const deletedRoomId = ((deletedRooms as Array<{ id?: string }> | null) || [])[0]?.id || null
-  if (!deletedRoomId) {
+  const deletedRoomIds = (((deletedRooms as Array<{ id?: string }> | null) || []).map((item) => item.id).filter((value): value is string => Boolean(value)))
+  if (deletedRoomIds.length === 0) {
     const { data: remainingRoom, error: remainingRoomError } = await adminSupabase
       .from("package_chat_rooms")
       .select("id")
-      .eq("id", roomId)
-      .maybeSingle()
+      .in("id", roomIdsToDelete)
 
     if (remainingRoomError) {
       return NextResponse.json(
@@ -94,9 +118,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (remainingRoom?.id) {
+    if (((remainingRoom as Array<{ id?: string }> | null) || []).length > 0) {
       return NextResponse.json(
-        { error: "Room masih ada di database setelah proses hapus." },
+        { error: "Masih ada room terkait yang tertinggal di database setelah proses hapus." },
         { status: 409 },
       )
     }
@@ -110,16 +134,15 @@ export async function POST(request: Request) {
   const { data: remainingRoomAfterDelete, error: verifyDeleteError } = await adminSupabase
     .from("package_chat_rooms")
     .select("id")
-    .eq("id", roomId)
-    .maybeSingle()
+    .in("id", roomIdsToDelete)
 
   if (verifyDeleteError) {
     return NextResponse.json({ error: verifyDeleteError.message || "Failed to verify room deletion" }, { status: 500 })
   }
 
-  if (remainingRoomAfterDelete?.id) {
+  if (((remainingRoomAfterDelete as Array<{ id?: string }> | null) || []).length > 0) {
     return NextResponse.json(
-      { error: "Room muncul lagi sesaat setelah dihapus." },
+      { error: "Ada room terkait yang muncul lagi sesaat setelah dihapus." },
       { status: 409 },
     )
   }
@@ -127,6 +150,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     roomId,
+    deletedRoomIds,
     deleted: true,
     warnings: attachmentCleanupWarnings.length > 0 ? attachmentCleanupWarnings : undefined,
   })
