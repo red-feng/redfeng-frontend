@@ -437,6 +437,34 @@ export default function CustomerChatRealtimeClient({
     }
   }, [supabase])
 
+  const refreshRoomsSnapshot = useCallback(async () => {
+    const limit = String(Math.min(Math.max(rooms.length, 30), 100))
+    const search = new URLSearchParams({
+      mode: "customer",
+      limit,
+    })
+    const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
+    const payload = (await response.json()) as RoomsPageResponse
+    if (!response.ok) {
+      throw new Error(payload.error || "Gagal menyegarkan daftar room.")
+    }
+
+    const nextRooms = payload.rooms || []
+    setRooms(sortRooms(nextRooms))
+    setRoomsHasMore(Boolean(payload.hasMore))
+    setRoomsCursor(payload.nextCursor || null)
+
+    if (activeRoomIdRef.current) {
+      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
+      if (!hasActiveRoom) {
+        setActiveRoomId(nextRooms[0]?.id || "")
+        if (nextRooms.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+    }
+  }, [rooms.length])
+
   useEffect(() => {
     if (!activeRoomId) return
     if (!loadedRoomIds[activeRoomId]) {
@@ -704,34 +732,6 @@ export default function CustomerChatRealtimeClient({
       setLoadingMoreRooms(false)
     }
   }
-
-  const refreshRoomsSnapshot = useCallback(async () => {
-    const limit = String(Math.min(Math.max(rooms.length, 30), 100))
-    const search = new URLSearchParams({
-      mode: "customer",
-      limit,
-    })
-    const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
-    const payload = (await response.json()) as RoomsPageResponse
-    if (!response.ok) {
-      throw new Error(payload.error || "Gagal menyegarkan daftar room.")
-    }
-
-    const nextRooms = payload.rooms || []
-    setRooms(sortRooms(nextRooms))
-    setRoomsHasMore(Boolean(payload.hasMore))
-    setRoomsCursor(payload.nextCursor || null)
-
-    if (activeRoomIdRef.current) {
-      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
-      if (!hasActiveRoom) {
-        setActiveRoomId(nextRooms[0]?.id || "")
-        if (nextRooms.length === 0) {
-          setMobileThreadOpen(false)
-        }
-      }
-    }
-  }, [rooms.length])
 
   useEffect(() => {
     if (realtimeStatus !== "fallback") return
