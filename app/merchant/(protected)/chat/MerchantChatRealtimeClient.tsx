@@ -353,6 +353,34 @@ export default function MerchantChatRealtimeClient({
     [userId, visibleRooms],
   )
 
+  const refreshRoomsSnapshot = useCallback(async () => {
+    const limit = String(Math.min(Math.max(rooms.length, 30), 100))
+    const search = new URLSearchParams({
+      mode: "merchant",
+      limit,
+    })
+    const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
+    const payload = (await response.json()) as RoomsPageResponse
+    if (!response.ok) {
+      throw new Error(payload.error || "Gagal menyegarkan daftar room.")
+    }
+
+    const nextRooms = payload.rooms || []
+    setRooms(sortRooms(nextRooms))
+    setRoomsHasMore(Boolean(payload.hasMore))
+    setRoomsCursor(payload.nextCursor || null)
+
+    if (activeRoomIdRef.current) {
+      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
+      if (!hasActiveRoom) {
+        setActiveRoomId(nextRooms[0]?.id || "")
+        if (nextRooms.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+    }
+  }, [rooms.length])
+
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -533,6 +561,7 @@ export default function MerchantChatRealtimeClient({
             next.push(room)
             return sortRooms(next)
           })
+          await refreshRoomsSnapshot()
         } catch (error) {
           console.error("Failed to process merchant room realtime update", error)
         }
@@ -587,6 +616,8 @@ export default function MerchantChatRealtimeClient({
             })
           }
 
+          await refreshRoomsSnapshot()
+
           if (message.room_id === activeRoomIdRef.current && message.sender_id !== userId) {
             void markRoomRead(message.room_id)
           }
@@ -611,7 +642,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [fetchRoomMeta, markRoomRead, supabase, t, userId])
+  }, [fetchRoomMeta, markRoomRead, refreshRoomsSnapshot, supabase, t, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"
@@ -790,34 +821,6 @@ export default function MerchantChatRealtimeClient({
       setLoadingMoreRooms(false)
     }
   }
-
-  const refreshRoomsSnapshot = useCallback(async () => {
-    const limit = String(Math.min(Math.max(rooms.length, 30), 100))
-    const search = new URLSearchParams({
-      mode: "merchant",
-      limit,
-    })
-    const response = await fetch(`/api/chat/rooms?${search.toString()}`, { cache: "no-store" })
-    const payload = (await response.json()) as RoomsPageResponse
-    if (!response.ok) {
-      throw new Error(payload.error || "Gagal menyegarkan daftar room.")
-    }
-
-    const nextRooms = payload.rooms || []
-    setRooms(sortRooms(nextRooms))
-    setRoomsHasMore(Boolean(payload.hasMore))
-    setRoomsCursor(payload.nextCursor || null)
-
-    if (activeRoomIdRef.current) {
-      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
-      if (!hasActiveRoom) {
-        setActiveRoomId(nextRooms[0]?.id || "")
-        if (nextRooms.length === 0) {
-          setMobileThreadOpen(false)
-        }
-      }
-    }
-  }, [rooms.length])
 
   useEffect(() => {
     if (realtimeStatus !== "fallback") return
