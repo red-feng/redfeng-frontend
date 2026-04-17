@@ -691,6 +691,12 @@ export default function CustomerChatRealtimeClient({
     }
   }
 
+  function handleDeleteRoomClick(event: React.MouseEvent<HTMLButtonElement>, roomId: string) {
+    event.preventDefault()
+    event.stopPropagation()
+    void handleHideRoom(roomId)
+  }
+
   function handleSelectRoom(roomId: string) {
     setActiveRoomId(roomId)
     setMobileThreadOpen(true)
@@ -967,9 +973,9 @@ export default function CustomerChatRealtimeClient({
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleHideRoom(room.id)}
+                      onClick={(event) => handleDeleteRoomClick(event, room.id)}
                       disabled={deletingRoomId === room.id}
-                      className="mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:inline-flex"
+                      className="relative z-10 mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:inline-flex"
                     >
                       {deletingRoomId === room.id ? normalizeDeleteRoomLabel(deletingRoomLabel) : normalizeDeleteRoomLabel(deleteRoomLabel)}
                     </button>
