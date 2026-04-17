@@ -82,6 +82,7 @@ export default async function ChatPage({
     booking_id?: string
     portal?: string
     error?: string
+    deleted_room?: string
   }>
 }) {
   const params = await searchParams
@@ -92,6 +93,7 @@ export default async function ChatPage({
   const bookingId = params.booking_id || ""
   const requestedPortal = String(params.portal || "").trim().toLowerCase()
   const errorMessage = params.error || ""
+  const deletedRoomMarker = params.deleted_room === "1"
   const ui =
     locale === "en"
       ? {
@@ -194,7 +196,7 @@ export default async function ChatPage({
 
   let activeRoomId = roomId
 
-  if (isCustomerMode && bookingId) {
+  if (isCustomerMode && bookingId && !deletedRoomMarker) {
     const { data: booking } = await adminSupabase
       .from("bookings")
       .select("id, package_id, customer_email")
@@ -230,7 +232,7 @@ export default async function ChatPage({
     }
   }
 
-  if (isCustomerMode && resolvedPackageId && !bookingId) {
+  if (isCustomerMode && resolvedPackageId && !bookingId && !deletedRoomMarker) {
     try {
       const targetRoom = await ensureCustomerPackageChatRoom(adminSupabase, {
         packageId: resolvedPackageId,

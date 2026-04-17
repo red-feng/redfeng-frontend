@@ -675,6 +675,7 @@ export default function CustomerChatRealtimeClient({
       }
 
       removeRoomLocally(roomId)
+      clearChatBootstrapParams()
       await refreshRoomsSnapshot()
     } catch (error) {
       const nextErrorMessage =
@@ -698,6 +699,16 @@ export default function CustomerChatRealtimeClient({
     const confirmed = window.confirm(locale === "en" ? "Delete this room permanently?" : locale === "zh" ? "确认永久删除这个房间吗？" : "Yakin hapus room ini secara permanen?")
     if (!confirmed) return
     void handleHideRoom(roomId)
+  }
+
+  function clearChatBootstrapParams() {
+    if (typeof window === "undefined") return
+    const url = new URL(window.location.href)
+    url.searchParams.delete("package_id")
+    url.searchParams.delete("booking_id")
+    url.searchParams.delete("room_id")
+    url.searchParams.set("deleted_room", "1")
+    window.history.replaceState({}, "", `${url.pathname}?${url.searchParams.toString()}`)
   }
 
   function handleRoomCardKeyDown(event: React.KeyboardEvent<HTMLDivElement>, roomId: string) {
