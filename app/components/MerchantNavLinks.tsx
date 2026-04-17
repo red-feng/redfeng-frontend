@@ -11,21 +11,35 @@ type MerchantNavItem = {
   badgeCount: number
 }
 
+type MerchantNavStatusText = {
+  live: string
+  fallback: string
+  connecting: string
+}
+
 type MerchantNavBadgesPayload = {
   badgeCounts?: Record<string, number>
   error?: string
 }
 
+type RealtimeStatus = "connecting" | "live" | "fallback"
+
+const NAV_BADGE_POLL_INTERVAL_MS = 20000
+const NAV_BADGE_FALLBACK_INTERVAL_MS = 4000
+
 export default function MerchantNavLinks({
   items,
+  statusText,
 }: {
   items: MerchantNavItem[]
+  statusText: MerchantNavStatusText
 }) {
   const pathname = usePathname()
   const [supabase] = useState(() => createClient())
   const [liveBadgeCounts, setLiveBadgeCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(items.map((item) => [item.href, item.badgeCount])),
   )
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const lastFetchAtRef = useRef(0)
   const queuedRefreshTimeoutRef = useRef<number | null>(null)
   const itemBadgeCounts = useMemo(
@@ -38,12 +52,30 @@ export default function MerchantNavLinks({
   }, [itemBadgeCounts])
 
   useEffect(() => {
+    function handleMerchantChatUnreadChange(event: Event) {
+      const customEvent = event as CustomEvent<{ count?: number }>
+      const nextCount = Number(customEvent.detail?.count ?? 0)
+      setLiveBadgeCounts((current) => ({
+        ...current,
+        "/merchant/chat": nextCount,
+      }))
+    }
+
+    window.addEventListener("merchant-chat-unread-change", handleMerchantChatUnreadChange as EventListener)
+
+    return () => {
+      window.removeEventListener("merchant-chat-unread-change", handleMerchantChatUnreadChange as EventListener)
+    }
+  }, [])
+
+  useEffect(() => {
     let cancelled = false
 
     async function refreshBadges(force = false) {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return
       const now = Date.now()
-      if (!force && now - lastFetchAtRef.current < 5000) return
+      const minGapMs = realtimeStatus === "fallback" ? NAV_BADGE_FALLBACK_INTERVAL_MS - 500 : 5000
+      if (!force && now - lastFetchAtRef.current < minGapMs) return
 
       lastFetchAtRef.current = now
 
@@ -72,7 +104,7 @@ export default function MerchantNavLinks({
     void refreshBadges(true)
     const intervalId = window.setInterval(() => {
       void refreshBadges()
-    }, 20000)
+    }, realtimeStatus === "fallback" ? NAV_BADGE_FALLBACK_INTERVAL_MS : NAV_BADGE_POLL_INTERVAL_MS)
 
     window.addEventListener("focus", handleFocus)
     document.addEventListener("visibilitychange", handleVisibilityChange)
@@ -83,7 +115,7 @@ export default function MerchantNavLinks({
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
-  }, [pathname])
+  }, [pathname, realtimeStatus])
 
   useEffect(() => {
     function scheduleRealtimeRefresh(delayMs = 180) {
@@ -122,7 +154,19 @@ export default function MerchantNavLinks({
       )
     })
 
-    channel.subscribe()
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        setRealtimeStatus("live")
+        return
+      }
+
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        setRealtimeStatus("fallback")
+        return
+      }
+
+      setRealtimeStatus("connecting")
+    })
 
     return () => {
       if (queuedRefreshTimeoutRef.current) {
@@ -133,11 +177,37 @@ export default function MerchantNavLinks({
     }
   }, [pathname, supabase])
 
+  const navRealtimeBadge =
+    realtimeStatus === "live"
+      ? {
+          label: statusText.live,
+          className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        }
+      : realtimeStatus === "fallback"
+        ? {
+            label: statusText.fallback,
+            className: "border-orange-200 bg-orange-50 text-orange-700",
+          }
+        : {
+            label: statusText.connecting,
+            className: "border-amber-200 bg-amber-50 text-amber-700",
+          }
+
   return (
-    <div className="flex min-w-max gap-2">
+    <div className="flex min-w-max items-center gap-2">
+      <span
+        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${navRealtimeBadge.className}`}
+      >
+        {navRealtimeBadge.label}
+      </span>
       {items.map((item) => {
         const isActiveSection = pathname.startsWith(item.href)
-        const visibleBadgeCount = isActiveSection ? 0 : Number(liveBadgeCounts[item.href] ?? item.badgeCount ?? 0)
+        const visibleBadgeCount =
+          item.href === "/merchant/chat"
+            ? Number(liveBadgeCounts[item.href] ?? item.badgeCount ?? 0)
+            : isActiveSection
+              ? 0
+              : Number(liveBadgeCounts[item.href] ?? item.badgeCount ?? 0)
 
         return (
           <Link

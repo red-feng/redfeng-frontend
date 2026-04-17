@@ -215,6 +215,24 @@ export default async function MerchantLayout({
     { href: "/merchant/review", label: t.nav.review, badgeCount: reviewBadgeCount },
     { href: "/merchant/profil", label: t.nav.profile, badgeCount: 0 },
   ]
+  const merchantNavStatusText =
+    locale === "en"
+      ? {
+          live: "Live",
+          fallback: "Fallback",
+          connecting: "Connecting",
+        }
+      : locale === "zh"
+        ? {
+            live: "实时",
+            fallback: "备用同步",
+            connecting: "连接中",
+          }
+        : {
+            live: "Live",
+            fallback: "Fallback",
+            connecting: "Menghubungkan",
+          }
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
@@ -275,7 +293,7 @@ export default async function MerchantLayout({
             </div>
 
             <nav className="overflow-x-auto pb-1">
-              <MerchantNavLinks items={merchantNav} />
+              <MerchantNavLinks items={merchantNav} statusText={merchantNavStatusText} />
             </nav>
           </div>
         </div>

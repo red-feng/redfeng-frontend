@@ -339,6 +339,16 @@ export default function MerchantChatRealtimeClient({
     [userId, visibleRooms],
   )
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    window.dispatchEvent(
+      new CustomEvent("merchant-chat-unread-change", {
+        detail: { count: unreadCount },
+      }),
+    )
+  }, [unreadCount])
+
   const fetchRoomMeta = useCallback(async (roomId: string) => {
     try {
       const response = await fetch(`/api/chat/room-meta?roomId=${encodeURIComponent(roomId)}`, { cache: "no-store" })
