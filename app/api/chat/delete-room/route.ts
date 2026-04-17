@@ -54,6 +54,8 @@ export async function POST(request: Request) {
     ),
   ]
 
+  const attachmentCleanupWarnings: string[] = []
+
   if (attachmentPaths.length > 0) {
     const bucket = getPackageChatAttachmentBucket()
     const chunkSize = 100
@@ -62,18 +64,9 @@ export async function POST(request: Request) {
       const chunk = attachmentPaths.slice(index, index + chunkSize)
       const { error: storageError } = await adminSupabase.storage.from(bucket).remove(chunk)
       if (storageError) {
-        return NextResponse.json({ error: storageError.message || "Failed to delete room attachments" }, { status: 500 })
+        attachmentCleanupWarnings.push(storageError.message || "Failed to delete room attachments")
       }
     }
-  }
-
-  const { error: deleteMessagesError } = await adminSupabase
-    .from("package_chat_messages")
-    .delete()
-    .eq("room_id", roomId)
-
-  if (deleteMessagesError) {
-    return NextResponse.json({ error: deleteMessagesError.message || "Failed to delete room messages" }, { status: 500 })
   }
 
   const { error: deleteRoomError } = await adminSupabase
@@ -85,5 +78,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: deleteRoomError.message || "Failed to delete room" }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, roomId, deleted: true })
+  return NextResponse.json({
+    ok: true,
+    roomId,
+    deleted: true,
+    warnings: attachmentCleanupWarnings.length > 0 ? attachmentCleanupWarnings : undefined,
+  })
 }

@@ -512,8 +512,8 @@ export default async function ChatPage({
            leadStatus={leadStatusLabel}
            newBadge={ui.newBadge}
            bookingLabel={bookingLabel}
-           deleteRoomLabel={locale === "en" ? "Delete room" : locale === "zh" ? "????" : "Hapus room"}
-           deletingRoomLabel={locale === "en" ? "Deleting room..." : locale === "zh" ? "?????..." : "Menghapus room..."}
+           deleteRoomLabel={locale === "en" ? "Delete room" : locale === "zh" ? "\u5220\u9664\u623f\u95f4" : "Hapus room"}
+           deletingRoomLabel={locale === "en" ? "Deleting room..." : locale === "zh" ? "\u5220\u9664\u623f\u95f4\u4e2d..." : "Menghapus room..."}
          />
       </div>
     </main>

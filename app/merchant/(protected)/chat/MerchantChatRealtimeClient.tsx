@@ -340,6 +340,24 @@ export default function MerchantChatRealtimeClient({
   const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
   const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
 
+  const removeRoomLocally = useCallback((roomId: string) => {
+    setRooms((current) => {
+      const next = current.filter((room) => room.id !== roomId)
+      if (activeRoomIdRef.current === roomId) {
+        setActiveRoomId(next[0]?.id || "")
+        if (next.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+      return next
+    })
+    setMessagesByRoom((current) => {
+      const next = { ...current }
+      delete next[roomId]
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId
   }, [activeRoomId])
@@ -380,12 +398,7 @@ export default function MerchantChatRealtimeClient({
     }
 
     const nextRooms = payload.rooms || []
-    setRooms((current) => {
-      const merged = new Map<string, MerchantChatRoom>()
-      for (const room of current) merged.set(room.id, room)
-      for (const room of nextRooms) merged.set(room.id, room)
-      return sortRooms([...merged.values()])
-    })
+    setRooms(sortRooms(nextRooms))
     setRoomsHasMore(Boolean(payload.hasMore))
     setRoomsCursor(payload.nextCursor || null)
 
@@ -567,7 +580,8 @@ export default function MerchantChatRealtimeClient({
           if (!payloadRoomId) return
 
           if (payload.eventType === "DELETE") {
-            setRooms((current) => current.filter((room) => room.id !== payloadRoomId))
+            removeRoomLocally(payloadRoomId)
+            await refreshRoomsSnapshot()
             return
           }
 
@@ -660,7 +674,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [fetchRoomMeta, markRoomRead, refreshRoomsSnapshot, supabase, t, userId])
+  }, [fetchRoomMeta, markRoomRead, refreshRoomsSnapshot, removeRoomLocally, supabase, t, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"
@@ -772,26 +786,13 @@ export default function MerchantChatRealtimeClient({
       })
       const payload = (await response.json().catch(() => null)) as { error?: string } | null
       if (!response.ok) {
-        throw new Error(payload?.error || "Gagal menyembunyikan room.")
+        throw new Error(payload?.error || "Gagal menghapus room.")
       }
 
-      setRooms((current) => {
-        const next = current.filter((room) => room.id !== roomId)
-        if (activeRoomId === roomId) {
-          setActiveRoomId(next[0]?.id || "")
-          if (next.length === 0) {
-            setMobileThreadOpen(false)
-          }
-        }
-        return next
-      })
-      setMessagesByRoom((current) => {
-        const next = { ...current }
-        delete next[roomId]
-        return next
-      })
+      removeRoomLocally(roomId)
+      await refreshRoomsSnapshot()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Gagal menyembunyikan room.")
+      setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room.")
     } finally {
       setDeletingRoomId("")
     }

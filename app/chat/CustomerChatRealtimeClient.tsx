@@ -282,6 +282,24 @@ export default function CustomerChatRealtimeClient({
   const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
   const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
 
+  const removeRoomLocally = useCallback((roomId: string) => {
+    setRooms((current) => {
+      const next = current.filter((room) => room.id !== roomId)
+      if (activeRoomIdRef.current === roomId) {
+        setActiveRoomId(next[0]?.id || "")
+        if (next.length === 0) {
+          setMobileThreadOpen(false)
+        }
+      }
+      return next
+    })
+    setMessagesByRoom((current) => {
+      const next = { ...current }
+      delete next[roomId]
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId
   }, [activeRoomId])
@@ -453,7 +471,8 @@ export default function CustomerChatRealtimeClient({
           if (!payloadRoomId) return
 
           if (payload.eventType === "DELETE") {
-            setRooms((current) => current.filter((room) => room.id !== payloadRoomId))
+            removeRoomLocally(payloadRoomId)
+            await refreshRoomsSnapshot()
             return
           }
 
@@ -523,7 +542,7 @@ export default function CustomerChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [fetchRoomMeta, markRoomRead, supabase, userId])
+  }, [fetchRoomMeta, markRoomRead, refreshRoomsSnapshot, removeRoomLocally, supabase, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"
@@ -623,27 +642,22 @@ export default function CustomerChatRealtimeClient({
       const payload = (await response.json().catch(() => null)) as { error?: string } | null
       if (!response.ok) {
         throw new Error(
-          payload?.error || (locale === "en" ? "Failed to hide room." : locale === "zh" ? "移除会话失败。" : "Gagal menyembunyikan room."),
+          payload?.error || (locale === "en" ? "Failed to delete room." : locale === "zh" ? "删除房间失败。" : "Gagal menghapus room."),
         )
       }
 
-      setRooms((current) => {
-        const next = current.filter((room) => room.id !== roomId)
-        if (activeRoomId === roomId) {
-          setActiveRoomId(next[0]?.id || "")
-          if (next.length === 0) {
-            setMobileThreadOpen(false)
-          }
-        }
-        return next
-      })
-      setMessagesByRoom((current) => {
-        const next = { ...current }
-        delete next[roomId]
-        return next
-      })
+      removeRoomLocally(roomId)
+      await refreshRoomsSnapshot()
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to hide room.")
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : locale === "en"
+            ? "Failed to delete room."
+            : locale === "zh"
+              ? "删除房间失败。"
+              : "Gagal menghapus room.",
+      )
     } finally {
       setDeletingRoomId("")
     }
