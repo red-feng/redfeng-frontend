@@ -10,6 +10,7 @@ import {
   ensureCustomerPackageChatRoom,
 } from "@/lib/chat/customer-room"
 import { buildChatLoginNextTarget } from "@/lib/chat/auth-flow-policy.mjs"
+import { buildChatThreadKey, findChatThreadGroupByRoomId, groupChatThreadRooms } from "@/lib/chat/thread-group"
 import CustomerChatRealtimeClient from "./CustomerChatRealtimeClient"
 
 type ChatRoomRow = {
@@ -305,18 +306,20 @@ export default async function ChatPage({
   }
 
   const roomRows = roomsData || []
-  const initialRoomsHasMore = roomRows.length > CHAT_ROOM_PAGE_SIZE
-  const roomFirstPage = initialRoomsHasMore ? roomRows.slice(0, CHAT_ROOM_PAGE_SIZE) : roomRows
-  let initialRooms = roomFirstPage
+  const groupedRoomRows = groupChatThreadRooms(roomRows)
+  const activeRoomGroup = activeRoomId ? findChatThreadGroupByRoomId(roomRows, activeRoomId) : null
+  const initialRoomsHasMore = groupedRoomRows.length > CHAT_ROOM_PAGE_SIZE
+  const roomFirstPageGroups = initialRoomsHasMore ? groupedRoomRows.slice(0, CHAT_ROOM_PAGE_SIZE) : groupedRoomRows
+  let initialRoomGroups = roomFirstPageGroups
   const initialRoomsCursor =
-    initialRoomsHasMore && roomFirstPage.length > 0
+    initialRoomsHasMore && roomFirstPageGroups.length > 0
       ? {
-          updatedAt: roomFirstPage[roomFirstPage.length - 1]?.updated_at || "",
-          roomId: roomFirstPage[roomFirstPage.length - 1]?.id || "",
+          updatedAt: roomFirstPageGroups[roomFirstPageGroups.length - 1]?.representative.updated_at || "",
+          roomId: roomFirstPageGroups[roomFirstPageGroups.length - 1]?.representative.id || "",
         }
       : null
 
-  if (activeRoomId && !initialRooms.some((room) => room.id === activeRoomId)) {
+  if (activeRoomGroup && !initialRoomGroups.some((group) => group.key === activeRoomGroup.key)) {
     const requestedRoomQuery = adminSupabase
       .from("package_chat_rooms")
       .select(
@@ -328,15 +331,24 @@ export default async function ChatPage({
       : await requestedRoomQuery.eq("merchant_user_id", user.id).maybeSingle()
 
     if (requestedRoomResult.data) {
-      initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
+      const requestedGroup = groupChatThreadRooms([requestedRoomResult.data as ChatRoomRow])[0]
+      if (requestedGroup) {
+        initialRoomGroups = [requestedGroup, ...initialRoomGroups]
+      }
     }
   }
 
+  const initialRooms = initialRoomGroups.map((group) => group.representative)
   if (!activeRoomId && initialRooms.length > 0) {
     activeRoomId = initialRooms[0].id
   }
 
+  if (activeRoomGroup?.representative.id) {
+    activeRoomId = activeRoomGroup.representative.id
+  }
+
   const activeRoom = initialRooms.find((room) => room.id === activeRoomId) || null
+  const activeRoomGroupForMessages = initialRoomGroups.find((group) => group.representative.id === activeRoomId) || null
 
   if (
     activeRoom &&
@@ -356,7 +368,7 @@ export default async function ChatPage({
   }
 
   const packageIds = [...new Set(initialRooms.map((room) => room.package_id))]
-  const roomIds = initialRooms.map((room) => room.id)
+  const roomIds = initialRoomGroups.flatMap((group) => group.roomIds)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase
       .from("packages")
@@ -382,8 +394,15 @@ export default async function ChatPage({
     : { data: [] as Array<{ room_id: string; message: string; attachment_name?: string | null; created_at?: string | null }> }
 
   const latestMessageMap = new Map<string, { message: string; attachmentName: string | null }>()
+  const roomIdToThreadKey = new Map<string, string>()
+  for (const group of initialRoomGroups) {
+    for (const id of group.roomIds) {
+      roomIdToThreadKey.set(id, group.key)
+    }
+  }
   for (const row of latestMessageRows || []) {
-    if (!row.room_id || latestMessageMap.has(row.room_id)) continue
+    const threadKey = roomIdToThreadKey.get(row.room_id)
+    if (!row.room_id || !threadKey || latestMessageMap.has(threadKey)) continue
     const systemMessage = parseChatSystemMessage(row.message)
     let preview = row.message || ""
     if (systemMessage?.type === "package_inquiry") {
@@ -393,7 +412,7 @@ export default async function ChatPage({
     } else if (!preview && row.attachment_name) {
       preview = row.attachment_name
     }
-    latestMessageMap.set(row.room_id, {
+    latestMessageMap.set(threadKey, {
       message: preview,
       attachmentName: row.attachment_name || null,
     })
@@ -403,7 +422,7 @@ export default async function ChatPage({
     ? await adminSupabase
         .from("package_chat_messages")
         .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
-        .eq("room_id", activeRoomId)
+        .in("room_id", activeRoomGroupForMessages?.roomIds || [activeRoomId])
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .limit(CHAT_PAGE_SIZE + 1)
@@ -479,7 +498,7 @@ export default async function ChatPage({
                bookingStatus: booking?.booking_status || null,
                paymentStatus: booking?.payment_status || null,
                customerName: booking?.customer_name || null,
-               lastMessagePreview: latestMessageMap.get(room.id)?.message || null,
+              lastMessagePreview: latestMessageMap.get(buildChatThreadKey(room))?.message || null,
                updatedAt: room.updated_at || null,
               lastMessageAt: room.last_message_at || null,
               lastMessageSenderId: room.last_message_sender_id || null,

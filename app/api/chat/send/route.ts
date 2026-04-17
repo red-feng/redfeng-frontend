@@ -9,6 +9,7 @@ import {
   ensureCustomerPackageChatRoom,
 } from "@/lib/chat/customer-room"
 import { createClient } from "@/lib/supabase/server"
+import { buildChatThreadKey, groupChatThreadRooms } from "@/lib/chat/thread-group"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -122,8 +123,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Anda tidak punya akses ke ruang chat ini." }, { status: 403 })
   }
 
+  const { data: threadRoomRows, error: threadRoomsError } = await adminSupabase
+    .from("package_chat_rooms")
+    .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at")
+    .eq("package_id", room.package_id)
+    .eq("customer_id", room.customer_id)
+    .eq("merchant_user_id", room.merchant_user_id)
+
+  if (threadRoomsError) {
+    return NextResponse.json({ error: threadRoomsError.message || "Gagal menyelaraskan thread chat." }, { status: 500 })
+  }
+
+  const representativeRoom =
+    groupChatThreadRooms((threadRoomRows as Array<{
+      id: string
+      package_id: string
+      customer_id: string
+      merchant_user_id: string
+      booking_id?: string | null
+      updated_at?: string | null
+      last_message_at?: string | null
+      last_message_sender_id?: string | null
+      customer_last_read_at?: string | null
+      merchant_last_read_at?: string | null
+    }> | null) || []).find((group) => group.key === buildChatThreadKey(room))?.representative || room
+
+  roomId = representativeRoom.id
+
   const uploadedAttachment = await uploadChatAttachment({
-    roomId: room.id,
+    roomId: roomId,
     senderId: user.id,
     file: attachment,
   })
@@ -135,7 +163,7 @@ export async function POST(request: Request) {
   const { data: insertedMessage, error: insertError } = await adminSupabase
     .from("package_chat_messages")
     .insert({
-      room_id: room.id,
+      room_id: roomId,
       sender_id: user.id,
       message: message || "",
       attachment_url: uploadedAttachment.attachment?.url || null,
@@ -158,17 +186,17 @@ export async function POST(request: Request) {
   const { error: updateRoomError } = await adminSupabase
     .from("package_chat_rooms")
     .update(roomUpdate)
-    .eq("id", room.id)
+    .eq("id", roomId)
 
   if (updateRoomError && updateRoomError.message.includes("last_message")) {
     await adminSupabase
       .from("package_chat_rooms")
       .update({ updated_at: nowIso })
-      .eq("id", room.id)
+      .eq("id", roomId)
   }
 
   return NextResponse.json({
-    roomId: room.id,
+    roomId: roomId,
     message: insertedMessage,
   })
 }

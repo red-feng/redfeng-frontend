@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { getCurrentLocale } from "@/lib/locale"
+import { buildChatThreadKey, groupChatThreadRooms } from "@/lib/chat/thread-group"
 
 function getSystemPreviewText(
   type: "package_inquiry" | "booking_linked",
@@ -77,6 +78,54 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const { data: threadRoomRows, error: threadRoomsError } = await adminSupabase
+    .from("package_chat_rooms")
+    .select(
+      "id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at, customer_hidden_at, merchant_hidden_at, bookings(booking_code, booking_status, payment_status, customer_name)",
+    )
+    .eq("package_id", room.package_id)
+    .eq("customer_id", room.customer_id)
+    .eq("merchant_user_id", room.merchant_user_id)
+
+  if (threadRoomsError) {
+    return NextResponse.json({ error: threadRoomsError.message || "Failed to resolve thread rooms" }, { status: 500 })
+  }
+
+  const groupedRooms = groupChatThreadRooms(
+    (threadRoomRows as Array<{
+      id: string
+      package_id: string
+      customer_id: string
+      merchant_user_id: string
+      booking_id?: string | null
+      updated_at?: string | null
+      last_message_at?: string | null
+      last_message_sender_id?: string | null
+      customer_last_read_at?: string | null
+      merchant_last_read_at?: string | null
+      customer_hidden_at?: string | null
+      merchant_hidden_at?: string | null
+      bookings?:
+        | {
+            booking_code: string | null
+            booking_status: string | null
+            payment_status: string | null
+            customer_name?: string | null
+          }
+        | {
+            booking_code: string | null
+            booking_status: string | null
+            payment_status: string | null
+            customer_name?: string | null
+          }[]
+        | null
+    }> | null) || [],
+  )
+  const threadKey = buildChatThreadKey(room)
+  const threadGroup = groupedRooms.find((group) => group.key === threadKey)
+  const representativeRoom = threadGroup?.representative || room
+  const threadRoomIds = threadGroup?.roomIds || [room.id]
+
   if (actorRole === "merchant") {
     const { data: pkg } = await adminSupabase
       .from("packages")
@@ -88,7 +137,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const booking = Array.isArray(room.bookings) ? room.bookings[0] || null : room.bookings || null
+    const booking = Array.isArray(representativeRoom.bookings) ? representativeRoom.bookings[0] || null : representativeRoom.bookings || null
     const { data: merchant } = pkg?.merchant_id
       ? await adminSupabase
           .from("merchants")
@@ -99,7 +148,7 @@ export async function GET(request: Request) {
     const { data: latestMessage } = await adminSupabase
       .from("package_chat_messages")
       .select("message, attachment_name")
-      .eq("room_id", room.id)
+      .in("room_id", threadRoomIds)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -115,26 +164,26 @@ export async function GET(request: Request) {
     return NextResponse.json({
       room: {
         id: room.id,
-        packageId: room.package_id,
+        packageId: representativeRoom.package_id,
         packageCode: pkg?.package_code || null,
         packageTitle: pkg?.title || null,
         packageSlug: pkg?.slug || null,
         packageCoverImage: pkg?.cover_image || null,
         merchantName: merchant?.brand_name || merchant?.company_name || null,
         merchantLogoUrl: merchant?.logo_url || null,
-        customerId: room.customer_id,
-        merchantUserId: room.merchant_user_id,
-        bookingId: room.booking_id || null,
+        customerId: representativeRoom.customer_id,
+        merchantUserId: representativeRoom.merchant_user_id,
+        bookingId: representativeRoom.booking_id || null,
         bookingCode: booking?.booking_code || null,
         bookingStatus: booking?.booking_status || null,
         paymentStatus: booking?.payment_status || null,
         customerName: booking?.customer_name || null,
         lastMessagePreview: latestMessagePreview,
-        updatedAt: room.updated_at || null,
-        lastMessageAt: room.last_message_at || null,
-        lastMessageSenderId: room.last_message_sender_id || null,
-        customerLastReadAt: room.customer_last_read_at || null,
-        merchantLastReadAt: room.merchant_last_read_at || null,
+        updatedAt: representativeRoom.updated_at || null,
+        lastMessageAt: representativeRoom.last_message_at || null,
+        lastMessageSenderId: representativeRoom.last_message_sender_id || null,
+        customerLastReadAt: representativeRoom.customer_last_read_at || null,
+        merchantLastReadAt: representativeRoom.merchant_last_read_at || null,
       },
     })
   }
@@ -145,7 +194,7 @@ export async function GET(request: Request) {
     .eq("id", room.package_id)
     .maybeSingle()
 
-  const booking = Array.isArray(room.bookings) ? room.bookings[0] || null : room.bookings || null
+  const booking = Array.isArray(representativeRoom.bookings) ? representativeRoom.bookings[0] || null : representativeRoom.bookings || null
   const { data: merchant } = await adminSupabase
     .from("packages")
     .select("merchant_id, merchants(brand_name, company_name, logo_url)")
@@ -154,7 +203,7 @@ export async function GET(request: Request) {
   const { data: latestMessage } = await adminSupabase
     .from("package_chat_messages")
     .select("message, attachment_name")
-    .eq("room_id", room.id)
+    .in("room_id", threadRoomIds)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -170,7 +219,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     room: {
       id: room.id,
-      packageId: room.package_id,
+      packageId: representativeRoom.package_id,
       packageCode: pkg?.package_code || null,
       packageTitle: pkg?.title || null,
       packageSlug: pkg?.slug || null,
@@ -187,19 +236,19 @@ export async function GET(request: Request) {
         Array.isArray((merchant as { merchants?: { logo_url?: string | null } | null } | null)?.merchants)
           ? null
           : ((merchant as { merchants?: { logo_url?: string | null } | null } | null)?.merchants?.logo_url || null),
-      customerId: room.customer_id,
-      merchantUserId: room.merchant_user_id,
-      bookingId: room.booking_id || null,
+      customerId: representativeRoom.customer_id,
+      merchantUserId: representativeRoom.merchant_user_id,
+      bookingId: representativeRoom.booking_id || null,
       bookingCode: booking?.booking_code || null,
       bookingStatus: booking?.booking_status || null,
       paymentStatus: booking?.payment_status || null,
       customerName: booking?.customer_name || null,
       lastMessagePreview: latestMessagePreview,
-      updatedAt: room.updated_at || null,
-      lastMessageAt: room.last_message_at || null,
-      lastMessageSenderId: room.last_message_sender_id || null,
-      customerLastReadAt: room.customer_last_read_at || null,
-      merchantLastReadAt: room.merchant_last_read_at || null,
+      updatedAt: representativeRoom.updated_at || null,
+      lastMessageAt: representativeRoom.last_message_at || null,
+      lastMessageSenderId: representativeRoom.last_message_sender_id || null,
+      customerLastReadAt: representativeRoom.customer_last_read_at || null,
+      merchantLastReadAt: representativeRoom.merchant_last_read_at || null,
     },
   })
 }

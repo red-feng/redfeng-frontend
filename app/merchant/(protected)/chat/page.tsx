@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import MerchantChatRealtimeClient from "./MerchantChatRealtimeClient"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
+import { buildChatThreadKey, findChatThreadGroupByRoomId, groupChatThreadRooms } from "@/lib/chat/thread-group"
 
 const CHAT_PAGE_SIZE = 50
 const CHAT_ROOM_PAGE_SIZE = 30
@@ -334,18 +335,20 @@ export default async function MerchantChatPage({
     roomsError = roomsWithBooking.error
   }
 
-  const initialRoomsHasMore = allRooms.length > CHAT_ROOM_PAGE_SIZE
-  const roomFirstPage = initialRoomsHasMore ? allRooms.slice(0, CHAT_ROOM_PAGE_SIZE) : allRooms
-  let initialRooms = roomFirstPage
+  const groupedAllRooms = groupChatThreadRooms(allRooms)
+  const requestedRoomGroup = requestedRoomId ? findChatThreadGroupByRoomId(allRooms, requestedRoomId) : null
+  const initialRoomsHasMore = groupedAllRooms.length > CHAT_ROOM_PAGE_SIZE
+  const roomFirstPageGroups = initialRoomsHasMore ? groupedAllRooms.slice(0, CHAT_ROOM_PAGE_SIZE) : groupedAllRooms
+  let initialRoomGroups = roomFirstPageGroups
   const initialRoomsCursor =
-    initialRoomsHasMore && roomFirstPage.length > 0
+    initialRoomsHasMore && roomFirstPageGroups.length > 0
       ? {
-          updatedAt: roomFirstPage[roomFirstPage.length - 1]?.updated_at || "",
-          roomId: roomFirstPage[roomFirstPage.length - 1]?.id || "",
+          updatedAt: roomFirstPageGroups[roomFirstPageGroups.length - 1]?.representative.updated_at || "",
+          roomId: roomFirstPageGroups[roomFirstPageGroups.length - 1]?.representative.id || "",
         }
       : null
 
-  if (requestedRoomId && !deletedRoomMarker && !initialRooms.some((room) => room.id === requestedRoomId)) {
+  if (requestedRoomGroup && !deletedRoomMarker && !initialRoomGroups.some((group) => group.key === requestedRoomGroup.key)) {
     const requestedRoomResult = await adminSupabase
       .from("package_chat_rooms")
       .select(
@@ -357,12 +360,16 @@ export default async function MerchantChatPage({
       .maybeSingle()
 
     if (requestedRoomResult.data) {
-      initialRooms = [requestedRoomResult.data as ChatRoomRow, ...initialRooms]
+      const requestedGroup = groupChatThreadRooms([requestedRoomResult.data as ChatRoomRow])[0]
+      if (requestedGroup) {
+        initialRoomGroups = [requestedGroup, ...initialRoomGroups]
+      }
     }
   }
 
+  const initialRooms = initialRoomGroups.map((group) => group.representative)
   const packageIds = [...new Set(initialRooms.map((room) => room.package_id))]
-  const roomIds = initialRooms.map((room) => room.id)
+  const roomIds = initialRoomGroups.flatMap((group) => group.roomIds)
   const { data: packageRows } = packageIds.length
     ? await adminSupabase.from("packages").select("id, package_code, title, slug, cover_image").in("id", packageIds)
     : { data: [] as PackageRow[] }
@@ -377,8 +384,15 @@ export default async function MerchantChatPage({
     : { data: [] as Array<{ room_id: string; message: string; attachment_name?: string | null; created_at?: string | null }> }
 
   const latestMessageMap = new Map<string, string>()
+  const roomIdToThreadKey = new Map<string, string>()
+  for (const group of initialRoomGroups) {
+    for (const id of group.roomIds) {
+      roomIdToThreadKey.set(id, group.key)
+    }
+  }
   for (const row of latestMessageRows || []) {
-    if (!row.room_id || latestMessageMap.has(row.room_id)) continue
+    const threadKey = roomIdToThreadKey.get(row.room_id)
+    if (!row.room_id || !threadKey || latestMessageMap.has(threadKey)) continue
     const systemMessage = parseChatSystemMessage(row.message)
     let preview = row.message || ""
     if (systemMessage?.type === "package_inquiry") {
@@ -390,11 +404,12 @@ export default async function MerchantChatPage({
     } else if (!preview && row.attachment_name) {
       preview = row.attachment_name
     }
-    latestMessageMap.set(row.room_id, preview)
+    latestMessageMap.set(threadKey, preview)
   }
 
-  const activeRoomId = requestedRoomId || initialRooms[0]?.id || ""
+  const activeRoomId = requestedRoomGroup?.representative.id || requestedRoomId || initialRooms[0]?.id || ""
   const activeRoom = initialRooms.find((room) => room.id === activeRoomId) || null
+  const activeRoomGroup = initialRoomGroups.find((group) => group.representative.id === activeRoomId) || null
 
   if (
     activeRoom &&
@@ -418,7 +433,7 @@ export default async function MerchantChatPage({
     ? await adminSupabase
         .from("package_chat_messages")
         .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
-        .eq("room_id", activeRoomId)
+        .in("room_id", activeRoomGroup?.roomIds || [activeRoomId])
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .limit(CHAT_PAGE_SIZE + 1)
@@ -552,7 +567,7 @@ export default async function MerchantChatPage({
             bookingStatus: booking?.booking_status || null,
             paymentStatus: booking?.payment_status || null,
             customerName: booking?.customer_name || null,
-            lastMessagePreview: latestMessageMap.get(room.id) || null,
+            lastMessagePreview: latestMessageMap.get(buildChatThreadKey(room)) || null,
             updatedAt: room.updated_at || null,
             lastMessageAt: room.last_message_at || null,
             lastMessageSenderId: room.last_message_sender_id || null,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { groupChatThreadRooms, buildChatThreadKey } from "@/lib/chat/thread-group"
 
 const CHAT_PAGE_SIZE = 50
 
@@ -54,10 +55,35 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
+  const { data: threadRoomRows, error: threadRoomsError } = await adminSupabase
+    .from("package_chat_rooms")
+    .select("id, package_id, customer_id, merchant_user_id, booking_id, updated_at, last_message_at, last_message_sender_id, customer_last_read_at, merchant_last_read_at")
+    .eq("package_id", room.package_id)
+    .eq("customer_id", room.customer_id)
+    .eq("merchant_user_id", room.merchant_user_id)
+
+  if (threadRoomsError) {
+    return NextResponse.json({ error: threadRoomsError.message || "Failed to resolve thread rooms" }, { status: 500 })
+  }
+
+  const threadGroup = groupChatThreadRooms((threadRoomRows as Array<{
+    id: string
+    package_id: string
+    customer_id: string
+    merchant_user_id: string
+    booking_id?: string | null
+    updated_at?: string | null
+    last_message_at?: string | null
+    last_message_sender_id?: string | null
+    customer_last_read_at?: string | null
+    merchant_last_read_at?: string | null
+  }> | null) || []).find((group) => group.key === buildChatThreadKey(room))
+  const threadRoomIds = threadGroup?.roomIds || [room.id]
+
   let query = adminSupabase
     .from("package_chat_messages")
     .select("id, room_id, sender_id, message, attachment_url, attachment_name, attachment_mime_type, created_at")
-    .eq("room_id", roomId)
+    .in("room_id", threadRoomIds)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(safeLimit + 1)

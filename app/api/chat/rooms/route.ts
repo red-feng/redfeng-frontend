@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getCurrentLocale } from "@/lib/locale"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
+import { groupChatThreadRooms } from "@/lib/chat/thread-group"
 
 const DEFAULT_LIMIT = 30
 
@@ -146,12 +147,14 @@ export async function GET(request: Request) {
   }
 
   const descRows = (roomRows as ChatRoomRow[] | null) || []
-  const hasMore = descRows.length > safeLimit
-  const rooms = hasMore ? descRows.slice(0, safeLimit) : descRows
+  const groupedRows = groupChatThreadRooms(descRows)
+  const hasMore = groupedRows.length > safeLimit
+  const groups = hasMore ? groupedRows.slice(0, safeLimit) : groupedRows
+  const rooms = groups.map((group) => group.representative)
   const nextCursor = hasMore
     ? {
-        updatedAt: rooms[rooms.length - 1]?.updated_at || null,
-        roomId: rooms[rooms.length - 1]?.id || null,
+        updatedAt: groups[groups.length - 1]?.representative.updated_at || null,
+        roomId: groups[groups.length - 1]?.representative.id || null,
       }
     : null
 
@@ -173,7 +176,7 @@ export async function GET(request: Request) {
     : { data: [] as MerchantRow[] }
   const merchantMap = new Map((merchantRows || []).map((m: MerchantRow) => [m.id, m]))
 
-  const roomIds = rooms.map((room) => room.id)
+  const roomIds = groups.flatMap((group) => group.roomIds)
   const { data: latestMessageRows } = roomIds.length
     ? await adminSupabase
         .from("package_chat_messages")
@@ -197,7 +200,8 @@ export async function GET(request: Request) {
     latestMessageMap.set(row.room_id, preview)
   }
 
-  const payloadRooms = rooms.map((room) => {
+  const payloadRooms = groups.map((group) => {
+    const room = group.representative
     const pkg = packageMap.get(room.package_id)
     const merchant = pkg?.merchant_id ? merchantMap.get(pkg.merchant_id) : null
     const booking = getBookingInfo(room)
