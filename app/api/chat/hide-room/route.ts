@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { extractPackageChatAttachmentPath, getPackageChatAttachmentBucket } from "@/lib/chat/attachment-path"
 import { resolvePackageChatActorRole } from "@/lib/chat/package-chat-access"
+import { buildHideRoomPatch } from "@/lib/chat/room-visibility"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -29,48 +29,24 @@ export async function POST(request: Request) {
     .single()
 
   if (error || !room) {
-    return NextResponse.json({ error: "Room not found" }, { status: 404 })
+    return NextResponse.json({ ok: true, roomId, deleted: true, alreadyHidden: true })
   }
 
-  if (!(await resolvePackageChatActorRole(adminSupabase, user.id, room))) {
+  const actorRole = await resolvePackageChatActorRole(adminSupabase, user.id, room)
+  if (!actorRole) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const { data: messageAttachments, error: attachmentsError } = await adminSupabase
-    .from("package_chat_messages")
-    .select("attachment_url")
-    .eq("room_id", roomId)
+  const hidePatch = buildHideRoomPatch(actorRole, new Date().toISOString())
 
-  if (attachmentsError) {
-    return NextResponse.json({ error: attachmentsError.message || "Failed to read room attachments" }, { status: 500 })
-  }
-
-  const attachmentPaths = [...new Set(
-    ((messageAttachments as Array<{ attachment_url?: string | null }> | null) || [])
-      .map((row) => extractPackageChatAttachmentPath(row.attachment_url))
-      .filter((path): path is string => Boolean(path)),
-  )]
-
-  if (attachmentPaths.length > 0) {
-    const bucket = getPackageChatAttachmentBucket()
-    const chunkSize = 100
-    for (let index = 0; index < attachmentPaths.length; index += chunkSize) {
-      const chunk = attachmentPaths.slice(index, index + chunkSize)
-      const { error: storageError } = await adminSupabase.storage.from(bucket).remove(chunk)
-      if (storageError) {
-        return NextResponse.json({ error: storageError.message || "Failed to delete room attachments" }, { status: 500 })
-      }
-    }
-  }
-
-  const { error: deleteError } = await adminSupabase
+  const { error: hideError } = await adminSupabase
     .from("package_chat_rooms")
-    .delete()
+    .update(hidePatch)
     .eq("id", roomId)
 
-  if (deleteError) {
-    return NextResponse.json({ error: deleteError.message || "Failed to delete room" }, { status: 500 })
+  if (hideError) {
+    return NextResponse.json({ error: hideError.message || "Failed to hide room" }, { status: 500 })
   }
 
-  return NextResponse.json({ ok: true, roomId, deleted: true })
+  return NextResponse.json({ ok: true, roomId, hidden: true })
 }
