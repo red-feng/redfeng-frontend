@@ -1,7 +1,7 @@
 "use client"
 
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 import { COMMERCE_CHAT_ENGINE } from "@/lib/chat-engines"
 import { isCommerceChatImageAttachment } from "@/lib/commerce-chat"
@@ -50,6 +50,8 @@ type Props = {
 }
 
 type SendPhase = "idle" | "compressing" | "uploading"
+
+const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -182,6 +184,7 @@ export default function CommerceChatRealtimeClient({
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const supabaseRef = useRef(createClient())
   const threadRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -346,11 +349,14 @@ export default function CommerceChatRealtimeClient({
   }, [activeThreadId, loadedThreadIds, refreshLatestMessages])
 
   useEffect(() => {
+    const currentRoomId = String(searchParams.get("room_id") || "").trim()
+    if (currentRoomId === activeThreadId) return
+
     const next = activeThreadId ? `${pathname}?room_id=${encodeURIComponent(activeThreadId)}` : pathname
     startTransition(() => {
       router.replace(next, { scroll: false })
     })
-  }, [activeThreadId, pathname, router])
+  }, [activeThreadId, pathname, router, searchParams])
 
   useEffect(() => {
     const container = threadRef.current
@@ -479,17 +485,26 @@ export default function CommerceChatRealtimeClient({
       } catch {}
     }
 
-    void refreshSnapshot()
-    const intervalId = window.setInterval(() => {
-      void refreshSnapshot()
-    }, 2500)
+    const shouldUsePollingFallback = realtimeStatus !== "live"
 
-    const handleFocus = () => {
+    if (shouldUsePollingFallback) {
       void refreshSnapshot()
     }
 
+    const intervalId = shouldUsePollingFallback
+      ? window.setInterval(() => {
+          void refreshSnapshot()
+        }, SNAPSHOT_FALLBACK_INTERVAL_MS)
+      : null
+
+    const handleFocus = () => {
+      if (realtimeStatus !== "live") {
+        void refreshSnapshot()
+      }
+    }
+
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
+      if (document.visibilityState === "visible" && realtimeStatus !== "live") {
         void refreshSnapshot()
       }
     }
@@ -498,11 +513,13 @@ export default function CommerceChatRealtimeClient({
     document.addEventListener("visibilitychange", handleVisibility)
     return () => {
       cancelled = true
-      window.clearInterval(intervalId)
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [activeThreadId, fetchMessagesPage, fetchThreads])
+  }, [activeThreadId, fetchMessagesPage, fetchThreads, realtimeStatus])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
