@@ -270,6 +270,7 @@ export default function MerchantChatRealtimeClient({
   const previousLastMessageIdRef = useRef("")
   const activeRoomIdRef = useRef(initialActiveRoomId)
   const fallbackSyncInFlightRef = useRef(false)
+  const previousRoomsLengthRef = useRef(initialRooms.length)
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase()
   const unreadRoomsCount = useMemo(
@@ -314,6 +315,19 @@ export default function MerchantChatRealtimeClient({
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId
   }, [activeRoomId])
+
+  useEffect(() => {
+    const previousRoomsLength = previousRoomsLengthRef.current
+    previousRoomsLengthRef.current = rooms.length
+
+    if (activeRoomId) return
+    if (previousRoomsLength > 0) return
+    const firstRoomId = rooms[0]?.id || ""
+    if (!firstRoomId) return
+
+    setActiveRoomId(firstRoomId)
+  }, [activeRoomId, rooms])
+
   const unreadCount = useMemo(
     () =>
       visibleRooms.filter((room) => {
