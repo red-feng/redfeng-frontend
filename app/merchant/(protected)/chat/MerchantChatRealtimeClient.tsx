@@ -801,6 +801,8 @@ export default function MerchantChatRealtimeClient({
   function handleDeleteRoomClick(event: React.MouseEvent<HTMLButtonElement>, roomId: string) {
     event.preventDefault()
     event.stopPropagation()
+    const confirmed = window.confirm("Yakin hapus room ini secara permanen?")
+    if (!confirmed) return
     void handleHideRoom(roomId)
   }
 
@@ -1220,9 +1222,13 @@ export default function MerchantChatRealtimeClient({
                   ) : null}
                   <button
                     type="button"
+                    onPointerDown={(event) => {
+                      event.preventDefault()
+                      event.stopPropagation()
+                    }}
                     onClick={(event) => handleDeleteRoomClick(event, room.id)}
                     disabled={deletingRoomId === room.id}
-                    className="relative z-10 mt-3 hidden text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:block"
+                    className="relative z-20 mt-3 hidden cursor-pointer select-none pointer-events-auto text-xs font-semibold text-slate-500 transition hover:text-rose-600 disabled:cursor-not-allowed disabled:text-slate-300 lg:block"
                   >
                     {deletingRoomId === room.id ? normalizeDeleteRoomLabel(t.deletingRoom) : normalizeDeleteRoomLabel(t.deleteRoom)}
                   </button>
