@@ -368,17 +368,21 @@ export default function MerchantChatRealtimeClient({
     }
 
     const nextRooms = payload.rooms || []
-    setRooms(sortRooms(nextRooms))
+    setRooms((current) => {
+      const merged = new Map<string, MerchantChatRoom>()
+      for (const room of current) merged.set(room.id, room)
+      for (const room of nextRooms) merged.set(room.id, room)
+      return sortRooms([...merged.values()])
+    })
     setRoomsHasMore(Boolean(payload.hasMore))
     setRoomsCursor(payload.nextCursor || null)
 
-    if (activeRoomIdRef.current) {
-      const hasActiveRoom = nextRooms.some((room) => room.id === activeRoomIdRef.current)
-      if (!hasActiveRoom) {
-        setActiveRoomId(nextRooms[0]?.id || "")
-        if (nextRooms.length === 0) {
-          setMobileThreadOpen(false)
-        }
+    if (!activeRoomIdRef.current) {
+      const firstRoomId = nextRooms[0]?.id || ""
+      if (firstRoomId) {
+        setActiveRoomId(firstRoomId)
+      } else {
+        setMobileThreadOpen(false)
       }
     }
   }, [rooms.length])
