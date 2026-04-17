@@ -504,8 +504,6 @@ export default async function AdminBookingDetailPage({
   const productLabel = booking.package_id ? "Paket Tour" : "Pesawat"
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
   const auditLogHref = `/admin/audit-log?target=booking&q=${encodeURIComponent(booking.id)}`
-  const postBookingChatHref = `/chat?booking_id=${encodeURIComponent(booking.id)}`
-  const preBookingChatHref = booking.package_id ? `/chat?package_id=${encodeURIComponent(booking.package_id)}` : null
   const timeline = [
     {
       label: "Merchant Arrived",
@@ -637,32 +635,6 @@ export default async function AdminBookingDetailPage({
               <p className="mt-3 text-lg font-semibold text-slate-950">Jejak admin booking ini</p>
               <p className="mt-2 text-sm leading-6 text-slate-600">Lihat auto-queue, handoff manual, dan aksi admin yang pernah tercatat.</p>
             </Link>
-
-            <Link
-              href={postBookingChatHref}
-              className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Post-booking chat</p>
-              <p className="mt-3 text-lg font-semibold text-slate-950">Buka chat sesudah booking</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Masuk ke percakapan yang terkait langsung dengan booking ini.</p>
-            </Link>
-
-            {preBookingChatHref ? (
-              <Link
-                href={preBookingChatHref}
-                className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pre-booking chat</p>
-                <p className="mt-3 text-lg font-semibold text-slate-950">Buka chat sebelum booking</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Lihat konteks diskusi package sebelum transaksi dibuat.</p>
-              </Link>
-            ) : (
-              <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Pre-booking chat</p>
-                <p className="mt-3 text-lg font-semibold text-slate-900">Belum tersedia</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Shortcut ini muncul untuk booking yang terhubung ke package.</p>
-              </div>
-            )}
 
             {merchant?.id ? (
               <Link

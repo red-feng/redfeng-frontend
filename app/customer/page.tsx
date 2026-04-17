@@ -17,7 +17,7 @@ export default async function CustomerAccountHubPage() {
     id: {
       eyebrow: "Akun Customer",
       title: "Kelola akun RedFeng Anda",
-      body: "Area ini dibuat sebagai hub seperti aplikasi travel: semua pengaturan akun, bahasa, chat, dan aktivitas utama customer bisa diakses dari satu tempat yang rapi.",
+      body: "Area ini dibuat sebagai hub seperti aplikasi travel: semua pengaturan akun, bahasa, dan aktivitas utama customer bisa diakses dari satu tempat yang rapi.",
       profileLabel: "Profil aktif",
       profileTitle: "Profil & Preferensi",
       profileBody: "Masuk ke pengaturan untuk ubah bahasa, wilayah, dan preferensi akun lainnya.",
@@ -28,9 +28,6 @@ export default async function CustomerAccountHubPage() {
       exploreTitle: "Jelajahi Paket",
       exploreBody: "Cari paket wisata terbaru, trending, dan paket unggulan langsung dari katalog.",
       explore: "Buka katalog",
-      chatTitle: "Chat Customer",
-      chatBody: "Lanjutkan percakapan dengan merchant dalam room yang sama dari inquiry sampai booking.",
-      chat: "Buka chat",
       supportTitle: "Butuh bantuan?",
       supportBody: "Pusat bantuan dan alur dukungan bisa ditambahkan di blok ini saat modul support customer dibuka.",
       supportAction: "Kembali ke situs",
@@ -42,7 +39,7 @@ export default async function CustomerAccountHubPage() {
     en: {
       eyebrow: "Customer Account",
       title: "Manage your RedFeng account",
-      body: "This area acts as a travel-app style hub: account settings, language, chat, and key customer actions are organized in one place.",
+      body: "This area acts as a travel-app style hub: account settings, language, and key customer actions are organized in one place.",
       profileLabel: "Active profile",
       profileTitle: "Profile & Preferences",
       profileBody: "Open settings to change language, region, and future account preferences.",
@@ -53,9 +50,6 @@ export default async function CustomerAccountHubPage() {
       exploreTitle: "Explore Packages",
       exploreBody: "Browse the latest, trending, and featured travel packages directly from the catalog.",
       explore: "Open catalog",
-      chatTitle: "Customer Chat",
-      chatBody: "Continue conversations with merchants in the same room from inquiry through booking.",
-      chat: "Open chat",
       supportTitle: "Need help?",
       supportBody: "Help center and support actions can be expanded here when the customer support module is ready.",
       supportAction: "Back to site",
@@ -117,20 +111,6 @@ export default async function CustomerAccountHubPage() {
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <circle cx="11" cy="11" r="6.5" />
           <path d="M16 16l4 4" />
-        </svg>
-      ),
-    },
-    {
-      title: copy.chatTitle,
-      body: copy.chatBody,
-      href: "/chat?portal=customer",
-      action: copy.chat,
-      tone: "bg-[linear-gradient(135deg,#eefaff_0%,#f9fdff_100%)]",
-      iconTone: "bg-[#ecfeff] text-[#0891b2]",
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
-          <path d="M6 17.5 4 20V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H6Z" />
-          <path d="M8 9h8M8 12.5h5" />
         </svg>
       ),
     },

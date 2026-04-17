@@ -3,7 +3,6 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 type MerchantAdminHelpWidgetProps = {
@@ -78,7 +77,7 @@ const copyByLocale: Record<string, WidgetCopy> = {
     responseLabel: "Estimasi respons",
     responseValue: "< 15 menit pada jam operasional",
     primaryAction: "Kirim pesan",
-    secondaryAction: "Buka chat customer",
+    secondaryAction: "Buka dashboard merchant",
     emailAction: "Email admin",
     closeLabel: "Tutup bantuan admin",
     inputPlaceholder: "Tulis pesan untuk admin...",
@@ -105,7 +104,7 @@ const copyByLocale: Record<string, WidgetCopy> = {
     responseLabel: "Response time",
     responseValue: "< 15 minutes during working hours",
     primaryAction: "Send message",
-    secondaryAction: "Open customer chat",
+    secondaryAction: "Open merchant dashboard",
     emailAction: "Email admin",
     closeLabel: "Close admin help",
     inputPlaceholder: "Write a message for admin...",
@@ -132,7 +131,7 @@ const copyByLocale: Record<string, WidgetCopy> = {
     responseLabel: "Response time",
     responseValue: "< 15 minutes during working hours",
     primaryAction: "Send message",
-    secondaryAction: "Open customer chat",
+    secondaryAction: "Open merchant dashboard",
     emailAction: "Email admin",
     closeLabel: "Close admin help",
     inputPlaceholder: "Write a message for admin...",
@@ -177,7 +176,6 @@ export default function MerchantAdminHelpWidget({
 }: MerchantAdminHelpWidgetProps) {
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
-  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [messages, setMessages] = useState<SupportMessage[]>([])
   const [draft, setDraft] = useState("")
@@ -194,7 +192,7 @@ export default function MerchantAdminHelpWidget({
 
   const t = copyByLocale[locale] || copyByLocale.id
   const mailtoHref = useMemo(() => buildMailtoHref({ merchantLabel, merchantCode }), [merchantCode, merchantLabel])
-  const hideOnChatPage = pathname === "/merchant/chat"
+  const hideOnChatPage = false
 
   const fetchRoom = useMemo(
     () => async () => {
@@ -612,7 +610,7 @@ export default function MerchantAdminHelpWidget({
                     {t.emailAction}
                   </a>
                   <Link
-                    href="/merchant/chat"
+                    href="/merchant/dashboard"
                     className="inline-flex items-center justify-center rounded-[18px] border border-[#ead8c0] bg-[#fffaf4] px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-white hover:text-orange-600"
                   >
                     {t.secondaryAction}

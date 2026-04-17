@@ -17,10 +17,7 @@ export default function CustomerHeaderNav({ items }: { items: Item[] }) {
     <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600 sm:gap-3">
       {items.map((item) => {
         const itemPath = getPathOnly(item.href)
-        const isActive =
-          itemPath === "/chat"
-            ? pathname === "/chat"
-            : pathname === itemPath || pathname.startsWith(`${itemPath}/`)
+        const isActive = pathname === itemPath || pathname.startsWith(`${itemPath}/`)
 
         return (
           <Link

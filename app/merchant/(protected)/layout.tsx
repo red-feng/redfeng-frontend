@@ -105,16 +105,11 @@ export default async function MerchantLayout({
     day: "2-digit",
   }).format(tomorrowJakartaDate)
 
-  const [packageResult, chatRoomsResult, reviewResult, seenStateResult] = await Promise.all([
+  const [packageResult, reviewResult, seenStateResult] = await Promise.all([
     adminSupabase
       .from("packages")
       .select("id, status, reviewed_at")
       .eq("merchant_id", merchant.id),
-    adminSupabase
-      .from("package_chat_rooms")
-      .select("id, last_message_at, last_message_sender_id, merchant_last_read_at")
-      .eq("merchant_user_id", user.id)
-      .order("updated_at", { ascending: false }),
     adminSupabase
       .from("package_reviews")
       .select("id, created_at, packages!inner(merchant_id)")
@@ -187,18 +182,6 @@ export default async function MerchantLayout({
     )
   }).length
 
-  const chatBadgeCount = (((chatRoomsResult.data as Array<{
-    id: string
-    last_message_at: string | null
-    last_message_sender_id: string | null
-    merchant_last_read_at: string | null
-  }> | null) || []).filter((room) => {
-    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
-    if (!room.last_message_at) return false
-    if (!room.merchant_last_read_at) return true
-    return room.last_message_at > room.merchant_last_read_at
-  })).length
-
   const reviewBadgeCount =
     ((reviewResult.data as Array<{ id: string; created_at: string | null }> | null) || []).filter((review) =>
       isNewerThan(review.created_at, seenReviewAt),
@@ -209,7 +192,6 @@ export default async function MerchantLayout({
     { href: "/merchant/paket", label: t.nav.packages, badgeCount: packageBadgeCount },
     { href: "/merchant/pesanan", label: t.nav.orders, badgeCount: orderBadgeCount },
     { href: "/merchant/statistik", label: t.nav.statistics, badgeCount: 0 },
-    { href: "/merchant/chat", label: t.nav.chat, badgeCount: chatBadgeCount },
     { href: "/merchant/kalender-booking", label: t.nav.calendar, badgeCount: calendarBadgeCount },
     { href: "/merchant/saldo-payout", label: t.nav.payout, badgeCount: payoutBadgeCount },
     { href: "/merchant/review", label: t.nav.review, badgeCount: reviewBadgeCount },

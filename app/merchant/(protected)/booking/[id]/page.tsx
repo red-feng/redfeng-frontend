@@ -30,10 +30,6 @@ type BookingRow = {
   package_id: string | null
 }
 
-type ChatRoomRow = {
-  id: string
-}
-
 function titleCaseStatus(value: string | null) {
   const normalized = normalizeStatus(value)
   if (!normalized) return "-"
@@ -78,7 +74,6 @@ function getText(locale: Locale) {
       total: "Total",
       dpAmount: "DP",
       finalPayment: "Sisa pelunasan",
-      openChat: "Chat customer",
       backToOrders: "Kembali ke pesanan",
       fullPayment: "Full payment",
       dpPayment: "DP 30%",
@@ -99,7 +94,6 @@ function getText(locale: Locale) {
       total: "Total",
       dpAmount: "Down payment",
       finalPayment: "Remaining final payment",
-      openChat: "Chat customer",
       backToOrders: "Back to orders",
       fullPayment: "Full payment",
       dpPayment: "DP 30%",
@@ -120,7 +114,6 @@ function getText(locale: Locale) {
       total: "总额",
       dpAmount: "定金",
       finalPayment: "尾款",
-      openChat: "联系客户",
       backToOrders: "返回订单",
       fullPayment: "全额付款",
       dpPayment: "定金 30%",
@@ -172,16 +165,6 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
   if (!pkg?.id) {
     return <div className="p-6 text-sm text-rose-700">{t.bookingNotFound}</div>
   }
-
-  const { data: linkedRoom } = await adminSupabase
-    .from("package_chat_rooms")
-    .select("id")
-    .eq("merchant_user_id", user.id)
-    .eq("booking_id", booking.id)
-    .order("updated_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(1)
-    .maybeSingle<ChatRoomRow>()
 
   const participantCount = Number(booking.adult_count || 0) + Number(booking.child_count || 0)
   const paymentType = normalizeStatus(booking.payment_type) === "dp" ? t.dpPayment : t.fullPayment
@@ -250,16 +233,6 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
           </div>
 
           <div className="mt-6 flex flex-wrap gap-3">
-            <Link
-              href={
-                linkedRoom?.id
-                  ? `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&room_id=${encodeURIComponent(linkedRoom.id)}&portal=merchant`
-                  : `/merchant/chat?booking_id=${encodeURIComponent(booking.id)}&portal=merchant`
-              }
-              className="rounded-[18px] bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-            >
-              {t.openChat}
-            </Link>
             <Link
               href="/merchant/pesanan"
               className="rounded-[18px] border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"

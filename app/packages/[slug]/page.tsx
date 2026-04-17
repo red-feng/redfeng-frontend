@@ -7,7 +7,6 @@ import Gallery from "./Gallery"
 import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
-import { getCustomerTargetUnreadCount } from "@/lib/chat/customer-target-unread"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
@@ -126,9 +125,7 @@ export default async function PaketPage({
   const cookieLocale = await getCurrentLocale()
   const supabase = createAdminClient()
   const authSupabase = await createClient()
-  const {
-    data: { user },
-  } = await authSupabase.auth.getUser()
+  await authSupabase.auth.getUser()
 
   const slugCandidates = [
     rawSlug,
@@ -465,34 +462,6 @@ export default async function PaketPage({
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 4)
 
-  const packageChatTarget = `/chat?package_id=${encodeURIComponent(pkg.package_code || pkg.id)}&portal=customer`
-  let chatHref = user ? packageChatTarget : `/login?next=${encodeURIComponent(packageChatTarget)}`
-  let chatBadgeCount = 0
-
-  if (user?.email) {
-    const { data: latestBooking } = await supabase
-      .from("bookings")
-      .select("id")
-      .eq("package_id", pkg.id)
-      .eq("customer_email", user.email)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (latestBooking?.id) {
-      const bookingChatTarget = `/chat?booking_id=${encodeURIComponent(latestBooking.id)}&portal=customer`
-      chatHref = bookingChatTarget
-    } else {
-      chatHref = packageChatTarget
-    }
-
-    chatBadgeCount = await getCustomerTargetUnreadCount(supabase, {
-      customerId: user.id,
-      bookingId: latestBooking?.id || null,
-      packageId: pkg.id,
-    })
-  }
-
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)] pb-36 md:pb-0">
       <PackageViewTracker packageId={pkg.id} />
@@ -672,8 +641,6 @@ export default async function PaketPage({
               </div>
             </section>
             <SidebarActions
-              chatHref={chatHref}
-              chatBadgeCount={chatBadgeCount}
               preparation={translation?.preparation || null}
               termsConditions={translation?.terms_conditions || null}
               locale={activeLocale}

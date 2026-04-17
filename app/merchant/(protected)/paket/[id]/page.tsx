@@ -136,7 +136,6 @@ function getCopy(locale: Locale) {
       people: "people",
       backToList: "Back to package list",
       editPackage: "Edit package",
-      openMerchantChat: "Open merchant chat",
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
       quickActions: "Quick actions",
@@ -156,7 +155,6 @@ function getCopy(locale: Locale) {
       people: "people",
       backToList: "Back to package list",
       editPackage: "Edit package",
-      openMerchantChat: "Open merchant chat",
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
       quickActions: "Quick actions",
@@ -175,7 +173,6 @@ function getCopy(locale: Locale) {
     people: "orang",
     backToList: "Kembali ke daftar paket",
     editPackage: "Edit paket",
-    openMerchantChat: "Buka chat merchant",
     packageNotFound: "Paket tidak ditemukan atau bukan milik merchant ini.",
     gallery: "Galeri",
     quickActions: "Aksi cepat",
@@ -332,14 +329,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 6)
 
-  const chatSearch = new URLSearchParams()
-  chatSearch.set("portal", "merchant")
-  const roomIdValue = sp.room_id
-  if (typeof roomIdValue === "string" && roomIdValue) {
-    chatSearch.set("room_id", roomIdValue)
-  }
-  const merchantChatHref = `/merchant/chat?${chatSearch.toString()}`
-
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-6xl">
@@ -356,9 +345,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
               className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
             >
               {copy.editPackage}
-            </Link>
-            <Link href={merchantChatHref} className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">
-              {copy.openMerchantChat}
             </Link>
           </div>
         </section>
@@ -459,12 +445,6 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
                 <p>{copy.duration}: {(pkg.duration || 0).toString()} {copy.day}</p>
                 <p>{copy.participant}: {(pkg.minimal_peserta || 0).toString()} {copy.people}</p>
               </div>
-              <Link
-                href={merchantChatHref}
-                className="mt-4 block w-full rounded-xl bg-orange-500 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600"
-              >
-                {copy.openMerchantChat}
-              </Link>
             </section>
             <MerchantSidebarInfo
               locale={activeLocale}

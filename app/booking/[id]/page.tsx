@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import Link from "next/link"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { cancelDraftBooking, confirmCustomerPickedUp } from "./actions"
 import { getCurrentLocale } from "@/lib/locale"
@@ -10,7 +9,6 @@ import {
   formatFinalPaymentDueLabel,
   isFinalPaymentOverdue,
 } from "@/lib/booking/final-payment-deadline"
-import { getCustomerTargetUnreadCount } from "@/lib/chat/customer-target-unread"
 import { formatBookingCode } from "@/lib/merchant-code"
 
 export const dynamic = "force-dynamic"
@@ -527,11 +525,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
     .order("sequence_no", { ascending: true })
 
   const participants = (participantRows as BookingParticipantRow[] | null) || []
-  const bookingChatBadgeCount = await getCustomerTargetUnreadCount(adminSupabase, {
-    customerId: user.id,
-    bookingId: booking.id,
-    packageId: booking.package_id,
-  })
   const adultCount = Math.max(Number(booking.adult_count || 0), 0)
   const childCount = Math.max(Number(booking.child_count || 0), 0)
   const expectedParticipantCount = adultCount + childCount
@@ -554,7 +547,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const phase = resolveJourneyPhase(booking, locale)
   const openedFromCheckout = resolvedSearchParams.from_checkout === "1"
   const normalizedPaymentType = normalizeStatus(booking.payment_type) === "dp" ? "dp" : "full"
-  const chatLabel = locale === "en" ? "Chat Merchant" : locale === "zh" ? "联系商家" : "Chat Merchant"
   const amountDueNow = normalizedPaymentType === "dp" ? Number(booking.dp_amount || 0) : Number(booking.total_amount || 0)
   const displayCurrency = booking.display_currency || "IDR"
   const displaySubtotal = Number(booking.display_subtotal_amount || 0)
@@ -840,17 +832,6 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 {t.completeParticipants}
               </a>
             ) : null}
-            <Link
-              href={`/chat?booking_id=${encodeURIComponent(booking.id)}&portal=customer`}
-              className="inline-flex items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-5 py-3 text-sm font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-100"
-            >
-              <span>{chatLabel}</span>
-              {bookingChatBadgeCount > 0 ? (
-                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-rose-500 px-2 py-1 text-[11px] font-semibold leading-none text-white">
-                  {bookingChatBadgeCount > 99 ? "99+" : bookingChatBadgeCount}
-                </span>
-              ) : null}
-            </Link>
             {canStartInitialPayment ? (
               <form action={cancelDraftBooking}>
                 <input type="hidden" name="booking_id" value={booking.id} />

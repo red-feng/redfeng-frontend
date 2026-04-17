@@ -8,7 +8,6 @@ import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
-import { ChatRoomFlowError, ensureCustomerBookingChatRoom } from "@/lib/chat/customer-room"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -223,30 +222,6 @@ export async function POST(req: Request) {
         { error: insertError?.message || "Gagal menyimpan data booking" },
         { status: 500 },
       )
-    }
-
-    const { data: pkg } = await supabase
-      .from("packages")
-      .select("merchant_id")
-      .eq("id", package_id)
-      .maybeSingle()
-
-    if (pkg?.merchant_id) {
-      try {
-        await ensureCustomerBookingChatRoom(supabase, {
-          bookingId: booking.id,
-          customerId: user.id,
-          customerEmail: user.email || customer_email,
-          senderId: user.id,
-          touchUpdatedAt: true,
-        })
-      } catch (error) {
-        if (error instanceof ChatRoomFlowError && error.code === "migration_missing") {
-          console.error("Chat post-booking butuh migration terbaru:", error.message)
-        } else if (error instanceof Error) {
-          console.error("Gagal sinkronkan room chat booking:", error.message)
-        }
-      }
     }
 
     return NextResponse.json({

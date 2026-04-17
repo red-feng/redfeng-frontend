@@ -23,12 +23,6 @@ type BookingRow = {
   escrow_status: string | null
 }
 
-type ChatRoomRow = {
-  last_message_at: string | null
-  last_message_sender_id: string | null
-  merchant_last_read_at: string | null
-}
-
 type ReviewRow = {
   rating: number | null
 }
@@ -160,16 +154,12 @@ export default async function MerchantDashboardPage() {
   if (!merchant) return <div className="p-10">{t.merchantMissing}</div>
   const merchantCode = formatMerchantCode(merchant.id)
 
-  const [{ data: packagesData }, { data: bookingsData }, { data: chatRoomsData }] = await Promise.all([
+  const [{ data: packagesData }, { data: bookingsData }] = await Promise.all([
     supabase.from("packages").select("id, status").eq("merchant_id", merchant.id),
     supabase
       .from("bookings")
       .select("id, total_amount, payment_status, booking_status, escrow_status, packages!inner(merchant_id)")
       .eq("packages.merchant_id", merchant.id),
-    supabase
-      .from("package_chat_rooms")
-      .select("last_message_at, last_message_sender_id, merchant_last_read_at")
-      .eq("merchant_user_id", user.id),
   ])
 
   const reviewsResult = await supabase
@@ -179,7 +169,6 @@ export default async function MerchantDashboardPage() {
 
   const packages = (packagesData as PackageRow[] | null) || []
   const bookings = ((bookingsData as BookingRow[] | null) || []).filter((booking) => isVisiblePaidBooking(booking))
-  const chatRooms = (chatRoomsData as ChatRoomRow[] | null) || []
   const reviews = (reviewsResult.data as ReviewRow[] | null) || []
 
   const totalPackages = packages.length
@@ -191,13 +180,6 @@ export default async function MerchantDashboardPage() {
   const paidBookings = bookings.filter((booking) => normalizeStatus(booking.payment_status) === "paid")
   const monthlyRevenue = paidBookings.reduce((sum, booking) => sum + (booking.total_amount ?? 0), 0)
   const pendingPayments = bookings.filter((booking) => normalizeStatus(booking.payment_status) === "pending").length
-  const unreadChats = chatRooms.filter((room) => {
-    if (!room.last_message_sender_id || room.last_message_sender_id === user.id) return false
-    if (!room.last_message_at) return false
-    if (!room.merchant_last_read_at) return true
-    return room.last_message_at > room.merchant_last_read_at
-  }).length
-
   const averageRating =
     reviews.length > 0
       ? (reviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / reviews.length).toFixed(1)
@@ -222,7 +204,6 @@ export default async function MerchantDashboardPage() {
   const menuMeta: Record<string, string> = {
     "Kelola Paket": `${activePackages} aktif â€¢ ${pendingPackages} pending review`,
     Pesanan: `${totalBookings} total booking`,
-    "Chat Customer": unreadChats > 0 ? `${unreadChats} chat baru` : "Inbox customer",
     "Kalender Booking": "Jadwal trip dan kapasitas peserta",
     Statistik: "Revenue, top paket, conversion",
     "Saldo & Payout": "Saldo tersedia dan pending payout",
@@ -275,23 +256,6 @@ export default async function MerchantDashboardPage() {
           : locale === "zh"
             ? `${totalBookings} ç¬”è®¢å•`
             : `${totalBookings} total booking`,
-    },
-    {
-      key: "chat",
-      label: locale === "en" ? "Customer Chat" : locale === "zh" ? "å®¢æˆ·èŠå¤©" : "Chat Customer",
-      href: "/merchant/chat",
-      note:
-        unreadChats > 0
-          ? locale === "en"
-            ? `${unreadChats} new chats`
-            : locale === "zh"
-              ? `${unreadChats} æ¡æ–°æ¶ˆæ¯`
-              : `${unreadChats} chat baru`
-          : locale === "en"
-            ? "Customer inbox"
-            : locale === "zh"
-              ? "å®¢æˆ·æ”¶ä»¶ç®±"
-              : "Inbox customer",
     },
     {
       key: "calendar",
@@ -352,7 +316,6 @@ export default async function MerchantDashboardPage() {
   ]
 
   const quickSignals = [
-    { label: t.newChats, value: String(unreadChats), tone: "from-orange-500 to-amber-400" },
     { label: t.pendingPackages, value: String(pendingPackages), tone: "from-amber-500 to-orange-300" },
     { label: t.bookingPaid, value: String(paidBookings.length), tone: "from-emerald-500 to-lime-400" },
   ]
