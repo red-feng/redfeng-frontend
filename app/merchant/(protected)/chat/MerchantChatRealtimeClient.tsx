@@ -51,6 +51,7 @@ type RoomCursor = {
 }
 
 const FALLBACK_SYNC_INTERVAL_MS = 4000
+const ROOM_LIST_SYNC_INTERVAL_MS = 4000
 
 type MerchantChatRealtimeClientProps = {
   userId: string
@@ -870,6 +871,47 @@ export default function MerchantChatRealtimeClient({
       fallbackSyncInFlightRef.current = false
     }
   }, [fetchLatestMessages, realtimeStatus, refreshRoomsSnapshot])
+
+  useEffect(() => {
+    let intervalId: number | null = null
+    let cancelled = false
+
+    const syncRoomList = async () => {
+      if (cancelled) return
+      if (document.visibilityState === "hidden") return
+      try {
+        await refreshRoomsSnapshot()
+      } catch (error) {
+        console.error("Failed to run merchant room-list sync", error)
+      }
+    }
+
+    void syncRoomList()
+    intervalId = window.setInterval(() => {
+      void syncRoomList()
+    }, ROOM_LIST_SYNC_INTERVAL_MS)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return
+      void syncRoomList()
+    }
+
+    const handleFocus = () => {
+      void syncRoomList()
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+
+    return () => {
+      cancelled = true
+      if (intervalId) {
+        window.clearInterval(intervalId)
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+    }
+  }, [refreshRoomsSnapshot])
 
   function handleRoomListScroll(event: React.UIEvent<HTMLDivElement>) {
     const node = event.currentTarget
