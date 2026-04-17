@@ -183,6 +183,20 @@ function getMerchantRoomPreview(room: MerchantChatRoom) {
   return "Belum ada pesan."
 }
 
+function getRealtimePreviewText(
+  message: Pick<MerchantChatMessage, "message" | "attachment_name">,
+  text: MerchantChatRealtimeClientProps["text"],
+) {
+  const systemMessage = parseChatSystemMessage(message.message)
+  if (systemMessage?.type === "package_inquiry") return text.packageInquiryCard
+  if (systemMessage?.type === "booking_linked") return text.bookingCreatedCard
+
+  const plainMessage = String(message.message || "").trim()
+  if (plainMessage) return plainMessage
+
+  return String(message.attachment_name || text.attachmentLabel)
+}
+
 function getCustomerDisplayName(room: MerchantChatRoom | null) {
   if (!room) return "Customer"
   const explicitName = String(room.customerName || "").trim()
@@ -544,6 +558,26 @@ export default function MerchantChatRealtimeClient({
             }
           })
 
+          setRooms((current) => {
+            const existingRoom = current.find((item) => item.id === message.room_id)
+            if (!existingRoom) return current
+
+            const nextRoom: MerchantChatRoom = {
+              ...existingRoom,
+              lastMessageAt: message.created_at || existingRoom.lastMessageAt,
+              lastMessageSenderId: message.sender_id || existingRoom.lastMessageSenderId,
+              lastMessagePreview: getRealtimePreviewText(message, t),
+              updatedAt: message.created_at || existingRoom.updatedAt,
+              ...(message.sender_id === userId
+                ? { merchantLastReadAt: message.created_at || existingRoom.merchantLastReadAt }
+                : {}),
+            }
+
+            const next = current.filter((item) => item.id !== nextRoom.id)
+            next.push(nextRoom)
+            return sortRooms(next)
+          })
+
           const room = await fetchRoomMeta(message.room_id)
           if (room) {
             setRooms((current) => {
@@ -577,7 +611,7 @@ export default function MerchantChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [fetchRoomMeta, markRoomRead, supabase, userId])
+  }, [fetchRoomMeta, markRoomRead, supabase, t, userId])
 
   const realtimeBadge =
     realtimeStatus === "live"
@@ -636,6 +670,25 @@ export default function MerchantChatRealtimeClient({
             ...current,
             [targetRoomId]: [...existing, nextMessage],
           }
+        })
+
+        setRooms((current) => {
+          const targetRoomId = nextMessage.room_id || activeRoomId
+          const existingRoom = current.find((item) => item.id === targetRoomId)
+          if (!existingRoom) return current
+
+          const nextRoom: MerchantChatRoom = {
+            ...existingRoom,
+            lastMessageAt: nextMessage.created_at || existingRoom.lastMessageAt,
+            lastMessageSenderId: userId,
+            lastMessagePreview: getRealtimePreviewText(nextMessage, t),
+            updatedAt: nextMessage.created_at || existingRoom.updatedAt,
+            merchantLastReadAt: nextMessage.created_at || existingRoom.merchantLastReadAt,
+          }
+
+          const next = current.filter((item) => item.id !== nextRoom.id)
+          next.push(nextRoom)
+          return sortRooms(next)
         })
       }
 
