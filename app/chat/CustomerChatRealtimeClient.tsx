@@ -697,6 +697,12 @@ export default function CustomerChatRealtimeClient({
     void handleHideRoom(roomId)
   }
 
+  function handleRoomCardKeyDown(event: React.KeyboardEvent<HTMLDivElement>, roomId: string) {
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    handleSelectRoom(roomId)
+  }
+
   function handleSelectRoom(roomId: string) {
     setActiveRoomId(roomId)
     setMobileThreadOpen(true)
@@ -886,9 +892,11 @@ export default function CustomerChatRealtimeClient({
                       room.id === activeRoomId ? "bg-[#fffaf5]" : ""
                     }`}
                   >
-                    <button
-                      type="button"
+                    <div
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleSelectRoom(room.id)}
+                      onKeyDown={(event) => handleRoomCardKeyDown(event, room.id)}
                       className={`block w-full text-left ${room.id === activeRoomId ? "text-orange-700" : ""}`}
                     >
                       <div className="flex items-start justify-between gap-2 lg:hidden">
@@ -970,7 +978,7 @@ export default function CustomerChatRealtimeClient({
                         ) : null}
                       </div>
                       <p className="mt-2 hidden text-[11px] text-slate-400 lg:block">{formatMessageTime(room.lastMessageAt || room.updatedAt, locale) || "-"}</p>
-                    </button>
+                    </div>
                     <button
                       type="button"
                       onClick={(event) => handleDeleteRoomClick(event, room.id)}

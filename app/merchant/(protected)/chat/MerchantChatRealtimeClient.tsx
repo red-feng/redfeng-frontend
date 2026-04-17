@@ -804,6 +804,12 @@ export default function MerchantChatRealtimeClient({
     void handleHideRoom(roomId)
   }
 
+  function handleRoomCardKeyDown(event: React.KeyboardEvent<HTMLDivElement>, roomId: string) {
+    if (event.key !== "Enter" && event.key !== " ") return
+    event.preventDefault()
+    handleSelectRoom(roomId)
+  }
+
   function handleSelectRoom(roomId: string) {
     shouldAutoMarkActiveRoomReadRef.current = true
     setActiveRoomId(roomId)
@@ -1128,7 +1134,13 @@ export default function MerchantChatRealtimeClient({
                     room.id === activeRoomId ? "bg-[#fffaf5]" : ""
                   }`}
                 >
-                  <button type="button" onClick={() => handleSelectRoom(room.id)} className="block w-full text-left">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelectRoom(room.id)}
+                    onKeyDown={(event) => handleRoomCardKeyDown(event, room.id)}
+                    className="block w-full text-left"
+                  >
                     <div className="flex items-start justify-between gap-3 lg:hidden">
                       <div className="flex min-w-0 items-start gap-3">
                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ffe7d1] text-[15px] font-semibold text-[#a54d00]">
@@ -1194,7 +1206,7 @@ export default function MerchantChatRealtimeClient({
                     <p className="mt-2 text-xs text-slate-500">
                       {t.lastUpdated}: {formatDateTime(room.lastMessageAt || room.updatedAt)}
                     </p>
-                  </button>
+                  </div>
                   {room.packageId ? (
                     <Link
                       href={buildMerchantPackageDetailHref({
