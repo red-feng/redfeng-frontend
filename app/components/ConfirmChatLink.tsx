@@ -14,13 +14,11 @@ export default function ConfirmChatLink({
   href,
   label,
   className,
-  confirmMessage,
   children,
 }: ConfirmChatLinkProps) {
   const router = useRouter()
 
   function handleClick() {
-    if (!window.confirm(confirmMessage)) return
     router.push(href)
   }
 

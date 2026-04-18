@@ -593,13 +593,6 @@ export default function CommerceChatRealtimeClient({
   async function handleDeleteThread() {
     if (!activeThread) return
 
-    const confirmed = window.confirm(
-      portal === "merchant"
-        ? "Hapus room chat ini permanen dari sisi merchant dan customer? Semua pesan dan lampiran akan dihapus tanpa sisa."
-        : "Hapus room chat ini permanen? Semua pesan dan lampiran akan dihapus tanpa sisa untuk customer dan merchant.",
-    )
-    if (!confirmed) return
-
     setDeletingThreadId(activeThread.id)
     setErrorMessage("")
 
