@@ -1,3 +1,5 @@
 export * from "./core"
 export * from "./attachments"
 export * from "./client-state"
+export * from "./policy.mjs"
+export * from "./delete-contract.mjs"

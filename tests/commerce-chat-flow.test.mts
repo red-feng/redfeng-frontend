@@ -3,6 +3,17 @@ import {
   resolveCommerceActiveThreadId,
   resolveCommerceActiveThreadIdAfterDelete,
 } from "../lib/commerce-chat/client-state.ts"
+import {
+  COMMERCE_CHAT_DELETE_ROUTE_CONTRACT_VERSION,
+  COMMERCE_CHAT_DELETE_ROUTE_ERRORS,
+  resolveCommerceChatDeleteErrorStatus,
+} from "../lib/commerce-chat/delete-contract.mjs"
+import {
+  COMMERCE_CHAT_DELETE_POLICY_VERSION,
+  canDeleteCommerceThread,
+  decideCommerceInquiryThreadResolution,
+  shouldBlockInternalRoleFromCommerceChat,
+} from "../lib/commerce-chat/policy.mjs"
 
 function runCase(name: string, fn: () => void) {
   try {
@@ -19,6 +30,51 @@ const threads = [
   { id: "thread-b" },
   { id: "thread-c" },
 ] as const
+
+runCase("commerce chat delete policy version stays locked", () => {
+  assert.equal(COMMERCE_CHAT_DELETE_POLICY_VERSION, "2026-04-18")
+})
+
+runCase("commerce chat delete route contract version stays locked", () => {
+  assert.equal(COMMERCE_CHAT_DELETE_ROUTE_CONTRACT_VERSION, "2026-04-18")
+})
+
+runCase("commerce chat delete route error messages stay stable", () => {
+  assert.deepEqual(COMMERCE_CHAT_DELETE_ROUTE_ERRORS, {
+    unauthorized: "Unauthorized",
+    forbidden: "Forbidden",
+    invalidThread: "Thread commerce tidak valid.",
+    deleteFailed: "Gagal menghapus thread commerce.",
+  })
+})
+
+runCase("only customer and merchant can delete commerce threads", () => {
+  assert.equal(canDeleteCommerceThread("customer"), true)
+  assert.equal(canDeleteCommerceThread("merchant"), true)
+  assert.equal(canDeleteCommerceThread("system"), false)
+  assert.equal(canDeleteCommerceThread(null), false)
+})
+
+runCase("inquiry resolution rule stays stable", () => {
+  assert.equal(decideCommerceInquiryThreadResolution({ hasExistingInquiryThread: true }), "reuse_inquiry_thread")
+  assert.equal(decideCommerceInquiryThreadResolution({ hasExistingInquiryThread: false }), "create_inquiry_thread")
+})
+
+runCase("internal roles stay blocked from delete entry flow", () => {
+  assert.equal(shouldBlockInternalRoleFromCommerceChat("admin"), true)
+  assert.equal(shouldBlockInternalRoleFromCommerceChat("finance"), true)
+  assert.equal(shouldBlockInternalRoleFromCommerceChat("superadmin"), true)
+  assert.equal(shouldBlockInternalRoleFromCommerceChat("merchant"), false)
+  assert.equal(shouldBlockInternalRoleFromCommerceChat("customer"), false)
+})
+
+runCase("commerce chat delete route status mapping stays stable", () => {
+  assert.equal(resolveCommerceChatDeleteErrorStatus("Anda tidak punya akses ke thread commerce ini."), 403)
+  assert.equal(resolveCommerceChatDeleteErrorStatus("Role akun ini tidak diizinkan menghapus thread commerce."), 403)
+  assert.equal(resolveCommerceChatDeleteErrorStatus("Thread commerce tidak valid."), 400)
+  assert.equal(resolveCommerceChatDeleteErrorStatus("Gagal menghapus thread commerce."), 500)
+  assert.equal(resolveCommerceChatDeleteErrorStatus(""), 500)
+})
 
 runCase("requested room id is reused when still available", () => {
   assert.equal(resolveCommerceActiveThreadId("thread-b", [...threads] as never), "thread-b")

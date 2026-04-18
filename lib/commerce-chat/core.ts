@@ -1,6 +1,10 @@
 import { isInternalRole } from "@/lib/internal-roles"
 import { uploadCommerceChatAttachment } from "@/lib/commerce-chat/attachments"
-import { decideCommerceInquiryThreadResolution, isCommerceThreadUnreadForActor } from "@/lib/commerce-chat/policy.mjs"
+import {
+  canDeleteCommerceThread,
+  decideCommerceInquiryThreadResolution,
+  isCommerceThreadUnreadForActor,
+} from "@/lib/commerce-chat/policy.mjs"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
 const COMMERCE_CHAT_ATTACHMENT_BUCKET = "commerce-chat-attachments"
@@ -635,6 +639,9 @@ export async function hardDeleteCommerceThreadForUser(
   userId: string,
 ) {
   const { actorRole } = await getAccessibleThreadRowForUser(adminSupabase, threadId, userId)
+  if (!canDeleteCommerceThread(actorRole)) {
+    throw new Error("Role akun ini tidak diizinkan menghapus thread commerce.")
+  }
   const attachmentObjectPaths = await listCommerceThreadAttachmentObjectPaths(adminSupabase, threadId)
 
   const { error } = await adminSupabase

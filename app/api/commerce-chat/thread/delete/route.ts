@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server"
 import {
+  COMMERCE_CHAT_DELETE_ROUTE_ERRORS,
   getCommerceChatProfile,
   hardDeleteCommerceThreadForUser,
   isBlockedCommerceProfileRole,
+  resolveCommerceChatDeleteErrorStatus,
 } from "@/lib/commerce-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -15,28 +17,28 @@ export async function DELETE(request: Request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: COMMERCE_CHAT_DELETE_ROUTE_ERRORS.unauthorized }, { status: 401 })
   }
 
   const profile = await getCommerceChatProfile(adminSupabase, user.id)
   if (isBlockedCommerceProfileRole(profile?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    return NextResponse.json({ error: COMMERCE_CHAT_DELETE_ROUTE_ERRORS.forbidden }, { status: 403 })
   }
 
   const body = (await request.json().catch(() => null)) as { threadId?: string } | null
   const threadId = String(body?.threadId || "").trim()
 
   if (!threadId) {
-    return NextResponse.json({ error: "Thread commerce tidak valid." }, { status: 400 })
+    return NextResponse.json({ error: COMMERCE_CHAT_DELETE_ROUTE_ERRORS.invalidThread }, { status: 400 })
   }
 
   try {
     const result = await hardDeleteCommerceThreadForUser(adminSupabase, threadId, user.id)
     return NextResponse.json(result)
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Gagal menghapus thread commerce."
-    const lowered = message.toLowerCase()
-    const status = lowered.includes("akses") ? 403 : 500
+    const message =
+      error instanceof Error ? error.message : COMMERCE_CHAT_DELETE_ROUTE_ERRORS.deleteFailed
+    const status = resolveCommerceChatDeleteErrorStatus(message)
     return NextResponse.json({ error: message }, { status })
   }
 }
