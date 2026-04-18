@@ -36,16 +36,17 @@ export default async function ChatPage({ searchParams }: Props) {
   }
 
   const requestedPackageId = String(params.package_id || "").trim()
-  if (requestedPackageId) {
-    await ensureCommerceInquiryThread(adminSupabase, {
+  const requestedThreadId = String(params.room_id || "").trim()
+  if (requestedPackageId && !requestedThreadId) {
+    const result = await ensureCommerceInquiryThread(adminSupabase, {
       customerUserId: user.id,
       packageId: requestedPackageId,
       sourceContext: "public_package",
     })
+    redirect(`/chat?room_id=${encodeURIComponent(result.threadId)}`)
   }
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)
-  const requestedThreadId = String(params.room_id || "").trim()
   const activeThreadId =
     (requestedThreadId && threads.some((thread) => thread.id === requestedThreadId) ? requestedThreadId : "") ||
     threads[0]?.id ||

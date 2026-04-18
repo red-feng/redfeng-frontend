@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import ConfirmChatLink from "@/app/components/ConfirmChatLink"
 import { type Locale } from "@/lib/i18n"
 
 type PublicStickyActionProps = {
@@ -10,6 +11,7 @@ type PublicStickyActionProps = {
   summary?: string
   secondaryHref?: string
   secondaryLabel?: string
+  secondaryConfirmMessage?: string
 }
 
 export default function PublicStickyAction({
@@ -19,6 +21,7 @@ export default function PublicStickyAction({
   summary,
   secondaryHref,
   secondaryLabel,
+  secondaryConfirmMessage,
 }: PublicStickyActionProps) {
   const copy = {
     id: {
@@ -47,12 +50,21 @@ export default function PublicStickyAction({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {secondaryHref ? (
-            <Link
-              href={secondaryHref}
-              className="rounded-2xl border border-orange-200 bg-white px-3 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
-            >
-              {secondaryLabel || copy.defaultSecondaryLabel}
-            </Link>
+            secondaryConfirmMessage ? (
+              <ConfirmChatLink
+                href={secondaryHref}
+                label={secondaryLabel || copy.defaultSecondaryLabel}
+                confirmMessage={secondaryConfirmMessage}
+                className="rounded-2xl border border-orange-200 bg-white px-3 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+              />
+            ) : (
+              <Link
+                href={secondaryHref}
+                className="rounded-2xl border border-orange-200 bg-white px-3 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+              >
+                {secondaryLabel || copy.defaultSecondaryLabel}
+              </Link>
+            )
           ) : null}
           <Link
             href={href}

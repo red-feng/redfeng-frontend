@@ -7,6 +7,7 @@ import Gallery from "./Gallery"
 import PackageViewTracker from "./PackageViewTracker"
 import PackageTabs from "./PackageTabs"
 import SidebarActions from "./SidebarActions"
+import ConfirmChatLink from "@/app/components/ConfirmChatLink"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
@@ -461,6 +462,13 @@ export default async function PaketPage({
     parseHighlights(translation?.highlights).length > 0
       ? parseHighlights(translation?.highlights)
       : tags.map((tag) => tag.tag).slice(0, 4)
+  const chatMerchantLabel = activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"
+  const confirmChatMessage =
+    activeLocale === "en"
+      ? "Starting chat from this package will open a new merchant room if no active room exists. Continue?"
+      : activeLocale === "zh"
+        ? "从此套餐开始聊天时，如果当前没有可用会话，系统会创建一个新的商家聊天房间。是否继续？"
+        : "Memulai chat dari halaman paket ini akan membuka room merchant baru jika belum ada room aktif. Lanjutkan?"
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)] pb-36 md:pb-0">
@@ -638,12 +646,14 @@ export default async function PaketPage({
                 >
                   {t.bookingNow}
                 </Link>
-                <Link
+                <ConfirmChatLink
                   href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
+                  label={chatMerchantLabel}
+                  confirmMessage={confirmChatMessage}
                   className="block w-full rounded-[22px] border border-orange-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-orange-700 shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-orange-300 hover:bg-orange-50"
                 >
                   {activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
-                </Link>
+                </ConfirmChatLink>
               </div>
             </section>
             <SidebarActions
@@ -660,6 +670,7 @@ export default async function PaketPage({
         label={t.bookingNow}
         summary={displayTitle}
         secondaryHref={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
+        secondaryConfirmMessage={confirmChatMessage}
         secondaryLabel={activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
       />
       <PublicMobileNav locale={activeLocale} />
