@@ -62,7 +62,6 @@ type Props = {
 type SendPhase = "idle" | "compressing" | "uploading"
 
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
-const SNAPSHOT_LIVE_KEEPALIVE_INTERVAL_MS = 4000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
@@ -87,6 +86,34 @@ function mergeMessages(existing: CommerceChatMessageItem[], incoming: CommerceCh
   for (const message of existing) merged.set(message.id, message)
   for (const message of incoming) merged.set(message.id, message)
   return sortMessages([...merged.values()])
+}
+
+function areThreadListsEqual(left: CommerceChatThreadItem[], right: CommerceChatThreadItem[]) {
+  if (left.length !== right.length) return false
+  return left.every((thread, index) => {
+    const other = right[index]
+    return (
+      other &&
+      thread.id === other.id &&
+      thread.lastMessageAt === other.lastMessageAt &&
+      thread.lastMessagePreview === other.lastMessagePreview &&
+      thread.currentUserLastReadAt === other.currentUserLastReadAt
+    )
+  })
+}
+
+function areMessageListsEqual(left: CommerceChatMessageItem[], right: CommerceChatMessageItem[]) {
+  if (left.length !== right.length) return false
+  return left.every((message, index) => {
+    const other = right[index]
+    return (
+      other &&
+      message.id === other.id &&
+      message.created_at === other.created_at &&
+      message.body === other.body &&
+      message.attachment_url === other.attachment_url
+    )
+  })
 }
 
 function formatDateTime(value: string | null) {
@@ -229,6 +256,7 @@ export default function CommerceChatRealtimeClient({
   const threadsRef = useRef<CommerceChatThreadItem[]>(sortThreads(initialThreads))
   const activeThreadIdRef = useRef(initialActiveThreadId)
   const queuedSnapshotRefreshTimeoutRef = useRef<number | null>(null)
+  const deletingThreadIdRef = useRef("")
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
   const activeMessages = messagesByThread[activeThreadId] || []
@@ -289,8 +317,12 @@ export default function CommerceChatRealtimeClient({
   const refreshThreads = useCallback(async (keepCurrent = true) => {
     try {
       const nextThreads = await fetchThreads()
-      threadsRef.current = nextThreads
-      setThreads(nextThreads)
+      if (!areThreadListsEqual(threadsRef.current, nextThreads)) {
+        threadsRef.current = nextThreads
+        setThreads(nextThreads)
+      } else {
+        threadsRef.current = nextThreads
+      }
       const currentActiveThreadId = activeThreadIdRef.current
       const nextActiveThreadId = keepCurrent
         ? resolveCommerceActiveThreadId(currentActiveThreadId, nextThreads)
@@ -372,6 +404,7 @@ export default function CommerceChatRealtimeClient({
 
   const refreshSnapshotNow = useCallback(async () => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+    if (deletingThreadIdRef.current) return
 
     try {
       const nextThreads = await fetchThreads()
@@ -388,10 +421,16 @@ export default function CommerceChatRealtimeClient({
 
       const payload = await fetchMessagesPage(candidateThreadId)
       const nextMessages = sortMessages(payload.messages || [])
-      setMessagesByThread((current) => ({
-        ...current,
-        [candidateThreadId]: mergeMessages(current[candidateThreadId] || [], nextMessages),
-      }))
+      setMessagesByThread((current) => {
+        const mergedMessages = mergeMessages(current[candidateThreadId] || [], nextMessages)
+        if (areMessageListsEqual(current[candidateThreadId] || [], mergedMessages)) {
+          return current
+        }
+        return {
+          ...current,
+          [candidateThreadId]: mergedMessages,
+        }
+      })
       setLoadedThreadIds((current) => ({ ...current, [candidateThreadId]: true }))
       setHasMoreByThread((current) => ({ ...current, [candidateThreadId]: Boolean(payload.hasMore) }))
       setOldestByThread((current) => ({
@@ -403,6 +442,7 @@ export default function CommerceChatRealtimeClient({
 
   const scheduleSnapshotRefresh = useCallback((delayMs = 180) => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+    if (deletingThreadIdRef.current) return
     if (queuedSnapshotRefreshTimeoutRef.current) {
       window.clearTimeout(queuedSnapshotRefreshTimeoutRef.current)
     }
@@ -506,18 +546,18 @@ export default function CommerceChatRealtimeClient({
 
         if (payload.eventType === "DELETE") {
           removeThreadLocally(threadId)
-          scheduleSnapshotRefresh(120)
           return
         }
 
         const thread = await fetchThreadMeta(threadId)
         if (!thread) {
           await refreshThreads()
-          scheduleSnapshotRefresh(180)
           return
         }
         upsertThreadLocally(thread)
-        scheduleSnapshotRefresh(180)
+        if (portal === "merchant") {
+          scheduleSnapshotRefresh(180)
+        }
       },
     )
 
@@ -546,7 +586,9 @@ export default function CommerceChatRealtimeClient({
           await refreshLatestMessages(message.thread_id)
         }
 
-        scheduleSnapshotRefresh(120)
+        if (portal === "merchant") {
+          scheduleSnapshotRefresh(120)
+        }
       },
     )
 
@@ -579,25 +621,30 @@ export default function CommerceChatRealtimeClient({
       } catch {}
     }
 
-    const pollIntervalMs =
-      realtimeStatus === "fallback"
-        ? SNAPSHOT_FALLBACK_INTERVAL_MS
-        : threads.length === 0
-          ? SNAPSHOT_LIVE_EMPTY_INTERVAL_MS
-          : SNAPSHOT_LIVE_KEEPALIVE_INTERVAL_MS
+    const shouldPollFallback = realtimeStatus === "fallback"
+    const shouldPollForFirstMerchantThread = realtimeStatus === "live" && portal === "merchant" && threads.length === 0
 
-    void refreshSnapshot()
-
-    const intervalId = window.setInterval(() => {
-      void refreshSnapshot()
-    }, pollIntervalMs)
-
-    const handleFocus = () => {
+    if (shouldPollFallback || shouldPollForFirstMerchantThread) {
       void refreshSnapshot()
     }
 
+    const intervalId = shouldPollFallback || shouldPollForFirstMerchantThread
+      ? window.setInterval(() => {
+          void refreshSnapshot()
+        }, shouldPollFallback ? SNAPSHOT_FALLBACK_INTERVAL_MS : SNAPSHOT_LIVE_EMPTY_INTERVAL_MS)
+      : null
+
+    const handleFocus = () => {
+      if (realtimeStatus === "fallback" || (portal === "merchant" && threadsRef.current.length === 0)) {
+        void refreshSnapshot()
+      }
+    }
+
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
+      if (
+        document.visibilityState === "visible" &&
+        (realtimeStatus === "fallback" || (portal === "merchant" && threadsRef.current.length === 0))
+      ) {
         void refreshSnapshot()
       }
     }
@@ -612,7 +659,7 @@ export default function CommerceChatRealtimeClient({
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [realtimeStatus, refreshSnapshotNow, threads.length])
+  }, [portal, realtimeStatus, refreshSnapshotNow, threads.length])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -675,6 +722,7 @@ export default function CommerceChatRealtimeClient({
     if (!activeThread) return
 
     setDeletingThreadId(activeThread.id)
+    deletingThreadIdRef.current = activeThread.id
     setErrorMessage("")
 
     try {
@@ -699,6 +747,7 @@ export default function CommerceChatRealtimeClient({
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room chat.")
     } finally {
+      deletingThreadIdRef.current = ""
       setDeletingThreadId("")
     }
   }
