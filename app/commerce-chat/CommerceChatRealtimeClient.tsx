@@ -63,6 +63,7 @@ type SendPhase = "idle" | "compressing" | "uploading"
 
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
+const THREAD_LIST_LIVE_SYNC_INTERVAL_MS = 3000
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -344,6 +345,13 @@ export default function CommerceChatRealtimeClient({
       }
     } catch {}
   }, [fetchThreads])
+
+  const refreshThreadListNow = useCallback(async (keepCurrent = true) => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+    if (deletingThreadIdRef.current) return
+
+    await refreshThreads(keepCurrent)
+  }, [refreshThreads])
 
   const removeThreadLocally = useCallback((threadId: string) => {
     const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
@@ -690,6 +698,37 @@ export default function CommerceChatRealtimeClient({
       document.removeEventListener("visibilitychange", handleVisibility)
     }
   }, [portal, realtimeStatus, refreshSnapshotNow, threads.length])
+
+  useEffect(() => {
+    if (realtimeStatus !== "live") return
+
+    let cancelled = false
+    const intervalId = window.setInterval(() => {
+      if (cancelled) return
+      void refreshThreadListNow()
+    }, THREAD_LIST_LIVE_SYNC_INTERVAL_MS)
+
+    const handleFocus = () => {
+      if (cancelled) return
+      void refreshThreadListNow()
+    }
+
+    const handleVisibility = () => {
+      if (cancelled) return
+      if (document.visibilityState === "visible") {
+        void refreshThreadListNow()
+      }
+    }
+
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleVisibility)
+    return () => {
+      cancelled = true
+      window.clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleVisibility)
+    }
+  }, [realtimeStatus, refreshThreadListNow])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
