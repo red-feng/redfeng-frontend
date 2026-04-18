@@ -644,13 +644,19 @@ export async function hardDeleteCommerceThreadForUser(
   }
   const attachmentObjectPaths = await listCommerceThreadAttachmentObjectPaths(adminSupabase, threadId)
 
-  const { error } = await adminSupabase
+  const { data: deletedThread, error } = await adminSupabase
     .from("commerce_chat_threads")
     .delete()
     .eq("id", threadId)
+    .select("id")
+    .maybeSingle()
 
   if (error) {
     throw new Error(error.message || "Gagal menghapus thread commerce.")
+  }
+
+  if (!deletedThread?.id) {
+    throw new Error("Thread commerce tidak ditemukan atau sudah terhapus.")
   }
 
   if (attachmentObjectPaths.length) {

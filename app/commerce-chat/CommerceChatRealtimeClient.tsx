@@ -64,6 +64,8 @@ type SendPhase = "idle" | "compressing" | "uploading"
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
 const THREAD_LIST_SYNC_INTERVAL_MS = 1200
+const THREAD_DELETE_TOMBSTONE_TTL_MS = 10000
+const THREAD_DELETE_BROADCAST_KEY = "commerce-chat-thread-delete"
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -121,6 +123,29 @@ function isCommerceThreadAccessError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "")
   const lowered = message.toLowerCase()
   return lowered.includes("tidak punya akses") || lowered.includes("thread commerce tidak ditemukan")
+}
+
+function broadcastDeletedThread(threadId: string) {
+  if (typeof window === "undefined" || !threadId) return
+
+  const payload = JSON.stringify({
+    type: "thread_deleted",
+    threadId,
+    at: Date.now(),
+  })
+
+  try {
+    window.localStorage.setItem(THREAD_DELETE_BROADCAST_KEY, payload)
+    window.localStorage.removeItem(THREAD_DELETE_BROADCAST_KEY)
+  } catch {}
+
+  if (typeof BroadcastChannel !== "undefined") {
+    try {
+      const channel = new BroadcastChannel(THREAD_DELETE_BROADCAST_KEY)
+      channel.postMessage(payload)
+      channel.close()
+    } catch {}
+  }
 }
 
 function formatDateTime(value: string | null) {
@@ -264,6 +289,7 @@ export default function CommerceChatRealtimeClient({
   const activeThreadIdRef = useRef(initialActiveThreadId)
   const queuedSnapshotRefreshTimeoutRef = useRef<number | null>(null)
   const deletingThreadIdRef = useRef("")
+  const deletedThreadTombstonesRef = useRef<Map<string, number>>(new Map())
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
   const activeMessages = messagesByThread[activeThreadId] || []
@@ -293,6 +319,28 @@ export default function CommerceChatRealtimeClient({
       }).length,
     [threads],
   )
+
+  const sweepDeletedThreadTombstones = useCallback(() => {
+    const now = Date.now()
+    for (const [threadId, expiresAt] of deletedThreadTombstonesRef.current.entries()) {
+      if (expiresAt <= now) {
+        deletedThreadTombstonesRef.current.delete(threadId)
+      }
+    }
+  }, [])
+
+  const markThreadDeletedLocally = useCallback((threadId: string, shouldBroadcast = false) => {
+    if (!threadId) return
+    deletedThreadTombstonesRef.current.set(threadId, Date.now() + THREAD_DELETE_TOMBSTONE_TTL_MS)
+    if (shouldBroadcast) {
+      broadcastDeletedThread(threadId)
+    }
+  }, [])
+
+  const filterDeletedThreadTombstones = useCallback((threadsToFilter: CommerceChatThreadItem[]) => {
+    sweepDeletedThreadTombstones()
+    return threadsToFilter.filter((thread) => !deletedThreadTombstonesRef.current.has(thread.id))
+  }, [sweepDeletedThreadTombstones])
 
   const fetchThreads = useCallback(async () => {
     const response = await fetch(COMMERCE_CHAT_ENGINE.threadsEndpoint, { cache: "no-store" })
@@ -328,7 +376,7 @@ export default function CommerceChatRealtimeClient({
 
   const refreshThreads = useCallback(async (keepCurrent = true) => {
     try {
-      const nextThreads = await fetchThreads()
+      const nextThreads = filterDeletedThreadTombstones(await fetchThreads())
       if (!areThreadListsEqual(threadsRef.current, nextThreads)) {
         threadsRef.current = nextThreads
         setThreads(nextThreads)
@@ -344,7 +392,7 @@ export default function CommerceChatRealtimeClient({
         setActiveThreadId(nextActiveThreadId)
       }
     } catch {}
-  }, [fetchThreads])
+  }, [fetchThreads, filterDeletedThreadTombstones])
 
   const refreshThreadListNow = useCallback(async (keepCurrent = true) => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
@@ -354,6 +402,7 @@ export default function CommerceChatRealtimeClient({
   }, [refreshThreads])
 
   const removeThreadLocally = useCallback((threadId: string) => {
+    markThreadDeletedLocally(threadId)
     const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
     threadsRef.current = nextThreads
     setThreads(nextThreads)
@@ -394,14 +443,15 @@ export default function CommerceChatRealtimeClient({
       delete next[threadId]
       return next
     })
-  }, [])
+  }, [markThreadDeletedLocally])
 
   const handleInaccessibleThread = useCallback((threadId: string) => {
     if (!threadId) return
+    markThreadDeletedLocally(threadId, true)
     removeThreadLocally(threadId)
     setErrorMessage("")
     void refreshThreads()
-  }, [refreshThreads, removeThreadLocally])
+  }, [markThreadDeletedLocally, refreshThreads, removeThreadLocally])
 
   const refreshLatestMessages = useCallback(async (threadId: string) => {
     if (!threadId) return
@@ -423,6 +473,10 @@ export default function CommerceChatRealtimeClient({
   }, [fetchMessagesPage, handleInaccessibleThread])
 
   const upsertThreadLocally = useCallback((thread: CommerceChatThreadItem) => {
+    sweepDeletedThreadTombstones()
+    if (deletedThreadTombstonesRef.current.has(thread.id)) {
+      return
+    }
     setThreads((current) => {
       const next = current.filter((item) => item.id !== thread.id)
       next.push(thread)
@@ -430,14 +484,14 @@ export default function CommerceChatRealtimeClient({
       threadsRef.current = sorted
       return sorted
     })
-  }, [])
+  }, [sweepDeletedThreadTombstones])
 
   const refreshSnapshotNow = useCallback(async () => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
     if (deletingThreadIdRef.current) return
 
     try {
-      const nextThreads = await fetchThreads()
+      const nextThreads = filterDeletedThreadTombstones(await fetchThreads())
       if (!areThreadListsEqual(threadsRef.current, nextThreads)) {
         threadsRef.current = nextThreads
         setThreads(nextThreads)
@@ -476,7 +530,7 @@ export default function CommerceChatRealtimeClient({
         handleInaccessibleThread(activeThreadIdRef.current)
       }
     }
-  }, [fetchMessagesPage, fetchThreads, handleInaccessibleThread])
+  }, [fetchMessagesPage, fetchThreads, filterDeletedThreadTombstones, handleInaccessibleThread])
 
   const scheduleSnapshotRefresh = useCallback((delayMs = 180) => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
@@ -547,6 +601,55 @@ export default function CommerceChatRealtimeClient({
       void refreshLatestMessages(activeThreadId)
     }
   }, [activeThreadId, loadedThreadIds, refreshLatestMessages])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const handleDeletedThread = (threadId: string) => {
+      if (!threadId) return
+      markThreadDeletedLocally(threadId)
+      removeThreadLocally(threadId)
+      setErrorMessage("")
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== THREAD_DELETE_BROADCAST_KEY || !event.newValue) return
+      try {
+        const payload = JSON.parse(event.newValue) as { type?: string; threadId?: string }
+        if (payload.type === "thread_deleted" && payload.threadId) {
+          handleDeletedThread(payload.threadId)
+        }
+      } catch {}
+    }
+
+    let channel: BroadcastChannel | null = null
+    const handleMessage = (event: MessageEvent<string>) => {
+      try {
+        const payload = JSON.parse(String(event.data || "")) as { type?: string; threadId?: string }
+        if (payload.type === "thread_deleted" && payload.threadId) {
+          handleDeletedThread(payload.threadId)
+        }
+      } catch {}
+    }
+
+    window.addEventListener("storage", handleStorage)
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        channel = new BroadcastChannel(THREAD_DELETE_BROADCAST_KEY)
+        channel.addEventListener("message", handleMessage)
+      } catch {
+        channel = null
+      }
+    }
+
+    return () => {
+      window.removeEventListener("storage", handleStorage)
+      if (channel) {
+        channel.removeEventListener("message", handleMessage)
+        channel.close()
+      }
+    }
+  }, [markThreadDeletedLocally, removeThreadLocally])
 
   useEffect(() => {
     const normalizedCurrentRoomId = String(currentRoomId).trim()
@@ -826,6 +929,7 @@ export default function CommerceChatRealtimeClient({
       }
 
       const deletedThreadId = payload.deletedThreadId
+      markThreadDeletedLocally(deletedThreadId, true)
       removeThreadLocally(deletedThreadId)
       setErrorMessage("")
       setDraftMessage("")
@@ -835,6 +939,7 @@ export default function CommerceChatRealtimeClient({
     } catch (error) {
       if (isCommerceThreadAccessError(error)) {
         if (activeThread?.id) {
+          markThreadDeletedLocally(activeThread.id, true)
           handleInaccessibleThread(activeThread.id)
         }
         setErrorMessage("")
