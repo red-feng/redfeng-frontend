@@ -246,7 +246,7 @@ export default function CheckoutClient({
   financeSettings: CheckoutFinanceSettings
   paymentPricing: CheckoutPaymentPricing
 }) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
   const t = dictionaries[locale].checkout
   const ui = checkoutUiCopy[locale]
@@ -343,16 +343,16 @@ export default function CheckoutClient({
       setCheckingSession(false)
 
       if (session?.user?.email) {
-        setEmail(session.user.email)
+        setEmail((current) => current || session.user.email || "")
       }
 
       const fullName = (session?.user?.user_metadata?.full_name as string | undefined) || ""
       const phoneNumber = (session?.user?.user_metadata?.phone_number as string | undefined) || ""
       if (fullName) {
-        setNama(fullName)
+        setNama((current) => current || fullName)
       }
       if (phoneNumber) {
-        setPhone(phoneNumber)
+        setPhone((current) => current || phoneNumber)
       }
     }
 
