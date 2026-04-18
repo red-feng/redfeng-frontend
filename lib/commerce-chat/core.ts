@@ -376,14 +376,14 @@ export async function ensureCommerceInquiryThread(
     }
   }
 
-  const recentlyDeleted = await wasCommerceInquiryThreadRecentlyDeleted(adminSupabase, {
+  const wasRecentlyDeleted = await wasCommerceInquiryThreadRecentlyDeleted(adminSupabase, {
     customerUserId: params.customerUserId,
     merchantId: merchant.id,
     packageId: params.packageId,
   })
 
-  if (recentlyDeleted) {
-    throw new Error("Thread inquiry commerce ini baru saja dihapus.")
+  if (wasRecentlyDeleted) {
+    throw new Error("Room chat untuk paket ini baru saja dihapus. Silakan tunggu sebentar sebelum membuat thread baru.")
   }
 
   const nowIso = new Date().toISOString()
@@ -452,7 +452,13 @@ export async function ensureCommerceInquiryThread(
     })
 
   if (eventError) {
-    throw new Error(eventError.message || "Gagal mencatat event thread inquiry commerce.")
+    console.error("[commerce-chat] failed to persist inquiry thread event", {
+      threadId: createdThread.id,
+      customerUserId: params.customerUserId,
+      packageId: params.packageId,
+      sourceContext: params.sourceContext || "public_package",
+      error: eventError.message || "Unknown commerce chat event insert error",
+    })
   }
 
   return {
