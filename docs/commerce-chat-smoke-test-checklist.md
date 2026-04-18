@@ -211,7 +211,59 @@ Expected:
 - thread tidak ditemukan atau tidak punya akses
 - customer B tidak bisa melihat pesan customer A
 
-## 9. Database Spot Check
+## 9. Smoke Test Delete Flow
+
+### Case P. Customer menghapus room aktif
+
+1. Login sebagai customer yang memiliki thread inquiry aktif.
+2. Buka `/chat?room_id=<thread-id>`.
+3. Klik `Hapus room`.
+
+Expected:
+
+- room langsung hilang dari panel kiri tanpa reload penuh halaman
+- area percakapan pindah ke thread lain jika masih ada, atau ke state kosong jika tidak ada thread lain
+- URL tidak lagi mempertahankan `room_id` yang sudah dihapus
+- tidak muncul error server di browser
+
+### Case Q. Merchant menghapus room aktif
+
+1. Login sebagai merchant pemilik thread.
+2. Buka `/merchant/chat?room_id=<thread-id>`.
+3. Klik `Hapus room`.
+
+Expected:
+
+- room langsung hilang dari inbox merchant
+- merchant tidak lagi melihat pesan thread tersebut
+- customer juga kehilangan thread yang sama setelah event realtime atau fallback snapshot berikutnya
+- tidak ada popup konfirmasi browser
+
+### Case R. Refresh setelah room dihapus
+
+1. Hapus room dari salah satu sisi.
+2. Refresh halaman customer dan merchant.
+3. Jika perlu, coba akses ulang URL lama `/chat?room_id=<thread-id>` dan `/merchant/chat?room_id=<thread-id>`.
+
+Expected:
+
+- halaman tidak crash
+- `room_id` mati diabaikan dan UI fallback ke thread valid berikutnya atau state kosong
+- room yang sudah dihapus tidak dibuat ulang hanya karena refresh biasa
+
+### Case S. Spot check database dan storage setelah delete
+
+1. Catat `thread_id` yang dihapus.
+2. Cek tabel `commerce_chat_threads`, `commerce_chat_messages`, dan `commerce_chat_events`.
+3. Cek bucket `commerce-chat-attachments` untuk object path thread tersebut bila sebelumnya ada lampiran.
+
+Expected:
+
+- row thread sudah tidak ada
+- message dan event untuk thread tersebut ikut hilang karena cascade
+- attachment object untuk thread tersebut ikut terhapus
+
+## 10. Database Spot Check
 
 Lakukan verifikasi cepat di Supabase SQL editor setelah beberapa pesan terkirim.
 
@@ -237,7 +289,7 @@ Pastikan:
 - `client_message_id` tidak menduplikasi pesan retry
 - lampiran menyimpan URL/nama/MIME bila ada file
 
-## 10. Known Limits Saat Ini
+## 11. Known Limits Saat Ini
 
 Hal berikut memang belum dianggap bug untuk scope sekarang:
 
@@ -246,7 +298,7 @@ Hal berikut memang belum dianggap bug untuk scope sekarang:
 - belum ada unread badge live khusus customer header, saat ini memakai render server dari layout
 - belum ada escalation ke merchant support/internal ops
 
-## 11. Definition of Done Smoke Test
+## 12. Definition of Done Smoke Test
 
 Commerce chat dianggap lolos smoke test bila:
 
@@ -257,4 +309,4 @@ Commerce chat dianggap lolos smoke test bila:
 5. Unread badge merchant ikut berubah.
 6. Customer dan merchant lain yang tidak berhak tidak bisa membaca thread.
 7. Role internal tidak bisa memakai commerce chat.
-
+8. Room yang dihapus hilang dari customer, merchant, database, dan attachment storage.

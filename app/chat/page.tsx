@@ -6,6 +6,7 @@ import {
   isBlockedCommerceProfileRole,
   loadCommerceChatMessagesPageForUser,
   loadCommerceChatThreadsForUser,
+  resolveCommerceActiveThreadId,
 } from "@/lib/commerce-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -47,10 +48,7 @@ export default async function ChatPage({ searchParams }: Props) {
   }
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)
-  const activeThreadId =
-    (requestedThreadId && threads.some((thread) => thread.id === requestedThreadId) ? requestedThreadId : "") ||
-    threads[0]?.id ||
-    ""
+  const activeThreadId = resolveCommerceActiveThreadId(requestedThreadId, threads)
   const initialPage = activeThreadId
     ? await loadCommerceChatMessagesPageForUser(adminSupabase, activeThreadId, user.id, {
         limit: COMMERCE_CHAT_PAGE_SIZE,

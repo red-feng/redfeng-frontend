@@ -8,9 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test:chat": "node --experimental-strip-types tests/chat-flow.test.mts",
+    "test:commerce-chat": "node --experimental-strip-types tests/commerce-chat-flow.test.mts",
     "test:role-lock": "node --experimental-strip-types tests/role-lock.test.mts",
     "verify:account-state": "node --experimental-strip-types tests/chat-flow.test.mts",
-    "verify:account-state:full": "npm run test:chat && npm run test:role-lock",
+    "verify:account-state:full": "npm run test:chat && npm run test:commerce-chat && npm run test:role-lock",
     "verify:release": "npm run lint && npx tsc --noEmit --pretty false && npm run verify:account-state:full"
   },
   "dependencies": {

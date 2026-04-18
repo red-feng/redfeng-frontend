@@ -491,7 +491,7 @@ function extractStoragePathFromPublicUrl(url: string | null | undefined, bucket:
   return decodeURIComponent(raw.slice(index + marker.length))
 }
 
-async function removeCommerceThreadAttachmentObjects(
+async function listCommerceThreadAttachmentObjectPaths(
   adminSupabase: AdminSupabase,
   threadId: string,
 ) {
@@ -505,19 +505,39 @@ async function removeCommerceThreadAttachmentObjects(
     throw new Error(error.message || "Gagal membaca lampiran thread commerce.")
   }
 
-  const objectPaths = (((data as Array<{ attachment_url: string | null }> | null) || []) as Array<{ attachment_url: string | null }>)
+  return [...new Set(
+    ((((data as Array<{ attachment_url: string | null }> | null) || []) as Array<{ attachment_url: string | null }>)
     .map((item) => extractStoragePathFromPublicUrl(item.attachment_url, COMMERCE_CHAT_ATTACHMENT_BUCKET))
-    .filter((path): path is string => Boolean(path))
+    .filter((path): path is string => Boolean(path))),
+  )]
+}
 
+async function removeCommerceThreadAttachmentObjects(
+  adminSupabase: AdminSupabase,
+  objectPaths: string[],
+) {
   if (!objectPaths.length) return
 
-  const uniquePaths = [...new Set(objectPaths)]
-  const { error: removeError } = await adminSupabase.storage
-    .from(COMMERCE_CHAT_ATTACHMENT_BUCKET)
-    .remove(uniquePaths)
+  let lastError: string | null = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 250 * attempt))
+    }
 
-  if (removeError) {
-    throw new Error(removeError.message || "Gagal menghapus lampiran thread commerce.")
+    lastError = null
+    const { error: removeError } = await adminSupabase.storage
+      .from(COMMERCE_CHAT_ATTACHMENT_BUCKET)
+      .remove(objectPaths)
+
+    if (!removeError) {
+      return
+    }
+
+    lastError = removeError.message || "Gagal menghapus lampiran thread commerce."
+  }
+
+  if (lastError) {
+    throw new Error(lastError)
   }
 }
 
@@ -615,8 +635,7 @@ export async function hardDeleteCommerceThreadForUser(
   userId: string,
 ) {
   const { actorRole } = await getAccessibleThreadRowForUser(adminSupabase, threadId, userId)
-
-  await removeCommerceThreadAttachmentObjects(adminSupabase, threadId)
+  const attachmentObjectPaths = await listCommerceThreadAttachmentObjectPaths(adminSupabase, threadId)
 
   const { error } = await adminSupabase
     .from("commerce_chat_threads")
@@ -625,6 +644,17 @@ export async function hardDeleteCommerceThreadForUser(
 
   if (error) {
     throw new Error(error.message || "Gagal menghapus thread commerce.")
+  }
+
+  if (attachmentObjectPaths.length) {
+    try {
+      await removeCommerceThreadAttachmentObjects(adminSupabase, attachmentObjectPaths)
+    } catch (cleanupError) {
+      console.error("[commerce-chat] attachment cleanup failed after thread delete", {
+        threadId,
+        error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+      })
+    }
   }
 
   return {

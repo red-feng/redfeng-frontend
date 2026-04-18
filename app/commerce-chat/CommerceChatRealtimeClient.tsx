@@ -4,7 +4,11 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState } fr
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 import { COMMERCE_CHAT_ENGINE } from "@/lib/chat-engines"
-import { isCommerceChatImageAttachment } from "@/lib/commerce-chat"
+import {
+  isCommerceChatImageAttachment,
+  resolveCommerceActiveThreadId,
+  resolveCommerceActiveThreadIdAfterDelete,
+} from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/client"
 import type { CommerceChatMessageItem, CommerceChatThreadItem } from "@/lib/commerce-chat"
 
@@ -220,6 +224,8 @@ export default function CommerceChatRealtimeClient({
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [deletingThreadId, setDeletingThreadId] = useState("")
+  const threadsRef = useRef<CommerceChatThreadItem[]>(sortThreads(initialThreads))
+  const activeThreadIdRef = useRef(initialActiveThreadId)
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
   const activeMessages = messagesByThread[activeThreadId] || []
@@ -280,17 +286,18 @@ export default function CommerceChatRealtimeClient({
   const refreshThreads = useCallback(async (keepCurrent = true) => {
     try {
       const nextThreads = await fetchThreads()
+      threadsRef.current = nextThreads
       setThreads(nextThreads)
+      const currentActiveThreadId = activeThreadIdRef.current
       const nextActiveThreadId = keepCurrent
-        ? activeThreadId && nextThreads.some((thread) => thread.id === activeThreadId)
-          ? activeThreadId
-          : nextThreads[0]?.id || ""
-        : nextThreads[0]?.id || ""
-      if (nextActiveThreadId !== activeThreadId) {
+        ? resolveCommerceActiveThreadId(currentActiveThreadId, nextThreads)
+        : resolveCommerceActiveThreadId("", nextThreads)
+      if (nextActiveThreadId !== currentActiveThreadId) {
+        activeThreadIdRef.current = nextActiveThreadId
         setActiveThreadId(nextActiveThreadId)
       }
     } catch {}
-  }, [activeThreadId, fetchThreads])
+  }, [fetchThreads])
 
   const refreshLatestMessages = useCallback(async (threadId: string) => {
     if (!threadId) return
@@ -306,6 +313,59 @@ export default function CommerceChatRealtimeClient({
       }))
     } catch {}
   }, [fetchMessagesPage])
+
+  const removeThreadLocally = useCallback((threadId: string) => {
+    const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
+    threadsRef.current = nextThreads
+    setThreads(nextThreads)
+
+    const nextActiveThreadId = resolveCommerceActiveThreadIdAfterDelete({
+      currentActiveThreadId: activeThreadIdRef.current,
+      deletedThreadId: threadId,
+      remainingThreads: nextThreads,
+    })
+
+    if (nextActiveThreadId !== activeThreadIdRef.current) {
+      activeThreadIdRef.current = nextActiveThreadId
+      setActiveThreadId(nextActiveThreadId)
+    }
+
+    setMessagesByThread((current) => {
+      const next = { ...current }
+      delete next[threadId]
+      return next
+    })
+    setLoadedThreadIds((current) => {
+      const next = { ...current }
+      delete next[threadId]
+      return next
+    })
+    setHasMoreByThread((current) => {
+      const next = { ...current }
+      delete next[threadId]
+      return next
+    })
+    setOldestByThread((current) => {
+      const next = { ...current }
+      delete next[threadId]
+      return next
+    })
+    setLoadingOlderByThread((current) => {
+      const next = { ...current }
+      delete next[threadId]
+      return next
+    })
+  }, [])
+
+  const upsertThreadLocally = useCallback((thread: CommerceChatThreadItem) => {
+    setThreads((current) => {
+      const next = current.filter((item) => item.id !== thread.id)
+      next.push(thread)
+      const sorted = sortThreads(next)
+      threadsRef.current = sorted
+      return sorted
+    })
+  }, [])
 
   const loadOlderMessages = useCallback(async (threadId: string) => {
     if (!threadId || loadingOlderByThread[threadId] || !hasMoreByThread[threadId]) return
@@ -350,6 +410,14 @@ export default function CommerceChatRealtimeClient({
   }, [fetchMessagesPage, hasMoreByThread, loadingOlderByThread, oldestByThread])
 
   useEffect(() => {
+    threadsRef.current = threads
+  }, [threads])
+
+  useEffect(() => {
+    activeThreadIdRef.current = activeThreadId
+  }, [activeThreadId])
+
+  useEffect(() => {
     if (!activeThreadId) return
     if (!loadedThreadIds[activeThreadId]) {
       void refreshLatestMessages(activeThreadId)
@@ -391,10 +459,7 @@ export default function CommerceChatRealtimeClient({
         if (!threadId) return
 
         if (payload.eventType === "DELETE") {
-          setThreads((current) => current.filter((thread) => thread.id !== threadId))
-          if (activeThreadId === threadId) {
-            setActiveThreadId("")
-          }
+          removeThreadLocally(threadId)
           return
         }
 
@@ -403,11 +468,7 @@ export default function CommerceChatRealtimeClient({
           await refreshThreads()
           return
         }
-        setThreads((current) => {
-          const next = current.filter((item) => item.id !== thread.id)
-          next.push(thread)
-          return sortThreads(next)
-        })
+        upsertThreadLocally(thread)
       },
     )
 
@@ -429,14 +490,10 @@ export default function CommerceChatRealtimeClient({
 
         const thread = await fetchThreadMeta(message.thread_id)
         if (thread) {
-          setThreads((current) => {
-            const next = current.filter((item) => item.id !== thread.id)
-            next.push(thread)
-            return sortThreads(next)
-          })
+          upsertThreadLocally(thread)
         }
 
-        if (message.thread_id === activeThreadId && message.sender_user_id !== userId) {
+        if (message.thread_id === activeThreadIdRef.current && message.sender_user_id !== userId) {
           await refreshLatestMessages(message.thread_id)
         }
       },
@@ -455,7 +512,7 @@ export default function CommerceChatRealtimeClient({
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [activeThreadId, fetchThreadMeta, portal, refreshLatestMessages, refreshThreads, supabase, userId])
+  }, [fetchThreadMeta, portal, refreshLatestMessages, refreshThreads, removeThreadLocally, supabase, upsertThreadLocally, userId])
 
   useEffect(() => {
     let cancelled = false
@@ -464,14 +521,13 @@ export default function CommerceChatRealtimeClient({
       try {
         const nextThreads = await fetchThreads()
         if (cancelled) return
+        threadsRef.current = nextThreads
         setThreads(nextThreads)
 
-        const candidateThreadId =
-          activeThreadId && nextThreads.some((thread) => thread.id === activeThreadId)
-            ? activeThreadId
-            : nextThreads[0]?.id || ""
+        const candidateThreadId = resolveCommerceActiveThreadId(activeThreadIdRef.current, nextThreads)
 
-        if (!cancelled && candidateThreadId !== activeThreadId) {
+        if (!cancelled && candidateThreadId !== activeThreadIdRef.current) {
+          activeThreadIdRef.current = candidateThreadId
           setActiveThreadId(candidateThreadId)
         }
 
@@ -571,11 +627,7 @@ export default function CommerceChatRealtimeClient({
 
       const thread = await fetchThreadMeta(activeThreadId)
       if (thread) {
-        setThreads((current) => {
-          const next = current.filter((item) => item.id !== thread.id)
-          next.push(thread)
-          return sortThreads(next)
-        })
+        upsertThreadLocally(thread)
       }
 
       setDraftMessage("")
@@ -610,34 +662,7 @@ export default function CommerceChatRealtimeClient({
       }
 
       const deletedThreadId = payload.deletedThreadId
-      const remainingThreads = threads.filter((thread) => thread.id !== deletedThreadId)
-      setThreads(remainingThreads)
-      setActiveThreadId((current) => (current === deletedThreadId ? remainingThreads[0]?.id || "" : current))
-      setMessagesByThread((current) => {
-        const next = { ...current }
-        delete next[deletedThreadId]
-        return next
-      })
-      setLoadedThreadIds((current) => {
-        const next = { ...current }
-        delete next[deletedThreadId]
-        return next
-      })
-      setHasMoreByThread((current) => {
-        const next = { ...current }
-        delete next[deletedThreadId]
-        return next
-      })
-      setOldestByThread((current) => {
-        const next = { ...current }
-        delete next[deletedThreadId]
-        return next
-      })
-      setLoadingOlderByThread((current) => {
-        const next = { ...current }
-        delete next[deletedThreadId]
-        return next
-      })
+      removeThreadLocally(deletedThreadId)
       setDraftMessage("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
@@ -724,13 +749,16 @@ export default function CommerceChatRealtimeClient({
                   (!thread.currentUserLastReadAt || thread.lastMessageAt > thread.currentUserLastReadAt)
 
                 return (
-                  <button
-                    key={thread.id}
-                    type="button"
-                    onClick={() => setActiveThreadId(thread.id)}
-                    className={`mb-1 w-full rounded-[12px] px-3 py-3 text-left transition ${
-                      active ? "bg-[#fff2e8]" : "hover:bg-[#f4f5f7]"
-                    }`}
+                    <button
+                      key={thread.id}
+                      type="button"
+                      onClick={() => {
+                        activeThreadIdRef.current = thread.id
+                        setActiveThreadId(thread.id)
+                      }}
+                      className={`mb-1 w-full rounded-[12px] px-3 py-3 text-left transition ${
+                        active ? "bg-[#fff2e8]" : "hover:bg-[#f4f5f7]"
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
