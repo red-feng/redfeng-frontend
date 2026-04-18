@@ -34,6 +34,12 @@ type SendMessageResponse = {
   error?: string
 }
 
+type DeleteThreadResponse = {
+  deletedThreadId?: string
+  actorRole?: "customer" | "merchant"
+  error?: string
+}
+
 type Props = {
   userId: string
   portal: "customer" | "merchant"
@@ -213,6 +219,7 @@ export default function CommerceChatRealtimeClient({
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle")
   const [errorMessage, setErrorMessage] = useState("")
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
+  const [deletingThreadId, setDeletingThreadId] = useState("")
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
   const activeMessages = messagesByThread[activeThreadId] || []
@@ -582,6 +589,72 @@ export default function CommerceChatRealtimeClient({
     }
   }
 
+  async function handleDeleteThread() {
+    if (!activeThread) return
+
+    const confirmed = window.confirm(
+      portal === "merchant"
+        ? "Hapus room chat ini permanen dari sisi merchant dan customer? Semua pesan dan lampiran akan dihapus tanpa sisa."
+        : "Hapus room chat ini permanen? Semua pesan dan lampiran akan dihapus tanpa sisa untuk customer dan merchant.",
+    )
+    if (!confirmed) return
+
+    setDeletingThreadId(activeThread.id)
+    setErrorMessage("")
+
+    try {
+      const response = await fetch("/api/commerce-chat/thread/delete", {
+        method: "DELETE",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ threadId: activeThread.id }),
+      })
+      const payload = (await response.json().catch(() => null)) as DeleteThreadResponse | null
+      if (!response.ok || payload?.error || !payload?.deletedThreadId) {
+        throw new Error(payload?.error || "Gagal menghapus room chat.")
+      }
+
+      const deletedThreadId = payload.deletedThreadId
+      const remainingThreads = threads.filter((thread) => thread.id !== deletedThreadId)
+      setThreads(remainingThreads)
+      setActiveThreadId((current) => (current === deletedThreadId ? remainingThreads[0]?.id || "" : current))
+      setMessagesByThread((current) => {
+        const next = { ...current }
+        delete next[deletedThreadId]
+        return next
+      })
+      setLoadedThreadIds((current) => {
+        const next = { ...current }
+        delete next[deletedThreadId]
+        return next
+      })
+      setHasMoreByThread((current) => {
+        const next = { ...current }
+        delete next[deletedThreadId]
+        return next
+      })
+      setOldestByThread((current) => {
+        const next = { ...current }
+        delete next[deletedThreadId]
+        return next
+      })
+      setLoadingOlderByThread((current) => {
+        const next = { ...current }
+        delete next[deletedThreadId]
+        return next
+      })
+      setDraftMessage("")
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room chat.")
+    } finally {
+      setDeletingThreadId("")
+    }
+  }
+
   function handleDraftKeyDown(event: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key !== "Enter" || event.shiftKey) return
     event.preventDefault()
@@ -699,12 +772,26 @@ export default function CommerceChatRealtimeClient({
 
           <section className={`flex min-h-0 flex-col ${CHAT_DESIGN_LOCK.threadBackground}`}>
             <div className={`sticky top-0 z-10 border-b border-[#efe3d1] px-5 py-3 ${CHAT_DESIGN_LOCK.panelBackground}`}>
-              <p className="text-base font-semibold text-slate-900">
-                {activeThread ? (portal === "merchant" ? activeThread.customerLabel : activeThread.merchantLabel) : "Pilih chat"}
-              </p>
-              <p className="text-xs text-slate-500">
-                {activeThread?.packageTitle || "Percakapan inquiry commerce"}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-base font-semibold text-slate-900">
+                    {activeThread ? (portal === "merchant" ? activeThread.customerLabel : activeThread.merchantLabel) : "Pilih chat"}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {activeThread?.packageTitle || "Percakapan inquiry commerce"}
+                  </p>
+                </div>
+                {activeThread ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteThread}
+                    disabled={deletingThreadId === activeThread.id}
+                    className="shrink-0 rounded-[12px] border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {deletingThreadId === activeThread.id ? "Menghapus..." : "Hapus room"}
+                  </button>
+                ) : null}
+              </div>
             </div>
 
             <div
@@ -795,7 +882,7 @@ export default function CommerceChatRealtimeClient({
                   ref={fileInputRef}
                   type="file"
                   name="attachment"
-                  disabled={!activeThread}
+                  disabled={!activeThread || Boolean(deletingThreadId)}
                   accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                   className="block w-full rounded-[12px] border border-[#dcd2c3] bg-white px-3 py-2 text-xs text-slate-600 file:mr-2 file:rounded-full file:border-0 file:bg-orange-100 file:px-2 file:py-1 file:text-[11px] file:font-semibold file:text-orange-700 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
@@ -805,13 +892,13 @@ export default function CommerceChatRealtimeClient({
                   value={draftMessage}
                   onChange={(event) => setDraftMessage(event.target.value)}
                   onKeyDown={handleDraftKeyDown}
-                  disabled={!activeThread}
+                  disabled={!activeThread || Boolean(deletingThreadId)}
                   placeholder="Tulis pesan... (Enter kirim, Shift+Enter baris baru)"
                   className="h-12 max-h-28 min-h-12 flex-1 rounded-[12px] border border-[#dcd2c3] bg-white px-3 py-2 text-sm text-slate-700 outline-none ring-orange-500 transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-slate-100"
                 />
                 <button
                   type="submit"
-                  disabled={!activeThread || sending}
+                  disabled={!activeThread || sending || Boolean(deletingThreadId)}
                   className="h-12 rounded-[12px] bg-[#ff6a00] px-5 text-sm font-semibold text-white transition hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
                   {sending ? (sendPhase === "compressing" ? "Siapkan..." : "Upload...") : "Kirim"}

@@ -3,6 +3,7 @@ import { uploadCommerceChatAttachment } from "@/lib/commerce-chat/attachments"
 import { decideCommerceInquiryThreadResolution, isCommerceThreadUnreadForActor } from "@/lib/commerce-chat/policy.mjs"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
+const COMMERCE_CHAT_ATTACHMENT_BUCKET = "commerce-chat-attachments"
 
 type CommerceProfileRow = {
   id: string
@@ -481,6 +482,45 @@ async function getAccessibleThreadRowForUser(adminSupabase: AdminSupabase, threa
   return { thread, actorRole }
 }
 
+function extractStoragePathFromPublicUrl(url: string | null | undefined, bucket: string) {
+  const raw = String(url || "").trim()
+  if (!raw) return null
+  const marker = `/storage/v1/object/public/${bucket}/`
+  const index = raw.indexOf(marker)
+  if (index === -1) return null
+  return decodeURIComponent(raw.slice(index + marker.length))
+}
+
+async function removeCommerceThreadAttachmentObjects(
+  adminSupabase: AdminSupabase,
+  threadId: string,
+) {
+  const { data, error } = await adminSupabase
+    .from("commerce_chat_messages")
+    .select("attachment_url")
+    .eq("thread_id", threadId)
+    .not("attachment_url", "is", null)
+
+  if (error) {
+    throw new Error(error.message || "Gagal membaca lampiran thread commerce.")
+  }
+
+  const objectPaths = (((data as Array<{ attachment_url: string | null }> | null) || []) as Array<{ attachment_url: string | null }>)
+    .map((item) => extractStoragePathFromPublicUrl(item.attachment_url, COMMERCE_CHAT_ATTACHMENT_BUCKET))
+    .filter((path): path is string => Boolean(path))
+
+  if (!objectPaths.length) return
+
+  const uniquePaths = [...new Set(objectPaths)]
+  const { error: removeError } = await adminSupabase.storage
+    .from(COMMERCE_CHAT_ATTACHMENT_BUCKET)
+    .remove(uniquePaths)
+
+  if (removeError) {
+    throw new Error(removeError.message || "Gagal menghapus lampiran thread commerce.")
+  }
+}
+
 export async function loadCommerceChatMessagesPageForUser(
   adminSupabase: AdminSupabase,
   threadId: string,
@@ -567,6 +607,30 @@ export async function getCommerceChatUnreadBadgeCount(adminSupabase: AdminSupaba
       merchantLastReadAt: thread.currentUserActorRole === "merchant" ? thread.currentUserLastReadAt : null,
     }),
   ).length
+}
+
+export async function hardDeleteCommerceThreadForUser(
+  adminSupabase: AdminSupabase,
+  threadId: string,
+  userId: string,
+) {
+  const { actorRole } = await getAccessibleThreadRowForUser(adminSupabase, threadId, userId)
+
+  await removeCommerceThreadAttachmentObjects(adminSupabase, threadId)
+
+  const { error } = await adminSupabase
+    .from("commerce_chat_threads")
+    .delete()
+    .eq("id", threadId)
+
+  if (error) {
+    throw new Error(error.message || "Gagal menghapus thread commerce.")
+  }
+
+  return {
+    deletedThreadId: threadId,
+    actorRole,
+  }
 }
 
 async function findExistingMessageByClientMessageId(
