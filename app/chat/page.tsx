@@ -16,7 +16,7 @@ import { redirect } from "next/navigation"
 export const dynamic = "force-dynamic"
 
 type Props = {
-  searchParams: Promise<{ room_id?: string; package_id?: string }>
+  searchParams: Promise<{ room_id?: string; package_id?: string; error?: string }>
 }
 
 export default async function ChatPage({ searchParams }: Props) {
@@ -39,6 +39,7 @@ export default async function ChatPage({ searchParams }: Props) {
 
   const requestedPackageId = String(params.package_id || "").trim()
   const requestedThreadId = String(params.room_id || "").trim()
+  const requestedErrorMessage = String(params.error || "").trim()
   if (requestedPackageId && !requestedThreadId) {
     try {
       const result = await ensureCommerceInquiryThread(adminSupabase, {
@@ -49,19 +50,17 @@ export default async function ChatPage({ searchParams }: Props) {
       redirect(`/chat?room_id=${encodeURIComponent(result.threadId)}`)
     } catch (error) {
       const message = error instanceof Error ? error.message : "Gagal menyiapkan thread commerce."
-      if (message.includes("baru saja dihapus")) {
-        redirect("/chat")
-      }
-      throw error
+      redirect(`/chat?error=${encodeURIComponent(message)}`)
     }
   }
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)
   const activeThreadId = resolveCommerceActiveThreadId(requestedThreadId, threads)
-  const initialServerNotice =
+  const deletedThreadNotice =
     requestedThreadId && !activeThreadId
       ? (await getDeletedCommerceChatNoticeForUser(adminSupabase, requestedThreadId, user.id)) || ""
       : ""
+  const initialServerNotice = requestedErrorMessage || deletedThreadNotice
   const initialPage = activeThreadId
     ? await loadCommerceChatMessagesPageForUser(adminSupabase, activeThreadId, user.id, {
         limit: COMMERCE_CHAT_PAGE_SIZE,
