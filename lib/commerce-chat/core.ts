@@ -7,7 +7,6 @@ import {
 } from "@/lib/commerce-chat/policy.mjs"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
-const COMMERCE_CHAT_ATTACHMENT_BUCKET = "commerce-chat-attachments"
 
 type CommerceProfileRow = {
   id: string
@@ -48,6 +47,10 @@ export type CommerceChatThreadRow = {
   last_message_sender_role: "customer" | "merchant" | "system" | null
   customer_last_read_at: string | null
   merchant_last_read_at: string | null
+  deleted_for_all_at: string | null
+  deleted_by_user_id: string | null
+  deleted_by_role: "customer" | "merchant" | null
+  purge_after_at: string | null
 }
 
 type CommerceMessagePreviewRow = {
@@ -94,6 +97,8 @@ export type CommerceChatThreadItem = {
   lastMessagePreview: string | null
 }
 
+export const COMMERCE_CHAT_DELETED_NOTICE = "Room chat ini telah dihapus."
+
 type CommerceChatThreadDeletionRow = {
   thread_id: string
   thread_type: "inquiry" | "booking" | null
@@ -110,6 +115,7 @@ type CommerceChatThreadDeletionRow = {
 export const COMMERCE_CHAT_PAGE_SIZE = 50
 export const COMMERCE_CHAT_ROLE_POLICY_VERSION = "2026-04-17"
 const COMMERCE_CHAT_RECENT_DELETE_GUARD_WINDOW_MS = 30 * 60 * 1000
+const COMMERCE_CHAT_PURGE_AFTER_DELETE_MS = 30 * 24 * 60 * 60 * 1000
 
 function isMissingCommerceThreadDeletionTableError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "")
@@ -352,6 +358,7 @@ export async function ensureCommerceInquiryThread(
     .eq("subject_package_id", params.packageId)
     .eq("customer_user_id", params.customerUserId)
     .eq("merchant_id", merchant.id)
+    .is("deleted_for_all_at", null)
     .order("last_message_at", { ascending: false, nullsFirst: false })
     .order("updated_at", { ascending: false })
     .order("created_at", { ascending: false })
@@ -460,14 +467,16 @@ async function getAccessibleThreadsForUser(adminSupabase: AdminSupabase, userId:
 
   const customerThreadsPromise = adminSupabase
     .from("commerce_chat_threads")
-    .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at")
+    .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at, deleted_for_all_at, deleted_by_user_id, deleted_by_role, purge_after_at")
     .eq("customer_user_id", userId)
+    .is("deleted_for_all_at", null)
 
   const merchantThreadsPromise = ownedMerchants.length
     ? adminSupabase
         .from("commerce_chat_threads")
-        .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at")
+        .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at, deleted_for_all_at, deleted_by_user_id, deleted_by_role, purge_after_at")
         .eq("merchant_user_id", userId)
+        .is("deleted_for_all_at", null)
     : Promise.resolve({ data: [] as CommerceChatThreadRow[], error: null as { message?: string } | null })
 
   const [customerResult, merchantResult] = await Promise.all([customerThreadsPromise, merchantThreadsPromise])
@@ -504,6 +513,41 @@ async function getAccessibleThreadsForUser(adminSupabase: AdminSupabase, userId:
     ownedMerchants,
     ownedMerchantIds,
   }
+}
+
+export async function getDeletedCommerceChatNoticeForUser(
+  adminSupabase: AdminSupabase,
+  threadId: string,
+  userId: string,
+) {
+  const ownedMerchants = await getOwnedMerchantsForUser(adminSupabase, userId)
+  const ownedMerchantIds = new Set(ownedMerchants.map((merchant) => merchant.id))
+  const { data, error } = await adminSupabase
+    .from("commerce_chat_threads")
+    .select("id, customer_user_id, merchant_id, merchant_user_id, deleted_for_all_at")
+    .eq("id", threadId)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(error.message || "Gagal membaca status thread commerce.")
+  }
+
+  const thread = (data as Pick<CommerceChatThreadRow, "id" | "customer_user_id" | "merchant_id" | "merchant_user_id" | "deleted_for_all_at"> | null) || null
+  if (!thread?.id) return null
+
+  const actorRole = resolveCommerceThreadActorRole(
+    userId,
+    {
+      customer_user_id: thread.customer_user_id,
+      merchant_user_id: thread.merchant_user_id,
+      merchant_id: thread.merchant_id,
+    },
+    ownedMerchantIds,
+  )
+
+  if (!actorRole) return null
+  if (!thread.deleted_for_all_at) return null
+  return COMMERCE_CHAT_DELETED_NOTICE
 }
 
 export async function loadCommerceChatThreadsForUser(adminSupabase: AdminSupabase, userId: string) {
@@ -573,6 +617,9 @@ async function getAccessibleThreadRowForUser(adminSupabase: AdminSupabase, threa
   if (!thread) {
     throw new Error("Anda tidak punya akses ke thread commerce ini.")
   }
+  if (thread.deleted_for_all_at) {
+    throw new Error("Thread commerce tidak ditemukan.")
+  }
 
   const actorRole = resolveCommerceThreadActorRole(userId, thread, ownedMerchantIds)
   if (!actorRole) {
@@ -580,65 +627,6 @@ async function getAccessibleThreadRowForUser(adminSupabase: AdminSupabase, threa
   }
 
   return { thread, actorRole }
-}
-
-function extractStoragePathFromPublicUrl(url: string | null | undefined, bucket: string) {
-  const raw = String(url || "").trim()
-  if (!raw) return null
-  const marker = `/storage/v1/object/public/${bucket}/`
-  const index = raw.indexOf(marker)
-  if (index === -1) return null
-  return decodeURIComponent(raw.slice(index + marker.length))
-}
-
-async function listCommerceThreadAttachmentObjectPaths(
-  adminSupabase: AdminSupabase,
-  threadId: string,
-) {
-  const { data, error } = await adminSupabase
-    .from("commerce_chat_messages")
-    .select("attachment_url")
-    .eq("thread_id", threadId)
-    .not("attachment_url", "is", null)
-
-  if (error) {
-    throw new Error(error.message || "Gagal membaca lampiran thread commerce.")
-  }
-
-  return [...new Set(
-    ((((data as Array<{ attachment_url: string | null }> | null) || []) as Array<{ attachment_url: string | null }>)
-    .map((item) => extractStoragePathFromPublicUrl(item.attachment_url, COMMERCE_CHAT_ATTACHMENT_BUCKET))
-    .filter((path): path is string => Boolean(path))),
-  )]
-}
-
-async function removeCommerceThreadAttachmentObjects(
-  adminSupabase: AdminSupabase,
-  objectPaths: string[],
-) {
-  if (!objectPaths.length) return
-
-  let lastError: string | null = null
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    if (attempt > 0) {
-      await new Promise((resolve) => setTimeout(resolve, 250 * attempt))
-    }
-
-    lastError = null
-    const { error: removeError } = await adminSupabase.storage
-      .from(COMMERCE_CHAT_ATTACHMENT_BUCKET)
-      .remove(objectPaths)
-
-    if (!removeError) {
-      return
-    }
-
-    lastError = removeError.message || "Gagal menghapus lampiran thread commerce."
-  }
-
-  if (lastError) {
-    throw new Error(lastError)
-  }
 }
 
 export async function loadCommerceChatMessagesPageForUser(
@@ -741,13 +729,14 @@ export async function hardDeleteCommerceThreadForUser(
 
   let relatedThreads = [thread]
   if (thread.thread_type === "inquiry" && thread.subject_package_id) {
-    const { data, error } = await adminSupabase
+      const { data, error } = await adminSupabase
       .from("commerce_chat_threads")
-      .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at")
+      .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at, deleted_for_all_at, deleted_by_user_id, deleted_by_role, purge_after_at")
       .eq("thread_type", "inquiry")
       .eq("subject_package_id", thread.subject_package_id)
       .eq("customer_user_id", thread.customer_user_id)
       .eq("merchant_id", thread.merchant_id)
+      .is("deleted_for_all_at", null)
 
     if (error) {
       throw new Error(error.message || "Gagal membaca duplikat thread inquiry commerce.")
@@ -755,11 +744,12 @@ export async function hardDeleteCommerceThreadForUser(
 
     relatedThreads = ((data as CommerceChatThreadRow[] | null) || []).filter((item) => item.id)
   } else if (thread.thread_type === "booking" && thread.subject_booking_id) {
-    const { data, error } = await adminSupabase
+      const { data, error } = await adminSupabase
       .from("commerce_chat_threads")
-      .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at")
+      .select("id, thread_type, source_context, subject_package_id, subject_booking_id, customer_user_id, merchant_id, merchant_user_id, status, safety_state, created_at, updated_at, last_message_at, last_message_sender_role, customer_last_read_at, merchant_last_read_at, deleted_for_all_at, deleted_by_user_id, deleted_by_role, purge_after_at")
       .eq("thread_type", "booking")
       .eq("subject_booking_id", thread.subject_booking_id)
+      .is("deleted_for_all_at", null)
 
     if (error) {
       throw new Error(error.message || "Gagal membaca duplikat thread booking commerce.")
@@ -769,10 +759,8 @@ export async function hardDeleteCommerceThreadForUser(
   }
 
   const targetThreadIds = [...new Set(relatedThreads.map((item) => item.id).filter(Boolean))]
-  const attachmentPathGroups = await Promise.all(
-    targetThreadIds.map((targetThreadId) => listCommerceThreadAttachmentObjectPaths(adminSupabase, targetThreadId)),
-  )
-  const attachmentObjectPaths = [...new Set(attachmentPathGroups.flat())]
+  const deletedAtIso = new Date().toISOString()
+  const purgeAfterIso = new Date(Date.now() + COMMERCE_CHAT_PURGE_AFTER_DELETE_MS).toISOString()
 
   const deletionMarkerRows = relatedThreads.map((item) => ({
     thread_id: item.id,
@@ -802,27 +790,22 @@ export async function hardDeleteCommerceThreadForUser(
 
   const { data: deletedThreads, error } = await adminSupabase
     .from("commerce_chat_threads")
-    .delete()
+    .update({
+      deleted_for_all_at: deletedAtIso,
+      deleted_by_user_id: userId,
+      deleted_by_role: actorRole,
+      purge_after_at: purgeAfterIso,
+      updated_at: deletedAtIso,
+    })
     .in("id", targetThreadIds)
     .select("id")
 
   if (error) {
-    throw new Error(error.message || "Gagal menghapus thread commerce.")
+    throw new Error(error.message || "Gagal menandai thread commerce sebagai terhapus.")
   }
 
   if (!((deletedThreads as Array<{ id: string }> | null) || []).length) {
     throw new Error("Thread commerce tidak ditemukan atau sudah terhapus.")
-  }
-
-  if (attachmentObjectPaths.length) {
-    try {
-      await removeCommerceThreadAttachmentObjects(adminSupabase, attachmentObjectPaths)
-    } catch (cleanupError) {
-      console.error("[commerce-chat] attachment cleanup failed after thread delete", {
-        threadId,
-        error: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
-      })
-    }
   }
 
   return {

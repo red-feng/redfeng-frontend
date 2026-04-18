@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import {
+  COMMERCE_CHAT_DELETED_NOTICE,
   COMMERCE_CHAT_NO_STORE_HEADERS,
   ensureCommerceInquiryThread,
+  getDeletedCommerceChatNoticeForUser,
   getCommerceChatProfile,
   getCommerceChatThreadMetaForUser,
   isBlockedCommerceProfileRole,
@@ -36,6 +38,10 @@ export async function GET(request: Request) {
   try {
     const thread = await getCommerceChatThreadMetaForUser(adminSupabase, threadId, user.id)
     if (!thread) {
+      const deletedNotice = await getDeletedCommerceChatNoticeForUser(adminSupabase, threadId, user.id)
+      if (deletedNotice === COMMERCE_CHAT_DELETED_NOTICE) {
+        return NextResponse.json({ error: deletedNotice, deleted: true }, { status: 410, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
+      }
       return NextResponse.json({ error: "Thread commerce tidak ditemukan." }, { status: 404, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
     }
 

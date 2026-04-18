@@ -2,6 +2,7 @@ import CommerceChatRealtimeClient from "@/app/commerce-chat/CommerceChatRealtime
 import {
   COMMERCE_CHAT_PAGE_SIZE,
   ensureCommerceInquiryThread,
+  getDeletedCommerceChatNoticeForUser,
   getCommerceChatProfile,
   isBlockedCommerceProfileRole,
   loadCommerceChatMessagesPageForUser,
@@ -57,6 +58,10 @@ export default async function ChatPage({ searchParams }: Props) {
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)
   const activeThreadId = resolveCommerceActiveThreadId(requestedThreadId, threads)
+  const initialServerNotice =
+    requestedThreadId && !activeThreadId
+      ? (await getDeletedCommerceChatNoticeForUser(adminSupabase, requestedThreadId, user.id)) || ""
+      : ""
   const initialPage = activeThreadId
     ? await loadCommerceChatMessagesPageForUser(adminSupabase, activeThreadId, user.id, {
         limit: COMMERCE_CHAT_PAGE_SIZE,
@@ -74,6 +79,7 @@ export default async function ChatPage({ searchParams }: Props) {
           initialHasMore={initialPage.hasMore}
           initialOldestCreatedAt={initialPage.oldestCreatedAt}
           initialActiveThreadId={activeThreadId}
+          initialServerNotice={initialServerNotice}
           headline={{
             badge: "Customer Commerce Chat",
             title: "Lanjutkan percakapan aman dengan merchant dalam satu inbox.",

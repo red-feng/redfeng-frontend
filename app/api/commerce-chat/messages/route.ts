@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import {
+  COMMERCE_CHAT_DELETED_NOTICE,
   COMMERCE_CHAT_PAGE_SIZE,
   COMMERCE_CHAT_NO_STORE_HEADERS,
+  getDeletedCommerceChatNoticeForUser,
   getCommerceChatProfile,
   isBlockedCommerceProfileRole,
   loadCommerceChatMessagesPageForUser,
@@ -49,7 +51,16 @@ export async function GET(request: Request) {
     return NextResponse.json(page, { headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal memuat pesan commerce."
-    const status = message.includes("akses") ? 403 : 500
-    return NextResponse.json({ error: message }, { status, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
+    const deletedNotice = await getDeletedCommerceChatNoticeForUser(adminSupabase, threadId, user.id)
+    const status =
+      deletedNotice === COMMERCE_CHAT_DELETED_NOTICE
+        ? 410
+        : message.includes("akses")
+          ? 403
+          : message.includes("tidak ditemukan")
+            ? 404
+            : 500
+    const finalMessage = deletedNotice || message
+    return NextResponse.json({ error: finalMessage, deleted: deletedNotice === COMMERCE_CHAT_DELETED_NOTICE }, { status, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
 }

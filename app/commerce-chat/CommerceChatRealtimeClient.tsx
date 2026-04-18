@@ -57,6 +57,7 @@ type Props = {
   initialHasMore: boolean
   initialOldestCreatedAt: string | null
   initialActiveThreadId: string
+  initialServerNotice?: string
   headline: {
     badge: string
     title: string
@@ -127,7 +128,7 @@ function areMessageListsEqual(left: CommerceChatMessageItem[], right: CommerceCh
 function isCommerceThreadAccessError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "")
   const lowered = message.toLowerCase()
-  return lowered.includes("tidak punya akses") || lowered.includes("thread commerce tidak ditemukan")
+  return lowered.includes("tidak punya akses") || lowered.includes("thread commerce tidak ditemukan") || lowered.includes("room chat ini telah dihapus")
 }
 
 function broadcastDeletedThread(threadId: string) {
@@ -256,6 +257,7 @@ export default function CommerceChatRealtimeClient({
   initialHasMore,
   initialOldestCreatedAt,
   initialActiveThreadId,
+  initialServerNotice = "",
   headline,
 }: Props) {
   const pathname = usePathname()
@@ -285,7 +287,7 @@ export default function CommerceChatRealtimeClient({
   const [draftMessage, setDraftMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle")
-  const [errorMessage, setErrorMessage] = useState("")
+  const [errorMessage, setErrorMessage] = useState(initialServerNotice)
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [deletingThreadId, setDeletingThreadId] = useState("")
   const threadsRef = useRef<CommerceChatThreadItem[]>(sortThreads(initialThreads))
@@ -466,7 +468,7 @@ export default function CommerceChatRealtimeClient({
     if (!threadId) return
     markThreadDeletedLocally(threadId, true)
     removeThreadLocally(threadId)
-    setErrorMessage("")
+    setErrorMessage("Room chat ini telah dihapus.")
     void refreshThreads()
   }, [markThreadDeletedLocally, refreshThreads, removeThreadLocally])
 
