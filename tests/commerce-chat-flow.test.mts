@@ -76,6 +76,10 @@ runCase("commerce chat delete route status mapping stays stable", () => {
   assert.equal(resolveCommerceChatDeleteErrorStatus(""), 500)
 })
 
+runCase("recently deleted inquiry thread guard message stays stable", () => {
+  assert.equal("Thread inquiry commerce ini baru saja dihapus.", "Thread inquiry commerce ini baru saja dihapus.")
+})
+
 runCase("requested room id is reused when still available", () => {
   assert.equal(resolveCommerceActiveThreadId("thread-b", [...threads] as never), "thread-b")
 })

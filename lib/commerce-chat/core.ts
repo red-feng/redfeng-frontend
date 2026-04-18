@@ -96,6 +96,9 @@ export type CommerceChatThreadItem = {
 
 type CommerceChatThreadDeletionRow = {
   thread_id: string
+  thread_type: "inquiry" | "booking" | null
+  subject_package_id: string | null
+  subject_booking_id: string | null
   customer_user_id: string
   merchant_id: string
   merchant_user_id: string
@@ -106,10 +109,41 @@ type CommerceChatThreadDeletionRow = {
 
 export const COMMERCE_CHAT_PAGE_SIZE = 50
 export const COMMERCE_CHAT_ROLE_POLICY_VERSION = "2026-04-17"
+const COMMERCE_CHAT_RECENT_DELETE_GUARD_WINDOW_MS = 30 * 60 * 1000
 
 function isMissingCommerceThreadDeletionTableError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error || "")
   return /commerce_chat_thread_deletions/i.test(message) && /does not exist|relation|column/i.test(message)
+}
+
+async function wasCommerceInquiryThreadRecentlyDeleted(
+  adminSupabase: AdminSupabase,
+  params: {
+    customerUserId: string
+    merchantId: string
+    packageId: string
+  },
+) {
+  const cutoffIso = new Date(Date.now() - COMMERCE_CHAT_RECENT_DELETE_GUARD_WINDOW_MS).toISOString()
+  const { data, error } = await adminSupabase
+    .from("commerce_chat_thread_deletions")
+    .select("thread_id")
+    .eq("thread_type", "inquiry")
+    .eq("customer_user_id", params.customerUserId)
+    .eq("merchant_id", params.merchantId)
+    .eq("subject_package_id", params.packageId)
+    .gte("created_at", cutoffIso)
+    .order("created_at", { ascending: false })
+    .limit(1)
+
+  if (error) {
+    if (isMissingCommerceThreadDeletionTableError(error)) {
+      return false
+    }
+    throw new Error(error.message || "Gagal membaca status penghapusan inquiry commerce.")
+  }
+
+  return Boolean(((data as Array<{ thread_id: string }> | null) || [])[0]?.thread_id)
 }
 
 function getMerchantLabel(merchant: Pick<CommerceMerchantRow, "brand_name" | "company_name" | "id"> | null | undefined) {
@@ -333,6 +367,16 @@ export async function ensureCommerceInquiryThread(
       threadId: existingThread?.id as string,
       created: false,
     }
+  }
+
+  const recentlyDeleted = await wasCommerceInquiryThreadRecentlyDeleted(adminSupabase, {
+    customerUserId: params.customerUserId,
+    merchantId: merchant.id,
+    packageId: params.packageId,
+  })
+
+  if (recentlyDeleted) {
+    throw new Error("Thread inquiry commerce ini baru saja dihapus.")
   }
 
   const nowIso = new Date().toISOString()
@@ -732,6 +776,9 @@ export async function hardDeleteCommerceThreadForUser(
 
   const deletionMarkerRows = relatedThreads.map((item) => ({
     thread_id: item.id,
+    thread_type: item.thread_type,
+    subject_package_id: item.subject_package_id,
+    subject_booking_id: item.subject_booking_id,
     customer_user_id: item.customer_user_id,
     merchant_id: item.merchant_id,
     merchant_user_id: item.merchant_user_id,

@@ -39,12 +39,20 @@ export default async function ChatPage({ searchParams }: Props) {
   const requestedPackageId = String(params.package_id || "").trim()
   const requestedThreadId = String(params.room_id || "").trim()
   if (requestedPackageId && !requestedThreadId) {
-    const result = await ensureCommerceInquiryThread(adminSupabase, {
-      customerUserId: user.id,
-      packageId: requestedPackageId,
-      sourceContext: "public_package",
-    })
-    redirect(`/chat?room_id=${encodeURIComponent(result.threadId)}`)
+    try {
+      const result = await ensureCommerceInquiryThread(adminSupabase, {
+        customerUserId: user.id,
+        packageId: requestedPackageId,
+        sourceContext: "public_package",
+      })
+      redirect(`/chat?room_id=${encodeURIComponent(result.threadId)}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Gagal menyiapkan thread commerce."
+      if (message.includes("baru saja dihapus")) {
+        redirect("/chat")
+      }
+      throw error
+    }
   }
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)

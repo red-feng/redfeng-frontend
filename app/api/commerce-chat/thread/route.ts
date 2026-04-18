@@ -89,6 +89,8 @@ export async function POST(request: Request) {
     const status =
       message.includes("tidak valid") || message.includes("Gunakan portal merchant")
         ? 400
+        : message.includes("baru saja dihapus")
+          ? 409
         : 500
     return NextResponse.json({ error: message }, { status, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
