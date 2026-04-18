@@ -63,7 +63,7 @@ type SendPhase = "idle" | "compressing" | "uploading"
 
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
-const THREAD_LIST_LIVE_SYNC_INTERVAL_MS = 1200
+const THREAD_LIST_SYNC_INTERVAL_MS = 1200
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -700,14 +700,12 @@ export default function CommerceChatRealtimeClient({
   }, [portal, realtimeStatus, refreshSnapshotNow, threads.length])
 
   useEffect(() => {
-    if (realtimeStatus !== "live") return
-
     let cancelled = false
     void refreshThreadListNow()
     const intervalId = window.setInterval(() => {
       if (cancelled) return
       void refreshThreadListNow()
-    }, THREAD_LIST_LIVE_SYNC_INTERVAL_MS)
+    }, THREAD_LIST_SYNC_INTERVAL_MS)
 
     const handleFocus = () => {
       if (cancelled) return
@@ -729,7 +727,7 @@ export default function CommerceChatRealtimeClient({
       window.removeEventListener("focus", handleFocus)
       document.removeEventListener("visibilitychange", handleVisibility)
     }
-  }, [realtimeStatus, refreshThreadListNow])
+  }, [refreshThreadListNow])
 
   useEffect(() => {
     if (!activeThreadId) {
