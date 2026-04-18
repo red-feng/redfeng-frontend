@@ -107,6 +107,11 @@ type CommerceChatThreadDeletionRow = {
 export const COMMERCE_CHAT_PAGE_SIZE = 50
 export const COMMERCE_CHAT_ROLE_POLICY_VERSION = "2026-04-17"
 
+function isMissingCommerceThreadDeletionTableError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "")
+  return /commerce_chat_thread_deletions/i.test(message) && /does not exist|relation|column/i.test(message)
+}
+
 function getMerchantLabel(merchant: Pick<CommerceMerchantRow, "brand_name" | "company_name" | "id"> | null | undefined) {
   if (!merchant) return "Merchant"
   return merchant.brand_name || merchant.company_name || `Merchant ${merchant.id.slice(0, 8).toUpperCase()}`
@@ -666,7 +671,12 @@ export async function hardDeleteCommerceThreadForUser(
     })
 
   if (deletionMarkerError) {
-    throw new Error(deletionMarkerError.message || "Gagal mencatat penghapusan thread commerce.")
+    console.error("[commerce-chat] failed to persist thread deletion marker", {
+      threadId,
+      userId,
+      actorRole,
+      error: deletionMarkerError.message,
+    })
   }
 
   const { data: deletedThread, error } = await adminSupabase
@@ -712,6 +722,9 @@ export async function loadRecentCommerceThreadDeletionIdsForUser(adminSupabase: 
     .limit(50)
 
   if (error) {
+    if (isMissingCommerceThreadDeletionTableError(error)) {
+      return []
+    }
     throw new Error(error.message || "Gagal membaca marker penghapusan thread commerce.")
   }
 

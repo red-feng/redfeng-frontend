@@ -1,7 +1,7 @@
 "use client"
 
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 import { COMMERCE_CHAT_ENGINE } from "@/lib/chat-engines"
 import {
@@ -258,9 +258,7 @@ export default function CommerceChatRealtimeClient({
   initialActiveThreadId,
   headline,
 }: Props) {
-  const router = useRouter()
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const supabaseRef = useRef(createClient())
   const threadRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -302,8 +300,6 @@ export default function CommerceChatRealtimeClient({
   const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
   const activeLoadingOlder = Boolean(loadingOlderByThread[activeThreadId])
-  const currentRoomId = searchParams.get("room_id") || ""
-
   const visibleThreads = useMemo(() => {
     const needle = threadSearch.trim().toLowerCase()
     if (!needle) return threads
@@ -673,14 +669,21 @@ export default function CommerceChatRealtimeClient({
   }, [markThreadDeletedLocally, removeThreadLocally])
 
   useEffect(() => {
-    const normalizedCurrentRoomId = String(currentRoomId).trim()
+    if (typeof window === "undefined") return
+
+    const url = new URL(window.location.href)
+    const normalizedCurrentRoomId = String(url.searchParams.get("room_id") || "").trim()
     if (normalizedCurrentRoomId === activeThreadId) return
 
-    const next = activeThreadId ? `${pathname}?room_id=${encodeURIComponent(activeThreadId)}` : pathname
-    startTransition(() => {
-      router.replace(next, { scroll: false })
-    })
-  }, [activeThreadId, currentRoomId, pathname, router])
+    if (activeThreadId) {
+      url.searchParams.set("room_id", activeThreadId)
+    } else {
+      url.searchParams.delete("room_id")
+    }
+
+    const nextPath = `${pathname}${url.searchParams.toString() ? `?${url.searchParams.toString()}` : ""}`
+    window.history.replaceState(window.history.state, "", nextPath)
+  }, [activeThreadId, pathname])
 
   useEffect(() => {
     const container = threadRef.current
