@@ -63,7 +63,7 @@ type SendPhase = "idle" | "compressing" | "uploading"
 
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
-const THREAD_LIST_LIVE_SYNC_INTERVAL_MS = 3000
+const THREAD_LIST_LIVE_SYNC_INTERVAL_MS = 1200
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -703,6 +703,7 @@ export default function CommerceChatRealtimeClient({
     if (realtimeStatus !== "live") return
 
     let cancelled = false
+    void refreshThreadListNow()
     const intervalId = window.setInterval(() => {
       if (cancelled) return
       void refreshThreadListNow()
@@ -729,6 +730,25 @@ export default function CommerceChatRealtimeClient({
       document.removeEventListener("visibilitychange", handleVisibility)
     }
   }, [realtimeStatus, refreshThreadListNow])
+
+  useEffect(() => {
+    if (!activeThreadId) {
+      setErrorMessage("")
+      setDraftMessage("")
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      return
+    }
+
+    if (threads.some((thread) => thread.id === activeThreadId)) return
+
+    setErrorMessage("")
+    setDraftMessage("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+  }, [activeThreadId, threads])
 
   async function handleSendMessage(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
