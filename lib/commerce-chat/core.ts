@@ -798,14 +798,39 @@ export async function hardDeleteCommerceThreadForUser(
       updated_at: deletedAtIso,
     })
     .in("id", targetThreadIds)
-    .select("id")
+    .is("deleted_for_all_at", null)
+    .select("id, deleted_for_all_at, purge_after_at")
 
   if (error) {
     throw new Error(error.message || "Gagal menandai thread commerce sebagai terhapus.")
   }
 
-  if (!((deletedThreads as Array<{ id: string }> | null) || []).length) {
+  const updatedThreads = ((deletedThreads as Array<{ id: string; deleted_for_all_at?: string | null; purge_after_at?: string | null }> | null) || [])
+  if (!updatedThreads.length) {
     throw new Error("Thread commerce tidak ditemukan atau sudah terhapus.")
+  }
+
+  const verifiedUpdatedIds = updatedThreads
+    .filter((item) => item.id && item.deleted_for_all_at && item.purge_after_at)
+    .map((item) => item.id)
+
+  if (verifiedUpdatedIds.length !== targetThreadIds.length) {
+    const { data: verificationRows, error: verificationError } = await adminSupabase
+      .from("commerce_chat_threads")
+      .select("id, deleted_for_all_at, purge_after_at")
+      .in("id", targetThreadIds)
+
+    if (verificationError) {
+      throw new Error(verificationError.message || "Gagal memverifikasi status hapus thread commerce.")
+    }
+
+    const successfullyDeletedIds = (((verificationRows as Array<{ id: string; deleted_for_all_at?: string | null; purge_after_at?: string | null }> | null) || []))
+      .filter((item) => item.id && item.deleted_for_all_at && item.purge_after_at)
+      .map((item) => item.id)
+
+    if (successfullyDeletedIds.length !== targetThreadIds.length) {
+      throw new Error("Server belum berhasil menandai room chat sebagai terhapus.")
+    }
   }
 
   return {
