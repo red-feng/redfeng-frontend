@@ -122,6 +122,13 @@ function isMissingCommerceThreadDeletionTableError(error: unknown) {
   return /commerce_chat_thread_deletions/i.test(message) && /does not exist|relation|column/i.test(message)
 }
 
+function isCommerceChatDuplicateThreadError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "")
+  const lowered = message.toLowerCase()
+  return lowered.includes("duplicate key value violates unique constraint")
+    || lowered.includes("commerce_chat_threads_inquiry_unique_idx")
+}
+
 async function wasCommerceInquiryThreadRecentlyDeleted(
   adminSupabase: AdminSupabase,
   params: {
@@ -404,6 +411,35 @@ export async function ensureCommerceInquiryThread(
     .single()
 
   if (createError || !createdThread?.id) {
+    if (createError && isCommerceChatDuplicateThreadError(createError)) {
+      const { data: duplicatedThreads, error: duplicatedThreadsError } = await adminSupabase
+        .from("commerce_chat_threads")
+        .select("id, deleted_for_all_at, updated_at, last_message_at, created_at")
+        .eq("thread_type", "inquiry")
+        .eq("subject_package_id", params.packageId)
+        .eq("customer_user_id", params.customerUserId)
+        .eq("merchant_id", merchant.id)
+        .order("last_message_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false })
+        .order("created_at", { ascending: false })
+
+      if (duplicatedThreadsError) {
+        throw new Error(duplicatedThreadsError.message || "Gagal membaca ulang thread inquiry commerce.")
+      }
+
+      const activeDuplicateThread = (((duplicatedThreads as Array<{ id: string; deleted_for_all_at?: string | null }> | null) || []))
+        .find((thread) => thread.id && !thread.deleted_for_all_at)
+
+      if (activeDuplicateThread?.id) {
+        return {
+          threadId: activeDuplicateThread.id,
+          created: false,
+        }
+      }
+
+      throw new Error("Room chat untuk paket ini masih terkunci oleh data lama yang sudah dihapus. Jalankan migration unique index terbaru lalu coba lagi.")
+    }
+
     throw new Error(createError?.message || "Gagal membuat thread inquiry commerce.")
   }
 
