@@ -38,6 +38,11 @@ export async function DELETE(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : COMMERCE_CHAT_DELETE_ROUTE_ERRORS.deleteFailed
+    console.error("[commerce-chat] delete thread failed", {
+      threadId,
+      userId: user.id,
+      error: message,
+    })
     const status = resolveCommerceChatDeleteErrorStatus(message)
     return NextResponse.json({ error: message }, { status })
   }

@@ -802,7 +802,9 @@ export async function hardDeleteCommerceThreadForUser(
     .select("id, deleted_for_all_at, purge_after_at")
 
   if (error) {
-    throw new Error(error.message || "Gagal menandai thread commerce sebagai terhapus.")
+    throw new Error(
+      error.message || `Gagal menandai thread commerce sebagai terhapus. target=${targetThreadIds.length}`,
+    )
   }
 
   const updatedThreads = ((deletedThreads as Array<{ id: string; deleted_for_all_at?: string | null; purge_after_at?: string | null }> | null) || [])
@@ -821,7 +823,10 @@ export async function hardDeleteCommerceThreadForUser(
       .in("id", targetThreadIds)
 
     if (verificationError) {
-      throw new Error(verificationError.message || "Gagal memverifikasi status hapus thread commerce.")
+      throw new Error(
+        verificationError.message ||
+          `Gagal memverifikasi status hapus thread commerce. target=${targetThreadIds.length} updated=${updatedThreads.length}`,
+      )
     }
 
     const successfullyDeletedIds = (((verificationRows as Array<{ id: string; deleted_for_all_at?: string | null; purge_after_at?: string | null }> | null) || []))
@@ -829,7 +834,9 @@ export async function hardDeleteCommerceThreadForUser(
       .map((item) => item.id)
 
     if (successfullyDeletedIds.length !== targetThreadIds.length) {
-      throw new Error("Server belum berhasil menandai room chat sebagai terhapus.")
+      throw new Error(
+        `Server belum berhasil menandai room chat sebagai terhapus. target=${targetThreadIds.length} updated=${updatedThreads.length} verified=${successfullyDeletedIds.length}`,
+      )
     }
   }
 
