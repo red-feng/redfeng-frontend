@@ -15,6 +15,12 @@ import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
+function isNextRedirectError(error: unknown) {
+  if (!error || typeof error !== "object") return false
+  const digest = "digest" in error ? String(error.digest || "") : ""
+  return digest.startsWith("NEXT_REDIRECT")
+}
+
 type Props = {
   searchParams: Promise<{ room_id?: string; package_id?: string; error?: string }>
 }
@@ -49,6 +55,9 @@ export default async function ChatPage({ searchParams }: Props) {
       })
       redirect(`/chat?room_id=${encodeURIComponent(result.threadId)}`)
     } catch (error) {
+      if (isNextRedirectError(error)) {
+        throw error
+      }
       const message = error instanceof Error ? error.message : "Gagal menyiapkan thread commerce."
       redirect(`/chat?error=${encodeURIComponent(message)}`)
     }
