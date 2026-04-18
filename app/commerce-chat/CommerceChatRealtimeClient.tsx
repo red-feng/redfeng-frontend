@@ -493,7 +493,7 @@ export default function CommerceChatRealtimeClient({
       } catch {}
     }
 
-    const shouldUsePollingFallback = realtimeStatus !== "live"
+    const shouldUsePollingFallback = realtimeStatus === "fallback"
 
     if (shouldUsePollingFallback) {
       void refreshSnapshot()
@@ -506,13 +506,13 @@ export default function CommerceChatRealtimeClient({
       : null
 
     const handleFocus = () => {
-      if (realtimeStatus !== "live") {
+      if (realtimeStatus === "fallback") {
         void refreshSnapshot()
       }
     }
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && realtimeStatus !== "live") {
+      if (document.visibilityState === "visible" && realtimeStatus === "fallback") {
         void refreshSnapshot()
       }
     }
