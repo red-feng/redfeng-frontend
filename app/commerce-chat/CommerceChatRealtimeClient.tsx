@@ -303,9 +303,14 @@ export default function CommerceChatRealtimeClient({
     return payload?.thread || null
   }, [])
 
-  const fetchMessagesPage = useCallback(async (threadId: string, beforeCreatedAt?: string | null) => {
+  const fetchMessagesPage = useCallback(async (
+    threadId: string,
+    beforeCreatedAt?: string | null,
+    options?: { markRead?: boolean },
+  ) => {
     const search = new URLSearchParams({ threadId })
     if (beforeCreatedAt) search.set("beforeCreatedAt", beforeCreatedAt)
+    if (options?.markRead === false) search.set("markRead", "0")
     const response = await fetch(`${COMMERCE_CHAT_ENGINE.messagesEndpoint}?${search.toString()}`, { cache: "no-store" })
     const payload = (await response.json().catch(() => null)) as MessagePageResponse | null
     if (!response.ok) {
@@ -408,8 +413,12 @@ export default function CommerceChatRealtimeClient({
 
     try {
       const nextThreads = await fetchThreads()
-      threadsRef.current = nextThreads
-      setThreads(nextThreads)
+      if (!areThreadListsEqual(threadsRef.current, nextThreads)) {
+        threadsRef.current = nextThreads
+        setThreads(nextThreads)
+      } else {
+        threadsRef.current = nextThreads
+      }
 
       const candidateThreadId = resolveCommerceActiveThreadId(activeThreadIdRef.current, nextThreads)
       if (candidateThreadId !== activeThreadIdRef.current) {
@@ -419,7 +428,7 @@ export default function CommerceChatRealtimeClient({
 
       if (!candidateThreadId) return
 
-      const payload = await fetchMessagesPage(candidateThreadId)
+      const payload = await fetchMessagesPage(candidateThreadId, null, { markRead: false })
       const nextMessages = sortMessages(payload.messages || [])
       setMessagesByThread((current) => {
         const mergedMessages = mergeMessages(current[candidateThreadId] || [], nextMessages)

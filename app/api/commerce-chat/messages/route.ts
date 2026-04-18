@@ -29,13 +29,16 @@ export async function GET(request: Request) {
   const threadId = String(searchParams.get("threadId") || "").trim()
   const beforeCreatedAt = String(searchParams.get("beforeCreatedAt") || "").trim()
   const requestedLimit = Number(searchParams.get("limit") || COMMERCE_CHAT_PAGE_SIZE)
+  const shouldMarkRead = searchParams.get("markRead") !== "0"
 
   if (!threadId) {
     return NextResponse.json({ error: "Missing threadId" }, { status: 400 })
   }
 
   try {
-    await markCommerceThreadRead(adminSupabase, threadId, user.id)
+    if (shouldMarkRead) {
+      await markCommerceThreadRead(adminSupabase, threadId, user.id)
+    }
     const page = await loadCommerceChatMessagesPageForUser(adminSupabase, threadId, user.id, {
       beforeCreatedAt: beforeCreatedAt || null,
       limit: requestedLimit,
