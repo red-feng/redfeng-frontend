@@ -116,6 +116,12 @@ function areMessageListsEqual(left: CommerceChatMessageItem[], right: CommerceCh
   })
 }
 
+function isCommerceThreadAccessError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "")
+  const lowered = message.toLowerCase()
+  return lowered.includes("tidak punya akses") || lowered.includes("thread commerce tidak ditemukan")
+}
+
 function formatDateTime(value: string | null) {
   if (!value) return "-"
   const date = new Date(value)
@@ -339,21 +345,6 @@ export default function CommerceChatRealtimeClient({
     } catch {}
   }, [fetchThreads])
 
-  const refreshLatestMessages = useCallback(async (threadId: string) => {
-    if (!threadId) return
-    try {
-      const payload = await fetchMessagesPage(threadId)
-      const nextMessages = sortMessages(payload.messages || [])
-      setMessagesByThread((current) => ({ ...current, [threadId]: nextMessages }))
-      setLoadedThreadIds((current) => ({ ...current, [threadId]: true }))
-      setHasMoreByThread((current) => ({ ...current, [threadId]: Boolean(payload.hasMore) }))
-      setOldestByThread((current) => ({
-        ...current,
-        [threadId]: payload.oldestCreatedAt || nextMessages[0]?.created_at || null,
-      }))
-    } catch {}
-  }, [fetchMessagesPage])
-
   const removeThreadLocally = useCallback((threadId: string) => {
     const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
     threadsRef.current = nextThreads
@@ -396,6 +387,32 @@ export default function CommerceChatRealtimeClient({
       return next
     })
   }, [])
+
+  const handleInaccessibleThread = useCallback((threadId: string) => {
+    if (!threadId) return
+    removeThreadLocally(threadId)
+    setErrorMessage("")
+    void refreshThreads()
+  }, [refreshThreads, removeThreadLocally])
+
+  const refreshLatestMessages = useCallback(async (threadId: string) => {
+    if (!threadId) return
+    try {
+      const payload = await fetchMessagesPage(threadId)
+      const nextMessages = sortMessages(payload.messages || [])
+      setMessagesByThread((current) => ({ ...current, [threadId]: nextMessages }))
+      setLoadedThreadIds((current) => ({ ...current, [threadId]: true }))
+      setHasMoreByThread((current) => ({ ...current, [threadId]: Boolean(payload.hasMore) }))
+      setOldestByThread((current) => ({
+        ...current,
+        [threadId]: payload.oldestCreatedAt || nextMessages[0]?.created_at || null,
+      }))
+    } catch (error) {
+      if (isCommerceThreadAccessError(error)) {
+        handleInaccessibleThread(threadId)
+      }
+    }
+  }, [fetchMessagesPage, handleInaccessibleThread])
 
   const upsertThreadLocally = useCallback((thread: CommerceChatThreadItem) => {
     setThreads((current) => {
@@ -446,8 +463,12 @@ export default function CommerceChatRealtimeClient({
         ...current,
         [candidateThreadId]: payload.oldestCreatedAt || nextMessages[0]?.created_at || null,
       }))
-    } catch {}
-  }, [fetchMessagesPage, fetchThreads])
+    } catch (error) {
+      if (isCommerceThreadAccessError(error)) {
+        handleInaccessibleThread(activeThreadIdRef.current)
+      }
+    }
+  }, [fetchMessagesPage, fetchThreads, handleInaccessibleThread])
 
   const scheduleSnapshotRefresh = useCallback((delayMs = 180) => {
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
@@ -749,12 +770,20 @@ export default function CommerceChatRealtimeClient({
 
       const deletedThreadId = payload.deletedThreadId
       removeThreadLocally(deletedThreadId)
+      setErrorMessage("")
       setDraftMessage("")
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room chat.")
+      if (isCommerceThreadAccessError(error)) {
+        if (activeThread?.id) {
+          handleInaccessibleThread(activeThread.id)
+        }
+        setErrorMessage("")
+      } else {
+        setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus room chat.")
+      }
     } finally {
       deletingThreadIdRef.current = ""
       setDeletingThreadId("")
