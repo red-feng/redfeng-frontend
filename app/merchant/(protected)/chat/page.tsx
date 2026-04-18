@@ -34,7 +34,10 @@ export default async function MerchantChatPage({ searchParams }: Props) {
 
   const threads = await loadCommerceChatThreadsForUser(adminSupabase, user.id)
   const requestedThreadId = String(params.room_id || "").trim()
-  const activeThreadId = requestedThreadId || threads[0]?.id || ""
+  const activeThreadId =
+    (requestedThreadId && threads.some((thread) => thread.id === requestedThreadId) ? requestedThreadId : "") ||
+    threads[0]?.id ||
+    ""
   const initialPage = activeThreadId
     ? await loadCommerceChatMessagesPageForUser(adminSupabase, activeThreadId, user.id, {
         limit: COMMERCE_CHAT_PAGE_SIZE,
