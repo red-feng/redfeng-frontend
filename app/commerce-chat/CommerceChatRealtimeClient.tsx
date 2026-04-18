@@ -227,6 +227,7 @@ export default function CommerceChatRealtimeClient({
   const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
   const activeLoadingOlder = Boolean(loadingOlderByThread[activeThreadId])
+  const currentRoomId = searchParams.get("room_id") || ""
 
   const visibleThreads = useMemo(() => {
     const needle = threadSearch.trim().toLowerCase()
@@ -356,14 +357,14 @@ export default function CommerceChatRealtimeClient({
   }, [activeThreadId, loadedThreadIds, refreshLatestMessages])
 
   useEffect(() => {
-    const currentRoomId = String(searchParams.get("room_id") || "").trim()
-    if (currentRoomId === activeThreadId) return
+    const normalizedCurrentRoomId = String(currentRoomId).trim()
+    if (normalizedCurrentRoomId === activeThreadId) return
 
     const next = activeThreadId ? `${pathname}?room_id=${encodeURIComponent(activeThreadId)}` : pathname
     startTransition(() => {
       router.replace(next, { scroll: false })
     })
-  }, [activeThreadId, pathname, router, searchParams])
+  }, [activeThreadId, currentRoomId, pathname, router])
 
   useEffect(() => {
     const container = threadRef.current
