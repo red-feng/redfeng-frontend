@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import {
   COMMERCE_CHAT_PAGE_SIZE,
+  COMMERCE_CHAT_NO_STORE_HEADERS,
   getCommerceChatProfile,
   isBlockedCommerceProfileRole,
   loadCommerceChatMessagesPageForUser,
@@ -8,6 +9,8 @@ import {
 } from "@/lib/commerce-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+
+export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   const supabase = await createClient()
@@ -17,12 +20,12 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
 
   const profile = await getCommerceChatProfile(adminSupabase, user.id)
   if (isBlockedCommerceProfileRole(profile?.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
 
   const { searchParams } = new URL(request.url)
@@ -32,7 +35,7 @@ export async function GET(request: Request) {
   const shouldMarkRead = searchParams.get("markRead") !== "0"
 
   if (!threadId) {
-    return NextResponse.json({ error: "Missing threadId" }, { status: 400 })
+    return NextResponse.json({ error: "Missing threadId" }, { status: 400, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
 
   try {
@@ -43,10 +46,10 @@ export async function GET(request: Request) {
       beforeCreatedAt: beforeCreatedAt || null,
       limit: requestedLimit,
     })
-    return NextResponse.json(page)
+    return NextResponse.json(page, { headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Gagal memuat pesan commerce."
     const status = message.includes("akses") ? 403 : 500
-    return NextResponse.json({ error: message }, { status })
+    return NextResponse.json({ error: message }, { status, headers: COMMERCE_CHAT_NO_STORE_HEADERS })
   }
 }
