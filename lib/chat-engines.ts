@@ -18,6 +18,7 @@ export const COMMERCE_CHAT_ENGINE = Object.freeze({
   unreadCountEndpoint: "/api/commerce-chat/unread-count",
   threadsEndpoint: "/api/commerce-chat/threads",
   threadEndpoint: "/api/commerce-chat/thread",
+  deletionsEndpoint: "/api/commerce-chat/deletions",
   messagesEndpoint: "/api/commerce-chat/messages",
   sendEndpoint: "/api/commerce-chat/send",
   realtimeChannelPrefix: "commerce-chat-live",

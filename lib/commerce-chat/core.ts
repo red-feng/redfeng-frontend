@@ -94,6 +94,16 @@ export type CommerceChatThreadItem = {
   lastMessagePreview: string | null
 }
 
+type CommerceChatThreadDeletionRow = {
+  thread_id: string
+  customer_user_id: string
+  merchant_id: string
+  merchant_user_id: string
+  deleted_by_user_id: string | null
+  deleted_by_role: CommerceChatActorRole
+  created_at: string | null
+}
+
 export const COMMERCE_CHAT_PAGE_SIZE = 50
 export const COMMERCE_CHAT_ROLE_POLICY_VERSION = "2026-04-17"
 
@@ -638,11 +648,26 @@ export async function hardDeleteCommerceThreadForUser(
   threadId: string,
   userId: string,
 ) {
-  const { actorRole } = await getAccessibleThreadRowForUser(adminSupabase, threadId, userId)
+  const { thread, actorRole } = await getAccessibleThreadRowForUser(adminSupabase, threadId, userId)
   if (!canDeleteCommerceThread(actorRole)) {
     throw new Error("Role akun ini tidak diizinkan menghapus thread commerce.")
   }
   const attachmentObjectPaths = await listCommerceThreadAttachmentObjectPaths(adminSupabase, threadId)
+
+  const { error: deletionMarkerError } = await adminSupabase
+    .from("commerce_chat_thread_deletions")
+    .insert({
+      thread_id: thread.id,
+      customer_user_id: thread.customer_user_id,
+      merchant_id: thread.merchant_id,
+      merchant_user_id: thread.merchant_user_id,
+      deleted_by_user_id: userId,
+      deleted_by_role: actorRole,
+    })
+
+  if (deletionMarkerError) {
+    throw new Error(deletionMarkerError.message || "Gagal mencatat penghapusan thread commerce.")
+  }
 
   const { data: deletedThread, error } = await adminSupabase
     .from("commerce_chat_threads")
@@ -674,6 +699,23 @@ export async function hardDeleteCommerceThreadForUser(
     deletedThreadId: threadId,
     actorRole,
   }
+}
+
+export async function loadRecentCommerceThreadDeletionIdsForUser(adminSupabase: AdminSupabase, userId: string) {
+  const cutoffIso = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+  const { data, error } = await adminSupabase
+    .from("commerce_chat_thread_deletions")
+    .select("thread_id, customer_user_id, merchant_id, merchant_user_id, deleted_by_user_id, deleted_by_role, created_at")
+    .or(`customer_user_id.eq.${userId},merchant_user_id.eq.${userId}`)
+    .gte("created_at", cutoffIso)
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  if (error) {
+    throw new Error(error.message || "Gagal membaca marker penghapusan thread commerce.")
+  }
+
+  return [...new Set((((data as CommerceChatThreadDeletionRow[] | null) || [])).map((item) => item.thread_id).filter(Boolean))]
 }
 
 async function findExistingMessageByClientMessageId(

@@ -44,6 +44,11 @@ type DeleteThreadResponse = {
   error?: string
 }
 
+type DeletionListResponse = {
+  threadIds?: string[]
+  error?: string
+}
+
 type Props = {
   userId: string
   portal: "customer" | "merchant"
@@ -358,6 +363,13 @@ export default function CommerceChatRealtimeClient({
     return payload?.thread || null
   }, [])
 
+  const fetchDeletedThreadIds = useCallback(async () => {
+    const response = await fetch(COMMERCE_CHAT_ENGINE.deletionsEndpoint, { cache: "no-store" })
+    const payload = (await response.json().catch(() => null)) as DeletionListResponse | null
+    if (!response.ok) return [] as string[]
+    return payload?.threadIds || []
+  }, [])
+
   const fetchMessagesPage = useCallback(async (
     threadId: string,
     beforeCreatedAt?: string | null,
@@ -398,11 +410,20 @@ export default function CommerceChatRealtimeClient({
     if (typeof document !== "undefined" && document.visibilityState === "hidden") return
     if (deletingThreadIdRef.current) return
 
+    const deletedThreadIds = await fetchDeletedThreadIds()
+    if (deletedThreadIds.length > 0) {
+      deletedThreadIds.forEach((threadId) => {
+        markThreadDeletedLocally(threadId)
+      })
+    }
+
     await refreshThreads(keepCurrent)
-  }, [refreshThreads])
+  }, [fetchDeletedThreadIds, markThreadDeletedLocally, refreshThreads])
 
   const removeThreadLocally = useCallback((threadId: string) => {
+    if (!threadId) return
     markThreadDeletedLocally(threadId)
+    if (!threadsRef.current.some((thread) => thread.id === threadId)) return
     const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
     threadsRef.current = nextThreads
     setThreads(nextThreads)
