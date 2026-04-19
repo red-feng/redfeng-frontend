@@ -4,6 +4,9 @@ import {
   resolveCommerceActiveThreadIdAfterDelete,
 } from "../lib/commerce-chat/client-state.ts"
 import {
+  extractCommerceChatAttachmentPathFromPublicUrl,
+} from "../lib/commerce-chat/attachment-path.ts"
+import {
   COMMERCE_CHAT_DELETE_ROUTE_CONTRACT_VERSION,
   COMMERCE_CHAT_DELETE_ROUTE_ERRORS,
   resolveCommerceChatDeleteErrorStatus,
@@ -78,6 +81,24 @@ runCase("commerce chat delete route status mapping stays stable", () => {
 
 runCase("deleted inquiry can be recreated immediately", () => {
   assert.equal(decideCommerceInquiryThreadResolution({ hasExistingInquiryThread: false }), "create_inquiry_thread")
+})
+
+runCase("commerce chat attachment public url resolves to storage object path", () => {
+  assert.equal(
+    extractCommerceChatAttachmentPathFromPublicUrl(
+      "https://example.supabase.co/storage/v1/object/public/commerce-chat-attachments/threads/thread-1/user-1/file.pdf?download=1",
+    ),
+    "threads/thread-1/user-1/file.pdf",
+  )
+})
+
+runCase("non-commerce attachment url is ignored safely", () => {
+  assert.equal(
+    extractCommerceChatAttachmentPathFromPublicUrl(
+      "https://example.supabase.co/storage/v1/object/public/other-bucket/threads/thread-1/file.pdf",
+    ),
+    null,
+  )
 })
 
 runCase("requested room id is reused when still available", () => {

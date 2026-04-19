@@ -50,7 +50,7 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
 2. Go to `Environment Variables`.
 3. Confirm all required values exist in `Production`.
 4. Confirm `CRON_SECRET` is set in `Production` if scheduled cleanup endpoints are enabled.
-5. Verify `vercel.json` includes the cleanup cron for `/api/cron/cleanup-booking-drafts`.
+5. Verify `vercel.json` includes cron jobs for `/api/cron/cleanup-booking-drafts`, `/api/cron/cleanup-commerce-chat-retention`, `/api/cron/cleanup-expired-merchant-revisions`, and `/api/cron/purge-deleted-commerce-chat-threads` when production cleanup is enabled.
 6. Redeploy after adding or changing any variable or cron configuration.
 7. Validate on the Vercel deployment URL, not localhost.
 
@@ -59,6 +59,15 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
 - `/api/cron/cleanup-booking-drafts`
   - Runs from `vercel.json` schedule `5 17 * * *` (around `00:05 WIB` each day).
   - Deletes expired draft bookings and H-3 overdue unpaid bookings, including related payment and participant records.
+- `/api/cron/cleanup-commerce-chat-retention`
+  - Runs from `vercel.json` schedule `15 17 * * *` (around `00:15 WIB` each day).
+  - Removes old commerce-chat attachments via Storage API first, then cleans message rows older than six months.
+- `/api/cron/cleanup-expired-merchant-revisions`
+  - Runs from `vercel.json` schedule `20 17 * * *` (around `00:20 WIB` each day).
+  - Purges expired merchant revision records and related merchant documents.
+- `/api/cron/purge-deleted-commerce-chat-threads`
+  - Runs from `vercel.json` schedule `35 17 * * *` (around `00:35 WIB` each day).
+  - Removes deleted-thread attachments via Storage API first, then purges soft-deleted commerce chat rows whose `purge_after_at` has passed.
 
 ## Symptoms of missing variables
 

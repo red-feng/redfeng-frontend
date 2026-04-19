@@ -259,9 +259,11 @@ Expected:
 
 Expected:
 
-- row thread sudah tidak ada
-- message dan event untuk thread tersebut ikut hilang karena cascade
-- attachment object untuk thread tersebut ikut terhapus
+- tepat setelah tombol `Hapus room`, row thread biasanya masih ada tetapi sudah `deleted_for_all_at` dan `purge_after_at` terisi
+- thread yang sudah soft-delete tidak lagi muncul di UI customer maupun merchant
+- setelah backend purge job berjalan, row thread hilang permanen
+- message untuk thread tersebut ikut hilang saat purge permanen berjalan
+- attachment object untuk thread tersebut ikut terhapus oleh backend Storage API job
 
 ## 10. Database Spot Check
 
@@ -310,3 +312,4 @@ Commerce chat dianggap lolos smoke test bila:
 6. Customer dan merchant lain yang tidak berhak tidak bisa membaca thread.
 7. Role internal tidak bisa memakai commerce chat.
 8. Room yang dihapus hilang dari customer, merchant, database, dan attachment storage.
+9. Room yang dihapus memakai soft delete dulu, lalu hilang permanen dari database dan storage setelah job purge backend berjalan.

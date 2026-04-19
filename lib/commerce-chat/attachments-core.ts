@@ -1,6 +1,10 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
+import {
+  COMMERCE_CHAT_ATTACHMENT_BUCKET,
+  extractCommerceChatAttachmentPathFromPublicUrl,
+} from "./attachment-path"
 
-const COMMERCE_CHAT_ATTACHMENT_BUCKET = "commerce-chat-attachments"
 const MAX_COMMERCE_CHAT_ATTACHMENT_BYTES = 10 * 1024 * 1024
 
 const allowedMimeTypes = new Set([
@@ -22,6 +26,44 @@ function sanitizeFileName(name: string) {
     .replace(/\s+/g, "-")
     .replace(/[^a-zA-Z0-9._-]/g, "")
     .slice(-120) || "attachment"
+}
+
+export async function removeCommerceChatAttachmentObjects(
+  supabase: SupabaseClient,
+  attachmentUrls: Array<string | null | undefined>,
+) {
+  const objectPaths = [...new Set(
+    attachmentUrls
+      .map((url) => extractCommerceChatAttachmentPathFromPublicUrl(url))
+      .filter((path): path is string => Boolean(path)),
+  )]
+
+  if (!objectPaths.length) {
+    return {
+      removedCount: 0,
+      objectPaths: [] as string[],
+      errors: [] as string[],
+    }
+  }
+
+  const errors: string[] = []
+  let removedCount = 0
+
+  for (let index = 0; index < objectPaths.length; index += 100) {
+    const chunk = objectPaths.slice(index, index + 100)
+    const { error } = await supabase.storage.from(COMMERCE_CHAT_ATTACHMENT_BUCKET).remove(chunk)
+    if (error) {
+      errors.push(error.message || "Gagal menghapus lampiran commerce chat.")
+      continue
+    }
+    removedCount += chunk.length
+  }
+
+  return {
+    removedCount,
+    objectPaths,
+    errors,
+  }
 }
 
 export function isCommerceChatImageAttachment(mimeType: string | null | undefined) {

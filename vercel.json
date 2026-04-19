@@ -5,8 +5,16 @@
       "schedule": "5 17 * * *"
     },
     {
+      "path": "/api/cron/cleanup-commerce-chat-retention",
+      "schedule": "15 17 * * *"
+    },
+    {
       "path": "/api/cron/cleanup-expired-merchant-revisions",
       "schedule": "20 17 * * *"
+    },
+    {
+      "path": "/api/cron/purge-deleted-commerce-chat-threads",
+      "schedule": "35 17 * * *"
     }
   ]
 }
