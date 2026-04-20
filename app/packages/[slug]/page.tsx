@@ -12,6 +12,7 @@ import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
+import { isCommerceThreadUnreadForActor, loadCommerceChatThreadsForUser } from "@/lib/commerce-chat"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
@@ -126,7 +127,9 @@ export default async function PaketPage({
   const cookieLocale = await getCurrentLocale()
   const supabase = createAdminClient()
   const authSupabase = await createClient()
-  await authSupabase.auth.getUser()
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
 
   const slugCandidates = [
     rawSlug,
@@ -469,6 +472,22 @@ export default async function PaketPage({
       : activeLocale === "zh"
         ? "从此套餐开始聊天时，如果当前没有可用会话，系统会创建一个新的商家聊天房间。是否继续？"
         : "Memulai chat dari halaman paket ini akan membuka room merchant baru jika belum ada room aktif. Lanjutkan?"
+  let chatMerchantUnreadCount = 0
+
+  if (user?.id) {
+    const commerceThreads = await loadCommerceChatThreadsForUser(supabase, user.id)
+    chatMerchantUnreadCount = commerceThreads.filter((thread) =>
+      thread.threadType === "inquiry"
+      && thread.subjectPackageId === pkg.id
+      && isCommerceThreadUnreadForActor({
+        actorRole: thread.currentUserActorRole,
+        lastMessageSenderRole: thread.lastMessageSenderRole,
+        lastMessageAt: thread.lastMessageAt,
+        customerLastReadAt: thread.currentUserActorRole === "customer" ? thread.currentUserLastReadAt : null,
+        merchantLastReadAt: thread.currentUserActorRole === "merchant" ? thread.currentUserLastReadAt : null,
+      }),
+    ).length
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_45%,#fffaf5_100%)] pb-36 md:pb-0">
@@ -650,6 +669,7 @@ export default async function PaketPage({
                   href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
                   label={chatMerchantLabel}
                   confirmMessage={confirmChatMessage}
+                  badgeCount={chatMerchantUnreadCount}
                   className="block w-full rounded-[22px] border border-orange-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-orange-700 shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-orange-300 hover:bg-orange-50"
                 >
                   {activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
@@ -671,6 +691,7 @@ export default async function PaketPage({
         summary={displayTitle}
         secondaryHref={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
         secondaryConfirmMessage={confirmChatMessage}
+        secondaryBadgeCount={chatMerchantUnreadCount}
         secondaryLabel={activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
       />
       <PublicMobileNav locale={activeLocale} />

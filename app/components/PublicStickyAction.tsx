@@ -12,6 +12,7 @@ type PublicStickyActionProps = {
   secondaryHref?: string
   secondaryLabel?: string
   secondaryConfirmMessage?: string
+  secondaryBadgeCount?: number
 }
 
 export default function PublicStickyAction({
@@ -22,6 +23,7 @@ export default function PublicStickyAction({
   secondaryHref,
   secondaryLabel,
   secondaryConfirmMessage,
+  secondaryBadgeCount = 0,
 }: PublicStickyActionProps) {
   const copy = {
     id: {
@@ -55,6 +57,7 @@ export default function PublicStickyAction({
                 href={secondaryHref}
                 label={secondaryLabel || copy.defaultSecondaryLabel}
                 confirmMessage={secondaryConfirmMessage}
+                badgeCount={secondaryBadgeCount}
                 className="rounded-2xl border border-orange-200 bg-white px-3 py-2.5 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
               />
             ) : (
