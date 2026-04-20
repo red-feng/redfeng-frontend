@@ -12,7 +12,11 @@ import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
-import { isCommerceThreadUnreadForActor, loadCommerceChatThreadsForUser } from "@/lib/commerce-chat"
+import {
+  getOwnedMerchantsForUser,
+  isCommerceThreadUnreadForActor,
+  loadCommerceChatThreadsForUser,
+} from "@/lib/commerce-chat"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
 import { getFacilityLabel } from "@/lib/facility-labels"
 import { getCurrentLocale } from "@/lib/locale"
@@ -130,6 +134,7 @@ export default async function PaketPage({
   const {
     data: { user },
   } = await authSupabase.auth.getUser()
+  const ownedMerchants = user ? await getOwnedMerchantsForUser(supabase, user.id) : []
 
   const slugCandidates = [
     rawSlug,
@@ -472,9 +477,11 @@ export default async function PaketPage({
       : activeLocale === "zh"
         ? "从此套餐开始聊天时，如果当前没有可用会话，系统会创建一个新的商家聊天房间。是否继续？"
         : "Memulai chat dari halaman paket ini akan membuka room merchant baru jika belum ada room aktif. Lanjutkan?"
+  const isViewingOwnMerchantPackage = ownedMerchants.some((merchant) => merchant.id === pkg.merchant_id)
+  const canStartMerchantChat = Boolean(user?.id) && !isViewingOwnMerchantPackage
   let chatMerchantUnreadCount = 0
 
-  if (user?.id) {
+  if (user?.id && canStartMerchantChat) {
     const commerceThreads = await loadCommerceChatThreadsForUser(supabase, user.id)
     chatMerchantUnreadCount = commerceThreads.filter((thread) =>
       thread.threadType === "inquiry"
@@ -665,15 +672,17 @@ export default async function PaketPage({
                 >
                   {t.bookingNow}
                 </Link>
-                <ConfirmChatLink
-                  href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
-                  label={chatMerchantLabel}
-                  confirmMessage={confirmChatMessage}
-                  badgeCount={chatMerchantUnreadCount}
-                  className="block w-full rounded-[22px] border border-orange-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-orange-700 shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-orange-300 hover:bg-orange-50"
-                >
-                  {activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
-                </ConfirmChatLink>
+                {canStartMerchantChat ? (
+                  <ConfirmChatLink
+                    href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
+                    label={chatMerchantLabel}
+                    confirmMessage={confirmChatMessage}
+                    badgeCount={chatMerchantUnreadCount}
+                    className="block w-full rounded-[22px] border border-orange-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-orange-700 shadow-[0_12px_24px_rgba(15,23,42,0.06)] transition hover:border-orange-300 hover:bg-orange-50"
+                  >
+                    {activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
+                  </ConfirmChatLink>
+                ) : null}
               </div>
             </section>
             <SidebarActions
@@ -689,8 +698,8 @@ export default async function PaketPage({
         href={`/checkout/${encodeURIComponent(pkg.slug)}`}
         label={t.bookingNow}
         summary={displayTitle}
-        secondaryHref={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
-        secondaryConfirmMessage={confirmChatMessage}
+        secondaryHref={canStartMerchantChat ? `/chat?package_id=${encodeURIComponent(pkg.id)}` : undefined}
+        secondaryConfirmMessage={canStartMerchantChat ? confirmChatMessage : undefined}
         secondaryBadgeCount={chatMerchantUnreadCount}
         secondaryLabel={activeLocale === "en" ? "Chat merchant" : activeLocale === "zh" ? "联系商家" : "Chat merchant"}
       />

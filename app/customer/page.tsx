@@ -1,17 +1,21 @@
 import Link from "next/link"
+import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { formatCustomerCode } from "@/lib/merchant-code"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function CustomerAccountHubPage() {
   const supabase = await createClient()
+  const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   const customerCode = user ? formatCustomerCode(user.id) : "-"
+  const commerceChatUnreadCount = user ? await getCommerceChatUnreadBadgeCount(adminSupabase, user.id) : 0
 
   const copy = {
     id: {
@@ -221,6 +225,11 @@ export default async function CustomerAccountHubPage() {
                     <span className="block text-base font-semibold text-slate-950">{item.title}</span>
                     <span className="mt-1 block text-sm leading-6 text-slate-600">{item.body}</span>
                   </span>
+                  {item.href === "/chat" && commerceChatUnreadCount > 0 ? (
+                    <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-bold leading-none text-white shadow-[0_6px_14px_rgba(16,185,129,0.28)]">
+                      {commerceChatUnreadCount > 9 ? "9+" : commerceChatUnreadCount}
+                    </span>
+                  ) : null}
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#ead8c0] bg-white text-slate-500">
                     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
                       <path d="M9 6l6 6-6 6" />
