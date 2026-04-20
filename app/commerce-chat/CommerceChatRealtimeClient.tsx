@@ -828,6 +828,9 @@ export default function CommerceChatRealtimeClient({
           return
         }
         upsertThreadLocally(thread)
+        if (threadId === activeThreadIdRef.current) {
+          await refreshLatestMessages(threadId)
+        }
         if (portal === "merchant") {
           scheduleSnapshotRefresh(180)
         }
