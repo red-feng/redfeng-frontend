@@ -2,10 +2,13 @@ import CheckoutClient from "./CheckoutClient"
 import { getFinanceSettings } from "@/lib/finance/settings"
 import { convertCurrencyAmount } from "@/lib/currency-rates"
 import { getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
+import { getOwnedMerchantsForUser } from "@/lib/commerce-chat"
 import { getCurrentLocale } from "@/lib/locale"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -24,6 +27,7 @@ function normalizeSlug(value: string): string {
 type PackageCheckoutRow = {
   id: string
   slug: string
+  merchant_id: string | null
   title: string | null
   departure_date: string | null
   price_adult: number | null
@@ -45,7 +49,7 @@ type PackageCheckoutRow = {
 }
 
 const checkoutPackageSelect =
-  "id, slug, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)"
+  "id, slug, merchant_id, title, departure_date, price_adult, price_child, currency, duration, minimal_peserta, travel_style, cover_image, default_language, published_languages, package_translations(language_code, title, currency, price_adult, price_child)"
 
 export default async function CheckoutPage({
   params,
@@ -56,6 +60,10 @@ export default async function CheckoutPage({
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].checkout
   const supabase = createAdminClient()
+  const authSupabase = await createClient()
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser()
 
   const slugCandidates = [
     rawSlug,
@@ -98,6 +106,14 @@ export default async function CheckoutPage({
 
   if (!pkg) {
     return <div className="p-10">{t.packageNotFound}</div>
+  }
+
+  if (user?.id) {
+    const ownedMerchants = await getOwnedMerchantsForUser(supabase, user.id)
+    const isOwnMerchantPackage = ownedMerchants.some((merchant) => merchant.id === pkg?.merchant_id)
+    if (isOwnMerchantPackage) {
+      redirect(`/packages/${encodeURIComponent(pkg.slug)}`)
+    }
   }
 
   const localizedTranslation = resolvePackageTranslation(

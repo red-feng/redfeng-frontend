@@ -479,6 +479,7 @@ export default async function PaketPage({
         : "Memulai chat dari halaman paket ini akan membuka room merchant baru jika belum ada room aktif. Lanjutkan?"
   const isViewingOwnMerchantPackage = ownedMerchants.some((merchant) => merchant.id === pkg.merchant_id)
   const canStartMerchantChat = Boolean(user?.id) && !isViewingOwnMerchantPackage
+  const canStartBooking = !isViewingOwnMerchantPackage
   let chatMerchantUnreadCount = 0
 
   if (user?.id && canStartMerchantChat) {
@@ -666,12 +667,14 @@ export default async function PaketPage({
                     <p className="mt-2">Tanggal keberangkatan: {pkg.departure_date}</p>
                   )}
                 </div>
-                <Link
-                  href={`/checkout/${encodeURIComponent(pkg.slug)}`}
-                  className="block w-full rounded-[22px] bg-[linear-gradient(135deg,#fb923c_0%,#f97316_100%)] px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_16px_30px_rgba(249,115,22,0.28)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(249,115,22,0.34)]"
-                >
-                  {t.bookingNow}
-                </Link>
+                {canStartBooking ? (
+                  <Link
+                    href={`/checkout/${encodeURIComponent(pkg.slug)}`}
+                    className="block w-full rounded-[22px] bg-[linear-gradient(135deg,#fb923c_0%,#f97316_100%)] px-4 py-3.5 text-center text-sm font-semibold text-white shadow-[0_16px_30px_rgba(249,115,22,0.28)] transition hover:translate-y-[-1px] hover:shadow-[0_18px_34px_rgba(249,115,22,0.34)]"
+                  >
+                    {t.bookingNow}
+                  </Link>
+                ) : null}
                 {canStartMerchantChat ? (
                   <ConfirmChatLink
                     href={`/chat?package_id=${encodeURIComponent(pkg.id)}`}
@@ -695,7 +698,7 @@ export default async function PaketPage({
       </div>
       <PublicStickyAction
         locale={activeLocale}
-        href={`/checkout/${encodeURIComponent(pkg.slug)}`}
+        href={canStartBooking ? `/checkout/${encodeURIComponent(pkg.slug)}` : `/packages/${encodeURIComponent(pkg.slug)}`}
         label={t.bookingNow}
         summary={displayTitle}
         secondaryHref={canStartMerchantChat ? `/chat?package_id=${encodeURIComponent(pkg.id)}` : undefined}
