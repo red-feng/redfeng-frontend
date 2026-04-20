@@ -901,7 +901,28 @@ export async function loadRecentCommerceThreadDeletionIdsForUser(adminSupabase: 
     throw new Error(error.message || "Gagal membaca marker penghapusan thread commerce.")
   }
 
-  return [...new Set((((data as CommerceChatThreadDeletionRow[] | null) || [])).map((item) => item.thread_id).filter(Boolean))]
+  const candidateThreadIds = [...new Set((((data as CommerceChatThreadDeletionRow[] | null) || [])).map((item) => item.thread_id).filter(Boolean))]
+  if (!candidateThreadIds.length) return []
+
+  const { data: existingThreads, error: existingThreadsError } = await adminSupabase
+    .from("commerce_chat_threads")
+    .select("id, deleted_for_all_at")
+    .in("id", candidateThreadIds)
+
+  if (existingThreadsError) {
+    throw new Error(existingThreadsError.message || "Gagal memverifikasi marker penghapusan thread commerce.")
+  }
+
+  const existingThreadMap = new Map(
+    (((existingThreads as Array<{ id: string; deleted_for_all_at?: string | null }> | null) || []))
+      .filter((item) => item.id)
+      .map((item) => [item.id, item.deleted_for_all_at || null]),
+  )
+
+  return candidateThreadIds.filter((threadId) => {
+    if (!existingThreadMap.has(threadId)) return true
+    return Boolean(existingThreadMap.get(threadId))
+  })
 }
 
 async function findExistingMessageByClientMessageId(
