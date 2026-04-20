@@ -69,6 +69,7 @@ type Props = {
 }
 
 type SendPhase = "idle" | "compressing" | "uploading"
+type UploadProgressMap = Record<string, number>
 
 const SNAPSHOT_FALLBACK_INTERVAL_MS = 12000
 const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
@@ -128,6 +129,12 @@ function buildOptimisticThreadPreview(
     currentUserLastReadAt: sentAt,
     lastMessagePreview: preview,
   }
+}
+
+function formatUploadButtonLabel(sendPhase: SendPhase, uploadProgress: number) {
+  if (sendPhase === "compressing") return "Siapkan..."
+  if (uploadProgress > 0) return `Upload ${uploadProgress}%`
+  return "Upload..."
 }
 
 function areThreadListsEqual(left: CommerceChatThreadItem[], right: CommerceChatThreadItem[]) {
@@ -385,6 +392,42 @@ async function optimizeAttachmentBeforeSend(file: File | null) {
   })
 }
 
+async function sendFormDataWithProgress(
+  url: string,
+  formData: FormData,
+  onProgress: (percent: number) => void,
+) {
+  return await new Promise<SendMessageResponse>((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open("POST", url, true)
+    request.responseType = "json"
+
+    request.upload.onprogress = (event) => {
+      if (!event.lengthComputable || event.total <= 0) return
+      onProgress(Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100))))
+    }
+
+    request.onerror = () => reject(new Error("Gagal kirim pesan chat."))
+    request.onabort = () => reject(new Error("Pengiriman lampiran dibatalkan."))
+    request.onload = () => {
+      const payload =
+        typeof request.response === "object" && request.response
+          ? request.response as SendMessageResponse
+          : JSON.parse(String(request.responseText || "{}")) as SendMessageResponse
+
+      if (request.status < 200 || request.status >= 300 || payload.error) {
+        reject(new Error(payload.error || "Gagal kirim pesan chat."))
+        return
+      }
+
+      onProgress(100)
+      resolve(payload)
+    }
+
+    request.send(formData)
+  })
+}
+
 export default function CommerceChatRealtimeClient({
   userId,
   portal,
@@ -423,6 +466,8 @@ export default function CommerceChatRealtimeClient({
   const [draftMessage, setDraftMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle")
+  const [activeUploadProgress, setActiveUploadProgress] = useState(0)
+  const [uploadProgressByClientMessageId, setUploadProgressByClientMessageId] = useState<UploadProgressMap>({})
   const [errorMessage, setErrorMessage] = useState(initialServerNotice)
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting")
   const [deletingThreadId, setDeletingThreadId] = useState("")
@@ -899,6 +944,14 @@ export default function CommerceChatRealtimeClient({
             [message.thread_id]: mergeMessages(current[message.thread_id] || [], [message]),
           }
         })
+        if (message.client_message_id) {
+          setUploadProgressByClientMessageId((current) => {
+            if (!(message.client_message_id! in current)) return current
+            const next = { ...current }
+            delete next[message.client_message_id!]
+            return next
+          })
+        }
 
         const thread = await fetchThreadMeta(message.thread_id)
         if (thread) {
@@ -1063,7 +1116,12 @@ export default function CommerceChatRealtimeClient({
 
     setSending(true)
     setSendPhase(attachment ? "compressing" : "uploading")
+    setActiveUploadProgress(0)
     setErrorMessage("")
+    setUploadProgressByClientMessageId((current) => ({
+      ...current,
+      [clientMessageId]: attachment ? 0 : 100,
+    }))
     setMessagesByThread((current) => ({
       ...current,
       [currentThreadId]: mergeMessages(current[currentThreadId] || [], [optimisticMessage]),
@@ -1099,13 +1157,28 @@ export default function CommerceChatRealtimeClient({
       }
 
       setSendPhase("uploading")
-      const response = await fetch(COMMERCE_CHAT_ENGINE.sendEndpoint, {
-        method: "POST",
-        body: formData,
-      })
-      const payload = (await response.json()) as SendMessageResponse
-      if (!response.ok || payload.error || !payload.message) {
-        throw new Error(payload.error || "Gagal kirim pesan chat.")
+      const payload = preparedAttachment
+        ? await sendFormDataWithProgress(COMMERCE_CHAT_ENGINE.sendEndpoint, formData, (percent) => {
+            setActiveUploadProgress(percent)
+            setUploadProgressByClientMessageId((current) => ({
+              ...current,
+              [clientMessageId]: percent,
+            }))
+          })
+        : await (async () => {
+            const response = await fetch(COMMERCE_CHAT_ENGINE.sendEndpoint, {
+              method: "POST",
+              body: formData,
+            })
+            const nextPayload = (await response.json()) as SendMessageResponse
+            if (!response.ok || nextPayload.error) {
+              throw new Error(nextPayload.error || "Gagal kirim pesan chat.")
+            }
+            return nextPayload
+          })()
+
+      if (!payload.message) {
+        throw new Error("Gagal kirim pesan chat.")
       }
 
       setMessagesByThread((current) => {
@@ -1113,6 +1186,12 @@ export default function CommerceChatRealtimeClient({
           ...current,
           [currentThreadId]: mergeMessages(current[currentThreadId] || [], [payload.message!]),
         }
+      })
+      setUploadProgressByClientMessageId((current) => {
+        if (!(clientMessageId in current)) return current
+        const next = { ...current }
+        delete next[clientMessageId]
+        return next
       })
 
       const thread = await fetchThreadMeta(currentThreadId)
@@ -1124,11 +1203,18 @@ export default function CommerceChatRealtimeClient({
         ...current,
         [currentThreadId]: (current[currentThreadId] || []).filter((message) => message.client_message_id !== clientMessageId),
       }))
+      setUploadProgressByClientMessageId((current) => {
+        if (!(clientMessageId in current)) return current
+        const next = { ...current }
+        delete next[clientMessageId]
+        return next
+      })
       setDraftMessage(trimmedDraftMessage)
       setErrorMessage(error instanceof Error ? error.message : "Gagal kirim pesan chat.")
     } finally {
       setSending(false)
       setSendPhase("idle")
+      setActiveUploadProgress(0)
     }
   }
 
@@ -1348,6 +1434,9 @@ export default function CommerceChatRealtimeClient({
               ) : (
                 activeMessages.map((message) => {
                   const mine = message.sender_user_id === userId
+                  const uploadProgress =
+                    message.client_message_id ? uploadProgressByClientMessageId[message.client_message_id] : undefined
+                  const isPendingUpload = typeof uploadProgress === "number" && uploadProgress < 100
                   const bubbleClass =
                     message.sender_role === "system"
                       ? "border border-slate-200 bg-white text-slate-500"
@@ -1374,11 +1463,11 @@ export default function CommerceChatRealtimeClient({
                            </div>
                          ) : (
                            <>
-                             {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
-                             {message.attachment_url ? (
-                               <div className={message.body ? "mt-3" : ""}>
-                                 {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
-                                   <a
+                            {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
+                            {message.attachment_url ? (
+                              <div className={message.body ? "mt-3" : ""}>
+                                {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
+                                  <a
                                      href={message.attachment_url}
                                      target="_blank"
                                      rel="noreferrer"
@@ -1399,12 +1488,31 @@ export default function CommerceChatRealtimeClient({
                                      className="inline-flex items-center rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
                                    >
                                      {message.attachment_name || "Lampiran"}
-                                   </a>
-                                 )}
-                               </div>
-                             ) : null}
-                             <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
-                           </>
+                                  </a>
+                                )}
+                              </div>
+                            ) : message.attachment_name ? (
+                              <div className={message.body ? "mt-3" : ""}>
+                                <div className="rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="truncate font-semibold">{message.attachment_name}</span>
+                                    <span className="shrink-0 text-[10px] font-semibold text-orange-600">
+                                      {isPendingUpload ? `${uploadProgress}%` : "Diproses"}
+                                    </span>
+                                  </div>
+                                  {isPendingUpload ? (
+                                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-orange-100">
+                                      <div
+                                        className="h-full rounded-full bg-[#ff6a00] transition-all"
+                                        style={{ width: `${Math.max(6, uploadProgress)}%` }}
+                                      />
+                                    </div>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
+                            <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
+                          </>
                          )}
                        </div>
                      </div>
@@ -1438,7 +1546,7 @@ export default function CommerceChatRealtimeClient({
                   disabled={!activeThread || sending || Boolean(deletingThreadId)}
                   className="h-12 rounded-[12px] bg-[#ff6a00] px-5 text-sm font-semibold text-white transition hover:bg-[#ea6100] disabled:cursor-not-allowed disabled:bg-slate-300"
                 >
-                  {sending ? (sendPhase === "compressing" ? "Siapkan..." : "Upload...") : "Kirim"}
+                  {sending ? formatUploadButtonLabel(sendPhase, activeUploadProgress) : "Kirim"}
                 </button>
               </div>
             </form>
