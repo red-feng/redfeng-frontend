@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
@@ -10,6 +11,7 @@ import {
   resolveCommerceActiveThreadId,
   resolveCommerceActiveThreadIdAfterDelete,
 } from "@/lib/commerce-chat"
+import { formatPackageMoney } from "@/lib/package-pricing"
 import { createClient } from "@/lib/supabase/client"
 import type { CommerceChatMessageItem, CommerceChatThreadItem } from "@/lib/commerce-chat"
 
@@ -174,7 +176,11 @@ function buildClientMessageId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function renderCommerceSystemMessageCard(message: CommerceChatMessageItem, activeThread: CommerceChatThreadItem | null) {
+function renderCommerceSystemMessageCard(
+  message: CommerceChatMessageItem,
+  activeThread: CommerceChatThreadItem | null,
+  portal: "customer" | "merchant",
+) {
   const parsed = parseChatSystemMessage(message.body)
   if (!parsed) {
     return message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null
@@ -182,31 +188,90 @@ function renderCommerceSystemMessageCard(message: CommerceChatMessageItem, activ
 
   if (parsed.type === "package_inquiry") {
     const packageTitle = activeThread?.packageTitle || "Paket"
+    const packageImage = activeThread?.packageCoverImage || "/placeholder.png"
+    const packageHref =
+      portal === "merchant"
+        ? activeThread?.subjectPackageId
+          ? `/merchant/paket/${encodeURIComponent(activeThread.subjectPackageId)}`
+          : null
+        : activeThread?.packageSlug
+          ? `/packages/${encodeURIComponent(activeThread.packageSlug)}`
+          : null
+    const packagePrice =
+      typeof activeThread?.packagePriceAdult === "number"
+        ? formatPackageMoney(activeThread.packagePriceAdult, activeThread.packageCurrency || "IDR", "id")
+        : null
 
     return (
-      <div className="min-w-[250px] max-w-[420px] rounded-[16px] border border-orange-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-4 text-left shadow-[0_14px_32px_rgba(249,115,22,0.12)]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">
-          Inquiry Baru
+      <div className="min-w-[250px] max-w-[390px] text-left">
+        <p className="mb-1.5 text-[11px] font-medium text-slate-500">
+          {portal === "merchant" ? "Customer bertanya tentang paket ini" : "Kamu bertanya tentang paket ini"}
         </p>
-        <p className="mt-2 text-sm font-semibold text-slate-900">
-          {packageTitle}
-        </p>
-        <p className="mt-2 text-xs leading-5 text-slate-600">
-          Customer memulai chat inquiry untuk paket ini. Lanjutkan percakapan di thread yang sama agar detail pertanyaan dan jawaban merchant tetap rapi di satu inbox.
-        </p>
+        <div className="overflow-hidden rounded-[14px] border border-[#ece4d8] bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+          <div className="flex items-center gap-2.5 p-2.5">
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={packageImage}
+                alt={packageTitle}
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="line-clamp-2 text-[13px] font-semibold leading-4 text-slate-900">
+                {packageTitle}
+              </p>
+              {packagePrice ? (
+                <p className="mt-0.5 text-[13px] font-bold text-[#e56f1f]">
+                  {packagePrice}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {packageHref ? (
+            <div className="border-t border-[#f5ede2] px-2.5 py-2">
+              <Link
+                href={packageHref}
+                className="inline-flex items-center rounded-full border border-[#f3d4bb] bg-[#fff7f0] px-2.5 py-1 text-[11px] font-semibold text-[#c8611d] transition hover:bg-[#ffefe2]"
+              >
+                Lihat paket
+              </Link>
+            </div>
+          ) : null}
+        </div>
       </div>
     )
   }
 
   if (parsed.type === "booking_linked") {
+    const bookingHref =
+      portal === "merchant"
+        ? `/merchant/booking/${encodeURIComponent(parsed.bookingId)}`
+        : `/booking/${encodeURIComponent(parsed.bookingId)}`
+
     return (
-      <div className="min-w-[250px] max-w-[420px] rounded-[16px] border border-slate-200 bg-white p-4 text-left shadow-[0_12px_24px_rgba(15,23,42,0.08)]">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
-          Booking Terkait
+      <div className="min-w-[250px] max-w-[390px] text-left">
+        <p className="mb-1.5 text-[11px] font-medium text-slate-500">
+          {portal === "merchant" ? "Booking customer sudah terhubung" : "Booking kamu sudah terhubung"}
         </p>
-        <p className="mt-2 text-sm font-semibold text-slate-900">
-          {parsed.bookingCode || "Booking sudah terhubung"}
-        </p>
+        <div className="overflow-hidden rounded-[14px] border border-[#e6e8ec] bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)]">
+          <div className="p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Booking Terkait
+            </p>
+            <p className="mt-1.5 text-[13px] font-semibold text-slate-900">
+              {parsed.bookingCode || "Booking sudah terhubung"}
+            </p>
+          </div>
+          <div className="border-t border-slate-200 px-2.5 py-2">
+            <Link
+              href={bookingHref}
+              className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              Lihat booking
+            </Link>
+          </div>
+        </div>
       </div>
     )
   }
@@ -1207,7 +1272,7 @@ export default function CommerceChatRealtimeClient({
                     >
                       <div className={`max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
                         {message.sender_role === "system"
-                          ? renderCommerceSystemMessageCard(message, activeThread)
+                          ? renderCommerceSystemMessageCard(message, activeThread, portal)
                           : message.body
                             ? <p className="whitespace-pre-line leading-6">{message.body}</p>
                             : null}

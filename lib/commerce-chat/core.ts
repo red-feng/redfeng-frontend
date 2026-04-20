@@ -25,8 +25,12 @@ type CommerceMerchantRow = {
 
 type CommercePackageRow = {
   id: string
+  slug: string | null
   title: string | null
   merchant_id: string | null
+  cover_image: string | null
+  price_adult: number | null
+  currency: string | null
 }
 
 export type CommerceChatActorRole = "customer" | "merchant"
@@ -106,6 +110,10 @@ export type CommerceChatThreadItem = {
   merchantLabel: string
   customerLabel: string
   packageTitle: string | null
+  packageSlug: string | null
+  packageCoverImage: string | null
+  packagePriceAdult: number | null
+  packageCurrency: string | null
   status: "open" | "archived" | "blocked" | "resolved"
   safetyState: "normal" | "flagged" | "frozen"
   createdAt: string | null
@@ -237,7 +245,7 @@ async function getPackagesByIds(adminSupabase: AdminSupabase, packageIds: string
 
   const { data, error } = await adminSupabase
     .from("packages")
-    .select("id, title, merchant_id")
+    .select("id, slug, title, merchant_id, cover_image, price_adult, currency")
     .in("id", packageIds)
 
   if (error) {
@@ -612,6 +620,10 @@ export async function loadCommerceChatThreadsForUser(adminSupabase: AdminSupabas
         merchantLabel: getMerchantLabel(merchant),
         customerLabel: customerProfile?.username || "Customer",
         packageTitle: thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.title || null : null,
+        packageSlug: thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.slug || null : null,
+        packageCoverImage: thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.cover_image || null : null,
+        packagePriceAdult: thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.price_adult ?? null : null,
+        packageCurrency: thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.currency || null : null,
         status: thread.status,
         safetyState: thread.safety_state,
         createdAt: thread.created_at,
