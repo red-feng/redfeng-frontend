@@ -94,10 +94,40 @@ function sortMessages(messages: CommerceChatMessageItem[]) {
 }
 
 function mergeMessages(existing: CommerceChatMessageItem[], incoming: CommerceChatMessageItem[]) {
-  const merged = new Map<string, CommerceChatMessageItem>()
-  for (const message of existing) merged.set(message.id, message)
-  for (const message of incoming) merged.set(message.id, message)
-  return sortMessages([...merged.values()])
+  const merged = [...existing]
+  for (const message of incoming) {
+    const existingIndex = merged.findIndex((item) =>
+      item.id === message.id
+      || (
+        Boolean(item.client_message_id)
+        && Boolean(message.client_message_id)
+        && item.client_message_id === message.client_message_id
+      ))
+
+    if (existingIndex >= 0) {
+      merged[existingIndex] = message
+      continue
+    }
+
+    merged.push(message)
+  }
+  return sortMessages(merged)
+}
+
+function buildOptimisticThreadPreview(
+  thread: CommerceChatThreadItem,
+  senderRole: "customer" | "merchant",
+  preview: string,
+  sentAt: string,
+) {
+  return {
+    ...thread,
+    updatedAt: sentAt,
+    lastMessageAt: sentAt,
+    lastMessageSenderRole: senderRole,
+    currentUserLastReadAt: sentAt,
+    lastMessagePreview: preview,
+  }
 }
 
 function areThreadListsEqual(left: CommerceChatThreadItem[], right: CommerceChatThreadItem[]) {
@@ -864,11 +894,9 @@ export default function CommerceChatRealtimeClient({
         if (!message?.thread_id) return
 
         setMessagesByThread((current) => {
-          const existing = current[message.thread_id] || []
-          if (existing.some((item) => item.id === message.id)) return current
           return {
             ...current,
-            [message.thread_id]: [...existing, message],
+            [message.thread_id]: mergeMessages(current[message.thread_id] || [], [message]),
           }
         })
 
@@ -1009,21 +1037,62 @@ export default function CommerceChatRealtimeClient({
     event.preventDefault()
     if (!activeThreadId) return
     const attachment = fileInputRef.current?.files?.[0] || null
-    if (!draftMessage.trim() && !attachment) {
+    const trimmedDraftMessage = draftMessage.trim()
+    if (!trimmedDraftMessage && !attachment) {
       setErrorMessage("Pesan atau lampiran wajib diisi.")
       return
+    }
+
+    const currentThreadId = activeThreadId
+    const clientMessageId = buildClientMessageId()
+    const optimisticSentAt = new Date().toISOString()
+    const optimisticMessage: CommerceChatMessageItem = {
+      id: `pending:${clientMessageId}`,
+      thread_id: currentThreadId,
+      sender_user_id: userId,
+      sender_role: portal,
+      message_type: attachment ? "attachment" : "text",
+      body: trimmedDraftMessage,
+      attachment_url: null,
+      attachment_name: attachment?.name || null,
+      attachment_mime_type: attachment?.type || null,
+      moderation_state: "clean",
+      client_message_id: clientMessageId,
+      created_at: optimisticSentAt,
     }
 
     setSending(true)
     setSendPhase(attachment ? "compressing" : "uploading")
     setErrorMessage("")
-    const clientMessageId = buildClientMessageId()
+    setMessagesByThread((current) => ({
+      ...current,
+      [currentThreadId]: mergeMessages(current[currentThreadId] || [], [optimisticMessage]),
+    }))
+    setThreads((current) => {
+      const nextThreads = current.map((thread) =>
+        thread.id === currentThreadId
+          ? buildOptimisticThreadPreview(
+              thread,
+              portal,
+              trimmedDraftMessage || attachment?.name || "Lampiran",
+              optimisticSentAt,
+            )
+          : thread,
+      )
+      const sortedThreads = sortThreads(nextThreads)
+      threadsRef.current = sortedThreads
+      return sortedThreads
+    })
+    setDraftMessage("")
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
 
     try {
       const preparedAttachment = await optimizeAttachmentBeforeSend(attachment)
       const formData = new FormData()
-      formData.set("thread_id", activeThreadId)
-      formData.set("message", draftMessage.trim())
+      formData.set("thread_id", currentThreadId)
+      formData.set("message", trimmedDraftMessage)
       formData.set("client_message_id", clientMessageId)
       if (preparedAttachment) {
         formData.set("attachment", preparedAttachment)
@@ -1040,21 +1109,22 @@ export default function CommerceChatRealtimeClient({
       }
 
       setMessagesByThread((current) => {
-        const existing = current[activeThreadId] || []
-        if (existing.some((item) => item.id === payload.message!.id)) return current
-        return { ...current, [activeThreadId]: [...existing, payload.message!] }
+        return {
+          ...current,
+          [currentThreadId]: mergeMessages(current[currentThreadId] || [], [payload.message!]),
+        }
       })
 
-      const thread = await fetchThreadMeta(activeThreadId)
+      const thread = await fetchThreadMeta(currentThreadId)
       if (thread) {
         upsertThreadLocally(thread)
       }
-
-      setDraftMessage("")
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ""
-      }
     } catch (error) {
+      setMessagesByThread((current) => ({
+        ...current,
+        [currentThreadId]: (current[currentThreadId] || []).filter((message) => message.client_message_id !== clientMessageId),
+      }))
+      setDraftMessage(trimmedDraftMessage)
       setErrorMessage(error instanceof Error ? error.message : "Gagal kirim pesan chat.")
     } finally {
       setSending(false)
