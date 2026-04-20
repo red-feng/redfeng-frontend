@@ -585,39 +585,6 @@ export default function CommerceChatRealtimeClient({
     } catch {}
   }, [fetchThreads, filterDeletedThreadTombstones])
 
-  const refreshThreadListNow = useCallback(async (keepCurrent = true) => {
-    if (typeof document !== "undefined" && document.visibilityState === "hidden") return
-    if (deletingThreadIdRef.current) return
-
-    const previousActiveThreadId = activeThreadIdRef.current
-    const previousActiveThread = previousActiveThreadId
-      ? threadsRef.current.find((thread) => thread.id === previousActiveThreadId) || null
-      : null
-
-    const deletedThreadIds = await fetchDeletedThreadIds()
-    if (deletedThreadIds.length > 0) {
-      deletedThreadIds.forEach((threadId) => {
-        markThreadDeletedLocally(threadId)
-      })
-    }
-
-    await refreshThreads(keepCurrent)
-
-    const nextActiveThreadId = activeThreadIdRef.current
-    if (!nextActiveThreadId) return
-
-    const nextActiveThread = threadsRef.current.find((thread) => thread.id === nextActiveThreadId) || null
-    const activeThreadChanged =
-      previousActiveThreadId !== nextActiveThreadId ||
-      previousActiveThread?.lastMessageAt !== nextActiveThread?.lastMessageAt ||
-      previousActiveThread?.updatedAt !== nextActiveThread?.updatedAt ||
-      previousActiveThread?.lastMessagePreview !== nextActiveThread?.lastMessagePreview
-
-    if (activeThreadChanged) {
-      await refreshLatestMessages(nextActiveThreadId)
-    }
-  }, [fetchDeletedThreadIds, markThreadDeletedLocally, refreshLatestMessages, refreshThreads])
-
   const removeThreadLocally = useCallback((threadId: string) => {
     if (!threadId) return
     markThreadDeletedLocally(threadId)
@@ -690,6 +657,39 @@ export default function CommerceChatRealtimeClient({
       }
     }
   }, [fetchMessagesPage, handleInaccessibleThread])
+
+  const refreshThreadListNow = useCallback(async (keepCurrent = true) => {
+    if (typeof document !== "undefined" && document.visibilityState === "hidden") return
+    if (deletingThreadIdRef.current) return
+
+    const previousActiveThreadId = activeThreadIdRef.current
+    const previousActiveThread = previousActiveThreadId
+      ? threadsRef.current.find((thread) => thread.id === previousActiveThreadId) || null
+      : null
+
+    const deletedThreadIds = await fetchDeletedThreadIds()
+    if (deletedThreadIds.length > 0) {
+      deletedThreadIds.forEach((threadId) => {
+        markThreadDeletedLocally(threadId)
+      })
+    }
+
+    await refreshThreads(keepCurrent)
+
+    const nextActiveThreadId = activeThreadIdRef.current
+    if (!nextActiveThreadId) return
+
+    const nextActiveThread = threadsRef.current.find((thread) => thread.id === nextActiveThreadId) || null
+    const activeThreadChanged =
+      previousActiveThreadId !== nextActiveThreadId ||
+      previousActiveThread?.lastMessageAt !== nextActiveThread?.lastMessageAt ||
+      previousActiveThread?.updatedAt !== nextActiveThread?.updatedAt ||
+      previousActiveThread?.lastMessagePreview !== nextActiveThread?.lastMessagePreview
+
+    if (activeThreadChanged) {
+      await refreshLatestMessages(nextActiveThreadId)
+    }
+  }, [fetchDeletedThreadIds, markThreadDeletedLocally, refreshLatestMessages, refreshThreads])
 
   const upsertThreadLocally = useCallback((thread: CommerceChatThreadItem) => {
     sweepDeletedThreadTombstones()
