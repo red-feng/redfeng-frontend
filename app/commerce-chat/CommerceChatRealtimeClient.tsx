@@ -1263,52 +1263,61 @@ export default function CommerceChatRealtimeClient({
                         ? CHAT_DESIGN_LOCK.ownBubble
                         : CHAT_DESIGN_LOCK.peerBubble
 
+                  const isSystemCard = message.sender_role === "system"
+
                   return (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.sender_role === "system" ? "justify-center" : mine ? "justify-end" : "justify-start"
-                      }`}
-                    >
-                      <div className={`max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
-                        {message.sender_role === "system"
-                          ? renderCommerceSystemMessageCard(message, activeThread, portal)
-                          : message.body
-                            ? <p className="whitespace-pre-line leading-6">{message.body}</p>
-                            : null}
-                        {message.attachment_url ? (
-                          <div className={message.body ? "mt-3" : ""}>
-                            {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
-                              <a
-                                href={message.attachment_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block overflow-hidden rounded-[12px] border border-white/20 bg-white/10"
-                              >
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={message.attachment_url}
-                                  alt={message.attachment_name || "Lampiran"}
-                                  className="max-h-64 w-full object-cover"
-                                />
-                              </a>
-                            ) : (
-                              <a
-                                href={message.attachment_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
-                              >
-                                {message.attachment_name || "Lampiran"}
-                              </a>
-                            )}
-                          </div>
-                        ) : null}
-                        <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
-                      </div>
-                    </div>
-                  )
-                })
+                     <div
+                       key={message.id}
+                       className={`flex ${
+                         message.sender_role === "system" ? "justify-start" : mine ? "justify-end" : "justify-start"
+                       }`}
+                     >
+                       <div className={isSystemCard ? "max-w-[82%]" : `max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
+                         {isSystemCard ? (
+                           <div className="pl-1">
+                             {renderCommerceSystemMessageCard(message, activeThread, portal)}
+                             <p className="mt-1 pl-1 text-[10px] text-slate-400">
+                               {formatDateTime(message.created_at)}
+                             </p>
+                           </div>
+                         ) : (
+                           <>
+                             {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
+                             {message.attachment_url ? (
+                               <div className={message.body ? "mt-3" : ""}>
+                                 {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
+                                   <a
+                                     href={message.attachment_url}
+                                     target="_blank"
+                                     rel="noreferrer"
+                                     className="block overflow-hidden rounded-[12px] border border-white/20 bg-white/10"
+                                   >
+                                     {/* eslint-disable-next-line @next/next/no-img-element */}
+                                     <img
+                                       src={message.attachment_url}
+                                       alt={message.attachment_name || "Lampiran"}
+                                       className="max-h-64 w-full object-cover"
+                                     />
+                                   </a>
+                                 ) : (
+                                   <a
+                                     href={message.attachment_url}
+                                     target="_blank"
+                                     rel="noreferrer"
+                                     className="inline-flex items-center rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                                   >
+                                     {message.attachment_name || "Lampiran"}
+                                   </a>
+                                 )}
+                               </div>
+                             ) : null}
+                             <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
+                           </>
+                         )}
+                       </div>
+                     </div>
+                   )
+                 })
               )}
             </div>
 
