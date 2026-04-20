@@ -1,3 +1,4 @@
+import { buildPackageInquirySystemMessage, parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { isInternalRole } from "@/lib/internal-roles"
 import { uploadCommerceChatAttachment } from "@/lib/commerce-chat/attachments"
 import {
@@ -57,6 +58,25 @@ type CommerceMessagePreviewRow = {
   thread_id: string
   body: string
   created_at: string | null
+}
+
+function resolveCommerceSystemPreview(body: string | null | undefined, packageTitle?: string | null) {
+  const parsed = parseChatSystemMessage(body)
+  if (!parsed) return String(body || "").trim() || null
+
+  if (parsed.type === "package_inquiry") {
+    return packageTitle
+      ? `Inquiry paket: ${packageTitle}`
+      : "Inquiry paket dimulai."
+  }
+
+  if (parsed.type === "booking_linked") {
+    return parsed.bookingCode
+      ? `Booking terhubung: ${parsed.bookingCode}`
+      : "Booking terhubung ke chat ini."
+  }
+
+  return String(body || "").trim() || null
 }
 
 export type CommerceChatMessageItem = {
@@ -402,7 +422,9 @@ export async function ensureCommerceInquiryThread(
     throw new Error(createError?.message || "Gagal membuat thread inquiry commerce.")
   }
 
-  const systemBody = `Thread inquiry dibuat untuk paket "${packageRow.title || "Paket"}".`
+  const systemBody = buildPackageInquirySystemMessage({
+    packageId: packageRow.id,
+  })
   const { data: systemMessage, error: systemMessageError } = await adminSupabase
     .from("commerce_chat_messages")
     .insert({
@@ -599,7 +621,10 @@ export async function loadCommerceChatThreadsForUser(adminSupabase: AdminSupabas
         currentUserActorRole: actorRole,
         currentUserLastReadAt:
           actorRole === "customer" ? thread.customer_last_read_at : thread.merchant_last_read_at,
-        lastMessagePreview: latestMessage?.body || null,
+        lastMessagePreview: resolveCommerceSystemPreview(
+          latestMessage?.body || null,
+          thread.subject_package_id ? packageMap.get(thread.subject_package_id)?.title || null : null,
+        ),
       } satisfies CommerceChatThreadItem
     })
     .filter(Boolean) as CommerceChatThreadItem[]

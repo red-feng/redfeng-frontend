@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
+import { parseChatSystemMessage } from "@/lib/chat/system-messages"
 import { CHAT_DESIGN_LOCK } from "@/lib/chat-design-lock"
 import { COMMERCE_CHAT_ENGINE } from "@/lib/chat-engines"
 import {
@@ -171,6 +172,46 @@ function buildClientMessageId() {
     return crypto.randomUUID()
   }
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function renderCommerceSystemMessageCard(message: CommerceChatMessageItem, activeThread: CommerceChatThreadItem | null) {
+  const parsed = parseChatSystemMessage(message.body)
+  if (!parsed) {
+    return message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null
+  }
+
+  if (parsed.type === "package_inquiry") {
+    const packageTitle = activeThread?.packageTitle || "Paket"
+
+    return (
+      <div className="min-w-[250px] max-w-[420px] rounded-[16px] border border-orange-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_100%)] p-4 text-left shadow-[0_14px_32px_rgba(249,115,22,0.12)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">
+          Inquiry Baru
+        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">
+          {packageTitle}
+        </p>
+        <p className="mt-2 text-xs leading-5 text-slate-600">
+          Customer memulai chat inquiry untuk paket ini. Lanjutkan percakapan di thread yang sama agar detail pertanyaan dan jawaban merchant tetap rapi di satu inbox.
+        </p>
+      </div>
+    )
+  }
+
+  if (parsed.type === "booking_linked") {
+    return (
+      <div className="min-w-[250px] max-w-[420px] rounded-[16px] border border-slate-200 bg-white p-4 text-left shadow-[0_12px_24px_rgba(15,23,42,0.08)]">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+          Booking Terkait
+        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">
+          {parsed.bookingCode || "Booking sudah terhubung"}
+        </p>
+      </div>
+    )
+  }
+
+  return message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null
 }
 
 function sanitizeUploadName(name: string, fallbackExtension: string) {
@@ -1165,7 +1206,11 @@ export default function CommerceChatRealtimeClient({
                       }`}
                     >
                       <div className={`max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
-                        {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
+                        {message.sender_role === "system"
+                          ? renderCommerceSystemMessageCard(message, activeThread)
+                          : message.body
+                            ? <p className="whitespace-pre-line leading-6">{message.body}</p>
+                            : null}
                         {message.attachment_url ? (
                           <div className={message.body ? "mt-3" : ""}>
                             {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
