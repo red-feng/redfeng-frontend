@@ -6,7 +6,7 @@ import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
-import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
+import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
@@ -22,11 +22,6 @@ export default async function CustomerLayout({
   const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const cookieStore = await cookies()
-  cookieStore.set(ACTIVE_PORTAL_COOKIE, "customer", {
-    path: "/",
-    sameSite: "lax",
-    maxAge: ACTIVE_PORTAL_MAX_AGE,
-  })
   const {
     data: { user },
   } = await supabase.auth.getUser()

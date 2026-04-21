@@ -1,9 +1,7 @@
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
-import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
@@ -19,12 +17,6 @@ export default async function FinanceProtectedLayout({
 }) {
   const supabase = await createClient("finance")
   const adminSupabase = createAdminClient()
-  const cookieStore = await cookies()
-  cookieStore.set(ACTIVE_PORTAL_COOKIE, "finance", {
-    path: "/",
-    sameSite: "lax",
-    maxAge: ACTIVE_PORTAL_MAX_AGE,
-  })
 
   const {
     data: { user },

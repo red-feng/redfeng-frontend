@@ -1,6 +1,4 @@
-import { cookies } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
@@ -20,12 +18,6 @@ export default async function AdminProtectedLayout({
 }) {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
-  const cookieStore = await cookies()
-  cookieStore.set(ACTIVE_PORTAL_COOKIE, "admin", {
-    path: "/",
-    sameSite: "lax",
-    maxAge: ACTIVE_PORTAL_MAX_AGE,
-  })
 
   const {
     data: { user },
