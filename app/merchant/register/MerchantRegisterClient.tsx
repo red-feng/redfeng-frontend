@@ -189,7 +189,7 @@ const languageOptions: Array<{ value: Locale; label: string }> = [
 ]
 
 export default function MerchantRegisterClient({ initialLocale }: { initialLocale: Locale }) {
-  const supabase = createClient()
+  const supabase = createClient("merchant")
   const router = useRouter()
   const t = getMerchantRegisterCopy(initialLocale)
 

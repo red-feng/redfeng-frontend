@@ -9,7 +9,7 @@ function getValue(formData: FormData, key: string) {
 }
 
 export async function updateMerchantProfile(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const {
     data: { user },
   } = await supabase.auth.getUser()

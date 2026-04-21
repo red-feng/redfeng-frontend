@@ -134,7 +134,7 @@ function getMerchantOpsCue(
 export const dynamic = "force-dynamic"
 
 export default async function MerchantDashboardPage() {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const locale = await getCurrentLocale()
   const shellText = getMerchantShellText(locale)
   const t = shellText.dashboard

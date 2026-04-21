@@ -185,7 +185,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const [{ id }, sp] = await Promise.all([params, searchParams])
   const locale = normalizeLocale(await getCurrentLocale())
   const copy = getCopy(locale)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
 
   const {

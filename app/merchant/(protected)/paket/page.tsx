@@ -62,7 +62,7 @@ export default async function MerchantPackagePage({
   const activeStatus = params.status || "draft"
   const successMessage = params.success || ""
   const errorMessage = params.error || ""
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const locale = await getCurrentLocale()
   const t = getMerchantShellText(locale).packages
   const packageMenus = [

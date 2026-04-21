@@ -46,7 +46,7 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const initDraft = async () => {
-      const supabase = createClient()
+      const supabase = createClient("merchant")
 
       const {
         data: { user }

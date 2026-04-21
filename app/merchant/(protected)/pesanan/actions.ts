@@ -105,7 +105,7 @@ export async function markMerchantArrived(formData: FormData) {
   const t = await getOrderActionText()
   const bookingId = String(formData.get("booking_id") || "")
   const filter = String(formData.get("filter") || "all")
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
 
   const {
     data: { user },
@@ -155,7 +155,7 @@ export async function markMerchantGo(formData: FormData) {
   const t = await getOrderActionText()
   const bookingId = String(formData.get("booking_id") || "")
   const filter = String(formData.get("filter") || "all")
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
 
   const {
     data: { user },

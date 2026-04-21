@@ -28,7 +28,7 @@ type Props = {
 
 export default async function ChatPage({ searchParams }: Props) {
   const params = await searchParams
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

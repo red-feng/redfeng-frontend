@@ -400,7 +400,7 @@ export default async function MerchantStatisticsPage({
       : t.maintainMerchantRatingFallback
   const previousEndDate = new Date()
   previousEndDate.setDate(previousEndDate.getDate() - selectedPeriodMeta.days)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

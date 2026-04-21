@@ -41,7 +41,7 @@ export default function Step3Facilities({
 
   useEffect(() => {
     const fetchFacilities = async () => {
-      const supabase = createClient()
+      const supabase = createClient("merchant")
       const { data } = await supabase
         .from("facilities")
         .select("*")

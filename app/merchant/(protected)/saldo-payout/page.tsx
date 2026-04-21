@@ -254,7 +254,7 @@ export default async function MerchantSaldoPayoutPage({
   const params = await searchParams
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getPayoutText(locale)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

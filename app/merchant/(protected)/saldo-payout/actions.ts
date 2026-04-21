@@ -22,7 +22,7 @@ function isEligibleForPayout(booking: {
 
 export async function requestPayout(formData: FormData) {
   const amount = Number(formData.get("amount") || 0)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
 
   const {

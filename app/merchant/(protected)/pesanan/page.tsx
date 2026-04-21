@@ -185,7 +185,7 @@ export default async function MerchantOrdersPage({
     { key: "cancelled", label: t.filterCancelled },
   ]
 
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

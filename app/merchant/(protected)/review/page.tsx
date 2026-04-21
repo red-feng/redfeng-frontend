@@ -36,7 +36,7 @@ function renderStars(rating: number) {
 export default async function MerchantReviewPage() {
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getReviewText(locale)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

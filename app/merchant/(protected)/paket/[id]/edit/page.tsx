@@ -54,7 +54,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     ? String(resolvedSearchParams.step)
     : "1"
 
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

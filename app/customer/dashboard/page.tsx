@@ -552,7 +552,7 @@ function getBookingPriority(booking: BookingRow) {
 }
 
 export default async function CustomerDashboardPage() {
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const {

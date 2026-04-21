@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 
 export default async function MerchantDashboard() {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
 
   const {
     data: { user },

@@ -10,7 +10,7 @@ export default function LegalStep({
   merchantId: string
   setStep: (step: number) => void
 }) {
-  const supabase = createClient()
+  const supabase = createClient("merchant")
 
   const [form, setForm] = useState({
     pic_name: '',

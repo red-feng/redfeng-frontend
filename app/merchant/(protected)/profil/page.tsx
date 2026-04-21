@@ -44,7 +44,7 @@ export default async function MerchantProfilePage({
     merchantCodeNote: "Premium merchant operational ID",
     ...getProfileText(locale),
   }
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const {
     data: { user },
   } = await supabase.auth.getUser()

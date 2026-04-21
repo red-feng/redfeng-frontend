@@ -48,7 +48,7 @@ export default function DocumentsStep({
   merchantId: string
   setStep: Dispatch<SetStateAction<number>>
 }) {
-  const supabase = createClient()
+  const supabase = createClient("merchant")
   const router = useRouter()
 
   const [saving, setSaving] = useState(false)

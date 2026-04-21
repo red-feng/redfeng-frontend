@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { resubmitMerchant } from "./actions"
 
 export default async function RejectedPage() {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
 
   const {
     data: { user },

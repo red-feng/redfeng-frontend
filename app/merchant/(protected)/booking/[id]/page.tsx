@@ -127,7 +127,7 @@ export default async function MerchantBookingDetailPage({ params }: MerchantBook
   const { id } = await params
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getText(locale)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

@@ -168,7 +168,7 @@ function normalizeDepartureDate(travelStyle: FormDataEntryValue | null, departur
 }
 
 async function getOwnedMerchantPackage(packageId: string) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

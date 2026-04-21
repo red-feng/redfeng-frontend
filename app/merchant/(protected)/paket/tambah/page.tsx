@@ -11,7 +11,7 @@ export default async function WizardPage({
 }: {
   searchParams: Promise<{ step?: string; id?: string; error?: string }>
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const uiLocale = await getCurrentLocale()
   const resolvedSearchParams = await searchParams
 

@@ -181,7 +181,7 @@ function normalizePublishedLanguages(input: FormDataEntryValue[], defaultLanguag
 
 // step 1
 export async function createPackage(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   let nextPath = wizardPath("1")
 
   try {
@@ -311,7 +311,7 @@ export async function createPackage(formData: FormData) {
 
 // step 2
 export async function savePackageDetails(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const packageId = formData.get("package_id") as string
   let nextPath = wizardPath("2", packageId || null)
@@ -602,7 +602,7 @@ export async function savePackageDetails(formData: FormData) {
 
 // step 3
 export async function saveFacilities(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const packageId = formData.get("package_id") as string
   let nextPath = wizardPath("3", packageId || null)
 
@@ -640,7 +640,7 @@ export async function saveFacilities(formData: FormData) {
 
 // step 4
 export async function saveItinerary(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const packageId = formData.get("package_id") as string
   let nextPath = wizardPath("4", packageId || null)
 
@@ -773,7 +773,7 @@ export async function saveItinerary(formData: FormData) {
 }
 
 export async function submitForReview(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const packageId = formData.get("package_id") as string
 
   try {

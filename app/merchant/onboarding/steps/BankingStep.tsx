@@ -10,7 +10,7 @@ export default function BankingStep({
   merchantId: string
   setStep: (step: number) => void
 }) {
-  const supabase = createClient()
+  const supabase = createClient("merchant")
 
   const [form, setForm] = useState({
     bank_name: '',

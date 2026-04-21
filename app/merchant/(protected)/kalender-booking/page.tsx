@@ -248,7 +248,7 @@ function isOpenTripOrUmroh(pkg: MerchantPackageRow | null | undefined) {
 export default async function MerchantBookingCalendarPage() {
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getCalendarText(locale)
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

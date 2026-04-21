@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function CustomerAccountHubPage() {
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const {
