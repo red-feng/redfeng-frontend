@@ -1,9 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-function normalizeStatus(value: string | null) {
-  return String(value || "").trim().toLowerCase()
-}
+export const dynamic = "force-dynamic"
 
 export default async function AdminPackageTourWorkspacePage() {
   const adminSupabase = createAdminClient()
@@ -12,13 +10,14 @@ export default async function AdminPackageTourWorkspacePage() {
       .from("merchants")
       .select("id", { count: "exact", head: true })
       .eq("verification_status", "pending"),
-    adminSupabase.from("packages").select("id, status"),
+    adminSupabase
+      .from("packages")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
   ])
 
   const pendingMerchants = merchantResult.count || 0
-  const pendingPackages = ((packageResult.data as Array<{ id: string; status: string | null }> | null) || []).filter(
-    (pkg) => normalizeStatus(pkg.status) === "pending",
-  ).length
+  const pendingPackages = packageResult.count || 0
 
   const workstreams = [
     {

@@ -9,7 +9,7 @@ import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRout
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
 import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support/index"
-import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES, isStatusInSet } from "@/lib/nav-badge-policy"
+import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES } from "@/lib/nav-badge-policy"
 
 export default async function AdminProtectedLayout({
   children,
@@ -52,42 +52,31 @@ export default async function AdminProtectedLayout({
   const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
     adminSupabase
       .from("merchants")
-      .select("id, created_at")
+      .select("id", { count: "exact", head: true })
       .eq("verification_status", "pending"),
     adminSupabase
       .from("packages")
-      .select("id, status, updated_at"),
+      .select("id", { count: "exact", head: true })
+      .in("status", [...ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES]),
     adminSupabase
       .from("bookings")
-      .select("id, booking_status, created_at, updated_at"),
+      .select("id", { count: "exact", head: true })
+      .in("booking_status", [...ADMIN_ACTIVE_BOOKING_BADGE_STATUSES]),
     adminSupabase
       .from("merchant_deletion_requests")
-      .select("id, created_at")
+      .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
     getInternalChatUnreadBadgeCount(adminSupabase, user.id),
     loadMerchantSupportRoomsForAdmin(adminSupabase),
   ])
 
-  const pendingMerchantRows =
-    (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
-  const pendingMerchantDeletionRows =
-    (merchantDeletionRequestResult.data as Array<{ id: string; created_at: string | null }> | null) || []
-  const pendingPackageRows =
-    ((packageResult.data as Array<{ id: string; status: string | null; updated_at: string | null }> | null) || []).filter(
-      (pkg) => isStatusInSet(pkg.status, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES),
-    )
-  const financeReadyRows =
-    ((bookingResult.data as Array<{ id: string; booking_status: string | null; created_at: string | null; updated_at: string | null }> | null) || []).filter(
-      (booking) => isStatusInSet(booking.booking_status, ADMIN_ACTIVE_BOOKING_BADGE_STATUSES),
-    )
-
   // Merchant directory badge should reflect the active registration queue, not a transient "seen" state.
   // Keep it visible until each merchant is actually approved/rejected or the deletion request is resolved.
-  const pendingMerchantsBadgeCount = pendingMerchantRows.length
-  const pendingMerchantDeletionBadgeCount = pendingMerchantDeletionRows.length
+  const pendingMerchantsBadgeCount = merchantResult.count || 0
+  const pendingMerchantDeletionBadgeCount = merchantDeletionRequestResult.count || 0
   // Package and booking badges should also stay visible while items remain in their active queue.
-  const pendingPackagesBadgeCount = pendingPackageRows.length
-  const financeReadyBadgeCount = financeReadyRows.length
+  const pendingPackagesBadgeCount = packageResult.count || 0
+  const financeReadyBadgeCount = bookingResult.count || 0
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
 
   const adminNav = isOperationsManager
