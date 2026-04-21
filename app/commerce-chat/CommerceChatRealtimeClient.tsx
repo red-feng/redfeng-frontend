@@ -77,6 +77,7 @@ const THREAD_LIST_SYNC_INTERVAL_MS = 1200
 const THREAD_DELETE_TOMBSTONE_TTL_MS = 10000
 const THREAD_DELETE_BROADCAST_KEY = "commerce-chat-thread-delete"
 const ROOM_LIST_PAGE_SIZE = 30
+const ROOM_LIST_STORAGE_PREFIX = "commerce-chat-room-list"
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
     const leftDate = left.lastMessageAt || left.updatedAt || left.createdAt || ""
@@ -445,6 +446,8 @@ export default function CommerceChatRealtimeClient({
   const messageTopSentinelRef = useRef<HTMLDivElement | null>(null)
   const roomListViewportRef = useRef<HTMLDivElement | null>(null)
   const roomListSentinelRef = useRef<HTMLDivElement | null>(null)
+  const roomItemRefs = useRef<Map<string, HTMLButtonElement>>(new Map())
+  const messageItemRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const previousThreadRef = useRef("")
   const previousLastMessageIdRef = useRef("")
@@ -481,9 +484,14 @@ export default function CommerceChatRealtimeClient({
   const queuedSnapshotRefreshTimeoutRef = useRef<number | null>(null)
   const deletingThreadIdRef = useRef("")
   const deletedThreadTombstonesRef = useRef<Map<string, number>>(new Map())
+  const animatedRoomIdsRef = useRef<Set<string>>(new Set())
+  const animatedMessageKeysRef = useRef<Set<string>>(new Set())
+  const threadScrollTopByIdRef = useRef<Map<string, number>>(new Map())
+  const threadNearBottomByIdRef = useRef<Map<string, boolean>>(new Map())
+  const restoredRoomListStateRef = useRef(false)
 
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
-  const activeMessages = messagesByThread[activeThreadId] || []
+  const activeMessages = useMemo(() => messagesByThread[activeThreadId] || [], [activeThreadId, messagesByThread])
   const activeMessagesLength = activeMessages.length
   const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
@@ -501,6 +509,70 @@ export default function CommerceChatRealtimeClient({
     [filteredThreads, visibleThreadLimit],
   )
   const hasMoreVisibleThreads = filteredThreads.length > visibleThreadLimit
+
+  const animateElementIn = useCallback((element: HTMLElement, options?: { delayMs?: number; translateY?: number }) => {
+    if (typeof window === "undefined") return
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    if (typeof element.animate !== "function") return
+
+    element.animate(
+      [
+        {
+          opacity: 0,
+          transform: `translateY(${options?.translateY ?? 8}px) scale(0.995)`,
+        },
+        { opacity: 1, transform: "translateY(0) scale(1)" },
+      ],
+      {
+        duration: 240,
+        delay: options?.delayMs ?? 0,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+    )
+  }, [])
+
+  const setRoomItemRef = useCallback((threadId: string, element: HTMLButtonElement | null) => {
+    if (!element) {
+      roomItemRefs.current.delete(threadId)
+      return
+    }
+    roomItemRefs.current.set(threadId, element)
+  }, [])
+
+  const setMessageItemRef = useCallback((messageKey: string, element: HTMLDivElement | null) => {
+    if (!element) {
+      messageItemRefs.current.delete(messageKey)
+      return
+    }
+    messageItemRefs.current.set(messageKey, element)
+  }, [])
+
+  const roomListStorageKey = useMemo(
+    () => `${ROOM_LIST_STORAGE_PREFIX}:${portal}:${userId}`,
+    [portal, userId],
+  )
+
+  const updateThreadViewportSnapshot = useCallback((threadId: string, element: HTMLDivElement | null) => {
+    if (!threadId || !element) return
+
+    threadScrollTopByIdRef.current.set(threadId, element.scrollTop)
+    const distanceFromBottom = element.scrollHeight - element.clientHeight - element.scrollTop
+    threadNearBottomByIdRef.current.set(threadId, distanceFromBottom <= 96)
+  }, [])
+
+  const persistRoomListViewportSnapshot = useCallback((element: HTMLDivElement | null, nextVisibleThreadLimit?: number) => {
+    if (typeof window === "undefined" || !element || threadSearch.trim()) return
+
+    const payload = {
+      scrollTop: Math.max(0, element.scrollTop),
+      visibleThreadLimit: Math.max(
+        ROOM_LIST_PAGE_SIZE,
+        nextVisibleThreadLimit ?? visibleThreadLimit,
+      ),
+    }
+
+    window.sessionStorage.setItem(roomListStorageKey, JSON.stringify(payload))
+  }, [roomListStorageKey, threadSearch, visibleThreadLimit])
 
   const unreadCount = useMemo(
     () =>
@@ -598,6 +670,8 @@ export default function CommerceChatRealtimeClient({
   const removeThreadLocally = useCallback((threadId: string) => {
     if (!threadId) return
     markThreadDeletedLocally(threadId)
+    threadScrollTopByIdRef.current.delete(threadId)
+    threadNearBottomByIdRef.current.delete(threadId)
     if (!threadsRef.current.some((thread) => thread.id === threadId)) return
     const nextThreads = threadsRef.current.filter((thread) => thread.id !== threadId)
     threadsRef.current = nextThreads
@@ -801,6 +875,7 @@ export default function CommerceChatRealtimeClient({
           if (!nextContainer) return
           const nextHeight = nextContainer.scrollHeight
           nextContainer.scrollTop = Math.max(0, nextHeight - previousHeight + previousTop)
+          updateThreadViewportSnapshot(threadId, nextContainer)
         })
       }
 
@@ -814,7 +889,7 @@ export default function CommerceChatRealtimeClient({
     } finally {
       setLoadingOlderByThread((current) => ({ ...current, [threadId]: false }))
     }
-  }, [fetchMessagesPage, hasMoreByThread, loadingOlderByThread, oldestByThread])
+  }, [fetchMessagesPage, hasMoreByThread, loadingOlderByThread, oldestByThread, updateThreadViewportSnapshot])
 
   useEffect(() => {
     threadsRef.current = threads
@@ -828,8 +903,54 @@ export default function CommerceChatRealtimeClient({
   }, [activeThreadId, filteredThreads, visibleThreadLimit])
 
   useEffect(() => {
+    if (typeof window === "undefined" || restoredRoomListStateRef.current || threadSearch.trim()) return
+
+    const rawState = window.sessionStorage.getItem(roomListStorageKey)
+    if (!rawState) {
+      restoredRoomListStateRef.current = true
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(rawState) as { scrollTop?: number; visibleThreadLimit?: number }
+      if (typeof parsed.visibleThreadLimit === "number" && Number.isFinite(parsed.visibleThreadLimit)) {
+        setVisibleThreadLimit(Math.max(ROOM_LIST_PAGE_SIZE, parsed.visibleThreadLimit))
+      }
+    } catch {}
+
+    restoredRoomListStateRef.current = true
+  }, [roomListStorageKey, threadSearch])
+
+  useEffect(() => {
     setVisibleThreadLimit(ROOM_LIST_PAGE_SIZE)
   }, [threadSearch])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || threadSearch.trim()) return
+    persistRoomListViewportSnapshot(roomListViewportRef.current)
+  }, [persistRoomListViewportSnapshot, visibleThreadLimit, threads.length, threadSearch])
+
+  useEffect(() => {
+    if (typeof window === "undefined" || threadSearch.trim() || !restoredRoomListStateRef.current) return
+
+    const viewport = roomListViewportRef.current
+    if (!viewport) return
+
+    const rawState = window.sessionStorage.getItem(roomListStorageKey)
+    if (!rawState) return
+
+    try {
+      const parsed = JSON.parse(rawState) as { scrollTop?: number }
+      if (typeof parsed.scrollTop !== "number" || !Number.isFinite(parsed.scrollTop)) return
+      const savedScrollTop = parsed.scrollTop
+
+      requestAnimationFrame(() => {
+        const nextViewport = roomListViewportRef.current
+        if (!nextViewport) return
+        nextViewport.scrollTop = Math.max(0, savedScrollTop)
+      })
+    } catch {}
+  }, [roomListStorageKey, threadSearch, visibleThreadLimit, threads.length])
 
   useEffect(() => {
     const viewport = roomListViewportRef.current
@@ -844,7 +965,9 @@ export default function CommerceChatRealtimeClient({
         setLoadingMoreRooms(true)
         setVisibleThreadLimit((current) => {
           if (current >= filteredThreads.length) return current
-          return Math.min(filteredThreads.length, current + ROOM_LIST_PAGE_SIZE)
+          const nextLimit = Math.min(filteredThreads.length, current + ROOM_LIST_PAGE_SIZE)
+          persistRoomListViewportSnapshot(viewport, nextLimit)
+          return nextLimit
         })
       },
       {
@@ -856,7 +979,7 @@ export default function CommerceChatRealtimeClient({
 
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [filteredThreads.length, hasMoreVisibleThreads])
+  }, [filteredThreads.length, hasMoreVisibleThreads, persistRoomListViewportSnapshot])
 
   useEffect(() => {
     if (!loadingMoreRooms) return
@@ -869,8 +992,31 @@ export default function CommerceChatRealtimeClient({
   }, [loadingMoreRooms, visibleThreadLimit])
 
   useEffect(() => {
+    visibleThreads.forEach((thread, index) => {
+      if (animatedRoomIdsRef.current.has(thread.id)) return
+      const element = roomItemRefs.current.get(thread.id)
+      if (!element) return
+
+      animatedRoomIdsRef.current.add(thread.id)
+      animateElementIn(element, {
+        delayMs: Math.min(index, 5) * 24,
+        translateY: 10,
+      })
+    })
+  }, [animateElementIn, visibleThreads])
+
+  useEffect(() => {
     activeThreadIdRef.current = activeThreadId
   }, [activeThreadId])
+
+  const handleThreadViewportScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    if (!activeThreadId) return
+    updateThreadViewportSnapshot(activeThreadId, event.currentTarget)
+  }, [activeThreadId, updateThreadViewportSnapshot])
+
+  const handleRoomListViewportScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    persistRoomListViewportSnapshot(event.currentTarget)
+  }, [persistRoomListViewportSnapshot])
 
   useEffect(() => {
     if (!activeThreadId) return
@@ -951,13 +1097,30 @@ export default function CommerceChatRealtimeClient({
 
     const threadChanged = previousThreadRef.current !== activeThreadId
     const hasNewLatestMessage = Boolean(activeLastMessageId) && previousLastMessageIdRef.current !== activeLastMessageId
-    if (threadChanged || hasNewLatestMessage) {
+    const savedScrollTop = activeThreadId ? threadScrollTopByIdRef.current.get(activeThreadId) : undefined
+    const shouldStickToBottom = activeThreadId ? (threadNearBottomByIdRef.current.get(activeThreadId) ?? true) : true
+
+    if (threadChanged) {
+      requestAnimationFrame(() => {
+        const nextContainer = threadRef.current
+        if (!nextContainer) return
+
+        if (typeof savedScrollTop === "number") {
+          nextContainer.scrollTop = savedScrollTop
+        } else {
+          nextContainer.scrollTop = nextContainer.scrollHeight
+        }
+
+        updateThreadViewportSnapshot(activeThreadId, nextContainer)
+      })
+    } else if (hasNewLatestMessage && shouldStickToBottom) {
       container.scrollTop = container.scrollHeight
+      updateThreadViewportSnapshot(activeThreadId, container)
     }
 
     previousThreadRef.current = activeThreadId
     previousLastMessageIdRef.current = activeLastMessageId
-  }, [activeThreadId, activeLastMessageId, activeMessagesLength])
+  }, [activeThreadId, activeLastMessageId, activeMessagesLength, updateThreadViewportSnapshot])
 
   useEffect(() => {
     const viewport = threadRef.current
@@ -980,6 +1143,21 @@ export default function CommerceChatRealtimeClient({
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [activeHasMore, activeLoadingOlder, activeThreadId, activeMessagesLength, loadOlderMessages])
+
+  useEffect(() => {
+    activeMessages.forEach((message, index) => {
+      const messageKey = `${activeThreadId}:${message.id}`
+      if (animatedMessageKeysRef.current.has(messageKey)) return
+      const element = messageItemRefs.current.get(messageKey)
+      if (!element) return
+
+      animatedMessageKeysRef.current.add(messageKey)
+      animateElementIn(element, {
+        delayMs: Math.min(index, 4) * 18,
+        translateY: message.sender_role === "system" ? 6 : 12,
+      })
+    })
+  }, [activeMessages, activeThreadId, animateElementIn])
 
   useEffect(() => {
     const channel = supabase.channel(`${COMMERCE_CHAT_ENGINE.realtimeChannelPrefix}:${portal}:${userId}`)
@@ -1402,6 +1580,7 @@ export default function CommerceChatRealtimeClient({
 
             <div
               ref={roomListViewportRef}
+              onScroll={handleRoomListViewportScroll}
               className="min-h-0 flex-1 overflow-y-auto px-2 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {visibleThreads.map((thread) => {
@@ -1416,6 +1595,7 @@ export default function CommerceChatRealtimeClient({
                 return (
                     <button
                       key={thread.id}
+                      ref={(element) => setRoomItemRef(thread.id, element)}
                       type="button"
                       onClick={() => {
                         activeThreadIdRef.current = thread.id
@@ -1459,10 +1639,22 @@ export default function CommerceChatRealtimeClient({
                   <div ref={roomListSentinelRef} className="h-4 w-full" aria-hidden="true" />
                   <div className="px-3 py-3 text-center text-[11px] text-slate-400">
                     {loadingMoreRooms ? (
-                      <span className="inline-flex items-center gap-2">
-                        <span className="h-2 w-2 animate-pulse rounded-full bg-orange-400" />
-                        <span>Memuat room...</span>
-                      </span>
+                      <div className="space-y-2 text-left">
+                        <div className="inline-flex items-center gap-2 text-[11px] text-slate-400">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-orange-400" />
+                          <span>Memuat room...</span>
+                        </div>
+                        <div className="rounded-[14px] border border-[#f2e7d8] bg-white/80 px-3 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                          <div className="loading-shimmer h-4 w-2/5 rounded-full" />
+                          <div className="loading-shimmer mt-2 h-3 w-3/4 rounded-full" />
+                          <div className="loading-shimmer mt-3 h-3 w-full rounded-full" />
+                        </div>
+                        <div className="rounded-[14px] border border-[#f2e7d8] bg-white/80 px-3 py-3 opacity-80 shadow-[0_8px_24px_rgba(15,23,42,0.03)]">
+                          <div className="loading-shimmer h-4 w-1/3 rounded-full" />
+                          <div className="loading-shimmer mt-2 h-3 w-2/3 rounded-full" />
+                          <div className="loading-shimmer mt-3 h-3 w-5/6 rounded-full" />
+                        </div>
+                      </div>
                     ) : (
                       "Scroll terus, room berikutnya akan muncul otomatis..."
                     )}
@@ -1498,9 +1690,17 @@ export default function CommerceChatRealtimeClient({
 
               <div
                 ref={threadRef}
+                onScroll={handleThreadViewportScroll}
                 className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
               <div ref={messageTopSentinelRef} className="h-1 w-full" aria-hidden="true" />
+              {activeThread && activeHasMore && !activeLoadingOlder ? (
+                <div className="mb-2 flex justify-center">
+                  <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] text-orange-600">
+                    Geser ke atas, pesan lama akan dimuat otomatis...
+                  </span>
+                </div>
+              ) : null}
               {activeThread && activeLoadingOlder ? (
                 <div className="mb-2 flex justify-center">
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
@@ -1541,10 +1741,11 @@ export default function CommerceChatRealtimeClient({
                   return (
                      <div
                        key={message.id}
-                       className={`flex ${
-                         message.sender_role === "system" ? "justify-start" : mine ? "justify-end" : "justify-start"
-                       }`}
-                     >
+                       ref={(element) => setMessageItemRef(`${activeThreadId}:${message.id}`, element)}
+                        className={`flex ${
+                          message.sender_role === "system" ? "justify-start" : mine ? "justify-end" : "justify-start"
+                        }`}
+                      >
                        <div className={isSystemCard ? "max-w-[82%]" : `max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
                          {isSystemCard ? (
                            <div className="pl-1">
