@@ -322,7 +322,7 @@ function getCustomerModeCopy(locale: Locale, mode: Mode) {
 }
 
 export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode; initialLocale: Locale }) {
-  const supabase = createClient();
+  const supabase = createClient("customer");
   const [locale] = useState<Locale>(() => initialLocale || readLocaleFromCookie());
   const [safeNext] = useState(getSafeNextFromLocation);
   const [searchError] = useState(getSafeErrorFromLocation);

@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const safeNext = requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT
 
   if (code) {
-    const supabase = await createClient()
+    const supabase = await createClient("customer")
     await supabase.auth.exchangeCodeForSession(code)
 
     const {

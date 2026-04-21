@@ -177,7 +177,7 @@ function getMerchantLoginCopy(locale: Locale) {
 
 export default function MerchantLoginClient({ initialLocale }: { initialLocale: Locale }) {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = createClient("merchant")
   const t = getMerchantLoginCopy(initialLocale)
 
   const [email, setEmail] = useState("")

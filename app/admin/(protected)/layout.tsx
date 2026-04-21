@@ -1,4 +1,6 @@
+import { cookies } from "next/headers"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
@@ -16,8 +18,14 @@ export default async function AdminProtectedLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_PORTAL_COOKIE, "admin", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: ACTIVE_PORTAL_MAX_AGE,
+  })
 
   const {
     data: { user },
@@ -188,6 +196,7 @@ export default async function AdminProtectedLayout({
               </div>
               <div className="flex items-center gap-2 self-start md:self-auto">
                 <SignOutButton
+                  portal="admin"
                   redirectTo="https://app.redfeng.co/admin/login"
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
                 />

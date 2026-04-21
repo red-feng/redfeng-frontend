@@ -1,34 +1,42 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { getRequiredEnv } from "@/lib/env"
+import { ACTIVE_PORTAL_COOKIE, type ActivePortal, getPortalSessionCookieName, normalizeActivePortal } from "@/lib/portal-context"
 
-export async function createClient() {
+function buildBaseCookieOptions(options: CookieOptions) {
+  return {
+    path: "/",
+    sameSite: "lax" as const,
+    ...options,
+  }
+}
+
+export async function createClient(portal?: ActivePortal) {
   const cookieStore = await cookies()
+  const resolvedPortal = portal || normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value) || "customer"
 
   return createServerClient(
     getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
     getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
     {
+      cookieOptions: {
+        name: getPortalSessionCookieName(resolvedPortal),
+        path: "/",
+        sameSite: "lax",
+      },
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({
-              name,
-              value,
-              ...options,
-            })
-          } catch {}
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({
-              name,
-              value: "",
-              ...options,
-            })
+            for (const { name, value, options } of cookiesToSet) {
+              cookieStore.set({
+                name,
+                value,
+                ...buildBaseCookieOptions(options),
+              })
+            }
           } catch {}
         },
       },

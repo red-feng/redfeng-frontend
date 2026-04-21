@@ -2,9 +2,26 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getRequiredEnv } from "@/lib/env"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, type ActivePortal, getPortalSessionCookieName } from "@/lib/portal-context"
 import { buildPortalSessionError } from "@/lib/portal-session"
 
 const CANONICAL_HOST = "app.redfeng.co"
+
+function buildBaseCookieOptions(options: CookieOptions) {
+  return {
+    path: "/",
+    sameSite: "lax" as const,
+    ...options,
+  }
+}
+
+function getPortalCandidatesForPath(pathname: string): ActivePortal[] {
+  if (pathname.startsWith("/admin")) return ["admin", "superadmin"]
+  if (pathname.startsWith("/merchant")) return ["merchant"]
+  if (pathname.startsWith("/finance")) return ["finance"]
+  if (pathname.startsWith("/superadmin")) return ["superadmin"]
+  return ["customer"]
+}
 
 export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
@@ -38,50 +55,6 @@ export async function proxy(req: NextRequest) {
     request: req,
   })
 
-  const supabase = createServerClient(
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
-    getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
-    {
-      cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          req.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          res = NextResponse.next({
-            request: req,
-          })
-          res.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          req.cookies.set({
-            name,
-            value: "",
-            ...options,
-          })
-          res = NextResponse.next({
-            request: req,
-          })
-          res.cookies.set({
-            name,
-            value: "",
-            ...options,
-          })
-        },
-      },
-    }
-  )
-
-  await supabase.auth.getUser()
-
   const isFinanceRoute = pathname.startsWith("/finance")
   const isSuperadminRoute = pathname.startsWith("/superadmin")
 
@@ -98,9 +71,63 @@ export async function proxy(req: NextRequest) {
     return res
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const portalCandidates = getPortalCandidatesForPath(pathname)
+  let user: Awaited<ReturnType<ReturnType<typeof createServerClient>["auth"]["getUser"]>>["data"]["user"] | null = null
+  let profile: { role: string } | null = null
+  let matchedPortal: ActivePortal | null = null
+
+  for (const portal of portalCandidates) {
+    const supabase = createServerClient(
+      getRequiredEnv("NEXT_PUBLIC_SUPABASE_URL"),
+      getRequiredEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
+      {
+        cookieOptions: {
+          name: getPortalSessionCookieName(portal),
+          path: "/",
+          sameSite: "lax",
+        },
+        cookies: {
+          getAll() {
+            return req.cookies.getAll()
+          },
+          setAll(cookiesToSet) {
+            for (const { name, value, options } of cookiesToSet) {
+              const normalizedOptions = buildBaseCookieOptions(options)
+              req.cookies.set({
+                name,
+                value,
+                ...normalizedOptions,
+              })
+              res.cookies.set({
+                name,
+                value,
+                ...normalizedOptions,
+              })
+            }
+          },
+        },
+      }
+    )
+
+    const {
+      data: { user: portalUser },
+    } = await supabase.auth.getUser()
+
+    if (!portalUser) {
+      continue
+    }
+
+    const { data: portalProfile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", portalUser.id)
+      .single()
+
+    user = portalUser
+    profile = portalProfile
+    matchedPortal = portal
+    break
+  }
 
   if (!user) {
     const target = pathname.startsWith("/admin")
@@ -113,12 +140,6 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(new URL(target, req.url))
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
   if (!profile) {
     const target = pathname.startsWith("/admin")
       ? "/admin/login?error=no-profile"
@@ -128,6 +149,14 @@ export async function proxy(req: NextRequest) {
           ? "/finance/login?error=no-profile"
           : "/superadmin/login?error=no-profile"
     return NextResponse.redirect(new URL(target, req.url))
+  }
+
+  if (matchedPortal) {
+    res.cookies.set(ACTIVE_PORTAL_COOKIE, matchedPortal, {
+      path: "/",
+      sameSite: "lax",
+      maxAge: ACTIVE_PORTAL_MAX_AGE,
+    })
   }
 
   if (pathname.startsWith("/admin") && !["admin", "operations_manager", "superadmin"].includes(profile.role)) {

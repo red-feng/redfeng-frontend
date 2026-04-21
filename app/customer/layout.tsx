@@ -6,7 +6,7 @@ import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
-import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
@@ -19,9 +19,14 @@ export default async function CustomerLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_PORTAL_COOKIE, "customer", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: ACTIVE_PORTAL_MAX_AGE,
+  })
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -120,6 +125,7 @@ export default async function CustomerLayout({
                 {backToSiteLabel}
               </Link>
               <SignOutButton
+                portal="customer"
                 redirectTo="https://app.redfeng.co/login"
                 className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 sm:px-4"
               />

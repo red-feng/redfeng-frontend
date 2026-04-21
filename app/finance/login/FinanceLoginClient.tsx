@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import PasswordField from "@/app/components/PasswordField"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { createClient } from "@/lib/supabase/client"
 import { buildInternalFinanceEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { canAccessInternalPortal, getInternalPortalHomePath, normalizeRole } from "@/lib/internal-roles"
@@ -108,7 +109,7 @@ function getFinanceLoginCopy(locale: Locale) {
 }
 
 export default function FinanceLoginClient({ initialLocale }: { initialLocale: Locale }) {
-  const supabase = createClient()
+  const supabase = createClient("finance")
   const t = getFinanceLoginCopy(initialLocale)
 
   const [username, setUsername] = useState("")
@@ -170,6 +171,7 @@ export default function FinanceLoginClient({ initialLocale }: { initialLocale: L
     }
 
     if (canAccessInternalPortal("finance", profile.role)) {
+      document.cookie = `${ACTIVE_PORTAL_COOKIE}=finance; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
       window.location.assign(getInternalPortalHomePath("finance"))
       setLoading(false)
       return

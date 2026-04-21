@@ -1,7 +1,9 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
 import SignOutButton from "@/app/components/SignOutButton"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
@@ -15,8 +17,14 @@ export default async function FinanceProtectedLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const adminSupabase = createAdminClient()
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_PORTAL_COOKIE, "finance", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: ACTIVE_PORTAL_MAX_AGE,
+  })
 
   const {
     data: { user },
@@ -111,6 +119,7 @@ export default async function FinanceProtectedLayout({
               </div>
               <div className="flex w-full items-center gap-2 md:w-auto">
                 <SignOutButton
+                  portal="finance"
                   redirectTo="https://app.redfeng.co/finance/login"
                   className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 md:w-auto"
                 />

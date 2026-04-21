@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import PasswordField from "@/app/components/PasswordField"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { createClient } from "@/lib/supabase/client"
 import { buildInternalSuperadminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { canAccessInternalPortal, getInternalPortalHomePath } from "@/lib/internal-roles"
@@ -99,7 +100,7 @@ function getSuperadminLoginCopy(locale: Locale) {
 }
 
 export default function SuperadminLoginClient({ initialLocale }: { initialLocale: Locale }) {
-  const supabase = createClient()
+  const supabase = createClient("superadmin")
   const t = getSuperadminLoginCopy(initialLocale)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -152,6 +153,7 @@ export default function SuperadminLoginClient({ initialLocale }: { initialLocale
       return
     }
 
+    document.cookie = `${ACTIVE_PORTAL_COOKIE}=superadmin; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
     window.location.assign(getInternalPortalHomePath("superadmin"))
   }
 

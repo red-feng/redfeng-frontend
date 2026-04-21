@@ -1,7 +1,9 @@
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import SignOutButton from "@/app/components/SignOutButton"
 import AdminNavLinks from "@/app/components/AdminNavLinks"
 import SuperadminNavSeenTracker from "@/app/components/SuperadminNavSeenTracker"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { buildPortalSessionError } from "@/lib/portal-session"
@@ -15,8 +17,14 @@ export default async function SuperadminProtectedLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("superadmin")
   const adminSupabase = createAdminClient()
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_PORTAL_COOKIE, "superadmin", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: ACTIVE_PORTAL_MAX_AGE,
+  })
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -147,6 +155,7 @@ export default async function SuperadminProtectedLayout({
                 </div>
               </div>
               <SignOutButton
+                portal="superadmin"
                 redirectTo="https://app.redfeng.co/superadmin/login"
                 className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
               />

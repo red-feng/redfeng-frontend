@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import MerchantNavLinks from "@/app/components/MerchantNavLinks"
 import MerchantNavSeenTracker from "@/app/components/MerchantNavSeenTracker"
@@ -21,6 +22,7 @@ import {
 } from "@/lib/nav-badge-policy"
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { createClient } from "@/lib/supabase/server"
 
 export default async function MerchantLayout({
@@ -28,8 +30,14 @@ export default async function MerchantLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
+  const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
+  const cookieStore = await cookies()
+  cookieStore.set(ACTIVE_PORTAL_COOKIE, "merchant", {
+    path: "/",
+    sameSite: "lax",
+    maxAge: ACTIVE_PORTAL_MAX_AGE,
+  })
   const locale = await getCurrentLocale()
   const t = getMerchantShellText(locale)
 
@@ -270,6 +278,7 @@ export default async function MerchantLayout({
                   {t.viewSite}
                 </Link>
                 <SignOutButton
+                  portal="merchant"
                   label={t.logout}
                   redirectTo="https://app.redfeng.co/merchant/login"
                   className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"

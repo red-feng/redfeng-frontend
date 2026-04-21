@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import PasswordField from "@/app/components/PasswordField"
+import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE } from "@/lib/portal-context"
 import { createClient } from "@/lib/supabase/client"
 import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/internal-auth"
 import { canAccessInternalPortal, getInternalPortalHomePath, normalizeRole } from "@/lib/internal-roles"
@@ -111,7 +112,7 @@ function getAdminLoginCopy(locale: Locale) {
 }
 
 export default function AdminLoginClient({ initialLocale }: { initialLocale: Locale }) {
-  const supabase = createClient()
+  const supabase = createClient("admin")
   const t = getAdminLoginCopy(initialLocale)
 
   const [username, setUsername] = useState("")
@@ -175,6 +176,7 @@ export default function AdminLoginClient({ initialLocale }: { initialLocale: Loc
     }
 
     if (canAccessInternalPortal("admin", profile.role)) {
+      document.cookie = `${ACTIVE_PORTAL_COOKIE}=admin; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
       window.location.assign(getInternalPortalHomePath("admin"))
       setLoading(false)
       return
