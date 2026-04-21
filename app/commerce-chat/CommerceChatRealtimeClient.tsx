@@ -496,6 +496,23 @@ export default function CommerceChatRealtimeClient({
   const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
   const activeLoadingOlder = Boolean(loadingOlderByThread[activeThreadId])
+  const activeIsNearBottom = activeThreadId ? (threadNearBottomByIdRef.current.get(activeThreadId) ?? true) : true
+  const firstUnreadMessageId = useMemo(() => {
+    if (!activeThread || !activeMessages.length) return ""
+
+    const actorRole = activeThread.currentUserActorRole
+    const lastReadAt = activeThread.currentUserLastReadAt
+
+    const firstUnreadMessage = activeMessages.find((message) => {
+      if (!message.created_at) return false
+      if (message.sender_role === "system") return false
+      if (message.sender_role === actorRole) return false
+      if (!lastReadAt) return true
+      return message.created_at > lastReadAt
+    })
+
+    return firstUnreadMessage?.id || ""
+  }, [activeMessages, activeThread])
   const filteredThreads = useMemo(() => {
     const needle = threadSearch.trim().toLowerCase()
     if (!needle) return threads
@@ -1012,6 +1029,17 @@ export default function CommerceChatRealtimeClient({
   const handleThreadViewportScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
     if (!activeThreadId) return
     updateThreadViewportSnapshot(activeThreadId, event.currentTarget)
+  }, [activeThreadId, updateThreadViewportSnapshot])
+
+  const handleJumpToLatest = useCallback(() => {
+    const container = threadRef.current
+    if (!container || !activeThreadId) return
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    })
+    updateThreadViewportSnapshot(activeThreadId, container)
   }, [activeThreadId, updateThreadViewportSnapshot])
 
   const handleRoomListViewportScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
@@ -1688,43 +1716,45 @@ export default function CommerceChatRealtimeClient({
               </div>
             </div>
 
-              <div
-                ref={threadRef}
-                onScroll={handleThreadViewportScroll}
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-              <div ref={messageTopSentinelRef} className="h-1 w-full" aria-hidden="true" />
-              {activeThread && activeHasMore && !activeLoadingOlder ? (
-                <div className="mb-2 flex justify-center">
-                  <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] text-orange-600">
-                    Geser ke atas, pesan lama akan dimuat otomatis...
-                  </span>
-                </div>
-              ) : null}
-              {activeThread && activeLoadingOlder ? (
-                <div className="mb-2 flex justify-center">
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
-                    Memuat pesan lama...
-                  </span>
-                </div>
-              ) : null}
-              {activeThread && !activeHasMore && activeMessages.length > 0 ? (
-                <div className="mb-2 flex justify-center">
-                  <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
-                    Awal percakapan
-                  </span>
-                </div>
-              ) : null}
-              {!activeThread ? (
-                <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-                  Pilih chat di kiri untuk mulai.
-                </div>
-              ) : activeMessages.length === 0 ? (
-                <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
-                  Belum ada pesan di thread ini.
-                </div>
-              ) : (
-                activeMessages.map((message) => {
+              <div className="relative min-h-0 flex-1">
+                <div
+                  ref={threadRef}
+                  onScroll={handleThreadViewportScroll}
+                  className="min-h-0 h-full overflow-y-auto overscroll-contain space-y-2 px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                <div ref={messageTopSentinelRef} className="h-1 w-full" aria-hidden="true" />
+                {activeThread && activeHasMore && !activeLoadingOlder ? (
+                  <div className="mb-2 flex justify-center">
+                    <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] text-orange-600">
+                      Geser ke atas, pesan lama akan dimuat otomatis...
+                    </span>
+                  </div>
+                ) : null}
+                {activeThread && activeLoadingOlder ? (
+                  <div className="mb-2 flex justify-center">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                      Memuat pesan lama...
+                    </span>
+                  </div>
+                ) : null}
+                {activeThread && !activeHasMore && activeMessages.length > 0 ? (
+                  <div className="mb-2 flex justify-center">
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                      Awal percakapan
+                    </span>
+                  </div>
+                ) : null}
+                {!activeThread ? (
+                  <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+                    Pilih chat di kiri untuk mulai.
+                  </div>
+                ) : activeMessages.length === 0 ? (
+                  <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">
+                    Belum ada pesan di thread ini.
+                  </div>
+                ) : (
+                  activeMessages.map((message) => {
+                  const isFirstUnreadMessage = message.id === firstUnreadMessageId
                   const mine = message.sender_user_id === userId
                   const uploadProgress =
                     message.client_message_id ? uploadProgressByClientMessageId[message.client_message_id] : undefined
@@ -1739,79 +1769,100 @@ export default function CommerceChatRealtimeClient({
                   const isSystemCard = message.sender_role === "system"
 
                   return (
-                     <div
-                       key={message.id}
-                       ref={(element) => setMessageItemRef(`${activeThreadId}:${message.id}`, element)}
+                    <div key={message.id}>
+                      {isFirstUnreadMessage ? (
+                        <div className="sticky top-3 z-[5] mb-3 flex justify-center">
+                          <span className="rounded-full border border-emerald-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
+                            Pesan belum dibaca
+                          </span>
+                        </div>
+                      ) : null}
+                      <div
+                        ref={(element) => setMessageItemRef(`${activeThreadId}:${message.id}`, element)}
                         className={`flex ${
                           message.sender_role === "system" ? "justify-start" : mine ? "justify-end" : "justify-start"
                         }`}
                       >
-                       <div className={isSystemCard ? "max-w-[82%]" : `max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
-                         {isSystemCard ? (
-                           <div className="pl-1">
-                             {renderCommerceSystemMessageCard(message, activeThread, portal)}
-                             <p className="mt-1 pl-1 text-[10px] text-slate-400">
-                               {formatDateTime(message.created_at)}
-                             </p>
-                           </div>
-                         ) : (
-                           <>
-                            {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
-                            {message.attachment_url ? (
-                              <div className={message.body ? "mt-3" : ""}>
-                                {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
-                                  <a
-                                     href={message.attachment_url}
-                                     target="_blank"
-                                     rel="noreferrer"
-                                     className="block overflow-hidden rounded-[12px] border border-white/20 bg-white/10"
-                                   >
-                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                     <img
-                                       src={message.attachment_url}
-                                       alt={message.attachment_name || "Lampiran"}
-                                       className="max-h-64 w-full object-cover"
-                                     />
-                                   </a>
-                                 ) : (
-                                   <a
-                                     href={message.attachment_url}
-                                     target="_blank"
-                                     rel="noreferrer"
-                                     className="inline-flex items-center rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
-                                   >
-                                     {message.attachment_name || "Lampiran"}
-                                  </a>
-                                )}
-                              </div>
-                            ) : message.attachment_name ? (
-                              <div className={message.body ? "mt-3" : ""}>
-                                <div className="rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <span className="truncate font-semibold">{message.attachment_name}</span>
-                                    <span className="shrink-0 text-[10px] font-semibold text-orange-600">
-                                      {isPendingUpload ? `${uploadProgress}%` : "Diproses"}
-                                    </span>
-                                  </div>
-                                  {isPendingUpload ? (
-                                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-orange-100">
-                                      <div
-                                        className="h-full rounded-full bg-[#ff6a00] transition-all"
-                                        style={{ width: `${Math.max(6, uploadProgress)}%` }}
+                        <div className={isSystemCard ? "max-w-[82%]" : `max-w-[78%] rounded-[12px] px-3 py-2 text-sm shadow-sm ${bubbleClass}`}>
+                          {isSystemCard ? (
+                            <div className="pl-1">
+                              {renderCommerceSystemMessageCard(message, activeThread, portal)}
+                              <p className="mt-1 pl-1 text-[10px] text-slate-400">
+                                {formatDateTime(message.created_at)}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              {message.body ? <p className="whitespace-pre-line leading-6">{message.body}</p> : null}
+                              {message.attachment_url ? (
+                                <div className={message.body ? "mt-3" : ""}>
+                                  {isCommerceChatImageAttachment(message.attachment_mime_type) ? (
+                                    <a
+                                      href={message.attachment_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="block overflow-hidden rounded-[12px] border border-white/20 bg-white/10"
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={message.attachment_url}
+                                        alt={message.attachment_name || "Lampiran"}
+                                        className="max-h-64 w-full object-cover"
                                       />
-                                    </div>
-                                  ) : null}
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={message.attachment_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-100"
+                                    >
+                                      {message.attachment_name || "Lampiran"}
+                                    </a>
+                                  )}
                                 </div>
-                              </div>
-                            ) : null}
-                            <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
-                          </>
-                         )}
-                       </div>
-                     </div>
-                   )
-                 })
-              )}
+                              ) : message.attachment_name ? (
+                                <div className={message.body ? "mt-3" : ""}>
+                                  <div className="rounded-[12px] border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="truncate font-semibold">{message.attachment_name}</span>
+                                      <span className="shrink-0 text-[10px] font-semibold text-orange-600">
+                                        {isPendingUpload ? `${uploadProgress}%` : "Diproses"}
+                                      </span>
+                                    </div>
+                                    {isPendingUpload ? (
+                                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-orange-100">
+                                        <div
+                                          className="h-full rounded-full bg-[#ff6a00] transition-all"
+                                          style={{ width: `${Math.max(6, uploadProgress)}%` }}
+                                        />
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              ) : null}
+                              <p className="mt-1 text-right text-[10px] text-slate-400">{formatDateTime(message.created_at)}</p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                  })
+                )}
+              </div>
+              {activeThread && !activeIsNearBottom && activeMessages.length > 0 ? (
+                <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[6] flex justify-center px-4">
+                  <button
+                    type="button"
+                    onClick={handleJumpToLatest}
+                    className="pointer-events-auto inline-flex items-center gap-2 rounded-full border border-orange-200 bg-white/95 px-4 py-2 text-xs font-semibold text-orange-700 shadow-[0_12px_30px_rgba(15,23,42,0.14)] backdrop-blur transition hover:bg-orange-50"
+                  >
+                    <span className="text-sm leading-none">↓</span>
+                    <span>Ke pesan terbaru</span>
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             <form onSubmit={handleSendMessage} className={`sticky bottom-0 border-t border-[#efe3d1] px-4 py-3 ${CHAT_DESIGN_LOCK.panelBackground}`}>
