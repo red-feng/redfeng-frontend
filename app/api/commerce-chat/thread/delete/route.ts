@@ -10,6 +10,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
 export async function DELETE(request: Request) {
+  // LOCKED ENTRYPOINT:
+  // Route ini harus tetap mendelegasikan otorisasi role delete ke core/policy commerce chat.
+  // Jangan tambahkan role baru di sini tanpa mengubah kontrak yang sudah dikunci di test.
   const supabase = await createClient()
   const adminSupabase = createAdminClient()
   const {

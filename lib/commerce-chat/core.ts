@@ -5,6 +5,7 @@ import {
   canDeleteCommerceThread,
   decideCommerceInquiryThreadResolution,
   isCommerceThreadUnreadForActor,
+  requireCommerceDeleteActorRole,
 } from "@/lib/commerce-chat/policy.mjs"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
@@ -764,6 +765,7 @@ export async function hardDeleteCommerceThreadForUser(
   if (!canDeleteCommerceThread(actorRole)) {
     throw new Error("Role akun ini tidak diizinkan menghapus thread commerce.")
   }
+  const lockedActorRole = requireCommerceDeleteActorRole(actorRole)
 
   let relatedThreads = [thread]
   if (thread.thread_type === "inquiry" && thread.subject_package_id) {
@@ -805,12 +807,12 @@ export async function hardDeleteCommerceThreadForUser(
     thread_type: item.thread_type,
     subject_package_id: item.subject_package_id,
     subject_booking_id: item.subject_booking_id,
-    customer_user_id: item.customer_user_id,
-    merchant_id: item.merchant_id,
-    merchant_user_id: item.merchant_user_id,
-    deleted_by_user_id: userId,
-    deleted_by_role: actorRole,
-  }))
+      customer_user_id: item.customer_user_id,
+      merchant_id: item.merchant_id,
+      merchant_user_id: item.merchant_user_id,
+      deleted_by_user_id: userId,
+      deleted_by_role: lockedActorRole,
+    }))
 
   const { error: deletionMarkerError } = await adminSupabase
     .from("commerce_chat_thread_deletions")
@@ -831,7 +833,7 @@ export async function hardDeleteCommerceThreadForUser(
     .update({
       deleted_for_all_at: deletedAtIso,
       deleted_by_user_id: userId,
-      deleted_by_role: actorRole,
+      deleted_by_role: lockedActorRole,
       purge_after_at: purgeAfterIso,
       updated_at: deletedAtIso,
     })
@@ -880,7 +882,7 @@ export async function hardDeleteCommerceThreadForUser(
 
   return {
     deletedThreadId: threadId,
-    actorRole,
+    actorRole: lockedActorRole,
   }
 }
 

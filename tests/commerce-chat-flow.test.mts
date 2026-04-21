@@ -12,9 +12,12 @@ import {
   resolveCommerceChatDeleteErrorStatus,
 } from "../lib/commerce-chat/delete-contract.mjs"
 import {
+  COMMERCE_CHAT_DELETE_ALLOWED_ACTOR_ROLES,
+  COMMERCE_CHAT_DELETE_ROLE_LOCK,
   COMMERCE_CHAT_DELETE_POLICY_VERSION,
   canDeleteCommerceThread,
   decideCommerceInquiryThreadResolution,
+  requireCommerceDeleteActorRole,
   shouldBlockInternalRoleFromCommerceChat,
 } from "../lib/commerce-chat/policy.mjs"
 
@@ -38,6 +41,12 @@ runCase("commerce chat delete policy version stays locked", () => {
   assert.equal(COMMERCE_CHAT_DELETE_POLICY_VERSION, "2026-04-18")
 })
 
+runCase("commerce chat delete actor roles stay locked", () => {
+  assert.deepEqual(COMMERCE_CHAT_DELETE_ALLOWED_ACTOR_ROLES, ["customer", "merchant"])
+  assert.deepEqual(COMMERCE_CHAT_DELETE_ROLE_LOCK.allowedActorRoles, ["customer", "merchant"])
+  assert.deepEqual(COMMERCE_CHAT_DELETE_ROLE_LOCK.deniedActorRoles, ["system", null])
+})
+
 runCase("commerce chat delete route contract version stays locked", () => {
   assert.equal(COMMERCE_CHAT_DELETE_ROUTE_CONTRACT_VERSION, "2026-04-18")
 })
@@ -56,6 +65,13 @@ runCase("only customer and merchant can delete commerce threads", () => {
   assert.equal(canDeleteCommerceThread("merchant"), true)
   assert.equal(canDeleteCommerceThread("system"), false)
   assert.equal(canDeleteCommerceThread(null), false)
+})
+
+runCase("delete role guard only returns locked participant roles", () => {
+  assert.equal(requireCommerceDeleteActorRole("customer"), "customer")
+  assert.equal(requireCommerceDeleteActorRole("merchant"), "merchant")
+  assert.throws(() => requireCommerceDeleteActorRole("system"))
+  assert.throws(() => requireCommerceDeleteActorRole(null))
 })
 
 runCase("inquiry resolution rule stays stable", () => {
