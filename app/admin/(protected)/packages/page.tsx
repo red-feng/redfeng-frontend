@@ -61,7 +61,7 @@ export default async function AdminPackagesPage({
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const supabase = createAdminClient()
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("admin")
 
   const {
     data: { user },

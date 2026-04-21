@@ -55,7 +55,7 @@ export default async function FinanceDashboardPage({
   searchParams?: Promise<{ success?: string; error?: string; view?: string }>
 }) {
   const adminSupabase = createAdminClient()
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const params = (await searchParams) || {}
   const {
     data: { user },

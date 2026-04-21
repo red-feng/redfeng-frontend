@@ -65,7 +65,7 @@ export default async function AdminMerchantPackagesPage({
   const query = (resolvedSearchParams.q || "").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "created_desc").trim().toLowerCase()
   const supabase = createAdminClient()
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("admin")
   const {
     data: { user },
   } = await authSupabase.auth.getUser()

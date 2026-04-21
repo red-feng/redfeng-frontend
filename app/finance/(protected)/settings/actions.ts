@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 const merchantTransferBanks = ["default", "bca", "bni", "bri", "mandiri", "permata", "cimb", "bsi"] as const
 
 async function ensureFinance() {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -20,7 +20,7 @@ function redirectWithMessage(path: string, message: string, type: "success" | "e
 }
 
 async function ensureSuperadminOperator() {
-  const supabase = await createClient()
+  const supabase = await createClient("superadmin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

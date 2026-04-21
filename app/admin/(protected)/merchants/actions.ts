@@ -42,7 +42,7 @@ function getMerchantReviewRequestsUnavailableMessage() {
 }
 
 async function getAdminActor() {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -63,7 +63,7 @@ async function getAdminActor() {
 }
 
 async function getMerchantManagerReviewer() {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

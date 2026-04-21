@@ -13,7 +13,7 @@ function readText(formData: FormData, key: string) {
 }
 
 export async function submitOperationsManagerReport(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

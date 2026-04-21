@@ -4,7 +4,7 @@ import { isFinanceNavSeenSection, FINANCE_NAV_SECTION_TO_COLUMN } from "@/lib/fi
 import { createClient } from "@/lib/supabase/server"
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

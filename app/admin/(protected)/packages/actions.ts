@@ -20,7 +20,7 @@ function getPackageIds(formData: FormData) {
 }
 
 async function getAdminActor() {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

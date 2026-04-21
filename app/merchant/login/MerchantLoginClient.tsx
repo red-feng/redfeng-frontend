@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import PasswordField from "@/app/components/PasswordField"
 import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown"
 import { createClient } from "@/lib/supabase/client"
@@ -176,7 +175,6 @@ function getMerchantLoginCopy(locale: Locale) {
 }
 
 export default function MerchantLoginClient({ initialLocale }: { initialLocale: Locale }) {
-  const router = useRouter()
   const supabase = createClient("merchant")
   const t = getMerchantLoginCopy(initialLocale)
 
@@ -226,7 +224,7 @@ export default function MerchantLoginClient({ initialLocale }: { initialLocale: 
     } = await supabase.auth.getSession()
 
     if (!session?.user) {
-      router.push("/")
+      window.location.assign("/")
       return
     }
 
@@ -266,7 +264,7 @@ export default function MerchantLoginClient({ initialLocale }: { initialLocale: 
         return
       }
 
-      router.push(MERCHANT_PORTAL_DEFAULT_REDIRECT)
+      window.location.assign(MERCHANT_PORTAL_DEFAULT_REDIRECT)
     } else {
       setError(t.wrongPortal)
       await supabase.auth.signOut()

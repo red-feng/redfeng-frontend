@@ -13,7 +13,7 @@ function readText(formData: FormData, key: string) {
 }
 
 export async function submitFinanceManagerReport(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -18,7 +18,7 @@ export default async function AdminTeamAccountsPage({
   searchParams: SearchParams
 }) {
   const params = await searchParams
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

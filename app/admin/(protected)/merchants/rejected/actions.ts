@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 
 export async function resubmitMerchant() {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
 
   const {
     data: { user },

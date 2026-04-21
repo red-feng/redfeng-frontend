@@ -58,7 +58,7 @@ function mergeMetadata(
 }
 
 async function ensureFinanceActor() {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

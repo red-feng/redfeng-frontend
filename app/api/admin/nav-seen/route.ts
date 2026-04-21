@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ADMIN_NAV_SECTION_TO_COLUMN, isAdminNavSeenSection } from "@/lib/admin-nav-seen"
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

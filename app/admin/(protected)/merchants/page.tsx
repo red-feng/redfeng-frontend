@@ -174,7 +174,7 @@ export default async function AdminMerchantsPage({
   const cityFilter = (resolvedSearchParams.city || "").trim().toLowerCase()
   const queueFilter = (resolvedSearchParams.queue || "all").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

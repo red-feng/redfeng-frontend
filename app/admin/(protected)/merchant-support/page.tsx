@@ -17,7 +17,7 @@ export default async function AdminMerchantSupportPage({
   searchParams: Promise<{ room_id?: string }>
 }) {
   const params = await searchParams
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

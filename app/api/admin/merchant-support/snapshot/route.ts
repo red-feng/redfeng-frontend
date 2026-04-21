@@ -10,7 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
 export async function GET(request: Request) {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

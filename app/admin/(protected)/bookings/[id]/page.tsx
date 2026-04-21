@@ -427,7 +427,7 @@ export default async function AdminBookingDetailPage({
   const { id } = await params
   const resolvedSearchParams = (await searchParams) || {}
   const adminSupabase = createAdminClient()
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },

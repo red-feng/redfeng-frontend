@@ -111,7 +111,7 @@ export default async function Page({
 }) {
   const { id } = await params
   const supabase = createAdminClient()
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("admin")
   const {
     data: { user },
   } = await authSupabase.auth.getUser()

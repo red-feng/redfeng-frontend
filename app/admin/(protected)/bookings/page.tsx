@@ -323,7 +323,7 @@ export default async function AdminBookingsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },

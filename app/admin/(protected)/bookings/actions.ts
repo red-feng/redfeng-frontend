@@ -15,7 +15,7 @@ function normalizeStatus(value: string | null) {
 }
 
 async function ensureAdmin() {
-  const supabase = await createClient()
+  const supabase = await createClient("admin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

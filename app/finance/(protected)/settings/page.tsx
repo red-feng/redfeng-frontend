@@ -23,7 +23,7 @@ export default async function FinanceSettingsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

@@ -153,7 +153,7 @@ export default async function FinancePayoutsPage({
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },

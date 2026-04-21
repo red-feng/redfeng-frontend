@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SUPERADMIN_NAV_SECTION_TO_COLUMN, isSuperadminNavSeenSection } from "@/lib/superadmin-nav-seen"
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
+  const supabase = await createClient("superadmin")
   const {
     data: { user },
   } = await supabase.auth.getUser()

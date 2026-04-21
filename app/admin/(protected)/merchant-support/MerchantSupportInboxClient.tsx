@@ -83,7 +83,7 @@ export default function MerchantSupportInboxClient({
   initialMessages: MerchantSupportMessage[]
   initialActiveRoomId: string
 }) {
-  const supabaseRef = useRef(createClient())
+  const supabaseRef = useRef(createClient("admin"))
   const supabase = supabaseRef.current
   const [rooms, setRooms] = useState(initialRooms)
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, MerchantSupportMessage[]>>(

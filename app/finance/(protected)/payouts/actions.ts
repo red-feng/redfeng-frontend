@@ -11,7 +11,7 @@ function normalizeStatus(value: string | null) {
 }
 
 async function ensureFinance() {
-  const supabase = await createClient()
+  const supabase = await createClient("finance")
   const {
     data: { user },
   } = await supabase.auth.getUser()

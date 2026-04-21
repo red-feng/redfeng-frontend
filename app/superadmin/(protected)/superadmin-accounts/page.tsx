@@ -17,7 +17,7 @@ export default async function SuperadminAccountsPage({
   searchParams: SearchParams
 }) {
   const params = await searchParams
-  const supabase = await createClient()
+  const supabase = await createClient("superadmin")
   const {
     data: { user },
   } = await supabase.auth.getUser()
