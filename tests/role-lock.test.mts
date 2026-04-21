@@ -2,6 +2,16 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { resolvePackageChatActorRole } from "../lib/chat/package-chat-access.ts"
+import {
+  getPortalSessionCookieName,
+  normalizeActivePortal,
+  resolvePortalFromPathname,
+} from "../lib/portal-context.ts"
+import {
+  canAccessInternalPortal,
+  isAdminPortalRole,
+  isFinancePortalRole,
+} from "../lib/internal-roles.ts"
 
 async function runCase(name: string, fn: () => void | Promise<void>) {
   try {
@@ -67,6 +77,8 @@ function createPackageAccessMock(params: {
 
 const internalChatPath = fileURLToPath(new URL("../lib/internal-chat/core.ts", import.meta.url))
 const internalChatSource = readFileSync(internalChatPath, "utf8")
+const proxyPath = fileURLToPath(new URL("../proxy.ts", import.meta.url))
+const proxySource = readFileSync(proxyPath, "utf8")
 
 async function main() {
   await runCase("internal chat policy version is locked", () => {
@@ -80,6 +92,58 @@ async function main() {
     assert.match(internalChatSource, /finance_manager:\s*\["superadmin", "finance_manager", "finance", "operations_manager"\]/)
     assert.match(internalChatSource, /admin:\s*\["operations_manager", "admin", "finance"\]/)
     assert.match(internalChatSource, /finance:\s*\["finance_manager", "finance", "admin"\]/)
+  })
+
+  await runCase("portal namespace normalization stays explicit", () => {
+    assert.equal(normalizeActivePortal("customer"), "customer")
+    assert.equal(normalizeActivePortal("merchant"), "merchant")
+    assert.equal(normalizeActivePortal("admin"), "admin")
+    assert.equal(normalizeActivePortal("finance"), "finance")
+    assert.equal(normalizeActivePortal("superadmin"), "superadmin")
+    assert.equal(normalizeActivePortal("unknown"), "")
+    assert.equal(normalizeActivePortal(null), "")
+  })
+
+  await runCase("portal pathname routing stays pinned", () => {
+    assert.equal(resolvePortalFromPathname("/"), "customer")
+    assert.equal(resolvePortalFromPathname("/customer/dashboard"), "customer")
+    assert.equal(resolvePortalFromPathname("/merchant/dashboard"), "merchant")
+    assert.equal(resolvePortalFromPathname("/admin/dashboard"), "admin")
+    assert.equal(resolvePortalFromPathname("/finance/dashboard"), "finance")
+    assert.equal(resolvePortalFromPathname("/superadmin/dashboard"), "superadmin")
+  })
+
+  await runCase("portal session cookie names stay isolated per portal", () => {
+    assert.equal(getPortalSessionCookieName("customer"), "rf-sb-customer-auth")
+    assert.equal(getPortalSessionCookieName("merchant"), "rf-sb-merchant-auth")
+    assert.equal(getPortalSessionCookieName("admin"), "rf-sb-admin-auth")
+    assert.equal(getPortalSessionCookieName("finance"), "rf-sb-finance-auth")
+    assert.equal(getPortalSessionCookieName("superadmin"), "rf-sb-superadmin-auth")
+  })
+
+  await runCase("internal portal role gates stay fixed", () => {
+    assert.equal(isAdminPortalRole("admin"), true)
+    assert.equal(isAdminPortalRole("operations_manager"), true)
+    assert.equal(isAdminPortalRole("superadmin"), false)
+    assert.equal(isFinancePortalRole("finance"), true)
+    assert.equal(isFinancePortalRole("finance_manager"), true)
+    assert.equal(isFinancePortalRole("superadmin"), false)
+
+    assert.equal(canAccessInternalPortal("admin", "admin"), true)
+    assert.equal(canAccessInternalPortal("admin", "operations_manager"), true)
+    assert.equal(canAccessInternalPortal("admin", "superadmin"), false)
+    assert.equal(canAccessInternalPortal("finance", "finance"), true)
+    assert.equal(canAccessInternalPortal("finance", "finance_manager"), true)
+    assert.equal(canAccessInternalPortal("finance", "superadmin"), false)
+    assert.equal(canAccessInternalPortal("superadmin", "superadmin"), true)
+    assert.equal(canAccessInternalPortal("superadmin", "admin"), false)
+  })
+
+  await runCase("proxy keeps admin route fallback to superadmin session only", () => {
+    assert.match(proxySource, /if \(pathname\.startsWith\("\/admin"\)\) return \["admin", "superadmin"\]/)
+    assert.match(proxySource, /if \(pathname\.startsWith\("\/merchant"\)\) return \["merchant"\]/)
+    assert.match(proxySource, /if \(pathname\.startsWith\("\/finance"\)\) return \["finance"\]/)
+    assert.match(proxySource, /if \(pathname\.startsWith\("\/superadmin"\)\) return \["superadmin"\]/)
   })
 
   await runCase("package chat customer can access own room", async () => {
