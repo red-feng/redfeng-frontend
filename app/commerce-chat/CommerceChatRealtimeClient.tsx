@@ -76,6 +76,8 @@ const SNAPSHOT_LIVE_EMPTY_INTERVAL_MS = 1500
 const THREAD_LIST_SYNC_INTERVAL_MS = 1200
 const THREAD_DELETE_TOMBSTONE_TTL_MS = 10000
 const THREAD_DELETE_BROADCAST_KEY = "commerce-chat-thread-delete"
+const ROOM_LIST_PAGE_SIZE = 30
+const MESSAGE_LIST_LOAD_MORE_THRESHOLD_PX = 120
 
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
@@ -442,6 +444,8 @@ export default function CommerceChatRealtimeClient({
   const pathname = usePathname()
   const supabaseRef = useRef(createClient())
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const roomListViewportRef = useRef<HTMLDivElement | null>(null)
+  const roomListSentinelRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const previousThreadRef = useRef("")
   const previousLastMessageIdRef = useRef("")
@@ -463,6 +467,8 @@ export default function CommerceChatRealtimeClient({
   )
   const [loadingOlderByThread, setLoadingOlderByThread] = useState<Record<string, boolean>>({})
   const [threadSearch, setThreadSearch] = useState("")
+  const [visibleThreadLimit, setVisibleThreadLimit] = useState(ROOM_LIST_PAGE_SIZE)
+  const [loadingMoreRooms, setLoadingMoreRooms] = useState(false)
   const [draftMessage, setDraftMessage] = useState("")
   const [sending, setSending] = useState(false)
   const [sendPhase, setSendPhase] = useState<SendPhase>("idle")
@@ -483,7 +489,7 @@ export default function CommerceChatRealtimeClient({
   const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
   const activeLoadingOlder = Boolean(loadingOlderByThread[activeThreadId])
-  const visibleThreads = useMemo(() => {
+  const filteredThreads = useMemo(() => {
     const needle = threadSearch.trim().toLowerCase()
     if (!needle) return threads
     return threads.filter((thread) => {
@@ -491,6 +497,11 @@ export default function CommerceChatRealtimeClient({
       return haystack.includes(needle)
     })
   }, [threadSearch, threads])
+  const visibleThreads = useMemo(
+    () => filteredThreads.slice(0, visibleThreadLimit),
+    [filteredThreads, visibleThreadLimit],
+  )
+  const hasMoreVisibleThreads = filteredThreads.length > visibleThreadLimit
 
   const unreadCount = useMemo(
     () =>
@@ -809,6 +820,54 @@ export default function CommerceChatRealtimeClient({
   useEffect(() => {
     threadsRef.current = threads
   }, [threads])
+
+  useEffect(() => {
+    const activeThreadIndex = filteredThreads.findIndex((thread) => thread.id === activeThreadId)
+    if (activeThreadIndex >= 0 && activeThreadIndex + 1 > visibleThreadLimit) {
+      setVisibleThreadLimit(Math.ceil((activeThreadIndex + 1) / ROOM_LIST_PAGE_SIZE) * ROOM_LIST_PAGE_SIZE)
+    }
+  }, [activeThreadId, filteredThreads, visibleThreadLimit])
+
+  useEffect(() => {
+    setVisibleThreadLimit(ROOM_LIST_PAGE_SIZE)
+  }, [threadSearch])
+
+  useEffect(() => {
+    const viewport = roomListViewportRef.current
+    const sentinel = roomListSentinelRef.current
+    if (!viewport || !sentinel || !hasMoreVisibleThreads) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0]
+        if (!firstEntry?.isIntersecting) return
+
+        setLoadingMoreRooms(true)
+        setVisibleThreadLimit((current) => {
+          if (current >= filteredThreads.length) return current
+          return Math.min(filteredThreads.length, current + ROOM_LIST_PAGE_SIZE)
+        })
+      },
+      {
+        root: viewport,
+        rootMargin: "0px 0px 180px 0px",
+        threshold: 0.01,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [filteredThreads.length, hasMoreVisibleThreads])
+
+  useEffect(() => {
+    if (!loadingMoreRooms) return
+
+    const timeoutId = window.setTimeout(() => {
+      setLoadingMoreRooms(false)
+    }, 260)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadingMoreRooms, visibleThreadLimit])
 
   useEffect(() => {
     activeThreadIdRef.current = activeThreadId
@@ -1269,9 +1328,9 @@ export default function CommerceChatRealtimeClient({
     event.currentTarget.form?.requestSubmit()
   }
 
-  function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
+  function handleMessageScroll(event: React.UIEvent<HTMLDivElement>) {
     if (!activeThreadId || !activeHasMore || activeLoadingOlder) return
-    if (event.currentTarget.scrollTop > 80) return
+    if (event.currentTarget.scrollTop > MESSAGE_LIST_LOAD_MORE_THRESHOLD_PX) return
     void loadOlderMessages(activeThreadId)
   }
 
@@ -1326,7 +1385,10 @@ export default function CommerceChatRealtimeClient({
               />
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            <div
+              ref={roomListViewportRef}
+              className="min-h-0 flex-1 overflow-y-auto px-2 py-2"
+            >
               {visibleThreads.map((thread) => {
                 const active = thread.id === activeThreadId
                 const hasUnread =
@@ -1377,6 +1439,21 @@ export default function CommerceChatRealtimeClient({
               {visibleThreads.length === 0 ? (
                 <div className="px-3 py-4 text-xs text-slate-500">Belum ada percakapan yang cocok.</div>
               ) : null}
+              {hasMoreVisibleThreads ? (
+                <>
+                  <div ref={roomListSentinelRef} className="h-4 w-full" aria-hidden="true" />
+                  <div className="px-3 py-3 text-center text-[11px] text-slate-400">
+                    {loadingMoreRooms ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2 w-2 animate-pulse rounded-full bg-orange-400" />
+                        <span>Memuat room...</span>
+                      </span>
+                    ) : (
+                      "Scroll terus, room berikutnya akan muncul otomatis..."
+                    )}
+                  </div>
+                </>
+              ) : null}
             </div>
           </aside>
 
@@ -1404,11 +1481,11 @@ export default function CommerceChatRealtimeClient({
               </div>
             </div>
 
-            <div
-              ref={threadRef}
-              onScroll={handleThreadScroll}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4"
-            >
+              <div
+                ref={threadRef}
+                onScroll={handleMessageScroll}
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4"
+              >
               {activeThread && activeLoadingOlder ? (
                 <div className="mb-2 flex justify-center">
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
