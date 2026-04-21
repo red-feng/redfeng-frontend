@@ -143,6 +143,10 @@ export default async function AdminTeamAccountsPage({
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Direktori tim</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Daftar akun operasional</h2>
+            <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-800">
+              Akun yang sedang Anda pakai tidak ditampilkan di daftar ini. Reset password dan hapus akun sendiri harus
+              dilakukan lewat jalur terpisah agar session operasional aktif tidak terputus tanpa sengaja.
+            </div>
             <div className="mt-6 space-y-4">
               {teamProfiles.length === 0 ? (
                 <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">

@@ -128,6 +128,10 @@ export default async function SuperadminAccountsPage({
           <div className="rounded-[32px] border border-violet-200/50 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">Direktori superadmin</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Daftar akun superadmin</h2>
+            <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-800">
+              Akun superadmin yang sedang Anda pakai tidak ditampilkan di daftar ini. Reset password dan hapus akun
+              sendiri tidak boleh dijalankan dari panel ini agar akses utama tetap aman.
+            </div>
             <div className="mt-6 space-y-4">
               {otherSuperadmins.length === 0 ? (
                 <div className="rounded-[24px] border border-dashed border-violet-200 bg-violet-50/40 px-5 py-6 text-sm text-slate-500">

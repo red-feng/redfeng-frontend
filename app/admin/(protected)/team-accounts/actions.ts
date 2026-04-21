@@ -137,6 +137,10 @@ export async function resetAdminPassword(formData: FormData) {
     redirectWithMessage(returnTo, "Password baru admin minimal 8 karakter", "error")
   }
 
+  if (adminId === actor.id) {
+    redirectWithMessage(returnTo, "Akun yang sedang Anda pakai tidak boleh reset password dari panel ini", "error")
+  }
+
   const adminSupabase = createAdminClient()
   const { data: targetProfile } = await adminSupabase
     .from("profiles")
@@ -183,6 +187,10 @@ export async function deleteAdminAccount(formData: FormData) {
 
   if (!adminId) {
     redirectWithMessage(returnTo, "Akun admin tidak valid", "error")
+  }
+
+  if (adminId === actor.id) {
+    redirectWithMessage(returnTo, "Akun yang sedang Anda pakai tidak boleh dihapus dari panel ini", "error")
   }
 
   const adminSupabase = createAdminClient()

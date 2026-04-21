@@ -132,6 +132,10 @@ export async function resetFinancePassword(formData: FormData) {
     redirectWithMessage(returnTo, "Password baru finance minimal 8 karakter", "error")
   }
 
+  if (financeId === actor.id) {
+    redirectWithMessage(returnTo, "Akun yang sedang Anda pakai tidak boleh reset password dari panel ini", "error")
+  }
+
   const adminSupabase = createAdminClient()
   const { data: targetProfile } = await adminSupabase
     .from("profiles")
@@ -178,6 +182,10 @@ export async function deleteFinanceAccount(formData: FormData) {
 
   if (!financeId) {
     redirectWithMessage(returnTo, "Akun finance tidak valid", "error")
+  }
+
+  if (financeId === actor.id) {
+    redirectWithMessage(returnTo, "Akun yang sedang Anda pakai tidak boleh dihapus dari panel ini", "error")
   }
 
   const adminSupabase = createAdminClient()

@@ -132,6 +132,10 @@ export async function resetSuperadminPassword(formData: FormData) {
     redirectWithMessage(returnTo, "Password baru superadmin minimal 8 karakter", "error")
   }
 
+  if (superadminId === actor.id) {
+    redirectWithMessage(returnTo, "Akun yang sedang Anda pakai tidak boleh reset password dari panel ini", "error")
+  }
+
   const adminSupabase = createAdminClient()
   const { data: targetProfile } = await adminSupabase
     .from("profiles")

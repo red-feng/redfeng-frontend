@@ -109,7 +109,7 @@ export async function createSuperadminAccount(formData: FormData) {
 
 export async function resetSuperadminPassword(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/superadmin/superadmin-accounts")
-  await ensureSuperadminOperator()
+  const actorId = await ensureSuperadminOperator()
 
   const superadminId = String(formData.get("superadminId") || "")
   const password = String(formData.get("password") || "")
@@ -120,6 +120,10 @@ export async function resetSuperadminPassword(formData: FormData) {
 
   if (password.length < 8) {
     redirectWithMessage(returnTo, "Password baru superadmin minimal 8 karakter", "error")
+  }
+
+  if (superadminId === actorId) {
+    redirectWithMessage(returnTo, "Akun yang sedang dipakai tidak boleh reset password dari panel ini", "error")
   }
 
   const adminSupabase = createAdminClient()
