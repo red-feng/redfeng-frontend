@@ -77,8 +77,6 @@ const THREAD_LIST_SYNC_INTERVAL_MS = 1200
 const THREAD_DELETE_TOMBSTONE_TTL_MS = 10000
 const THREAD_DELETE_BROADCAST_KEY = "commerce-chat-thread-delete"
 const ROOM_LIST_PAGE_SIZE = 30
-const MESSAGE_LIST_LOAD_MORE_THRESHOLD_PX = 120
-
 function sortThreads(threads: CommerceChatThreadItem[]) {
   return [...threads].sort((left, right) => {
     const leftDate = left.lastMessageAt || left.updatedAt || left.createdAt || ""
@@ -444,6 +442,7 @@ export default function CommerceChatRealtimeClient({
   const pathname = usePathname()
   const supabaseRef = useRef(createClient())
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const messageTopSentinelRef = useRef<HTMLDivElement | null>(null)
   const roomListViewportRef = useRef<HTMLDivElement | null>(null)
   const roomListSentinelRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -961,6 +960,28 @@ export default function CommerceChatRealtimeClient({
   }, [activeThreadId, activeLastMessageId, activeMessagesLength])
 
   useEffect(() => {
+    const viewport = threadRef.current
+    const sentinel = messageTopSentinelRef.current
+    if (!viewport || !sentinel || !activeThreadId || !activeHasMore || activeLoadingOlder) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0]
+        if (!firstEntry?.isIntersecting) return
+        void loadOlderMessages(activeThreadId)
+      },
+      {
+        root: viewport,
+        rootMargin: "140px 0px 0px 0px",
+        threshold: 0.01,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [activeHasMore, activeLoadingOlder, activeThreadId, activeMessagesLength, loadOlderMessages])
+
+  useEffect(() => {
     const channel = supabase.channel(`${COMMERCE_CHAT_ENGINE.realtimeChannelPrefix}:${portal}:${userId}`)
 
     channel.on(
@@ -1328,12 +1349,6 @@ export default function CommerceChatRealtimeClient({
     event.currentTarget.form?.requestSubmit()
   }
 
-  function handleMessageScroll(event: React.UIEvent<HTMLDivElement>) {
-    if (!activeThreadId || !activeHasMore || activeLoadingOlder) return
-    if (event.currentTarget.scrollTop > MESSAGE_LIST_LOAD_MORE_THRESHOLD_PX) return
-    void loadOlderMessages(activeThreadId)
-  }
-
   const realtimeBadge =
     realtimeStatus === "live"
       ? { label: "Live", className: "border-emerald-200 bg-emerald-50 text-emerald-700" }
@@ -1387,7 +1402,7 @@ export default function CommerceChatRealtimeClient({
 
             <div
               ref={roomListViewportRef}
-              className="min-h-0 flex-1 overflow-y-auto px-2 py-2"
+              className="min-h-0 flex-1 overflow-y-auto px-2 py-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
               {visibleThreads.map((thread) => {
                 const active = thread.id === activeThreadId
@@ -1483,9 +1498,9 @@ export default function CommerceChatRealtimeClient({
 
               <div
                 ref={threadRef}
-                onScroll={handleMessageScroll}
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 px-4 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
+              <div ref={messageTopSentinelRef} className="h-1 w-full" aria-hidden="true" />
               {activeThread && activeLoadingOlder ? (
                 <div className="mb-2 flex justify-center">
                   <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
