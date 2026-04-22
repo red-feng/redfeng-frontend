@@ -214,8 +214,14 @@ function buildClientMessageId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function getCommerceMessageStableKey(message: Pick<CommerceChatMessageItem, "id" | "client_message_id">) {
-  return message.client_message_id || message.id
+function getCommerceMessageStableKey(message: Pick<CommerceChatMessageItem, "id" | "client_message_id"> | null | undefined) {
+  const clientMessageId = String(message?.client_message_id || "").trim()
+  if (clientMessageId) return `client:${clientMessageId}`
+
+  const messageId = String(message?.id || "").trim()
+  if (messageId) return `server:${messageId}`
+
+  return "missing-message-key"
 }
 
 function renderCommerceSystemMessageCard(
