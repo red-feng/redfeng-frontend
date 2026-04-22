@@ -16,26 +16,31 @@ const merchantTransferBanks = [
   { key: "bsi", label: "BSI" },
 ] as const
 
+type FinancePortal = "finance" | "superadmin"
+
 export default async function FinanceSettingsPage({
   searchParams,
+  portal = "finance",
 }: {
   searchParams: Promise<{ success?: string; error?: string }>
+  portal?: FinancePortal
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("finance")
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/finance/login")
+    redirect(portal === "superadmin" ? "/superadmin/login" : "/finance/login")
   }
 
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const canEditSettings = currentProfile?.role === "finance_manager"
+  const dashboardHref = portal === "superadmin" ? "/superadmin/finance-manager" : "/finance/dashboard"
   const settings = await getFinanceSettings(
     adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
   )
@@ -66,6 +71,7 @@ export default async function FinanceSettingsPage({
 
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_0.9fr]">
           <form action={saveFinanceSettings} className="space-y-5 rounded-[24px] border border-[#f3dbc3] bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
+            <input type="hidden" name="portal" value={portal} />
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Komisi Red Feng (%)</label>
               <input
@@ -195,7 +201,7 @@ export default async function FinanceSettingsPage({
                 pajak {defaultFinanceSettings.customerTaxPercent}%,
                 transfer Rp {defaultFinanceSettings.merchantTransferFee.toLocaleString("id-ID")}.
               </p>
-              <Link href="/finance/dashboard" className="mt-5 inline-flex text-sm font-semibold text-orange-600">
+              <Link href={dashboardHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 Kembali ke finance dashboard
               </Link>
             </div>

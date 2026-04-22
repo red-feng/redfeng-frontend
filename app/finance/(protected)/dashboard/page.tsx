@@ -92,6 +92,10 @@ export default async function FinanceDashboardPage({
   const showFinanceManagerView = isFinanceManager || (isSuperadmin && params.view === "finance-manager")
   const reportReturnTo =
     portal === "superadmin" && params.view === "finance-manager" ? "/superadmin/finance-manager" : fallbackDashboardPath
+  const refundsHref = portal === "superadmin" ? "/superadmin/finance-refunds?filter=auto-review" : "/finance/refunds?filter=auto-review"
+  const payoutsHref = portal === "superadmin" ? "/superadmin/finance-payouts" : "/finance/payouts"
+  const settingsHref = portal === "superadmin" ? "/superadmin/finance-settings" : "/finance/settings"
+  const auditLogHref = portal === "superadmin" ? "/superadmin/audit-log" : "/finance/audit-log"
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
@@ -329,19 +333,19 @@ export default async function FinanceDashboardPage({
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <Link
-                    href="/finance/refunds?filter=auto-review"
+                    href={refundsHref}
                     className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
                   >
                     Buka Auto Review Refund
                   </Link>
                   <Link
-                    href="/finance/payouts"
+                    href={payoutsHref}
                     className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
                     Buka Payout Queue
                   </Link>
                   <Link
-                    href="/admin/audit-log"
+                    href={auditLogHref}
                     className="rounded-[18px] border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                   >
                     Buka Audit Log
@@ -936,20 +940,20 @@ export default async function FinanceDashboardPage({
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
-                  href="/finance/refunds?filter=auto-review"
+                  href={refundsHref}
                   className="inline-flex items-center justify-center rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
                   Buka Auto Review Refund
                 </Link>
                 <Link
-                  href="/finance/payouts"
+                  href={payoutsHref}
                   className="inline-flex items-center justify-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                 >
                   Buka Payout Queue
                 </Link>
                 {canManageFinanceSettings ? (
                   <Link
-                    href="/finance/settings"
+                    href={settingsHref}
                     className="inline-flex items-center justify-center rounded-[18px] border border-[#e7d6c1] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
                   >
                     Buka Finance Settings

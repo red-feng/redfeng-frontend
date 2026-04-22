@@ -6,18 +6,33 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { isFinanceApprovalRole, isFinanceExecutionRole, isFinancePortalRole } from "@/lib/internal-roles"
 
+type FinancePortal = "finance" | "superadmin"
+
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
-async function ensureFinance() {
-  const supabase = await createClient("finance")
+function resolvePortal(formData: FormData): FinancePortal {
+  return String(formData.get("portal") || "").trim() === "superadmin" ? "superadmin" : "finance"
+}
+
+function resolvePortalPaths(portal: FinancePortal) {
+  return {
+    loginPath: portal === "superadmin" ? "/superadmin/login" : "/finance/login",
+    payoutsPath: portal === "superadmin" ? "/superadmin/finance-payouts" : "/finance/payouts",
+  }
+}
+
+async function ensureFinance(portal: FinancePortal) {
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { loginPath } = resolvePortalPaths(portal)
+
   if (!user) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   const { data: profile } = await supabase
@@ -27,7 +42,7 @@ async function ensureFinance() {
     .single()
 
   if (!profile || !isFinancePortalRole(profile.role)) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   return {
@@ -36,36 +51,38 @@ async function ensureFinance() {
   }
 }
 
-function backToPayouts(message: string, type: "success" | "error"): never {
-  redirect(`/finance/payouts?${type}=${encodeURIComponent(message)}`)
+function backToPayouts(portal: FinancePortal, message: string, type: "success" | "error"): never {
+  const { payoutsPath } = resolvePortalPaths(portal)
+  redirect(`${payoutsPath}?${type}=${encodeURIComponent(message)}`)
 }
 
 export async function updatePayoutStatus(formData: FormData) {
-  const actor = await ensureFinance()
+  const portal = resolvePortal(formData)
+  const actor = await ensureFinance(portal)
 
   const payoutId = String(formData.get("payoutId") || "")
   const nextStatus = String(formData.get("nextStatus") || "")
   const note = String(formData.get("note") || "").trim()
 
   if (!payoutId || !nextStatus) {
-    backToPayouts("Request payout tidak valid", "error")
+    backToPayouts(portal, "Request payout tidak valid", "error")
   }
 
   const allowedStatuses = new Set(["approved", "processing", "paid", "rejected"])
   if (!allowedStatuses.has(nextStatus)) {
-    backToPayouts("Status payout tidak dikenali", "error")
+    backToPayouts(portal, "Status payout tidak dikenali", "error")
   }
 
   if ((nextStatus === "approved" || nextStatus === "rejected") && !isFinanceApprovalRole(actor.role)) {
-    backToPayouts("Role finance ini tidak punya akses approval payout", "error")
+    backToPayouts(portal, "Role finance ini tidak punya akses approval payout", "error")
   }
 
   if ((nextStatus === "processing" || nextStatus === "paid") && !isFinanceExecutionRole(actor.role)) {
-    backToPayouts("Hanya finance eksekusi yang boleh menandai processing / paid", "error")
+    backToPayouts(portal, "Hanya finance eksekusi yang boleh menandai processing / paid", "error")
   }
 
   if (nextStatus === "rejected" && !note) {
-    backToPayouts("Alasan penolakan payout wajib diisi", "error")
+    backToPayouts(portal, "Alasan penolakan payout wajib diisi", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -76,12 +93,12 @@ export async function updatePayoutStatus(formData: FormData) {
     .single()
 
   if (payoutError || !payout) {
-    backToPayouts("Request payout tidak ditemukan", "error")
+    backToPayouts(portal, "Request payout tidak ditemukan", "error")
   }
 
   const currentStatus = normalizeStatus(payout.status)
   if (currentStatus === "paid") {
-    backToPayouts("Payout yang sudah berstatus Paid Out tidak bisa diubah lagi", "error")
+    backToPayouts(portal, "Payout yang sudah berstatus Paid Out tidak bisa diubah lagi", "error")
   }
 
   const validTransition =
@@ -90,7 +107,7 @@ export async function updatePayoutStatus(formData: FormData) {
     (currentStatus === "processing" && nextStatus === "paid")
 
   if (!validTransition) {
-    backToPayouts("Urutan status payout tidak valid untuk request ini", "error")
+    backToPayouts(portal, "Urutan status payout tidak valid untuk request ini", "error")
   }
 
   const processedAt =
@@ -116,7 +133,7 @@ export async function updatePayoutStatus(formData: FormData) {
     .eq("id", payoutId)
 
   if (error) {
-    backToPayouts(error.message, "error")
+    backToPayouts(portal, error.message, "error")
   }
 
   if (payout.booking_id) {
@@ -143,7 +160,7 @@ export async function updatePayoutStatus(formData: FormData) {
       .eq("id", payout.booking_id)
 
     if (bookingUpdateError) {
-      backToPayouts(bookingUpdateError.message, "error")
+      backToPayouts(portal, bookingUpdateError.message, "error")
     }
   }
 
@@ -186,5 +203,5 @@ export async function updatePayoutStatus(formData: FormData) {
           ? "Payout berhasil ditandai Paid Out"
           : "Payout berhasil ditolak"
 
-  backToPayouts(successMessage, "success")
+  backToPayouts(portal, successMessage, "success")
 }

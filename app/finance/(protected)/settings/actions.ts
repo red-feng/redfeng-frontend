@@ -6,24 +6,40 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 const merchantTransferBanks = ["default", "bca", "bni", "bri", "mandiri", "permata", "cimb", "bsi"] as const
 
-async function ensureFinance() {
-  const supabase = await createClient("finance")
+type FinancePortal = "finance" | "superadmin"
+
+function resolvePortal(formData: FormData): FinancePortal {
+  return String(formData.get("portal") || "").trim() === "superadmin" ? "superadmin" : "finance"
+}
+
+function resolvePortalPaths(portal: FinancePortal) {
+  return {
+    loginPath: portal === "superadmin" ? "/superadmin/login" : "/finance/login",
+    settingsPath: portal === "superadmin" ? "/superadmin/finance-settings" : "/finance/settings",
+  }
+}
+
+async function ensureFinance(portal: FinancePortal) {
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { loginPath } = resolvePortalPaths(portal)
+
   if (!user) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (!profile || profile.role !== "finance_manager") {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 }
 
 export async function saveFinanceSettings(formData: FormData) {
-  await ensureFinance()
+  const portal = resolvePortal(formData)
+  await ensureFinance(portal)
 
   const redfengCommissionPercent = Number(formData.get("redfeng_commission_percent") || 0)
   const bankTransferFeePercent = Number(formData.get("customer_admin_fee_bank_transfer_percent") || 0)
@@ -56,8 +72,8 @@ export async function saveFinanceSettings(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/finance/settings?error=${encodeURIComponent(error.message)}`)
+    redirect(`${resolvePortalPaths(portal).settingsPath}?error=${encodeURIComponent(error.message)}`)
   }
 
-  redirect("/finance/settings?success=Setting finance berhasil diperbarui")
+  redirect(`${resolvePortalPaths(portal).settingsPath}?success=Setting finance berhasil diperbarui`)
 }

@@ -149,14 +149,18 @@ function renderMetadataText(
   return typeof value === "string" && value.trim() ? value.trim() : fallback
 }
 
+type FinancePortal = "finance" | "superadmin"
+
 export default async function FinanceRefundsPage({
   searchParams,
+  portal = "finance",
 }: {
   searchParams: Promise<{ success?: string; error?: string; filter?: string }>
+  portal?: FinancePortal
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("finance")
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -165,6 +169,7 @@ export default async function FinanceRefundsPage({
     : { data: null }
   const canApproveRefund = isFinanceApprovalRole(currentProfile?.role)
   const canExecuteRefund = isFinanceExecutionRole(currentProfile?.role)
+  const refundsBasePath = portal === "superadmin" ? "/superadmin/finance-refunds" : "/finance/refunds"
   const activeFilter = ["all", "auto-review", "manual"].includes(String(params.filter || ""))
     ? String(params.filter)
     : "all"
@@ -300,7 +305,7 @@ export default async function FinanceRefundsPage({
                 return (
                   <Link
                     key={filter.key}
-                    href={`/finance/refunds?filter=${filter.key}`}
+                      href={`${refundsBasePath}?filter=${filter.key}`}
                       className={`rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
                       active
                         ? "bg-slate-950 text-white shadow-lg"
@@ -325,6 +330,7 @@ export default async function FinanceRefundsPage({
             </p>
 
             <form action={createRefundRequest} className="mt-6 grid gap-4">
+              <input type="hidden" name="portal" value={portal} />
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Booking code / booking ID</label>
@@ -656,6 +662,7 @@ export default async function FinanceRefundsPage({
                         </div>
                       ) : (
                         <form action={updateRefundStatus} className="rounded-[24px] border border-slate-200 bg-white p-5 space-y-4">
+                          <input type="hidden" name="portal" value={portal} />
                           <input type="hidden" name="refundId" value={refund.id} />
                           <div className="grid gap-4 md:grid-cols-2">
                             <div>
@@ -754,6 +761,7 @@ export default async function FinanceRefundsPage({
 
                       {canSyncGatewayStatus && !isClosed ? (
                         <form action={syncRefundGatewayStatus} className="rounded-[24px] border border-slate-200 bg-white p-5">
+                          <input type="hidden" name="portal" value={portal} />
                           <input type="hidden" name="refundId" value={refund.id} />
                           <button className="w-full rounded-[18px] border border-slate-300 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200">
                             Sinkronkan status gateway

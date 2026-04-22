@@ -20,8 +20,22 @@ type RefundStatus =
   | "refund_reconciled"
   | "refund_closed"
 
-function backToRefunds(message: string, type: "success" | "error"): never {
-  redirect(`/finance/refunds?${type}=${encodeURIComponent(message)}`)
+type FinancePortal = "finance" | "superadmin"
+
+function resolvePortal(formData: FormData): FinancePortal {
+  return String(formData.get("portal") || "").trim() === "superadmin" ? "superadmin" : "finance"
+}
+
+function resolvePortalPaths(portal: FinancePortal) {
+  return {
+    loginPath: portal === "superadmin" ? "/superadmin/login" : "/finance/login",
+    refundsPath: portal === "superadmin" ? "/superadmin/finance-refunds" : "/finance/refunds",
+  }
+}
+
+function backToRefunds(portal: FinancePortal, message: string, type: "success" | "error"): never {
+  const { refundsPath } = resolvePortalPaths(portal)
+  redirect(`${refundsPath}?${type}=${encodeURIComponent(message)}`)
 }
 
 function readText(formData: FormData, key: string) {
@@ -57,21 +71,23 @@ function mergeMetadata(
   }
 }
 
-async function ensureFinanceActor() {
-  const supabase = await createClient("finance")
+async function ensureFinanceActor(portal: FinancePortal) {
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { loginPath } = resolvePortalPaths(portal)
+
   if (!user) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   const role = profile?.role || null
 
   if (!profile || !isFinancePortalRole(role)) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   return {
@@ -287,7 +303,8 @@ function isValidRefundTransition(currentStatus: string, nextStatus: RefundStatus
 }
 
 export async function createRefundRequest(formData: FormData) {
-  const actor = await ensureFinanceActor()
+  const portal = resolvePortal(formData)
+  const actor = await ensureFinanceActor(portal)
   const bookingReference = readText(formData, "bookingReference")
   const orderId = readText(formData, "orderId")
   const refundChannel = readText(formData, "refundChannel") || "manual_other"
@@ -305,15 +322,15 @@ export async function createRefundRequest(formData: FormData) {
   const notes = readText(formData, "notes")
 
   if (!refundReason) {
-    backToRefunds("Alasan refund wajib diisi.", "error")
+    backToRefunds(portal, "Alasan refund wajib diisi.", "error")
   }
 
   if (grossAmount === null || Number.isNaN(grossAmount) || grossAmount <= 0) {
-    backToRefunds("Nominal bruto refund tidak valid.", "error")
+    backToRefunds(portal, "Nominal bruto refund tidak valid.", "error")
   }
 
   if ((deductionAmount !== null && Number.isNaN(deductionAmount)) || (deductionAmount !== null && deductionAmount < 0)) {
-    backToRefunds("Nominal potongan refund tidak valid.", "error")
+    backToRefunds(portal, "Nominal potongan refund tidak valid.", "error")
   }
 
   const safeDeduction = deductionAmount || 0
@@ -321,11 +338,11 @@ export async function createRefundRequest(formData: FormData) {
     netRefundAmount === null || Number.isNaN(netRefundAmount) ? grossAmount - safeDeduction : netRefundAmount
 
   if (!Number.isFinite(resolvedNetRefundAmount) || resolvedNetRefundAmount < 0) {
-    backToRefunds("Nominal refund bersih tidak valid.", "error")
+    backToRefunds(portal, "Nominal refund bersih tidak valid.", "error")
   }
 
   if (refundChannel === "kopra_manual" && (!bankName || !bankAccountNumber || !bankAccountHolder)) {
-    backToRefunds("Refund via Kopra wajib melengkapi data rekening customer.", "error")
+    backToRefunds(portal, "Refund via Kopra wajib melengkapi data rekening customer.", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -354,7 +371,7 @@ export async function createRefundRequest(formData: FormData) {
       .maybeSingle()
 
     if (!bookingData) {
-      backToRefunds("Booking tidak ditemukan. Gunakan booking code atau booking ID yang valid.", "error")
+        backToRefunds(portal, "Booking tidak ditemukan. Gunakan booking code atau booking ID yang valid.", "error")
     }
 
     booking = bookingData
@@ -402,7 +419,7 @@ export async function createRefundRequest(formData: FormData) {
     .single()
 
   if (error || !refund) {
-    backToRefunds(error?.message || "Gagal membuat refund request.", "error")
+    backToRefunds(portal, error?.message || "Gagal membuat refund request.", "error")
   }
 
   await insertRefundEvent({
@@ -439,11 +456,12 @@ export async function createRefundRequest(formData: FormData) {
     },
   })
 
-  backToRefunds("Refund request berhasil dibuat.", "success")
+  backToRefunds(portal, "Refund request berhasil dibuat.", "success")
 }
 
 export async function updateRefundStatus(formData: FormData) {
-  const actor = await ensureFinanceActor()
+  const portal = resolvePortal(formData)
+  const actor = await ensureFinanceActor(portal)
   const refundId = readText(formData, "refundId")
   const nextStatus = readText(formData, "nextStatus") as RefundStatus
   const note = readText(formData, "note")
@@ -464,15 +482,15 @@ export async function updateRefundStatus(formData: FormData) {
   ]
 
   if (!refundId || !allowedStatuses.includes(nextStatus)) {
-    backToRefunds("Aksi refund tidak valid.", "error")
+    backToRefunds(portal, "Aksi refund tidak valid.", "error")
   }
 
   if (!canMoveToStatus(actor.role, nextStatus)) {
-    backToRefunds("Role finance ini tidak punya akses untuk status refund tersebut.", "error")
+    backToRefunds(portal, "Role finance ini tidak punya akses untuk status refund tersebut.", "error")
   }
 
   if ((nextStatus === "refund_rejected" || nextStatus === "refund_failed") && !note) {
-    backToRefunds("Catatan wajib diisi untuk reject atau mark failed.", "error")
+    backToRefunds(portal, "Catatan wajib diisi untuk reject atau mark failed.", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -483,28 +501,28 @@ export async function updateRefundStatus(formData: FormData) {
     .single()
 
   if (fetchError || !refund) {
-    backToRefunds("Refund request tidak ditemukan.", "error")
+    backToRefunds(portal, "Refund request tidak ditemukan.", "error")
   }
 
   const currentStatus = normalizeStatus(refund.status)
   if (isFinalStatus(currentStatus)) {
-    backToRefunds("Refund dengan status final tidak bisa diubah lagi.", "error")
+    backToRefunds(portal, "Refund dengan status final tidak bisa diubah lagi.", "error")
   }
 
   if (!isValidRefundTransition(currentStatus, nextStatus)) {
-    backToRefunds("Urutan status refund tidak valid untuk request ini.", "error")
+    backToRefunds(portal, "Urutan status refund tidak valid untuk request ini.", "error")
   }
 
   if (nextStatus === "refund_processing_midtrans" && !(midtransRefundId || refund.midtrans_refund_id || midtransTransactionId || refund.midtrans_transaction_id)) {
-    backToRefunds("Isi Midtrans refund ID atau transaction ID sebelum menandai processing Midtrans.", "error")
+    backToRefunds(portal, "Isi Midtrans refund ID atau transaction ID sebelum menandai processing Midtrans.", "error")
   }
 
   if (nextStatus === "refund_processing_bank" && !(kopraReferenceNo || refund.kopra_reference_no || note)) {
-    backToRefunds("Isi referensi Kopra atau catatan transfer sebelum menandai processing bank.", "error")
+    backToRefunds(portal, "Isi referensi Kopra atau catatan transfer sebelum menandai processing bank.", "error")
   }
 
   if (nextStatus === "refund_closed" && !["refund_paid", "refund_reconciled", "refund_rejected", "refund_failed"].includes(currentStatus)) {
-    backToRefunds("Refund hanya bisa ditutup setelah statusnya paid, reconciled, rejected, atau failed.", "error")
+    backToRefunds(portal, "Refund hanya bisa ditutup setelah statusnya paid, reconciled, rejected, atau failed.", "error")
   }
 
   const now = new Date().toISOString()
@@ -579,7 +597,7 @@ export async function updateRefundStatus(formData: FormData) {
   const { error: updateError } = await adminSupabase.from("refund_requests").update(payload).eq("id", refundId)
 
   if (updateError) {
-    backToRefunds(updateError.message, "error")
+    backToRefunds(portal, updateError.message, "error")
   }
 
   await insertRefundEvent({
@@ -620,15 +638,16 @@ export async function updateRefundStatus(formData: FormData) {
     },
   })
 
-  backToRefunds(`Refund berhasil dipindahkan ke ${statusLabel(nextStatus)}.`, "success")
+  backToRefunds(portal, `Refund berhasil dipindahkan ke ${statusLabel(nextStatus)}.`, "success")
 }
 
 export async function syncRefundGatewayStatus(formData: FormData) {
-  const actor = await ensureFinanceActor()
+  const portal = resolvePortal(formData)
+  const actor = await ensureFinanceActor(portal)
   const refundId = readText(formData, "refundId")
 
   if (!refundId) {
-    backToRefunds("Refund request tidak valid.", "error")
+    backToRefunds(portal, "Refund request tidak valid.", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -639,14 +658,14 @@ export async function syncRefundGatewayStatus(formData: FormData) {
     .single()
 
   if (error || !refund) {
-    backToRefunds("Refund request tidak ditemukan.", "error")
+    backToRefunds(portal, "Refund request tidak ditemukan.", "error")
   }
 
   const now = new Date().toISOString()
   const currentStatus = normalizeStatus(refund.status)
 
   if (!["refund_processing_midtrans", "refund_processing_bank"].includes(currentStatus)) {
-    backToRefunds("Sync gateway hanya bisa dijalankan saat refund sedang diproses.", "error")
+    backToRefunds(portal, "Sync gateway hanya bisa dijalankan saat refund sedang diproses.", "error")
   }
 
   let nextStatus: RefundStatus | null = null
@@ -659,7 +678,7 @@ export async function syncRefundGatewayStatus(formData: FormData) {
   if (refund.refund_channel === "midtrans") {
     const transactionKey = refund.midtrans_transaction_id || refund.order_id || ""
     if (!transactionKey) {
-      backToRefunds("Refund Midtrans ini belum memiliki transaction ID atau order ID.", "error")
+        backToRefunds(portal, "Refund Midtrans ini belum memiliki transaction ID atau order ID.", "error")
     }
 
     const statusResponse = (await getMidtransTransactionStatus(transactionKey)) as Record<string, unknown>
@@ -684,11 +703,11 @@ export async function syncRefundGatewayStatus(formData: FormData) {
       gatewaySummary = `Gateway Midtrans mengembalikan status ${transactionStatus}.`
       notePatch = `Midtrans sync ${now}: ${transactionStatus}`
     } else {
-      backToRefunds(`Status Midtrans saat ini masih ${transactionStatus || "unknown"}.`, "success")
+        backToRefunds(portal, `Status Midtrans saat ini masih ${transactionStatus || "unknown"}.`, "success")
     }
   } else if (refund.refund_channel === "kopra_manual") {
     if (!isKopraStatusConfigured()) {
-      backToRefunds("KOPRA_STATUS_API_URL belum diatur, jadi status Kopra belum bisa disinkronkan otomatis.", "error")
+      backToRefunds(portal, "KOPRA_STATUS_API_URL belum diatur, jadi status Kopra belum bisa disinkronkan otomatis.", "error")
     }
 
     const statusResponse = await getKopraRefundStatus({
@@ -719,10 +738,10 @@ export async function syncRefundGatewayStatus(formData: FormData) {
       gatewaySummary = `Gateway Kopra mengembalikan status ${keyword}.`
       notePatch = `Kopra sync ${now}: ${keyword}`
     } else {
-      backToRefunds(`Status Kopra saat ini masih ${keyword || "unknown"}.`, "success")
+        backToRefunds(portal, `Status Kopra saat ini masih ${keyword || "unknown"}.`, "success")
     }
   } else {
-    backToRefunds("Sync otomatis baru tersedia untuk channel Midtrans atau Kopra manual.", "error")
+    backToRefunds(portal, "Sync otomatis baru tersedia untuk channel Midtrans atau Kopra manual.", "error")
   }
 
   const payload: Record<string, unknown> = {
@@ -746,7 +765,7 @@ export async function syncRefundGatewayStatus(formData: FormData) {
 
   const { error: updateError } = await adminSupabase.from("refund_requests").update(payload).eq("id", refund.id)
   if (updateError) {
-    backToRefunds(updateError.message, "error")
+    backToRefunds(portal, updateError.message, "error")
   }
 
   await insertRefundEvent({
@@ -776,5 +795,5 @@ export async function syncRefundGatewayStatus(formData: FormData) {
     },
   })
 
-  backToRefunds(gatewaySummary || "Status refund dari gateway berhasil disinkronkan.", "success")
+  backToRefunds(portal, gatewaySummary || "Status refund dari gateway berhasil disinkronkan.", "success")
 }

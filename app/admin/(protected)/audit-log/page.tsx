@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-type AuditLogPortal = "admin" | "superadmin"
+type AuditLogPortal = "admin" | "finance" | "superadmin"
 
 type AdminActionLogRow = {
   id: string
@@ -110,7 +110,8 @@ function formatMetadataValue(value: unknown) {
 }
 
 function buildHref(portal: AuditLogPortal, target: FilterTarget, action: FilterAction, q: string, from: string, to: string) {
-  const basePath = portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"
+  const basePath =
+    portal === "superadmin" ? "/superadmin/audit-log" : portal === "finance" ? "/finance/audit-log" : "/admin/audit-log"
   const params = new URLSearchParams()
   if (target !== "all") params.set("target", target)
   if (action !== "all") params.set("action", action)
@@ -317,7 +318,7 @@ export default async function AdminAuditLogPage({
                   Terapkan filter
                 </button>
                 <Link
-                  href={portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"}
+                  href={portal === "superadmin" ? "/superadmin/audit-log" : portal === "finance" ? "/finance/audit-log" : "/admin/audit-log"}
                   className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
                 >
                   Reset

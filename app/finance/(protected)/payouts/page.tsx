@@ -146,14 +146,18 @@ function hasCompleteBookingData(booking: BookingLiteRow | null | undefined) {
   )
 }
 
+type FinancePortal = "finance" | "superadmin"
+
 export default async function FinancePayoutsPage({
   searchParams,
+  portal = "finance",
 }: {
   searchParams: Promise<{ success?: string; error?: string }>
+  portal?: FinancePortal
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("finance")
+  const supabase = await createClient(portal)
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
@@ -445,6 +449,7 @@ export default async function FinancePayoutsPage({
                         <div className="grid gap-4">
                           {canApproveThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-emerald-200 bg-emerald-50/80 p-5">
+                              <input type="hidden" name="portal" value={portal} />
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="approved" />
                               <button className="rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700">
@@ -455,6 +460,7 @@ export default async function FinancePayoutsPage({
 
                           {canMarkProcessingThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-sky-200 bg-sky-50/80 p-5">
+                              <input type="hidden" name="portal" value={portal} />
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="processing" />
                               <button className="rounded-[18px] bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(2,132,199,0.22)] transition hover:bg-sky-700">
@@ -465,6 +471,7 @@ export default async function FinancePayoutsPage({
 
                           {canMarkPaidThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-violet-200 bg-violet-50/80 p-5 space-y-4">
+                              <input type="hidden" name="portal" value={portal} />
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="paid" />
                               <textarea
@@ -480,6 +487,7 @@ export default async function FinancePayoutsPage({
 
                           {canRejectThisPayout ? (
                             <form action={updatePayoutStatus} className="rounded-[24px] border border-rose-200 bg-rose-50/80 p-5 space-y-4">
+                              <input type="hidden" name="portal" value={portal} />
                               <input type="hidden" name="payoutId" value={payout.id} />
                               <input type="hidden" name="nextStatus" value="rejected" />
                               <textarea
