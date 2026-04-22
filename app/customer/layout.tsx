@@ -1,12 +1,11 @@
 import Image from "next/image"
 import Link from "next/link"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import MerchantLanguageSwitcher from "@/app/components/MerchantLanguageSwitcher"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
-import { ACTIVE_PORTAL_COOKIE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
+import { CUSTOMER_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
@@ -21,7 +20,6 @@ export default async function CustomerLayout({
 }) {
   const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
-  const cookieStore = await cookies()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -35,9 +33,6 @@ export default async function CustomerLayout({
     .select("role")
     .eq("id", user.id)
     .maybeSingle()
-
-  const activePortal = normalizeActivePortal(cookieStore.get(ACTIVE_PORTAL_COOKIE)?.value)
-
   if (!profile) {
     await supabase.from("profiles").upsert({
       id: user.id,
@@ -50,9 +45,7 @@ export default async function CustomerLayout({
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
   } else if (profile.role === "merchant") {
-    if (activePortal !== "customer") {
-      redirect("/merchant/dashboard")
-    }
+    redirect("/merchant/dashboard")
   } else if (profile.role !== "customer") {
     redirect("/login")
   }

@@ -6,6 +6,10 @@ import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_RE
 function getCustomerPortalRoleError(role: string | null | undefined) {
   const normalizedRole = String(role || "").trim().toLowerCase()
 
+  if (normalizedRole === "merchant") {
+    return "Akun ini terdaftar sebagai merchant. Gunakan portal merchant untuk melanjutkan."
+  }
+
   if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
     return "Akun Google ini terdaftar sebagai finance. Gunakan portal finance untuk melanjutkan."
   }
@@ -59,7 +63,7 @@ export async function GET(request: Request) {
         return response
       }
 
-      if (profile.role === "customer" || profile.role === "merchant") {
+      if (profile.role === "customer") {
         const response = NextResponse.redirect(new URL(safeNext, origin))
         if (portal === "customer") {
           response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
