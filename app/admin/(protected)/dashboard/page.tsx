@@ -160,6 +160,8 @@ export default async function AdminDashboard({
   const isSuperadmin = currentProfile?.role === "superadmin"
   const isOperationsManager = currentProfile?.role === "operations_manager"
   const showOperationsManagerView = isOperationsManager || (isSuperadmin && params.view === "operations-manager")
+  const reportReturnTo =
+    portal === "superadmin" && params.view === "operations-manager" ? "/superadmin/operations-manager" : fallbackDashboardPath
 
   const [merchantResult, packageResult, bookingResult, webVitalsResult] = await Promise.all([
     adminSupabase
@@ -811,6 +813,7 @@ export default async function AdminDashboard({
                 Isi laporan secara lengkap agar superadmin bisa membaca kondisi antrean, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
               </p>
               <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
+                <input type="hidden" name="return_to" value={reportReturnTo} />
                 <input
                   type="hidden"
                   name="metric_snapshot"

@@ -4,8 +4,13 @@ import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
-function backToDashboard(message: string, type: "success" | "error"): never {
-  redirect(`/finance/dashboard?${type}=${encodeURIComponent(message)}`)
+function resolveReturnTo(formData: FormData, fallbackPath: string) {
+  const returnTo = String(formData.get("return_to") || "").trim()
+  return returnTo.startsWith("/") ? returnTo : fallbackPath
+}
+
+function backToDashboard(path: string, message: string, type: "success" | "error"): never {
+  redirect(`${path}?${type}=${encodeURIComponent(message)}`)
 }
 
 function readText(formData: FormData, key: string) {
@@ -13,18 +18,19 @@ function readText(formData: FormData, key: string) {
 }
 
 export async function submitFinanceManagerReport(formData: FormData) {
-  const supabase = await createClient("finance")
+  const returnTo = resolveReturnTo(formData, "/finance/dashboard")
+  const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/finance/login")
+    redirect(returnTo.startsWith("/superadmin") ? "/superadmin/login" : "/finance/login")
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (!profile || !["finance_manager", "superadmin"].includes(profile.role || "")) {
-    backToDashboard("Hanya finance manager atau superadmin yang dapat mengirim laporan finance.", "error")
+    backToDashboard(returnTo, "Hanya finance manager atau superadmin yang dapat mengirim laporan finance.", "error")
   }
 
   const title = readText(formData, "title")
@@ -57,7 +63,7 @@ export async function submitFinanceManagerReport(formData: FormData) {
     !financialRisks ||
     !supportNeeded
   ) {
-    backToDashboard("Judul, ringkasan eksekutif, transaksi customer, status dana customer, queue payout, aging, posisi keuangan, kewajiban merchant, risiko, dan kebutuhan keputusan wajib diisi.", "error")
+    backToDashboard(returnTo, "Judul, ringkasan eksekutif, transaksi customer, status dana customer, queue payout, aging, posisi keuangan, kewajiban merchant, risiko, dan kebutuhan keputusan wajib diisi.", "error")
   }
 
   let metricSnapshot: Record<string, unknown> = {}
@@ -96,8 +102,8 @@ export async function submitFinanceManagerReport(formData: FormData) {
   })
 
   if (error) {
-    backToDashboard(error.message, "error")
+    backToDashboard(returnTo, error.message, "error")
   }
 
-  backToDashboard("Laporan finance manager berhasil dikirim ke superadmin.", "success")
+  backToDashboard(returnTo, "Laporan finance manager berhasil dikirim ke superadmin.", "success")
 }

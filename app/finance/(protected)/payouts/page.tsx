@@ -494,12 +494,12 @@ export default async function FinancePayoutsPage({
                           ) : null}
                           {!canApprovePayout && canExecuteTransferFlow ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                              Role finance di workspace ini bertindak sebagai maker transfer. Persetujuan dan penolakan payout hanya dijalankan finance manager atau superadmin.
+                              Role finance di workspace ini bertindak sebagai maker transfer. Persetujuan dan penolakan payout hanya dijalankan finance manager.
                             </div>
                           ) : null}
                           {isFinanceManager ? (
                             <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                              Finance Manager memegang persetujuan / penolakan. Perubahan ke tahap diproses dan dibayar tetap dijalankan finance eksekusi atau superadmin.
+                              Finance Manager memegang persetujuan / penolakan. Perubahan ke tahap diproses dan dibayar tetap dijalankan finance eksekusi.
                             </div>
                           ) : null}
                           {!isFinal &&

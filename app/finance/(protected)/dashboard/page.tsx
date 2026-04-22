@@ -90,6 +90,8 @@ export default async function FinanceDashboardPage({
   const isSuperadmin = currentProfile?.role === "superadmin"
   const canManageFinanceSettings = isFinanceManager || isSuperadmin
   const showFinanceManagerView = isFinanceManager || (isSuperadmin && params.view === "finance-manager")
+  const reportReturnTo =
+    portal === "superadmin" && params.view === "finance-manager" ? "/superadmin/finance-manager" : fallbackDashboardPath
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
@@ -576,6 +578,7 @@ export default async function FinanceDashboardPage({
                 Isi laporan finance secara lengkap agar superadmin bisa membaca kondisi payout, aging, posisi keuangan, risiko, dan kebutuhan keputusan tanpa mengejar detail tambahan.
               </p>
               <form action={submitFinanceManagerReport} className="mt-6 space-y-4">
+                <input type="hidden" name="return_to" value={reportReturnTo} />
                 <input
                   type="hidden"
                   name="metric_snapshot"

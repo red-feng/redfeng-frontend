@@ -763,7 +763,7 @@ export default async function FinanceRefundsPage({
 
                       {!canApproveRefund ? (
                         <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                          Persetujuan, penolakan, dan penutupan refund tetap dijalankan oleh finance manager atau superadmin.
+                          Persetujuan, penolakan, dan penutupan refund tetap dijalankan oleh finance manager.
                         </div>
                       ) : null}
                     </div>
