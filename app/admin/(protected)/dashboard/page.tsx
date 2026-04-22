@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { getRoleLabel } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -6,6 +7,8 @@ import { createClient } from "@/lib/supabase/server"
 import { submitOperationsManagerReport } from "./actions"
 import { createAdminAccount } from "@/app/admin/(protected)/team-accounts/actions"
 import { createFinanceAccount } from "@/app/finance/(protected)/team-accounts/finance-actions"
+
+type AdminWorkspacePortal = "admin" | "superadmin"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -122,19 +125,38 @@ function formatRelativeHours(value: string | null | undefined) {
 
 export default async function AdminDashboard({
   searchParams,
+  portal = "admin",
 }: {
   searchParams?: Promise<{ success?: string; error?: string; view?: string }>
+  portal?: AdminWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("admin")
+  const supabase = await createClient(portal)
   const params = (await searchParams) || {}
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const loginPath = portal === "superadmin" ? "/superadmin/login" : "/admin/login"
+  const fallbackDashboardPath = portal === "superadmin" ? "/superadmin/dashboard" : "/admin/dashboard"
+
+  if (!user) {
+    redirect(loginPath)
+  }
+
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null }
+
+  const canAccessDashboard =
+    portal === "superadmin"
+      ? currentProfile?.role === "superadmin"
+      : ["operations_manager", "superadmin"].includes(currentProfile?.role || "")
+
+  if (!canAccessDashboard) {
+    redirect(fallbackDashboardPath)
+  }
+
   const isSuperadmin = currentProfile?.role === "superadmin"
   const isOperationsManager = currentProfile?.role === "operations_manager"
   const showOperationsManagerView = isOperationsManager || (isSuperadmin && params.view === "operations-manager")

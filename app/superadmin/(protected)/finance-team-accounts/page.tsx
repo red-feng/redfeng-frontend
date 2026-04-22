@@ -5,5 +5,5 @@ export default async function SuperadminFinanceTeamAccountsPage({
 }: {
   searchParams: Promise<{ success?: string; error?: string }>
 }) {
-  return FinanceTeamAccountsPage({ searchParams })
+  return FinanceTeamAccountsPage({ searchParams, portal: "superadmin" })
 }

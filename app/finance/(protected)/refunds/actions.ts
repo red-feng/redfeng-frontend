@@ -70,7 +70,7 @@ async function ensureFinanceActor() {
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   const role = profile?.role || null
 
-  if (!profile || (!isFinancePortalRole(role) && role !== "superadmin")) {
+  if (!profile || !isFinancePortalRole(role)) {
     redirect("/finance/login")
   }
 
@@ -256,7 +256,7 @@ async function applyGatewayExecution(params: {
 
 function canMoveToStatus(role: string | null, status: RefundStatus) {
   if (status === "refund_under_review") {
-    return isFinancePortalRole(role) || role === "superadmin"
+    return isFinancePortalRole(role)
   }
 
   if (status === "refund_approved" || status === "refund_rejected" || status === "refund_closed") {

@@ -61,7 +61,7 @@ export async function updatePayoutStatus(formData: FormData) {
   }
 
   if ((nextStatus === "processing" || nextStatus === "paid") && !isFinanceExecutionRole(actor.role)) {
-    backToPayouts("Hanya finance eksekusi atau superadmin yang boleh menandai processing / paid", "error")
+    backToPayouts("Hanya finance eksekusi yang boleh menandai processing / paid", "error")
   }
 
   if (nextStatus === "rejected" && !note) {

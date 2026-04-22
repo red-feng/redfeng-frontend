@@ -1,7 +1,10 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { submitFinanceManagerReport } from "./actions"
+
+type FinanceWorkspacePortal = "finance" | "superadmin"
 
 function formatMoney(value: number) {
   return `Rp ${value.toLocaleString("id-ID")}`
@@ -51,18 +54,38 @@ type ManagerReportRow = {
 
 export default async function FinanceDashboardPage({
   searchParams,
+  portal = "finance",
 }: {
   searchParams?: Promise<{ success?: string; error?: string; view?: string }>
+  portal?: FinanceWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("finance")
+  const supabase = await createClient(portal)
   const params = (await searchParams) || {}
   const {
     data: { user },
   } = await supabase.auth.getUser()
+
+  const loginPath = portal === "superadmin" ? "/superadmin/login" : "/finance/login"
+  const fallbackDashboardPath = portal === "superadmin" ? "/superadmin/dashboard" : "/finance/dashboard"
+
+  if (!user) {
+    redirect(loginPath)
+  }
+
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null }
+
+  const canAccessDashboard =
+    portal === "superadmin"
+      ? currentProfile?.role === "superadmin"
+      : ["finance", "finance_manager"].includes(currentProfile?.role || "")
+
+  if (!canAccessDashboard) {
+    redirect(fallbackDashboardPath)
+  }
+
   const isFinanceManager = currentProfile?.role === "finance_manager"
   const isSuperadmin = currentProfile?.role === "superadmin"
   const canManageFinanceSettings = isFinanceManager || isSuperadmin

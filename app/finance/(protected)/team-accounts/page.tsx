@@ -11,20 +11,26 @@ import {
 } from "./finance-actions"
 
 type SearchParams = Promise<{ success?: string; error?: string }>
+type FinanceTeamAccountsPortal = "finance" | "superadmin"
 
 export default async function FinanceTeamAccountsPage({
   searchParams,
+  portal = "finance",
 }: {
   searchParams: SearchParams
+  portal?: FinanceTeamAccountsPortal
 }) {
   const params = await searchParams
-  const supabase = await createClient("finance")
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const loginPath = portal === "superadmin" ? "/superadmin/login" : "/finance/login"
+  const fallbackDashboardPath = portal === "superadmin" ? "/superadmin/dashboard" : "/finance/dashboard"
+
   if (!user) {
-    redirect("/finance/login")
+    redirect(loginPath)
   }
 
   const { data: currentProfile } = await supabase
@@ -33,12 +39,18 @@ export default async function FinanceTeamAccountsPage({
     .eq("id", user.id)
     .single()
 
-  if (!currentProfile || !["finance_manager", "superadmin"].includes(currentProfile.role || "")) {
-    redirect("/finance/dashboard")
+  const canAccessPage =
+    portal === "superadmin"
+      ? currentProfile?.role === "superadmin"
+      : ["finance_manager", "superadmin"].includes(currentProfile?.role || "")
+
+  if (!canAccessPage) {
+    redirect(fallbackDashboardPath)
   }
 
+  const resolvedRole = currentProfile?.role || ""
   const adminSupabase = createAdminClient()
-  const isSuperadmin = currentProfile.role === "superadmin"
+  const isSuperadmin = resolvedRole === "superadmin"
   const basePath = isSuperadmin ? "/superadmin/finance-team-accounts" : "/finance/team-accounts"
   const backHref = isSuperadmin ? "/superadmin/dashboard" : "/finance/dashboard"
 

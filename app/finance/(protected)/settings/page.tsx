@@ -35,7 +35,7 @@ export default async function FinanceSettingsPage({
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
-  const canEditSettings = ["finance_manager", "superadmin"].includes(currentProfile?.role || "")
+  const canEditSettings = currentProfile?.role === "finance_manager"
   const settings = await getFinanceSettings(
     adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0],
   )
@@ -163,7 +163,7 @@ export default async function FinanceSettingsPage({
               </button>
             ) : (
               <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
-                Finance Settings dimiliki finance manager. Tim finance eksekusi tidak mengubah parameter ini, dan superadmin tetap memegang hak override.
+                Finance Settings dimiliki finance manager. Tim finance eksekusi tidak mengubah parameter ini dari portal finance.
               </div>
             )}
           </form>

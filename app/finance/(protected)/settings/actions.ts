@@ -17,7 +17,7 @@ async function ensureFinance() {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["finance_manager", "superadmin"].includes(profile.role || "")) {
+  if (!profile || profile.role !== "finance_manager") {
     redirect("/finance/login")
   }
 }

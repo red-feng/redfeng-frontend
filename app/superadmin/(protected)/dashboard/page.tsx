@@ -5,5 +5,5 @@ export default async function SuperadminDashboardPage({
 }: {
   searchParams?: Promise<{ success?: string; error?: string; view?: string }>
 }) {
-  return AdminDashboardPage({ searchParams })
+  return AdminDashboardPage({ searchParams, portal: "superadmin" })
 }
