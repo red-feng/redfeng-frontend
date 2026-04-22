@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
-import { getRoleLabel } from "@/lib/internal-roles"
+import { canAccessInternalPortal, getInternalPortalHomePath, getRoleLabel } from "@/lib/internal-roles"
+import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-role-lock"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { submitOperationsManagerReport } from "./actions"
@@ -148,13 +149,25 @@ export default async function AdminDashboard({
     ? await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     : { data: null }
 
+  const normalizedRole = String(currentProfile?.role || "").trim().toLowerCase()
   const canAccessDashboard =
     portal === "superadmin"
-      ? currentProfile?.role === "superadmin"
-      : ["operations_manager", "superadmin"].includes(currentProfile?.role || "")
+      ? normalizedRole === "superadmin"
+      : ["admin", "operations_manager", "superadmin"].includes(normalizedRole)
 
   if (!canAccessDashboard) {
-    redirect(fallbackDashboardPath)
+    const redirectPath =
+      normalizedRole === "superadmin"
+        ? getInternalPortalHomePath("superadmin")
+        : canAccessInternalPortal("admin", normalizedRole)
+          ? getInternalPortalHomePath("admin")
+          : getPublicAccountHomePath(resolvePublicAccountRole(normalizedRole))
+
+    if (redirectPath === fallbackDashboardPath) {
+      redirect(loginPath)
+    }
+
+    redirect(redirectPath)
   }
 
   const isSuperadmin = currentProfile?.role === "superadmin"
