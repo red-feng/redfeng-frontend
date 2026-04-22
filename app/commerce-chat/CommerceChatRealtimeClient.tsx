@@ -214,6 +214,10 @@ function buildClientMessageId() {
   return `msg-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
+function getCommerceMessageStableKey(message: Pick<CommerceChatMessageItem, "id" | "client_message_id">) {
+  return message.client_message_id || message.id
+}
+
 function renderCommerceSystemMessageCard(
   message: CommerceChatMessageItem,
   activeThread: CommerceChatThreadItem | null,
@@ -493,7 +497,9 @@ export default function CommerceChatRealtimeClient({
   const activeThread = threads.find((thread) => thread.id === activeThreadId) || null
   const activeMessages = useMemo(() => messagesByThread[activeThreadId] || [], [activeThreadId, messagesByThread])
   const activeMessagesLength = activeMessages.length
-  const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
+  const activeLastMessageId = activeMessages[activeMessagesLength - 1]
+    ? getCommerceMessageStableKey(activeMessages[activeMessagesLength - 1])
+    : ""
   const activeHasMore = Boolean(hasMoreByThread[activeThreadId])
   const activeLoadingOlder = Boolean(loadingOlderByThread[activeThreadId])
   const activeIsNearBottom = activeThreadId ? (threadNearBottomByIdRef.current.get(activeThreadId) ?? true) : true
@@ -511,7 +517,7 @@ export default function CommerceChatRealtimeClient({
       return message.created_at > lastReadAt
     })
 
-    return firstUnreadMessage?.id || ""
+    return firstUnreadMessage ? getCommerceMessageStableKey(firstUnreadMessage) : ""
   }, [activeMessages, activeThread])
   const filteredThreads = useMemo(() => {
     const needle = threadSearch.trim().toLowerCase()
@@ -1174,7 +1180,7 @@ export default function CommerceChatRealtimeClient({
 
   useEffect(() => {
     activeMessages.forEach((message, index) => {
-      const messageKey = `${activeThreadId}:${message.id}`
+      const messageKey = `${activeThreadId}:${getCommerceMessageStableKey(message)}`
       if (animatedMessageKeysRef.current.has(messageKey)) return
       const element = messageItemRefs.current.get(messageKey)
       if (!element) return
@@ -1754,7 +1760,8 @@ export default function CommerceChatRealtimeClient({
                   </div>
                 ) : (
                   activeMessages.map((message) => {
-                  const isFirstUnreadMessage = message.id === firstUnreadMessageId
+                  const messageStableKey = getCommerceMessageStableKey(message)
+                  const isFirstUnreadMessage = messageStableKey === firstUnreadMessageId
                   const mine = message.sender_user_id === userId
                   const uploadProgress =
                     message.client_message_id ? uploadProgressByClientMessageId[message.client_message_id] : undefined
@@ -1769,7 +1776,7 @@ export default function CommerceChatRealtimeClient({
                   const isSystemCard = message.sender_role === "system"
 
                   return (
-                    <div key={message.id}>
+                    <div key={messageStableKey}>
                       {isFirstUnreadMessage ? (
                         <div className="sticky top-3 z-[5] mb-3 flex justify-center">
                           <span className="rounded-full border border-emerald-200 bg-white/95 px-3 py-1 text-[11px] font-semibold text-emerald-700 shadow-[0_8px_20px_rgba(15,23,42,0.08)] backdrop-blur">
@@ -1778,7 +1785,7 @@ export default function CommerceChatRealtimeClient({
                         </div>
                       ) : null}
                       <div
-                        ref={(element) => setMessageItemRef(`${activeThreadId}:${message.id}`, element)}
+                        ref={(element) => setMessageItemRef(`${activeThreadId}:${messageStableKey}`, element)}
                         className={`flex ${
                           message.sender_role === "system" ? "justify-start" : mine ? "justify-end" : "justify-start"
                         }`}
