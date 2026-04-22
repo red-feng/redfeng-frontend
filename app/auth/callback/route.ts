@@ -25,6 +25,42 @@ function getCustomerPortalRoleError(role: string | null | undefined) {
   return "Portal ini khusus untuk customer."
 }
 
+async function repairDeletedMerchantRole(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  role: string | null | undefined,
+) {
+  if (String(role || "").trim().toLowerCase() !== "merchant") {
+    return false
+  }
+
+  const { data: merchant } = await supabase
+    .from("merchants")
+    .select("id")
+    .eq("user_id", userId)
+    .maybeSingle()
+
+  if (merchant?.id) {
+    return false
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ role: "customer" })
+    .eq("id", userId)
+    .eq("role", "merchant")
+
+  if (error) {
+    console.error("[auth/callback] failed to repair stale merchant role", {
+      userId,
+      error: error.message,
+    })
+    return false
+  }
+
+  return true
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
@@ -63,7 +99,10 @@ export async function GET(request: Request) {
         return response
       }
 
-      if (profile.role === "customer") {
+      const repairedDeletedMerchant = await repairDeletedMerchantRole(supabase, user.id, profile.role)
+      const effectiveRole = repairedDeletedMerchant ? "customer" : profile.role
+
+      if (effectiveRole === "customer") {
         const response = NextResponse.redirect(new URL(safeNext, origin))
         if (portal === "customer") {
           response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
@@ -75,16 +114,16 @@ export async function GET(request: Request) {
         return response
       }
 
-      if (isAdminPortalRole(profile.role) || isFinancePortalRole(profile.role) || profile.role === "superadmin") {
+      if (isAdminPortalRole(effectiveRole) || isFinancePortalRole(effectiveRole) || effectiveRole === "superadmin") {
         await supabase.auth.signOut()
         return NextResponse.redirect(
-          new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(profile.role))}`, origin),
+          new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(effectiveRole))}`, origin),
         )
       }
 
       await supabase.auth.signOut()
       return NextResponse.redirect(
-        new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(profile.role))}`, origin),
+        new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(effectiveRole))}`, origin),
       )
     }
   }

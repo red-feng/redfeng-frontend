@@ -38,14 +38,35 @@ export default async function CustomerLayout({
       id: user.id,
       role: "customer",
     })
+  } else if (profile.role === "merchant") {
+    const { data: merchant } = await supabase
+      .from("merchants")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (!merchant?.id) {
+      const { error: repairError } = await supabase
+        .from("profiles")
+        .update({ role: "customer" })
+        .eq("id", user.id)
+        .eq("role", "merchant")
+
+      if (repairError) {
+        console.error("[customer/layout] failed to repair stale merchant role", {
+          userId: user.id,
+          error: repairError.message,
+        })
+      }
+    } else {
+      redirect("/merchant/dashboard")
+    }
   } else if (profile.role === "superadmin") {
     redirect("/superadmin/login")
   } else if (isAdminPortalRole(profile.role)) {
     redirect("/admin/login")
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
-  } else if (profile.role === "merchant") {
-    redirect("/merchant/dashboard")
   } else if (profile.role !== "customer") {
     redirect("/login")
   }
