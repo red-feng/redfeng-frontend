@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
 import { createClient } from "@/lib/supabase/client"
 
@@ -34,12 +34,21 @@ type SnapshotPayload = {
   rooms?: MerchantSupportRoomItem[]
   activeRoomId?: string
   messages?: MerchantSupportMessage[]
+  hasMore?: boolean
+  oldestCreatedAt?: string | null
   unreadCount?: number
   error?: string
 }
 
 type SendPayload = {
   message?: MerchantSupportMessage
+  error?: string
+}
+
+type MessagesPagePayload = {
+  messages?: MerchantSupportMessage[]
+  hasMore?: boolean
+  oldestCreatedAt?: string | null
   error?: string
 }
 
@@ -74,23 +83,60 @@ function hasUnread(room: MerchantSupportRoomItem) {
   return room.lastMessageAt > room.adminLastReadAt
 }
 
+function sortMessages(messages: MerchantSupportMessage[]) {
+  return [...messages].sort((left, right) => {
+    const leftDate = left.created_at || ""
+    const rightDate = right.created_at || ""
+    if (leftDate === rightDate) return left.id.localeCompare(right.id)
+    return leftDate.localeCompare(rightDate)
+  })
+}
+
+function mergeMessages(existingMessages: MerchantSupportMessage[], snapshotMessages: MerchantSupportMessage[]) {
+  const mergedMap = new Map<string, MerchantSupportMessage>()
+  for (const message of existingMessages) {
+    mergedMap.set(message.id, message)
+  }
+  for (const message of snapshotMessages) {
+    mergedMap.set(message.id, message)
+  }
+  return sortMessages([...mergedMap.values()])
+}
+
 export default function MerchantSupportInboxClient({
   portal,
   initialRooms,
   initialMessages,
+  initialHasMore,
+  initialOldestCreatedAt,
   initialActiveRoomId,
 }: {
   portal: "admin" | "superadmin"
   initialRooms: MerchantSupportRoomItem[]
   initialMessages: MerchantSupportMessage[]
+  initialHasMore: boolean
+  initialOldestCreatedAt: string | null
   initialActiveRoomId: string
 }) {
   const supabaseRef = useRef(createClient(portal))
   const supabase = supabaseRef.current
+  const messageTopSentinelRef = useRef<HTMLDivElement | null>(null)
+  const previousRoomRef = useRef("")
+  const previousLastMessageIdRef = useRef("")
   const [rooms, setRooms] = useState(initialRooms)
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, MerchantSupportMessage[]>>(
     initialActiveRoomId ? { [initialActiveRoomId]: initialMessages } : {},
   )
+  const [loadedRoomIds, setLoadedRoomIds] = useState<Record<string, true>>(
+    initialActiveRoomId ? { [initialActiveRoomId]: true } : {},
+  )
+  const [hasMoreByRoom, setHasMoreByRoom] = useState<Record<string, boolean>>(
+    initialActiveRoomId ? { [initialActiveRoomId]: initialHasMore } : {},
+  )
+  const [oldestByRoom, setOldestByRoom] = useState<Record<string, string | null>>(
+    initialActiveRoomId ? { [initialActiveRoomId]: initialOldestCreatedAt } : {},
+  )
+  const [loadingOlderByRoom, setLoadingOlderByRoom] = useState<Record<string, boolean>>({})
   const [activeRoomId, setActiveRoomId] = useState(initialActiveRoomId)
   const [draft, setDraft] = useState("")
   const [loading, setLoading] = useState(false)
@@ -101,6 +147,10 @@ export default function MerchantSupportInboxClient({
 
   const activeRoom = useMemo(() => rooms.find((room) => room.id === activeRoomId) || null, [activeRoomId, rooms])
   const activeMessages = useMemo(() => messagesByRoom[activeRoomId] || [], [activeRoomId, messagesByRoom])
+  const activeMessagesLength = activeMessages.length
+  const activeLastMessageId = activeMessages[activeMessagesLength - 1]?.id || ""
+  const activeHasMore = Boolean(hasMoreByRoom[activeRoomId])
+  const activeLoadingOlder = Boolean(loadingOlderByRoom[activeRoomId])
   const unreadCount = useMemo(() => rooms.filter((room) => hasUnread(room)).length, [rooms])
   const merchantProfileHref = (merchantId: string) =>
     portal === "superadmin" ? `/superadmin/merchants/${encodeURIComponent(merchantId)}` : `/admin/merchants/${encodeURIComponent(merchantId)}`
@@ -121,11 +171,110 @@ export default function MerchantSupportInboxClient({
     [activeRoomId],
   )
 
+  const fetchMessagesPage = useCallback(async (roomId: string, beforeCreatedAt?: string | null) => {
+    const search = new URLSearchParams({ roomId })
+    if (beforeCreatedAt) {
+      search.set("beforeCreatedAt", beforeCreatedAt)
+    }
+    const response = await fetch(`${MERCHANT_SUPPORT_ENGINE.adminMessagesEndpoint}?${search.toString()}`, { cache: "no-store" })
+    const payload = (await response.json().catch(() => null)) as MessagesPagePayload | null
+    if (!response.ok) {
+      throw new Error(payload?.error || "Gagal memuat pesan merchant support.")
+    }
+    return payload
+  }, [])
+
+  const fetchLatestMessages = useCallback(async (roomId: string) => {
+    const payload = await fetchMessagesPage(roomId)
+    const nextMessages = sortMessages(payload?.messages || [])
+    setMessagesByRoom((current) => ({ ...current, [roomId]: nextMessages }))
+    setLoadedRoomIds((current) => ({ ...current, [roomId]: true }))
+    setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload?.hasMore) }))
+    setOldestByRoom((current) => ({
+      ...current,
+      [roomId]: payload?.oldestCreatedAt || nextMessages[0]?.created_at || null,
+    }))
+  }, [fetchMessagesPage])
+
+  const loadOlderMessages = useCallback(async (roomId: string) => {
+    if (!roomId || loadingOlderByRoom[roomId] || !hasMoreByRoom[roomId]) return
+    const beforeCreatedAt = oldestByRoom[roomId]
+    if (!beforeCreatedAt) return
+
+    const container = threadRef.current
+    const previousHeight = container?.scrollHeight || 0
+    const previousTop = container?.scrollTop || 0
+
+    setLoadingOlderByRoom((current) => ({ ...current, [roomId]: true }))
+    try {
+      const payload = await fetchMessagesPage(roomId, beforeCreatedAt)
+      const olderMessages = sortMessages(payload?.messages || [])
+      if (olderMessages.length > 0) {
+        setMessagesByRoom((current) => {
+          const existing = current[roomId] || []
+          return {
+            ...current,
+            [roomId]: mergeMessages(olderMessages, existing),
+          }
+        })
+
+        requestAnimationFrame(() => {
+          const nextContainer = threadRef.current
+          if (!nextContainer) return
+          const nextHeight = nextContainer.scrollHeight
+          nextContainer.scrollTop = Math.max(0, nextHeight - previousHeight + previousTop)
+        })
+      }
+
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: Boolean(payload?.hasMore) }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]: payload?.oldestCreatedAt || olderMessages[0]?.created_at || current[roomId] || null,
+      }))
+    } catch {
+      setHasMoreByRoom((current) => ({ ...current, [roomId]: false }))
+    } finally {
+      setLoadingOlderByRoom((current) => ({ ...current, [roomId]: false }))
+    }
+  }, [fetchMessagesPage, hasMoreByRoom, loadingOlderByRoom, oldestByRoom])
+
   useEffect(() => {
     const container = threadRef.current
     if (!container) return
-    container.scrollTop = container.scrollHeight
-  }, [activeMessages, activeRoomId])
+
+    const roomChanged = previousRoomRef.current !== activeRoomId
+    const hasNewLatestMessage =
+      Boolean(activeLastMessageId) && previousLastMessageIdRef.current !== activeLastMessageId
+
+    if (roomChanged || hasNewLatestMessage) {
+      container.scrollTop = container.scrollHeight
+    }
+
+    previousRoomRef.current = activeRoomId
+    previousLastMessageIdRef.current = activeLastMessageId
+  }, [activeLastMessageId, activeMessagesLength, activeRoomId])
+
+  useEffect(() => {
+    const viewport = threadRef.current
+    const sentinel = messageTopSentinelRef.current
+    if (!viewport || !sentinel || !activeRoomId || !activeHasMore || activeLoadingOlder) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0]
+        if (!firstEntry?.isIntersecting) return
+        void loadOlderMessages(activeRoomId)
+      },
+      {
+        root: viewport,
+        rootMargin: "140px 0px 0px 0px",
+        threshold: 0.01,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [activeHasMore, activeLoadingOlder, activeMessagesLength, activeRoomId, loadOlderMessages])
 
   useEffect(() => {
     let cancelled = false
@@ -142,7 +291,20 @@ export default function MerchantSupportInboxClient({
         if (nextActiveRoomId) {
           setMessagesByRoom((current) => ({
             ...current,
-            [nextActiveRoomId]: payload?.messages || [],
+            [nextActiveRoomId]: mergeMessages(current[nextActiveRoomId] || [], payload?.messages || []),
+          }))
+          setLoadedRoomIds((current) => ({ ...current, [nextActiveRoomId]: true }))
+          setHasMoreByRoom((current) => ({
+            ...current,
+            [nextActiveRoomId]: typeof payload?.hasMore === "boolean" ? payload.hasMore : current[nextActiveRoomId] || false,
+          }))
+          setOldestByRoom((current) => ({
+            ...current,
+            [nextActiveRoomId]:
+              payload?.oldestCreatedAt ||
+              current[nextActiveRoomId] ||
+              payload?.messages?.[0]?.created_at ||
+              null,
           }))
         }
         setErrorMessage("")
@@ -188,7 +350,20 @@ export default function MerchantSupportInboxClient({
             setActiveRoomId(nextActiveRoomId)
             setMessagesByRoom((current) => ({
               ...current,
-              [nextActiveRoomId]: payload?.messages || [],
+              [nextActiveRoomId]: mergeMessages(current[nextActiveRoomId] || [], payload?.messages || []),
+            }))
+            setLoadedRoomIds((current) => ({ ...current, [nextActiveRoomId]: true }))
+            setHasMoreByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]: typeof payload?.hasMore === "boolean" ? payload.hasMore : current[nextActiveRoomId] || false,
+            }))
+            setOldestByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]:
+                payload?.oldestCreatedAt ||
+                current[nextActiveRoomId] ||
+                payload?.messages?.[0]?.created_at ||
+                null,
             }))
           }
           setErrorMessage("")
@@ -211,7 +386,20 @@ export default function MerchantSupportInboxClient({
             setActiveRoomId(nextActiveRoomId)
             setMessagesByRoom((current) => ({
               ...current,
-              [nextActiveRoomId]: payload?.messages || [],
+              [nextActiveRoomId]: mergeMessages(current[nextActiveRoomId] || [], payload?.messages || []),
+            }))
+            setLoadedRoomIds((current) => ({ ...current, [nextActiveRoomId]: true }))
+            setHasMoreByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]: typeof payload?.hasMore === "boolean" ? payload.hasMore : current[nextActiveRoomId] || false,
+            }))
+            setOldestByRoom((current) => ({
+              ...current,
+              [nextActiveRoomId]:
+                payload?.oldestCreatedAt ||
+                current[nextActiveRoomId] ||
+                payload?.messages?.[0]?.created_at ||
+                null,
             }))
           }
           setErrorMessage("")
@@ -240,11 +428,27 @@ export default function MerchantSupportInboxClient({
     setActiveRoomId(roomId)
     try {
       setLoading(true)
+      if (!loadedRoomIds[roomId]) {
+        await fetchLatestMessages(roomId)
+      }
       const payload = await fetchSnapshot(roomId)
       setRooms(payload?.rooms || [])
       setMessagesByRoom((current) => ({
         ...current,
-        [roomId]: payload?.messages || [],
+        [roomId]: mergeMessages(current[roomId] || [], payload?.messages || []),
+      }))
+      setLoadedRoomIds((current) => ({ ...current, [roomId]: true }))
+      setHasMoreByRoom((current) => ({
+        ...current,
+        [roomId]: typeof payload?.hasMore === "boolean" ? payload.hasMore : current[roomId] || false,
+      }))
+      setOldestByRoom((current) => ({
+        ...current,
+        [roomId]:
+          payload?.oldestCreatedAt ||
+          current[roomId] ||
+          payload?.messages?.[0]?.created_at ||
+          null,
       }))
       setErrorMessage("")
     } catch (error) {
@@ -274,7 +478,7 @@ export default function MerchantSupportInboxClient({
       }
       setMessagesByRoom((current) => ({
         ...current,
-        [activeRoomId]: [...(current[activeRoomId] || []), payload.message as MerchantSupportMessage],
+        [activeRoomId]: mergeMessages(current[activeRoomId] || [], [payload.message as MerchantSupportMessage]),
       }))
       setRooms((current) =>
         current.map((room) =>
@@ -393,6 +597,28 @@ export default function MerchantSupportInboxClient({
             ref={threadRef}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 bg-[#efeae2] px-4 py-4"
           >
+            <div ref={messageTopSentinelRef} aria-hidden="true" className="h-1 w-full" />
+            {activeRoom && activeHasMore && !activeLoadingOlder ? (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] text-orange-600">
+                  Geser ke atas, pesan lama akan dimuat otomatis...
+                </span>
+              </div>
+            ) : null}
+            {activeRoom && activeLoadingOlder ? (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                  Memuat pesan lama...
+                </span>
+              </div>
+            ) : null}
+            {activeRoom && !activeHasMore && activeMessages.length > 0 ? (
+              <div className="mb-2 flex justify-center">
+                <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">
+                  Awal percakapan
+                </span>
+              </div>
+            ) : null}
             {loading && activeMessages.length === 0 ? (
               <div className="rounded-[12px] bg-white px-4 py-3 text-sm text-slate-600 shadow-sm">Memuat percakapan merchant support...</div>
             ) : null}

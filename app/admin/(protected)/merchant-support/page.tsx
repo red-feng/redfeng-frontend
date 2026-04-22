@@ -2,7 +2,8 @@ import { redirect } from "next/navigation"
 import MerchantSupportInboxClient from "./MerchantSupportInboxClient"
 import {
   getAdminMerchantSupportAccessProfile,
-  loadMerchantSupportMessages,
+  loadMerchantSupportMessagesPage,
+  MERCHANT_SUPPORT_PAGE_SIZE,
   loadMerchantSupportRoomsForAdmin,
   markMerchantSupportRoomReadByAdmin,
 } from "@/lib/merchant-support/index"
@@ -44,7 +45,11 @@ export default async function AdminMerchantSupportPage({
     await markMerchantSupportRoomReadByAdmin(adminSupabase, activeRoomId)
   }
 
-  const initialMessages = activeRoomId ? await loadMerchantSupportMessages(adminSupabase, activeRoomId) : []
+  const initialPage = activeRoomId
+    ? await loadMerchantSupportMessagesPage(adminSupabase, activeRoomId, {
+        limit: MERCHANT_SUPPORT_PAGE_SIZE,
+      })
+    : { messages: [], hasMore: false, oldestCreatedAt: null as string | null }
   const patchedRooms = rooms.map((room) =>
     room.id === activeRoomId ? { ...room, adminLastReadAt: new Date().toISOString() } : room,
   )
@@ -68,7 +73,9 @@ export default async function AdminMerchantSupportPage({
           <MerchantSupportInboxClient
             portal={portal}
             initialRooms={patchedRooms}
-            initialMessages={initialMessages}
+            initialMessages={initialPage.messages}
+            initialHasMore={initialPage.hasMore}
+            initialOldestCreatedAt={initialPage.oldestCreatedAt}
             initialActiveRoomId={activeRoomId}
           />
         </div>

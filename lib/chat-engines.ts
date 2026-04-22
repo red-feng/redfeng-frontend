@@ -32,6 +32,7 @@ export const MERCHANT_SUPPORT_ENGINE = Object.freeze({
   adminUnreadCountEndpoint: "/api/admin/merchant-support/unread-count",
   merchantRoomEndpoint: "/api/merchant-support/room",
   adminSnapshotEndpoint: "/api/admin/merchant-support/snapshot",
+  adminMessagesEndpoint: "/api/admin/merchant-support/messages",
   merchantSendEndpoint: "/api/merchant-support/send",
   adminSendEndpoint: "/api/admin/merchant-support/send",
   realtimeChannelPrefix: "merchant-support-live",

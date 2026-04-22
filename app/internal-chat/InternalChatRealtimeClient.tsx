@@ -104,6 +104,7 @@ export default function InternalChatRealtimeClient({
   const supabaseRef = useRef(createClient())
   const supabase = supabaseRef.current
   const threadRef = useRef<HTMLDivElement | null>(null)
+  const messageTopSentinelRef = useRef<HTMLDivElement | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const previousRoomRef = useRef("")
   const previousLastMessageIdRef = useRef("")
@@ -284,6 +285,28 @@ export default function InternalChatRealtimeClient({
     previousRoomRef.current = activeRoomId
     previousLastMessageIdRef.current = activeLastMessageId
   }, [activeLastMessageId, activeRoomId, activeMessagesLength])
+
+  useEffect(() => {
+    const viewport = threadRef.current
+    const sentinel = messageTopSentinelRef.current
+    if (!viewport || !sentinel || !activeRoomId || !activeHasMore || activeLoadingOlder) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const firstEntry = entries[0]
+        if (!firstEntry?.isIntersecting) return
+        void loadOlderMessages(activeRoomId)
+      },
+      {
+        root: viewport,
+        rootMargin: "140px 0px 0px 0px",
+        threshold: 0.01,
+      },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [activeHasMore, activeLoadingOlder, activeMessagesLength, activeRoomId, loadOlderMessages])
 
   useEffect(() => {
     const channel = supabase.channel(`${INTERNAL_CHAT_ENGINE.realtimeChannelPrefix}:${userId}`)
@@ -534,12 +557,6 @@ export default function InternalChatRealtimeClient({
     }
   }
 
-  function handleThreadScroll(event: React.UIEvent<HTMLDivElement>) {
-    if (!activeRoomId || !activeHasMore || activeLoadingOlder) return
-    if (event.currentTarget.scrollTop > 80) return
-    void loadOlderMessages(activeRoomId)
-  }
-
   const realtimeBadge =
     realtimeStatus === "live"
       ? { label: "Live", className: "border-emerald-200 bg-emerald-50 text-emerald-700" }
@@ -640,9 +657,9 @@ export default function InternalChatRealtimeClient({
 
           <div
             ref={threadRef}
-            onScroll={handleThreadScroll}
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-2 bg-[#efeae2] px-4 py-4"
           >
+            <div ref={messageTopSentinelRef} aria-hidden="true" className="h-1 w-full" />
             {activeRoom && activeLoadingOlder ? (
               <div className="mb-2 flex justify-center">
                 <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] text-slate-500">

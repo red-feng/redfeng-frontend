@@ -2,7 +2,8 @@ import { NextResponse } from "next/server"
 import {
   getAdminMerchantSupportAccessProfile,
   getMerchantSupportUnreadCountForAdmin,
-  loadMerchantSupportMessages,
+  loadMerchantSupportMessagesPage,
+  MERCHANT_SUPPORT_PAGE_SIZE,
   loadMerchantSupportRoomsForAdmin,
   markMerchantSupportRoomReadByAdmin,
 } from "@/lib/merchant-support/index"
@@ -35,7 +36,11 @@ export async function GET(request: Request) {
       await markMerchantSupportRoomReadByAdmin(adminSupabase, activeRoomId)
     }
 
-    const messages = activeRoomId ? await loadMerchantSupportMessages(adminSupabase, activeRoomId) : []
+    const page = activeRoomId
+      ? await loadMerchantSupportMessagesPage(adminSupabase, activeRoomId, {
+          limit: MERCHANT_SUPPORT_PAGE_SIZE,
+        })
+      : { messages: [], hasMore: false, oldestCreatedAt: null as string | null }
     const patchedRooms = rooms.map((room) =>
       room.id === activeRoomId ? { ...room, adminLastReadAt: new Date().toISOString() } : room,
     )
@@ -43,7 +48,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       rooms: patchedRooms,
       activeRoomId,
-      messages,
+      messages: page.messages,
+      hasMore: page.hasMore,
+      oldestCreatedAt: page.oldestCreatedAt,
       unreadCount: getMerchantSupportUnreadCountForAdmin(patchedRooms),
     })
   } catch (error) {

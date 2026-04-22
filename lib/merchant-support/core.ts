@@ -26,6 +26,8 @@ export type MerchantSupportMessage = {
   created_at: string | null
 }
 
+export const MERCHANT_SUPPORT_PAGE_SIZE = 50
+
 export type MerchantSupportRoomItem = {
   id: string
   merchantId: string
@@ -144,6 +146,58 @@ export async function loadMerchantSupportMessages(adminSupabase: AdminSupabase, 
     ...message,
     sender_role: message.sender_role as MerchantSupportMessage["sender_role"],
   }))
+}
+
+export async function loadMerchantSupportMessagesPage(
+  adminSupabase: AdminSupabase,
+  roomId: string,
+  options?: {
+    beforeCreatedAt?: string | null
+    limit?: number
+  },
+) {
+  const requestedLimit = Number(options?.limit || MERCHANT_SUPPORT_PAGE_SIZE)
+  const safeLimit = Number.isFinite(requestedLimit)
+    ? Math.min(Math.max(Math.trunc(requestedLimit), 10), 200)
+    : MERCHANT_SUPPORT_PAGE_SIZE
+
+  let query = adminSupabase
+    .from("merchant_support_messages")
+    .select("id, room_id, sender_user_id, sender_role, message, created_at")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(safeLimit + 1)
+
+  const beforeCreatedAt = String(options?.beforeCreatedAt || "").trim()
+  if (beforeCreatedAt) {
+    query = query.lt("created_at", beforeCreatedAt)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(error.message || "Gagal membaca pesan bantuan merchant.")
+  }
+
+  const descRows = ((data as MerchantSupportMessage[] | null) || []).map((message) => ({
+    ...message,
+    sender_role: message.sender_role as MerchantSupportMessage["sender_role"],
+  }))
+  const hasMore = descRows.length > safeLimit
+  const limited = hasMore ? descRows.slice(0, safeLimit) : descRows
+  const messages = [...limited].sort((left, right) => {
+    const leftDate = left.created_at || ""
+    const rightDate = right.created_at || ""
+    if (leftDate === rightDate) return left.id.localeCompare(right.id)
+    return leftDate.localeCompare(rightDate)
+  })
+
+  return {
+    messages,
+    hasMore,
+    oldestCreatedAt: messages[0]?.created_at || null,
+  }
 }
 
 export async function markMerchantSupportRoomReadByMerchant(
@@ -327,4 +381,3 @@ export async function markMerchantSupportRoomReadByAdmin(
     throw new Error(error.message || "Gagal update status baca admin support.")
   }
 }
-
