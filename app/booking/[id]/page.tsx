@@ -495,7 +495,7 @@ function formatIdr(value: number | null | undefined) {
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const t = getBookingPageCopy(locale)

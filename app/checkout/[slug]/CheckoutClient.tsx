@@ -246,7 +246,7 @@ export default function CheckoutClient({
   financeSettings: CheckoutFinanceSettings
   paymentPricing: CheckoutPaymentPricing
 }) {
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState(() => createClient("customer"))
   const router = useRouter()
   const t = dictionaries[locale].checkout
   const ui = checkoutUiCopy[locale]

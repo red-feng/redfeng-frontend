@@ -24,7 +24,7 @@ export default function PublicHeaderAccountControls({
 }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState(() => createClient("customer"))
   const t = dictionaries[locale].header
   const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
   const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"

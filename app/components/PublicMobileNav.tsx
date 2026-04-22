@@ -17,7 +17,7 @@ type PublicMobileNavProps = {
 
 export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   const pathname = usePathname()
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState(() => createClient("customer"))
   const [accountRole, setAccountRole] = useState<PublicAccountRole>("guest")
 
   useEffect(() => {

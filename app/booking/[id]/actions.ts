@@ -40,7 +40,7 @@ function canReviewCompletedTrip(booking: {
 }
 
 async function getOwnedBooking(bookingId: string) {
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const {
     data: { user },

@@ -60,7 +60,7 @@ export default async function CheckoutPage({
   const locale = await getCurrentLocale()
   const t = dictionaries[locale].checkout
   const supabase = createAdminClient()
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("customer")
   const {
     data: { user },
   } = await authSupabase.auth.getUser()

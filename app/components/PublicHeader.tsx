@@ -13,7 +13,7 @@ type PublicHeaderProps = {
 }
 
 export default async function PublicHeader({ locale, languageOptions, redirectSuperadminFromHome = false }: PublicHeaderProps) {
-  const supabase = await createClient()
+  const supabase = await createClient("customer")
   const {
     data: { user },
   } = await supabase.auth.getUser()

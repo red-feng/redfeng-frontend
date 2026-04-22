@@ -101,7 +101,7 @@ export default async function BookingParticipantsPage({
 }: BookingParticipantsPageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
-  const authSupabase = await createClient()
+  const authSupabase = await createClient("customer")
   const adminSupabase = createAdminClient()
   const locale = normalizeLocale(await getCurrentLocale())
   const t = participantsCopy[locale]
