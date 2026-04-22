@@ -13,6 +13,8 @@ import { addBookingAdminNote, reopenBookingAdminNote, resolveBookingAdminNote } 
 
 export const dynamic = "force-dynamic"
 
+type BookingPortal = "admin" | "superadmin"
+
 type BookingDetailRow = {
   id: string
   booking_code: string | null
@@ -390,6 +392,7 @@ function normalizeNotePinFilter(value: string | null | undefined): NotePinFilter
 }
 
 function buildBookingDetailHref(
+  portal: BookingPortal,
   bookingId: string,
   filters: {
     noteStatus?: NoteStatusFilter
@@ -399,6 +402,7 @@ function buildBookingDetailHref(
     error?: string
   },
 ) {
+  const basePath = portal === "superadmin" ? `/superadmin/bookings/${bookingId}` : `/admin/bookings/${bookingId}`
   const params = new URLSearchParams()
 
   if (filters.noteStatus && filters.noteStatus !== "all") params.set("note_status", filters.noteStatus)
@@ -408,12 +412,13 @@ function buildBookingDetailHref(
   if (filters.error) params.set("error", filters.error)
 
   const query = params.toString()
-  return query ? `/admin/bookings/${bookingId}?${query}` : `/admin/bookings/${bookingId}`
+  return query ? `${basePath}?${query}` : basePath
 }
 
 export default async function AdminBookingDetailPage({
   params,
   searchParams,
+  portal = "admin",
 }: {
   params: Promise<{ id: string }>
   searchParams?: Promise<{
@@ -423,11 +428,12 @@ export default async function AdminBookingDetailPage({
     note_type?: string
     note_pin?: string
   }>
+  portal?: BookingPortal
 }) {
   const { id } = await params
   const resolvedSearchParams = (await searchParams) || {}
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("admin")
+  const supabase = await createClient(portal)
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
@@ -436,6 +442,7 @@ export default async function AdminBookingDetailPage({
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
+  const bookingsPath = portal === "superadmin" ? "/superadmin/bookings" : "/admin/bookings"
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
@@ -501,9 +508,11 @@ export default async function AdminBookingDetailPage({
   const ready = canHandoffToFinance(booking)
   const operationalOwnerCue = getOperationalOwnerCue(booking, locale)
   const attentionReasons = deriveAttentionReasons(booking)
+  const auditLogHref = `${portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"}?target=booking&q=${encodeURIComponent(booking.id)}`
+  const merchantHref = merchant?.id ? (portal === "superadmin" ? `/superadmin/merchants/${merchant.id}` : `/admin/merchants/${merchant.id}`) : ""
+  const packageHref = pkg?.id ? (portal === "superadmin" ? `/superadmin/packages/${pkg.id}` : `/admin/packages/${pkg.id}`) : ""
   const productLabel = booking.package_id ? "Paket Tour" : "Pesawat"
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
-  const auditLogHref = `/admin/audit-log?target=booking&q=${encodeURIComponent(booking.id)}`
   const timeline = [
     {
       label: "Merchant Arrived",
@@ -582,7 +591,7 @@ export default async function AdminBookingDetailPage({
               </p>
             </div>
             <Link
-              href="/admin/bookings"
+              href={bookingsPath}
               className="inline-flex items-center justify-center rounded-[18px] border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
             >
               Kembali ke Booking Center
@@ -638,7 +647,7 @@ export default async function AdminBookingDetailPage({
 
             {merchant?.id ? (
               <Link
-                href={`/admin/merchants/${merchant.id}`}
+                href={merchantHref}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Merchant workspace</p>
@@ -655,7 +664,7 @@ export default async function AdminBookingDetailPage({
 
             {pkg?.id ? (
               <Link
-                href={`/admin/packages/${pkg.id}`}
+                href={packageHref}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Package detail</p>
@@ -691,7 +700,7 @@ export default async function AdminBookingDetailPage({
                 <p className="mt-2 text-sm font-medium text-slate-900">{pkg?.title || "-"}</p>
                 <p className="mt-2 text-sm text-slate-600">{[pkg?.city, pkg?.country].filter(Boolean).join(", ") || "-"}</p>
                 {pkg?.id ? (
-                  <Link href={`/admin/packages/${pkg.id}`} className="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
+                  <Link href={packageHref} className="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
                     Buka detail package
                   </Link>
                 ) : null}
@@ -702,7 +711,7 @@ export default async function AdminBookingDetailPage({
                 <p className="mt-2 text-sm text-slate-600">{merchant?.email || "-"}</p>
                 <p className="mt-2 text-sm text-slate-600">{[merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"}</p>
                 {merchant?.id ? (
-                  <Link href={`/admin/merchants/${merchant.id}`} className="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
+                  <Link href={merchantHref} className="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
                     Buka workspace merchant
                   </Link>
                 ) : null}
@@ -733,6 +742,7 @@ export default async function AdminBookingDetailPage({
             <div className="mt-6 flex flex-wrap gap-3">
               {canExecuteAdminOps ? (
                 <form action={handoffBookingToFinance}>
+                  <input type="hidden" name="portal" value={portal} />
                   <input type="hidden" name="booking_id" value={booking.id} />
                   <button
                     type="submit"
@@ -856,6 +866,7 @@ export default async function AdminBookingDetailPage({
             </p>
             {canExecuteAdminOps ? (
               <form action={addBookingAdminNote} className="mt-6 space-y-4">
+                <input type="hidden" name="portal" value={portal} />
                 <input type="hidden" name="booking_id" value={booking.id} />
                 <input type="hidden" name="note_status" value={noteStatusFilter} />
                 <input type="hidden" name="note_type_filter" value={noteTypeFilter} />
@@ -911,7 +922,7 @@ export default async function AdminBookingDetailPage({
                     return (
                       <Link
                         key={filter.value}
-                        href={buildBookingDetailHref(booking.id, {
+                        href={buildBookingDetailHref(portal, booking.id, {
                           noteStatus: filter.value,
                           noteType: noteTypeFilter,
                           notePin: notePinFilter,
@@ -939,7 +950,7 @@ export default async function AdminBookingDetailPage({
                     return (
                       <Link
                         key={filter.value}
-                        href={buildBookingDetailHref(booking.id, {
+                        href={buildBookingDetailHref(portal, booking.id, {
                           noteStatus: noteStatusFilter,
                           noteType: filter.value,
                           notePin: notePinFilter,
@@ -968,7 +979,7 @@ export default async function AdminBookingDetailPage({
                       return (
                         <Link
                           key={filter.value}
-                          href={buildBookingDetailHref(booking.id, {
+                          href={buildBookingDetailHref(portal, booking.id, {
                             noteStatus: noteStatusFilter,
                             noteType: noteTypeFilter,
                             notePin: filter.value,
@@ -990,7 +1001,7 @@ export default async function AdminBookingDetailPage({
                 </div>
                 {hasActiveNoteFilters ? (
                   <Link
-                    href={buildBookingDetailHref(booking.id, {})}
+                    href={buildBookingDetailHref(portal, booking.id, {})}
                     className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-700"
                   >
                     Reset filter note
@@ -1041,6 +1052,7 @@ export default async function AdminBookingDetailPage({
                       ) : null}
                       {!item.is_resolved && canExecuteAdminOps ? (
                         <form action={resolveBookingAdminNote} className="mt-4">
+                          <input type="hidden" name="portal" value={portal} />
                           <input type="hidden" name="booking_id" value={booking.id} />
                           <input type="hidden" name="note_id" value={item.id} />
                           <input type="hidden" name="note_status" value={noteStatusFilter} />
@@ -1082,6 +1094,7 @@ export default async function AdminBookingDetailPage({
                         </p>
                         {canExecuteAdminOps ? (
                           <form action={reopenBookingAdminNote} className="mt-4">
+                            <input type="hidden" name="portal" value={portal} />
                             <input type="hidden" name="booking_id" value={booking.id} />
                             <input type="hidden" name="note_id" value={item.id} />
                             <input type="hidden" name="note_status" value={noteStatusFilter} />

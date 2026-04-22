@@ -7,19 +7,37 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 
-async function ensureAdmin() {
-  const supabase = await createClient("admin")
+type BookingPortal = "admin" | "superadmin"
+
+function resolvePortal(formData: FormData): BookingPortal {
+  return String(formData.get("portal") || "").trim() === "superadmin" ? "superadmin" : "admin"
+}
+
+function resolvePortalPaths(portal: BookingPortal) {
+  return {
+    loginPath: portal === "superadmin" ? "/superadmin/login" : "/admin/login",
+    bookingsPath: portal === "superadmin" ? "/superadmin/bookings" : "/admin/bookings",
+    bookingDetailPath: (bookingId: string) =>
+      portal === "superadmin" ? `/superadmin/bookings/${bookingId}` : `/admin/bookings/${bookingId}`,
+    auditLogPath: portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log",
+  }
+}
+
+async function ensureAdmin(portal: BookingPortal) {
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const { loginPath } = resolvePortalPaths(portal)
+
   if (!user) {
-    redirect("/admin/login")
+    redirect(loginPath)
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
   if (!profile || !isAdminExecutionRole(profile.role)) {
-    redirect("/admin/login")
+    redirect(loginPath)
   }
 
   return {
@@ -50,13 +68,16 @@ function readBookingDetailFilters(formData: FormData) {
 }
 
 function backToBookingDetailWithState(bookingId: string, type: "success" | "error", message: string, formData: FormData): never {
+  const portal = resolvePortal(formData)
+  const { bookingDetailPath } = resolvePortalPaths(portal)
   const params = readBookingDetailFilters(formData)
   params.set(type, message)
-  redirect(`/admin/bookings/${bookingId}?${params.toString()}`)
+  redirect(`${bookingDetailPath(bookingId)}?${params.toString()}`)
 }
 
 export async function addBookingAdminNote(formData: FormData) {
-  const adminActor = await ensureAdmin()
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
   const bookingId = String(formData.get("booking_id") || "").trim()
   const note = String(formData.get("note") || "").trim()
   const noteType = String(formData.get("note_type") || "general").trim().toLowerCase()
@@ -64,7 +85,7 @@ export async function addBookingAdminNote(formData: FormData) {
   const allowedNoteTypes = ["general", "urgent", "follow_up_merchant", "follow_up_payment", "finance_issue"]
 
   if (!bookingId) {
-    redirect("/admin/bookings")
+    redirect(resolvePortalPaths(portal).bookingsPath)
   }
 
   if (!note) {
@@ -103,19 +124,24 @@ export async function addBookingAdminNote(formData: FormData) {
     },
   })
 
+  const { bookingDetailPath, bookingsPath, auditLogPath } = resolvePortalPaths(portal)
   revalidatePath(`/admin/bookings/${bookingId}`)
+  revalidatePath(bookingDetailPath(bookingId))
   revalidatePath("/admin/bookings")
+  revalidatePath(bookingsPath)
   revalidatePath("/admin/audit-log")
+  revalidatePath(auditLogPath)
   backToBookingDetailWithState(bookingId, "success", "Catatan internal berhasil disimpan.", formData)
 }
 
 export async function resolveBookingAdminNote(formData: FormData) {
-  const adminActor = await ensureAdmin()
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
   const bookingId = String(formData.get("booking_id") || "").trim()
   const noteId = String(formData.get("note_id") || "").trim()
 
   if (!bookingId) {
-    redirect("/admin/bookings")
+    redirect(resolvePortalPaths(portal).bookingsPath)
   }
 
   if (!noteId) {
@@ -151,19 +177,24 @@ export async function resolveBookingAdminNote(formData: FormData) {
     },
   })
 
+  const { bookingDetailPath, bookingsPath, auditLogPath } = resolvePortalPaths(portal)
   revalidatePath(`/admin/bookings/${bookingId}`)
+  revalidatePath(bookingDetailPath(bookingId))
   revalidatePath("/admin/bookings")
+  revalidatePath(bookingsPath)
   revalidatePath("/admin/audit-log")
+  revalidatePath(auditLogPath)
   backToBookingDetailWithState(bookingId, "success", "Catatan internal berhasil ditandai selesai.", formData)
 }
 
 export async function reopenBookingAdminNote(formData: FormData) {
-  const adminActor = await ensureAdmin()
+  const portal = resolvePortal(formData)
+  const adminActor = await ensureAdmin(portal)
   const bookingId = String(formData.get("booking_id") || "").trim()
   const noteId = String(formData.get("note_id") || "").trim()
 
   if (!bookingId) {
-    redirect("/admin/bookings")
+    redirect(resolvePortalPaths(portal).bookingsPath)
   }
 
   if (!noteId) {
@@ -199,8 +230,12 @@ export async function reopenBookingAdminNote(formData: FormData) {
     },
   })
 
+  const { bookingDetailPath, bookingsPath, auditLogPath } = resolvePortalPaths(portal)
   revalidatePath(`/admin/bookings/${bookingId}`)
+  revalidatePath(bookingDetailPath(bookingId))
   revalidatePath("/admin/bookings")
+  revalidatePath(bookingsPath)
   revalidatePath("/admin/audit-log")
+  revalidatePath(auditLogPath)
   backToBookingDetailWithState(bookingId, "success", "Catatan internal berhasil dibuka kembali.", formData)
 }

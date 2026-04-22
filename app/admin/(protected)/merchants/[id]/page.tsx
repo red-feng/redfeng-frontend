@@ -52,12 +52,16 @@ const FILTERS = [
   { key: "inactive", label: "Inactive" },
 ] as const
 
+type MerchantDetailPortal = "admin" | "superadmin"
+
 export default async function AdminMerchantPackagesPage({
   params,
   searchParams,
+  portal = "admin",
 }: {
   params: Promise<{ id: string }>
   searchParams?: Promise<{ status?: string; q?: string; sort?: string; success?: string; error?: string }>
+  portal?: MerchantDetailPortal
 }) {
   const { id } = await params
   const resolvedSearchParams = (await searchParams) || {}
@@ -65,7 +69,7 @@ export default async function AdminMerchantPackagesPage({
   const query = (resolvedSearchParams.q || "").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "created_desc").trim().toLowerCase()
   const supabase = createAdminClient()
-  const authSupabase = await createClient("admin")
+  const authSupabase = await createClient(portal)
   const {
     data: { user },
   } = await authSupabase.auth.getUser()
@@ -123,6 +127,8 @@ export default async function AdminMerchantPackagesPage({
 
   const merchantName = merchant.brand_name || merchant.company_name || merchant.id
   const merchantCode = formatMerchantCode(merchant.id)
+  const merchantDetailBasePath = portal === "superadmin" ? `/superadmin/merchants/${id}` : `/admin/merchants/${id}`
+  const backHref = portal === "superadmin" ? "/superadmin/bookings" : "/admin/merchants"
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -139,7 +145,7 @@ export default async function AdminMerchantPackagesPage({
                 </p>
               </div>
               <Link
-                href="/admin/merchants"
+                href={backHref}
                 className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600 sm:w-auto"
               >
                 Kembali ke Merchant Directory
@@ -219,7 +225,7 @@ export default async function AdminMerchantPackagesPage({
                 if (filter.key !== "all") nextParams.set("status", filter.key)
                 if (resolvedSearchParams.q) nextParams.set("q", resolvedSearchParams.q)
                 if (resolvedSearchParams.sort) nextParams.set("sort", resolvedSearchParams.sort)
-                const href = nextParams.toString() ? `/admin/merchants/${id}?${nextParams.toString()}` : `/admin/merchants/${id}`
+                const href = nextParams.toString() ? `${merchantDetailBasePath}?${nextParams.toString()}` : merchantDetailBasePath
                 const count = statusCounts[filter.key]
                 return (
                   <Link
@@ -271,7 +277,7 @@ export default async function AdminMerchantPackagesPage({
                   Terapkan
                 </button>
                 <Link
-                  href={`/admin/merchants/${id}${activeFilter !== "all" ? `?status=${activeFilter}` : ""}`}
+                  href={`${merchantDetailBasePath}${activeFilter !== "all" ? `?status=${activeFilter}` : ""}`}
                   className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
                 >
                   Reset

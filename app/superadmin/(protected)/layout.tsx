@@ -4,6 +4,7 @@ import AdminNavLinks from "@/app/components/AdminNavLinks"
 import SuperadminNavSeenTracker from "@/app/components/SuperadminNavSeenTracker"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
+import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support/index"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -39,7 +40,7 @@ export default async function SuperadminProtectedLayout({
     redirect(`/superadmin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
-  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount] = await Promise.all([
+  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
     adminSupabase
       .from("superadmin_nav_seen_states")
       .select("seen_ops_accounts_at, seen_finance_accounts_at, seen_superadmin_accounts_at, seen_bookings_at, seen_audit_log_at")
@@ -61,6 +62,7 @@ export default async function SuperadminProtectedLayout({
       .order("created_at", { ascending: false })
       .limit(200),
     getInternalChatUnreadBadgeCount(adminSupabase, user.id),
+    loadMerchantSupportRoomsForAdmin(adminSupabase),
   ])
 
   const seenState =
@@ -99,10 +101,12 @@ export default async function SuperadminProtectedLayout({
   }).length
   const bookingsBadgeCount = financeReadyRows.length
   const auditLogBadgeCount = auditLogs.filter((log) => isNewerThan(log.created_at, seenAuditLogAt)).length
+  const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
 
   const navItems = [
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
+    { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
     {
       label: "Manager Dashboard Preview",
       children: [
@@ -118,8 +122,8 @@ export default async function SuperadminProtectedLayout({
         { href: "/superadmin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: superadminAccountsBadgeCount },
       ],
     },
-    { href: "/admin/bookings", label: "Booking Center", badgeCount: bookingsBadgeCount },
-    { href: "/admin/audit-log", label: "Audit Log", badgeCount: auditLogBadgeCount },
+    { href: "/superadmin/bookings", label: "Booking Center", badgeCount: bookingsBadgeCount },
+    { href: "/superadmin/audit-log", label: "Audit Log", badgeCount: auditLogBadgeCount },
   ]
 
   return (

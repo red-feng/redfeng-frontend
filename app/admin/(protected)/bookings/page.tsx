@@ -10,6 +10,8 @@ import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/l
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
 
+type BookingPortal = "admin" | "superadmin"
+
 type BookingRow = {
   id: string
   package_id: string | null
@@ -305,7 +307,8 @@ function matchesAttentionFocus(booking: BookingRow, focus: AttentionFocus) {
   return deriveAttentionReasons(booking).some((reason) => reason.key === focus)
 }
 
-function buildFilterHref(product: ProductFilter, queue: QueueFilter, focus: AttentionFocus, q: string, sort: SortMode) {
+function buildFilterHref(portal: BookingPortal, product: ProductFilter, queue: QueueFilter, focus: AttentionFocus, q: string, sort: SortMode) {
+  const basePath = portal === "superadmin" ? "/superadmin/bookings" : "/admin/bookings"
   const params = new URLSearchParams()
   if (product !== "all") params.set("product", product)
   if (queue !== "all") params.set("queue", queue)
@@ -313,17 +316,19 @@ function buildFilterHref(product: ProductFilter, queue: QueueFilter, focus: Atte
   if (q) params.set("q", q)
   if (sort !== "created_desc") params.set("sort", sort)
   const query = params.toString()
-  return query ? `/admin/bookings?${query}` : "/admin/bookings"
+  return query ? `${basePath}?${query}` : basePath
 }
 
 export default async function AdminBookingsPage({
   searchParams,
+  portal = "admin",
 }: {
   searchParams: Promise<{ success?: string; error?: string; product?: string; queue?: string; focus?: string; q?: string; sort?: string }>
+  portal?: BookingPortal
 }) {
   const params = await searchParams
   const adminSupabase = createAdminClient()
-  const supabase = await createClient("admin")
+  const supabase = await createClient(portal)
   const locale = normalizeLocale(await getCurrentLocale())
   const {
     data: { user },
@@ -339,6 +344,8 @@ export default async function AdminBookingsPage({
   const activeFocus = normalizeAttentionFocus(params.focus)
   const searchQuery = String(params.q || "").trim().toLowerCase()
   const sortMode = normalizeSortMode(params.sort)
+  const bookingDetailHref = (bookingId: string) =>
+    portal === "superadmin" ? `/superadmin/bookings/${bookingId}` : `/admin/bookings/${bookingId}`
 
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
@@ -559,7 +566,7 @@ export default async function AdminBookingsPage({
                 Terapkan
               </button>
               <Link
-                href={buildFilterHref(activeProduct, activeQueue, activeFocus, "", "created_desc")}
+                href={buildFilterHref(portal, activeProduct, activeQueue, activeFocus, "", "created_desc")}
                 className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
               >
                 Reset
@@ -578,7 +585,7 @@ export default async function AdminBookingsPage({
               return (
                 <Link
                   key={filter.value}
-                  href={buildFilterHref(filter.value, activeQueue, activeFocus, searchQuery, sortMode)}
+                  href={buildFilterHref(portal, filter.value, activeQueue, activeFocus, searchQuery, sortMode)}
                   className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                     isActive
                       ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -598,7 +605,7 @@ export default async function AdminBookingsPage({
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Queue yang harus dicek lebih dulu</h2>
             <div className="mt-5 grid gap-3 sm:mt-6 sm:gap-4 md:grid-cols-3">
               <Link
-                href={buildFilterHref(activeProduct, "needs-attention", activeFocus, searchQuery, sortMode)}
+                href={buildFilterHref(portal, activeProduct, "needs-attention", activeFocus, searchQuery, sortMode)}
                 className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Needs Attention</p>
@@ -606,7 +613,7 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang belum siap handoff atau status operasionalnya masih macet.</p>
               </Link>
               <Link
-                href={buildFilterHref(activeProduct, "ready", "all", searchQuery, sortMode)}
+                href={buildFilterHref(portal, activeProduct, "ready", "all", searchQuery, sortMode)}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Ready for Finance</p>
@@ -616,7 +623,7 @@ export default async function AdminBookingsPage({
                 <p className="mt-2 text-sm leading-6 text-slate-600">Booking yang siap atau sudah otomatis masuk queue finance.</p>
               </Link>
               <Link
-                href={buildFilterHref(activeProduct, "in-finance", "all", searchQuery, sortMode)}
+                href={buildFilterHref(portal, activeProduct, "in-finance", "all", searchQuery, sortMode)}
                 className="rounded-[24px] border border-[#efe1cf] bg-white p-5 transition hover:-translate-y-0.5 hover:border-orange-200"
               >
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">In Finance</p>
@@ -638,7 +645,7 @@ export default async function AdminBookingsPage({
                 return (
                   <Link
                     key={filter.value}
-                    href={buildFilterHref(activeProduct, filter.value, filter.value === "needs-attention" ? activeFocus : "all", searchQuery, sortMode)}
+                    href={buildFilterHref(portal, activeProduct, filter.value, filter.value === "needs-attention" ? activeFocus : "all", searchQuery, sortMode)}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -675,7 +682,7 @@ export default async function AdminBookingsPage({
                 return (
                   <Link
                     key={filter.value}
-                    href={buildFilterHref(activeProduct, "needs-attention", filter.value, searchQuery, sortMode)}
+                    href={buildFilterHref(portal, activeProduct, "needs-attention", filter.value, searchQuery, sortMode)}
                     className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -755,6 +762,7 @@ export default async function AdminBookingsPage({
             </div>
             {canExecuteAdminOps ? (
               <form action={cleanupExpiredPendingBookings} className="rounded-[20px] border border-[#f0ddc7] bg-[#fffaf3] p-3 lg:min-w-[320px]">
+                <input type="hidden" name="portal" value={portal} />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Cleanup</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Jalankan pembersihan booking pending yang sudah lewat H+1 dan booking berbayar yang sudah melewati retensi 15 bulan.
@@ -888,13 +896,14 @@ export default async function AdminBookingsPage({
 
                     <div className="mt-5 flex flex-wrap gap-3">
                       <Link
-                        href={`/admin/bookings/${booking.id}`}
+                        href={bookingDetailHref(booking.id)}
                         className="rounded-[20px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
                       >
                         Detail
                       </Link>
                       {canExecuteAdminOps ? (
                         <form action={handoffBookingToFinance}>
+                          <input type="hidden" name="portal" value={portal} />
                           <input type="hidden" name="booking_id" value={booking.id} />
                           <button
                             type="submit"

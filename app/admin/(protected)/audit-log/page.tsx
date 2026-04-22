@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+type AuditLogPortal = "admin" | "superadmin"
+
 type AdminActionLogRow = {
   id: string
   actor_id: string | null
@@ -107,7 +109,8 @@ function formatMetadataValue(value: unknown) {
   return JSON.stringify(value)
 }
 
-function buildHref(target: FilterTarget, action: FilterAction, q: string, from: string, to: string) {
+function buildHref(portal: AuditLogPortal, target: FilterTarget, action: FilterAction, q: string, from: string, to: string) {
+  const basePath = portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"
   const params = new URLSearchParams()
   if (target !== "all") params.set("target", target)
   if (action !== "all") params.set("action", action)
@@ -115,13 +118,15 @@ function buildHref(target: FilterTarget, action: FilterAction, q: string, from: 
   if (from) params.set("from", from)
   if (to) params.set("to", to)
   const query = params.toString()
-  return query ? `/admin/audit-log?${query}` : "/admin/audit-log"
+  return query ? `${basePath}?${query}` : basePath
 }
 
 export default async function AdminAuditLogPage({
   searchParams,
+  portal = "admin",
 }: {
   searchParams?: Promise<SearchParams>
+  portal?: AuditLogPortal
 }) {
   const params = (await searchParams) || {}
   const activeTarget = normalizeTargetFilter(params.target)
@@ -240,7 +245,7 @@ export default async function AdminAuditLogPage({
                   return (
                     <Link
                       key={filter.value}
-                      href={buildHref(filter.value, activeAction, searchQuery, dateFrom, dateTo)}
+                        href={buildHref(portal, filter.value, activeAction, searchQuery, dateFrom, dateTo)}
                       className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         isActive
                           ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -262,7 +267,7 @@ export default async function AdminAuditLogPage({
                   return (
                     <Link
                       key={filter.value}
-                      href={buildHref(activeTarget, filter.value, searchQuery, dateFrom, dateTo)}
+                        href={buildHref(portal, activeTarget, filter.value, searchQuery, dateFrom, dateTo)}
                       className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold transition ${
                         isActive
                           ? "border-orange-200 bg-[#fff7ef] text-orange-600"
@@ -312,7 +317,7 @@ export default async function AdminAuditLogPage({
                   Terapkan filter
                 </button>
                 <Link
-                  href="/admin/audit-log"
+                  href={portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"}
                   className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
                 >
                   Reset

@@ -9,7 +9,7 @@ import {
 
 export async function GET() {
   try {
-    const supabase = await createClient("admin")
+    const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()

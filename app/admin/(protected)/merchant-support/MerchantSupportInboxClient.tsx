@@ -75,15 +75,17 @@ function hasUnread(room: MerchantSupportRoomItem) {
 }
 
 export default function MerchantSupportInboxClient({
+  portal,
   initialRooms,
   initialMessages,
   initialActiveRoomId,
 }: {
+  portal: "admin" | "superadmin"
   initialRooms: MerchantSupportRoomItem[]
   initialMessages: MerchantSupportMessage[]
   initialActiveRoomId: string
 }) {
-  const supabaseRef = useRef(createClient("admin"))
+  const supabaseRef = useRef(createClient(portal))
   const supabase = supabaseRef.current
   const [rooms, setRooms] = useState(initialRooms)
   const [messagesByRoom, setMessagesByRoom] = useState<Record<string, MerchantSupportMessage[]>>(
@@ -100,6 +102,8 @@ export default function MerchantSupportInboxClient({
   const activeRoom = useMemo(() => rooms.find((room) => room.id === activeRoomId) || null, [activeRoomId, rooms])
   const activeMessages = useMemo(() => messagesByRoom[activeRoomId] || [], [activeRoomId, messagesByRoom])
   const unreadCount = useMemo(() => rooms.filter((room) => hasUnread(room)).length, [rooms])
+  const merchantProfileHref = (merchantId: string) =>
+    portal === "superadmin" ? `/superadmin/merchants/${encodeURIComponent(merchantId)}` : `/admin/merchants/${encodeURIComponent(merchantId)}`
   const fetchSnapshot = useMemo(
     () => async (targetRoomId?: string) => {
       const query = targetRoomId
@@ -371,7 +375,7 @@ export default function MerchantSupportInboxClient({
                   <p className="text-xs text-slate-500">{activeRoom.merchantCode} • {activeRoom.merchantEmail || "Email merchant belum tersedia"}</p>
                 </div>
                 <Link
-                  href={`/admin/merchants/${encodeURIComponent(activeRoom.merchantId)}`}
+                  href={merchantProfileHref(activeRoom.merchantId)}
                   className="inline-flex self-start rounded-full border border-[#e1d8ca] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
                 >
                   Buka profil merchant

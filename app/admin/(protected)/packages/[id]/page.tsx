@@ -106,12 +106,14 @@ function statusSummary(status: string | null): string {
 
 export default async function Page({
   params,
+  portal = "admin",
 }: {
   params: Promise<{ id: string }>
+  portal?: "admin" | "superadmin"
 }) {
   const { id } = await params
   const supabase = createAdminClient()
-  const authSupabase = await createClient("admin")
+  const authSupabase = await createClient(portal)
   const {
     data: { user },
   } = await authSupabase.auth.getUser()
@@ -139,7 +141,7 @@ export default async function Page({
   if (!pkg) return <div className="p-8">Paket tidak ditemukan</div>
 
   if (pkg.package_code && id !== pkg.package_code) {
-    redirect(`/admin/packages/${encodeURIComponent(pkg.package_code)}`)
+    redirect(`${portal === "superadmin" ? "/superadmin/packages" : "/admin/packages"}/${encodeURIComponent(pkg.package_code)}`)
   }
   const packageInternalId = pkg.id
 

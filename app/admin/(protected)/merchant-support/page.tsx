@@ -11,25 +11,29 @@ import { createClient } from "@/lib/supabase/server"
 
 export const dynamic = "force-dynamic"
 
+type MerchantSupportPortal = "admin" | "superadmin"
+
 export default async function AdminMerchantSupportPage({
   searchParams,
+  portal = "admin",
 }: {
   searchParams: Promise<{ room_id?: string }>
+  portal?: MerchantSupportPortal
 }) {
   const params = await searchParams
-  const supabase = await createClient("admin")
+  const supabase = await createClient(portal)
   const adminSupabase = createAdminClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect("/admin/login?error=no-session")
+    redirect(`/${portal}/login?error=no-session`)
   }
 
   const profile = await getAdminMerchantSupportAccessProfile(adminSupabase, user.id)
   if (!profile) {
-    redirect("/admin/login?error=wrong-role")
+    redirect(`/${portal}/login?error=wrong-role`)
   }
 
   const rooms = await loadMerchantSupportRoomsForAdmin(adminSupabase)
@@ -62,6 +66,7 @@ export default async function AdminMerchantSupportPage({
 
         <div className="min-h-0">
           <MerchantSupportInboxClient
+            portal={portal}
             initialRooms={patchedRooms}
             initialMessages={initialMessages}
             initialActiveRoomId={activeRoomId}
