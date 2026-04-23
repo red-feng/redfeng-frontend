@@ -217,6 +217,62 @@ function buildRecentDayBuckets(days = 30) {
   return buckets
 }
 
+function ProductMiniIcon({
+  kind,
+  className,
+}: {
+  kind: "package" | "flight" | "hotel" | "train" | "bus" | "ship" | "cruise"
+  className?: string
+}) {
+  if (kind === "flight") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M3 14.5l7-1.8 5.8-6.2a1.8 1.8 0 012.6 2.5l-6.1 5.8-1.8 7-2.1-.8 1.1-5.1-3.6 2.8H3.8l3.6-4.2-5-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "hotel") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M6 3h8v18H6V3zm2 2v3h4V5H8zm8 5h2a2 2 0 012 2v9h-4v-8h-2v8h-2V3h2v7z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "train") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M7 3h10a3 3 0 013 3v7.5a3.5 3.5 0 01-3.5 3.5l1.5 2.5h-2.3L14 17H10l-1.7 2.5H6l1.5-2.5A3.5 3.5 0 014 13.5V6a3 3 0 013-3zm0 2a1 1 0 00-1 1v3h12V6a1 1 0 00-1-1H7zm0 6v2.5a1.5 1.5 0 001.5 1.5h7a1.5 1.5 0 001.5-1.5V11H7zm2 1.2a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "bus") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M7 4h10c2 0 3 1.3 3 3v8a3 3 0 01-2 2.8V20h-2v-2H8v2H6v-2.2A3 3 0 014 15V7c0-1.7 1-3 3-3zm0 2a1 1 0 00-1 1v3h12V7a1 1 0 00-1-1H7zm0 6v3a1 1 0 001 1h8a1 1 0 001-1v-3H7zm2 1a1 1 0 110 2 1 1 0 010-2zm6 0a1 1 0 110 2 1 1 0 010-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "ship") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M10 4h4v3h3v5l2 1.5V16l-7 4-7-4v-2.5l2-1.5V9h4V4zm-3 9.2L5 14.5v.4l7 2.9 7-2.9v-.4l-2-1.3v1.3h-2v-4H7v4.7zm4-7.2v1h2V6h-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "cruise") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M8 5h6v2h2v3h2v5l-6 3-6-3v-2.8L8 10V5zm2 2v1h2V7h-2zm-1 5.4l-1 .8v.5l4 1.9 4-1.9v-.5l-1-.8v1H9v-1zm-2.8 6.1c1 .9 2 1.4 3.1 1.4.8 0 1.5-.2 2.1-.7.7.5 1.4.7 2.2.7 1.1 0 2.1-.5 3.1-1.4l1.3 1c-1.4 1.4-2.9 2-4.4 2-.8 0-1.5-.2-2.2-.6-.7.4-1.4.6-2.2.6-1.5 0-3-.6-4.4-2l1.4-1z" fill="currentColor" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <path d="M12 3l2.6 5.3L20 9l-4 3.9.9 5.6-4.9-2.6-4.9 2.6.9-5.6L4 9l5.4-.7L12 3zm-1 7v7h2v-7h-2z" fill="currentColor" />
+    </svg>
+  )
+}
+
 function getDashboardPeriod(value: string | null | undefined) {
   const normalized = String(value || "30d").trim().toLowerCase()
   if (normalized === "7d") return { value: "7d", label: "7 hari terakhir", days: 7 }
@@ -894,13 +950,16 @@ export default async function AdminDashboard({
         connected: true,
         tone: "text-violet-600",
         bg: "bg-violet-50",
+        icon: "package" as const,
+        sparkColor: "#7c3aed",
+        sparkPoints: "2,22 14,24 26,18 38,12 50,20 62,8 74,17 86,10 98,6",
       },
-      { label: "Pesawat", href: "/admin/pesawat", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-sky-600", bg: "bg-sky-50" },
-      { label: "Hotel", href: "/admin/hotel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Kereta Api", href: "/admin/kereta-api", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Bus & Travel", href: "/admin/bus-travel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-blue-600", bg: "bg-blue-50" },
-      { label: "Kapal Laut", href: "/admin/kapal-laut", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-cyan-600", bg: "bg-cyan-50" },
-      { label: "Kapal Pesiar", href: "/admin/kapal-pesiar", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Coming soon", connected: false, tone: "text-rose-600", bg: "bg-rose-50" },
+      { label: "Pesawat", href: "/admin/pesawat", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-sky-600", bg: "bg-sky-50", icon: "flight" as const, sparkColor: "#2563eb", sparkPoints: "2,22 14,23 26,18 38,21 50,14 62,10 74,16 86,9 98,7" },
+      { label: "Hotel", href: "/admin/hotel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-emerald-600", bg: "bg-emerald-50", icon: "hotel" as const, sparkColor: "#16a34a", sparkPoints: "2,23 14,14 26,20 38,12 50,18 62,10 74,17 86,14 98,8" },
+      { label: "Kereta Api", href: "/admin/kereta-api", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-orange-600", bg: "bg-orange-50", icon: "train" as const, sparkColor: "#ea580c", sparkPoints: "2,20 14,24 26,22 38,17 50,10 62,16 74,9 86,12 98,8" },
+      { label: "Bus & Travel", href: "/admin/bus-travel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-blue-600", bg: "bg-blue-50", icon: "bus" as const, sparkColor: "#2563eb", sparkPoints: "2,24 14,18 26,15 38,19 50,12 62,16 74,10 86,13 98,9" },
+      { label: "Kapal Laut", href: "/admin/kapal-laut", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-cyan-600", bg: "bg-cyan-50", icon: "ship" as const, sparkColor: "#0f766e", sparkPoints: "2,22 14,19 26,16 38,18 50,13 62,17 74,12 86,14 98,10" },
+      { label: "Kapal Pesiar", href: "/admin/kapal-pesiar", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-rose-600", bg: "bg-rose-50", icon: "cruise" as const, sparkColor: "#f43f5e", sparkPoints: "2,24 14,10 26,20 38,18 50,16 62,19 74,14 86,15 98,11" },
     ]
     const reviewQueueItems = periodPackages
       .filter((pkg) => ["pending", "draft", "rejected"].includes(normalizeStatus(pkg.status)))
@@ -1027,47 +1086,54 @@ export default async function AdminDashboard({
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
               {productPerformanceCards.map((product) => (
-                <Link key={product.label} href={product.href} className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4 transition hover:border-orange-200 hover:bg-orange-50">
+                <Link key={product.label} href={product.href} className="flex min-h-[272px] flex-col rounded-[16px] border border-[#edf0f4] bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.03)] transition hover:border-orange-200 hover:shadow-[0_14px_26px_rgba(249,115,22,0.08)]">
                   <div className="flex items-center gap-3">
-                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-black ${product.bg} ${product.tone}`}>{product.label[0]}</span>
+                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
+                      <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
+                    </span>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{product.label}</p>
-                      <p className="mt-1 text-[11px] text-slate-400">{product.connected ? "Marketplace live" : "Belum terhubung"}</p>
+                      <p className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">{product.label}</p>
                     </div>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-[11px]">
                     <div>
                       <p className="text-slate-400">Booking</p>
-                      <p className="mt-1 text-base font-semibold text-slate-950">{product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}</p>
+                      <p className="mt-1 text-[15px] font-semibold text-slate-950">{product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}</p>
                     </div>
                     <div>
                       <p className="text-slate-400">Revenue</p>
-                      <p className="mt-1 text-base font-semibold text-slate-950">{product.revenue}</p>
+                      <p className="mt-1 text-[15px] font-semibold text-slate-950">{product.revenue}</p>
                     </div>
                   </div>
-                  <p className={`mt-3 text-[11px] font-semibold ${product.connected ? "text-emerald-600" : "text-slate-400"}`}>{product.growth}</p>
-                  <div className="mt-3 h-12 rounded-[14px] bg-[linear-gradient(180deg,rgba(59,130,246,0.06),transparent)] px-2 py-2">
-                    <div className="relative h-full border-b border-[#e9dfd6]">
-                      {product.connected ? (
-                        <>
-                          <div className="absolute bottom-[34%] left-[4%] h-[2px] w-[20%] rotate-[8deg] rounded-full bg-violet-500" />
-                          <div className="absolute bottom-[28%] left-[22%] h-[2px] w-[18%] rotate-[-8deg] rounded-full bg-violet-500" />
-                          <div className="absolute bottom-[44%] left-[39%] h-[2px] w-[16%] rotate-[10deg] rounded-full bg-violet-500" />
-                          <div className="absolute bottom-[36%] left-[54%] h-[2px] w-[18%] rotate-[-6deg] rounded-full bg-violet-500" />
-                          <div className="absolute bottom-[52%] left-[71%] h-[2px] w-[16%] rotate-[6deg] rounded-full bg-violet-500" />
-                        </>
-                      ) : (
-                        <div className="absolute inset-x-2 bottom-5 h-[2px] rounded-full bg-slate-200" />
-                      )}
-                    </div>
+                  <p className={`mt-2 text-[11px] font-semibold ${product.connected ? "text-emerald-600" : "text-slate-400"}`}>{product.growth}</p>
+                  <div className="mt-3 h-14 rounded-[14px] bg-[linear-gradient(180deg,rgba(99,102,241,0.06),rgba(255,255,255,0))] px-1 py-1">
+                    <svg viewBox="0 0 100 28" className="h-full w-full" aria-hidden="true">
+                      <polyline
+                        points={product.sparkPoints}
+                        fill="none"
+                        stroke={product.connected ? product.sparkColor : "#cbd5e1"}
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeDasharray={product.connected ? undefined : "3 3"}
+                      />
+                      {product.connected
+                        ? product.sparkPoints.split(" ").map((point) => {
+                            const [cx, cy] = point.split(",")
+                            return <circle key={point} cx={cx} cy={cy} r="1.4" fill={product.sparkColor} />
+                          })
+                        : null}
+                    </svg>
                   </div>
-                  <div className="mt-4 space-y-2 border-t border-[#f0e6dd] pt-3 text-xs">
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Pending Review</span><span className="font-semibold text-slate-900">{product.pending ?? "-"}</span></p>
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-rose-400" />Anomali</span><span className="font-semibold text-slate-900">{product.anomaly ?? "-"}</span></p>
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-orange-400" />SLA Melanggar</span><span className="font-semibold text-slate-900">{product.sla ?? "-"}</span></p>
+                  <div className="mt-3 space-y-2 border-t border-[#eef2f7] pt-3 text-[11px]">
+                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Pending Review</span><span className="font-semibold text-slate-900">{product.pending ?? "-"}</span></p>
+                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400" />Anomali</span><span className="font-semibold text-slate-900">{product.anomaly ?? "-"}</span></p>
+                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-orange-400" />SLA Melanggar</span><span className="font-semibold text-slate-900">{product.sla ?? "-"}</span></p>
                   </div>
-                  <div className="mt-4 rounded-[12px] border border-[#ece3da] bg-white px-3 py-2 text-center text-[11px] font-semibold text-[#3b82f6]">
+                  <div className="mt-auto pt-4">
+                    <div className="rounded-[10px] border border-[#e8edf3] bg-[#fbfdff] px-3 py-2 text-center text-[11px] font-semibold text-[#2563eb]">
                     Lihat Detail
+                    </div>
                   </div>
                 </Link>
               ))}
