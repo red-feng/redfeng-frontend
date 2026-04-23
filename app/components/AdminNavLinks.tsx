@@ -68,7 +68,6 @@ export default function AdminNavLinks({
   const [openGroupLabel, setOpenGroupLabel] = useState<string | null>(activeGroupLabel)
   const [liveBadgeCounts, setLiveBadgeCounts] = useState<Record<string, number | null>>({})
   const visibleGroupLabel = openGroupLabel || activeGroupLabel
-  const visibleChildren = items.find((item) => item.label === visibleGroupLabel)?.children || []
   const resolveRealtimeBadgeConfig = (href?: string) =>
     realtimeBadgeConfigs.find((config) => href && normalizeHref(href).endsWith(config.hrefSuffix)) || null
   const resolveBadgeCount = (baseCount: number, href?: string) => {
@@ -144,9 +143,8 @@ export default function AdminNavLinks({
   }, [realtimeBadgeConfigs, supabase])
 
   return (
-    <div className="space-y-3">
-      <div className="flex min-w-max flex-wrap gap-2">
-        {items.map((item) => {
+    <div className="space-y-2">
+      {items.map((item) => {
           const isActiveLink = item.href ? pathname.startsWith(normalizeHref(item.href)) : false
           const isActiveGroup = item.children
             ? item.children.some((child) => pathname.startsWith(normalizeHref(child.href)))
@@ -161,23 +159,53 @@ export default function AdminNavLinks({
             const totalSecondaryBadgeCount = item.children.reduce((total, child) => total + Number(child.secondaryBadgeCount || 0), 0)
 
             return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() =>
-                  setOpenGroupLabel((current) => (current === item.label ? null : item.label))
-                }
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                  isHighlighted
-                    ? "border-orange-200 bg-[#fff7ef] text-orange-600"
-                    : "border-[#ecd9c2] bg-white text-slate-700 hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
-                }`}
-              >
-                {item.label}
-                {renderBadge(totalPrimaryBadgeCount, "primary")}
-                {renderBadge(totalSecondaryBadgeCount, "danger")}
-                <span className={`text-xs transition ${visibleGroupLabel === item.label ? "rotate-180" : ""}`}>v</span>
-              </button>
+              <div key={item.label}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenGroupLabel((current) => (current === item.label ? null : item.label))
+                  }
+                  className={`flex w-full items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold transition ${
+                    isHighlighted
+                      ? "bg-[#fff2e8] text-orange-600"
+                      : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
+                  }`}
+                >
+                  <span>{item.label}</span>
+                  <span className="inline-flex items-center gap-2">
+                    {renderBadge(totalPrimaryBadgeCount, "primary")}
+                    {renderBadge(totalSecondaryBadgeCount, "danger")}
+                    <span className={`text-xs transition ${visibleGroupLabel === item.label ? "rotate-180" : ""}`}>v</span>
+                  </span>
+                </button>
+                {visibleGroupLabel === item.label ? (
+                  <div className="ml-5 mt-1 space-y-1 border-l border-[#f0e6dd] pl-3">
+                    {item.children.map((child) => {
+                      const isActive = pathname.startsWith(normalizeHref(child.href))
+                      const visiblePrimaryBadgeCount = resolveBadgeCount(Number(child.badgeCount || 0), child.href)
+                      const visibleSecondaryBadgeCount = Number(child.secondaryBadgeCount || 0)
+
+                      return (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className={`flex items-center justify-between gap-3 rounded-[12px] px-4 py-2.5 text-sm font-medium transition ${
+                            isActive
+                              ? "bg-[#fff2e8] text-orange-600"
+                              : "text-slate-500 hover:bg-[#fff7f1] hover:text-orange-600"
+                          }`}
+                        >
+                          <span>{child.label}</span>
+                          <span className="inline-flex items-center gap-1.5">
+                            {renderBadge(visiblePrimaryBadgeCount, "primary")}
+                            {renderBadge(visibleSecondaryBadgeCount, "danger")}
+                          </span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                ) : null}
+              </div>
             )
           }
 
@@ -186,15 +214,17 @@ export default function AdminNavLinks({
               <Link
                 key={item.label}
                 href={item.href}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                className={`flex items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold transition ${
                   isHighlighted
-                    ? "border-orange-200 bg-[#fff7ef] text-orange-600"
-                    : "border-[#ecd9c2] bg-white text-slate-700 hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600"
+                    ? "bg-[#fff2e8] text-orange-600"
+                    : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
                 }`}
               >
-                {item.label}
-                {renderBadge(resolveBadgeCount(Number(item.badgeCount || 0), item.href), "primary")}
-                {renderBadge(Number(item.secondaryBadgeCount || 0), "danger")}
+                <span>{item.label}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  {renderBadge(resolveBadgeCount(Number(item.badgeCount || 0), item.href), "primary")}
+                  {renderBadge(Number(item.secondaryBadgeCount || 0), "danger")}
+                </span>
               </Link>
             )
           }
@@ -202,39 +232,12 @@ export default function AdminNavLinks({
           return (
             <span
               key={item.label}
-              className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-400"
+              className="flex items-center rounded-[14px] px-4 py-3 text-sm font-semibold text-slate-400"
             >
               {item.label}
             </span>
           )
         })}
-      </div>
-
-      {visibleChildren.length > 0 && (
-        <div className="flex min-w-max flex-wrap gap-2 rounded-[22px] border border-[#ecd9c2] bg-[#fffaf3] p-2">
-          {visibleChildren.map((child) => {
-            const isActive = pathname.startsWith(normalizeHref(child.href))
-              const visiblePrimaryBadgeCount = resolveBadgeCount(Number(child.badgeCount || 0), child.href)
-            const visibleSecondaryBadgeCount = Number(child.secondaryBadgeCount || 0)
-
-            return (
-              <Link
-                key={child.href}
-                href={child.href}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
-                  isActive
-                    ? "border-orange-200 bg-white text-orange-600 shadow-[0_6px_18px_rgba(249,115,22,0.08)]"
-                    : "border-transparent bg-transparent text-slate-600 hover:border-orange-200 hover:bg-white hover:text-orange-600"
-                }`}
-              >
-                {child.label}
-                {renderBadge(visiblePrimaryBadgeCount, "primary")}
-                {renderBadge(visibleSecondaryBadgeCount, "danger")}
-              </Link>
-            )
-          })}
-        </div>
-      )}
     </div>
   )
 }

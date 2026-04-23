@@ -176,7 +176,7 @@ function getPositiveInteger(value: string | null | undefined, fallback: number) 
 }
 
 function buildMerchantPageHref(
-  params: { q?: string; city?: string; queue?: string; sort?: string; success?: string; error?: string },
+  params: { q?: string; city?: string; queue?: string; sort?: string; selected?: string; success?: string; error?: string },
   page: number,
 ) {
   const query = new URLSearchParams()
@@ -184,15 +184,51 @@ function buildMerchantPageHref(
   if (params.city) query.set("city", params.city)
   if (params.queue) query.set("queue", params.queue)
   if (params.sort) query.set("sort", params.sort)
+  if (params.selected) query.set("selected", params.selected)
   if (page > 1) query.set("page", String(page))
   const suffix = query.toString()
   return suffix ? `/admin/merchants?${suffix}` : "/admin/merchants"
 }
 
+function buildMerchantSelectionHref(
+  params: { q?: string; city?: string; queue?: string; sort?: string; page?: string; selected?: string },
+  selected: string,
+) {
+  const query = new URLSearchParams()
+  if (params.q) query.set("q", params.q)
+  if (params.city) query.set("city", params.city)
+  if (params.queue) query.set("queue", params.queue)
+  if (params.sort) query.set("sort", params.sort)
+  if (params.page) query.set("page", params.page)
+  query.set("selected", selected)
+  return `/admin/merchants?${query.toString()}`
+}
+
+function formatAdminDateTime(value: string | null) {
+  if (!value) return "-"
+  return new Date(value).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+function getMerchantInitials(merchant: MerchantRow) {
+  const source = merchant.brand_name || merchant.company_name || merchant.email || "Merchant"
+  return source
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((item) => item[0]?.toUpperCase())
+    .join("") || "M"
+}
+
 export default async function AdminMerchantsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string; page?: string; success?: string; error?: string }>
+  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string; page?: string; selected?: string; success?: string; error?: string }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const searchQuery = (resolvedSearchParams.q || "").trim().toLowerCase()
@@ -250,11 +286,28 @@ export default async function AdminMerchantsPage({
   const pending = (pendingMerchants || []) as MerchantRow[]
   const managed = (managedMerchantsResult.data || []) as MerchantRow[]
   const managedTotalCount = managedMerchantsResult.count || 0
-  const activeMerchantCountResult = await adminSupabase
-    .from("merchants")
-    .select("id", { count: "exact", head: true })
-    .eq("verification_status", "approved")
+  const [activeMerchantCountResult, inactiveMerchantCountResult, deletedMerchantCountResult, rejectedMerchantCountResult] = await Promise.all([
+    adminSupabase
+      .from("merchants")
+      .select("id", { count: "exact", head: true })
+      .eq("verification_status", "approved"),
+    adminSupabase
+      .from("merchants")
+      .select("id", { count: "exact", head: true })
+      .eq("verification_status", "inactive"),
+    adminSupabase
+      .from("merchants")
+      .select("id", { count: "exact", head: true })
+      .eq("verification_status", "deleted"),
+    adminSupabase
+      .from("merchants")
+      .select("id", { count: "exact", head: true })
+      .eq("verification_status", "rejected"),
+  ])
   const activeMerchantCount = activeMerchantCountResult.count || 0
+  const inactiveMerchantCount = inactiveMerchantCountResult.count || 0
+  const deletedMerchantCount = deletedMerchantCountResult.count || 0
+  const rejectedMerchantCount = rejectedMerchantCountResult.count || 0
   const allMerchantIds = [...new Set([...pending, ...managed].map((merchant) => merchant.id))]
   const { data: packagesData } = allMerchantIds.length
     ? await adminSupabase.from("packages").select("merchant_id, status").in("merchant_id", allMerchantIds)
@@ -449,64 +502,86 @@ export default async function AdminMerchantsPage({
   const managedEndIndex = managedTotalCount
     ? Math.min(managedRangeStart + paginatedManaged.length, managedTotalCount)
     : 0
+  const selectedManagedMerchant =
+    paginatedManaged.find((merchant) => merchant.id === resolvedSearchParams.selected) ||
+    paginatedManaged[0] ||
+    null
+  const selectedPackageStats = selectedManagedMerchant
+    ? packageStatsMap.get(selectedManagedMerchant.id) || {
+        total: 0,
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        draft: 0,
+        inactive: 0,
+      }
+    : null
+  const selectedDeletionRequest = selectedManagedMerchant
+    ? pendingDeletionRequestMap.get(getDeletionRequestKey({ merchantId: selectedManagedMerchant.id }) || "") || null
+    : null
+  const totalMerchantCount = activeMerchantCount + inactiveMerchantCount + deletedMerchantCount + rejectedMerchantCount
+  const activeMerchantRatio = totalMerchantCount ? Math.round((activeMerchantCount / totalMerchantCount) * 1000) / 10 : 0
+  const inactiveMerchantRatio = totalMerchantCount ? Math.round((inactiveMerchantCount / totalMerchantCount) * 1000) / 10 : 0
+  const deletionRequestRatio = totalMerchantCount ? Math.round((pendingDeletionQueue.length / totalMerchantCount) * 1000) / 10 : 0
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
-        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div className="max-w-3xl">
-              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Admin Merchant Review
-              </span>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
-                Review merchant baru dan kelola merchant aktif dari satu halaman.
-              </h1>
-              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Admin kini mereview dan mengajukan keputusan merchant ke operations manager, sementara manager memegang keputusan final approve atau reject.
-              </p>
-            </div>
-            <div className="grid gap-3 rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Admin review queue</p>
-                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{pending.length}</p>
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Manager decision queue</p>
-                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{pendingMerchantReviewRequests.length}</p>
-              </div>
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Merchant aktif</p>
-                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{activeMerchantCount}</p>
-              </div>
-            </div>
-          </div>
+    <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
+      <div className="mx-auto max-w-[1680px] space-y-6">
+        <section>
+          <span className="inline-flex rounded-full border border-[#efd8c8] bg-[#fff7f1] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">
+            Admin Workspace
+          </span>
+          <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Merchants Directory</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Kelola dan monitor semua merchant dalam sistem RedFeng.</p>
         </section>
 
-        <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-6">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          {[
+            { label: "Total Merchant", value: totalMerchantCount, note: "Semua merchant terdaftar", tone: "text-slate-950", chip: "bg-sky-50 text-sky-600" },
+            { label: "Aktif", value: activeMerchantCount, note: `${activeMerchantRatio}% dari total`, tone: "text-emerald-600", chip: "bg-emerald-50 text-emerald-600" },
+            { label: "Nonaktif", value: inactiveMerchantCount, note: `${inactiveMerchantRatio}% dari total`, tone: "text-orange-600", chip: "bg-orange-50 text-orange-600" },
+            { label: "Temporary Block", value: inactiveMerchantCount, note: "Merchant diblok sementara", tone: "text-orange-600", chip: "bg-orange-50 text-orange-600" },
+            { label: "Deletion Request", value: pendingDeletionQueue.length, note: `${deletionRequestRatio}% dari total`, tone: "text-rose-600", chip: "bg-rose-50 text-rose-600" },
+            { label: "Anomalies", value: orphanMerchantProfiles.length, note: "Perlu ditindaklanjuti", tone: "text-violet-600", chip: "bg-violet-50 text-violet-600" },
+          ].map((item) => (
+            <div key={item.label} className="rounded-[18px] border border-[#eee3d9] bg-white px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <div className="flex items-start gap-3">
+                <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black ${item.chip}`}>{item.label[0]}</span>
+                <div>
+                  <p className="text-sm font-medium text-slate-500">{item.label}</p>
+                  <p className={`mt-1 text-3xl font-semibold tracking-[-0.04em] ${item.tone}`}>{item.value}</p>
+                  <p className="mt-1 text-xs text-slate-400">{item.note}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="rounded-[20px] border border-[#eee3d9] bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
           {merchantReviewRequestsUnavailable ? (
             <div className="mb-4 rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-7 text-amber-800">
               Fitur review manager merchant belum aktif di database production karena migration `merchant_review_requests` belum dijalankan di Supabase.
             </div>
           ) : null}
-          <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_220px_220px_220px_auto]">
-            <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Cari merchant</label>
+          <form className="grid gap-4 xl:grid-cols-[minmax(260px,1.4fr)_220px_220px_220px_auto]">
+            <div className="relative">
+              <label className="sr-only">Cari merchant</label>
               <input
                 type="text"
                 name="q"
                 defaultValue={resolvedSearchParams.q || ""}
-                placeholder="Nama brand, company, email, atau merchant ID"
-                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                placeholder="Cari merchant, company, email, atau ID..."
+                className="w-full rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 pr-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               />
+              <span className="pointer-events-none absolute right-4 top-3.5 text-slate-400">/</span>
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Kota</label>
+              <label className="sr-only">Kota</label>
               <select
                 name="city"
                 defaultValue={resolvedSearchParams.city || ""}
-                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                className="w-full rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               >
                 <option value="">Semua kota</option>
                 {allCities.map((city) => (
@@ -518,40 +593,40 @@ export default async function AdminMerchantsPage({
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Queue paket</label>
+              <label className="sr-only">Queue paket</label>
               <select
                 name="queue"
                 defaultValue={queueFilter}
-                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                className="w-full rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               >
-                <option value="all">Semua merchant</option>
+                <option value="all">Akses Paket: Semua</option>
                 <option value="with_pending">Punya paket pending</option>
                 <option value="without_pending">Tanpa paket pending</option>
               </select>
             </div>
 
             <div>
-              <label className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Urutkan</label>
+              <label className="sr-only">Urutkan</label>
               <select
                 name="sort"
                 defaultValue={sortMode}
-                className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                className="w-full rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               >
-                <option value="pending_desc">Pending terbanyak</option>
+                <option value="pending_desc">Workspace: Semua</option>
                 <option value="total_desc">Total paket terbanyak</option>
                 <option value="newest">Merchant terbaru</option>
               </select>
             </div>
 
-            <div className="flex flex-wrap items-end gap-3">
-              <button className="inline-flex items-center justify-center rounded-[18px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.22)] transition hover:bg-orange-600">
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="inline-flex items-center justify-center rounded-[14px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_28px_rgba(249,115,22,0.18)] transition hover:bg-orange-600">
                 Terapkan
               </button>
               <Link
                 href="/admin/merchants"
-                className="inline-flex items-center justify-center rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+                className="inline-flex items-center justify-center rounded-[14px] border border-[#eadfd5] bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-600"
               >
-                Reset
+                Reset Filter
               </Link>
             </div>
           </form>
@@ -946,369 +1021,260 @@ export default async function AdminMerchantsPage({
           )}
         </section>
 
-        <section className="space-y-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant controls</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Merchant aktif, nonaktif, dan hapus</h2>
-              <p className="mt-2 text-sm leading-7 text-slate-500">
-                Menampilkan {filteredManaged.length ? managedRangeStart + 1 : 0}-{managedEndIndex} dari {managedTotalCount} merchant sesuai filter database.
-              </p>
+        <section className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_440px]">
+          <div className="overflow-hidden rounded-[20px] border border-[#eee3d9] bg-white shadow-[0_18px_44px_rgba(15,23,42,0.05)]">
+            <div className="overflow-x-auto">
+              <table className="min-w-[980px] w-full border-separate border-spacing-0 text-left">
+                <thead>
+                  <tr className="text-xs font-semibold text-slate-500">
+                    <th className="border-b border-[#f0e6dd] px-5 py-4"><span className="sr-only">Pilih</span></th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Merchant</th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Company</th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Status</th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Paket</th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Akses Paket</th>
+                    <th className="border-b border-[#f0e6dd] px-4 py-4">Terakhir Update</th>
+                    <th className="border-b border-[#f0e6dd] px-5 py-4">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {!paginatedManaged.length ? (
+                    <tr>
+                      <td colSpan={8} className="px-5 py-14 text-center">
+                        <h2 className="text-xl font-semibold text-slate-950">Belum ada merchant aktif</h2>
+                        <p className="mt-2 text-sm text-slate-500">Tidak ada merchant managed yang cocok dengan filter saat ini.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedManaged.map((merchant) => {
+                      const stats = packageStatsMap.get(merchant.id) || {
+                        total: 0,
+                        pending: 0,
+                        approved: 0,
+                        rejected: 0,
+                        draft: 0,
+                        inactive: 0,
+                      }
+                      const isSelected = selectedManagedMerchant?.id === merchant.id
+                      return (
+                        <tr key={merchant.id} className={isSelected ? "bg-[#fff7ef] outline outline-1 outline-orange-300" : "bg-white"}>
+                          <td className="border-b border-[#f4eee7] px-5 py-4">
+                            <span className={`inline-flex h-4 w-4 rounded border ${isSelected ? "border-orange-500 bg-orange-500" : "border-[#eadfd5] bg-white"}`} />
+                          </td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4">
+                            <div className="flex items-center gap-3">
+                              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                                {getMerchantInitials(merchant)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-slate-900">{merchant.brand_name || merchant.company_name || "Merchant tanpa nama"}</p>
+                                <p className="mt-1 max-w-[220px] truncate text-xs text-slate-500">{fieldValue(merchant.email)}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4 text-sm font-medium text-slate-700">{fieldValue(merchant.company_name)}</td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4">
+                            <span className={`inline-flex rounded-[9px] border px-2.5 py-1 text-xs font-semibold ${getStatusBadge(merchant.verification_status)}`}>
+                              {getStatusLabel(merchant.verification_status)}
+                            </span>
+                          </td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4 text-sm font-semibold text-slate-700">{stats.total} Total</td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4">
+                            <div className="grid grid-cols-2 gap-1.5 text-[11px] font-semibold">
+                              <span className="rounded-lg bg-emerald-50 px-2 py-1 text-emerald-700">{stats.approved} Approved</span>
+                              <span className="rounded-lg bg-slate-50 px-2 py-1 text-slate-500">{stats.pending} Pending</span>
+                              <span className="rounded-lg bg-orange-50 px-2 py-1 text-orange-600">{stats.rejected} Rejected</span>
+                              <span className="rounded-lg bg-slate-50 px-2 py-1 text-slate-500">{stats.draft} Draft</span>
+                            </div>
+                          </td>
+                          <td className="border-b border-[#f4eee7] px-4 py-4 text-xs leading-5 text-slate-500">{formatAdminDateTime(merchant.created_at)}</td>
+                          <td className="border-b border-[#f4eee7] px-5 py-4">
+                            <Link
+                              href={buildMerchantSelectionHref(resolvedSearchParams, merchant.id)}
+                              className="inline-flex items-center justify-center rounded-[12px] border border-orange-200 bg-white px-5 py-2.5 text-xs font-semibold text-orange-600 transition hover:bg-orange-50"
+                            >
+                              Detail
+                            </Link>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
-            <p className="max-w-2xl text-sm leading-7 text-slate-500">
-              Nonaktif sementara memblok akses merchant ke dashboard. Penghapusan merchant memakai alur maker-checker:
-              admin mengajukan, lalu operations manager menyetujui atau membatalkan sebelum hard delete dijalankan.
-            </p>
+            <div className="flex flex-col gap-3 border-t border-[#f0e6dd] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-500">
+                Menampilkan {filteredManaged.length ? managedRangeStart + 1 : 0} - {managedEndIndex} dari {managedTotalCount} data
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={buildMerchantPageHref(resolvedSearchParams, Math.max(1, managedPage - 1))}
+                  aria-disabled={managedPage <= 1}
+                  className={`inline-flex h-10 items-center justify-center rounded-[12px] border px-4 text-sm font-semibold transition ${
+                    managedPage <= 1
+                      ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-300"
+                      : "border-[#eadfd5] bg-white text-slate-600 hover:border-orange-200 hover:text-orange-600"
+                  }`}
+                >
+                  Prev
+                </Link>
+                <span className="inline-flex h-10 min-w-10 items-center justify-center rounded-[12px] border border-orange-300 bg-white px-3 text-sm font-semibold text-orange-600">
+                  {managedPage}
+                </span>
+                <span className="px-2 text-sm text-slate-400">/ {managedPageCount}</span>
+                <Link
+                  href={buildMerchantPageHref(resolvedSearchParams, Math.min(managedPageCount, managedPage + 1))}
+                  aria-disabled={managedPage >= managedPageCount}
+                  className={`inline-flex h-10 items-center justify-center rounded-[12px] border px-4 text-sm font-semibold transition ${
+                    managedPage >= managedPageCount
+                      ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-300"
+                      : "border-[#eadfd5] bg-white text-slate-600 hover:border-orange-200 hover:text-orange-600"
+                  }`}
+                >
+                  Next
+                </Link>
+              </div>
+            </div>
           </div>
 
-          {!filteredManaged.length ? (
-            <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
-              <h2 className="text-2xl font-semibold text-slate-950">Belum ada merchant aktif</h2>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Tidak ada merchant managed yang cocok dengan filter saat ini.
-              </p>
-            </section>
-          ) : (
-            <section className="grid gap-6">
-              {paginatedManaged.map((merchant) => {
-                const pendingDeletionRequest =
-                  pendingDeletionRequestMap.get(getDeletionRequestKey({ merchantId: merchant.id }) || "") || null
-                return (
-                <article
-                  key={merchant.id}
-                  className="rounded-[22px] border border-[#ece3d7] bg-[#fffdfa] p-5 shadow-[0_16px_44px_rgba(15,23,42,0.05)] sm:rounded-[26px] sm:p-6"
-                >
-                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
-                    <div className="min-w-0 flex-1 space-y-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <h3 className="text-xl font-semibold text-slate-950 sm:text-2xl">
-                          {merchant.brand_name || merchant.company_name || "Merchant tanpa nama"}
-                        </h3>
-                        <span
-                          className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getStatusBadge(merchant.verification_status)}`}
-                        >
-                          {getStatusLabel(merchant.verification_status)}
-                        </span>
-                      </div>
-                      <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
-                        {[
-                          { label: "Email", value: fieldValue(merchant.email) },
-                          { label: "Company", value: fieldValue(merchant.company_name) },
-                          { label: "NIB", value: fieldValue(merchant.nib) },
-                          { label: "NPWP Badan Usaha", value: fieldValue(merchant.npwp_company) },
-                        ].map((item) => (
-                          <div key={item.label} className="min-w-0 rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</p>
-                            <p className={fieldValueClassName()}>{item.value}</p>
-                          </div>
-                        ))}
-                      </div>
-                      {merchant.rejection_reason ? (
-                        <div className="rounded-[18px] border border-[#efe3d5] bg-[#fff7ef] px-4 py-3 text-sm text-slate-600">
-                          {merchant.verification_status === "rejected" ? "Alasan penolakan final dari operations manager" : "Catatan review"}: {merchant.rejection_reason}
-                        </div>
-                      ) : null}
-                      {merchant.verification_status === "rejected" && merchant.revision_deadline_at ? (
-                        <div className="rounded-[18px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                          Merchant punya waktu revisi 7 hari sampai: {new Date(merchant.revision_deadline_at).toLocaleString("id-ID")}
-                        </div>
-                      ) : null}
-
-                      <div className="rounded-[20px] border border-[#efe3d5] bg-white px-4 py-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#f2e8dd] pb-4">
-                          <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Merchant package workspace</p>
-                            <p className="mt-2 text-sm text-slate-600">Masuk ke detail merchant untuk melihat seluruh paket tanpa tercampur merchant lain.</p>
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            <Link
-                              href={`/admin/merchants/${merchant.id}/profile`}
-                              className="inline-flex items-center justify-center rounded-[16px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
-                            >
-                              Profil
-                            </Link>
-                            <Link
-                              href={`/admin/merchants/${merchant.id}`}
-                              className="inline-flex items-center justify-center rounded-[16px] border border-[#f2dcc1] bg-[#fff7ef] px-4 py-3 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-50"
-                            >
-                              Buka paket merchant
-                            </Link>
-                          </div>
-                        </div>
-                        <div className="mt-4 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                          {(() => {
-                            const stats = packageStatsMap.get(merchant.id) || {
-                              total: 0,
-                              pending: 0,
-                              approved: 0,
-                              rejected: 0,
-                              draft: 0,
-                              inactive: 0,
-                            }
-                            const items = [
-                              { label: "Total", value: stats.total },
-                              { label: "Pending", value: stats.pending },
-                              { label: "Approved", value: stats.approved },
-                              { label: "Rejected", value: stats.rejected },
-                              { label: "Draft", value: stats.draft },
-                              { label: "Inactive", value: stats.inactive },
-                            ]
-                            return items.map((item) => (
-                              <div key={item.label} className="rounded-[16px] border border-[#f0e6da] bg-[#fffaf4] p-3">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                                <p className="mt-2 text-lg font-semibold text-slate-950">{item.value}</p>
-                              </div>
-                            ))
-                          })()}
-                        </div>
-                      </div>
+          <aside className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.05)] 2xl:sticky 2xl:top-6 2xl:max-h-[calc(100vh-48px)] 2xl:overflow-auto">
+            {selectedManagedMerchant && selectedPackageStats ? (
+              <div className="space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{selectedManagedMerchant.brand_name || selectedManagedMerchant.company_name || "Merchant tanpa nama"}</h2>
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusBadge(selectedManagedMerchant.verification_status)}`}>
+                        {getStatusLabel(selectedManagedMerchant.verification_status)}
+                      </span>
                     </div>
-
-                    <div className="flex min-w-0 w-full flex-col gap-3 xl:w-[340px] xl:pt-[58px]">
-                      {pendingDeletionRequest ? (
-                        <div className="overflow-hidden rounded-[24px] border border-amber-200 bg-amber-50/80 shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
-                          <div className="space-y-4 px-5 py-4">
-                            <details className="group rounded-[18px] border border-amber-200 bg-white/80 p-4">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                                <div>
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700">Alasan admin</p>
-                                  <p className="mt-2 text-sm text-slate-600">Buka untuk melihat alasan lengkap pengajuan hapus merchant dari admin.</p>
-                                </div>
-                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-amber-700 transition group-open:rotate-180">
-                                  v
-                                </span>
-                              </summary>
-                              <p className="mt-4 break-words text-sm leading-7 text-slate-700">{pendingDeletionRequest.reason}</p>
-                            </details>
-                            <details className="group rounded-[18px] border border-slate-200 bg-white/90 p-4">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                                <div>
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Ringkasan merchant</p>
-                                  <p className="mt-2 text-sm text-slate-600">Buka detail merchant sebelum mengambil keputusan penghapusan.</p>
-                                </div>
-                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 text-slate-500 transition group-open:rotate-180">
-                                  v
-                                </span>
-                              </summary>
-                              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Brand</p>
-                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.brand_name || merchant.company_name)}</p>
-                                </div>
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Email</p>
-                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.email)}</p>
-                                </div>
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Company</p>
-                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.company_name)}</p>
-                                </div>
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Status</p>
-                                  <p className={fieldValueClassName(true)}>{getStatusLabel(merchant.verification_status)}</p>
-                                </div>
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NIB</p>
-                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.nib)}</p>
-                                </div>
-                                <div className="min-w-0 rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">NPWP</p>
-                                  <p className={fieldValueClassName(true)}>{fieldValue(merchant.npwp_company)}</p>
-                                </div>
-                              </div>
-                              <div className="mt-4 flex flex-wrap gap-3">
-                                <Link
-                                  href={`/admin/merchants/${merchant.id}/profile`}
-                                  className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 py-2.5 text-center text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-700"
-                                >
-                                  Profil
-                                </Link>
-                                <Link
-                                  href={`/admin/merchants/${merchant.id}`}
-                                  className="inline-flex min-w-0 flex-1 items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-center text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
-                                >
-                                  Paket
-                                </Link>
-                              </div>
-                            </details>
-                            <details className="group rounded-[18px] border border-slate-200 bg-white/90 p-4">
-                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                                <div>
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
-                                  <p className="mt-2 text-sm text-slate-600">Buka untuk melihat paket yang terdampak dan konsekuensi hard delete.</p>
-                                </div>
-                                <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 text-slate-500 transition group-open:rotate-180">
-                                  v
-                                </span>
-                              </summary>
-                              {(() => {
-                                const stats = packageStatsMap.get(merchant.id) || {
-                                  total: 0,
-                                  pending: 0,
-                                  approved: 0,
-                                  rejected: 0,
-                                  draft: 0,
-                                  inactive: 0,
-                                }
-                                const impactItems = [
-                                  { label: "Total paket", value: `${stats.total}` },
-                                  { label: "Paket approved", value: `${stats.approved}` },
-                                  { label: "Paket pending", value: `${stats.pending}` },
-                                  { label: "Paket draft", value: `${stats.draft}` },
-                                ]
-                                return (
-                                  <div className="mt-4">
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                      {impactItems.map((item) => (
-                                        <div key={item.label} className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-3">
-                                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{item.label}</p>
-                                          <p className="mt-2 font-medium text-slate-800">{item.value}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="mt-4 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-700">
-                                      Jika disetujui, merchant ini akan dihapus permanen dari database beserta paket, profile merchant, akun login, payout request, dan data turunan yang terhubung.
-                                    </div>
-                                  </div>
-                                )
-                              })()}
-                            </details>
-                            {pendingDeletionRequest.status === "pending" && canReviewMerchantDeletion ? (
-                              <>
-                                <form action={approveMerchantDeletion} className="space-y-3">
-                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
-                                  <textarea
-                                    name="reviewNote"
-                                    placeholder="Alasan final penghapusan yang akan dikirim ke email merchant..."
-                                    className="min-h-[96px] w-full rounded-[18px] border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                                  />
-                                  <ConfirmSubmitButton
-                                    confirmMessage="Yakin ingin menyetujui penghapusan merchant ini? Semua data merchant dan paket terkait akan dihapus permanen."
-                                    pendingLabel="Sedang menghapus merchant..."
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                                  >
-                                    {MERCHANT_REVIEW_BUTTONS.approve}
-                                  </ConfirmSubmitButton>
-                                </form>
-                                <form action={rejectMerchantDeletion} className="space-y-3">
-                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
-                                  <textarea
-                                    name="reviewNote"
-                                    placeholder="Alasan operations manager menolak penghapusan. Alasan ini akan dikirim ke admin..."
-                                    className="min-h-[96px] w-full rounded-[18px] border border-rose-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
-                                  />
-                                  <ConfirmSubmitButton
-                                    confirmMessage="Tolak pengajuan penghapusan merchant ini dan kirim alasan ke admin?"
-                                    pendingLabel="Sedang menolak..."
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-rose-300 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
-                                  >
-                                    {MERCHANT_REVIEW_BUTTONS.reject}
-                                  </ConfirmSubmitButton>
-                                </form>
-                              </>
-                            ) : pendingDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && currentUserId === pendingDeletionRequest.requested_by ? (
-                              <div className="space-y-3">
-                                <div className="rounded-[18px] border border-rose-200 bg-rose-50 p-4 text-sm leading-7 text-rose-700">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-rose-700">Alasan manager</p>
-                                  <p className="mt-3 break-words">{pendingDeletionRequest.review_note || "Operations manager menolak penghapusan tanpa catatan tambahan."}</p>
-                                </div>
-                                <form action={finalizeMerchantDeletionCancellation}>
-                                  <input type="hidden" name="requestId" value={pendingDeletionRequest.id} />
-                                  <ConfirmSubmitButton
-                                    confirmMessage="Tutup pengajuan penghapusan merchant ini sebagai dibatalkan?"
-                                    pendingLabel="Sedang menutup pengajuan..."
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                                  >
-                                    {MERCHANT_REVIEW_BUTTONS.cancel}
-                                  </ConfirmSubmitButton>
-                                </form>
-                              </div>
-                            ) : (
-                              <div className="rounded-[18px] border border-sky-200 bg-sky-50 p-4 text-sm leading-7 text-sky-700">
-                                {pendingDeletionRequest.status === "manager_rejected"
-                                  ? "Pengajuan ini sudah ditolak operations manager dan sedang menunggu admin menutup request."
-                                  : "Menunggu keputusan operations manager. Admin tidak bisa menghapus merchant ini sebelum request direview."}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : null}
-                      {merchant.verification_status === "approved" && canExecuteAdminOps ? (
-                        <MerchantReasonActionCard merchantId={merchant.id} variant="deactivate" />
-                      ) : null}
-
-                      {merchant.verification_status === "inactive" && canExecuteAdminOps ? (
-                        <div className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#f2dcc1] bg-[#fffdfa] shadow-[0_14px_36px_rgba(15,23,42,0.06)]">
-                          <div className="border-b border-[#f3e4d2] px-5 py-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-emerald-700">Restore Access</p>
-                            <h4 className="mt-2 text-base font-semibold text-slate-950">Aktifkan kembali</h4>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                              Merchant akan kembali bisa login dan melanjutkan operasional di workspace merchant.
-                            </p>
-                          </div>
-                          <div className="flex h-full flex-col px-5 pb-5 pt-4">
-                            <div className="rounded-[18px] border border-[#f3e4d2] bg-[#fffaf4] p-4">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700">Access impact</p>
-                              <p className="mt-3 text-sm leading-7 text-slate-600">
-                                Merchant kembali aktif tanpa mengubah histori booking, payout, atau package review sebelumnya.
-                              </p>
-                            </div>
-                            <form action={reactivateMerchant} className="mt-auto pt-4">
-                              <input type="hidden" name="merchantId" value={merchant.id} />
-                              <button className="inline-flex w-full items-center justify-center gap-2 rounded-[18px] bg-[linear-gradient(135deg,#059669_0%,#10b981_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(16,185,129,0.24)] transition hover:brightness-105">
-                                Aktifkan
-                              </button>
-                            </form>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {merchant.verification_status !== "deleted" && canRequestMerchantDeletion && !pendingDeletionRequest ? (
-                        <MerchantReasonActionCard merchantId={merchant.id} variant="delete" />
-                      ) : null}
-                      {!canExecuteAdminOps && !canReviewMerchantDeletion ? (
-                        <div className="rounded-[24px] border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-700">
-                          Operations Manager hanya memonitor status merchant. Nonaktif, aktifkan kembali, dan hapus akses tetap dijalankan admin operasional.
-                        </div>
-                      ) : null}
-                    </div>
+                    <p className="mt-2 text-sm text-slate-500">ID Merchant: {formatInternalUserCode(selectedManagedMerchant.id)}</p>
+                    <p className="mt-1 text-sm text-slate-500">Terdaftar: {formatAdminDateTime(selectedManagedMerchant.created_at)}</p>
                   </div>
-                </article>
-                )
-              })}
-              {managedPageCount > 1 ? (
-                <div className="flex flex-col gap-3 rounded-[24px] border border-[#ece3d7] bg-white px-5 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-medium text-slate-600">
-                    Halaman {managedPage} dari {managedPageCount}. Gunakan pencarian/filter untuk menemukan merchant lebih cepat.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href={buildMerchantPageHref(resolvedSearchParams, Math.max(1, managedPage - 1))}
-                      aria-disabled={managedPage <= 1}
-                      className={`inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition ${
-                        managedPage <= 1
-                          ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-400"
-                          : "border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:text-orange-700"
-                      }`}
-                    >
-                      Sebelumnya
-                    </Link>
-                    <Link
-                      href={buildMerchantPageHref(resolvedSearchParams, Math.min(managedPageCount, managedPage + 1))}
-                      aria-disabled={managedPage >= managedPageCount}
-                      className={`inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition ${
-                        managedPage >= managedPageCount
-                          ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-400"
-                          : "border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100"
-                      }`}
-                    >
-                      Berikutnya
-                    </Link>
+                  <Link href={buildMerchantPageHref(resolvedSearchParams, managedPage)} className="text-2xl leading-none text-slate-400 hover:text-slate-700">x</Link>
+                </div>
+
+                <div className="flex gap-7 border-b border-[#f0e6dd] text-sm font-semibold text-slate-500">
+                  <span className="border-b-2 border-orange-500 px-1 pb-4 text-orange-600">Detail</span>
+                  <Link href={`/admin/merchants/${selectedManagedMerchant.id}`} className="px-1 pb-4 transition hover:text-orange-600">Paket</Link>
+                  <span className="px-1 pb-4">Aktivitas</span>
+                  <Link href="/admin/audit-log" className="px-1 pb-4 transition hover:text-orange-600">Audit Log</Link>
+                </div>
+
+                <div className="rounded-[18px] border border-[#eee3d9] p-5">
+                  <h3 className="text-sm font-semibold text-slate-950">Informasi Perusahaan</h3>
+                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                    {[
+                      { label: "Company", value: fieldValue(selectedManagedMerchant.company_name) },
+                      { label: "NPWP Badan Usaha", value: fieldValue(selectedManagedMerchant.npwp_company) },
+                      { label: "Email", value: fieldValue(selectedManagedMerchant.email) },
+                      { label: "PIC", value: fieldValue(selectedManagedMerchant.pic_name) },
+                      { label: "NIB", value: fieldValue(selectedManagedMerchant.nib) },
+                      { label: "PIC Position", value: fieldValue(selectedManagedMerchant.pic_position) },
+                    ].map((item) => (
+                      <div key={item.label} className="min-w-0">
+                        <p className="text-xs font-medium text-slate-400">{item.label}</p>
+                        <p className="mt-1 break-words text-sm font-semibold text-slate-700">{item.value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              ) : null}
-            </section>
-          )}
+
+                <div className="rounded-[18px] border border-[#eee3d9] p-5">
+                  <h3 className="text-sm font-semibold text-slate-950">Status & Akses Paket</h3>
+                  <div className="mt-5 grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+                    <p className="text-slate-500">Status Merchant <span className="float-right font-semibold text-slate-800">{getStatusLabel(selectedManagedMerchant.verification_status)}</span></p>
+                    <p className="text-slate-500">Total Paket <span className="float-right font-semibold text-slate-800">{selectedPackageStats.total}</span></p>
+                    <p className="text-slate-500">Temporary Block <span className="float-right font-semibold text-slate-800">{selectedManagedMerchant.verification_status === "inactive" ? "Ya" : "-"}</span></p>
+                    <p className="text-slate-500">Approved <span className="float-right font-semibold text-emerald-600">{selectedPackageStats.approved}</span></p>
+                    <p className="text-slate-500">Deletion Request <span className="float-right font-semibold text-rose-500">{selectedDeletionRequest ? "Ada" : "-"}</span></p>
+                    <p className="text-slate-500">Pending Review <span className="float-right font-semibold text-orange-600">{selectedPackageStats.pending}</span></p>
+                    <p className="text-slate-500">Draft <span className="float-right font-semibold text-slate-700">{selectedPackageStats.draft}</span></p>
+                    <p className="text-slate-500">Inactive <span className="float-right font-semibold text-slate-700">{selectedPackageStats.inactive}</span></p>
+                  </div>
+                </div>
+
+                <div className="rounded-[18px] border border-[#eee3d9] p-5">
+                  <h3 className="text-sm font-semibold text-slate-950">Aksi Cepat</h3>
+                  <div className="mt-4 flex flex-wrap gap-3">
+                    <Link href={`/admin/merchants/${selectedManagedMerchant.id}/profile`} className="inline-flex items-center justify-center rounded-[14px] border border-[#eadfd5] bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-600">
+                      Lihat Profil Merchant
+                    </Link>
+                    <Link href={`/admin/merchants/${selectedManagedMerchant.id}`} className="inline-flex items-center justify-center rounded-[14px] border border-orange-200 bg-orange-50 px-4 py-2.5 text-xs font-semibold text-orange-600 transition hover:bg-orange-100">
+                      Buka Paket Merchant
+                    </Link>
+                    <Link href="/admin/audit-log" className="inline-flex items-center justify-center rounded-[14px] border border-[#eadfd5] bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-600">
+                      Lihat Audit Log
+                    </Link>
+                    {selectedManagedMerchant.verification_status === "approved" && canExecuteAdminOps ? (
+                      <MerchantReasonActionCard merchantId={selectedManagedMerchant.id} variant="deactivate" compact />
+                    ) : null}
+                    {selectedManagedMerchant.verification_status === "inactive" && canExecuteAdminOps ? (
+                      <form action={reactivateMerchant}>
+                        <input type="hidden" name="merchantId" value={selectedManagedMerchant.id} />
+                        <button className="inline-flex items-center justify-center rounded-[14px] border border-emerald-300 bg-white px-4 py-2.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50">
+                          Aktifkan Merchant
+                        </button>
+                      </form>
+                    ) : null}
+                    {selectedManagedMerchant.verification_status !== "deleted" && canRequestMerchantDeletion && !selectedDeletionRequest ? (
+                      <MerchantReasonActionCard merchantId={selectedManagedMerchant.id} variant="delete" compact />
+                    ) : null}
+                  </div>
+                </div>
+
+                {selectedDeletionRequest ? (
+                  <div className="rounded-[18px] border border-amber-200 bg-amber-50 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Deletion request aktif</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-700">{selectedDeletionRequest.reason}</p>
+                    {selectedDeletionRequest.status === "pending" && canReviewMerchantDeletion ? (
+                      <div className="mt-4 grid gap-3">
+                        <form action={approveMerchantDeletion} className="space-y-3">
+                          <input type="hidden" name="requestId" value={selectedDeletionRequest.id} />
+                          <textarea name="reviewNote" placeholder="Alasan final penghapusan..." className="min-h-[88px] w-full rounded-[14px] border border-emerald-200 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100" />
+                          <ConfirmSubmitButton confirmMessage="Yakin ingin menyetujui penghapusan merchant ini?" pendingLabel="Sedang menghapus..." className="w-full rounded-[14px] bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                            {MERCHANT_REVIEW_BUTTONS.approve}
+                          </ConfirmSubmitButton>
+                        </form>
+                        <form action={rejectMerchantDeletion} className="space-y-3">
+                          <input type="hidden" name="requestId" value={selectedDeletionRequest.id} />
+                          <textarea name="reviewNote" placeholder="Alasan operations manager menolak..." className="min-h-[88px] w-full rounded-[14px] border border-rose-200 bg-white px-4 py-3 text-sm outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100" />
+                          <ConfirmSubmitButton confirmMessage="Tolak pengajuan penghapusan merchant ini?" pendingLabel="Sedang menolak..." className="w-full rounded-[14px] border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                            {MERCHANT_REVIEW_BUTTONS.reject}
+                          </ConfirmSubmitButton>
+                        </form>
+                      </div>
+                    ) : null}
+                    {selectedDeletionRequest.status === "manager_rejected" && canRequestMerchantDeletion && currentUserId === selectedDeletionRequest.requested_by ? (
+                      <form action={finalizeMerchantDeletionCancellation} className="mt-4">
+                        <input type="hidden" name="requestId" value={selectedDeletionRequest.id} />
+                        <ConfirmSubmitButton confirmMessage="Tutup pengajuan penghapusan merchant ini sebagai dibatalkan?" pendingLabel="Sedang menutup pengajuan..." className="w-full rounded-[14px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                          {MERCHANT_REVIEW_BUTTONS.cancel}
+                        </ConfirmSubmitButton>
+                      </form>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="rounded-[18px] border border-[#eee3d9] p-5">
+                  <h3 className="text-sm font-semibold text-slate-950">Catatan Admin</h3>
+                  <p className="mt-4 text-sm leading-6 text-slate-500">
+                    {selectedManagedMerchant.rejection_reason || "Merchant aktif dan tidak memiliki catatan khusus."}
+                  </p>
+                  <div className="mt-5 border-t border-[#f0e6dd] pt-4 text-xs text-slate-500">
+                    Terakhir updated oleh <span className="font-semibold text-slate-800">Admin Red Feng</span>
+                    <span className="float-right">{formatAdminDateTime(selectedManagedMerchant.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-14 text-center">
+                <h2 className="text-xl font-semibold text-slate-950">Pilih merchant</h2>
+                <p className="mt-2 text-sm text-slate-500">Detail merchant akan tampil di panel ini.</p>
+              </div>
+            )}
+          </aside>
         </section>
 
         <section className="space-y-5">

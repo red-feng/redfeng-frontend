@@ -87,23 +87,6 @@ export default function MerchantReasonActionCard({ merchantId, variant, compact 
           </div>
         </div>
       )}
-      {!compact ? null : null}
-      {false ? (
-        <div className={`flex h-full flex-col overflow-hidden rounded-[20px] border sm:rounded-[24px] ${copy.cardClass}`}>
-          <div className={`border-b px-4 py-4 sm:px-5 ${copy.headerClass}`}>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
-          </div>
-          <div className="flex h-full flex-col px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition sm:w-auto ${copy.buttonClass}`}
-          >
-            {copy.buttonLabel}
-          </button>
-          </div>
-        </div>
-      ) : null}
 
       {open ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:py-6">
