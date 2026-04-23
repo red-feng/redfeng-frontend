@@ -14,7 +14,7 @@ export function resolvePublicAccountRole(role: string | null | undefined): Publi
   if (normalized === "superadmin") return "superadmin"
   if (normalized === "admin" || normalized === "operations_manager") return "admin"
   if (normalized === "finance" || normalized === "finance_manager") return "finance"
-  if (normalized === "merchant") return "merchant"
+  if (normalized === "merchant") return "customer"
   if (normalized === "customer") return "customer"
   return "guest"
 }

@@ -2,13 +2,13 @@ import CommerceChatRealtimeClient from "@/app/commerce-chat/CommerceChatRealtime
 import {
   COMMERCE_CHAT_PAGE_SIZE,
   getDeletedCommerceChatNoticeForUser,
-  getCommerceChatProfile,
   loadCommerceChatMessagesPageForUser,
   loadCommerceChatThreadsForUser,
   resolveCommerceActiveThreadId,
 } from "@/lib/commerce-chat"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { hasActiveAccountRole } from "@/lib/account-roles"
 import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
@@ -29,8 +29,8 @@ export default async function MerchantChatPage({ searchParams }: Props) {
     redirect("/merchant/login")
   }
 
-  const profile = await getCommerceChatProfile(adminSupabase, user.id)
-  if (profile?.role !== "merchant") {
+  const hasMerchantAccess = await hasActiveAccountRole(adminSupabase, user.id, "merchant")
+  if (!hasMerchantAccess) {
     redirect("/merchant/dashboard")
   }
 

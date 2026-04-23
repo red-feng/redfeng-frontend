@@ -228,42 +228,40 @@ export default function MerchantLoginClient({ initialLocale }: { initialLocale: 
       return
     }
 
-    const userId = session.user.id
+    if (typeof document !== "undefined") {
+      document.cookie = `${ACTIVE_PORTAL_COOKIE}=merchant; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
+    }
 
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", userId).maybeSingle()
+    const accessResponse = await fetch("/api/auth/portal-access?portal=merchant", {
+      cache: "no-store",
+    })
+    const access = (await accessResponse.json().catch(() => null)) as {
+      hasAccess?: boolean
+      merchantStatus?: string | null
+    } | null
 
-    if (!profile) {
+    if (!accessResponse.ok || !access?.hasAccess) {
       setError(t.missingAccess)
       await supabase.auth.signOut()
       setLoading(false)
       return
     }
 
-    if (profile.role === "merchant") {
-      if (typeof document !== "undefined") {
-        document.cookie = `${ACTIVE_PORTAL_COOKIE}=merchant; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`
-      }
+    if (access.merchantStatus === "inactive") {
+      await supabase.auth.signOut()
+      setError(t.inactiveDuringLogin)
+      setLoading(false)
+      return
+    }
 
-      const { data: merchant } = await supabase
-        .from("merchants")
-        .select("verification_status")
-        .eq("user_id", userId)
-        .maybeSingle()
+    if (access.merchantStatus === "deleted") {
+      await supabase.auth.signOut()
+      setError(t.deletedDuringLogin)
+      setLoading(false)
+      return
+    }
 
-      if (merchant?.verification_status === "inactive") {
-        await supabase.auth.signOut()
-        setError(t.inactiveDuringLogin)
-        setLoading(false)
-        return
-      }
-
-      if (merchant?.verification_status === "deleted") {
-        await supabase.auth.signOut()
-        setError(t.deletedDuringLogin)
-        setLoading(false)
-        return
-      }
-
+    if (access.hasAccess) {
       window.location.assign(MERCHANT_PORTAL_DEFAULT_REDIRECT)
     } else {
       setError(t.wrongPortal)

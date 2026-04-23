@@ -12,6 +12,7 @@ import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
+import { ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
 
 export default async function CustomerLayout({
   children,
@@ -34,19 +35,22 @@ export default async function CustomerLayout({
     .eq("id", user.id)
     .maybeSingle()
   if (!profile) {
-    await supabase.from("profiles").upsert({
+    await adminSupabase.from("profiles").upsert({
       id: user.id,
       role: "customer",
     })
+    await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_layout_profile_created")
   } else if (profile.role === "merchant") {
-    const { data: merchant } = await supabase
+    const { data: merchant } = await adminSupabase
       .from("merchants")
-      .select("id")
+      .select("id, verification_status")
       .eq("user_id", user.id)
       .maybeSingle()
+    await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_layout_merchant_customer_access")
 
-    if (!merchant?.id) {
-      const { error: repairError } = await supabase
+    if (!merchant?.id || merchant.verification_status === "deleted") {
+      await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_layout_stale_merchant_repair")
+      const { error: repairError } = await adminSupabase
         .from("profiles")
         .update({ role: "customer" })
         .eq("id", user.id)
@@ -58,8 +62,6 @@ export default async function CustomerLayout({
           error: repairError.message,
         })
       }
-    } else {
-      redirect("/merchant/dashboard")
     }
   } else if (profile.role === "superadmin") {
     redirect("/superadmin/login")
@@ -67,7 +69,14 @@ export default async function CustomerLayout({
     redirect("/admin/login")
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
+  } else if (profile.role === "customer") {
+    await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_layout_customer_access")
   } else if (profile.role !== "customer") {
+    redirect("/login")
+  }
+
+  const hasCustomerAccess = await hasActiveAccountRole(adminSupabase, user.id, "customer")
+  if (!hasCustomerAccess) {
     redirect("/login")
   }
 

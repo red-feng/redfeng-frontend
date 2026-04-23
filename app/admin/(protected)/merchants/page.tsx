@@ -238,12 +238,26 @@ export default async function AdminMerchantsPage({
     .map((item) => String(item))
     .sort((a, b) => a.localeCompare(b))
 
-  const { data: merchantProfilesData } = await adminSupabase
+  const { data: legacyMerchantProfilesData } = await adminSupabase
     .from("profiles")
     .select("id, role, created_at")
     .eq("role", "merchant")
 
-  const merchantProfileIds = [...new Set(((merchantProfilesData as Array<{ id: string; role: string | null; created_at: string | null }> | null) || []).map((profile) => profile.id))]
+  const { data: merchantAccessRows } = await adminSupabase
+    .from("account_roles")
+    .select("user_id")
+    .eq("role", "merchant")
+    .eq("status", "active")
+
+  const merchantProfileIds = [
+    ...new Set([
+      ...(((legacyMerchantProfilesData as Array<{ id: string; role: string | null; created_at: string | null }> | null) || []).map((profile) => profile.id)),
+      ...(((merchantAccessRows as Array<{ user_id: string | null }> | null) || []).map((row) => row.user_id).filter(Boolean) as string[]),
+    ]),
+  ]
+  const { data: merchantProfilesData } = merchantProfileIds.length
+    ? await adminSupabase.from("profiles").select("id, role, created_at").in("id", merchantProfileIds)
+    : { data: [] as Array<{ id: string; role: string | null; created_at: string | null }> }
   const { data: linkedMerchantRows } = merchantProfileIds.length
     ? await adminSupabase.from("merchants").select("id, user_id").in("user_id", merchantProfileIds)
     : { data: [] as Array<{ id: string; user_id: string | null }> }
@@ -1217,19 +1231,19 @@ export default async function AdminMerchantsPage({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant anomalies</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Role merchant tanpa data merchant</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Akses merchant tanpa data merchant</h2>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-slate-500">
-              Akun di bawah ini punya role `merchant` di profiles, tetapi belum memiliki row di tabel merchants.
-              Admin dapat mencabut akses merchant-nya langsung dari sini.
+              Akun di bawah ini punya akses merchant aktif, tetapi belum memiliki row di tabel merchants.
+              Admin dapat mencabut akses merchant-nya langsung dari sini tanpa menghapus akun customer.
             </p>
           </div>
 
           {!orphanMerchantProfiles.length ? (
             <section className="rounded-[24px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_60px_rgba(15,23,42,0.06)] sm:rounded-[30px] sm:p-10">
-              <h2 className="text-2xl font-semibold text-slate-950">Tidak ada merchant tanpa profil merchant</h2>
+                <h2 className="text-2xl font-semibold text-slate-950">Tidak ada akses merchant yatim</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Semua akun merchant saat ini sudah punya data merchant yang valid.
+                Semua akses merchant aktif saat ini sudah punya data merchant yang valid.
               </p>
             </section>
           ) : (
@@ -1273,7 +1287,7 @@ export default async function AdminMerchantsPage({
                           <div className="mt-4 rounded-[18px] border border-slate-200 bg-white/90 p-4 text-sm leading-7 text-slate-700">
                             <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-500">Dampak penghapusan</p>
                             <div className="mt-3 rounded-[14px] border border-rose-200 bg-rose-50 px-4 py-4 text-rose-700">
-                              Jika disetujui, akun anomali ini akan dihapus permanen dengan menghapus profile merchant dan auth user yang terkait.
+                              Jika disetujui, akses merchant akan dicabut. Akun auth dan akses customer tetap dipertahankan.
                             </div>
                           </div>
                           {pendingDeletionRequest.status === "pending" && canReviewMerchantDeletion ? (
@@ -1340,7 +1354,7 @@ export default async function AdminMerchantsPage({
                             {MERCHANT_REVIEW_BUTTONS.submit}
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-700">
-                            Action ini mengirim pengajuan ke operations manager. Jika disetujui, akun auth dan profile merchant akan dihapus permanen dari database.
+                             Action ini mengirim pengajuan ke operations manager. Jika disetujui, akses merchant akan dicabut tanpa menghapus akun customer.
                           </p>
                           <form action={requestMerchantDeletion} className="mt-4 flex h-full flex-col space-y-4">
                             <input type="hidden" name="profileId" value={profile.id} />

@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
 import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
 import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
+import { ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 function getCustomerPortalRoleError(role: string | null | undefined) {
   const normalizedRole = String(role || "").trim().toLowerCase()
@@ -25,37 +28,38 @@ function getCustomerPortalRoleError(role: string | null | undefined) {
   return "Portal ini khusus untuk customer."
 }
 
-async function repairDeletedMerchantRole(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+async function ensureCustomerAccessForPublicAccount(
+  adminSupabase: SupabaseClient,
   userId: string,
   role: string | null | undefined,
 ) {
-  if (String(role || "").trim().toLowerCase() !== "merchant") {
-    return false
-  }
-
-  const { data: merchant } = await supabase
+  const { data: merchant } = await adminSupabase
     .from("merchants")
-    .select("id")
+    .select("id, verification_status")
     .eq("user_id", userId)
     .maybeSingle()
 
-  if (merchant?.id) {
-    return false
+  const normalizedRole = String(role || "").trim().toLowerCase()
+  if (normalizedRole === "customer" || normalizedRole === "merchant" || !normalizedRole) {
+    await ensureCustomerBaselineRole(adminSupabase, userId, "customer_portal_login")
   }
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role: "customer" })
-    .eq("id", userId)
-    .eq("role", "merchant")
+  const hasCustomerAccess = await hasActiveAccountRole(adminSupabase, userId, "customer")
+  if (!hasCustomerAccess) return false
 
-  if (error) {
-    console.error("[auth/callback] failed to repair stale merchant role", {
-      userId,
-      error: error.message,
-    })
-    return false
+  if (normalizedRole === "merchant" && (!merchant?.id || merchant.verification_status === "deleted")) {
+    const { error } = await adminSupabase
+      .from("profiles")
+      .update({ role: "customer" })
+      .eq("id", userId)
+      .eq("role", "merchant")
+
+    if (error) {
+      console.error("[auth/callback] failed to repair stale merchant primary role", {
+        userId,
+        error: error.message,
+      })
+    }
   }
 
   return true
@@ -70,6 +74,7 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient("customer")
+    const adminSupabase = createAdminClient()
     await supabase.auth.exchangeCodeForSession(code)
 
     const {
@@ -84,10 +89,11 @@ export async function GET(request: Request) {
         .maybeSingle()
 
       if (!profile) {
-        await supabase.from("profiles").upsert({
+        await adminSupabase.from("profiles").upsert({
           id: user.id,
           role: "customer",
         })
+        await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_oauth_profile_created")
         const response = NextResponse.redirect(new URL(safeNext, origin))
         if (portal === "customer") {
           response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
@@ -99,26 +105,25 @@ export async function GET(request: Request) {
         return response
       }
 
-      const repairedDeletedMerchant = await repairDeletedMerchantRole(supabase, user.id, profile.role)
-      const effectiveRole = repairedDeletedMerchant ? "customer" : profile.role
-
-      if (effectiveRole === "customer") {
-        const response = NextResponse.redirect(new URL(safeNext, origin))
-        if (portal === "customer") {
-          response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
-            path: "/",
-            maxAge: ACTIVE_PORTAL_MAX_AGE,
-            sameSite: "lax",
-          })
-        }
-        return response
-      }
+      const effectiveRole = profile.role
 
       if (isAdminPortalRole(effectiveRole) || isFinancePortalRole(effectiveRole) || effectiveRole === "superadmin") {
         await supabase.auth.signOut()
         return NextResponse.redirect(
           new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(effectiveRole))}`, origin),
         )
+      }
+
+      if (await ensureCustomerAccessForPublicAccount(adminSupabase, user.id, effectiveRole)) {
+        const response = NextResponse.redirect(new URL(safeNext, origin))
+        if (portal === "customer") {
+          response.cookies.set(ACTIVE_PORTAL_COOKIE, "customer", {
+            path: "/",
+            maxAge: ACTIVE_PORTAL_MAX_AGE,
+            sameSite: "lax",
+          })
+        }
+        return response
       }
 
       await supabase.auth.signOut()

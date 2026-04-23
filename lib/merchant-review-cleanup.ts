@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { purgePackageRecords } from "@/lib/package-delete"
+import { ensureCustomerBaselineRole, revokeAccountRole } from "@/lib/account-roles"
 
 const MERCHANT_DOCUMENT_BUCKET = "merchant-documents"
 
@@ -83,18 +84,17 @@ export async function purgeMerchantAccountRecords(
 
   if (!merchant.user_id) return
 
-  const { error: profileDeleteError } = await adminSupabase
+  await revokeAccountRole(adminSupabase, merchant.user_id, "merchant", "merchant_account_purge")
+  await ensureCustomerBaselineRole(adminSupabase, merchant.user_id, "merchant_account_purge_customer_preserved")
+
+  const { error: profileUpdateError } = await adminSupabase
     .from("profiles")
-    .delete()
+    .update({ role: "customer" })
     .eq("id", merchant.user_id)
+    .eq("role", "merchant")
 
-  if (profileDeleteError) {
-    throw new Error(`Gagal menghapus profil merchant: ${profileDeleteError.message}`)
-  }
-
-  const { error: authDeleteError } = await adminSupabase.auth.admin.deleteUser(merchant.user_id)
-  if (authDeleteError) {
-    throw new Error(`Gagal menghapus akun auth merchant: ${authDeleteError.message}`)
+  if (profileUpdateError) {
+    throw new Error(`Gagal memperbarui profil merchant menjadi customer: ${profileUpdateError.message}`)
   }
 }
 

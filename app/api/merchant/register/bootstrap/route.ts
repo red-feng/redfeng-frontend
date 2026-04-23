@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { ensureAccountRole, ensureCustomerBaselineRole } from "@/lib/account-roles"
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +23,14 @@ export async function POST(request: Request) {
 
     const adminSupabase = createAdminClient()
 
+    const { data: existingProfile } = await adminSupabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle()
     const { error: profileError } = await adminSupabase.from("profiles").upsert({
       id: userId,
-      role: "merchant",
+      role: existingProfile?.role || "customer",
     })
 
     if (profileError) {
@@ -33,6 +39,9 @@ export async function POST(request: Request) {
         { status: 500 },
       )
     }
+
+    await ensureCustomerBaselineRole(adminSupabase, userId, "merchant_register_bootstrap")
+    await ensureAccountRole(adminSupabase, userId, "merchant", "merchant_register_bootstrap")
 
     const { error: merchantError } = await adminSupabase.from("merchants").upsert(
       {

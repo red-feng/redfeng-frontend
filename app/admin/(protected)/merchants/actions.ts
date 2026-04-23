@@ -10,6 +10,7 @@ import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { redirectWithMessage } from "@/lib/internal-account-management"
 import { purgeMerchantAccountRecords } from "@/lib/merchant-review-cleanup"
+import { ensureAccountRole, ensureCustomerBaselineRole, hasActiveAccountRole, revokeAccountRole } from "@/lib/account-roles"
 import {
   canDecideMerchantDeletionReview,
   canDecideMerchantRegistrationReview,
@@ -726,7 +727,7 @@ export async function approveMerchantReviewRequest(formData: FormData) {
 
   const { data: merchant } = await supabaseAdmin
     .from("merchants")
-    .select("id, email, brand_name, default_locale")
+    .select("id, user_id, email, brand_name, default_locale")
     .eq("id", request.merchant_id)
     .maybeSingle()
 
@@ -756,6 +757,9 @@ export async function approveMerchantReviewRequest(formData: FormData) {
     console.error("Approve merchant final decision error:", merchantError)
     backToMerchants(merchantError.message || "Gagal menyetujui merchant.", "error")
   }
+
+  await ensureCustomerBaselineRole(supabaseAdmin, merchant.user_id, "merchant_final_approval")
+  await ensureAccountRole(supabaseAdmin, merchant.user_id, "merchant", "merchant_final_approval")
 
   const { error: reviewUpdateError } = await supabaseAdmin
     .from("merchant_review_requests")
@@ -1115,7 +1119,8 @@ export async function requestMerchantDeletion(formData: FormData) {
     .eq("id", profileId)
     .maybeSingle()
 
-  if (profileError || !profile || profile.role !== "merchant") {
+  const hasMerchantAccess = await hasActiveAccountRole(supabaseAdmin, profileId, "merchant")
+  if (profileError || !profile || (profile.role !== "merchant" && !hasMerchantAccess)) {
     console.error("Delete orphan merchant profile error:", profileError)
     backToMerchants("Akun merchant tanpa data merchant tidak ditemukan.", "error")
   }
@@ -1205,33 +1210,48 @@ export async function approveMerchantDeletion(formData: FormData) {
       .maybeSingle()
 
     if (!merchant) {
-      backToMerchants("Data merchant untuk request ini sudah tidak ditemukan.", "error")
-    }
+      if (!request.profile_id) {
+        backToMerchants("Data merchant untuk request ini sudah tidak ditemukan.", "error")
+      }
 
-    try {
-      await sendMerchantDecisionEmail({
-        email: merchant.email ?? null,
-        brandName: merchant.brand_name ?? null,
-        locale: merchant.default_locale ?? "id",
-        type: "deleted",
-        reason: reviewNote || "Penghapusan merchant telah disetujui operations manager Red Feng.",
-      })
-    } catch (emailError) {
-      console.error("Approve merchant deletion email error:", emailError)
-    }
+      await revokeAccountRole(supabaseAdmin, request.profile_id, "merchant", "merchant_deletion_missing_row_approved")
+      await ensureCustomerBaselineRole(supabaseAdmin, request.profile_id, "merchant_deletion_missing_row_customer_preserved")
 
-    try {
-      await purgeMerchantAccountRecords(supabaseAdmin, {
-        id: request.merchant_id,
-        user_id: merchant.user_id,
-        ktp_file_url: merchant.ktp_file_url ?? null,
-        npwp_file_url: merchant.npwp_file_url ?? null,
-        nib_file_url: merchant.nib_file_url ?? null,
-        logo_url: merchant.logo_url ?? null,
-      })
-    } catch (deleteError) {
-      console.error("Approve merchant deletion purge error:", deleteError)
-      backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
+      const { error: updateProfileError } = await supabaseAdmin
+        .from("profiles")
+        .update({ role: "customer" })
+        .eq("id", request.profile_id)
+        .eq("role", "merchant")
+
+      if (updateProfileError) {
+        backToMerchants(updateProfileError.message || "Gagal mencabut role merchant dari profile.", "error")
+      }
+    } else {
+      try {
+        await sendMerchantDecisionEmail({
+          email: merchant.email ?? null,
+          brandName: merchant.brand_name ?? null,
+          locale: merchant.default_locale ?? "id",
+          type: "deleted",
+          reason: reviewNote || "Penghapusan merchant telah disetujui operations manager Red Feng.",
+        })
+      } catch (emailError) {
+        console.error("Approve merchant deletion email error:", emailError)
+      }
+
+      try {
+        await purgeMerchantAccountRecords(supabaseAdmin, {
+          id: request.merchant_id,
+          user_id: merchant.user_id,
+          ktp_file_url: merchant.ktp_file_url ?? null,
+          npwp_file_url: merchant.npwp_file_url ?? null,
+          nib_file_url: merchant.nib_file_url ?? null,
+          logo_url: merchant.logo_url ?? null,
+        })
+      } catch (deleteError) {
+        console.error("Approve merchant deletion purge error:", deleteError)
+        backToMerchants(deleteError instanceof Error ? deleteError.message : "Gagal menghapus merchant secara permanen.", "error")
+      }
     }
   } else if (request.profile_id) {
     const { data: profile } = await supabaseAdmin
@@ -1240,23 +1260,22 @@ export async function approveMerchantDeletion(formData: FormData) {
       .eq("id", request.profile_id)
       .maybeSingle()
 
-    if (!profile || profile.role !== "merchant") {
+    const hasMerchantAccess = await hasActiveAccountRole(supabaseAdmin, request.profile_id, "merchant")
+    if (!profile || (profile.role !== "merchant" && !hasMerchantAccess)) {
       backToMerchants("Profile merchant untuk request ini sudah tidak ditemukan.", "error")
     }
 
-    const { error: deleteProfileError } = await supabaseAdmin
+    await revokeAccountRole(supabaseAdmin, request.profile_id, "merchant", "orphan_merchant_deletion_approved")
+    await ensureCustomerBaselineRole(supabaseAdmin, request.profile_id, "orphan_merchant_deletion_customer_preserved")
+
+    const { error: updateProfileError } = await supabaseAdmin
       .from("profiles")
-      .delete()
+      .update({ role: "customer" })
       .eq("id", request.profile_id)
       .eq("role", "merchant")
 
-    if (deleteProfileError) {
-      backToMerchants(deleteProfileError.message || "Gagal menghapus profile merchant.", "error")
-    }
-
-    const { error: authDeleteError } = await supabaseAdmin.auth.admin.deleteUser(request.profile_id)
-    if (authDeleteError) {
-      backToMerchants(authDeleteError.message || "Gagal menghapus akun auth merchant.", "error")
+    if (updateProfileError) {
+      backToMerchants(updateProfileError.message || "Gagal mencabut role merchant dari profile.", "error")
     }
 
     try {

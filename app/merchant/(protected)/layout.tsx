@@ -22,6 +22,7 @@ import {
 import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
+import { ensureAccountRole, hasActiveAccountRole } from "@/lib/account-roles"
 
 export default async function MerchantLayout({
   children,
@@ -51,7 +52,19 @@ export default async function MerchantLayout({
     redirect("/merchant/login?error=no-profile")
   }
 
-  if (profile.role !== "merchant") {
+  if (profile.role === "merchant") {
+    const { data: legacyMerchant } = await adminSupabase
+      .from("merchants")
+      .select("id, verification_status")
+      .eq("user_id", user.id)
+      .maybeSingle()
+    if (legacyMerchant?.id && legacyMerchant.verification_status !== "deleted") {
+      await ensureAccountRole(adminSupabase, user.id, "merchant", "merchant_layout_legacy_backfill")
+    }
+  }
+
+  const hasMerchantAccess = await hasActiveAccountRole(adminSupabase, user.id, "merchant")
+  if (!hasMerchantAccess) {
     redirect(`/merchant/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
