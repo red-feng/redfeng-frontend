@@ -330,6 +330,7 @@ type ProductWidgetAction = {
   label: string
   href: string
   badge?: number
+  roadmap?: boolean
 }
 
 type ProductWidgetCard = {
@@ -1224,9 +1225,9 @@ export default async function AdminDashboard({
                     meta: "Issue, refund, API error",
                     href: "/admin/pesawat",
                     actions: [
-                      { label: "Issue Queue", href: "/admin/pesawat" },
-                      { label: "Refund Queue", href: "/admin/pesawat" },
-                      { label: "API Errors", href: "/admin/pesawat" },
+                      { label: "Issue Queue", href: "/admin/pesawat", roadmap: true },
+                      { label: "Refund Queue", href: "/admin/pesawat", roadmap: true },
+                      { label: "API Errors", href: "/admin/pesawat", roadmap: true },
                     ],
                   }
                 case "hotel_quick_actions":
@@ -1237,9 +1238,9 @@ export default async function AdminDashboard({
                     meta: "Confirmation, cancel, SLA",
                     href: "/admin/hotel",
                     actions: [
-                      { label: "Pending Confirmation", href: "/admin/hotel" },
-                      { label: "Cancellation", href: "/admin/hotel" },
-                      { label: "Supplier SLA", href: "/admin/hotel" },
+                      { label: "Pending Confirmation", href: "/admin/hotel", roadmap: true },
+                      { label: "Cancellation", href: "/admin/hotel", roadmap: true },
+                      { label: "Supplier SLA", href: "/admin/hotel", roadmap: true },
                     ],
                   }
                 case "train_quick_actions":
@@ -1250,9 +1251,9 @@ export default async function AdminDashboard({
                     meta: "Issue, refund, vendor",
                     href: "/admin/kereta-api",
                     actions: [
-                      { label: "Issue Queue", href: "/admin/kereta-api" },
-                      { label: "Refund / Cancel", href: "/admin/kereta-api" },
-                      { label: "Vendor Issues", href: "/admin/kereta-api" },
+                      { label: "Issue Queue", href: "/admin/kereta-api", roadmap: true },
+                      { label: "Refund / Cancel", href: "/admin/kereta-api", roadmap: true },
+                      { label: "Vendor Issues", href: "/admin/kereta-api", roadmap: true },
                     ],
                   }
                 case "bus_quick_actions":
@@ -1263,9 +1264,9 @@ export default async function AdminDashboard({
                     meta: "Issue, refund, operator",
                     href: "/admin/bus-travel",
                     actions: [
-                      { label: "Issue Queue", href: "/admin/bus-travel" },
-                      { label: "Refund / Cancel", href: "/admin/bus-travel" },
-                      { label: "Operator Issues", href: "/admin/bus-travel" },
+                      { label: "Issue Queue", href: "/admin/bus-travel", roadmap: true },
+                      { label: "Refund / Cancel", href: "/admin/bus-travel", roadmap: true },
+                      { label: "Operator Issues", href: "/admin/bus-travel", roadmap: true },
                     ],
                   }
                 case "sea_quick_actions":
@@ -1276,9 +1277,9 @@ export default async function AdminDashboard({
                     meta: "Issue, refund, operator",
                     href: "/admin/kapal-laut",
                     actions: [
-                      { label: "Issue Queue", href: "/admin/kapal-laut" },
-                      { label: "Refund / Cancel", href: "/admin/kapal-laut" },
-                      { label: "Operator Issues", href: "/admin/kapal-laut" },
+                      { label: "Issue Queue", href: "/admin/kapal-laut", roadmap: true },
+                      { label: "Refund / Cancel", href: "/admin/kapal-laut", roadmap: true },
+                      { label: "Operator Issues", href: "/admin/kapal-laut", roadmap: true },
                     ],
                   }
                 case "cruise_quick_actions":
@@ -1289,9 +1290,9 @@ export default async function AdminDashboard({
                     meta: "Issue, refund, operator",
                     href: "/admin/kapal-pesiar",
                     actions: [
-                      { label: "Issue Queue", href: "/admin/kapal-pesiar" },
-                      { label: "Refund / Cancel", href: "/admin/kapal-pesiar" },
-                      { label: "Operator Issues", href: "/admin/kapal-pesiar" },
+                      { label: "Issue Queue", href: "/admin/kapal-pesiar", roadmap: true },
+                      { label: "Refund / Cancel", href: "/admin/kapal-pesiar", roadmap: true },
+                      { label: "Operator Issues", href: "/admin/kapal-pesiar", roadmap: true },
                     ],
                   }
                 default:
@@ -1528,9 +1529,27 @@ export default async function AdminDashboard({
                                 <Link
                                   key={action.label}
                                   href={action.href}
-                                  className="flex items-center justify-between rounded-[14px] border border-[#f0e6dd] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                                  className={`flex items-center justify-between rounded-[14px] border px-4 py-3 text-sm font-semibold transition ${
+                                    action.roadmap
+                                      ? "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700"
+                                      : "border-[#f0e6dd] bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                                  }`}
                                 >
-                                  {action.label}
+                                  <span className="flex items-center gap-2">
+                                    <span
+                                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                                        action.roadmap ? "bg-slate-200 text-slate-500" : "bg-orange-100 text-orange-600"
+                                      }`}
+                                    >
+                                      {action.roadmap ? "R" : "L"}
+                                    </span>
+                                    {action.label}
+                                    {action.roadmap ? (
+                                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                        Roadmap
+                                      </span>
+                                    ) : null}
+                                  </span>
                                   {action.badge && action.badge > 0 ? (
                                     <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">
                                       {action.badge}
