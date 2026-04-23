@@ -306,6 +306,14 @@ function getOperationsWorkspace(value: string | null | undefined) {
   return "all"
 }
 
+function getOperationsProduct(value: string | null | undefined) {
+  const normalized = String(value || "all").trim().toLowerCase()
+  if (["package_tour", "flight", "hotel", "train", "bus", "sea", "cruise"].includes(normalized)) {
+    return normalized
+  }
+  return "all"
+}
+
 function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap") {
   if (status === "connected") {
     return { label: "Terhubung", className: "bg-emerald-50 text-emerald-600" }
@@ -347,6 +355,17 @@ type ProductWidgetCard = {
   actions?: ProductWidgetAction[]
 }
 
+function getProductFilterFromLabel(productLabel: string) {
+  if (productLabel === "Paket Wisata") return "package_tour"
+  if (productLabel === "Pesawat") return "flight"
+  if (productLabel === "Hotel") return "hotel"
+  if (productLabel === "Kereta Api") return "train"
+  if (productLabel === "Bus & Travel") return "bus"
+  if (productLabel === "Kapal Laut") return "sea"
+  if (productLabel === "Kapal Pesiar") return "cruise"
+  return "all"
+}
+
 function classifyBookingProduct(booking: DashboardBookingRow) {
   return booking.package_id ? "Paket Tour" : "Pesawat"
 }
@@ -355,7 +374,7 @@ export default async function AdminDashboard({
   searchParams,
   portal = "admin",
 }: {
-  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string }>
   portal?: AdminWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
@@ -406,6 +425,7 @@ export default async function AdminDashboard({
   const operationsPeriodStart = getPeriodStart(operationsPeriod.days)
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
+  const operationsProduct = getOperationsProduct(params.product)
   const widgetPreferenceResult = showOperationsManagerView
     ? await adminSupabase
         .from("dashboard_widget_preferences")
@@ -842,8 +862,17 @@ export default async function AdminDashboard({
   ]
 
   if (showOperationsManagerView) {
-    const periodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
-    const periodPackages = packages.filter((pkg) => isWithinPeriod(pkg.created_at, operationsPeriodStart))
+    const periodBookings = bookings.filter((booking) => {
+      if (!isWithinPeriod(booking.created_at, operationsPeriodStart)) return false
+      if (operationsProduct === "all") return true
+      if (operationsProduct === "package_tour") return Boolean(booking.package_id)
+      if (operationsProduct === "flight") return !booking.package_id
+      return false
+    })
+    const periodPackages = packages.filter((pkg) => {
+      if (!isWithinPeriod(pkg.created_at, operationsPeriodStart)) return false
+      return operationsProduct === "all" || operationsProduct === "package_tour"
+    })
     const periodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodAuditLogs = recentAuditLogs.filter((log) => isWithinPeriod(log.created_at, operationsPeriodStart))
@@ -887,7 +916,7 @@ export default async function AdminDashboard({
     const managerKpiCards = [
       { label: "Total Booking", value: totalBookings.toLocaleString("id-ID"), delta: `${bookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`, sub: currentMonthLabel, tone: "text-sky-600", bg: "bg-sky-50" },
       { label: "Total Revenue (IDR)", value: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(totalRevenue), sub: currentMonthLabel, tone: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Merchant Aktif", value: activeMerchantCount.toLocaleString("id-ID"), delta: `${pendingMerchants} pending`, sub: "Dari data merchant approved", tone: "text-violet-600", bg: "bg-violet-50" },
+      { label: "Merchant Aktif", value: (operationsProduct === "all" || operationsProduct === "package_tour" ? activeMerchantCount : 0).toLocaleString("id-ID"), delta: `${operationsProduct === "all" || operationsProduct === "package_tour" ? pendingMerchants : 0} pending`, sub: operationsProduct === "all" || operationsProduct === "package_tour" ? "Dari data merchant approved" : "Belum ada merchant map untuk produk ini", tone: "text-violet-600", bg: "bg-violet-50" },
       { label: "Paket Disetujui", value: periodApprovedPackages.toLocaleString("id-ID"), delta: `${periodPackages.length.toLocaleString("id-ID")} total paket`, sub: "Status package approved", tone: "text-orange-600", bg: "bg-orange-50" },
       { label: "Pending Review", value: periodPendingPackages.toLocaleString("id-ID"), delta: `${periodPackageOverdueCount} overdue`, sub: "Paket menunggu review", tone: "text-orange-600", bg: "bg-orange-50" },
       { label: "Anomali Terbuka", value: periodOperationalWarnings.toLocaleString("id-ID"), delta: `${periodDeletionRequests.length + periodReviewRequests.length} request aktif`, sub: "SLA, deletion, dan approval", tone: "text-rose-600", bg: "bg-rose-50" },
@@ -1030,7 +1059,7 @@ export default async function AdminDashboard({
       { label: "Bus & Travel", href: "/admin/bus-travel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-blue-600", bg: "bg-blue-50", icon: "bus" as const, sparkColor: "#2563eb", sparkPoints: "2,24 14,18 26,15 38,19 50,12 62,16 74,10 86,13 98,9" },
       { label: "Kapal Laut", href: "/admin/kapal-laut", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-cyan-600", bg: "bg-cyan-50", icon: "ship" as const, sparkColor: "#0f766e", sparkPoints: "2,22 14,19 26,16 38,18 50,13 62,17 74,12 86,14 98,10" },
       { label: "Kapal Pesiar", href: "/admin/kapal-pesiar", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-rose-600", bg: "bg-rose-50", icon: "cruise" as const, sparkColor: "#f43f5e", sparkPoints: "2,24 14,10 26,20 38,18 50,16 62,19 74,14 86,15 98,11" },
-    ]
+    ].filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.label) === operationsProduct)
     const reviewQueueItems = periodPackages
       .filter((pkg) => ["pending", "draft", "rejected"].includes(normalizeStatus(pkg.status)))
       .slice(0, 6)
@@ -1311,6 +1340,7 @@ export default async function AdminDashboard({
         }
       })
       .filter((product) => product.items.length > 0)
+      .filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.productLabel) === operationsProduct)
       .map((product) => ({
         ...product,
         items: [...product.items].sort(
@@ -1341,11 +1371,25 @@ export default async function AdminDashboard({
                 <option value="all">Semua waktu</option>
               </select>
               <select
+                name="product"
+                defaultValue={operationsProduct}
+                className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
+              >
+                <option value="all">Produk: Semua</option>
+                <option value="package_tour">Paket Wisata</option>
+                <option value="flight">Pesawat</option>
+                <option value="hotel">Hotel</option>
+                <option value="train">Kereta Api</option>
+                <option value="bus">Bus & Travel</option>
+                <option value="sea">Kapal Laut</option>
+                <option value="cruise">Kapal Pesiar</option>
+              </select>
+              <select
                 name="workspace"
                 defaultValue={operationsWorkspace}
                 className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
               >
-                <option value="all">Semua Workspace</option>
+                <option value="all">Workspace: Semua</option>
                 <option value="merchant">Merchant</option>
                 <option value="package_review">Package Review</option>
                 <option value="booking_center">Booking Center</option>
