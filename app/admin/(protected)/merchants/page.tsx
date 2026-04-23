@@ -93,6 +93,8 @@ type MerchantReviewRequestRow = {
   reviewed_by: string | null
 }
 
+const MANAGED_MERCHANT_PAGE_SIZE = 20
+
 function isMissingMerchantReviewRequestsTableError(error: { message?: string | null; code?: string | null } | null | undefined) {
   const message = String(error?.message || "").toLowerCase()
   return message.includes("merchant_review_requests") && message.includes("schema cache")
@@ -158,22 +160,46 @@ function normalizeText(value: string | null) {
   return (value || "").trim().toLowerCase()
 }
 
+function sanitizePostgrestSearchTerm(value: string) {
+  return value.replace(/[,%]/g, " ").trim()
+}
+
 function getDeletionRequestKey(input: { merchantId?: string | null; profileId?: string | null }) {
   if (input.merchantId) return `merchant:${input.merchantId}`
   if (input.profileId) return `profile:${input.profileId}`
   return null
 }
 
+function getPositiveInteger(value: string | null | undefined, fallback: number) {
+  const parsed = Number.parseInt(String(value || ""), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function buildMerchantPageHref(
+  params: { q?: string; city?: string; queue?: string; sort?: string; success?: string; error?: string },
+  page: number,
+) {
+  const query = new URLSearchParams()
+  if (params.q) query.set("q", params.q)
+  if (params.city) query.set("city", params.city)
+  if (params.queue) query.set("queue", params.queue)
+  if (params.sort) query.set("sort", params.sort)
+  if (page > 1) query.set("page", String(page))
+  const suffix = query.toString()
+  return suffix ? `/admin/merchants?${suffix}` : "/admin/merchants"
+}
+
 export default async function AdminMerchantsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string; success?: string; error?: string }>
+  searchParams?: Promise<{ q?: string; city?: string; queue?: string; sort?: string; page?: string; success?: string; error?: string }>
 }) {
   const resolvedSearchParams = (await searchParams) || {}
   const searchQuery = (resolvedSearchParams.q || "").trim().toLowerCase()
   const cityFilter = (resolvedSearchParams.city || "").trim().toLowerCase()
   const queueFilter = (resolvedSearchParams.queue || "all").trim().toLowerCase()
   const sortMode = (resolvedSearchParams.sort || "pending_desc").trim().toLowerCase()
+  const requestedManagedPage = getPositiveInteger(resolvedSearchParams.page, 1)
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
   const {
@@ -189,24 +215,47 @@ export default async function AdminMerchantsPage({
   const canReviewMerchantRequests = canDecideMerchantRegistrationReview(currentRole)
   const canRequestMerchantDeletion = canRequestMerchantDeletionReview(currentRole)
   const canReviewMerchantDeletion = canDecideMerchantDeletionReview(currentRole)
-  const [{ data: pendingMerchants }, { data: managedMerchants }] = await Promise.all([
+  const managedRangeStart = (requestedManagedPage - 1) * MANAGED_MERCHANT_PAGE_SIZE
+  const managedRangeEnd = managedRangeStart + MANAGED_MERCHANT_PAGE_SIZE - 1
+  let managedQuery = adminSupabase
+    .from("merchants")
+    .select("*", { count: "exact" })
+    .in("verification_status", ["approved", "inactive", "deleted", "rejected"])
+
+  const safeSearchQuery = sanitizePostgrestSearchTerm(searchQuery)
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(safeSearchQuery)) {
+    managedQuery = managedQuery.eq("id", safeSearchQuery)
+  } else if (safeSearchQuery) {
+    managedQuery = managedQuery.or(
+      `brand_name.ilike.%${safeSearchQuery}%,company_name.ilike.%${safeSearchQuery}%,email.ilike.%${safeSearchQuery}%`,
+    )
+  }
+
+  const safeCityFilter = sanitizePostgrestSearchTerm(cityFilter)
+  if (safeCityFilter) {
+    managedQuery = managedQuery.or(`city.ilike.${safeCityFilter},province.ilike.${safeCityFilter}`)
+  }
+
+  const [{ data: pendingMerchants }, managedMerchantsResult] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("*")
       .in("verification_status", ["pending", "pending_admin_review", "awaiting_manager_approval", "awaiting_manager_rejection"])
       .order("created_at", { ascending: false }),
-    adminSupabase
-      .from("merchants")
-      .select("*")
-      .in("verification_status", ["approved", "inactive", "deleted", "rejected"])
-      .order("created_at", { ascending: false }),
+    managedQuery
+      .order("created_at", { ascending: false })
+      .range(managedRangeStart, managedRangeEnd),
   ])
 
   const pending = (pendingMerchants || []) as MerchantRow[]
-  const managed = (managedMerchants || []) as MerchantRow[]
-  const activeMerchants = managed.filter((merchant) => merchant.verification_status === "approved")
+  const managed = (managedMerchantsResult.data || []) as MerchantRow[]
+  const managedTotalCount = managedMerchantsResult.count || 0
+  const activeMerchantCountResult = await adminSupabase
+    .from("merchants")
+    .select("id", { count: "exact", head: true })
+    .eq("verification_status", "approved")
+  const activeMerchantCount = activeMerchantCountResult.count || 0
   const allMerchantIds = [...new Set([...pending, ...managed].map((merchant) => merchant.id))]
-  const merchantById = new Map([...pending, ...managed].map((merchant) => [merchant.id, merchant]))
   const { data: packagesData } = allMerchantIds.length
     ? await adminSupabase.from("packages").select("merchant_id, status").in("merchant_id", allMerchantIds)
     : { data: [] as Array<{ merchant_id: string | null; status: string | null }> }
@@ -298,22 +347,12 @@ export default async function AdminMerchantsPage({
     created_at: profile.created_at || authUserMap.get(profile.id)?.created_at || null,
   }))
 
-  const pendingDeletionRequestTargets = [
-    ...new Set(
-      [
-        ...managed.map((merchant) => merchant.id),
-        ...orphanMerchantProfiles.map((profile) => profile.id),
-      ].filter(Boolean),
-    ),
-  ]
-  const { data: pendingDeletionRequestsData } = pendingDeletionRequestTargets.length
-    ? await adminSupabase
-        .from("merchant_deletion_requests")
-        .select(
-          "id, merchant_id, profile_id, merchant_email, merchant_name, reason, status, review_note, requested_at, reviewed_at, requested_by, reviewed_by",
-        )
-        .in("status", ["pending", "manager_rejected"])
-    : { data: [] as MerchantDeletionRequestRow[] }
+  const { data: pendingDeletionRequestsData } = await adminSupabase
+    .from("merchant_deletion_requests")
+    .select(
+      "id, merchant_id, profile_id, merchant_email, merchant_name, reason, status, review_note, requested_at, reviewed_at, requested_by, reviewed_by",
+    )
+    .in("status", ["pending", "manager_rejected"])
   const pendingDeletionRequestMap = new Map<string, MerchantDeletionRequestRow>()
   const pendingDeletionRequests = (((pendingDeletionRequestsData as MerchantDeletionRequestRow[] | null) || []) as MerchantDeletionRequestRow[])
   const pendingDeletionQueue = pendingDeletionRequests.filter((request) => request.status === "pending")
@@ -324,14 +363,11 @@ export default async function AdminMerchantsPage({
     }
   }
 
-  const { data: merchantReviewRequestsData, error: merchantReviewRequestsError } = allMerchantIds.length
-    ? await adminSupabase
-        .from("merchant_review_requests")
-        .select("id, merchant_id, request_type, status, admin_note, manager_reason, requested_at, reviewed_at, requested_by, reviewed_by")
-        .in("merchant_id", allMerchantIds)
-        .eq("status", "pending")
-        .order("requested_at", { ascending: true })
-    : { data: [] as MerchantReviewRequestRow[], error: null }
+  const { data: merchantReviewRequestsData, error: merchantReviewRequestsError } = await adminSupabase
+    .from("merchant_review_requests")
+    .select("id, merchant_id, request_type, status, admin_note, manager_reason, requested_at, reviewed_at, requested_by, reviewed_by")
+    .eq("status", "pending")
+    .order("requested_at", { ascending: true })
   const merchantReviewRequestsUnavailable = isMissingMerchantReviewRequestsTableError(merchantReviewRequestsError)
   if (merchantReviewRequestsError && !merchantReviewRequestsUnavailable) {
     console.error("Load merchant review requests error:", merchantReviewRequestsError)
@@ -346,6 +382,14 @@ export default async function AdminMerchantsPage({
       pendingMerchantReviewMap.set(request.merchant_id, request)
     }
   }
+  const reviewMerchantIds = [...new Set(pendingMerchantReviewRequests.map((request) => request.merchant_id).filter(Boolean))]
+  const alreadyLoadedMerchantIds = new Set([...pending, ...managed].map((merchant) => merchant.id))
+  const missingReviewMerchantIds = reviewMerchantIds.filter((merchantId) => !alreadyLoadedMerchantIds.has(merchantId))
+  const { data: reviewMerchantsData } = missingReviewMerchantIds.length
+    ? await adminSupabase.from("merchants").select("*").in("id", missingReviewMerchantIds)
+    : { data: [] as MerchantRow[] }
+  const reviewMerchants = ((reviewMerchantsData as MerchantRow[] | null) || []) as MerchantRow[]
+  const merchantById = new Map([...pending, ...managed, ...reviewMerchants].map((merchant) => [merchant.id, merchant]))
 
   function matchesMerchant(merchant: MerchantRow) {
     const stats = packageStatsMap.get(merchant.id) || {
@@ -399,6 +443,12 @@ export default async function AdminMerchantsPage({
 
   const filteredPending = pending.filter(matchesMerchant).sort(sortMerchants)
   const filteredManaged = managed.filter(matchesMerchant).sort(sortMerchants)
+  const managedPageCount = Math.max(1, Math.ceil(managedTotalCount / MANAGED_MERCHANT_PAGE_SIZE))
+  const managedPage = requestedManagedPage
+  const paginatedManaged = filteredManaged
+  const managedEndIndex = managedTotalCount
+    ? Math.min(managedRangeStart + paginatedManaged.length, managedTotalCount)
+    : 0
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -427,7 +477,7 @@ export default async function AdminMerchantsPage({
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Merchant aktif</p>
-                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{activeMerchants.length}</p>
+                <p className="mt-2 text-2xl font-semibold text-white sm:text-3xl">{activeMerchantCount}</p>
               </div>
             </div>
           </div>
@@ -901,6 +951,9 @@ export default async function AdminMerchantsPage({
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Merchant controls</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">Merchant aktif, nonaktif, dan hapus</h2>
+              <p className="mt-2 text-sm leading-7 text-slate-500">
+                Menampilkan {filteredManaged.length ? managedRangeStart + 1 : 0}-{managedEndIndex} dari {managedTotalCount} merchant sesuai filter database.
+              </p>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-slate-500">
               Nonaktif sementara memblok akses merchant ke dashboard. Penghapusan merchant memakai alur maker-checker:
@@ -917,7 +970,7 @@ export default async function AdminMerchantsPage({
             </section>
           ) : (
             <section className="grid gap-6">
-              {filteredManaged.map((merchant) => {
+              {paginatedManaged.map((merchant) => {
                 const pendingDeletionRequest =
                   pendingDeletionRequestMap.get(getDeletionRequestKey({ merchantId: merchant.id }) || "") || null
                 return (
@@ -1223,6 +1276,37 @@ export default async function AdminMerchantsPage({
                 </article>
                 )
               })}
+              {managedPageCount > 1 ? (
+                <div className="flex flex-col gap-3 rounded-[24px] border border-[#ece3d7] bg-white px-5 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-slate-600">
+                    Halaman {managedPage} dari {managedPageCount}. Gunakan pencarian/filter untuk menemukan merchant lebih cepat.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href={buildMerchantPageHref(resolvedSearchParams, Math.max(1, managedPage - 1))}
+                      aria-disabled={managedPage <= 1}
+                      className={`inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition ${
+                        managedPage <= 1
+                          ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-400"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-orange-200 hover:text-orange-700"
+                      }`}
+                    >
+                      Sebelumnya
+                    </Link>
+                    <Link
+                      href={buildMerchantPageHref(resolvedSearchParams, Math.min(managedPageCount, managedPage + 1))}
+                      aria-disabled={managedPage >= managedPageCount}
+                      className={`inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition ${
+                        managedPage >= managedPageCount
+                          ? "pointer-events-none border-slate-200 bg-slate-50 text-slate-400"
+                          : "border-orange-200 bg-orange-50 text-orange-700 hover:border-orange-300 hover:bg-orange-100"
+                      }`}
+                    >
+                      Berikutnya
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
             </section>
           )}
         </section>
