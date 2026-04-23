@@ -848,22 +848,6 @@ export default async function AdminDashboard({
           { title: `Booking siap finance: ${periodFinanceReadyCount}`, detail: "Data live dari booking center", time: "Saat ini", tone: "bg-orange-50 text-orange-600" },
           { title: `Item perlu perhatian: ${periodOperationalWarnings}`, detail: "SLA, deletion, dan approval", time: "Saat ini", tone: "bg-rose-50 text-rose-600" },
         ]
-    const merchantRevenueMap = periodCustomerTransactionRows.reduce((map, transaction) => {
-      const merchantId = transaction.packageId ? packageMap.get(transaction.packageId)?.merchant_id : null
-      if (!merchantId) return map
-      map.set(merchantId, (map.get(merchantId) || 0) + transaction.receivedAmount)
-      return map
-    }, new Map<string, number>())
-    const topMerchantRevenueBase = Math.max(...Array.from(merchantRevenueMap.values()), 1)
-    const topMerchantRevenue = Array.from(merchantRevenueMap)
-      .map(([merchantId, value], index) => ({
-        name: merchantNameMap.get(merchantId) || "Merchant tanpa nama",
-        value,
-        percent: Math.max(Math.round((value / topMerchantRevenueBase) * 100), 8),
-        tone: categoryTones[index % categoryTones.length],
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
     const destinationMap = periodBookings.reduce((map, booking) => {
       const pkg = booking.package_id ? packageMap.get(booking.package_id) : null
       const label = pkg?.city || pkg?.destination_province || pkg?.country || pkg?.destination_country_id || "Tanpa destinasi"
@@ -880,6 +864,53 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
+    const productPerformanceCards = [
+      {
+        label: "Paket Wisata",
+        href: "/admin/paket-tour",
+        booking: totalBookings,
+        revenue: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0",
+        pending: periodPendingPackages,
+        anomaly: periodOperationalWarnings,
+        sla: periodPackageOverdueCount + periodBookingStalledCount,
+        connected: true,
+        tone: "text-violet-600",
+        bg: "bg-violet-50",
+      },
+      { label: "Pesawat", href: "/admin/pesawat", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Hotel", href: "/admin/hotel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Kereta Api", href: "/admin/kereta-api", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Bus & Travel", href: "/admin/bus-travel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-blue-600", bg: "bg-blue-50" },
+      { label: "Kapal Laut", href: "/admin/kapal-laut", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-cyan-600", bg: "bg-cyan-50" },
+      { label: "Kapal Pesiar", href: "/admin/kapal-pesiar", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, connected: false, tone: "text-rose-600", bg: "bg-rose-50" },
+    ]
+    const reviewQueueItems = periodPackages
+      .filter((pkg) => ["pending", "draft", "rejected"].includes(normalizeStatus(pkg.status)))
+      .slice(0, 6)
+      .map((pkg) => ({
+        merchant: merchantNameMap.get(pkg.merchant_id || "") || "Merchant",
+        product: pkg.title || "Paket tanpa judul",
+        type: "Paket Wisata",
+        status: titleCase(pkg.status),
+        time: formatDateTime(pkg.created_at),
+        href: `/admin/packages/${pkg.id}`,
+      }))
+    const slaTotal = Math.max(periodPendingPackages + periodPackageOverdueCount + periodBookingStalledCount, 1)
+    const slaRows = [
+      { label: "Tepat Waktu", value: Math.max(periodPendingPackages - periodPackageOverdueCount, 0), tone: "bg-emerald-500" },
+      { label: "Mendekati Batas", value: periodPackageOverdueCount, tone: "bg-orange-400" },
+      { label: "Lewat Batas", value: periodBookingStalledCount, tone: "bg-rose-500" },
+    ]
+    const slaGradient = slaRows
+      .reduce(
+        (state, item) => {
+          const nextCursor = state.cursor + (item.value / slaTotal) * 100
+          const color = item.tone === "bg-emerald-500" ? "#10b981" : item.tone === "bg-orange-400" ? "#fb923c" : "#f43f5e"
+          return { cursor: nextCursor, parts: [...state.parts, `${color} ${state.cursor}% ${nextCursor}%`] }
+        },
+        { cursor: 0, parts: [] as string[] },
+      )
+      .parts.join(", ")
     const showBookingWorkspace = operationsWorkspace === "all" || operationsWorkspace === "booking_center"
     const showPackageWorkspace = operationsWorkspace === "all" || operationsWorkspace === "package_review"
     const showMerchantWorkspace = operationsWorkspace === "all" || operationsWorkspace === "merchant" || operationsWorkspace === "anomalies"
@@ -943,6 +974,41 @@ export default async function AdminDashboard({
                 </div>
               </div>
             ))}
+          </section>
+
+          <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-slate-950">Performa per Produk</h2>
+              <Link href="/admin/paket-tour" className="text-xs font-semibold text-orange-600">Lihat semua produk -&gt;</Link>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
+              {productPerformanceCards.map((product) => (
+                <Link key={product.label} href={product.href} className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4 transition hover:border-orange-200 hover:bg-orange-50">
+                  <div className="flex items-center gap-3">
+                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-xs font-black ${product.bg} ${product.tone}`}>{product.label[0]}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{product.label}</p>
+                      <p className="mt-1 text-[11px] text-slate-400">{product.connected ? "Terhubung" : "Belum terhubung"}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <p className="text-slate-400">Booking</p>
+                      <p className="mt-1 text-base font-semibold text-slate-950">{product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400">Revenue</p>
+                      <p className="mt-1 text-base font-semibold text-slate-950">{product.revenue}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-2 border-t border-[#f0e6dd] pt-3 text-xs">
+                    <p className="flex items-center justify-between text-slate-500"><span>Pending Review</span><span className="font-semibold text-slate-900">{product.pending ?? "-"}</span></p>
+                    <p className="flex items-center justify-between text-slate-500"><span>Anomali</span><span className="font-semibold text-slate-900">{product.anomaly ?? "-"}</span></p>
+                    <p className="flex items-center justify-between text-slate-500"><span>SLA Melanggar</span><span className="font-semibold text-slate-900">{product.sla ?? "-"}</span></p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </section>
 
           {showBookingWorkspace ? (
@@ -1024,19 +1090,33 @@ export default async function AdminDashboard({
             {showPackageWorkspace ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Paket Review Queue</h2>
+                <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
                 <Link href="/admin/packages" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
-              <div className="mt-5 space-y-3">
+              <div className="mt-4 flex flex-wrap gap-4 border-b border-[#f0e6dd] pb-3 text-xs font-semibold text-slate-500">
                 {packageQueueRows.map((item) => (
-                  <Link key={item.label} href={item.href} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4 transition hover:border-orange-200 hover:bg-orange-50">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{item.label}</p>
-                      <p className="mt-1 text-xs text-slate-500">{item.note}</p>
-                    </div>
-                    <span className={`text-sm font-semibold ${item.tone}`}>{item.value}</span>
-                  </Link>
+                  <span key={item.label}>{item.label} ({item.value})</span>
                 ))}
+              </div>
+              <div className="mt-4 overflow-hidden rounded-[16px] border border-[#f0e6dd]">
+                <div className="grid grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr_auto] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <span>Merchant</span>
+                  <span>Produk</span>
+                  <span>Tipe</span>
+                  <span>Diajukan</span>
+                  <span>Aksi</span>
+                </div>
+                <div className="divide-y divide-[#f0e6dd]">
+                  {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
+                    <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr_auto] gap-3 px-4 py-3 text-sm transition hover:bg-orange-50">
+                      <span className="font-semibold text-slate-800">{item.merchant}</span>
+                      <span className="text-slate-600">{item.product}</span>
+                      <span><span className="rounded-full bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-600">{item.type}</span></span>
+                      <span className="text-xs text-slate-500">{item.time}</span>
+                      <span className="text-xs font-semibold text-orange-600">Review</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
             ) : null}
@@ -1067,20 +1147,24 @@ export default async function AdminDashboard({
             {showMerchantWorkspace ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Activity Feed</h2>
-                <Link href="/admin/audit-log" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
+                <h2 className="text-base font-semibold text-slate-950">SLA Review</h2>
+                <Link href="/admin/dashboard?workspace=anomalies" className="text-xs font-semibold text-orange-600">Lihat detail SLA -&gt;</Link>
               </div>
-              <div className="mt-5 max-h-[420px] space-y-3 overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
-                {activityFeed.map((item) => (
-                  <div key={`${item.title}-${item.time}`} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
-                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
-                    </div>
-                    <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{item.time}</span>
+              <div className="mt-7 grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
+                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full" style={{ background: `conic-gradient(${slaGradient})` }}>
+                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-2xl font-semibold text-slate-950">{slaTotal.toLocaleString("id-ID")}</p>
+                    <p className="text-xs text-slate-500">Total SLA</p>
                   </div>
-                ))}
+                </div>
+                <div className="space-y-3">
+                  {slaRows.map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
+                      <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")} <span className="text-xs font-normal text-slate-400">({Math.round((item.value / slaTotal) * 1000) / 10}%)</span></span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
             ) : null}
@@ -1090,18 +1174,18 @@ export default async function AdminDashboard({
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Performa Top Merchant (Revenue)</h2>
-                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
+                <h2 className="text-base font-semibold text-slate-950">Aktivitas Terakhir</h2>
+                <Link href="/admin/audit-log" className="text-xs font-semibold text-orange-600">Lihat semua aktivitas -&gt;</Link>
               </div>
-              <div className="mt-5 space-y-3">
-                {topMerchantRevenue.map((item, index) => (
-                  <div key={item.name} className="grid grid-cols-[24px_1fr_auto] items-center gap-3 text-sm">
-                    <span className="font-semibold text-slate-500">{index + 1}</span>
+              <div className="mt-5 max-h-[320px] space-y-3 overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
+                {activityFeed.map((item) => (
+                  <div key={`${item.title}-${item.time}`} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
+                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
                     <div>
-                      <p className="font-medium text-slate-700">{item.name}</p>
-                      <div className="mt-2 h-1.5 rounded-full bg-[#f0e6dd]"><div className={`h-1.5 rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} /></div>
+                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
                     </div>
-                    <span className="font-semibold text-slate-900">{formatMoney(item.value)}</span>
+                    <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{item.time}</span>
                   </div>
                 ))}
               </div>
