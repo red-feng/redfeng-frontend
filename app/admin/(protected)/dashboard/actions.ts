@@ -4,9 +4,9 @@ import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import {
+  ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS,
   DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS,
   OPERATIONS_DASHBOARD_SCOPE,
-  OPERATIONS_DASHBOARD_WIDGETS,
 } from "@/lib/admin-dashboard-widgets"
 
 function resolveReturnTo(formData: FormData, fallbackPath: string) {
@@ -121,7 +121,7 @@ async function getOperationsWidgetUser(returnTo: string) {
 export async function saveOperationsDashboardWidgets(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/dashboard/widgets")
   const user = await getOperationsWidgetUser(returnTo)
-  const allKeys = OPERATIONS_DASHBOARD_WIDGETS.map((widget) => widget.key)
+  const allKeys = ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS
   const enabledKeys = new Set(formData.getAll("enabled_widget_keys").map((value) => String(value)))
   const adminSupabase = createAdminClient()
   const rows = allKeys.map((widgetKey, index) => ({
@@ -147,11 +147,11 @@ export async function resetOperationsDashboardWidgets(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/dashboard/widgets")
   const user = await getOperationsWidgetUser(returnTo)
   const adminSupabase = createAdminClient()
-  const rows = OPERATIONS_DASHBOARD_WIDGETS.map((widget, index) => ({
+  const rows = ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS.map((widgetKey, index) => ({
     profile_id: user.id,
     dashboard_scope: OPERATIONS_DASHBOARD_SCOPE,
-    widget_key: widget.key,
-    enabled: DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS.includes(widget.key),
+    widget_key: widgetKey,
+    enabled: DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS.includes(widgetKey as (typeof DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS)[number]),
     sort_order: index,
   }))
 

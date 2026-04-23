@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import {
   OPERATIONS_DASHBOARD_SCOPE,
+  OPERATIONS_PRODUCT_WIDGET_CATALOG,
   resolveOperationsDashboardWidgetKeys,
 } from "@/lib/admin-dashboard-widgets"
 import { submitOperationsManagerReport } from "./actions"
@@ -303,6 +304,26 @@ function getOperationsWorkspace(value: string | null | undefined) {
     return normalized
   }
   return "all"
+}
+
+function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap") {
+  if (status === "connected") {
+    return { label: "Terhubung", className: "bg-emerald-50 text-emerald-600" }
+  }
+  if (status === "partial") {
+    return { label: "Sebagian", className: "bg-orange-50 text-orange-600" }
+  }
+  return { label: "Roadmap", className: "bg-slate-100 text-slate-500" }
+}
+
+function getProductIconKind(productLabel: string) {
+  if (productLabel === "Pesawat") return "flight" as const
+  if (productLabel === "Hotel") return "hotel" as const
+  if (productLabel === "Kereta Api") return "train" as const
+  if (productLabel === "Bus & Travel") return "bus" as const
+  if (productLabel === "Kapal Laut") return "ship" as const
+  if (productLabel === "Kapal Pesiar") return "cruise" as const
+  return "package" as const
 }
 
 function classifyBookingProduct(booking: DashboardBookingRow) {
@@ -937,6 +958,23 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
+    const topDestination = topDestinations[0] || null
+    const topMerchantRevenue =
+      Array.from(
+        periodCustomerTransactionRows.reduce((map, item) => {
+          const pkg = item.packageId ? packageMap.get(item.packageId) : null
+          const merchantId = pkg?.merchant_id
+          if (!merchantId) return map
+          map.set(merchantId, (map.get(merchantId) || 0) + item.receivedAmount)
+          return map
+        }, new Map<string, number>()),
+      )
+        .map(([merchantId, revenue]) => ({
+          merchantId,
+          revenue,
+          name: merchantNameMap.get(merchantId) || "Merchant tanpa nama",
+        }))
+        .sort((a, b) => b.revenue - a.revenue)[0] || null
     const productPerformanceCards = [
       {
         label: "Paket Wisata",
@@ -1001,6 +1039,141 @@ export default async function AdminDashboard({
     const showActivityFeedWidget = enabledOperationsWidgetKeys.has("activity_feed")
     const showTopDestinationsWidget = enabledOperationsWidgetKeys.has("top_destinations")
     const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
+    const selectedProductWidgetGroups = OPERATIONS_PRODUCT_WIDGET_CATALOG
+      .map((product) => {
+        const iconKind = getProductIconKind(product.productLabel)
+        const productStatus = getDashboardWidgetStatusMeta(product.status)
+        const items = product.sections.flatMap((section) =>
+          section.items
+            .filter((item) => enabledOperationsWidgetKeys.has(item.key))
+            .map((item) => {
+              const status = getDashboardWidgetStatusMeta(item.status)
+              const fallbackCard = {
+                key: item.key,
+                title: item.label,
+                sectionTitle: section.title,
+                href: product.productHref,
+                value: "Segera aktif",
+                detail: `Widget ${item.label.toLowerCase()} untuk ${product.productLabel.toLowerCase()} belum terhubung ke data dashboard.`,
+                meta: "Menunggu modul live",
+                status,
+                iconKind,
+                valueClassName: "text-lg font-semibold text-slate-950",
+              }
+
+              switch (item.key) {
+                case "package_tour_total_booking":
+                  return {
+                    ...fallbackCard,
+                    value: totalBookings.toLocaleString("id-ID"),
+                    detail: `Total booking Paket Wisata pada ${operationsPeriod.label}.`,
+                    meta: "Data live dari tabel bookings",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_revenue":
+                  return {
+                    ...fallbackCard,
+                    value: formatMoney(totalRevenue),
+                    detail: "Akumulasi pembayaran paid dan DP dari booking paket.",
+                    meta: currentMonthLabel,
+                    valueClassName: "text-2xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_merchant_active":
+                  return {
+                    ...fallbackCard,
+                    value: activeMerchantCount.toLocaleString("id-ID"),
+                    detail: "Merchant approved yang sudah aktif di marketplace.",
+                    meta: `${pendingMerchants} pending approval`,
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_top_destinations":
+                  return {
+                    ...fallbackCard,
+                    value: topDestination?.name || "Belum ada data",
+                    detail: topDestination
+                      ? `${topDestination.value.toLocaleString("id-ID")} booking menuju destinasi ini.`
+                      : "Belum ada booking paket yang bisa dipetakan ke destinasi.",
+                    meta: "Top destinasi Paket Wisata",
+                  }
+                case "package_tour_pending_review":
+                  return {
+                    ...fallbackCard,
+                    value: periodPendingPackages.toLocaleString("id-ID"),
+                    detail: "Paket merchant yang masih menunggu review.",
+                    meta: `${periodPackageOverdueCount} paket overdue`,
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_open_anomalies":
+                  return {
+                    ...fallbackCard,
+                    value: periodOperationalWarnings.toLocaleString("id-ID"),
+                    detail: "Gabungan SLA, deletion request, approval request, dan booking stalled.",
+                    meta: "Operational warning aktif",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_sla_review":
+                  return {
+                    ...fallbackCard,
+                    value: (periodPackageOverdueCount + periodBookingStalledCount).toLocaleString("id-ID"),
+                    detail: "Item yang sudah mendekati atau melewati SLA operasional.",
+                    meta: "SLA review package & booking",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_deletion_request":
+                  return {
+                    ...fallbackCard,
+                    value: periodDeletionRequests.length.toLocaleString("id-ID"),
+                    detail: "Request penghapusan merchant yang masih aktif pada periode ini.",
+                    meta: "Deletion request aktif",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_top_merchant_revenue":
+                  return {
+                    ...fallbackCard,
+                    value: topMerchantRevenue?.name || "Belum ada data",
+                    detail: topMerchantRevenue
+                      ? `${formatMoney(topMerchantRevenue.revenue)} revenue tertinggi pada periode ini.`
+                      : "Belum ada merchant dengan transaksi paket yang masuk revenue.",
+                    meta: "Top merchant revenue",
+                  }
+                case "package_tour_review_queue":
+                  return {
+                    ...fallbackCard,
+                    value: reviewQueueItems.length.toLocaleString("id-ID"),
+                    detail: "Jumlah item queue review yang sedang tampil di dashboard.",
+                    meta: "Queue Paket Wisata",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_booking_trend":
+                  return {
+                    ...fallbackCard,
+                    value: `${bookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`,
+                    detail: `Trend booking tersaji untuk ${operationsPeriod.label}.`,
+                    meta: `Puncak harian ${bookingTrendMax.toLocaleString("id-ID")} booking`,
+                  }
+                case "package_tour_activity_feed":
+                  return {
+                    ...fallbackCard,
+                    value: periodAuditLogs.length.toLocaleString("id-ID"),
+                    detail: "Jumlah aktivitas terbaru yang tercatat di audit log operasional.",
+                    meta: "Activity feed live",
+                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                default:
+                  return fallbackCard
+              }
+            }),
+        )
+
+        return {
+          productLabel: product.productLabel,
+          productHref: product.productHref,
+          note: product.note,
+          status: productStatus,
+          items,
+        }
+      })
+      .filter((product) => product.items.length > 0)
     const hasAnyDashboardWidget = enabledOperationsWidgetKeys.size > 0
 
     return (
@@ -1136,6 +1309,86 @@ export default async function AdminDashboard({
                     </div>
                   </div>
                 </Link>
+              ))}
+            </div>
+          </section>
+          ) : null}
+
+          {selectedProductWidgetGroups.length > 0 ? (
+          <section className="space-y-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <span className="inline-flex rounded-full border border-[#f0d8c3] bg-[#fff7ef] px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">
+                  Widget Produk
+                </span>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Widget Produk Terpilih</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  Pilihan dari menu Widget akan tampil di sini. Paket Wisata memakai data live, sedangkan produk roadmap tetap muncul sebagai placeholder yang jujur.
+                </p>
+              </div>
+              <Link href="/admin/dashboard/widgets" className="text-sm font-semibold text-orange-600">
+                Kelola widget produk
+              </Link>
+            </div>
+
+            <div className="space-y-5">
+              {selectedProductWidgetGroups.map((product) => (
+                <div
+                  key={product.productLabel}
+                  className="rounded-[22px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]"
+                >
+                  <div className="flex flex-col gap-3 border-b border-[#f0e6dd] pb-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#fff7ef] text-orange-600">
+                          <ProductMiniIcon kind={getProductIconKind(product.productLabel)} className="h-5 w-5" />
+                        </span>
+                        <div>
+                          <h3 className="text-lg font-semibold tracking-[-0.02em] text-slate-950">{product.productLabel}</h3>
+                          <p className="mt-1 text-sm text-slate-500">{product.note}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${product.status.className}`}>
+                        {product.status.label}
+                      </span>
+                      <Link href={product.productHref} className="text-sm font-semibold text-orange-600">
+                        Buka workspace
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {product.items.map((item) => (
+                      <div
+                        key={item.key}
+                        className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#fff1e6] text-orange-600">
+                            <ProductMiniIcon kind={item.iconKind} className="h-5 w-5" />
+                          </div>
+                          <span className={`rounded-full px-3 py-1 text-[10px] font-semibold ${item.status.className}`}>
+                            {item.status.label}
+                          </span>
+                        </div>
+                        <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                          {item.sectionTitle}
+                        </p>
+                        <h4 className="mt-2 text-sm font-semibold text-slate-900">{item.title}</h4>
+                        <p className={`mt-4 ${item.valueClassName}`}>{item.value}</p>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p>
+                        <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
+                          <span className="text-xs font-medium text-slate-400">{item.meta}</span>
+                          <Link href={item.href} className="text-xs font-semibold text-orange-600">
+                            Buka
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </section>
