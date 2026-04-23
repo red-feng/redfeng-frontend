@@ -8,6 +8,7 @@ import { MERCHANT_REVIEW_BUTTONS } from "@/lib/merchant-review-policy"
 type MerchantReasonActionCardProps = {
   merchantId: string
   variant: "deactivate" | "delete"
+  compact?: boolean
 }
 
 const COPY = {
@@ -45,7 +46,7 @@ const COPY = {
   },
 } as const
 
-export default function MerchantReasonActionCard({ merchantId, variant }: MerchantReasonActionCardProps) {
+export default function MerchantReasonActionCard({ merchantId, variant, compact = false }: MerchantReasonActionCardProps) {
   const [open, setOpen] = useState(false)
   const textareaId = useId()
   const copy = COPY[variant]
@@ -58,11 +59,41 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
 
   return (
     <>
-      <div className={`flex h-full flex-col overflow-hidden rounded-[20px] border sm:rounded-[24px] ${copy.cardClass}`}>
-        <div className={`border-b px-4 py-4 sm:px-5 ${copy.headerClass}`}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
+      {compact ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`inline-flex items-center justify-center rounded-[14px] border px-4 py-2.5 text-xs font-semibold transition ${
+            variant === "deactivate"
+              ? "border-orange-300 bg-white text-orange-700 hover:bg-orange-50"
+              : "border-rose-300 bg-white text-rose-700 hover:bg-rose-50"
+          }`}
+        >
+          {copy.buttonLabel}
+        </button>
+      ) : (
+        <div className={`flex h-full flex-col overflow-hidden rounded-[20px] border sm:rounded-[24px] ${copy.cardClass}`}>
+          <div className={`border-b px-4 py-4 sm:px-5 ${copy.headerClass}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
+          </div>
+          <div className="flex h-full flex-col px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className={`mt-auto inline-flex w-full items-center justify-center gap-2 rounded-[18px] px-5 py-3 text-sm font-semibold text-white transition sm:w-auto ${copy.buttonClass}`}
+            >
+              {copy.buttonLabel}
+            </button>
+          </div>
         </div>
-        <div className="flex h-full flex-col px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+      )}
+      {!compact ? null : null}
+      {false ? (
+        <div className={`flex h-full flex-col overflow-hidden rounded-[20px] border sm:rounded-[24px] ${copy.cardClass}`}>
+          <div className={`border-b px-4 py-4 sm:px-5 ${copy.headerClass}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em]">{copy.eyebrow}</p>
+          </div>
+          <div className="flex h-full flex-col px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -70,8 +101,9 @@ export default function MerchantReasonActionCard({ merchantId, variant }: Mercha
           >
             {copy.buttonLabel}
           </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {open ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 px-4 py-4 backdrop-blur-sm sm:py-6">
