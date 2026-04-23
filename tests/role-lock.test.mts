@@ -12,6 +12,13 @@ import {
   isAdminPortalRole,
   isFinancePortalRole,
 } from "../lib/internal-roles.ts"
+import {
+  ACCOUNT_ROLES,
+  normalizeAccountRole,
+} from "../lib/account-roles.ts"
+import {
+  resolvePublicAccountRole,
+} from "../lib/login-role-lock.ts"
 
 async function runCase(name: string, fn: () => void | Promise<void>) {
   try {
@@ -79,6 +86,8 @@ const internalChatPath = fileURLToPath(new URL("../lib/internal-chat/core.ts", i
 const internalChatSource = readFileSync(internalChatPath, "utf8")
 const proxyPath = fileURLToPath(new URL("../proxy.ts", import.meta.url))
 const proxySource = readFileSync(proxyPath, "utf8")
+const accountRolesMigrationPath = fileURLToPath(new URL("../supabase/migrations/2026042301_create_account_roles.sql", import.meta.url))
+const accountRolesMigrationSource = readFileSync(accountRolesMigrationPath, "utf8")
 
 async function main() {
   await runCase("internal chat policy version is locked", () => {
@@ -137,6 +146,32 @@ async function main() {
     assert.equal(canAccessInternalPortal("finance", "superadmin"), false)
     assert.equal(canAccessInternalPortal("superadmin", "superadmin"), true)
     assert.equal(canAccessInternalPortal("superadmin", "admin"), false)
+  })
+
+  await runCase("account roles table contract stays locked", () => {
+    assert.deepEqual(ACCOUNT_ROLES, [
+      "customer",
+      "merchant",
+      "admin",
+      "operations_manager",
+      "finance",
+      "finance_manager",
+      "superadmin",
+    ])
+    assert.equal(normalizeAccountRole("merchant"), "merchant")
+    assert.equal(normalizeAccountRole("unknown"), null)
+    assert.match(accountRolesMigrationSource, /create table if not exists public\.account_roles/)
+    assert.match(accountRolesMigrationSource, /primary key \(user_id, role\)/)
+    assert.match(accountRolesMigrationSource, /status in \('active', 'revoked', 'suspended'\)/)
+    assert.match(accountRolesMigrationSource, /where role in \('customer', 'merchant'\)/)
+  })
+
+  await runCase("public account role keeps merchant compatible with customer portal", () => {
+    assert.equal(resolvePublicAccountRole("customer"), "customer")
+    assert.equal(resolvePublicAccountRole("merchant"), "customer")
+    assert.equal(resolvePublicAccountRole("admin"), "admin")
+    assert.equal(resolvePublicAccountRole("finance_manager"), "finance")
+    assert.equal(resolvePublicAccountRole("superadmin"), "superadmin")
   })
 
   await runCase("proxy keeps admin route fallback to superadmin session only", () => {
