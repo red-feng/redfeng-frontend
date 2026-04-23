@@ -44,9 +44,7 @@ export default function ProductWidgetOrganizer({
 
   const enabledItemMap = useMemo(() => {
     const enabledSet = new Set(enabledKeys)
-    return new Map(
-      catalogItems.filter((item) => enabledSet.has(item.key)).map((item) => [item.key, item]),
-    )
+    return new Map(catalogItems.filter((item) => enabledSet.has(item.key)).map((item) => [item.key, item]))
   }, [catalogItems, enabledKeys])
 
   const [orderedKeys, setOrderedKeys] = useState(() => {
@@ -81,24 +79,30 @@ export default function ProductWidgetOrganizer({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {hiddenSortOrderEntries.map(([key, value]) => (
         <input key={key} type="hidden" name={`sort_order__${key}`} value={value} />
       ))}
 
-      <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="rounded-[24px] border border-[#dfe8f5] bg-white p-6 shadow-[0_16px_36px_rgba(15,23,42,0.05)]">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h3 className="text-lg font-semibold tracking-[-0.02em] text-slate-950">Urutan Widget Produk Aktif</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-500">
+            <span className="inline-flex rounded-full border border-[#dbe7fb] bg-[#f7fbff] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.26em] text-sky-700">
+              Product Order
+            </span>
+            <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Urutan Widget Produk Aktif</h3>
+            <p className="mt-2 text-[15px] leading-7 text-slate-500">
               Geser kartu untuk mengubah urutan tampil di dashboard. Tombol naik dan turun tetap tersedia kalau lebih nyaman.
             </p>
           </div>
-          <p className="text-xs font-medium text-slate-400">{orderedKeys.length} widget produk aktif</p>
+          <div className="rounded-[18px] border border-[#e3ebf7] bg-[#fcfdff] px-4 py-3 text-right">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">Siap diurutkan</p>
+            <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{orderedKeys.length}</p>
+          </div>
         </div>
 
         {orderedKeys.length > 0 ? (
-          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
             {orderedKeys.map((key, index) => {
               const item = enabledItemMap.get(key)
               if (!item) return null
@@ -118,32 +122,32 @@ export default function ProductWidgetOrganizer({
                     moveItem(fromIndex, index)
                     setDraggingKey(null)
                   }}
-                  className={`rounded-[18px] border bg-[#fffdfa] p-4 transition ${
+                  className={`rounded-[20px] border bg-[#fffdfa] p-5 transition ${
                     draggingKey === item.key
-                      ? "border-orange-300 shadow-[0_14px_26px_rgba(249,115,22,0.12)]"
-                      : "border-[#f0e6dd] hover:border-orange-200"
+                      ? "border-sky-300 shadow-[0_16px_30px_rgba(14,165,233,0.14)]"
+                      : "border-[#e5ebf4] hover:border-sky-200 hover:bg-sky-50/20"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        #{index + 1} • {item.productLabel}
+                        #{index + 1} - {item.productLabel}
                       </p>
-                      <p className="mt-2 text-base font-semibold text-slate-900">{item.label}</p>
-                      <p className="mt-1 text-sm text-slate-500">{item.sectionTitle}</p>
+                      <p className="mt-2 text-lg font-semibold tracking-[-0.02em] text-slate-900">{item.label}</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">{item.sectionTitle}</p>
                     </div>
                     <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${status.className}`}>
                       {status.label}
                     </span>
                   </div>
-                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#e5ebf4] pt-4">
                     <span className="text-xs font-medium text-slate-400">Seret untuk memindahkan</span>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => moveItem(index, index - 1)}
                         disabled={index === 0}
-                        className="rounded-[10px] border border-[#eadfd5] bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="rounded-[12px] border border-[#dce6f5] bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Naik
                       </button>
@@ -151,7 +155,7 @@ export default function ProductWidgetOrganizer({
                         type="button"
                         onClick={() => moveItem(index, index + 1)}
                         disabled={index === orderedKeys.length - 1}
-                        className="rounded-[10px] border border-[#eadfd5] bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="rounded-[12px] border border-[#dce6f5] bg-white px-3 py-2 text-xs font-semibold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Turun
                       </button>
@@ -162,9 +166,9 @@ export default function ProductWidgetOrganizer({
             })}
           </div>
         ) : (
-          <div className="mt-5 rounded-[18px] border border-dashed border-[#eadfd5] bg-[#fffdfa] px-5 py-8 text-center">
-            <p className="text-base font-semibold text-slate-900">Belum ada widget produk aktif</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+          <div className="mt-6 rounded-[20px] border border-dashed border-[#dce6f5] bg-[#fcfdff] px-6 py-10 text-center">
+            <p className="text-lg font-semibold tracking-[-0.02em] text-slate-900">Belum ada widget produk aktif</p>
+            <p className="mt-2 text-[15px] leading-7 text-slate-500">
               Centang widget produk di katalog bawah, lalu kembali ke area ini untuk mengatur urutannya.
             </p>
           </div>

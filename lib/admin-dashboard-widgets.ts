@@ -2,11 +2,6 @@ export type OperationsDashboardCoreWidgetKey =
   | "kpi_overview"
   | "product_performance"
   | "booking_trends"
-  | "package_review_queue"
-  | "latest_anomalies"
-  | "sla_review"
-  | "activity_feed"
-  | "top_destinations"
   | "quick_actions"
 
 export type OperationsDashboardWidgetKey = string
@@ -58,41 +53,6 @@ export const OPERATIONS_DASHBOARD_WIDGETS: OperationsDashboardWidgetDefinition[]
     key: "booking_trends",
     title: "Booking & Revenue Trend",
     description: "Grafik booking, revenue, dan distribusi booking per kategori.",
-    status: "connected",
-    defaultEnabled: true,
-  },
-  {
-    key: "package_review_queue",
-    title: "Paket Menunggu Review",
-    description: "Tabel paket wisata yang perlu ditinjau oleh tim operasional/admin.",
-    status: "connected",
-    defaultEnabled: true,
-  },
-  {
-    key: "latest_anomalies",
-    title: "Anomali Terbaru",
-    description: "Deletion request, approval request, dan item yang melewati SLA.",
-    status: "connected",
-    defaultEnabled: true,
-  },
-  {
-    key: "sla_review",
-    title: "SLA Review",
-    description: "Ringkasan SLA tepat waktu, mendekati batas, dan lewat batas.",
-    status: "connected",
-    defaultEnabled: true,
-  },
-  {
-    key: "activity_feed",
-    title: "Aktivitas Terakhir",
-    description: "Audit log dan aktivitas operasional terbaru.",
-    status: "connected",
-    defaultEnabled: true,
-  },
-  {
-    key: "top_destinations",
-    title: "Top Destinasi",
-    description: "Destinasi teratas berdasarkan booking Paket Wisata.",
     status: "connected",
     defaultEnabled: true,
   },
@@ -356,7 +316,16 @@ export const OPERATIONS_PRODUCT_WIDGET_KEYS = OPERATIONS_PRODUCT_WIDGET_CATALOG.
   product.sections.flatMap((section) => section.items.map((item) => item.key)),
 )
 
+export const LEGACY_OPERATIONS_DASHBOARD_WIDGET_KEYS = [
+  "package_review_queue",
+  "latest_anomalies",
+  "sla_review",
+  "activity_feed",
+  "top_destinations",
+] as const
+
 export const ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS = [
   ...OPERATIONS_DASHBOARD_WIDGETS.map((widget) => widget.key),
   ...OPERATIONS_PRODUCT_WIDGET_KEYS,
+  ...LEGACY_OPERATIONS_DASHBOARD_WIDGET_KEYS,
 ]

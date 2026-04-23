@@ -1037,11 +1037,24 @@ export default async function AdminDashboard({
     const showKpiOverviewWidget = enabledOperationsWidgetKeys.has("kpi_overview")
     const showProductPerformanceWidget = enabledOperationsWidgetKeys.has("product_performance")
     const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
-    const showPackageReviewQueueWidget = enabledOperationsWidgetKeys.has("package_review_queue")
-    const showLatestAnomaliesWidget = enabledOperationsWidgetKeys.has("latest_anomalies")
-    const showSlaReviewWidget = enabledOperationsWidgetKeys.has("sla_review")
-    const showActivityFeedWidget = enabledOperationsWidgetKeys.has("activity_feed")
-    const showTopDestinationsWidget = enabledOperationsWidgetKeys.has("top_destinations")
+    const showPackageReviewQueueWidget =
+      enabledOperationsWidgetKeys.has("package_review_queue") ||
+      enabledOperationsWidgetKeys.has("package_tour_review_queue") ||
+      enabledOperationsWidgetKeys.has("package_tour_pending_review")
+    const showLatestAnomaliesWidget =
+      enabledOperationsWidgetKeys.has("latest_anomalies") ||
+      enabledOperationsWidgetKeys.has("package_tour_open_anomalies") ||
+      enabledOperationsWidgetKeys.has("package_tour_deletion_request")
+    const showSlaReviewWidget =
+      enabledOperationsWidgetKeys.has("sla_review") ||
+      enabledOperationsWidgetKeys.has("package_tour_sla_review")
+    const showActivityFeedWidget =
+      enabledOperationsWidgetKeys.has("activity_feed") ||
+      enabledOperationsWidgetKeys.has("package_tour_activity_feed")
+    const showTopDestinationsWidget =
+      enabledOperationsWidgetKeys.has("top_destinations") ||
+      enabledOperationsWidgetKeys.has("package_tour_top_destinations") ||
+      enabledOperationsWidgetKeys.has("package_tour_top_merchant_revenue")
     const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
     const selectedProductWidgetGroups = OPERATIONS_PRODUCT_WIDGET_CATALOG
       .map((product) => {
