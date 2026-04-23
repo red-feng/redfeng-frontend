@@ -94,12 +94,22 @@ export default async function AdminProtectedLayout({
     { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
     { href: "/admin/merchants/anomalies", label: "Anomalis", badgeCount: 0 },
   ]
+  const productNavChildren = [
+    { href: "/admin/paket-tour", label: "Paket Tour", badgeCount: pendingPackagesBadgeCount },
+    { href: "/admin/pesawat", label: "Pesawat", badgeCount: 0 },
+    { href: "/admin/hotel", label: "Hotel", badgeCount: 0 },
+    { href: "/admin/kereta-api", label: "Kereta Api", badgeCount: 0 },
+    { href: "/admin/bus-travel", label: "Bus & Travel", badgeCount: 0 },
+    { href: "/admin/kapal-laut", label: "Kapal Laut", badgeCount: 0 },
+    { href: "/admin/kapal-pesiar", label: "Kapal Pesiar", badgeCount: 0 },
+  ]
   const adminNav = isOperationsManager
     ? [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
         { label: "Merchant", children: merchantNavChildren },
+        { label: "Produk", children: productNavChildren },
         { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
         { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
@@ -107,13 +117,7 @@ export default async function AdminProtectedLayout({
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
         { label: "Merchant", children: merchantNavChildren },
-        { href: "/admin/paket-tour", label: "Paket Tour", badgeCount: 0 },
-        { href: "/admin/pesawat", label: "Pesawat", badgeCount: 0 },
-        { href: "/admin/hotel", label: "Hotel", badgeCount: 0 },
-        { href: "/admin/bus-travel", label: "Bus & Travel", badgeCount: 0 },
-        { href: "/admin/kereta-api", label: "Kereta Api", badgeCount: 0 },
-        { href: "/admin/kapal-laut", label: "Kapal Laut", badgeCount: 0 },
-        { href: "/admin/kapal-pesiar", label: "Kapal Pesiar", badgeCount: 0 },
+        { label: "Produk", children: productNavChildren },
         { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
