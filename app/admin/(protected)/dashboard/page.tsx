@@ -1020,7 +1020,7 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
+          <section className="grid items-start gap-5 xl:grid-cols-[1fr_1fr_1fr]">
             {showPackageWorkspace ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
@@ -1047,7 +1047,7 @@ export default async function AdminDashboard({
                 <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
                 <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
-              <div className="mt-5 divide-y divide-[#f0e6dd]">
+              <div className="mt-5 max-h-[360px] divide-y divide-[#f0e6dd] overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
                 {recentAnomalies.map((item) => (
                   <div key={`${item.title}-${item.source}-${item.time}`} className="flex items-center justify-between gap-4 py-3">
                     <div>
@@ -1070,7 +1070,7 @@ export default async function AdminDashboard({
                 <h2 className="text-base font-semibold text-slate-950">Activity Feed</h2>
                 <Link href="/admin/audit-log" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
-              <div className="mt-5 space-y-3">
+              <div className="mt-5 max-h-[420px] space-y-3 overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
                 {activityFeed.map((item) => (
                   <div key={`${item.title}-${item.time}`} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
                     <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
