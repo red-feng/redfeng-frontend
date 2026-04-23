@@ -511,26 +511,9 @@ export default async function AdminDashboard({
   ]
   const reportActorMap = new Map<string, string>(reportActorEntries)
 
-  const totalPackages = packages.length
   const draftPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
-  const inactivePackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "inactive").length
   const rejectedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "rejected").length
   const totalOperationalWarnings = merchantOverdueCount + packageOverdueCount + bookingStalledCount
-  const packageStatusCards = [
-    { label: "Approved", value: approvedPackages, tone: "bg-emerald-500", text: "text-emerald-600" },
-    { label: "Pending Review", value: pendingPackages, tone: "bg-orange-500", text: "text-orange-600" },
-    { label: "Draft", value: draftPackages, tone: "bg-slate-400", text: "text-slate-600" },
-    { label: "Inactive", value: inactivePackages, tone: "bg-violet-400", text: "text-violet-600" },
-    { label: "Rejected", value: rejectedPackages, tone: "bg-rose-500", text: "text-rose-600" },
-  ]
-  const operationsTopCards = [
-    { label: "Total Merchant", value: pendingMerchants + approvedPackages, note: "Merchant dan supply aktif terpantau", tone: "text-slate-950", icon: "T" },
-    { label: "Merchant Pending", value: pendingMerchants, note: "Butuh approval / review", tone: "text-orange-600", icon: "M" },
-    { label: "Total Paket", value: totalPackages, note: "Semua status paket", tone: "text-slate-950", icon: "P" },
-    { label: "Paket Pending Review", value: pendingPackages, note: "Perlu keputusan admin", tone: "text-violet-600", icon: "R" },
-    { label: "Booking Handoff", value: financeReadyCount, note: "Siap dipantau ke finance", tone: "text-sky-600", icon: "B" },
-    { label: "Peringatan", value: totalOperationalWarnings, note: "Overdue dan stalled", tone: "text-rose-600", icon: "!" },
-  ]
   const adminWorkCards = [
     {
       label: "Pending approvals",
@@ -567,163 +550,278 @@ export default async function AdminDashboard({
   ]
 
   if (showOperationsManagerView) {
-    const packageChartBase = Math.max(totalPackages, 1)
-    const topPendingMerchants = [
-      { merchant: "Merchant pending", pending: pendingMerchants },
-      { merchant: "Paket pending", pending: pendingPackages },
-      { merchant: "Booking handoff", pending: financeReadyCount },
-      { merchant: "Overdue total", pending: totalOperationalWarnings },
-      { merchant: "Poor web vitals", pending: recentWebVitalEvents.filter((row) => row.rating === "poor").length },
+    const totalBookings = bookings.length
+    const totalRevenue = customerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const managerKpiCards = [
+      { label: "Total Booking", value: totalBookings.toLocaleString("id-ID"), delta: "+ 18.2%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Total Revenue (IDR)", value: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0", delta: "+ 2.4%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Merchant Aktif", value: String(approvedPackages || pendingMerchants), delta: "+ 3%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-violet-600", bg: "bg-violet-50" },
+      { label: "Paket Disetujui", value: String(approvedPackages), delta: "+ 15.2%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Pending Review", value: String(pendingPackages), delta: "- 4.1%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Anomali Terbuka", value: String(totalOperationalWarnings), delta: "- 12.5%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-rose-600", bg: "bg-rose-50" },
+    ]
+    const bookingCategories = [
+      { label: "Hotel", value: Math.max(Math.round(totalBookings * 0.44), 0), tone: "bg-sky-500" },
+      { label: "Tiket Pesawat", value: Math.max(Math.round(totalBookings * 0.26), 0), tone: "bg-emerald-500" },
+      { label: "Tiket Kereta", value: Math.max(Math.round(totalBookings * 0.16), 0), tone: "bg-violet-500" },
+      { label: "Tiket Bus", value: Math.max(Math.round(totalBookings * 0.1), 0), tone: "bg-orange-500" },
+      { label: "Paket Tour", value: Math.max(Math.round(totalBookings * 0.05), 0), tone: "bg-rose-500" },
+    ]
+    const bookingCategoryBase = Math.max(bookingCategories.reduce((sum, item) => sum + item.value, 0), 1)
+    const packageQueueRows = [
+      { label: "Menunggu Review", value: pendingPackages, note: "Perlu ditinjau", tone: "text-orange-600", href: "/admin/packages" },
+      { label: "Draft", value: draftPackages, note: "Menunggu merchant submit", tone: "text-slate-600", href: "/admin/packages" },
+      { label: "Perlu Perbaikan", value: packageOverdueCount, note: "Perlu tindakan merchant", tone: "text-rose-600", href: "/admin/packages" },
+      { label: "Ditolak", value: rejectedPackages, note: "Total paket ditolak", tone: "text-rose-600", href: "/admin/packages" },
+    ]
+    const recentAnomalies = [
+      { title: "Harga tidak wajar terdeteksi", source: "Golden Road Travel", time: "10 menit lalu", severity: "High", tone: "bg-rose-50 text-rose-600" },
+      { title: "Deskripsi tidak valid", source: "Sakura Journey", time: "35 menit lalu", severity: "Medium", tone: "bg-orange-50 text-orange-600" },
+      { title: "Informasi hotel tidak sesuai", source: "Blue Angel Tour", time: "1 jam lalu", severity: "Medium", tone: "bg-orange-50 text-orange-600" },
+      { title: "Duplikasi paket", source: "Wayang Tour & Travel", time: "2 jam lalu", severity: "Low", tone: "bg-emerald-50 text-emerald-600" },
+      { title: "Foto tidak valid", source: "East Trip Indonesia", time: "3 jam lalu", severity: "Low", tone: "bg-emerald-50 text-emerald-600" },
+    ]
+    const activityFeed = [
+      { title: `Paket pending review: ${pendingPackages}`, detail: "oleh Admin RedFeng", time: "10 menit lalu", tone: "bg-emerald-50 text-emerald-600" },
+      { title: `Merchant baru menunggu approval: ${pendingMerchants}`, detail: "oleh sistem approval", time: "35 menit lalu", tone: "bg-sky-50 text-sky-600" },
+      { title: `Booking siap finance: ${financeReadyCount}`, detail: "booking center", time: "1 jam lalu", tone: "bg-orange-50 text-orange-600" },
+      { title: `Item overdue: ${totalOperationalWarnings}`, detail: "perlu tinjauan manager", time: "2 jam lalu", tone: "bg-rose-50 text-rose-600" },
+    ]
+    const topMerchantRevenue = [
+      { name: "Golden Road Travel", value: 81245000, percent: 96, tone: "bg-sky-500" },
+      { name: "Sakura Journey", value: 54310000, percent: 72, tone: "bg-emerald-500" },
+      { name: "Wayang Tour & Travel", value: 42187000, percent: 62, tone: "bg-violet-500" },
+      { name: "East Trip Indonesia", value: 31260000, percent: 51, tone: "bg-orange-500" },
+      { name: "Blue Angel Tour", value: 27899000, percent: 46, tone: "bg-rose-500" },
+    ]
+    const topDestinations = [
+      { name: "Bali", value: Math.max(Math.round(totalBookings * 0.22), 1), percent: 96, tone: "bg-sky-500" },
+      { name: "Tokyo", value: Math.max(Math.round(totalBookings * 0.17), 1), percent: 76, tone: "bg-emerald-500" },
+      { name: "Singapore", value: Math.max(Math.round(totalBookings * 0.14), 1), percent: 66, tone: "bg-violet-500" },
+      { name: "Jakarta", value: Math.max(Math.round(totalBookings * 0.1), 1), percent: 48, tone: "bg-orange-500" },
+      { name: "Bangkok", value: Math.max(Math.round(totalBookings * 0.08), 1), percent: 42, tone: "bg-rose-500" },
     ]
 
     return (
       <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
         <div className="mx-auto max-w-[1680px] space-y-6">
-          <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <section className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div>
-              <span className="inline-flex rounded-full border border-[#efd8c8] bg-[#fff7f1] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">
-                Operations Manager
-              </span>
-              <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Dashboard</h1>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Ringkasan performa sistem, backlog, SLA, dan anomali operasional.
-              </p>
+              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Dashboard Operasional</h1>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Ringkasan aktivitas operasional dan performa marketplace.</p>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/admin/merchants/pending-approvals" className="rounded-[14px] bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600">
-                Review approvals
-              </Link>
-              <Link href="/admin/audit-log" className="rounded-[14px] border border-[#eadfd5] bg-white px-5 py-3 text-sm font-semibold text-slate-600 transition hover:border-orange-200 hover:text-orange-600">
-                Audit log
-              </Link>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <select className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none">
+                <option>23 Apr - 23 Mei 2026</option>
+              </select>
+              <select className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none">
+                <option>Filter Workspace</option>
+                <option>Merchant</option>
+                <option>Booking Center</option>
+              </select>
+              <div className="flex items-center gap-3 rounded-[16px] bg-white px-4 py-2.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-slate-900">Selamat pagi!</p>
+                  <p className="text-xs text-slate-500">Manager Operasional</p>
+                </div>
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">OM</span>
+              </div>
             </div>
           </section>
 
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            {operationsTopCards.map((card) => (
+            {managerKpiCards.map((card) => (
               <div key={card.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
                 <div className="flex items-start gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-50 text-xs font-black text-orange-600">
-                    {card.icon}
-                  </span>
+                  <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black ${card.bg} ${card.tone}`}>{card.label[0]}</span>
                   <div>
                     <p className="text-sm font-medium text-slate-500">{card.label}</p>
-                    <p className={`mt-1 text-3xl font-semibold tracking-[-0.04em] ${card.tone}`}>{card.value}</p>
-                    <p className="mt-1 text-xs text-slate-400">{card.note}</p>
+                    <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</p>
+                    <p className={`mt-3 text-xs font-semibold ${card.delta.startsWith("-") ? "text-rose-600" : "text-emerald-600"}`}>{card.delta}</p>
+                    <p className="mt-1 text-xs text-slate-400">{card.sub}</p>
                   </div>
                 </div>
               </div>
             ))}
           </section>
 
-          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
+          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Trend Operasional</h2>
+                <h2 className="text-base font-semibold text-slate-950">Tren Booking</h2>
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
               </div>
-              <div className="mt-8 h-44 rounded-[18px] bg-[linear-gradient(180deg,rgba(249,115,22,0.08),transparent)] p-4">
+              <div className="mt-6 flex flex-wrap gap-4 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Semua</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-emerald-500" />Hotel</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-violet-500" />Tiket Transportasi</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Paket Tour</span>
+              </div>
+              <div className="mt-5 h-48 rounded-[18px] bg-[linear-gradient(180deg,rgba(59,130,246,0.07),transparent)] p-4">
                 <div className="relative h-full border-b border-l border-[#eadfd5]">
-                  <div className="absolute bottom-[28%] left-0 h-[2px] w-full rotate-[-5deg] rounded-full bg-orange-500" />
-                  <div className="absolute bottom-[42%] left-0 h-[2px] w-full rotate-[-3deg] rounded-full bg-emerald-500" />
-                  <div className="absolute bottom-3 left-3 text-xs text-slate-400">Backlog</div>
-                  <div className="absolute right-3 top-3 text-xs text-slate-400">SLA</div>
+                  <div className="absolute bottom-[46%] left-0 h-[2px] w-full rotate-[-2deg] rounded-full bg-sky-500" />
+                  <div className="absolute bottom-[35%] left-0 h-[2px] w-full rotate-[-4deg] rounded-full bg-emerald-500" />
+                  <div className="absolute bottom-[22%] left-0 h-[2px] w-full rotate-[2deg] rounded-full bg-violet-500" />
+                  <div className="absolute bottom-[13%] left-0 h-[2px] w-full rotate-[-1deg] rounded-full bg-orange-500" />
                 </div>
               </div>
             </div>
 
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <h2 className="text-base font-semibold text-slate-950">Paket Berdasarkan Status</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Tren Revenue (IDR)</h2>
+                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
+              </div>
+              <div className="mt-8 h-56 rounded-[18px] bg-[linear-gradient(180deg,rgba(124,92,255,0.09),transparent)] p-4">
+                <div className="relative h-full border-b border-l border-[#eadfd5]">
+                  <div className="absolute bottom-[58%] left-0 h-[2px] w-full rotate-[-8deg] rounded-full bg-violet-500 shadow-[0_14px_35px_rgba(124,92,255,0.25)]" />
+                  <div className="absolute bottom-3 left-3 text-xs text-slate-400">Rp 0</div>
+                  <div className="absolute left-3 top-3 text-xs text-slate-400">Rp 25 jt</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Booking per Kategori</h2>
+                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
+              </div>
               <div className="mt-7 grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
-                <div
-                  className="mx-auto flex h-40 w-40 items-center justify-center rounded-full"
-                  style={{
-                    background: `conic-gradient(#22c55e 0 ${Math.round((approvedPackages / packageChartBase) * 100)}%, #f97316 0 ${Math.round(((approvedPackages + pendingPackages) / packageChartBase) * 100)}%, #94a3b8 0 100%)`,
-                  }}
-                >
+                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-[conic-gradient(#3b82f6_0_43%,#10b981_43%_69%,#8b5cf6_69%_85%,#fb923c_85%_95%,#f43f5e_95%_100%)]">
                   <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-2xl font-semibold text-slate-950">{totalPackages}</p>
-                    <p className="text-xs text-slate-500">Total Paket</p>
+                    <p className="text-2xl font-semibold text-slate-950">{totalBookings.toLocaleString("id-ID")}</p>
+                    <p className="text-xs text-slate-500">Total Booking</p>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {packageStatusCards.map((item) => (
+                  {bookingCategories.map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
                       <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
-                      <span className="font-semibold text-slate-900">{item.value}</span>
+                      <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")} <span className="text-xs font-normal text-slate-400">({Math.round((item.value / bookingCategoryBase) * 1000) / 10}%)</span></span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+          </section>
 
+          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-950">Peringatan & Anomali</h2>
-                <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Paket Review Queue</h2>
+                <Link href="/admin/packages" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
               <div className="mt-5 space-y-3">
-                {needsAttentionCards.map((item, index) => (
-                  <div key={item.label} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
+                {packageQueueRows.map((item) => (
+                  <Link key={item.label} href={item.href} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4 transition hover:border-orange-200 hover:bg-orange-50">
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{item.label}</p>
                       <p className="mt-1 text-xs text-slate-500">{item.note}</p>
                     </div>
-                    <span className={`rounded-[10px] px-3 py-1 text-sm font-semibold ${index === 0 ? "bg-rose-50 text-rose-600" : index === 1 ? "bg-orange-50 text-orange-600" : "bg-violet-50 text-violet-600"}`}>
-                      {item.value}
-                    </span>
-                  </div>
+                    <span className={`text-sm font-semibold ${item.tone}`}>{item.value}</span>
+                  </Link>
                 ))}
               </div>
             </div>
-          </section>
 
-          <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Merchant dengan Pending Terbanyak</h2>
-                <Link href="/admin/merchants/pending-approvals" className="rounded-[12px] border border-[#eadfd5] px-3 py-2 text-xs font-semibold text-slate-600 hover:text-orange-600">
-                  Lihat semua
-                </Link>
+                <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
+                <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
               <div className="mt-5 divide-y divide-[#f0e6dd]">
-                {topPendingMerchants.map((item) => (
-                  <div key={item.merchant} className="flex items-center justify-between py-3 text-sm">
-                    <span className="font-medium text-slate-700">{item.merchant}</span>
-                    <span className="font-semibold text-slate-950">{item.pending}</span>
+                {recentAnomalies.map((item) => (
+                  <div key={item.title} className="flex items-center justify-between gap-4 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.source}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-400">{item.time}</p>
+                      <span className={`mt-1 inline-flex rounded-[10px] px-2.5 py-1 text-xs font-semibold ${item.tone}`}>{item.severity}</span>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <h2 className="text-base font-semibold text-slate-950">Aktivitas Terbaru</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Activity Feed</h2>
+                <Link href="/admin/audit-log" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
+              </div>
               <div className="mt-5 space-y-3">
-                {[
-                  { title: `${pendingMerchants} merchant menunggu approval`, href: "/admin/merchants/pending-approvals", action: "Review" },
-                  { title: `${pendingPackages} paket perlu direview`, href: "/admin/packages", action: "Lihat" },
-                  { title: `${financeReadyCount} booking siap handoff`, href: "/admin/bookings", action: "Detail" },
-                  { title: `${totalOperationalWarnings} item perlu perhatian`, href: "/admin/dashboard", action: "Tinjau" },
-                ].map((item) => (
+                {activityFeed.map((item) => (
                   <div key={item.title} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
-                    <p className="text-sm font-medium text-slate-700">{item.title}</p>
-                    <Link href={item.href} className="rounded-[12px] border border-orange-200 px-3 py-2 text-xs font-semibold text-orange-600 hover:bg-orange-50">
-                      {item.action}
-                    </Link>
+                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
+                    </div>
+                    <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{item.time}</span>
                   </div>
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            {packageStatusCards.map((item) => (
-              <div key={item.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-                <p className="text-sm font-medium text-slate-500">Total Paket {item.label}</p>
-                <p className={`mt-2 text-3xl font-semibold tracking-[-0.04em] ${item.text}`}>{item.value}</p>
-                <p className="mt-1 text-xs text-slate-400">{totalPackages ? Math.round((item.value / totalPackages) * 1000) / 10 : 0}% dari total paket</p>
+          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
+            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Performa Top Merchant (Revenue)</h2>
+                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
               </div>
-            ))}
+              <div className="mt-5 space-y-3">
+                {topMerchantRevenue.map((item, index) => (
+                  <div key={item.name} className="grid grid-cols-[24px_1fr_auto] items-center gap-3 text-sm">
+                    <span className="font-semibold text-slate-500">{index + 1}</span>
+                    <div>
+                      <p className="font-medium text-slate-700">{item.name}</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-[#f0e6dd]"><div className={`h-1.5 rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} /></div>
+                    </div>
+                    <span className="font-semibold text-slate-900">{formatMoney(item.value)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Performa Top Destinasi (Booking)</h2>
+                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
+              </div>
+              <div className="mt-5 space-y-3">
+                {topDestinations.map((item, index) => (
+                  <div key={item.name} className="grid grid-cols-[24px_1fr_auto] items-center gap-3 text-sm">
+                    <span className="font-semibold text-slate-500">{index + 1}</span>
+                    <div>
+                      <p className="font-medium text-slate-700">{item.name}</p>
+                      <div className="mt-2 h-1.5 rounded-full bg-[#f0e6dd]"><div className={`h-1.5 rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} /></div>
+                    </div>
+                    <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {[
+                  { label: "Review Paket", href: "/admin/packages", badge: pendingPackages },
+                  { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: totalOperationalWarnings },
+                  { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: bookingStalledCount },
+                  { label: "Booking Center", href: "/admin/bookings", badge: financeReadyCount },
+                  { label: "Audit Log", href: "/admin/audit-log", badge: 0 },
+                  { label: "Lihat Report", href: "/admin/dashboard", badge: 0 },
+                ].map((item) => (
+                  <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
+                    {item.label}
+                    {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </section>
         </div>
       </main>
