@@ -5,6 +5,10 @@ import { canAccessInternalPortal, getInternalPortalHomePath, getRoleLabel } from
 import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-role-lock"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import {
+  OPERATIONS_DASHBOARD_SCOPE,
+  resolveOperationsDashboardWidgetKeys,
+} from "@/lib/admin-dashboard-widgets"
 import { submitOperationsManagerReport } from "./actions"
 import { createAdminAccount } from "@/app/admin/(protected)/team-accounts/actions"
 import { createFinanceAccount } from "@/app/finance/(protected)/team-accounts/finance-actions"
@@ -304,6 +308,19 @@ export default async function AdminDashboard({
   const operationsPeriodStart = getPeriodStart(operationsPeriod.days)
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
+  const widgetPreferenceResult = showOperationsManagerView
+    ? await adminSupabase
+        .from("dashboard_widget_preferences")
+        .select("widget_key, enabled")
+        .eq("profile_id", user.id)
+        .eq("dashboard_scope", OPERATIONS_DASHBOARD_SCOPE)
+        .order("sort_order", { ascending: true })
+    : { data: null, error: null }
+  const enabledOperationsWidgetKeys = resolveOperationsDashboardWidgetKeys(
+    widgetPreferenceResult.error
+      ? null
+      : ((widgetPreferenceResult.data as Array<{ widget_key: string | null; enabled: boolean | null }> | null) || []),
+  )
 
   const [
     merchantResult,
@@ -915,6 +932,16 @@ export default async function AdminDashboard({
     const showPackageWorkspace = operationsWorkspace === "all" || operationsWorkspace === "package_review"
     const showMerchantWorkspace = operationsWorkspace === "all" || operationsWorkspace === "merchant" || operationsWorkspace === "anomalies"
     const showAnomalyWorkspace = operationsWorkspace === "all" || operationsWorkspace === "anomalies" || operationsWorkspace === "merchant"
+    const showKpiOverviewWidget = enabledOperationsWidgetKeys.has("kpi_overview")
+    const showProductPerformanceWidget = enabledOperationsWidgetKeys.has("product_performance")
+    const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
+    const showPackageReviewQueueWidget = enabledOperationsWidgetKeys.has("package_review_queue")
+    const showLatestAnomaliesWidget = enabledOperationsWidgetKeys.has("latest_anomalies")
+    const showSlaReviewWidget = enabledOperationsWidgetKeys.has("sla_review")
+    const showActivityFeedWidget = enabledOperationsWidgetKeys.has("activity_feed")
+    const showTopDestinationsWidget = enabledOperationsWidgetKeys.has("top_destinations")
+    const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
+    const hasAnyDashboardWidget = enabledOperationsWidgetKeys.size > 0
 
     return (
       <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
@@ -960,6 +987,20 @@ export default async function AdminDashboard({
             </form>
           </section>
 
+          {!hasAnyDashboardWidget ? (
+            <section className="rounded-[24px] border border-dashed border-orange-200 bg-white px-6 py-14 text-center shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-lg font-black text-orange-600">W</span>
+              <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Dashboard belum memiliki widget aktif</h2>
+              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+                Pilih widget yang ingin ditampilkan di dashboard operasional Anda. Dashboard boleh dikosongkan dan bisa diisi lagi kapan saja.
+              </p>
+              <Link href="/admin/dashboard/widgets" className="mt-6 inline-flex rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
+                Kelola Widget
+              </Link>
+            </section>
+          ) : null}
+
+          {showKpiOverviewWidget ? (
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             {managerKpiCards.map((card) => (
               <div key={card.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -975,7 +1016,9 @@ export default async function AdminDashboard({
               </div>
             ))}
           </section>
+          ) : null}
 
+          {showProductPerformanceWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-slate-950">Performa per Produk</h2>
@@ -1010,8 +1053,9 @@ export default async function AdminDashboard({
               ))}
             </div>
           </section>
+          ) : null}
 
-          {showBookingWorkspace ? (
+          {showBookingWorkspace && showBookingTrendsWidget ? (
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
@@ -1086,8 +1130,11 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
+          {(showPackageWorkspace && showPackageReviewQueueWidget) ||
+          (showAnomalyWorkspace && showLatestAnomaliesWidget) ||
+          (showMerchantWorkspace && showSlaReviewWidget) ? (
           <section className="grid items-start gap-5 xl:grid-cols-[1fr_1fr_1fr]">
-            {showPackageWorkspace ? (
+            {showPackageWorkspace && showPackageReviewQueueWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
@@ -1121,7 +1168,7 @@ export default async function AdminDashboard({
             </div>
             ) : null}
 
-            {showAnomalyWorkspace ? (
+            {showAnomalyWorkspace && showLatestAnomaliesWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
@@ -1144,7 +1191,7 @@ export default async function AdminDashboard({
             </div>
             ) : null}
 
-            {showMerchantWorkspace ? (
+            {showMerchantWorkspace && showSlaReviewWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">SLA Review</h2>
@@ -1169,9 +1216,11 @@ export default async function AdminDashboard({
             </div>
             ) : null}
           </section>
+          ) : null}
 
-          {showBookingWorkspace ? (
+          {showBookingWorkspace && (showActivityFeedWidget || showTopDestinationsWidget || showQuickActionsWidget) ? (
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
+            {showActivityFeedWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">Aktivitas Terakhir</h2>
@@ -1190,7 +1239,9 @@ export default async function AdminDashboard({
                 ))}
               </div>
             </div>
+            ) : null}
 
+            {showTopDestinationsWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">Performa Top Destinasi (Booking)</h2>
@@ -1209,7 +1260,9 @@ export default async function AdminDashboard({
                 ))}
               </div>
             </div>
+            ) : null}
 
+            {showQuickActionsWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -1228,8 +1281,9 @@ export default async function AdminDashboard({
                 ))}
               </div>
             </div>
+            ) : null}
           </section>
-          ) : (
+          ) : !showBookingWorkspace && showQuickActionsWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1246,7 +1300,7 @@ export default async function AdminDashboard({
               ))}
             </div>
           </section>
-          )}
+          ) : null}
         </div>
       </main>
     )

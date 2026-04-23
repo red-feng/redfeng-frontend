@@ -103,9 +103,13 @@ export default async function AdminProtectedLayout({
     { href: "/admin/kapal-laut", label: "Kapal Laut", badgeCount: 0 },
     { href: "/admin/kapal-pesiar", label: "Kapal Pesiar", badgeCount: 0 },
   ]
+  const dashboardNavChildren = [
+    { href: "/admin/dashboard", label: "Ringkasan", badgeCount: 0 },
+    { href: "/admin/dashboard/widgets", label: "Widget", badgeCount: 0 },
+  ]
   const adminNav = isOperationsManager
     ? [
-        { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
+        { label: "Dashboard", children: dashboardNavChildren },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
         { label: "Merchant", children: merchantNavChildren },

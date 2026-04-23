@@ -3,6 +3,11 @@
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import {
+  DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS,
+  OPERATIONS_DASHBOARD_SCOPE,
+  OPERATIONS_DASHBOARD_WIDGETS,
+} from "@/lib/admin-dashboard-widgets"
 
 function resolveReturnTo(formData: FormData, fallbackPath: string) {
   const returnTo = String(formData.get("return_to") || "").trim()
@@ -93,4 +98,70 @@ export async function submitOperationsManagerReport(formData: FormData) {
   }
 
   backToDashboard(returnTo, "Laporan operations manager berhasil dikirim ke superadmin.", "success")
+}
+
+async function getOperationsWidgetUser(returnTo: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/admin/login")
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  if (!profile || !["operations_manager", "superadmin"].includes(profile.role || "")) {
+    backToDashboard(returnTo, "Hanya operations manager atau superadmin yang dapat mengatur widget dashboard.", "error")
+  }
+
+  return user
+}
+
+export async function saveOperationsDashboardWidgets(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/admin/dashboard/widgets")
+  const user = await getOperationsWidgetUser(returnTo)
+  const allKeys = OPERATIONS_DASHBOARD_WIDGETS.map((widget) => widget.key)
+  const enabledKeys = new Set(formData.getAll("enabled_widget_keys").map((value) => String(value)))
+  const adminSupabase = createAdminClient()
+  const rows = allKeys.map((widgetKey, index) => ({
+    profile_id: user.id,
+    dashboard_scope: OPERATIONS_DASHBOARD_SCOPE,
+    widget_key: widgetKey,
+    enabled: enabledKeys.has(widgetKey),
+    sort_order: index,
+  }))
+
+  const { error } = await adminSupabase
+    .from("dashboard_widget_preferences")
+    .upsert(rows, { onConflict: "profile_id,dashboard_scope,widget_key" })
+
+  if (error) {
+    backToDashboard(returnTo, error.message, "error")
+  }
+
+  backToDashboard(returnTo, "Widget dashboard berhasil disimpan.", "success")
+}
+
+export async function resetOperationsDashboardWidgets(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/admin/dashboard/widgets")
+  const user = await getOperationsWidgetUser(returnTo)
+  const adminSupabase = createAdminClient()
+  const rows = OPERATIONS_DASHBOARD_WIDGETS.map((widget, index) => ({
+    profile_id: user.id,
+    dashboard_scope: OPERATIONS_DASHBOARD_SCOPE,
+    widget_key: widget.key,
+    enabled: DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS.includes(widget.key),
+    sort_order: index,
+  }))
+
+  const { error } = await adminSupabase
+    .from("dashboard_widget_preferences")
+    .upsert(rows, { onConflict: "profile_id,dashboard_scope,widget_key" })
+
+  if (error) {
+    backToDashboard(returnTo, error.message, "error")
+  }
+
+  backToDashboard(returnTo, "Widget dashboard dikembalikan ke default.", "success")
 }
