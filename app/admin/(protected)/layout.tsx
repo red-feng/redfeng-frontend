@@ -87,7 +87,7 @@ export default async function AdminProtectedLayout({
       secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
     },
     { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
-    { href: "/admin/merchants#anomalies", label: "Anomalies", badgeCount: 0 },
+    { href: "/admin/merchants/anomalies", label: "Anomalis", badgeCount: 0 },
   ]
   const adminNav = isOperationsManager
     ? [
