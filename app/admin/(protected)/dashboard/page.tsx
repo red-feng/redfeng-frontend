@@ -100,6 +100,62 @@ type WebVitalEventRow = {
   created_at: string | null
 }
 
+type DashboardPackageRow = {
+  id: string
+  status: string | null
+  created_at: string | null
+  merchant_id: string | null
+  title: string | null
+  city: string | null
+  country: string | null
+  destination_province: string | null
+  destination_country_id: string | null
+  travel_style: string | null
+}
+
+type DashboardBookingRow = {
+  id: string
+  package_id: string | null
+  booking_status: string | null
+  created_at: string | null
+  payment_status: string | null
+  payment_type: string | null
+  escrow_status: string | null
+  total_amount: number | null
+  dp_amount: number | null
+  final_payment_amount: number | null
+  customer_admin_fee_amount: number | null
+  customer_tax_amount: number | null
+}
+
+type MerchantDeletionRequestRow = {
+  id: string
+  merchant_id: string | null
+  merchant_email: string | null
+  merchant_name: string | null
+  reason: string | null
+  status: string | null
+  requested_at: string | null
+}
+
+type MerchantReviewRequestRow = {
+  id: string
+  merchant_id: string | null
+  request_type: string | null
+  status: string | null
+  admin_note: string | null
+  requested_at: string | null
+}
+
+type DashboardAuditLogRow = {
+  id: string
+  actor_role: string | null
+  target_type: string | null
+  action: string
+  summary: string | null
+  created_at: string | null
+}
+
 function averageMetricValue(rows: WebVitalEventRow[], metricName: string) {
   const matchingRows = rows.filter((row) => row.metric_name === metricName && Number.isFinite(Number(row.metric_value)))
   if (matchingRows.length === 0) return null
@@ -122,6 +178,39 @@ function formatRelativeHours(value: string | null | undefined) {
   if (diffHours < 24) return `${diffHours} jam lalu`
   const diffDays = Math.floor(diffHours / 24)
   return `${diffDays} hari lalu`
+}
+
+function formatShortDate(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleDateString("id-ID", { day: "2-digit", month: "short" })
+}
+
+function getDayKey(value: string | null | undefined) {
+  if (!value) return null
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString().slice(0, 10)
+}
+
+function buildRecentDayBuckets(days = 30) {
+  const buckets: Array<{ key: string; label: string; value: number }> = []
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - (days - 1))
+
+  for (let index = 0; index < days; index += 1) {
+    const date = new Date(start)
+    date.setDate(start.getDate() + index)
+    buckets.push({
+      key: date.toISOString().slice(0, 10),
+      label: formatShortDate(date.toISOString()),
+      value: 0,
+    })
+  }
+
+  return buckets
 }
 
 export default async function AdminDashboard({
@@ -176,45 +265,88 @@ export default async function AdminDashboard({
   const reportReturnTo =
     portal === "superadmin" && params.view === "operations-manager" ? "/superadmin/operations-manager" : fallbackDashboardPath
 
-  const [merchantResult, packageResult, bookingResult, webVitalsResult] = await Promise.all([
+  const [
+    merchantResult,
+    activeMerchantResult,
+    packageResult,
+    bookingResult,
+    webVitalsResult,
+    deletionRequestResult,
+    reviewRequestResult,
+    auditLogResult,
+  ] = await Promise.all([
     adminSupabase
       .from("merchants")
       .select("id, created_at")
       .eq("verification_status", "pending"),
     adminSupabase
+      .from("merchants")
+      .select("id", { count: "exact", head: true })
+      .eq("verification_status", "approved"),
+    adminSupabase
       .from("packages")
-      .select("id, status, created_at")
+      .select("id, status, created_at, merchant_id, title, city, country, destination_province, destination_country_id, travel_style")
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
+      .select("id, package_id, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("web_vitals_events")
       .select("event_type, metric_name, metric_value, path, rating, created_at")
       .order("created_at", { ascending: false })
       .limit(240),
+    adminSupabase
+      .from("merchant_deletion_requests")
+      .select("id, merchant_id, merchant_email, merchant_name, reason, status, requested_at")
+      .in("status", ["pending", "manager_rejected"])
+      .order("requested_at", { ascending: false })
+      .limit(12),
+    adminSupabase
+      .from("merchant_review_requests")
+      .select("id, merchant_id, request_type, status, admin_note, requested_at")
+      .eq("status", "pending")
+      .order("requested_at", { ascending: false })
+      .limit(12),
+    adminSupabase
+      .from("admin_action_logs")
+      .select("id, actor_role, target_type, action, summary, created_at")
+      .order("created_at", { ascending: false })
+      .limit(12),
   ])
 
   const pendingMerchantsData = (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
-  const packages = (packageResult.data as Array<{ id: string; status: string | null; created_at: string | null }> | null) || []
-  const bookings = (bookingResult.data as Array<{
-    id: string
-    booking_status: string | null
-    created_at: string | null
-    payment_status: string | null
-    payment_type: string | null
-    escrow_status: string | null
-    total_amount: number | null
-    dp_amount: number | null
-    final_payment_amount: number | null
-    customer_admin_fee_amount: number | null
-    customer_tax_amount: number | null
-  }> | null) || []
+  const activeMerchantCount = activeMerchantResult.count || 0
+  const packages = (packageResult.data as DashboardPackageRow[] | null) || []
+  const bookings = (bookingResult.data as DashboardBookingRow[] | null) || []
   const webVitalEvents = webVitalsResult.error
     ? []
     : ((webVitalsResult.data as WebVitalEventRow[] | null) || [])
+  const deletionRequests = deletionRequestResult.error
+    ? []
+    : ((deletionRequestResult.data as MerchantDeletionRequestRow[] | null) || [])
+  const reviewRequests = reviewRequestResult.error
+    ? []
+    : ((reviewRequestResult.data as MerchantReviewRequestRow[] | null) || [])
+  const recentAuditLogs = auditLogResult.error
+    ? []
+    : ((auditLogResult.data as DashboardAuditLogRow[] | null) || [])
   const pendingMerchants = pendingMerchantsData.length
+
+  const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
+  const packageMerchantIds = Array.from(new Set(packages.map((pkg) => pkg.merchant_id).filter((id): id is string => Boolean(id))))
+  const packageMerchants =
+    packageMerchantIds.length > 0
+      ? (
+          (await adminSupabase
+            .from("merchants")
+            .select("id, brand_name, company_name")
+            .in("id", packageMerchantIds)).data as Array<{ id: string; brand_name: string | null; company_name: string | null }> | null
+        ) || []
+      : []
+  const merchantNameMap = new Map(
+    packageMerchants.map((merchant) => [merchant.id, merchant.brand_name || merchant.company_name || "Merchant tanpa nama"]),
+  )
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
@@ -334,6 +466,9 @@ export default async function AdminDashboard({
       const receivedRatio = totalAmount > 0 ? Math.min(receivedAmount / totalAmount, 1) : 0
 
       return {
+        id: booking.id,
+        packageId: booking.package_id,
+        createdAt: booking.created_at,
         paymentStatus,
         paymentType,
         escrowStatus: normalizeStatus(booking.escrow_status),
@@ -513,7 +648,7 @@ export default async function AdminDashboard({
 
   const draftPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
   const rejectedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "rejected").length
-  const totalOperationalWarnings = merchantOverdueCount + packageOverdueCount + bookingStalledCount
+  const totalOperationalWarnings = merchantOverdueCount + packageOverdueCount + bookingStalledCount + deletionRequests.length + reviewRequests.length
   const adminWorkCards = [
     {
       label: "Pending approvals",
@@ -552,55 +687,138 @@ export default async function AdminDashboard({
   if (showOperationsManagerView) {
     const totalBookings = bookings.length
     const totalRevenue = customerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const bookingTrendRows = buildRecentDayBuckets(30)
+    const bookingTrendMap = new Map(bookingTrendRows.map((row) => [row.key, row]))
+    bookings.forEach((booking) => {
+      const dayKey = getDayKey(booking.created_at)
+      const bucket = dayKey ? bookingTrendMap.get(dayKey) : null
+      if (bucket) bucket.value += 1
+    })
+    const bookingTrendMax = Math.max(...bookingTrendRows.map((row) => row.value), 1)
+    const revenueTrendRows = buildRecentDayBuckets(30)
+    const revenueTrendMap = new Map(revenueTrendRows.map((row) => [row.key, row]))
+    customerTransactionRows.forEach((transaction) => {
+      const dayKey = getDayKey(transaction.createdAt)
+      const bucket = dayKey ? revenueTrendMap.get(dayKey) : null
+      if (bucket) bucket.value += transaction.receivedAmount
+    })
+    const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
+    const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
     const managerKpiCards = [
-      { label: "Total Booking", value: totalBookings.toLocaleString("id-ID"), delta: "+ 18.2%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-sky-600", bg: "bg-sky-50" },
-      { label: "Total Revenue (IDR)", value: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0", delta: "+ 2.4%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Merchant Aktif", value: String(approvedPackages || pendingMerchants), delta: "+ 3%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-violet-600", bg: "bg-violet-50" },
-      { label: "Paket Disetujui", value: String(approvedPackages), delta: "+ 15.2%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Pending Review", value: String(pendingPackages), delta: "- 4.1%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Anomali Terbuka", value: String(totalOperationalWarnings), delta: "- 12.5%", sub: "vs 23 Mar - 22 Apr 2026", tone: "text-rose-600", bg: "bg-rose-50" },
+      { label: "Total Booking", value: totalBookings.toLocaleString("id-ID"), delta: `${bookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`, sub: currentMonthLabel, tone: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Total Revenue (IDR)", value: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(totalRevenue), sub: currentMonthLabel, tone: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Merchant Aktif", value: activeMerchantCount.toLocaleString("id-ID"), delta: `${pendingMerchants} pending`, sub: "Dari data merchant approved", tone: "text-violet-600", bg: "bg-violet-50" },
+      { label: "Paket Disetujui", value: approvedPackages.toLocaleString("id-ID"), delta: `${packages.length.toLocaleString("id-ID")} total paket`, sub: "Status package approved", tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Pending Review", value: pendingPackages.toLocaleString("id-ID"), delta: `${packageOverdueCount} overdue`, sub: "Paket menunggu review", tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Anomali Terbuka", value: totalOperationalWarnings.toLocaleString("id-ID"), delta: `${deletionRequests.length + reviewRequests.length} request aktif`, sub: "SLA, deletion, dan approval", tone: "text-rose-600", bg: "bg-rose-50" },
     ]
-    const bookingCategories = [
-      { label: "Hotel", value: Math.max(Math.round(totalBookings * 0.44), 0), tone: "bg-sky-500" },
-      { label: "Tiket Pesawat", value: Math.max(Math.round(totalBookings * 0.26), 0), tone: "bg-emerald-500" },
-      { label: "Tiket Kereta", value: Math.max(Math.round(totalBookings * 0.16), 0), tone: "bg-violet-500" },
-      { label: "Tiket Bus", value: Math.max(Math.round(totalBookings * 0.1), 0), tone: "bg-orange-500" },
-      { label: "Paket Tour", value: Math.max(Math.round(totalBookings * 0.05), 0), tone: "bg-rose-500" },
-    ]
+    const bookingCategoryCounts = bookings.reduce((map, booking) => {
+      const label = booking.package_id ? "Paket Tour" : "Booking Lainnya"
+      map.set(label, (map.get(label) || 0) + 1)
+      return map
+    }, new Map<string, number>())
+    const categoryTones = ["bg-sky-500", "bg-emerald-500", "bg-violet-500", "bg-orange-500", "bg-rose-500"]
+    const categoryColors = ["#3b82f6", "#10b981", "#8b5cf6", "#fb923c", "#f43f5e"]
+    const calculatedBookingCategories = Array.from(bookingCategoryCounts)
+      .map(([label, value], index) => ({ label, value, tone: categoryTones[index % categoryTones.length], color: categoryColors[index % categoryColors.length] }))
+      .sort((a, b) => b.value - a.value)
+    const bookingCategories =
+      calculatedBookingCategories.length > 0
+        ? calculatedBookingCategories
+        : [{ label: "Belum ada booking", value: 0, tone: "bg-slate-300", color: "#cbd5e1" }]
     const bookingCategoryBase = Math.max(bookingCategories.reduce((sum, item) => sum + item.value, 0), 1)
+    const bookingCategoryGradient = bookingCategories
+      .reduce(
+        (state, item) => {
+          const nextCursor = state.cursor + (item.value / bookingCategoryBase) * 100
+          return {
+            cursor: nextCursor,
+            parts: [...state.parts, `${item.color} ${state.cursor}% ${nextCursor}%`],
+          }
+        },
+        { cursor: 0, parts: [] as string[] },
+      )
+      .parts.join(", ")
     const packageQueueRows = [
       { label: "Menunggu Review", value: pendingPackages, note: "Perlu ditinjau", tone: "text-orange-600", href: "/admin/packages" },
       { label: "Draft", value: draftPackages, note: "Menunggu merchant submit", tone: "text-slate-600", href: "/admin/packages" },
       { label: "Perlu Perbaikan", value: packageOverdueCount, note: "Perlu tindakan merchant", tone: "text-rose-600", href: "/admin/packages" },
       { label: "Ditolak", value: rejectedPackages, note: "Total paket ditolak", tone: "text-rose-600", href: "/admin/packages" },
     ]
-    const recentAnomalies = [
-      { title: "Harga tidak wajar terdeteksi", source: "Golden Road Travel", time: "10 menit lalu", severity: "High", tone: "bg-rose-50 text-rose-600" },
-      { title: "Deskripsi tidak valid", source: "Sakura Journey", time: "35 menit lalu", severity: "Medium", tone: "bg-orange-50 text-orange-600" },
-      { title: "Informasi hotel tidak sesuai", source: "Blue Angel Tour", time: "1 jam lalu", severity: "Medium", tone: "bg-orange-50 text-orange-600" },
-      { title: "Duplikasi paket", source: "Wayang Tour & Travel", time: "2 jam lalu", severity: "Low", tone: "bg-emerald-50 text-emerald-600" },
-      { title: "Foto tidak valid", source: "East Trip Indonesia", time: "3 jam lalu", severity: "Low", tone: "bg-emerald-50 text-emerald-600" },
-    ]
-    const activityFeed = [
-      { title: `Paket pending review: ${pendingPackages}`, detail: "oleh Admin RedFeng", time: "10 menit lalu", tone: "bg-emerald-50 text-emerald-600" },
-      { title: `Merchant baru menunggu approval: ${pendingMerchants}`, detail: "oleh sistem approval", time: "35 menit lalu", tone: "bg-sky-50 text-sky-600" },
-      { title: `Booking siap finance: ${financeReadyCount}`, detail: "booking center", time: "1 jam lalu", tone: "bg-orange-50 text-orange-600" },
-      { title: `Item overdue: ${totalOperationalWarnings}`, detail: "perlu tinjauan manager", time: "2 jam lalu", tone: "bg-rose-50 text-rose-600" },
-    ]
-    const topMerchantRevenue = [
-      { name: "Golden Road Travel", value: 81245000, percent: 96, tone: "bg-sky-500" },
-      { name: "Sakura Journey", value: 54310000, percent: 72, tone: "bg-emerald-500" },
-      { name: "Wayang Tour & Travel", value: 42187000, percent: 62, tone: "bg-violet-500" },
-      { name: "East Trip Indonesia", value: 31260000, percent: 51, tone: "bg-orange-500" },
-      { name: "Blue Angel Tour", value: 27899000, percent: 46, tone: "bg-rose-500" },
-    ]
-    const topDestinations = [
-      { name: "Bali", value: Math.max(Math.round(totalBookings * 0.22), 1), percent: 96, tone: "bg-sky-500" },
-      { name: "Tokyo", value: Math.max(Math.round(totalBookings * 0.17), 1), percent: 76, tone: "bg-emerald-500" },
-      { name: "Singapore", value: Math.max(Math.round(totalBookings * 0.14), 1), percent: 66, tone: "bg-violet-500" },
-      { name: "Jakarta", value: Math.max(Math.round(totalBookings * 0.1), 1), percent: 48, tone: "bg-orange-500" },
-      { name: "Bangkok", value: Math.max(Math.round(totalBookings * 0.08), 1), percent: 42, tone: "bg-rose-500" },
-    ]
+    const calculatedRecentAnomalies = [
+      ...deletionRequests.map((request) => ({
+        title: "Deletion request menunggu keputusan",
+        source: request.merchant_name || request.merchant_email || "Merchant",
+        time: formatRelativeHours(request.requested_at),
+        severity: "High",
+        tone: "bg-rose-50 text-rose-600",
+      })),
+      ...reviewRequests.map((request) => ({
+        title: `Approval merchant ${titleCase(request.request_type)}`,
+        source: request.admin_note || request.merchant_id || "Merchant review",
+        time: formatRelativeHours(request.requested_at),
+        severity: "Medium",
+        tone: "bg-orange-50 text-orange-600",
+      })),
+      ...(merchantOverdueCount > 0
+        ? [{ title: "Merchant pending melewati SLA", source: `${merchantOverdueCount} merchant perlu ditinjau`, time: "SLA 3 hari", severity: "High", tone: "bg-rose-50 text-rose-600" }]
+        : []),
+      ...(packageOverdueCount > 0
+        ? [{ title: "Paket pending melewati SLA", source: `${packageOverdueCount} paket perlu direview`, time: "SLA 3 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
+        : []),
+      ...(bookingStalledCount > 0
+        ? [{ title: "Booking stalled di handoff finance", source: `${bookingStalledCount} booking perlu follow-up`, time: "SLA 1 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
+        : []),
+    ].slice(0, 5)
+    const recentAnomalies =
+      calculatedRecentAnomalies.length > 0
+        ? calculatedRecentAnomalies
+        : [{ title: "Tidak ada anomali terbuka", source: "Semua queue operasional aman", time: "Saat ini", severity: "OK", tone: "bg-emerald-50 text-emerald-600" }]
+    const activityFeed = recentAuditLogs.length > 0
+      ? recentAuditLogs.map((log) => ({
+          title: log.summary || titleCase(log.action),
+          detail: `${titleCase(log.actor_role)} - ${titleCase(log.target_type)}`,
+          time: formatRelativeHours(log.created_at),
+          tone: "bg-sky-50 text-sky-600",
+        }))
+      : [
+          { title: `Paket pending review: ${pendingPackages}`, detail: "Data live dari package queue", time: "Saat ini", tone: "bg-emerald-50 text-emerald-600" },
+          { title: `Merchant baru menunggu approval: ${pendingMerchants}`, detail: "Data live dari merchant pending", time: "Saat ini", tone: "bg-sky-50 text-sky-600" },
+          { title: `Booking siap finance: ${financeReadyCount}`, detail: "Data live dari booking center", time: "Saat ini", tone: "bg-orange-50 text-orange-600" },
+          { title: `Item perlu perhatian: ${totalOperationalWarnings}`, detail: "SLA, deletion, dan approval", time: "Saat ini", tone: "bg-rose-50 text-rose-600" },
+        ]
+    const merchantRevenueMap = customerTransactionRows.reduce((map, transaction) => {
+      const merchantId = transaction.packageId ? packageMap.get(transaction.packageId)?.merchant_id : null
+      if (!merchantId) return map
+      map.set(merchantId, (map.get(merchantId) || 0) + transaction.receivedAmount)
+      return map
+    }, new Map<string, number>())
+    const topMerchantRevenueBase = Math.max(...Array.from(merchantRevenueMap.values()), 1)
+    const topMerchantRevenue = Array.from(merchantRevenueMap)
+      .map(([merchantId, value], index) => ({
+        name: merchantNameMap.get(merchantId) || "Merchant tanpa nama",
+        value,
+        percent: Math.max(Math.round((value / topMerchantRevenueBase) * 100), 8),
+        tone: categoryTones[index % categoryTones.length],
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
+    const destinationMap = bookings.reduce((map, booking) => {
+      const pkg = booking.package_id ? packageMap.get(booking.package_id) : null
+      const label = pkg?.city || pkg?.destination_province || pkg?.country || pkg?.destination_country_id || "Tanpa destinasi"
+      map.set(label, (map.get(label) || 0) + 1)
+      return map
+    }, new Map<string, number>())
+    const topDestinationBase = Math.max(...Array.from(destinationMap.values()), 1)
+    const topDestinations = Array.from(destinationMap)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        percent: Math.max(Math.round((value / topDestinationBase) * 100), 8),
+        tone: categoryTones[index % categoryTones.length],
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
 
     return (
       <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
@@ -652,17 +870,21 @@ export default async function AdminDashboard({
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
               </div>
               <div className="mt-6 flex flex-wrap gap-4 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Semua</span>
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-emerald-500" />Hotel</span>
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-violet-500" />Tiket Transportasi</span>
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Paket Tour</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Semua booking</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Dari tabel bookings</span>
               </div>
               <div className="mt-5 h-48 rounded-[18px] bg-[linear-gradient(180deg,rgba(59,130,246,0.07),transparent)] p-4">
-                <div className="relative h-full border-b border-l border-[#eadfd5]">
-                  <div className="absolute bottom-[46%] left-0 h-[2px] w-full rotate-[-2deg] rounded-full bg-sky-500" />
-                  <div className="absolute bottom-[35%] left-0 h-[2px] w-full rotate-[-4deg] rounded-full bg-emerald-500" />
-                  <div className="absolute bottom-[22%] left-0 h-[2px] w-full rotate-[2deg] rounded-full bg-violet-500" />
-                  <div className="absolute bottom-[13%] left-0 h-[2px] w-full rotate-[-1deg] rounded-full bg-orange-500" />
+                <div className="flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
+                  {bookingTrendRows.map((row, index) => (
+                    <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                      <div
+                        className="w-full rounded-t-full bg-sky-500/80 transition group-hover:bg-orange-500"
+                        style={{ height: `${Math.max((row.value / bookingTrendMax) * 100, row.value > 0 ? 8 : 2)}%` }}
+                        title={`${row.label}: ${row.value.toLocaleString("id-ID")} booking`}
+                      />
+                      {index === 0 || index === bookingTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -673,10 +895,19 @@ export default async function AdminDashboard({
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
               </div>
               <div className="mt-8 h-56 rounded-[18px] bg-[linear-gradient(180deg,rgba(124,92,255,0.09),transparent)] p-4">
-                <div className="relative h-full border-b border-l border-[#eadfd5]">
-                  <div className="absolute bottom-[58%] left-0 h-[2px] w-full rotate-[-8deg] rounded-full bg-violet-500 shadow-[0_14px_35px_rgba(124,92,255,0.25)]" />
+                <div className="relative flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
+                  {revenueTrendRows.map((row, index) => (
+                    <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                      <div
+                        className="w-full rounded-t-full bg-violet-500/80 transition group-hover:bg-orange-500"
+                        style={{ height: `${Math.max((row.value / revenueTrendMax) * 100, row.value > 0 ? 8 : 2)}%` }}
+                        title={`${row.label}: ${formatMoney(row.value)}`}
+                      />
+                      {index === 0 || index === revenueTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
+                    </div>
+                  ))}
                   <div className="absolute bottom-3 left-3 text-xs text-slate-400">Rp 0</div>
-                  <div className="absolute left-3 top-3 text-xs text-slate-400">Rp 25 jt</div>
+                  <div className="absolute left-3 top-3 text-xs text-slate-400">{formatMoney(revenueTrendMax)}</div>
                 </div>
               </div>
             </div>
@@ -687,7 +918,7 @@ export default async function AdminDashboard({
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">30 hari terakhir</span>
               </div>
               <div className="mt-7 grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
-                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full bg-[conic-gradient(#3b82f6_0_43%,#10b981_43%_69%,#8b5cf6_69%_85%,#fb923c_85%_95%,#f43f5e_95%_100%)]">
+                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full" style={{ background: `conic-gradient(${bookingCategoryGradient})` }}>
                   <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
                     <p className="text-2xl font-semibold text-slate-950">{totalBookings.toLocaleString("id-ID")}</p>
                     <p className="text-xs text-slate-500">Total Booking</p>
@@ -731,7 +962,7 @@ export default async function AdminDashboard({
               </div>
               <div className="mt-5 divide-y divide-[#f0e6dd]">
                 {recentAnomalies.map((item) => (
-                  <div key={item.title} className="flex items-center justify-between gap-4 py-3">
+                  <div key={`${item.title}-${item.source}-${item.time}`} className="flex items-center justify-between gap-4 py-3">
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{item.title}</p>
                       <p className="mt-1 text-xs text-slate-500">{item.source}</p>
@@ -752,7 +983,7 @@ export default async function AdminDashboard({
               </div>
               <div className="mt-5 space-y-3">
                 {activityFeed.map((item) => (
-                  <div key={item.title} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
+                  <div key={`${item.title}-${item.time}`} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
                     <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
                     <div>
                       <p className="text-sm font-semibold text-slate-800">{item.title}</p>
@@ -810,10 +1041,10 @@ export default async function AdminDashboard({
                 {[
                   { label: "Review Paket", href: "/admin/packages", badge: pendingPackages },
                   { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: totalOperationalWarnings },
-                  { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: bookingStalledCount },
+                  { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: deletionRequests.length },
                   { label: "Booking Center", href: "/admin/bookings", badge: financeReadyCount },
-                  { label: "Audit Log", href: "/admin/audit-log", badge: 0 },
-                  { label: "Lihat Report", href: "/admin/dashboard", badge: 0 },
+                  { label: "Audit Log", href: "/admin/audit-log", badge: recentAuditLogs.length },
+                  { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
                 ].map((item) => (
                   <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                     {item.label}
