@@ -22,6 +22,18 @@ function readText(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim()
 }
 
+function readWidgetSortOrders(formData: FormData, allKeys: string[]) {
+  const fallbackOrder = new Map(allKeys.map((widgetKey, index) => [widgetKey, index]))
+
+  return new Map(
+    allKeys.map((widgetKey) => {
+      const rawValue = String(formData.get(`sort_order__${widgetKey}`) || "").trim()
+      const parsed = Number(rawValue)
+      return [widgetKey, Number.isFinite(parsed) ? parsed : fallbackOrder.get(widgetKey) || 0]
+    }),
+  )
+}
+
 export async function submitOperationsManagerReport(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/dashboard")
   const supabase = await createClient()
@@ -123,13 +135,14 @@ export async function saveOperationsDashboardWidgets(formData: FormData) {
   const user = await getOperationsWidgetUser(returnTo)
   const allKeys = ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS
   const enabledKeys = new Set(formData.getAll("enabled_widget_keys").map((value) => String(value)))
+  const sortOrderMap = readWidgetSortOrders(formData, allKeys)
   const adminSupabase = createAdminClient()
   const rows = allKeys.map((widgetKey, index) => ({
     profile_id: user.id,
     dashboard_scope: OPERATIONS_DASHBOARD_SCOPE,
     widget_key: widgetKey,
     enabled: enabledKeys.has(widgetKey),
-    sort_order: index,
+    sort_order: sortOrderMap.get(widgetKey) ?? index,
   }))
 
   const { error } = await adminSupabase

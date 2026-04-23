@@ -388,15 +388,19 @@ export default async function AdminDashboard({
   const widgetPreferenceResult = showOperationsManagerView
     ? await adminSupabase
         .from("dashboard_widget_preferences")
-        .select("widget_key, enabled")
+        .select("widget_key, enabled, sort_order")
         .eq("profile_id", user.id)
         .eq("dashboard_scope", OPERATIONS_DASHBOARD_SCOPE)
         .order("sort_order", { ascending: true })
     : { data: null, error: null }
+  const widgetPreferenceRows = widgetPreferenceResult.error
+    ? null
+    : ((widgetPreferenceResult.data as Array<{ widget_key: string | null; enabled: boolean | null; sort_order: number | null }> | null) || [])
   const enabledOperationsWidgetKeys = resolveOperationsDashboardWidgetKeys(
-    widgetPreferenceResult.error
-      ? null
-      : ((widgetPreferenceResult.data as Array<{ widget_key: string | null; enabled: boolean | null }> | null) || []),
+    widgetPreferenceRows,
+  )
+  const widgetSortOrderMap = new Map(
+    (widgetPreferenceRows || []).map((row, index) => [String(row.widget_key || ""), Number.isFinite(Number(row.sort_order)) ? Number(row.sort_order) : index]),
   )
 
   const [
@@ -1170,10 +1174,18 @@ export default async function AdminDashboard({
           productHref: product.productHref,
           note: product.note,
           status: productStatus,
+          order: Math.min(...items.map((item) => widgetSortOrderMap.get(item.key) ?? Number.MAX_SAFE_INTEGER)),
           items,
         }
       })
       .filter((product) => product.items.length > 0)
+      .map((product) => ({
+        ...product,
+        items: [...product.items].sort(
+          (a, b) => (widgetSortOrderMap.get(a.key) ?? Number.MAX_SAFE_INTEGER) - (widgetSortOrderMap.get(b.key) ?? Number.MAX_SAFE_INTEGER),
+        ),
+      }))
+      .sort((a, b) => a.order - b.order || a.productLabel.localeCompare(b.productLabel))
     const hasAnyDashboardWidget = enabledOperationsWidgetKeys.size > 0
 
     return (

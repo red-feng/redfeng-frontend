@@ -9,6 +9,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { resetOperationsDashboardWidgets, saveOperationsDashboardWidgets } from "../actions"
+import ProductWidgetOrganizer from "./ProductWidgetOrganizer"
 
 export const dynamic = "force-dynamic"
 
@@ -41,12 +42,19 @@ export default async function OperationsDashboardWidgetsPage({
   const adminSupabase = createAdminClient()
   const preferenceResult = await adminSupabase
     .from("dashboard_widget_preferences")
-    .select("widget_key, enabled")
+    .select("widget_key, enabled, sort_order")
     .eq("profile_id", user.id)
     .eq("dashboard_scope", OPERATIONS_DASHBOARD_SCOPE)
     .order("sort_order", { ascending: true })
+  const preferenceRows =
+    preferenceResult.error
+      ? null
+      : ((preferenceResult.data as Array<{ widget_key: string | null; enabled: boolean | null; sort_order: number | null }> | null) || [])
   const enabledWidgetKeys = resolveOperationsDashboardWidgetKeys(
-    preferenceResult.error ? null : ((preferenceResult.data as Array<{ widget_key: string | null; enabled: boolean | null }> | null) || []),
+    preferenceRows,
+  )
+  const sortOrderMap = new Map(
+    (preferenceRows || []).map((row, index) => [String(row.widget_key || ""), Number.isFinite(Number(row.sort_order)) ? Number(row.sort_order) : index]),
   )
   const coreActiveCount = OPERATIONS_DASHBOARD_WIDGETS.filter((widget) => enabledWidgetKeys.has(widget.key)).length
   const roadmapActiveCount = OPERATIONS_PRODUCT_WIDGET_CATALOG.reduce(
@@ -59,6 +67,16 @@ export default async function OperationsDashboardWidgetsPage({
     0,
   )
   const activeCount = coreActiveCount + roadmapActiveCount
+  const productSortOrders = Object.fromEntries(
+    OPERATIONS_PRODUCT_WIDGET_CATALOG.flatMap((product, productIndex) =>
+      product.sections.flatMap((section, sectionIndex) =>
+        section.items.map((item, itemIndex) => [
+          item.key,
+          sortOrderMap.get(item.key) ?? productIndex * 100 + sectionIndex * 20 + itemIndex,
+        ]),
+      ),
+    ),
+  )
 
   return (
     <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
@@ -82,6 +100,9 @@ export default async function OperationsDashboardWidgetsPage({
             <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Kelola Widget Dashboard</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
               Pilih widget yang ingin ditampilkan di dashboard utama Manager Operasional. Semua widget boleh dimatikan; dashboard akan menampilkan empty state.
+            </p>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
+              Untuk widget produk, Anda bisa menyusun urutan tampil langsung dengan drag-and-drop.
             </p>
           </div>
           <div className="rounded-[18px] border border-[#eee3d9] bg-white px-5 py-4 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -134,13 +155,18 @@ export default async function OperationsDashboardWidgetsPage({
             </p>
           </div>
 
+          <ProductWidgetOrganizer
+            catalog={OPERATIONS_PRODUCT_WIDGET_CATALOG}
+            enabledKeys={Array.from(enabledWidgetKeys)}
+            initialSortOrders={productSortOrders}
+          />
+
           <div className="grid gap-4 xl:grid-cols-2">
             {OPERATIONS_PRODUCT_WIDGET_CATALOG.map((product) => {
               const status = statusCopy(product.status)
               return (
-                <Link
+                <div
                   key={product.productLabel}
-                  href={product.productHref}
                   className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)] transition hover:border-orange-200 hover:bg-orange-50/30"
                 >
                   <div className="flex items-start justify-between gap-4">
@@ -148,7 +174,12 @@ export default async function OperationsDashboardWidgetsPage({
                       <p className="text-lg font-semibold tracking-[-0.02em] text-slate-950">{product.productLabel}</p>
                       <p className="mt-2 text-sm leading-6 text-slate-500">{product.note}</p>
                     </div>
-                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${status.className}`}>{status.label}</span>
+                    <div className="flex items-center gap-3">
+                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${status.className}`}>{status.label}</span>
+                      <Link href={product.productHref} className="text-xs font-semibold text-orange-600">
+                        Buka workspace
+                      </Link>
+                    </div>
                   </div>
                   <div className="mt-5 grid gap-3 md:grid-cols-3">
                     {product.sections.map((section) => (
@@ -177,7 +208,7 @@ export default async function OperationsDashboardWidgetsPage({
                       </div>
                     ))}
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>
