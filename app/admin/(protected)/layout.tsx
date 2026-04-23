@@ -83,6 +83,11 @@ export default async function AdminProtectedLayout({
     {
       href: "/admin/merchants",
       label: "Directory",
+      badgeCount: 0,
+    },
+    {
+      href: "/admin/merchants/pending-approvals",
+      label: "Pending approvals",
       badgeCount: pendingMerchantsBadgeCount,
       secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
     },

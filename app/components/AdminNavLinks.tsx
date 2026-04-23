@@ -44,6 +44,15 @@ export default function AdminNavLinks({
   const supabase = useMemo(() => createClient(), [])
   const pathname = usePathname()
   const normalizeHref = (href: string) => href.split("?")[0]
+  const allNavHrefs = items.flatMap((item) => [
+    ...(item.href ? [item.href] : []),
+    ...((item.children || []).map((child) => child.href)),
+  ])
+  const activeHref =
+    allNavHrefs
+      .map(normalizeHref)
+      .filter((href) => pathname === href || pathname.startsWith(`${href}/`))
+      .sort((a, b) => b.length - a.length)[0] || null
   const realtimeBadgeConfigs = useMemo(
     () => [
       {
@@ -64,7 +73,7 @@ export default function AdminNavLinks({
     [],
   )
   const activeGroupLabel =
-    items.find((item) => item.children?.some((child) => pathname.startsWith(normalizeHref(child.href))))?.label || null
+    items.find((item) => item.children?.some((child) => normalizeHref(child.href) === activeHref))?.label || null
   const [openGroupLabel, setOpenGroupLabel] = useState<string | null>(activeGroupLabel)
   const [liveBadgeCounts, setLiveBadgeCounts] = useState<Record<string, number | null>>({})
   const visibleGroupLabel = openGroupLabel || activeGroupLabel
@@ -145,9 +154,9 @@ export default function AdminNavLinks({
   return (
     <div className="space-y-2">
       {items.map((item) => {
-          const isActiveLink = item.href ? pathname.startsWith(normalizeHref(item.href)) : false
+          const isActiveLink = item.href ? normalizeHref(item.href) === activeHref : false
           const isActiveGroup = item.children
-            ? item.children.some((child) => pathname.startsWith(normalizeHref(child.href)))
+            ? item.children.some((child) => normalizeHref(child.href) === activeHref)
             : false
           const isHighlighted = isActiveLink || isActiveGroup || visibleGroupLabel === item.label
 
@@ -181,7 +190,7 @@ export default function AdminNavLinks({
                 {visibleGroupLabel === item.label ? (
                   <div className="ml-5 mt-1 space-y-1 border-l border-[#f0e6dd] pl-3">
                     {item.children.map((child) => {
-                      const isActive = pathname.startsWith(normalizeHref(child.href))
+                      const isActive = normalizeHref(child.href) === activeHref
                       const visiblePrimaryBadgeCount = resolveBadgeCount(Number(child.badgeCount || 0), child.href)
                       const visibleSecondaryBadgeCount = Number(child.secondaryBadgeCount || 0)
 
