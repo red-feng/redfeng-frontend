@@ -326,6 +326,26 @@ function getProductIconKind(productLabel: string) {
   return "package" as const
 }
 
+type ProductWidgetAction = {
+  label: string
+  href: string
+  badge?: number
+}
+
+type ProductWidgetCard = {
+  key: string
+  title: string
+  sectionTitle: string
+  href: string
+  value: string
+  detail: string
+  meta: string
+  status: { label: string; className: string }
+  iconKind: "package" | "flight" | "hotel" | "train" | "bus" | "ship" | "cruise"
+  valueClassName: string
+  actions?: ProductWidgetAction[]
+}
+
 function classifyBookingProduct(booking: DashboardBookingRow) {
   return booking.package_id ? "Paket Tour" : "Pesawat"
 }
@@ -962,6 +982,13 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
+    const globalQuickActions = [
+      { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: periodOperationalWarnings },
+      { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: periodDeletionRequests.length },
+      { label: "Booking Center", href: "/admin/bookings", badge: periodFinanceReadyCount },
+      { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
+      { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
+    ]
     const topDestination = topDestinations[0] || null
     const topMerchantRevenue =
       Array.from(
@@ -1065,7 +1092,7 @@ export default async function AdminDashboard({
             .filter((item) => enabledOperationsWidgetKeys.has(item.key))
             .map((item) => {
               const status = getDashboardWidgetStatusMeta(item.status)
-              const fallbackCard = {
+              const fallbackCard: ProductWidgetCard = {
                 key: item.key,
                 title: item.label,
                 sectionTitle: section.title,
@@ -1175,6 +1202,97 @@ export default async function AdminDashboard({
                     detail: "Jumlah aktivitas terbaru yang tercatat di audit log operasional.",
                     meta: "Activity feed live",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
+                  }
+                case "package_tour_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut khusus Paket Wisata untuk review paket, workspace produk, dan merchant support.",
+                    meta: "Review paket, workspace, support",
+                    href: "/admin/paket-tour",
+                    actions: [
+                      { label: "Review Paket", href: "/admin/packages", badge: periodPendingPackages },
+                      { label: "Workspace Paket", href: "/admin/paket-tour" },
+                      { label: "Merchant Support", href: "/admin/merchant-support" },
+                    ],
+                  }
+                case "flight_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk queue issue tiket, refund/reschedule, dan error supplier sambil menunggu modul Pesawat live penuh.",
+                    meta: "Issue, refund, API error",
+                    href: "/admin/pesawat",
+                    actions: [
+                      { label: "Issue Queue", href: "/admin/pesawat" },
+                      { label: "Refund Queue", href: "/admin/pesawat" },
+                      { label: "API Errors", href: "/admin/pesawat" },
+                    ],
+                  }
+                case "hotel_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk pending confirmation, cancellation, dan supplier SLA sambil menunggu modul Hotel live penuh.",
+                    meta: "Confirmation, cancel, SLA",
+                    href: "/admin/hotel",
+                    actions: [
+                      { label: "Pending Confirmation", href: "/admin/hotel" },
+                      { label: "Cancellation", href: "/admin/hotel" },
+                      { label: "Supplier SLA", href: "/admin/hotel" },
+                    ],
+                  }
+                case "train_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan vendor issue sambil menunggu modul Kereta Api live penuh.",
+                    meta: "Issue, refund, vendor",
+                    href: "/admin/kereta-api",
+                    actions: [
+                      { label: "Issue Queue", href: "/admin/kereta-api" },
+                      { label: "Refund / Cancel", href: "/admin/kereta-api" },
+                      { label: "Vendor Issues", href: "/admin/kereta-api" },
+                    ],
+                  }
+                case "bus_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Bus & Travel live penuh.",
+                    meta: "Issue, refund, operator",
+                    href: "/admin/bus-travel",
+                    actions: [
+                      { label: "Issue Queue", href: "/admin/bus-travel" },
+                      { label: "Refund / Cancel", href: "/admin/bus-travel" },
+                      { label: "Operator Issues", href: "/admin/bus-travel" },
+                    ],
+                  }
+                case "sea_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Kapal Laut live penuh.",
+                    meta: "Issue, refund, operator",
+                    href: "/admin/kapal-laut",
+                    actions: [
+                      { label: "Issue Queue", href: "/admin/kapal-laut" },
+                      { label: "Refund / Cancel", href: "/admin/kapal-laut" },
+                      { label: "Operator Issues", href: "/admin/kapal-laut" },
+                    ],
+                  }
+                case "cruise_quick_actions":
+                  return {
+                    ...fallbackCard,
+                    value: "3 aksi cepat",
+                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Kapal Pesiar live penuh.",
+                    meta: "Issue, refund, operator",
+                    href: "/admin/kapal-pesiar",
+                    actions: [
+                      { label: "Issue Queue", href: "/admin/kapal-pesiar" },
+                      { label: "Refund / Cancel", href: "/admin/kapal-pesiar" },
+                      { label: "Operator Issues", href: "/admin/kapal-pesiar" },
+                    ],
                   }
                 default:
                   return fallbackCard
@@ -1402,14 +1520,44 @@ export default async function AdminDashboard({
                           {item.sectionTitle}
                         </p>
                         <h4 className="mt-2 text-sm font-semibold text-slate-900">{item.title}</h4>
-                        <p className={`mt-4 ${item.valueClassName}`}>{item.value}</p>
-                        <p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p>
-                        <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
-                          <span className="text-xs font-medium text-slate-400">{item.meta}</span>
-                          <Link href={item.href} className="text-xs font-semibold text-orange-600">
-                            Buka
-                          </Link>
-                        </div>
+                        {item.key.endsWith("_quick_actions") && Array.isArray(item.actions) ? (
+                          <>
+                            <p className="mt-4 text-sm leading-6 text-slate-500">{item.detail}</p>
+                            <div className="mt-4 grid gap-2">
+                              {item.actions.map((action) => (
+                                <Link
+                                  key={action.label}
+                                  href={action.href}
+                                  className="flex items-center justify-between rounded-[14px] border border-[#f0e6dd] bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                                >
+                                  {action.label}
+                                  {action.badge && action.badge > 0 ? (
+                                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">
+                                      {action.badge}
+                                    </span>
+                                  ) : null}
+                                </Link>
+                              ))}
+                            </div>
+                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
+                              <span className="text-xs font-medium text-slate-400">{item.meta}</span>
+                              <Link href={item.href} className="text-xs font-semibold text-orange-600">
+                                Buka workspace
+                              </Link>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className={`mt-4 ${item.valueClassName}`}>{item.value}</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p>
+                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
+                              <span className="text-xs font-medium text-slate-400">{item.meta}</span>
+                              <Link href={item.href} className="text-xs font-semibold text-orange-600">
+                                Buka
+                              </Link>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -1628,16 +1776,9 @@ export default async function AdminDashboard({
 
             {showQuickActionsWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
+              <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {[
-                  { label: "Review Paket", href: "/admin/packages", badge: periodPendingPackages },
-                  { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: periodOperationalWarnings },
-                  { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: periodDeletionRequests.length },
-                  { label: "Booking Center", href: "/admin/bookings", badge: periodFinanceReadyCount },
-                  { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
-                  { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
-                ].map((item) => (
+                {globalQuickActions.map((item) => (
                   <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                     {item.label}
                     {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
@@ -1649,14 +1790,9 @@ export default async function AdminDashboard({
           </section>
           ) : !showBookingWorkspace && showQuickActionsWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-            <h2 className="text-base font-semibold text-slate-950">Quick Actions</h2>
+            <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                { label: "Review Paket", href: "/admin/packages", badge: periodPendingPackages },
-                { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: periodOperationalWarnings },
-                { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: periodDeletionRequests.length },
-                { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
-              ].map((item) => (
+              {globalQuickActions.map((item) => (
                 <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
                   {item.label}
                   {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
