@@ -558,6 +558,7 @@ export default async function AdminDashboard({
 
   const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
   const packageMerchantIds = Array.from(new Set(packages.map((pkg) => pkg.merchant_id).filter((id): id is string => Boolean(id))))
+  const packageMerchantIdSet = new Set(packageMerchantIds)
   const packageMerchants =
     packageMerchantIds.length > 0
       ? (
@@ -925,13 +926,10 @@ export default async function AdminDashboard({
     const globalBookingStalledCount = globalPeriodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
-    const globalOperationalWarnings =
-      merchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
-    const globalReviewQueueCount =
-      pendingMerchants + globalPendingPackages + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
-    const connectedProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "connected").length
-    const partialProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "partial").length
-    const roadmapProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "roadmap").length
+    const accessibleProductSummaries = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => accessibleProductTypes.includes(product.key))
+    const connectedProductCount = accessibleProductSummaries.filter((product) => product.status === "connected").length
+    const partialProductCount = accessibleProductSummaries.filter((product) => product.status === "partial").length
+    const roadmapProductCount = accessibleProductSummaries.filter((product) => product.status === "roadmap").length
     const totalLiveProducts = connectedProductCount + partialProductCount
     const globalRevenueTotal = globalPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
 
@@ -945,7 +943,13 @@ export default async function AdminDashboard({
       return operationsProduct === "all" || operationsProduct === "package_tour"
     })
     const periodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
+    const packageTourDeletionRequests = periodDeletionRequests.filter(
+      (request) => Boolean(request.merchant_id) && packageMerchantIdSet.has(request.merchant_id as string),
+    )
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
+    const packageTourReviewRequests = periodReviewRequests.filter(
+      (request) => Boolean(request.merchant_id) && packageMerchantIdSet.has(request.merchant_id as string),
+    )
     const periodAuditLogs = globalPeriodAuditLogs
     const packageTourAuditLogs = periodAuditLogs.filter((log) => log.target_type === "package")
     const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
@@ -1004,6 +1008,23 @@ export default async function AdminDashboard({
     const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
     const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
     const globalBookingTrendTotal = globalPeriodBookings.length
+    const flightStalledBookingCount = globalPeriodBookings.filter(
+      (booking) => classifyBookingProduct(booking) === "flight" && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
+    ).length
+    const crossProductReviewQueueCount =
+      pendingMerchants +
+      (accessibleProductTypes.includes("package_tour")
+        ? globalPendingPackages + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
+        : 0) +
+      (accessibleProductTypes.includes("flight") ? flightStalledBookingCount : 0)
+    const crossProductOperationalWarnings =
+      merchantOverdueCount +
+      (accessibleProductTypes.includes("package_tour")
+        ? globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
+        : 0) +
+      globalBookingStalledCount
+    const globalReviewQueueCount = crossProductReviewQueueCount
+    const globalOperationalWarnings = crossProductOperationalWarnings
     const managerKpiCards = [
       { label: "Total Booking", value: globalPeriodBookings.length.toLocaleString("id-ID"), delta: `${globalBookingTrendTotal.toLocaleString("id-ID")} booking`, sub: `Global ${currentMonthLabel}`, tone: "text-sky-600", bg: "bg-sky-50" },
       { label: "Total Revenue (IDR)", value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(globalRevenueTotal), sub: `Semua produk ${currentMonthLabel}`, tone: "text-emerald-600", bg: "bg-emerald-50" },
@@ -1016,7 +1037,7 @@ export default async function AdminDashboard({
       if (card.label === "Produk Live") {
         return {
           ...card,
-          sub: `${connectedProductCount} connected | ${partialProductCount} partial dari ${OPERATIONS_PRODUCT_SUMMARIES.length} produk`,
+          sub: `${connectedProductCount} connected | ${partialProductCount} partial dari ${accessibleProductSummaries.length} produk akses`,
         }
       }
       if (card.label === "Merchant Aktif") {
@@ -1031,14 +1052,18 @@ export default async function AdminDashboard({
       if (card.label === "Queue Review") {
         return {
           ...card,
-          delta: `${globalPendingPackages} paket | ${pendingMerchants} merchant`,
+          label: "Queue Operasional",
+          value: crossProductReviewQueueCount.toLocaleString("id-ID"),
+          delta: `${pendingMerchants} merchant | ${globalPendingPackages} paket | ${flightStalledBookingCount} flight`,
+          sub: "Approval merchant, review paket, dan booking yang perlu follow-up",
         }
       }
       if (card.label === "Anomali Terbuka") {
         return {
           ...card,
-          delta: `${globalFinanceReadyCount} booking perlu monitor`,
-          sub: "SLA, review, fulfillment, dan handoff",
+          value: crossProductOperationalWarnings.toLocaleString("id-ID"),
+          delta: `${merchantOverdueCount} merchant | ${globalBookingStalledCount} booking`,
+          sub: "SLA, review, deletion request, dan booking handoff lintas workspace",
         }
       }
       return card
@@ -1101,10 +1126,40 @@ export default async function AdminDashboard({
         ? [{ title: "Booking stalled di handoff finance", source: `${periodBookingStalledCount} booking perlu follow-up`, time: "SLA 1 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
         : []),
     ].slice(0, 5)
+    const packageTourRecentAnomalies = [
+      ...packageTourDeletionRequests.map((request) => ({
+        title: "Deletion request merchant paket",
+        source: request.merchant_name || request.merchant_email || "Merchant Paket Wisata",
+        time: formatRelativeHours(request.requested_at),
+        severity: "High",
+        tone: "bg-rose-50 text-rose-600",
+      })),
+      ...packageTourReviewRequests.map((request) => ({
+        title: `Approval merchant paket ${titleCase(request.request_type)}`,
+        source: request.admin_note || request.merchant_id || "Merchant review Paket Wisata",
+        time: formatRelativeHours(request.requested_at),
+        severity: "Medium",
+        tone: "bg-orange-50 text-orange-600",
+      })),
+      ...(periodPackageOverdueCount > 0
+        ? [{ title: "Paket pending melewati SLA", source: `${periodPackageOverdueCount} paket perlu direview`, time: "SLA 3 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
+        : []),
+      ...(packageTourBookingStalledCount > 0
+        ? [{ title: "Booking paket stalled di handoff finance", source: `${packageTourBookingStalledCount} booking perlu follow-up`, time: "SLA 1 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
+        : []),
+    ].slice(0, 5)
+    const useGlobalLatestAnomalies = enabledOperationsWidgetKeys.has("latest_anomalies")
+    const recentAnomaliesSource = useGlobalLatestAnomalies ? calculatedRecentAnomalies : packageTourRecentAnomalies
     const recentAnomalies =
-      calculatedRecentAnomalies.length > 0
-        ? calculatedRecentAnomalies
-        : [{ title: "Tidak ada anomali terbuka", source: "Semua queue operasional aman", time: "Saat ini", severity: "OK", tone: "bg-emerald-50 text-emerald-600" }]
+      recentAnomaliesSource.length > 0
+        ? recentAnomaliesSource
+        : [{
+            title: useGlobalLatestAnomalies ? "Tidak ada anomali terbuka" : "Tidak ada anomali Paket Wisata",
+            source: useGlobalLatestAnomalies ? "Semua queue operasional aman" : "Queue Paket Wisata aman pada periode ini",
+            time: "Saat ini",
+            severity: "OK",
+            tone: "bg-emerald-50 text-emerald-600",
+          }]
     const activityFeed = packageTourAuditLogs.length > 0
       ? packageTourAuditLogs.map((log) => ({
           title: log.summary || titleCase(log.action),
@@ -1150,11 +1205,14 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
+    const primaryAccessibleProductHref = accessibleProductSummaries[0]?.href || "/admin/dashboard/widgets"
+    const primaryAccessibleProductLabel = accessibleProductSummaries[0]?.label || "Produk"
     const globalQuickActions = [
-      { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: periodOperationalWarnings },
-      { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: periodDeletionRequests.length },
       { label: "Booking Center", href: "/admin/bookings", badge: periodFinanceReadyCount },
       { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
+      { label: "Approval Merchant", href: "/admin/merchants/pending-approvals", badge: pendingMerchants },
+      { label: `Workspace ${primaryAccessibleProductLabel}`, href: primaryAccessibleProductHref, badge: 0 },
+      { label: "Kelola Widget", href: "/admin/dashboard/widgets", badge: 0 },
       { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
     ]
     const packageTourTopDestination = packageTourTopDestinations[0] || null
@@ -1202,21 +1260,34 @@ export default async function AdminDashboard({
       ["sea", 0],
       ["cruise", 0],
     ])
-    const productPerformanceCards = OPERATIONS_PRODUCT_SUMMARIES
-      .filter((product) => accessibleProductTypes.includes(product.key))
+    const productPerformanceCards = accessibleProductSummaries
       .map((product) => {
         const bookingCount = productBookingCounts.get(product.key) || 0
         const revenueTotal = productRevenueTotals.get(product.key) || 0
         const isConnected = product.status !== "roadmap"
         const statusMeta = getDashboardWidgetStatusMeta(product.status)
+        const metricRows = product.status === "roadmap"
+          ? [
+              { label: "Status Modul", value: "Roadmap" },
+              { label: "Booking Live", value: "Belum aktif" },
+              { label: "Akses", value: "Workspace siap" },
+            ]
+          : product.key === "package_tour"
+            ? [
+                { label: "Pending Review", value: globalPendingPackages.toLocaleString("id-ID") },
+                { label: "Anomali", value: (productAnomalyCounts.get(product.key) ?? 0).toLocaleString("id-ID") },
+                { label: "SLA Melanggar", value: (productSlaCounts.get(product.key) ?? 0).toLocaleString("id-ID") },
+              ]
+            : [
+                { label: "Queue Booking", value: flightStalledBookingCount.toLocaleString("id-ID") },
+                { label: "Anomali", value: (productAnomalyCounts.get(product.key) ?? 0).toLocaleString("id-ID") },
+                { label: "SLA Monitor", value: (productSlaCounts.get(product.key) ?? 0).toLocaleString("id-ID") },
+              ]
         return {
           label: product.label,
           href: product.href,
           booking: isConnected ? bookingCount : null,
           revenue: isConnected ? (revenueTotal > 0 ? `Rp ${(revenueTotal / 1000000).toFixed(2)} M` : "Rp 0") : "-",
-          pending: product.key === "package_tour" ? globalPendingPackages : 0,
-          anomaly: productAnomalyCounts.get(product.key) ?? 0,
-          sla: productSlaCounts.get(product.key) ?? 0,
           growth: isConnected ? statusMeta.label : "Roadmap",
           connected: isConnected,
           tone: product.tone,
@@ -1224,6 +1295,7 @@ export default async function AdminDashboard({
           icon: product.icon,
           sparkColor: product.sparkColor,
           sparkPoints: product.sparkPoints,
+          metricRows,
         }
       })
       .filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.label) === operationsProduct)
@@ -1369,9 +1441,9 @@ export default async function AdminDashboard({
                 case "package_tour_deletion_request":
                   return {
                     ...fallbackCard,
-                    value: periodDeletionRequests.length.toLocaleString("id-ID"),
-                    detail: "Request penghapusan merchant yang masih aktif pada periode ini.",
-                    meta: "Deletion request aktif",
+                    value: packageTourDeletionRequests.length.toLocaleString("id-ID"),
+                    detail: "Request penghapusan dari merchant yang memang terhubung ke inventori Paket Wisata pada periode ini.",
+                    meta: "Deletion request Paket Wisata",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
                   }
                 case "package_tour_top_merchant_revenue":
@@ -1671,9 +1743,19 @@ export default async function AdminDashboard({
                     </svg>
                   </div>
                   <div className="mt-3 space-y-2 border-t border-[#eef2f7] pt-3 text-[11px]">
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />Pending Review</span><span className="font-semibold text-slate-900">{product.pending ?? "-"}</span></p>
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-rose-400" />Anomali</span><span className="font-semibold text-slate-900">{product.anomaly ?? "-"}</span></p>
-                    <p className="flex items-center justify-between text-slate-500"><span className="inline-flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-orange-400" />SLA Melanggar</span><span className="font-semibold text-slate-900">{product.sla ?? "-"}</span></p>
+                    {product.metricRows.map((metric, index) => {
+                      const dotClassName =
+                        index === 0 ? "bg-emerald-400" : index === 1 ? "bg-rose-400" : "bg-orange-400"
+                      return (
+                        <p key={`${product.label}-${metric.label}`} className="flex items-center justify-between text-slate-500">
+                          <span className="inline-flex items-center gap-2">
+                            <span className={`h-1.5 w-1.5 rounded-full ${dotClassName}`} />
+                            {metric.label}
+                          </span>
+                          <span className="font-semibold text-slate-900">{metric.value}</span>
+                        </p>
+                      )
+                    })}
                   </div>
                   <div className="mt-auto pt-4">
                     <div className="rounded-[10px] border border-[#e8edf3] bg-[#fbfdff] px-3 py-2 text-center text-[11px] font-semibold text-[#2563eb]">
@@ -1930,7 +2012,7 @@ export default async function AdminDashboard({
             {showAnomalyWorkspace && showLatestAnomaliesWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
+                <h2 className="text-base font-semibold text-slate-950">{useGlobalLatestAnomalies ? "Anomali Terbaru" : "Anomali Paket Wisata"}</h2>
                 <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
               <div className="mt-5 max-h-[360px] divide-y divide-[#f0e6dd] overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
