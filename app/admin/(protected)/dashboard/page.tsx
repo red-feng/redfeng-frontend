@@ -5,6 +5,7 @@ import { canAccessInternalPortal, getInternalPortalHomePath, getRoleLabel } from
 import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-role-lock"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { getBookingProductLabel, resolveBookingProductType, type BookingProductType } from "@/lib/booking-products"
 import {
   OPERATIONS_DASHBOARD_SCOPE,
   OPERATIONS_PRODUCT_WIDGET_CATALOG,
@@ -121,6 +122,7 @@ type DashboardPackageRow = {
 type DashboardBookingRow = {
   id: string
   package_id: string | null
+  booking_product_type: string | null
   booking_status: string | null
   created_at: string | null
   payment_status: string | null
@@ -324,7 +326,7 @@ function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap
   return { label: "Roadmap", className: "bg-slate-100 text-slate-500" }
 }
 
-type OperationsProductKey = "package_tour" | "flight" | "hotel" | "train" | "bus" | "sea" | "cruise"
+type OperationsProductKey = BookingProductType
 
 const OPERATIONS_PRODUCT_SUMMARIES: Array<{
   key: OperationsProductKey
@@ -389,11 +391,14 @@ function getProductFilterFromLabel(productLabel: string) {
 }
 
 function getOperationsProductLabel(productKey: OperationsProductKey) {
-  return OPERATIONS_PRODUCT_SUMMARIES.find((product) => product.key === productKey)?.label || "Produk"
+  return getBookingProductLabel(productKey)
 }
 
 function classifyBookingProduct(booking: DashboardBookingRow): OperationsProductKey {
-  return booking.package_id ? "package_tour" : "flight"
+  return resolveBookingProductType({
+    bookingProductType: booking.booking_product_type,
+    packageId: booking.package_id,
+  })
 }
 
 export default async function AdminDashboard({
@@ -494,7 +499,7 @@ export default async function AdminDashboard({
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, package_id, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
+      .select("id, package_id, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("web_vitals_events")
@@ -673,6 +678,7 @@ export default async function AdminDashboard({
       return {
         id: booking.id,
         packageId: booking.package_id,
+        bookingProductType: classifyBookingProduct(booking),
         createdAt: booking.created_at,
         paymentStatus,
         paymentType,
@@ -919,9 +925,7 @@ export default async function AdminDashboard({
     const periodBookings = bookings.filter((booking) => {
       if (!isWithinPeriod(booking.created_at, operationsPeriodStart)) return false
       if (operationsProduct === "all") return true
-      if (operationsProduct === "package_tour") return Boolean(booking.package_id)
-      if (operationsProduct === "flight") return !booking.package_id
-      return false
+      return classifyBookingProduct(booking) === operationsProduct
     })
     const periodPackages = packages.filter((pkg) => {
       if (!isWithinPeriod(pkg.created_at, operationsPeriodStart)) return false
@@ -932,9 +936,7 @@ export default async function AdminDashboard({
     const periodAuditLogs = globalPeriodAuditLogs
     const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
       if (operationsProduct === "all") return true
-      if (operationsProduct === "package_tour") return Boolean(transaction.packageId)
-      if (operationsProduct === "flight") return !transaction.packageId
-      return false
+      return transaction.bookingProductType === operationsProduct
     })
     const periodPendingPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
     const periodDraftPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
@@ -1099,7 +1101,7 @@ export default async function AdminDashboard({
       return map
     }, new Map<OperationsProductKey, number>())
     const productRevenueTotals = globalPeriodCustomerTransactionRows.reduce((map, item) => {
-      const productKey: OperationsProductKey = item.packageId ? "package_tour" : "flight"
+      const productKey = item.bookingProductType
       map.set(productKey, (map.get(productKey) || 0) + item.receivedAmount)
       return map
     }, new Map<OperationsProductKey, number>())

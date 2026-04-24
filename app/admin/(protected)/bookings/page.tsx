@@ -6,6 +6,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { resolveBookingProductType, toAdminBookingFilter } from "@/lib/booking-products"
 import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/lib/bookings/draft-cleanup"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
@@ -15,6 +16,7 @@ type BookingPortal = "admin" | "superadmin"
 type BookingRow = {
   id: string
   package_id: string | null
+  booking_product_type: string | null
   booking_code: string | null
   customer_name: string | null
   pickup_date: string | null
@@ -294,8 +296,12 @@ function normalizeSortMode(value: string | undefined): SortMode {
 }
 
 function deriveBookingProduct(booking: BookingRow): Exclude<ProductFilter, "all"> {
-  if (booking.package_id) return "paket-tour"
-  return "pesawat"
+  return toAdminBookingFilter(
+    resolveBookingProductType({
+      bookingProductType: booking.booking_product_type,
+      packageId: booking.package_id,
+    }),
+  )
 }
 
 function isNeedsAttentionBooking(booking: BookingRow) {
@@ -350,7 +356,7 @@ export default async function AdminBookingsPage({
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_code, customer_name, pickup_date, created_at, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, package_id, booking_product_type, booking_code, customer_name, pickup_date, created_at, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .order("created_at", { ascending: false })
 

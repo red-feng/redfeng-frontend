@@ -8,6 +8,7 @@ import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
+import { resolveBookingProductType } from "@/lib/booking-products"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -152,6 +153,7 @@ export async function POST(req: Request) {
     const financeSettings = await getFinanceSettings(
       supabase as unknown as Parameters<typeof getFinanceSettings>[0],
     )
+    const bookingProductType = resolveBookingProductType({ packageId: package_id })
     const subtotalAmount =
       Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
       Number(childPriceCharge.amount || 0) * Number(child_count || 0)
@@ -193,6 +195,7 @@ export async function POST(req: Request) {
         customer_email,
         customer_phone,
         customer_locale: activeLocale,
+        booking_product_type: bookingProductType,
         expiry_time: expiry.toISOString(),
         payment_type: normalizedPaymentType,
         payment_status: "pending",
