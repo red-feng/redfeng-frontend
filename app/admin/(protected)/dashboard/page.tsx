@@ -222,6 +222,36 @@ function buildRecentDayBuckets(days = 30) {
   return buckets
 }
 
+function buildSparklinePoints(rows: Array<{ value: number }>, width = 100, height = 28) {
+  if (rows.length === 0) return null
+  const sampledRows = rows.length <= 8
+    ? rows
+    : Array.from({ length: 8 }, (_, index) => {
+        const rowIndex = Math.min(
+          Math.round((index / 7) * (rows.length - 1)),
+          rows.length - 1,
+        )
+        return rows[rowIndex]
+      })
+  const maxValue = Math.max(...sampledRows.map((row) => row.value), 0)
+  if (maxValue <= 0) return null
+  const minX = 2
+  const maxX = width - 2
+  const minY = 6
+  const maxY = height - 4
+  return sampledRows
+    .map((row, index) => {
+      const x =
+        sampledRows.length === 1
+          ? width / 2
+          : minX + ((maxX - minX) / (sampledRows.length - 1)) * index
+      const ratio = row.value / maxValue
+      const y = maxY - ratio * (maxY - minY)
+      return `${Math.round(x * 10) / 10},${Math.round(y * 10) / 10}`
+    })
+    .join(" ")
+}
+
 function ProductMiniIcon({
   kind,
   className,
@@ -1242,6 +1272,20 @@ export default async function AdminDashboard({
       map.set(productKey, (map.get(productKey) || 0) + item.receivedAmount)
       return map
     }, new Map<OperationsProductKey, number>())
+    const productBookingTrendPoints = new Map<OperationsProductKey, string | null>(
+      OPERATIONS_PRODUCT_SUMMARIES.map((product) => {
+        const rows = buildRecentDayBuckets(operationsChartDays)
+        const rowMap = new Map(rows.map((row) => [row.key, row]))
+        globalPeriodBookings
+          .filter((booking) => classifyBookingProduct(booking) === product.key)
+          .forEach((booking) => {
+            const dayKey = getDayKey(booking.created_at)
+            const bucket = dayKey ? rowMap.get(dayKey) : null
+            if (bucket) bucket.value += 1
+          })
+        return [product.key, buildSparklinePoints(rows)]
+      }),
+    )
     const productAnomalyCounts = new Map<OperationsProductKey, number>([
       ["package_tour", merchantOverdueCount + globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length],
       ["flight", globalPeriodBookings.filter((booking) => !booking.package_id && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length],
@@ -1265,7 +1309,25 @@ export default async function AdminDashboard({
         const bookingCount = productBookingCounts.get(product.key) || 0
         const revenueTotal = productRevenueTotals.get(product.key) || 0
         const isConnected = product.status !== "roadmap"
+        const liveTrendPoints = isConnected ? productBookingTrendPoints.get(product.key) || null : null
         const statusMeta = getDashboardWidgetStatusMeta(product.status)
+        const hasLiveRevenue = revenueTotal > 0
+        const stateNote =
+          product.status === "roadmap"
+            ? "Modul belum live. Workspace tetap bisa dibuka untuk melihat struktur dan kesiapan produk."
+            : liveTrendPoints
+              ? `${bookingCount.toLocaleString("id-ID")} booking live tercatat pada ${operationsPeriod.label.toLowerCase()}.`
+              : hasLiveRevenue
+                ? `Revenue sudah tercatat, tetapi belum ada pola booking yang cukup untuk membentuk trend di ${operationsPeriod.label.toLowerCase()}.`
+                : product.status === "partial"
+                  ? "Workspace sudah aktif sebagian, tetapi belum ada aktivitas live yang cukup pada periode ini."
+                  : "Belum ada aktivitas live pada periode ini."
+        const ctaLabel =
+          product.status === "roadmap"
+            ? "Buka Workspace"
+            : liveTrendPoints || hasLiveRevenue
+              ? "Lihat Data"
+              : "Buka Workspace"
         const metricRows = product.status === "roadmap"
           ? [
               { label: "Status Modul", value: "Roadmap" },
@@ -1294,7 +1356,10 @@ export default async function AdminDashboard({
           bg: product.bg,
           icon: product.icon,
           sparkColor: product.sparkColor,
-          sparkPoints: product.sparkPoints,
+          sparkPoints: liveTrendPoints,
+          hasLiveTrend: Boolean(liveTrendPoints),
+          stateNote,
+          ctaLabel,
           metricRows,
         }
       })
@@ -1724,24 +1789,28 @@ export default async function AdminDashboard({
                   </div>
                   <p className={`mt-2 text-[11px] font-semibold ${product.connected ? "text-emerald-600" : "text-slate-400"}`}>{product.growth}</p>
                   <div className="mt-3 h-14 rounded-[14px] bg-[linear-gradient(180deg,rgba(99,102,241,0.06),rgba(255,255,255,0))] px-1 py-1">
-                    <svg viewBox="0 0 100 28" className="h-full w-full" aria-hidden="true">
-                      <polyline
-                        points={product.sparkPoints}
-                        fill="none"
-                        stroke={product.connected ? product.sparkColor : "#cbd5e1"}
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeDasharray={product.connected ? undefined : "3 3"}
-                      />
-                      {product.connected
-                        ? product.sparkPoints.split(" ").map((point) => {
-                            const [cx, cy] = point.split(",")
-                            return <circle key={point} cx={cx} cy={cy} r="1.4" fill={product.sparkColor} />
-                          })
-                        : null}
-                    </svg>
+                    {product.hasLiveTrend && product.sparkPoints ? (
+                      <svg viewBox="0 0 100 28" className="h-full w-full" aria-hidden="true">
+                        <polyline
+                          points={product.sparkPoints}
+                          fill="none"
+                          stroke={product.sparkColor}
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        {product.sparkPoints.split(" ").map((point) => {
+                          const [cx, cy] = point.split(",")
+                          return <circle key={point} cx={cx} cy={cy} r="1.4" fill={product.sparkColor} />
+                        })}
+                      </svg>
+                    ) : (
+                      <div className="flex h-full items-center justify-center rounded-[12px] border border-dashed border-[#d9e2ef] bg-white/55 text-[10px] font-medium text-slate-400">
+                        Belum ada trend live
+                      </div>
+                    )}
                   </div>
+                  <p className="mt-2 text-[11px] leading-5 text-slate-500">{product.stateNote}</p>
                   <div className="mt-3 space-y-2 border-t border-[#eef2f7] pt-3 text-[11px]">
                     {product.metricRows.map((metric, index) => {
                       const dotClassName =
@@ -1759,7 +1828,7 @@ export default async function AdminDashboard({
                   </div>
                   <div className="mt-auto pt-4">
                     <div className="rounded-[10px] border border-[#e8edf3] bg-[#fbfdff] px-3 py-2 text-center text-[11px] font-semibold text-[#2563eb]">
-                    Lihat Detail
+                    {product.ctaLabel}
                     </div>
                   </div>
                 </Link>
