@@ -951,6 +951,10 @@ export default async function AdminDashboard({
       if (operationsProduct === "all") return true
       return transaction.bookingProductType === operationsProduct
     })
+    const packageTourPeriodBookings = globalPeriodBookings.filter((booking) => classifyBookingProduct(booking) === "package_tour")
+    const packageTourPeriodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter(
+      (transaction) => transaction.bookingProductType === "package_tour",
+    )
     const periodPendingPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
     const periodDraftPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
     const periodRejectedPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "rejected").length
@@ -963,10 +967,16 @@ export default async function AdminDashboard({
     const periodBookingStalledCount = periodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
+    const packageTourBookingStalledCount = packageTourPeriodBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
+    ).length
     const periodOperationalWarnings =
       merchantOverdueCount + periodPackageOverdueCount + periodBookingStalledCount + periodDeletionRequests.length + periodReviewRequests.length
+    const packageTourOperationalWarnings =
+      merchantOverdueCount + periodPackageOverdueCount + packageTourBookingStalledCount + periodDeletionRequests.length + periodReviewRequests.length
     const totalBookings = periodBookings.length
-    const totalRevenue = periodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const packageTourTotalBookings = packageTourPeriodBookings.length
+    const packageTourRevenue = packageTourPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const bookingTrendRows = buildRecentDayBuckets(operationsChartDays)
     const bookingTrendMap = new Map(bookingTrendRows.map((row) => [row.key, row]))
     periodBookings.forEach((booking) => {
@@ -975,6 +985,14 @@ export default async function AdminDashboard({
       if (bucket) bucket.value += 1
     })
     const bookingTrendMax = Math.max(...bookingTrendRows.map((row) => row.value), 1)
+    const packageTourBookingTrendRows = buildRecentDayBuckets(operationsChartDays)
+    const packageTourBookingTrendMap = new Map(packageTourBookingTrendRows.map((row) => [row.key, row]))
+    packageTourPeriodBookings.forEach((booking) => {
+      const dayKey = getDayKey(booking.created_at)
+      const bucket = dayKey ? packageTourBookingTrendMap.get(dayKey) : null
+      if (bucket) bucket.value += 1
+    })
+    const packageTourBookingTrendMax = Math.max(...packageTourBookingTrendRows.map((row) => row.value), 1)
     const revenueTrendRows = buildRecentDayBuckets(operationsChartDays)
     const revenueTrendMap = new Map(revenueTrendRows.map((row) => [row.key, row]))
     periodCustomerTransactionRows.forEach((transaction) => {
@@ -1115,6 +1133,22 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 5)
+    const packageTourDestinationMap = packageTourPeriodBookings.reduce((map, booking) => {
+      const pkg = booking.package_id ? packageMap.get(booking.package_id) : null
+      const label = pkg?.city || pkg?.destination_province || pkg?.country || pkg?.destination_country_id || "Tanpa destinasi"
+      map.set(label, (map.get(label) || 0) + 1)
+      return map
+    }, new Map<string, number>())
+    const packageTourDestinationBase = Math.max(...Array.from(packageTourDestinationMap.values()), 1)
+    const packageTourTopDestinations = Array.from(packageTourDestinationMap)
+      .map(([name, value], index) => ({
+        name,
+        value,
+        percent: Math.max(Math.round((value / packageTourDestinationBase) * 100), 8),
+        tone: categoryTones[index % categoryTones.length],
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
     const globalQuickActions = [
       { label: "Kelola Anomali", href: "/admin/merchants/anomalies", badge: periodOperationalWarnings },
       { label: "Deletion Request", href: "/admin/merchants/pending-approvals", badge: periodDeletionRequests.length },
@@ -1122,10 +1156,10 @@ export default async function AdminDashboard({
       { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
       { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
     ]
-    const topDestination = topDestinations[0] || null
-    const topMerchantRevenue =
+    const packageTourTopDestination = packageTourTopDestinations[0] || null
+    const packageTourTopMerchantRevenue =
       Array.from(
-        periodCustomerTransactionRows.reduce((map, item) => {
+        packageTourPeriodCustomerTransactionRows.reduce((map, item) => {
           const pkg = item.packageId ? packageMap.get(item.packageId) : null
           const merchantId = pkg?.merchant_id
           if (!merchantId) return map
@@ -1227,23 +1261,28 @@ export default async function AdminDashboard({
     const showProductPerformanceWidget = enabledOperationsWidgetKeys.has("product_performance")
     const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
     const showPackageReviewQueueWidget =
-      enabledOperationsWidgetKeys.has("package_review_queue") ||
-      enabledOperationsWidgetKeys.has("package_tour_review_queue") ||
-      enabledOperationsWidgetKeys.has("package_tour_pending_review")
+      canAccessPackageTour &&
+      (enabledOperationsWidgetKeys.has("package_review_queue") ||
+        enabledOperationsWidgetKeys.has("package_tour_review_queue") ||
+        enabledOperationsWidgetKeys.has("package_tour_pending_review"))
     const showLatestAnomaliesWidget =
-      enabledOperationsWidgetKeys.has("latest_anomalies") ||
-      enabledOperationsWidgetKeys.has("package_tour_open_anomalies") ||
-      enabledOperationsWidgetKeys.has("package_tour_deletion_request")
+      canAccessPackageTour &&
+      (enabledOperationsWidgetKeys.has("latest_anomalies") ||
+        enabledOperationsWidgetKeys.has("package_tour_open_anomalies") ||
+        enabledOperationsWidgetKeys.has("package_tour_deletion_request"))
     const showSlaReviewWidget =
-      enabledOperationsWidgetKeys.has("sla_review") ||
-      enabledOperationsWidgetKeys.has("package_tour_sla_review")
+      canAccessPackageTour &&
+      (enabledOperationsWidgetKeys.has("sla_review") ||
+        enabledOperationsWidgetKeys.has("package_tour_sla_review"))
     const showActivityFeedWidget =
-      enabledOperationsWidgetKeys.has("activity_feed") ||
-      enabledOperationsWidgetKeys.has("package_tour_activity_feed")
+      canAccessPackageTour &&
+      (enabledOperationsWidgetKeys.has("activity_feed") ||
+        enabledOperationsWidgetKeys.has("package_tour_activity_feed"))
     const showTopDestinationsWidget =
-      enabledOperationsWidgetKeys.has("top_destinations") ||
-      enabledOperationsWidgetKeys.has("package_tour_top_destinations") ||
-      enabledOperationsWidgetKeys.has("package_tour_top_merchant_revenue")
+      canAccessPackageTour &&
+      (enabledOperationsWidgetKeys.has("top_destinations") ||
+        enabledOperationsWidgetKeys.has("package_tour_top_destinations") ||
+        enabledOperationsWidgetKeys.has("package_tour_top_merchant_revenue"))
     const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
     const selectedProductWidgetGroups = OPERATIONS_PRODUCT_WIDGET_CATALOG
       .filter((product) => accessibleProductTypes.includes(getProductFilterFromLabel(product.productLabel) as BookingProductType))
@@ -1272,7 +1311,7 @@ export default async function AdminDashboard({
                 case "package_tour_total_booking":
                   return {
                     ...fallbackCard,
-                    value: totalBookings.toLocaleString("id-ID"),
+                    value: packageTourTotalBookings.toLocaleString("id-ID"),
                     detail: `Total booking Paket Wisata pada ${operationsPeriod.label}.`,
                     meta: "Data live dari tabel bookings",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
@@ -1280,7 +1319,7 @@ export default async function AdminDashboard({
                 case "package_tour_revenue":
                   return {
                     ...fallbackCard,
-                    value: formatMoney(totalRevenue),
+                    value: formatMoney(packageTourRevenue),
                     detail: "Akumulasi pembayaran paid dan DP dari booking paket.",
                     meta: currentMonthLabel,
                     valueClassName: "text-2xl font-semibold tracking-[-0.03em] text-slate-950",
@@ -1296,9 +1335,9 @@ export default async function AdminDashboard({
                 case "package_tour_top_destinations":
                   return {
                     ...fallbackCard,
-                    value: topDestination?.name || "Belum ada data",
-                    detail: topDestination
-                      ? `${topDestination.value.toLocaleString("id-ID")} booking menuju destinasi ini.`
+                    value: packageTourTopDestination?.name || "Belum ada data",
+                    detail: packageTourTopDestination
+                      ? `${packageTourTopDestination.value.toLocaleString("id-ID")} booking menuju destinasi ini.`
                       : "Belum ada booking paket yang bisa dipetakan ke destinasi.",
                     meta: "Top destinasi Paket Wisata",
                   }
@@ -1313,7 +1352,7 @@ export default async function AdminDashboard({
                 case "package_tour_open_anomalies":
                   return {
                     ...fallbackCard,
-                    value: periodOperationalWarnings.toLocaleString("id-ID"),
+                    value: packageTourOperationalWarnings.toLocaleString("id-ID"),
                     detail: "Gabungan SLA, deletion request, approval request, dan booking stalled.",
                     meta: "Operational warning aktif",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
@@ -1321,7 +1360,7 @@ export default async function AdminDashboard({
                 case "package_tour_sla_review":
                   return {
                     ...fallbackCard,
-                    value: (periodPackageOverdueCount + periodBookingStalledCount).toLocaleString("id-ID"),
+                    value: (periodPackageOverdueCount + packageTourBookingStalledCount).toLocaleString("id-ID"),
                     detail: "Item yang sudah mendekati atau melewati SLA operasional.",
                     meta: "SLA review package & booking",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
@@ -1337,9 +1376,9 @@ export default async function AdminDashboard({
                 case "package_tour_top_merchant_revenue":
                   return {
                     ...fallbackCard,
-                    value: topMerchantRevenue?.name || "Belum ada data",
-                    detail: topMerchantRevenue
-                      ? `${formatMoney(topMerchantRevenue.revenue)} revenue tertinggi pada periode ini.`
+                    value: packageTourTopMerchantRevenue?.name || "Belum ada data",
+                    detail: packageTourTopMerchantRevenue
+                      ? `${formatMoney(packageTourTopMerchantRevenue.revenue)} revenue tertinggi pada periode ini.`
                       : "Belum ada merchant dengan transaksi paket yang masuk revenue.",
                     meta: "Top merchant revenue",
                   }
@@ -1354,9 +1393,9 @@ export default async function AdminDashboard({
                 case "package_tour_booking_trend":
                   return {
                     ...fallbackCard,
-                    value: `${bookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`,
+                    value: `${packageTourBookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`,
                     detail: `Trend booking tersaji untuk ${operationsPeriod.label}.`,
-                    meta: `Puncak harian ${bookingTrendMax.toLocaleString("id-ID")} booking`,
+                    meta: `Puncak harian ${packageTourBookingTrendMax.toLocaleString("id-ID")} booking`,
                   }
                 case "package_tour_activity_feed":
                   return {
@@ -1481,7 +1520,18 @@ export default async function AdminDashboard({
         ),
       }))
       .sort((a, b) => a.order - b.order || a.productLabel.localeCompare(b.productLabel))
-    const hasAnyDashboardWidget = enabledOperationsWidgetKeys.size > 0
+    const hasAnyDashboardWidget =
+      showKpiOverviewWidget ||
+      showProductPerformanceWidget ||
+      showBookingTrendsWidget ||
+      showPackageReviewQueueWidget ||
+      showLatestAnomaliesWidget ||
+      showSlaReviewWidget ||
+      showActivityFeedWidget ||
+      showTopDestinationsWidget ||
+      showQuickActionsWidget ||
+      selectedProductWidgetGroups.length > 0
+    const primaryProductOverviewHref = productPerformanceCards[0]?.href || selectedProductWidgetGroups[0]?.productHref || "/admin/dashboard/widgets"
 
     return (
       <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
@@ -1576,7 +1626,7 @@ export default async function AdminDashboard({
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-slate-950">Performa per Produk <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
-              <Link href="/admin/paket-tour" className="text-xs font-semibold text-orange-600">Lihat semua produk -&gt;</Link>
+              <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-orange-600">Buka workspace produk yang tersedia -&gt;</Link>
             </div>
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
               {productPerformanceCards.map((product) => (
@@ -1644,7 +1694,7 @@ export default async function AdminDashboard({
                 </span>
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Widget Produk Terpilih</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Pilihan dari menu Widget akan tampil di sini. Paket Wisata memakai data live, sedangkan produk roadmap tetap muncul sebagai placeholder yang jujur.
+                  Pilihan dari menu Widget akan tampil di sini. Paket Wisata sudah live penuh, Pesawat sudah mulai memakai data operasional dasar, sedangkan produk lain yang masih roadmap tetap tampil sebagai placeholder yang jujur.
                 </p>
               </div>
               <Link href="/admin/dashboard/widgets" className="text-sm font-semibold text-orange-600">

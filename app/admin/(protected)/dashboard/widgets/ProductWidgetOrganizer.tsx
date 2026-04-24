@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { ProductWidgetCatalogEntry } from "@/lib/admin-dashboard-widgets"
 
 type OrganizerItem = {
@@ -17,6 +17,17 @@ function statusCopy(status: OrganizerItem["status"]) {
   return { label: "Roadmap", className: "bg-slate-100 text-slate-500" }
 }
 
+function sortOrganizerItems(
+  items: OrganizerItem[],
+  initialSortOrders: Record<string, number>,
+) {
+  return [...items].sort((a, b) => {
+    const aOrder = initialSortOrders[a.key] ?? Number.MAX_SAFE_INTEGER
+    const bOrder = initialSortOrders[b.key] ?? Number.MAX_SAFE_INTEGER
+    return aOrder - bOrder || a.label.localeCompare(b.label)
+  })
+}
+
 export default function ProductWidgetOrganizer({
   catalog,
   enabledKeys,
@@ -26,6 +37,7 @@ export default function ProductWidgetOrganizer({
   enabledKeys: string[]
   initialSortOrders: Record<string, number>
 }) {
+  const rootRef = useRef<HTMLDivElement | null>(null)
   const catalogItems = useMemo(
     () =>
       catalog.flatMap((product) =>
@@ -42,20 +54,54 @@ export default function ProductWidgetOrganizer({
     [catalog],
   )
 
+  const [liveEnabledKeys, setLiveEnabledKeys] = useState(enabledKeys)
   const enabledItemMap = useMemo(() => {
-    const enabledSet = new Set(enabledKeys)
+    const enabledSet = new Set(liveEnabledKeys)
     return new Map(catalogItems.filter((item) => enabledSet.has(item.key)).map((item) => [item.key, item]))
-  }, [catalogItems, enabledKeys])
+  }, [catalogItems, liveEnabledKeys])
 
   const [orderedKeys, setOrderedKeys] = useState(() => {
-    const entries = Array.from(enabledItemMap.values()).sort((a, b) => {
-      const aOrder = initialSortOrders[a.key] ?? Number.MAX_SAFE_INTEGER
-      const bOrder = initialSortOrders[b.key] ?? Number.MAX_SAFE_INTEGER
-      return aOrder - bOrder || a.label.localeCompare(b.label)
-    })
+    const entries = sortOrganizerItems(Array.from(enabledItemMap.values()), initialSortOrders)
     return entries.map((item) => item.key)
   })
   const [draggingKey, setDraggingKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLiveEnabledKeys(enabledKeys)
+  }, [enabledKeys])
+
+  useEffect(() => {
+    const form = rootRef.current?.closest("form")
+    if (!form) return
+
+    const syncEnabledKeys = () => {
+      const formData = new FormData(form)
+      setLiveEnabledKeys(formData.getAll("enabled_widget_keys").map((value) => String(value)))
+    }
+
+    syncEnabledKeys()
+    form.addEventListener("change", syncEnabledKeys)
+    return () => {
+      form.removeEventListener("change", syncEnabledKeys)
+    }
+  }, [])
+
+  useEffect(() => {
+    const enabledEntries = sortOrganizerItems(Array.from(enabledItemMap.values()), initialSortOrders)
+    const enabledKeySet = new Set(enabledEntries.map((item) => item.key))
+
+    setOrderedKeys((current) => {
+      const preserved = current.filter((key) => enabledKeySet.has(key))
+      const missing = enabledEntries.map((item) => item.key).filter((key) => !preserved.includes(key))
+      const next = [...preserved, ...missing]
+
+      if (next.length === current.length && next.every((key, index) => key === current[index])) {
+        return current
+      }
+
+      return next
+    })
+  }, [enabledItemMap, initialSortOrders])
 
   const hiddenSortOrderEntries = useMemo(
     () =>
@@ -79,7 +125,7 @@ export default function ProductWidgetOrganizer({
   }
 
   return (
-    <div className="space-y-5">
+    <div ref={rootRef} className="space-y-5">
       {hiddenSortOrderEntries.map(([key, value]) => (
         <input key={key} type="hidden" name={`sort_order__${key}`} value={value} />
       ))}

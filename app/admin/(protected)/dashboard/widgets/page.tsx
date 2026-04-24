@@ -6,6 +6,8 @@ import {
   OPERATIONS_PRODUCT_WIDGET_CATALOG,
   resolveOperationsDashboardWidgetKeys,
 } from "@/lib/admin-dashboard-widgets"
+import { getAccessibleInternalProducts, getAccessibleInternalProductTypes } from "@/lib/internal-product-access"
+import { normalizeBookingProductType } from "@/lib/booking-products"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { resetOperationsDashboardWidgets, saveOperationsDashboardWidgets } from "../actions"
@@ -23,6 +25,26 @@ function scopeCopy(scope: "global_only" | "product_only" | "hybrid") {
   if (scope === "global_only") return { label: "Global Only", className: "bg-slate-900 text-white" }
   if (scope === "hybrid") return { label: "Hybrid", className: "bg-violet-50 text-violet-700" }
   return { label: "Product Only", className: "bg-sky-50 text-sky-700" }
+}
+
+function getProductTypeFromWidgetCatalogLabel(label: string) {
+  return normalizeBookingProductType(
+    label === "Paket Wisata"
+      ? "package_tour"
+      : label === "Pesawat"
+        ? "flight"
+        : label === "Hotel"
+          ? "hotel"
+          : label === "Kereta Api"
+            ? "train"
+            : label === "Bus & Travel"
+              ? "bus"
+              : label === "Kapal Laut"
+                ? "sea"
+                : label === "Kapal Pesiar"
+                  ? "cruise"
+                  : null,
+  )
 }
 
 export default async function OperationsDashboardWidgetsPage({
@@ -46,6 +68,8 @@ export default async function OperationsDashboardWidgetsPage({
   }
 
   const adminSupabase = createAdminClient()
+  const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, profile.role)
+  const accessibleProductTypes = getAccessibleInternalProductTypes(accessibleProducts)
   const preferenceResult = await adminSupabase
     .from("dashboard_widget_preferences")
     .select("widget_key, enabled, sort_order")
@@ -63,7 +87,11 @@ export default async function OperationsDashboardWidgetsPage({
     (preferenceRows || []).map((row, index) => [String(row.widget_key || ""), Number.isFinite(Number(row.sort_order)) ? Number(row.sort_order) : index]),
   )
   const coreActiveCount = OPERATIONS_DASHBOARD_WIDGETS.filter((widget) => enabledWidgetKeys.has(widget.key)).length
-  const roadmapActiveCount = OPERATIONS_PRODUCT_WIDGET_CATALOG.reduce(
+  const visibleProductWidgetCatalog = OPERATIONS_PRODUCT_WIDGET_CATALOG.filter((product) => {
+    const productType = getProductTypeFromWidgetCatalogLabel(product.productLabel)
+    return productType ? accessibleProductTypes.includes(productType) : false
+  })
+  const productActiveCount = visibleProductWidgetCatalog.reduce(
     (total, product) =>
       total +
       product.sections.reduce(
@@ -72,9 +100,20 @@ export default async function OperationsDashboardWidgetsPage({
       ),
     0,
   )
-  const activeCount = coreActiveCount + roadmapActiveCount
+  const activeProductRoadmapCount = visibleProductWidgetCatalog.reduce(
+    (total, product) =>
+      total +
+      product.sections.reduce(
+        (sectionTotal, section) =>
+          sectionTotal + section.items.filter((item) => enabledWidgetKeys.has(item.key) && item.status === "roadmap").length,
+        0,
+      ),
+    0,
+  )
+  const activeProductConnectedCount = productActiveCount - activeProductRoadmapCount
+  const activeCount = coreActiveCount + productActiveCount
   const productSortOrders = Object.fromEntries(
-    OPERATIONS_PRODUCT_WIDGET_CATALOG.flatMap((product, productIndex) =>
+    visibleProductWidgetCatalog.flatMap((product, productIndex) =>
       product.sections.flatMap((section, sectionIndex) =>
         section.items.map((item, itemIndex) => [
           item.key,
@@ -108,7 +147,7 @@ export default async function OperationsDashboardWidgetsPage({
               Pilih widget global yang ingin ditampilkan di dashboard utama Manager Operasional. Semua widget boleh dimatikan; dashboard akan menampilkan empty state.
             </p>
             <p className="mt-2 max-w-3xl text-[15px] leading-7 text-slate-500">
-              Widget yang sifatnya spesifik Paket Wisata atau produk lain sekarang dikelompokkan di bawah agar tidak duplikatif dengan widget global.
+              Widget produk di bawah hanya menampilkan katalog untuk produk yang memang bisa Anda akses, supaya konfigurasi yang diaktifkan selalu relevan dengan dashboard utama.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               {[
@@ -141,7 +180,9 @@ export default async function OperationsDashboardWidgetsPage({
           <div className="rounded-[22px] border border-[#eee3d9] bg-white/95 px-6 py-5 shadow-[0_18px_38px_rgba(15,23,42,0.06)] backdrop-blur">
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Widget aktif</p>
             <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-slate-950">{activeCount}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{coreActiveCount} live widget + {roadmapActiveCount} roadmap widget</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              {coreActiveCount} widget global + {activeProductConnectedCount} widget produk aktif + {activeProductRoadmapCount} widget roadmap
+            </p>
           </div>
         </section>
 
@@ -209,25 +250,34 @@ export default async function OperationsDashboardWidgetsPage({
                 </span>
                 <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Master Widget per Produk</h2>
                 <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-500">
-                  Widget operasional yang spesifik per produk dikumpulkan di sini supaya tidak bertabrakan dengan widget global. Area ini juga menjadi fondasi saat modul baru mulai live.
+                  Widget operasional yang spesifik per produk dikumpulkan di sini supaya tidak bertabrakan dengan widget global. Katalog ini otomatis mengikuti akses produk user dan menjadi fondasi saat modul baru mulai live.
                 </p>
               </div>
               <div className="rounded-[20px] border border-[#dfe8f5] bg-white px-5 py-4 text-right shadow-[0_12px_28px_rgba(15,23,42,0.04)]">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">Produk aktif</p>
-                <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{roadmapActiveCount}</p>
+                <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{productActiveCount}</p>
               </div>
             </div>
 
             <div className="mt-6">
               <ProductWidgetOrganizer
-                catalog={OPERATIONS_PRODUCT_WIDGET_CATALOG}
+                catalog={visibleProductWidgetCatalog}
                 enabledKeys={Array.from(enabledWidgetKeys)}
                 initialSortOrders={productSortOrders}
               />
             </div>
 
+            {visibleProductWidgetCatalog.length === 0 ? (
+              <div className="mt-6 rounded-[22px] border border-dashed border-[#dfe8f5] bg-[#fcfdff] px-6 py-10 text-center">
+                <p className="text-lg font-semibold tracking-[-0.02em] text-slate-900">Belum ada katalog widget produk yang bisa diakses</p>
+                <p className="mt-2 text-[15px] leading-7 text-slate-500">
+                  Saat akses produk ditambahkan ke akun ini, widget produk yang relevan akan otomatis muncul di area ini.
+                </p>
+              </div>
+            ) : null}
+
             <div className="mt-6 grid gap-5 xl:grid-cols-2">
-              {OPERATIONS_PRODUCT_WIDGET_CATALOG.map((product) => {
+              {visibleProductWidgetCatalog.map((product) => {
                 const status = statusCopy(product.status)
                 return (
                   <div

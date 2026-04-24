@@ -121,7 +121,7 @@ export const OPERATIONS_PRODUCT_WIDGET_CATALOG: ProductWidgetCatalogEntry[] = [
   {
     productLabel: "Pesawat",
     productHref: "/admin/pesawat",
-    status: "roadmap",
+    status: "partial",
     note: "Fokus ke issue/issuance tiket, supplier API, dan exception handling khas flight.",
     sections: [
       {
