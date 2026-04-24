@@ -1754,7 +1754,10 @@ export default async function AdminDashboard({
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
 
     return (
-      <main className="min-h-screen bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
+      <main
+        className="min-h-screen w-[125%] bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10"
+        style={{ zoom: "0.8" }}
+      >
         <div className="w-full space-y-7">
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
             <div className="max-w-[760px]">
@@ -1898,26 +1901,26 @@ export default async function AdminDashboard({
                   </span>
                   <p className="text-[15px] font-medium text-slate-700">SLA Compliance</p>
                 </div>
-                <div className="mt-5 grid grid-cols-[132px_1fr] items-center gap-4">
-                  <div className="mx-auto flex h-[120px] w-[120px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
-                    <div className="flex h-[84px] w-[84px] flex-col items-center justify-center rounded-full bg-white">
+                <div className="mt-5 flex flex-col items-center gap-4">
+                  <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
+                    <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
                       <p className="text-[1.85rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
                       <p className="text-[11px] text-slate-400">On Time</p>
                     </div>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className="w-full max-w-[210px] space-y-2.5">
                     {[
                       { label: "On Time", value: slaOnTimeCount, tone: "bg-emerald-500" },
                       { label: "Mendekati", value: slaNearDueCount, tone: "bg-orange-400" },
                       { label: "Terlambat", value: slaBreachCount, tone: "bg-rose-500" },
                     ].map((item) => (
                       <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
-                        <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
-                        <span className="font-semibold text-slate-900">{slaTrackedItemCount > 0 ? Math.round((item.value / slaTrackedItemCount) * 100) : 0}%</span>
+                        <span className="inline-flex min-w-0 items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.tone}`} />{item.label}</span>
+                        <span className="shrink-0 font-semibold text-slate-900">{slaTrackedItemCount > 0 ? Math.round((item.value / slaTrackedItemCount) * 100) : 0}%</span>
                       </div>
                     ))}
-                    <p className="pt-1 text-xs text-slate-400">Target internal: &gt;= 90%</p>
                   </div>
+                  <p className="text-center text-xs text-slate-400">Target internal: &gt;= 90%</p>
                 </div>
               </article>
 
