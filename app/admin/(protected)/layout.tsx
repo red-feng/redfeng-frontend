@@ -104,20 +104,23 @@ export default async function AdminProtectedLayout({
     label: getBookingProductLabel(productType),
     badgeCount: productType === "package_tour" ? pendingPackagesBadgeCount : 0,
   }))
-  const dashboardNavChildren = [
-    { href: "/admin/dashboard", label: "Ringkasan", badgeCount: 0 },
-    { href: "/admin/dashboard/widgets", label: "Widget", badgeCount: 0 },
-  ]
   const adminNav = isOperationsManager
     ? [
-        { label: "Dashboard", children: dashboardNavChildren },
+        { label: "OPERASIONAL" },
+        { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
+        { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
+        ...(canAccessPackageTour ? [{ href: "/admin/packages", label: "Paket Review", badgeCount: pendingPackagesBadgeCount }] : []),
+        ...(canAccessPackageTour ? [{ href: "/admin/merchants/anomalies", label: "Anomali", badgeCount: pendingMerchantDeletionBadgeCount }] : []),
+        { href: "/admin/dashboard?workspace=alerts_overview", label: "SLA Monitoring", badgeCount: pendingMerchantsBadgeCount + pendingPackagesBadgeCount },
+        { href: "/admin/merchants", label: "Merchant", badgeCount: pendingMerchantsBadgeCount },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
-        ...(canAccessPackageTour ? [{ label: "Merchant", children: merchantNavChildren }] : []),
-        ...(productNavChildren.length > 0 ? [{ label: "Produk", children: productNavChildren }] : []),
-        { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
-        { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
-        { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
+        { label: "PRODUK & LAYANAN" },
+        ...productNavChildren,
+        { label: "LAPORAN" },
+        { href: "/admin/dashboard", label: "Report Harian", badgeCount: 0 },
+        { href: "/admin/audit-log", label: "Report Operasional", badgeCount: 0 },
+        { href: "/admin/dashboard/widgets", label: "Data Export", badgeCount: 0 },
       ]
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
@@ -133,29 +136,54 @@ export default async function AdminProtectedLayout({
     <div className="min-h-screen bg-[#fbfaf8] text-slate-900 lg:flex">
       <AdminNavSeenTracker />
       <SuperadminAdminRouteSeenBridge enabled={profile.role === "superadmin"} />
-      <aside className="sticky top-0 z-40 flex max-h-screen w-full flex-col border-b border-[#eee5dc] bg-white lg:h-screen lg:w-[280px] lg:shrink-0 lg:border-b-0 lg:border-r">
-        <div className="flex items-center justify-between gap-3 px-5 py-5 lg:px-6 lg:py-7">
+      <aside className={`sticky top-0 z-40 flex max-h-screen w-full flex-col border-b bg-white lg:h-screen lg:shrink-0 lg:border-b-0 lg:border-r ${isOperationsManager ? "border-[#eef2f7] lg:w-[274px]" : "border-[#eee5dc] lg:w-[280px]"}`}>
+        <div className={`flex items-center justify-between gap-3 px-5 lg:px-6 ${isOperationsManager ? "py-6" : "py-5 lg:py-7"}`}>
           <div className="flex items-center gap-3">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-2xl bg-orange-600 text-sm font-black text-white">RF</span>
-            <span className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Red Feng</span>
+            <span className={`inline-flex items-center justify-center rounded-2xl ${isOperationsManager ? "h-10 w-10 bg-[#fff1eb] text-orange-600" : "h-8 w-8 bg-orange-600 text-white"} text-sm font-black`}>
+              {isOperationsManager ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+                  <path d="M8 3c3 0 5 1.8 5 4.5 0 2.2-1.2 4-3.5 5.1L7 14l2.3-4H6.5C5.1 10 4 8.8 4 7.2 4 4.8 5.8 3 8 3zm6.3 5.5c2.1 0 3.7 1.5 3.7 3.4 0 2-1.5 3.7-4.2 4.7l-4 1.5 1.8-3.1H9.8l1.1-1.9 2.6-.9c1.5-.5 2.4-1.2 2.4-2.2 0-.8-.7-1.5-1.8-1.5z" fill="currentColor" />
+                </svg>
+              ) : "RF"}
+            </span>
+            <div>
+              <span className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{isOperationsManager ? "RedFeng" : "Red Feng"}</span>
+              {isOperationsManager ? <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Operational</p> : null}
+            </div>
           </div>
           <span className="rounded-full border border-[#efd8c8] bg-[#fff7f1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600 lg:hidden">
             {roleLabel}
           </span>
         </div>
-        <div className="hidden px-6 pb-4 lg:block">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">Admin Workspace</p>
+        <div className={`hidden px-6 pb-3 lg:block ${isOperationsManager ? "pt-1" : ""}`}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
           <p className="mt-3 text-xs font-semibold text-slate-700">{roleLabel}</p>
           <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
         </div>
-        <nav className="flex-1 overflow-auto px-4 pb-4 lg:px-5">
+        <nav className={`flex-1 overflow-auto pb-4 ${isOperationsManager ? "px-4" : "px-4 lg:px-5"}`}>
           <AdminNavLinks items={adminNav} />
         </nav>
-        <div className="hidden border-t border-[#f0e6dd] px-6 py-5 lg:block">
+        <div className={`hidden px-6 py-5 lg:block ${isOperationsManager ? "" : "border-t border-[#f0e6dd]"}`}>
+          {isOperationsManager ? (
+            <div className="mb-4 flex items-center gap-3 rounded-[18px] border border-[#eef2f7] bg-[#f8fafc] px-4 py-3">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                {roleLabel
+                  .split(" ")
+                  .map((part) => part[0] || "")
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-900">{roleLabel}</p>
+                <p className="mt-1 text-xs text-slate-400">{adminCode}</p>
+              </div>
+            </div>
+          ) : null}
           <SignOutButton
             portal="admin"
             redirectTo="https://app.redfeng.co/admin/login"
-            className="inline-flex w-full items-center justify-center rounded-[16px] border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
+            className={`inline-flex w-full items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${isOperationsManager ? "border border-[#f4d7d7] bg-white text-rose-500 hover:bg-rose-50" : "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"}`}
           />
         </div>
       </aside>

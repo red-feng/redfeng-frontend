@@ -21,6 +21,120 @@ type AdminNavItem = {
   children?: AdminNavChild[]
 }
 
+function NavIcon({
+  label,
+  className,
+}: {
+  label: string
+  className?: string
+}) {
+  const normalized = label.toLowerCase()
+
+  if (normalized.includes("dashboard")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M4 5h7v6H4V5zm9 0h7v10h-7V5zM4 13h7v6H4v-6zm9 4h7v2h-7v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("booking")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M6 5h12a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7a2 2 0 012-2zm0 2v10h12V7H6zm2 2h8v2H8V9zm0 4h5v2H8v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("paket") || normalized.includes("package")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 3l2.6 5.3L20 9l-4 3.9.9 5.6-4.9-2.6-4.9 2.6.9-5.6L4 9l5.4-.7L12 3z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("anom")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 2l10 18H2L12 2zm0 4.2L5.4 18h13.2L12 6.2zM11 9h2v4h-2V9zm0 5h2v2h-2v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("sla")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0-2a10 10 0 110 20 10 10 0 010-20zm1 5v5.2l3.6 2.1-1 1.7L11 13V7h2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("merchant")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M5 5h14l1 4a3 3 0 01-3 3h-1v7h-2v-7h-4v7H8v-7H7a3 3 0 01-3-3l1-4zm2 .5L6.4 8A1.5 1.5 0 007.9 10h8.2A1.5 1.5 0 0017.6 8L17 5.5H7z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("chat")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M4 5h16a2 2 0 012 2v8a2 2 0 01-2 2H8l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2zm2 4v2h8V9H6zm0 4v2h12v-2H6z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("support")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 3a8 8 0 00-8 8v3a2 2 0 002 2h2v-6H6a6 6 0 1112 0h-2v6h2a2 2 0 002-2v-3a8 8 0 00-8-8zm-4 9h2v6H8v-6zm6 0h2v6h-2v-6z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("pesawat")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M3 14.5l7-1.8 5.8-6.2a1.8 1.8 0 012.6 2.5l-6.1 5.8-1.8 7-2.1-.8 1.1-5.1-3.6 2.8H3.8l3.6-4.2-5-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("hotel")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M6 3h8v18H6V3zm2 2v3h4V5H8zm8 5h2a2 2 0 012 2v9h-4v-8h-2v8h-2V3h2v7z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("kereta")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M7 3h10a3 3 0 013 3v7.5a3.5 3.5 0 01-3.5 3.5l1.5 2.5h-2.3L14 17H10l-1.7 2.5H6l1.5-2.5A3.5 3.5 0 014 13.5V6a3 3 0 013-3z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("bus")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M7 4h10c2 0 3 1.3 3 3v8a3 3 0 01-2 2.8V20h-2v-2H8v2H6v-2.2A3 3 0 014 15V7c0-1.7 1-3 3-3z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("kapal")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M10 4h4v3h3v5l2 1.5V16l-7 4-7-4v-2.5l2-1.5V9h4V4z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (normalized.includes("audit") || normalized.includes("report") || normalized.includes("data")) {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M6 3h8l4 4v14H6V3zm8 1.5V8h3.5L14 4.5zM8 11h8v2H8v-2zm0 4h8v2H8v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <circle cx="12" cy="12" r="9" fill="currentColor" />
+    </svg>
+  )
+}
+
 function renderBadge(count: number, tone: "primary" | "danger") {
   if (count <= 0) return null
 
@@ -154,6 +268,15 @@ export default function AdminNavLinks({
   return (
     <div className="space-y-2">
       {items.map((item) => {
+          const isSectionHeading = !item.href && !item.children
+          if (isSectionHeading) {
+            return (
+              <div key={item.label} className="px-3 pt-4 text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
+                {item.label}
+              </div>
+            )
+          }
+
           const isActiveLink = item.href ? normalizeHref(item.href) === activeHref : false
           const isActiveGroup = item.children
             ? item.children.some((child) => normalizeHref(child.href) === activeHref)
@@ -174,13 +297,18 @@ export default function AdminNavLinks({
                   onClick={() =>
                     setOpenGroupLabel((current) => (current === item.label ? null : item.label))
                   }
-                  className={`flex w-full items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold transition ${
+                  className={`flex w-full items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-sm font-semibold transition ${
                     isHighlighted
                       ? "bg-[#fff2e8] text-orange-600"
                       : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
                   }`}
                 >
-                  <span>{item.label}</span>
+                  <span className="inline-flex items-center gap-3">
+                    <span className="inline-flex h-5 w-5 items-center justify-center text-slate-400">
+                      <NavIcon label={item.label} className="h-4 w-4" />
+                    </span>
+                    <span>{item.label}</span>
+                  </span>
                   <span className="inline-flex items-center gap-2">
                     {renderBadge(totalPrimaryBadgeCount, "primary")}
                     {renderBadge(totalSecondaryBadgeCount, "danger")}
@@ -188,7 +316,7 @@ export default function AdminNavLinks({
                   </span>
                 </button>
                 {visibleGroupLabel === item.label ? (
-                  <div className="ml-5 mt-1 space-y-1 border-l border-[#f0e6dd] pl-3">
+                  <div className="ml-4 mt-1 space-y-1 border-l border-[#f0e6dd] pl-3">
                     {item.children.map((child) => {
                       const isActive = normalizeHref(child.href) === activeHref
                       const visiblePrimaryBadgeCount = resolveBadgeCount(Number(child.badgeCount || 0), child.href)
@@ -204,7 +332,12 @@ export default function AdminNavLinks({
                               : "text-slate-500 hover:bg-[#fff7f1] hover:text-orange-600"
                           }`}
                         >
-                          <span>{child.label}</span>
+                          <span className="inline-flex items-center gap-3">
+                            <span className="inline-flex h-4 w-4 items-center justify-center text-slate-400">
+                              <NavIcon label={child.label} className="h-3.5 w-3.5" />
+                            </span>
+                            <span>{child.label}</span>
+                          </span>
                           <span className="inline-flex items-center gap-1.5">
                             {renderBadge(visiblePrimaryBadgeCount, "primary")}
                             {renderBadge(visibleSecondaryBadgeCount, "danger")}
@@ -223,13 +356,18 @@ export default function AdminNavLinks({
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center justify-between gap-3 rounded-[14px] px-4 py-3 text-sm font-semibold transition ${
+                className={`flex items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-sm font-semibold transition ${
                   isHighlighted
                     ? "bg-[#fff2e8] text-orange-600"
                     : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
                 }`}
               >
-                <span>{item.label}</span>
+                <span className="inline-flex items-center gap-3">
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-slate-400">
+                    <NavIcon label={item.label} className="h-4 w-4" />
+                  </span>
+                  <span>{item.label}</span>
+                </span>
                 <span className="inline-flex items-center gap-1.5">
                   {renderBadge(resolveBadgeCount(Number(item.badgeCount || 0), item.href), "primary")}
                   {renderBadge(Number(item.secondaryBadgeCount || 0), "danger")}

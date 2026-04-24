@@ -9,7 +9,6 @@ import { getBookingProductLabel, resolveBookingProductType, type BookingProductT
 import { getAccessibleInternalProducts, getAccessibleInternalProductTypes, hasInternalProductAccess } from "@/lib/internal-product-access"
 import {
   OPERATIONS_DASHBOARD_SCOPE,
-  OPERATIONS_PRODUCT_WIDGET_CATALOG,
   resolveOperationsDashboardWidgetKeys,
 } from "@/lib/admin-dashboard-widgets"
 import { submitOperationsManagerReport } from "./actions"
@@ -325,6 +324,175 @@ function ProductMiniIcon({
   )
 }
 
+function TinySparkline({
+  points,
+  stroke,
+}: {
+  points: string | null
+  stroke: string
+}) {
+  if (!points) {
+    return <div className="mt-5 h-12 rounded-[14px] border border-dashed border-[#dbe3f0] bg-[#f8fbff]" />
+  }
+
+  return (
+    <svg viewBox="0 0 100 28" aria-hidden="true" className="mt-5 h-12 w-full">
+      <polyline
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+    </svg>
+  )
+}
+
+function buildLinePath(values: number[], width = 520, height = 220) {
+  if (values.length === 0) return ""
+  const maxValue = Math.max(...values, 0)
+  const minX = 24
+  const maxX = width - 20
+  const minY = 14
+  const maxY = height - 22
+
+  return values
+    .map((value, index) => {
+      const x = values.length === 1 ? width / 2 : minX + ((maxX - minX) / (values.length - 1)) * index
+      const ratio = maxValue > 0 ? value / maxValue : 0
+      const y = maxY - ratio * (maxY - minY)
+      return `${index === 0 ? "M" : "L"} ${Math.round(x * 10) / 10} ${Math.round(y * 10) / 10}`
+    })
+    .join(" ")
+}
+
+function DashboardLineChart({
+  labels,
+  series,
+  valueFormatter,
+}: {
+  labels: string[]
+  series: Array<{ label: string; values: number[]; color: string }>
+  valueFormatter?: (value: number) => string
+}) {
+  const width = 520
+  const height = 220
+  const maxValue = Math.max(
+    ...series.flatMap((item) => item.values),
+    1,
+  )
+  const tickValues = [0, maxValue * 0.33, maxValue * 0.66, maxValue]
+  const formatValue = valueFormatter || ((value: number) => value.toLocaleString("id-ID"))
+
+  return (
+    <div className="mt-4">
+      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="h-[240px] w-full">
+        {tickValues.map((value, index) => {
+          const y = height - 22 - ((height - 36) * value) / maxValue
+          return (
+            <g key={`tick-${index}`}>
+              <line x1="24" x2={width - 14} y1={y} y2={y} stroke="#edf2f7" strokeWidth="1" strokeDasharray={index === 0 ? "0" : "4 4"} />
+              <text x="2" y={y + 4} fontSize="10" fill="#94a3b8">
+                {formatValue(Math.round(value))}
+              </text>
+            </g>
+          )
+        })}
+        {series.map((item) => (
+          <path
+            key={item.label}
+            d={buildLinePath(item.values, width, height)}
+            fill="none"
+            stroke={item.color}
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        ))}
+        {labels.map((label, index) => {
+          const x = labels.length === 1 ? width / 2 : 24 + ((width - 44) / (labels.length - 1)) * index
+          return (
+            <text key={label} x={x} y={height - 4} textAnchor="middle" fontSize="10" fill="#94a3b8">
+              {label}
+            </text>
+          )
+        })}
+      </svg>
+    </div>
+  )
+}
+
+function DashboardGlyph({
+  kind,
+  className,
+}: {
+  kind: "booking" | "revenue" | "issue" | "sla" | "anomaly" | "failure" | "alert" | "refresh" | "bell"
+  className?: string
+}) {
+  if (kind === "revenue") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 3a7 7 0 017 7v8a3 3 0 01-3 3H8a3 3 0 01-3-3v-8a7 7 0 017-7zm0 2a5 5 0 00-5 5v8a1 1 0 001 1h8a1 1 0 001-1v-8a5 5 0 00-5-5zm0 3c1.8 0 3 1.1 3 2.5 0 1.3-1 2.2-2.5 2.5V15h2v2h-2v1h-2v-1H8v-2h2v-2.1c-1.8-.3-3-1.3-3-2.9h2c0 .6.6 1 1.5 1h2c.8 0 1.5-.4 1.5-1s-.7-1-1.5-1h-1c-2.1 0-3.5-1-3.5-2.5S9.4 7 11 6.7V5h2v1.7c1.6.3 2.7 1.2 2.9 2.8h-2C13.8 8.6 13 8 12 8h-1z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "issue") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 2l9 4v6c0 5.2-3.2 9.9-8.1 11.8L12 24l-.9-.2C6.2 21.9 3 17.2 3 12V6l9-4zm0 3.1L5 7.9V12c0 4 2.4 7.6 6 9.1 3.6-1.5 6-5.1 6-9.1V7.9l-5-2.8zM11 8h2v5h-2V8zm0 7h2v2h-2v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "sla") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0-2a10 10 0 110 20 10 10 0 010-20zm1 5v5.2l3.6 2.1-1 1.7L11 13V7h2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "anomaly") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 2l10 18H2L12 2zm0 4.2L5.4 18h13.2L12 6.2zM11 9h2v4h-2V9zm0 5h2v2h-2v-2z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "failure") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 2l3 6 6 .9-4.5 4.4 1 6.2L12 17l-5.5 2.9 1-6.2L3 8.9 9 8l3-6zm0 4.7L10.2 10h-3.1l2.5 2.3-.6 3.3 3-1.7 3 1.7-.6-3.3 2.5-2.3h-3.1L12 6.7zm-1.4 4.1 1.4 1.4 1.4-1.4 1.4 1.4-1.4 1.4 1.4 1.4-1.4 1.4-1.4-1.4-1.4 1.4-1.4-1.4 1.4-1.4-1.4-1.4 1.4-1.4z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "alert") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 2a5 5 0 015 5v1.3c0 1.7.5 3.4 1.5 4.8l1 1.5V17H4.5v-2.4l1-1.5A8.2 8.2 0 007 8.3V7a5 5 0 015-5zm0 20a3 3 0 01-2.8-2h5.6A3 3 0 0112 22zm3.8-7l-.9-1.4A10.2 10.2 0 0115 8.3V7a3 3 0 10-6 0v1.3c0 1.8-.5 3.5-1.5 5L6.7 15h9.1z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "refresh") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 5a7 7 0 016.5 4.4h-2.3l3.8 4 3.8-4h-2.2A10 10 0 1022 14h-2a8 8 0 11-8-9z" fill="currentColor" />
+      </svg>
+    )
+  }
+  if (kind === "bell") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+        <path d="M12 3a5 5 0 015 5v1.1c0 1.6.5 3.2 1.5 4.5l1 1.4V17H4.5v-2l1-1.4A7.5 7.5 0 007 9.1V8a5 5 0 015-5zm0 19a2.8 2.8 0 01-2.6-1.8h5.2A2.8 2.8 0 0112 22z" fill="currentColor" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <path d="M5 5h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2zm1 2v10h12V7H6zm2 2h3v3H8V9zm5 0h3v3h-3V9zm-5 5h8v2H8v-2z" fill="currentColor" />
+    </svg>
+  )
+}
+
 function getDashboardPeriod(value: string | null | undefined) {
   const normalized = String(value || "30d").trim().toLowerCase()
   if (normalized === "7d") return { value: "7d", label: "7 hari terakhir", days: 7 }
@@ -415,37 +583,6 @@ const OPERATIONS_PRODUCT_SUMMARIES: Array<{
   { key: "sea", label: "Kapal Laut", href: "/admin/kapal-laut", status: "roadmap", icon: "ship", tone: "text-cyan-600", bg: "bg-cyan-50", sparkColor: "#0f766e", sparkPoints: "2,22 14,19 26,16 38,18 50,13 62,17 74,12 86,14 98,10" },
   { key: "cruise", label: "Kapal Pesiar", href: "/admin/kapal-pesiar", status: "roadmap", icon: "cruise", tone: "text-rose-600", bg: "bg-rose-50", sparkColor: "#f43f5e", sparkPoints: "2,24 14,10 26,20 38,18 50,16 62,19 74,14 86,15 98,11" },
 ]
-
-function getProductIconKind(productLabel: string) {
-  if (productLabel === "Pesawat") return "flight" as const
-  if (productLabel === "Hotel") return "hotel" as const
-  if (productLabel === "Kereta Api") return "train" as const
-  if (productLabel === "Bus & Travel") return "bus" as const
-  if (productLabel === "Kapal Laut") return "ship" as const
-  if (productLabel === "Kapal Pesiar") return "cruise" as const
-  return "package" as const
-}
-
-type ProductWidgetAction = {
-  label: string
-  href: string
-  badge?: number
-  roadmap?: boolean
-}
-
-type ProductWidgetCard = {
-  key: string
-  title: string
-  sectionTitle: string
-  href: string
-  value: string
-  detail: string
-  meta: string
-  status: { label: string; className: string }
-  iconKind: "package" | "flight" | "hotel" | "train" | "bus" | "ship" | "cruise"
-  valueClassName: string
-  actions?: ProductWidgetAction[]
-}
 
 function getProductFilterFromLabel(productLabel: string) {
   if (productLabel === "Paket Wisata") return "package_tour"
@@ -546,13 +683,8 @@ export default async function AdminDashboard({
   const enabledOperationsWidgetKeys = resolveOperationsDashboardWidgetKeys(
     widgetPreferenceRows,
   )
-  const widgetSortOrderMap = new Map(
-    (widgetPreferenceRows || []).map((row, index) => [String(row.widget_key || ""), Number.isFinite(Number(row.sort_order)) ? Number(row.sort_order) : index]),
-  )
-
   const [
     merchantResult,
-    activeMerchantResult,
     packageResult,
     bookingResult,
     supplierCatalogResult,
@@ -565,10 +697,6 @@ export default async function AdminDashboard({
       .from("merchants")
       .select("id, created_at")
       .eq("verification_status", "pending"),
-    adminSupabase
-      .from("merchants")
-      .select("id", { count: "exact", head: true })
-      .eq("verification_status", "approved"),
     adminSupabase
       .from("packages")
       .select("id, status, created_at, merchant_id, title, city, country, destination_province, destination_country_id, travel_style")
@@ -603,7 +731,6 @@ export default async function AdminDashboard({
   ])
 
   const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
-  const activeMerchantCount = canAccessPackageTour ? activeMerchantResult.count || 0 : 0
   const suppliers = supplierCatalogResult.error ? [] : ((supplierCatalogResult.data as DashboardSupplierRow[] | null) || [])
   const packages = canAccessPackageTour ? ((packageResult.data as DashboardPackageRow[] | null) || []) : []
   const bookings = (((bookingResult.data as DashboardBookingRow[] | null) || []) as DashboardBookingRow[])
@@ -622,10 +749,8 @@ export default async function AdminDashboard({
     : ((auditLogResult.data as DashboardAuditLogRow[] | null) || [])
   const pendingMerchants = pendingMerchantsData.length
 
-  const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
   const supplierMap = new Map(suppliers.map((supplier) => [supplier.id, supplier]))
   const packageMerchantIds = Array.from(new Set(packages.map((pkg) => pkg.merchant_id).filter((id): id is string => Boolean(id))))
-  const packageMerchantIdSet = new Set(packageMerchantIds)
   const packageMerchants =
     packageMerchantIds.length > 0
       ? (
@@ -1133,20 +1258,12 @@ export default async function AdminDashboard({
       return operationsProduct === "all" || operationsProduct === "package_tour"
     })
     const periodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
-    const packageTourDeletionRequests = periodDeletionRequests.filter(
-      (request) => Boolean(request.merchant_id) && packageMerchantIdSet.has(request.merchant_id as string),
-    )
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodAuditLogs = globalPeriodAuditLogs
-    const packageTourAuditLogs = periodAuditLogs.filter((log) => log.target_type === "package")
     const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
       if (operationsProduct === "all") return true
       return transaction.bookingProductType === operationsProduct
     })
-    const packageTourPeriodBookings = globalPeriodBookings.filter((booking) => classifyBookingProduct(booking) === "package_tour")
-    const packageTourPeriodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter(
-      (transaction) => transaction.bookingProductType === "package_tour",
-    )
     const periodPendingPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
     const periodDraftPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
     const periodRejectedPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "rejected").length
@@ -1159,16 +1276,6 @@ export default async function AdminDashboard({
     const periodBookingStalledCount = periodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
-    const packageTourBookingStalledCount = packageTourPeriodBookings.filter(
-      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
-    ).length
-    const packageTourSlaReviewCount = periodPackageOverdueCount + packageTourBookingStalledCount
-    const periodOperationalWarnings =
-      merchantOverdueCount + periodPackageOverdueCount + periodBookingStalledCount + periodDeletionRequests.length + periodReviewRequests.length
-    const packageTourOperationalWarnings = packageTourSlaReviewCount
-    const totalBookings = periodBookings.length
-    const packageTourTotalBookings = packageTourPeriodBookings.length
-    const packageTourRevenue = packageTourPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const bookingTrendRows = buildRecentDayBuckets(operationsChartDays).map((row) => ({ ...row, internal: 0, affiliate: 0 }))
     const bookingTrendMap = new Map(bookingTrendRows.map((row) => [row.key, row]))
     periodBookings.forEach((booking) => {
@@ -1183,15 +1290,6 @@ export default async function AdminDashboard({
         }
       }
     })
-    const bookingTrendMax = Math.max(...bookingTrendRows.map((row) => row.value), 1)
-    const packageTourBookingTrendRows = buildRecentDayBuckets(operationsChartDays)
-    const packageTourBookingTrendMap = new Map(packageTourBookingTrendRows.map((row) => [row.key, row]))
-    packageTourPeriodBookings.forEach((booking) => {
-      const dayKey = getDayKey(booking.created_at)
-      const bucket = dayKey ? packageTourBookingTrendMap.get(dayKey) : null
-      if (bucket) bucket.value += 1
-    })
-    const packageTourBookingTrendMax = Math.max(...packageTourBookingTrendRows.map((row) => row.value), 1)
     const revenueTrendRows = buildRecentDayBuckets(operationsChartDays).map((row) => ({ ...row, internal: 0, affiliate: 0 }))
     const revenueTrendMap = new Map(revenueTrendRows.map((row) => [row.key, row]))
     periodCustomerTransactionRows.forEach((transaction) => {
@@ -1206,80 +1304,9 @@ export default async function AdminDashboard({
         }
       }
     })
-    const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
-    const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
     const flightStalledBookingCount = globalPeriodBookings.filter(
       (booking) => classifyBookingProduct(booking) === "flight" && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
-    const managerVisibleKpiCards = [
-      {
-        label: "Total Booking",
-        value: globalPeriodBookings.length.toLocaleString("id-ID"),
-        delta: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} internal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} affiliate`,
-        sub: `Global ${currentMonthLabel}`,
-        tone: "text-sky-600",
-        bg: "bg-sky-50",
-      },
-      {
-        label: "Total Revenue (IDR)",
-        value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0",
-        delta: `${formatMoney(globalInternalRevenueTotal)} internal | ${formatMoney(globalAffiliateRevenueTotal)} affiliate`,
-        sub: `Semua produk ${currentMonthLabel}`,
-        tone: "text-emerald-600",
-        bg: "bg-emerald-50",
-      },
-      {
-        label: "Pending Issue",
-        value: totalPendingIssueCount.toLocaleString("id-ID"),
-        delta: `${internalPendingIssueCount} internal | ${affiliateIssueCount} affiliate`,
-        sub: "Approval merchant, review paket, dan issue booking affiliate yang perlu follow-up",
-        tone: "text-amber-600",
-        bg: "bg-amber-50",
-      },
-      {
-        label: "SLA Compliance",
-        value: `${slaComplianceRate.toLocaleString("id-ID")}%`,
-        delta: `${slaBreachCount.toLocaleString("id-ID")} breach | ${Math.max(slaTrackedItemCount - slaBreachCount, 0).toLocaleString("id-ID")} on-track`,
-        sub: "Monitor SLA approval merchant, package review, dan booking handoff",
-        tone: "text-violet-600",
-        bg: "bg-violet-50",
-      },
-      {
-        label: "Failure Rate",
-        value: `${affiliateFailureRate.toLocaleString("id-ID")}%`,
-        delta: `${affiliateFailureCount.toLocaleString("id-ID")} gagal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate`,
-        sub: "Failed, cancel, dan refund di channel affiliate Traveloka",
-        tone: "text-rose-600",
-        bg: "bg-rose-50",
-      },
-    ]
-    const bookingCategoryCounts = periodBookings.reduce((map, booking) => {
-      const label = getOperationsProductLabel(classifyBookingProduct(booking))
-      map.set(label, (map.get(label) || 0) + 1)
-      return map
-    }, new Map<string, number>())
-    const categoryTones = ["bg-sky-500", "bg-emerald-500", "bg-violet-500", "bg-orange-500", "bg-rose-500"]
-    const categoryColors = ["#3b82f6", "#10b981", "#8b5cf6", "#fb923c", "#f43f5e"]
-    const calculatedBookingCategories = Array.from(bookingCategoryCounts)
-      .map(([label, value], index) => ({ label, value, tone: categoryTones[index % categoryTones.length], color: categoryColors[index % categoryColors.length] }))
-      .sort((a, b) => b.value - a.value)
-    const bookingCategories =
-      calculatedBookingCategories.length > 0
-        ? calculatedBookingCategories
-        : [{ label: "Belum ada booking", value: 0, tone: "bg-slate-300", color: "#cbd5e1" }]
-    const bookingCategoryBase = Math.max(bookingCategories.reduce((sum, item) => sum + item.value, 0), 1)
-    const bookingCategoryGradient = bookingCategories
-      .reduce(
-        (state, item) => {
-          const nextCursor = state.cursor + (item.value / bookingCategoryBase) * 100
-          return {
-            cursor: nextCursor,
-            parts: [...state.parts, `${item.color} ${state.cursor}% ${nextCursor}%`],
-          }
-        },
-        { cursor: 0, parts: [] as string[] },
-      )
-      .parts.join(", ")
     const packageQueueRows = [
       { label: "Menunggu Review", value: periodPendingPackages, note: "Perlu ditinjau", tone: "text-orange-600", href: "/admin/packages" },
       { label: "Draft", value: periodDraftPackages, note: "Menunggu merchant submit", tone: "text-slate-600", href: "/admin/packages" },
@@ -1321,51 +1348,6 @@ export default async function AdminDashboard({
             severity: "OK",
             tone: "bg-emerald-50 text-emerald-600",
           }]
-    const activityFeed = packageTourAuditLogs.length > 0
-      ? packageTourAuditLogs.map((log) => ({
-          title: log.summary || titleCase(log.action),
-          detail: `${titleCase(log.actor_role)} - ${titleCase(log.target_type)}`,
-          time: formatRelativeHours(log.created_at),
-          tone: "bg-sky-50 text-sky-600",
-        }))
-      : [
-          { title: `Paket pending review: ${periodPendingPackages}`, detail: "Data live dari package queue", time: "Saat ini", tone: "bg-emerald-50 text-emerald-600" },
-          { title: `Approval pending: ${pendingMerchants}`, detail: "Data live dari queue approval", time: "Saat ini", tone: "bg-sky-50 text-sky-600" },
-          { title: `Booking perlu monitor finance: ${periodFinanceReadyCount}`, detail: "Data live dari booking center", time: "Saat ini", tone: "bg-orange-50 text-orange-600" },
-          { title: `Item perlu perhatian: ${periodOperationalWarnings}`, detail: "SLA, deletion, dan approval", time: "Saat ini", tone: "bg-rose-50 text-rose-600" },
-        ]
-    const destinationMap = periodBookings.reduce((map, booking) => {
-      const pkg = booking.package_id ? packageMap.get(booking.package_id) : null
-      const label = pkg?.city || pkg?.destination_province || pkg?.country || pkg?.destination_country_id || "Tanpa destinasi"
-      map.set(label, (map.get(label) || 0) + 1)
-      return map
-    }, new Map<string, number>())
-    const topDestinationBase = Math.max(...Array.from(destinationMap.values()), 1)
-    const topDestinations = Array.from(destinationMap)
-      .map(([name, value], index) => ({
-        name,
-        value,
-        percent: Math.max(Math.round((value / topDestinationBase) * 100), 8),
-        tone: categoryTones[index % categoryTones.length],
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
-    const packageTourDestinationMap = packageTourPeriodBookings.reduce((map, booking) => {
-      const pkg = booking.package_id ? packageMap.get(booking.package_id) : null
-      const label = pkg?.city || pkg?.destination_province || pkg?.country || pkg?.destination_country_id || "Tanpa destinasi"
-      map.set(label, (map.get(label) || 0) + 1)
-      return map
-    }, new Map<string, number>())
-    const packageTourDestinationBase = Math.max(...Array.from(packageTourDestinationMap.values()), 1)
-    const packageTourTopDestinations = Array.from(packageTourDestinationMap)
-      .map(([name, value], index) => ({
-        name,
-        value,
-        percent: Math.max(Math.round((value / packageTourDestinationBase) * 100), 8),
-        tone: categoryTones[index % categoryTones.length],
-      }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 5)
     const primaryAccessibleProductHref = accessibleProductSummaries[0]?.href || "/admin/dashboard/widgets"
     const primaryAccessibleProductLabel = accessibleProductSummaries[0]?.label || "Produk"
     const globalQuickActions = [
@@ -1402,23 +1384,6 @@ export default async function AdminDashboard({
         tone: anomalySpikeDelta > 0 ? "border-violet-200 bg-violet-50/70 text-violet-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
       },
     ]
-    const packageTourTopDestination = packageTourTopDestinations[0] || null
-    const packageTourTopMerchantRevenue =
-      Array.from(
-        packageTourPeriodCustomerTransactionRows.reduce((map, item) => {
-          const pkg = item.packageId ? packageMap.get(item.packageId) : null
-          const merchantId = pkg?.merchant_id
-          if (!merchantId) return map
-          map.set(merchantId, (map.get(merchantId) || 0) + item.receivedAmount)
-          return map
-        }, new Map<string, number>()),
-      )
-        .map(([merchantId, revenue]) => ({
-          merchantId,
-          revenue,
-          name: merchantNameMap.get(merchantId) || "Merchant tanpa nama",
-        }))
-        .sort((a, b) => b.revenue - a.revenue)[0] || null
     const productBookingCounts = globalPeriodBookings.reduce((map, booking) => {
       const productKey = classifyBookingProduct(booking)
       map.set(productKey, (map.get(productKey) || 0) + 1)
@@ -1602,252 +1567,7 @@ export default async function AdminDashboard({
     const showOperationalTasksWidget = enabledOperationsWidgetKeys.has("operational_tasks")
     const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
     const showAlertsOverviewWidget = enabledOperationsWidgetKeys.has("alerts_overview")
-    const showActivityFeedWidget =
-      canAccessPackageTour &&
-      (enabledOperationsWidgetKeys.has("activity_feed") ||
-        enabledOperationsWidgetKeys.has("package_tour_activity_feed"))
-    const showTopDestinationsWidget =
-      canAccessPackageTour &&
-      (enabledOperationsWidgetKeys.has("top_destinations") ||
-        enabledOperationsWidgetKeys.has("package_tour_top_destinations") ||
-        enabledOperationsWidgetKeys.has("package_tour_top_merchant_revenue"))
     const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
-    const selectedProductWidgetGroups = OPERATIONS_PRODUCT_WIDGET_CATALOG
-      .filter((product) => accessibleProductTypes.includes(getProductFilterFromLabel(product.productLabel) as BookingProductType))
-      .map((product) => {
-        const iconKind = getProductIconKind(product.productLabel)
-        const productStatus = getDashboardWidgetStatusMeta(product.status)
-        const items = product.sections.flatMap((section) =>
-          section.items
-            .filter((item) => enabledOperationsWidgetKeys.has(item.key))
-            .map((item) => {
-              const status = getDashboardWidgetStatusMeta(item.status)
-              const fallbackCard: ProductWidgetCard = {
-                key: item.key,
-                title: item.label,
-                sectionTitle: section.title,
-                href: product.productHref,
-                value: "Segera aktif",
-                detail: `Widget ${item.label.toLowerCase()} untuk ${product.productLabel.toLowerCase()} belum terhubung ke data dashboard.`,
-                meta: "Menunggu modul live",
-                status,
-                iconKind,
-                valueClassName: "text-lg font-semibold text-slate-950",
-              }
-
-              switch (item.key) {
-                case "package_tour_total_booking":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourTotalBookings.toLocaleString("id-ID"),
-                    detail: `Total booking Paket Wisata pada ${operationsPeriod.label}.`,
-                    meta: "Data live dari tabel bookings",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_revenue":
-                  return {
-                    ...fallbackCard,
-                    value: formatMoney(packageTourRevenue),
-                    detail: "Akumulasi pembayaran paid dan DP dari booking paket.",
-                    meta: currentMonthLabel,
-                    valueClassName: "text-2xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_merchant_active":
-                  return {
-                    ...fallbackCard,
-                    value: activeMerchantCount.toLocaleString("id-ID"),
-                    detail: "Merchant approved yang sudah aktif di marketplace.",
-                    meta: `${pendingMerchants} pending approval`,
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_top_destinations":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourTopDestination?.name || "Belum ada data",
-                    detail: packageTourTopDestination
-                      ? `${packageTourTopDestination.value.toLocaleString("id-ID")} booking menuju destinasi ini.`
-                      : "Belum ada booking paket yang bisa dipetakan ke destinasi.",
-                    meta: "Top destinasi Paket Wisata",
-                  }
-                case "package_tour_pending_review":
-                  return {
-                    ...fallbackCard,
-                    value: periodPendingPackages.toLocaleString("id-ID"),
-                    detail: "Paket merchant yang masih menunggu review.",
-                    meta: `${periodPackageOverdueCount} paket overdue`,
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_open_anomalies":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourOperationalWarnings.toLocaleString("id-ID"),
-                    detail: "Gabungan paket review overdue dan booking Paket Wisata yang stalled di handoff finance.",
-                    meta: "Warning khusus Paket Wisata",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_sla_review":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourSlaReviewCount.toLocaleString("id-ID"),
-                    detail: "Item Paket Wisata yang sudah mendekati atau melewati SLA review dan handoff booking.",
-                    meta: "SLA Paket Wisata",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_deletion_request":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourDeletionRequests.length.toLocaleString("id-ID"),
-                    detail: "Request penghapusan dari merchant yang memang terhubung ke inventori Paket Wisata pada periode ini.",
-                    meta: "Deletion request Paket Wisata",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_top_merchant_revenue":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourTopMerchantRevenue?.name || "Belum ada data",
-                    detail: packageTourTopMerchantRevenue
-                      ? `${formatMoney(packageTourTopMerchantRevenue.revenue)} revenue tertinggi pada periode ini.`
-                      : "Belum ada merchant dengan transaksi paket yang masuk revenue.",
-                    meta: "Top merchant revenue",
-                  }
-                case "package_tour_review_queue":
-                  return {
-                    ...fallbackCard,
-                    value: reviewQueueItems.length.toLocaleString("id-ID"),
-                    detail: "Jumlah item queue review yang sedang tampil di dashboard.",
-                    meta: "Queue Paket Wisata",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_booking_trend":
-                  return {
-                    ...fallbackCard,
-                    value: `${packageTourBookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`,
-                    detail: `Trend booking tersaji untuk ${operationsPeriod.label}.`,
-                    meta: `Puncak harian ${packageTourBookingTrendMax.toLocaleString("id-ID")} booking`,
-                  }
-                case "package_tour_activity_feed":
-                  return {
-                    ...fallbackCard,
-                    value: packageTourAuditLogs.length.toLocaleString("id-ID"),
-                    detail: "Jumlah aktivitas terbaru yang tercatat khusus untuk target package di audit log operasional.",
-                    meta: "Activity feed Paket Wisata",
-                    valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
-                  }
-                case "package_tour_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut khusus Paket Wisata untuk review paket, workspace produk, dan merchant support.",
-                    meta: "Review paket, workspace, support",
-                    href: "/admin/paket-tour",
-                    actions: [
-                      { label: "Review Paket", href: "/admin/packages", badge: periodPendingPackages },
-                      { label: "Workspace Paket", href: "/admin/paket-tour" },
-                      { label: "Merchant Support", href: "/admin/merchant-support" },
-                    ],
-                  }
-                case "flight_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk queue issue tiket, refund/reschedule, dan error supplier sambil menunggu modul Pesawat live penuh.",
-                    meta: "Issue, refund, API error",
-                    href: "/admin/pesawat",
-                    actions: [
-                      { label: "Issue Queue", href: "/admin/pesawat", roadmap: true },
-                      { label: "Refund Queue", href: "/admin/pesawat", roadmap: true },
-                      { label: "API Errors", href: "/admin/pesawat", roadmap: true },
-                    ],
-                  }
-                case "hotel_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk pending confirmation, cancellation, dan supplier SLA sambil menunggu modul Hotel live penuh.",
-                    meta: "Confirmation, cancel, SLA",
-                    href: "/admin/hotel",
-                    actions: [
-                      { label: "Pending Confirmation", href: "/admin/hotel", roadmap: true },
-                      { label: "Cancellation", href: "/admin/hotel", roadmap: true },
-                      { label: "Supplier SLA", href: "/admin/hotel", roadmap: true },
-                    ],
-                  }
-                case "train_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan vendor issue sambil menunggu modul Kereta Api live penuh.",
-                    meta: "Issue, refund, vendor",
-                    href: "/admin/kereta-api",
-                    actions: [
-                      { label: "Issue Queue", href: "/admin/kereta-api", roadmap: true },
-                      { label: "Refund / Cancel", href: "/admin/kereta-api", roadmap: true },
-                      { label: "Vendor Issues", href: "/admin/kereta-api", roadmap: true },
-                    ],
-                  }
-                case "bus_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Bus & Travel live penuh.",
-                    meta: "Issue, refund, operator",
-                    href: "/admin/bus-travel",
-                    actions: [
-                      { label: "Issue Queue", href: "/admin/bus-travel", roadmap: true },
-                      { label: "Refund / Cancel", href: "/admin/bus-travel", roadmap: true },
-                      { label: "Operator Issues", href: "/admin/bus-travel", roadmap: true },
-                    ],
-                  }
-                case "sea_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Kapal Laut live penuh.",
-                    meta: "Issue, refund, operator",
-                    href: "/admin/kapal-laut",
-                    actions: [
-                      { label: "Issue Queue", href: "/admin/kapal-laut", roadmap: true },
-                      { label: "Refund / Cancel", href: "/admin/kapal-laut", roadmap: true },
-                      { label: "Operator Issues", href: "/admin/kapal-laut", roadmap: true },
-                    ],
-                  }
-                case "cruise_quick_actions":
-                  return {
-                    ...fallbackCard,
-                    value: "3 aksi cepat",
-                    detail: "Shortcut awal untuk issue queue, refund/cancel, dan operator issue sambil menunggu modul Kapal Pesiar live penuh.",
-                    meta: "Issue, refund, operator",
-                    href: "/admin/kapal-pesiar",
-                    actions: [
-                      { label: "Issue Queue", href: "/admin/kapal-pesiar", roadmap: true },
-                      { label: "Refund / Cancel", href: "/admin/kapal-pesiar", roadmap: true },
-                      { label: "Operator Issues", href: "/admin/kapal-pesiar", roadmap: true },
-                    ],
-                  }
-                default:
-                  return fallbackCard
-              }
-            }),
-        )
-
-        return {
-          productLabel: product.productLabel,
-          productHref: product.productHref,
-          note: product.note,
-          status: productStatus,
-          order: Math.min(...items.map((item) => widgetSortOrderMap.get(item.key) ?? Number.MAX_SAFE_INTEGER)),
-          items,
-        }
-      })
-      .filter((product) => product.items.length > 0)
-      .filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.productLabel) === operationsProduct)
-      .map((product) => ({
-        ...product,
-        items: [...product.items].sort(
-          (a, b) => (widgetSortOrderMap.get(a.key) ?? Number.MAX_SAFE_INTEGER) - (widgetSortOrderMap.get(b.key) ?? Number.MAX_SAFE_INTEGER),
-        ),
-      }))
-      .sort((a, b) => a.order - b.order || a.productLabel.localeCompare(b.productLabel))
     const hasAnyDashboardWidget =
       showKpiOverviewWidget ||
       showSourcePerformanceWidget ||
@@ -1855,79 +1575,252 @@ export default async function AdminDashboard({
       showOperationalTasksWidget ||
       showBookingTrendsWidget ||
       showAlertsOverviewWidget ||
-      showActivityFeedWidget ||
-      showTopDestinationsWidget ||
-      showQuickActionsWidget ||
-      selectedProductWidgetGroups.length > 0
-    const primaryProductOverviewHref = productPerformanceCards[0]?.href || selectedProductWidgetGroups[0]?.productHref || "/admin/dashboard/widgets"
+      showQuickActionsWidget
+    const primaryProductOverviewHref = productPerformanceCards[0]?.href || "/admin/dashboard/widgets"
+    const selectedTrendProductKeys = productPerformanceCards
+      .map((product) => getProductFilterFromLabel(product.label))
+      .filter((key): key is OperationsProductKey => key !== "all")
+    const bookingTrendSeries = selectedTrendProductKeys.map((productKey) => {
+      const rows = buildRecentDayBuckets(operationsChartDays)
+      const rowMap = new Map(rows.map((row) => [row.key, row]))
+      periodBookings
+        .filter((booking) => classifyBookingProduct(booking) === productKey)
+        .forEach((booking) => {
+          const dayKey = getDayKey(booking.created_at)
+          const bucket = dayKey ? rowMap.get(dayKey) : null
+          if (bucket) bucket.value += 1
+        })
+      const productMeta = OPERATIONS_PRODUCT_SUMMARIES.find((product) => product.key === productKey)
+      return {
+        label: getOperationsProductLabel(productKey),
+        values: rows.map((row) => row.value),
+        color: productMeta?.sparkColor || "#2563eb",
+      }
+    })
+    const revenueTrendSeries = selectedTrendProductKeys.map((productKey) => {
+      const rows = buildRecentDayBuckets(operationsChartDays)
+      const rowMap = new Map(rows.map((row) => [row.key, row]))
+      periodCustomerTransactionRows
+        .filter((transaction) => transaction.bookingProductType === productKey)
+        .forEach((transaction) => {
+          const dayKey = getDayKey(transaction.createdAt)
+          const bucket = dayKey ? rowMap.get(dayKey) : null
+          if (bucket) bucket.value += transaction.receivedAmount
+        })
+      const productMeta = OPERATIONS_PRODUCT_SUMMARIES.find((product) => product.key === productKey)
+      return {
+        label: getOperationsProductLabel(productKey),
+        values: rows.map((row) => row.value),
+        color: productMeta?.sparkColor || "#2563eb",
+      }
+    })
+    const bookingSparkline = buildSparklinePoints(bookingTrendRows.map((row) => ({ value: row.value })), 100, 28)
+    const revenueSparkline = buildSparklinePoints(revenueTrendRows.map((row) => ({ value: row.value })), 100, 28)
+    const comparisonWindowStart =
+      operationsPeriod.days && operationsPeriodStart
+        ? new Date(operationsPeriodStart.getTime() - operationsPeriod.days * 24 * 60 * 60 * 1000)
+        : null
+    const previousGlobalBookings =
+      comparisonWindowStart && operationsPeriodStart
+        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, comparisonWindowStart, operationsPeriodStart))
+        : []
+    const previousGlobalTransactions =
+      comparisonWindowStart && operationsPeriodStart
+        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, comparisonWindowStart, operationsPeriodStart))
+        : []
+    const previousBookingCount = previousGlobalBookings.length
+    const previousRevenueTotal = previousGlobalTransactions.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const formatTrendDelta = (current: number, previous: number, suffix = "vs periode sebelumnya") => {
+      if (!operationsPeriod.days) return "Tanpa pembanding"
+      if (previous <= 0) {
+        return current > 0 ? `+100% ${suffix}` : `0% ${suffix}`
+      }
+      const change = ((current - previous) / previous) * 100
+      const sign = change > 0 ? "+" : ""
+      return `${sign}${change.toFixed(1)}% ${suffix}`
+    }
+    const bookingDeltaLabel = formatTrendDelta(globalPeriodBookings.length, previousBookingCount)
+    const revenueDeltaLabel = formatTrendDelta(globalRevenueTotal, previousRevenueTotal)
+    const greetingLabel = currentProfile?.role === "operations_manager" ? "Manager Operasional" : getRoleLabel(currentProfile?.role)
+    const rangeStartLabel = operationsPeriodStart ? formatShortDate(operationsPeriodStart.toISOString()) : "Semua waktu"
+    const rangeEndLabel = formatShortDate(new Date().toISOString())
+    const dashboardDateRangeLabel = operationsPeriod.days ? `${rangeStartLabel} ${new Date().getFullYear()} - ${rangeEndLabel} ${new Date().getFullYear()}` : "Semua waktu"
+    const merchantNearDueCount = pendingMerchantsData.filter((merchant) => daysSince(merchant.created_at) === 2).length
+    const packageNearDueCount = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) === 2).length
+    const bookingNearDueCount = periodBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) === 0,
+    ).length
+    const slaNearDueCount = merchantNearDueCount + packageNearDueCount + bookingNearDueCount
+    const slaOnTimeCount = Math.max(slaTrackedItemCount - slaBreachCount - slaNearDueCount, 0)
+    const severityRows = [
+      { label: "High", value: recentAnomalies.filter((item) => item.severity === "High").length, tone: "bg-rose-500" },
+      { label: "Medium", value: recentAnomalies.filter((item) => item.severity === "Medium").length, tone: "bg-amber-500" },
+      { label: "Low", value: recentAnomalies.filter((item) => item.severity === "Low" || item.severity === "OK").length, tone: "bg-emerald-500" },
+    ]
+    const alertRailItems = [
+      {
+        title: "SLA Terlambat",
+        detail: `${slaBreachCount} item operasional melewati SLA`,
+        time: operationsPeriod.label,
+        href: canAccessPackageTour ? "/admin/packages" : "/admin/bookings",
+        tone: "border-rose-100 bg-rose-50/80",
+        iconTone: "text-rose-500",
+      },
+      {
+        title: "Anomali Aktif",
+        detail: `${recentAnomalies.length} sinyal perlu dipantau`,
+        time: "Realtime operasional",
+        href: "/admin/merchants/anomalies",
+        tone: "border-orange-100 bg-orange-50/80",
+        iconTone: "text-orange-500",
+      },
+      {
+        title: "API Error Affiliate",
+        detail: `${affiliateApiErrorCount} error order Traveloka`,
+        time: "Affiliate channel",
+        href: "/admin/bookings",
+        tone: "border-amber-100 bg-amber-50/80",
+        iconTone: "text-amber-500",
+      },
+      {
+        title: "Spike Anomaly",
+        detail: anomalySpikeDelta > 0 ? `Naik ${anomalySpikeRate.toLocaleString("id-ID")}% dari minggu sebelumnya` : "Belum ada lonjakan anomaly",
+        time: "7 hari terakhir",
+        href: "/admin/dashboard?workspace=alerts_overview",
+        tone: "border-violet-100 bg-violet-50/80",
+        iconTone: "text-violet-500",
+      },
+      {
+        title: "Data Valid",
+        detail: affiliateFailureCount > 0 ? `${affiliateFailureCount} booking affiliate gagal perlu cek ulang` : "Tidak ada booking affiliate gagal pada periode ini",
+        time: "Status saat ini",
+        href: "/admin/bookings",
+        tone: "border-sky-100 bg-sky-50/80",
+        iconTone: "text-sky-500",
+      },
+    ]
+    const bottomSummaryCards = [
+      {
+        label: "Merchant Paket Aktif",
+        value: packageMerchantIds.length.toLocaleString("id-ID"),
+        delta: `${pendingMerchants.toLocaleString("id-ID")} approval pending`,
+        tone: "text-sky-600",
+        bg: "bg-sky-50",
+      },
+      {
+        label: "Merchant Perlu Tindak",
+        value: (merchantOverdueCount + globalPeriodDeletionRequests.length).toLocaleString("id-ID"),
+        delta: `${merchantOverdueCount} SLA | ${globalPeriodDeletionRequests.length} deletion`,
+        tone: "text-rose-600",
+        bg: "bg-rose-50",
+      },
+      {
+        label: "Affiliate Issue",
+        value: affiliateIssueCount.toLocaleString("id-ID"),
+        delta: `${affiliateApiErrorCount} API error`,
+        tone: "text-orange-600",
+        bg: "bg-orange-50",
+      },
+      {
+        label: "Share Affiliate",
+        value: `${affiliateBookingShare.toLocaleString("id-ID")}%`,
+        delta: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking`,
+        tone: "text-violet-600",
+        bg: "bg-violet-50",
+      },
+      {
+        label: "SLA Aman",
+        value: `${slaComplianceRate.toLocaleString("id-ID")}%`,
+        delta: `${slaOnTimeCount.toLocaleString("id-ID")} item on time`,
+        tone: "text-emerald-600",
+        bg: "bg-emerald-50",
+      },
+    ]
+    const dailyTip =
+      affiliateApiErrorCount > 0
+        ? "Error affiliate sedang naik. Prioritaskan cek supplier order status Traveloka sebelum antrean finance menumpuk."
+        : slaBreachCount > 0
+          ? "SLA internal sedang tertekan. Mulai dari approval merchant dan package review yang sudah melewati batas."
+          : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
 
     return (
-      <main className="min-h-screen bg-[#fbfaf8] px-4 py-6 sm:px-6 lg:px-9">
+      <main className="min-h-screen bg-[#f5f7fb] px-4 py-5 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[1680px] space-y-6">
-          <section className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Dashboard Operasional</h1>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Ringkasan aktivitas operasional dan performa marketplace.</p>
+              <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.2rem]">
+                Selamat pagi, {greetingLabel}!
+              </h1>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jujur antara jalur internal dan affiliate Traveloka.
+              </p>
             </div>
-            <form className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              {params.view ? <input type="hidden" name="view" value={params.view} /> : null}
-              <select
-                name="period"
-                defaultValue={operationsPeriod.value}
-                className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
+            <div className="flex flex-wrap items-center gap-3">
+              <form className="flex flex-wrap items-center gap-3">
+                {params.view ? <input type="hidden" name="view" value={params.view} /> : null}
+                <label className="inline-flex min-w-[220px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                  <DashboardGlyph kind="booking" className="h-4 w-4 text-slate-400" />
+                  <select name="period" defaultValue={operationsPeriod.value} className="bg-transparent font-medium outline-none">
+                    <option value="7d">7 hari terakhir</option>
+                    <option value="30d">30 hari terakhir</option>
+                    <option value="90d">90 hari terakhir</option>
+                    <option value="all">Semua waktu</option>
+                  </select>
+                </label>
+                <label className="inline-flex min-w-[170px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                  <select name="product" defaultValue={operationsProduct} className="bg-transparent font-medium outline-none">
+                    <option value="all">Semua Produk</option>
+                    {accessibleProductTypes.includes("package_tour") ? <option value="package_tour">Paket Wisata</option> : null}
+                    {accessibleProductTypes.includes("flight") ? <option value="flight">Pesawat</option> : null}
+                    {accessibleProductTypes.includes("hotel") ? <option value="hotel">Hotel</option> : null}
+                    {accessibleProductTypes.includes("train") ? <option value="train">Kereta Api</option> : null}
+                    {accessibleProductTypes.includes("bus") ? <option value="bus">Bus & Travel</option> : null}
+                    {accessibleProductTypes.includes("sea") ? <option value="sea">Kapal Laut</option> : null}
+                    {accessibleProductTypes.includes("cruise") ? <option value="cruise">Kapal Pesiar</option> : null}
+                  </select>
+                </label>
+                <label className="inline-flex min-w-[170px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                  <select name="workspace" defaultValue={operationsWorkspace} className="bg-transparent font-medium outline-none">
+                    <option value="all">Semua Workspace</option>
+                    <option value="kpi_overview">KPI Utama</option>
+                    <option value="source_performance">Source Performance</option>
+                    <option value="product_performance">Per Kategori</option>
+                    <option value="booking_center">Trend</option>
+                    <option value="operational_tasks">Operational Task</option>
+                    <option value="alerts_overview">Alert & Notifikasi</option>
+                    <option value="quick_actions">Quick Actions</option>
+                  </select>
+                </label>
+                <button className="inline-flex h-12 items-center justify-center rounded-[14px] bg-[#f97316] px-5 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(249,115,22,0.22)] transition hover:bg-[#ea580c]">
+                  Terapkan
+                </button>
+              </form>
+              <Link
+                href={`/admin/dashboard?period=${operationsPeriod.value}&product=${operationsProduct}&workspace=${operationsWorkspace}`}
+                className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
               >
-                <option value="7d">7 hari terakhir</option>
-                <option value="30d">30 hari terakhir</option>
-                <option value="90d">90 hari terakhir</option>
-                <option value="all">Semua waktu</option>
-              </select>
-              <select
-                name="product"
-                defaultValue={operationsProduct}
-                className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
+                <DashboardGlyph kind="refresh" className="h-5 w-5" />
+              </Link>
+              <Link
+                href="/admin/dashboard?workspace=alerts_overview"
+                className="relative inline-flex h-12 w-12 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
               >
-                <option value="all">Produk: Semua</option>
-                {accessibleProductTypes.includes("package_tour") ? <option value="package_tour">Paket Wisata</option> : null}
-                {accessibleProductTypes.includes("flight") ? <option value="flight">Pesawat</option> : null}
-                {accessibleProductTypes.includes("hotel") ? <option value="hotel">Hotel</option> : null}
-                {accessibleProductTypes.includes("train") ? <option value="train">Kereta Api</option> : null}
-                {accessibleProductTypes.includes("bus") ? <option value="bus">Bus & Travel</option> : null}
-                {accessibleProductTypes.includes("sea") ? <option value="sea">Kapal Laut</option> : null}
-                {accessibleProductTypes.includes("cruise") ? <option value="cruise">Kapal Pesiar</option> : null}
-              </select>
-              <select
-                name="workspace"
-                defaultValue={operationsWorkspace}
-                className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
-              >
-                <option value="all">Workspace: Semua</option>
-                <option value="kpi_overview">KPI Utama</option>
-                <option value="source_performance">Source Performance</option>
-                <option value="product_performance">Per Kategori</option>
-                <option value="operational_tasks">Operational Task</option>
-                <option value="booking_center">Trend & Aktivitas</option>
-                <option value="alerts_overview">Alert</option>
-                <option value="quick_actions">Quick Actions</option>
-              </select>
-              <button className="rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
-                Terapkan
-              </button>
-              <div className="flex items-center gap-3 rounded-[16px] bg-white px-4 py-2.5 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-slate-900">Selamat pagi!</p>
-                  <p className="text-xs text-slate-500">Manager Operasional</p>
-                </div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">OM</span>
-              </div>
-            </form>
+                <DashboardGlyph kind="bell" className="h-5 w-5" />
+                {recentAnomalies.length > 0 ? (
+                  <span className="absolute right-2 top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+                    {recentAnomalies.length}
+                  </span>
+                ) : null}
+              </Link>
+            </div>
           </section>
 
           {!hasAnyDashboardWidget ? (
-            <section className="rounded-[24px] border border-dashed border-orange-200 bg-white px-6 py-14 text-center shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <span className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-lg font-black text-orange-600">W</span>
+            <section className="rounded-[28px] border border-dashed border-orange-200 bg-white px-6 py-14 text-center shadow-[0_20px_45px_rgba(15,23,42,0.04)]">
+              <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-orange-50 text-lg font-black text-orange-600">W</span>
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Dashboard belum memiliki widget aktif</h2>
               <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                Pilih widget yang ingin ditampilkan di dashboard operasional Anda. Dashboard boleh dikosongkan dan bisa diisi lagi kapan saja.
+                Pilih widget yang ingin ditampilkan di dashboard operasional. Layout baru ini bisa tetap kosong, lalu diaktifkan lagi kapan saja dari pengaturan widget.
               </p>
               <Link href="/admin/dashboard/widgets" className="mt-6 inline-flex rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Kelola Widget
@@ -1936,44 +1829,134 @@ export default async function AdminDashboard({
           ) : null}
 
           {showKpiWorkspace && showKpiOverviewWidget ? (
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            {managerVisibleKpiCards.map((card) => (
-              <div key={card.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-                <div className="flex items-start gap-3">
-                  <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black ${card.bg} ${card.tone}`}>{card.label[0]}</span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-500">{card.label}</p>
-                    <p className="mt-1 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</p>
-                    <p className={`mt-3 text-xs font-semibold ${card.delta.startsWith("-") ? "text-rose-600" : "text-emerald-600"}`}>{card.delta}</p>
-                    <p className="mt-1 text-xs text-slate-400">{card.sub}</p>
+            <section className="grid gap-4 xl:grid-cols-6">
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+                    <DashboardGlyph kind="booking" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">Total Booking</p>
+                </div>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{globalPeriodBookings.length.toLocaleString("id-ID")}</p>
+                <p className={`mt-1 text-xs font-semibold ${bookingDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{bookingDeltaLabel}</p>
+                <TinySparkline points={bookingSparkline} stroke="#2563eb" />
+                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <DashboardGlyph kind="revenue" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">Total Revenue (GMV)</p>
+                </div>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0"}</p>
+                <p className={`mt-1 text-xs font-semibold ${revenueDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{revenueDeltaLabel}</p>
+                <TinySparkline points={revenueSparkline} stroke="#10b981" />
+                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">
+                  Internal {formatMoney(globalInternalRevenueTotal)} | Affiliate {formatMoney(globalAffiliateRevenueTotal)}
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                    <DashboardGlyph kind="issue" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">Pending Issue (Semua)</p>
+                </div>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
+                <p className="mt-1 text-xs font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
+                <div className="mt-5 space-y-3 text-sm">
+                  {[
+                    { label: "Approval Merchant", value: pendingMerchants },
+                    { label: "Paket Wisata", value: globalPendingPackages },
+                    { label: "Affiliate Traveloka", value: affiliateIssueCount },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 text-slate-600">
+                      <span>{item.label}</span>
+                      <span className="font-semibold text-slate-900">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <DashboardGlyph kind="sla" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">SLA Compliance</p>
+                </div>
+                <div className="mt-4 grid grid-cols-[120px_1fr] items-center gap-4">
+                  <div className="mx-auto flex h-[108px] w-[108px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
+                    <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full bg-white">
+                      <p className="text-2xl font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                      <p className="text-[11px] text-slate-400">On Time</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    {[
+                      { label: "On Time", value: slaOnTimeCount, tone: "bg-emerald-500" },
+                      { label: "Mendekati", value: slaNearDueCount, tone: "bg-orange-400" },
+                      { label: "Terlambat", value: slaBreachCount, tone: "bg-rose-500" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
+                        <span className="font-semibold text-slate-900">{slaTrackedItemCount > 0 ? Math.round((item.value / slaTrackedItemCount) * 100) : 0}%</span>
+                      </div>
+                    ))}
+                    <p className="pt-1 text-xs text-slate-400">Target internal: &gt;= 90%</p>
                   </div>
                 </div>
-              </div>
-            ))}
-          </section>
+              </article>
+
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                    <DashboardGlyph kind="anomaly" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">Anomali Aktif</p>
+                </div>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{recentAnomalies.length}</p>
+                <p className="mt-1 text-xs font-semibold text-rose-500">{severityRows[0].value} high | {severityRows[1].value} medium | {severityRows[2].value} low</p>
+                <div className="mt-5 space-y-3 text-sm">
+                  {severityRows.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between gap-3 text-slate-600">
+                      <span className="inline-flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${row.tone}`} />{row.label}</span>
+                      <span className="font-semibold text-slate-900">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                    <DashboardGlyph kind="failure" className="h-5 w-5" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-700">Failure Rate (Affiliate)</p>
+                </div>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{affiliateFailureRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-xs font-semibold ${affiliateFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate
+                </p>
+                <div className="mt-5 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target: &lt;= 3%</div>
+              </article>
+            </section>
           ) : null}
 
-          {showSourcePerformanceWorkspace && showSourcePerformanceWidget ? (
-          <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-slate-950">Source Performance</h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Pisahkan performa channel internal RedFeng vs affiliate Traveloka supaya dashboard tidak bias ke satu model bisnis saja.
-                </p>
-              </div>
-              <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
-            </div>
-            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          {showSourcePerformanceWorkspace && showSourcePerformanceWidget && operationsWorkspace === "source_performance" ? (
+            <section className="grid gap-4 xl:grid-cols-3">
               {sourcePerformanceCards.map((card) => (
-                <div key={card.title} className="rounded-[18px] border border-[#edf0f4] bg-[#fffdfa] p-4">
+                <div key={card.title} className="rounded-[22px] border border-[#e5eaf3] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)]">
                   <p className="text-sm font-semibold text-slate-900">{card.title}</p>
-                  <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">{card.summary}</p>
+                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{card.summary}</p>
                   <p className="mt-2 text-xs leading-5 text-slate-500">{card.detail}</p>
-                  <div className="mt-4 space-y-3">
+                  <div className="mt-5 space-y-3">
                     {card.rows.map((row) => (
                       <div key={`${card.title}-${row.label}`} className="space-y-1.5">
-                        <div className="flex items-center justify-between gap-3 text-[11px]">
+                        <div className="flex items-center justify-between gap-3 text-xs">
                           <span className="font-medium text-slate-600">{row.label}</span>
                           <span className="font-semibold text-slate-900">{row.value}</span>
                         </div>
@@ -1986,481 +1969,249 @@ export default async function AdminDashboard({
                   </div>
                 </div>
               ))}
-            </div>
-          </section>
+            </section>
           ) : null}
 
-          {showProductSummaryWorkspace && showProductPerformanceWidget ? (
-          <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-base font-semibold text-slate-950">Per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Bandingkan volume booking, revenue, dan issue tiap produk tanpa mencampur konteks internal RedFeng dengan channel affiliate Traveloka.
-                </p>
-              </div>
-              <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-orange-600">Buka workspace produk yang tersedia -&gt;</Link>
-            </div>
-            <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf0f4]">
-              <div className="grid grid-cols-[minmax(0,1.35fr)_120px_140px_110px_140px] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                <span>Produk</span>
-                <span>Booking</span>
-                <span>Revenue</span>
-                <span>Issue</span>
-                <span>Status</span>
-              </div>
-              <div className="divide-y divide-[#edf0f4]">
-                {productPerformanceCards.map((product) => (
-                  <Link
-                    key={product.label}
-                    href={product.href}
-                    className="grid grid-cols-[minmax(0,1.35fr)_120px_140px_110px_140px] gap-3 px-4 py-4 text-sm transition hover:bg-orange-50"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-3">
-                        <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
-                          <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-slate-900">{product.label}</p>
-                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{product.stateNote}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center font-semibold text-slate-900">
-                      {product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}
-                    </div>
-                    <div className="flex items-center font-semibold text-slate-900">
-                      {product.revenue}
-                    </div>
-                    <div className="flex items-center">
-                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${product.issueCount > 0 ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"}`}>
-                        {product.issueCount.toLocaleString("id-ID")}
-                      </span>
-                    </div>
-                    <div className="flex flex-col justify-center gap-1">
-                      <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${product.connected ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
-                        {product.statusDescription}
-                      </span>
-                      <span className="text-xs text-slate-400">{product.ctaLabel}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </section>
-          ) : null}
-
-          {showProductSummaryWorkspace && selectedProductWidgetGroups.length > 0 ? (
-          <section className="space-y-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <span className="inline-flex rounded-full border border-[#f0d8c3] bg-[#fff7ef] px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">
-                  Widget Produk
-                </span>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Widget Produk Terpilih</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Pilihan dari menu Widget akan tampil di sini. Paket Wisata sudah live penuh, Pesawat sudah mulai memakai data operasional dasar, sedangkan produk lain yang masih roadmap tetap tampil sebagai placeholder yang jujur.
-                </p>
-              </div>
-              <Link href="/admin/dashboard/widgets" className="text-sm font-semibold text-orange-600">
-                Kelola widget produk
-              </Link>
-            </div>
-
-            <div className="space-y-5">
-              {selectedProductWidgetGroups.map((product) => (
-                <div
-                  key={product.productLabel}
-                  className="rounded-[22px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]"
-                >
-                  <div className="flex flex-col gap-3 border-b border-[#f0e6dd] pb-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <div className="flex items-center gap-3">
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#fff7ef] text-orange-600">
-                          <ProductMiniIcon kind={getProductIconKind(product.productLabel)} className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <h3 className="text-lg font-semibold tracking-[-0.02em] text-slate-950">{product.productLabel}</h3>
-                          <p className="mt-1 text-sm text-slate-500">{product.note}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold ${product.status.className}`}>
-                        {product.status.label}
-                      </span>
-                      <Link href={product.productHref} className="text-sm font-semibold text-orange-600">
-                        Buka workspace
-                      </Link>
-                    </div>
+            <section className="grid items-start gap-5 xl:grid-cols-[1.14fr_1.02fr_1.02fr_0.74fr]">
+            {showProductSummaryWorkspace && showProductPerformanceWidget ? (
+              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Performa per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                    <p className="mt-1 text-xs text-slate-500">Grid ini tetap jujur: produk roadmap tidak dipaksa terlihat live.</p>
                   </div>
-
-                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {product.items.map((item) => (
-                      <div
-                        key={item.key}
-                        className="rounded-[18px] border border-[#f0e6dd] bg-[#fffdfa] p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#fff1e6] text-orange-600">
-                            <ProductMiniIcon kind={item.iconKind} className="h-5 w-5" />
-                          </div>
-                          <span className={`rounded-full px-3 py-1 text-[10px] font-semibold ${item.status.className}`}>
-                            {item.status.label}
+                  <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                </div>
+                <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf2f7]">
+                  <div className="grid grid-cols-[minmax(0,1.35fr)_96px_120px_70px_70px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                    <span>Kategori</span>
+                    <span>Booking</span>
+                    <span>Revenue</span>
+                    <span>Issue</span>
+                    <span>SLA</span>
+                  </div>
+                  <div className="divide-y divide-[#edf2f7]">
+                    {productPerformanceCards.map((product) => (
+                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(0,1.35fr)_96px_120px_70px_70px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
+                            <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
                           </span>
-                        </div>
-                        <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                          {item.sectionTitle}
-                        </p>
-                        <h4 className="mt-2 text-sm font-semibold text-slate-900">{item.title}</h4>
-                        {item.key.endsWith("_quick_actions") && Array.isArray(item.actions) ? (
-                          <>
-                            <p className="mt-4 text-sm leading-6 text-slate-500">{item.detail}</p>
-                            <div className="mt-4 grid gap-2">
-                              {item.actions.map((action) => (
-                                <Link
-                                  key={action.label}
-                                  href={action.href}
-                                  className={`flex items-center justify-between rounded-[14px] border px-4 py-3 text-sm font-semibold transition ${
-                                    action.roadmap
-                                      ? "border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300 hover:bg-slate-100 hover:text-slate-700"
-                                      : "border-[#f0e6dd] bg-white text-slate-700 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
-                                  }`}
-                                >
-                                  <span className="flex items-center gap-2">
-                                    <span
-                                      className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
-                                        action.roadmap ? "bg-slate-200 text-slate-500" : "bg-orange-100 text-orange-600"
-                                      }`}
-                                    >
-                                      {action.roadmap ? "R" : "L"}
-                                    </span>
-                                    {action.label}
-                                    {action.roadmap ? (
-                                      <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                        Roadmap
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                  {action.badge && action.badge > 0 ? (
-                                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">
-                                      {action.badge}
-                                    </span>
-                                  ) : null}
-                                </Link>
-                              ))}
-                            </div>
-                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
-                              <span className="text-xs font-medium text-slate-400">{item.meta}</span>
-                              <Link href={item.href} className="text-xs font-semibold text-orange-600">
-                                Buka workspace
-                              </Link>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className={`mt-4 ${item.valueClassName}`}>{item.value}</p>
-                            <p className="mt-2 text-sm leading-6 text-slate-500">{item.detail}</p>
-                            <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#f0e6dd] pt-4">
-                              <span className="text-xs font-medium text-slate-400">{item.meta}</span>
-                              <Link href={item.href} className="text-xs font-semibold text-orange-600">
-                                Buka
-                              </Link>
-                            </div>
-                          </>
-                        )}
-                      </div>
+                          <span className="truncate font-semibold text-slate-800">{product.label}</span>
+                        </span>
+                        <span className="font-semibold text-slate-900">{product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}</span>
+                        <span className="font-semibold text-slate-900">{product.revenue}</span>
+                        <span className="font-semibold text-slate-700">{product.issueCount}</span>
+                        <span className={`inline-flex h-fit rounded-full px-2 py-1 text-[11px] font-semibold ${product.issueCount > 0 ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"}`}>
+                          {product.connected ? `${Math.max(100 - product.issueCount * 3, 60)}%` : "-"}
+                        </span>
+                      </Link>
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-          ) : null}
+              </section>
+            ) : null}
 
-          {showBookingWorkspace && showBookingTrendsWidget ? (
-          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Booking Trend</h2>
-                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-4 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Internal RedFeng</span>
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Affiliate Traveloka</span>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[14px] border border-sky-100 bg-sky-50/70 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-600">Internal</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking</p>
-                </div>
-                <div className="rounded-[14px] border border-orange-100 bg-orange-50/70 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">Affiliate</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking</p>
-                </div>
-              </div>
-              <div className="mt-5 h-48 rounded-[18px] bg-[linear-gradient(180deg,rgba(59,130,246,0.07),transparent)] p-4">
-                <div className="flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
-                  {bookingTrendRows.map((row, index) => (
-                    <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                      <div className="flex h-full w-full items-end justify-center gap-0.5">
-                        <div
-                          className="w-full rounded-t-full bg-sky-500/80 transition group-hover:bg-sky-600"
-                          style={{ height: `${Math.max((row.internal / bookingTrendMax) * 100, row.internal > 0 ? 8 : 2)}%` }}
-                          title={`${row.label}: ${row.internal.toLocaleString("id-ID")} booking internal`}
-                        />
-                        <div
-                          className="w-full rounded-t-full bg-orange-500/80 transition group-hover:bg-orange-600"
-                          style={{ height: `${Math.max((row.affiliate / bookingTrendMax) * 100, row.affiliate > 0 ? 8 : 2)}%` }}
-                          title={`${row.label}: ${row.affiliate.toLocaleString("id-ID")} booking affiliate`}
-                        />
-                      </div>
-                      {index === 0 || index === bookingTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Revenue Trend (IDR)</h2>
-                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
-              </div>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[14px] border border-emerald-100 bg-emerald-50/70 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600">Internal</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(globalInternalRevenueTotal)}</p>
-                </div>
-                <div className="rounded-[14px] border border-orange-100 bg-orange-50/70 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">Affiliate</p>
-                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(globalAffiliateRevenueTotal)}</p>
-                </div>
-              </div>
-              <div className="mt-8 h-56 rounded-[18px] bg-[linear-gradient(180deg,rgba(124,92,255,0.09),transparent)] p-4">
-                <div className="relative flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
-                  {revenueTrendRows.map((row, index) => (
-                    <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                      <div className="flex h-full w-full items-end justify-center gap-0.5">
-                        <div
-                          className="w-full rounded-t-full bg-emerald-500/80 transition group-hover:bg-emerald-600"
-                          style={{ height: `${Math.max((row.internal / revenueTrendMax) * 100, row.internal > 0 ? 8 : 2)}%` }}
-                          title={`${row.label}: ${formatMoney(row.internal)} revenue internal`}
-                        />
-                        <div
-                          className="w-full rounded-t-full bg-orange-500/80 transition group-hover:bg-orange-600"
-                          style={{ height: `${Math.max((row.affiliate / revenueTrendMax) * 100, row.affiliate > 0 ? 8 : 2)}%` }}
-                          title={`${row.label}: ${formatMoney(row.affiliate)} revenue affiliate`}
-                        />
-                      </div>
-                      {index === 0 || index === revenueTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
-                    </div>
-                  ))}
-                  <div className="absolute bottom-3 left-3 text-xs text-slate-400">Rp 0</div>
-                  <div className="absolute left-3 top-3 text-xs text-slate-400">{formatMoney(revenueTrendMax)}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Booking per Kategori</h2>
-                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
-              </div>
-              <div className="mt-7 grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
-                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full" style={{ background: `conic-gradient(${bookingCategoryGradient})` }}>
-                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-2xl font-semibold text-slate-950">{totalBookings.toLocaleString("id-ID")}</p>
-                    <p className="text-xs text-slate-500">Total Booking</p>
+            {showBookingWorkspace && showBookingTrendsWidget ? (
+              <>
+                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                    <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
                   </div>
+                  <ChartLegend items={bookingTrendSeries.map((item) => ({ label: item.label, tone: "" }))} />
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
+                    {bookingTrendSeries.map((item) => (
+                      <span key={item.label} className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.label}</span>
+                    ))}
+                  </div>
+                  <DashboardLineChart labels={bookingTrendRows.map((row) => row.label)} series={bookingTrendSeries} />
+                </section>
+
+                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                    <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
+                    {revenueTrendSeries.map((item) => (
+                      <span key={item.label} className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.label}</span>
+                    ))}
+                  </div>
+                  <DashboardLineChart labels={revenueTrendRows.map((row) => row.label)} series={revenueTrendSeries} valueFormatter={(value) => `${Math.round(value / 1000000)}M`} />
+                </section>
+              </>
+            ) : null}
+
+            {showAlertWorkspace && showAlertsOverviewWidget ? (
+              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
+                  <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="space-y-3">
-                  {bookingCategories.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
-                      <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")} <span className="text-xs font-normal text-slate-400">({Math.round((item.value / bookingCategoryBase) * 1000) / 10}%)</span></span>
-                    </div>
+                <div className="mt-5 space-y-3">
+                  {alertRailItems.map((item) => (
+                    <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-4 transition hover:-translate-y-0.5 ${item.tone}`}>
+                      <div className="flex items-start gap-3">
+                        <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white ${item.iconTone}`}>
+                          <DashboardGlyph kind="alert" className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
+                          <p className="mt-2 text-[11px] text-slate-400">{item.time}</p>
+                        </div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
-              </div>
-            </div>
+              </section>
+            ) : null}
           </section>
-          ) : null}
 
           {showOperationalWorkspace && showOperationalTasksWidget ? (
-          <section className="grid items-start gap-5 xl:grid-cols-[1fr_1fr_1fr]">
-            {canAccessPackageTour ? (
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
-                <Link href="/admin/packages" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-4 border-b border-[#f0e6dd] pb-3 text-xs font-semibold text-slate-500">
-                {packageQueueRows.map((item) => (
-                  <span key={item.label}>{item.label} ({item.value})</span>
-                ))}
-              </div>
-              <div className="mt-4 overflow-hidden rounded-[16px] border border-[#f0e6dd]">
-                <div className="grid grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr_auto] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  <span>Merchant</span>
-                  <span>Produk</span>
-                  <span>Tipe</span>
-                  <span>Diajukan</span>
-                  <span>Aksi</span>
-                </div>
-                <div className="divide-y divide-[#f0e6dd]">
-                  {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
-                    <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[1.2fr_1.2fr_0.8fr_0.8fr_auto] gap-3 px-4 py-3 text-sm transition hover:bg-orange-50">
-                      <span className="font-semibold text-slate-800">{item.merchant}</span>
-                      <span className="text-slate-600">{item.product}</span>
-                      <span><span className="rounded-full bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-600">{item.type}</span></span>
-                      <span className="text-xs text-slate-500">{item.time}</span>
-                      <span className="text-xs font-semibold text-orange-600">Review</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-            ) : null}
+            <section className="grid items-start gap-5 xl:grid-cols-[1.12fr_1fr_1fr]">
+              {canAccessPackageTour ? (
+                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
+                    <Link href="/admin/packages" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-4 border-b border-[#edf2f7] pb-3 text-xs font-medium text-slate-500">
+                    {packageQueueRows.map((item) => (
+                      <span key={item.label}>{item.label} ({item.value})</span>
+                    ))}
+                  </div>
+                  <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                    <div className="grid grid-cols-[1.1fr_1.2fr_0.75fr_0.85fr_auto] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                      <span>Merchant</span>
+                      <span>Produk</span>
+                      <span>Kategori</span>
+                      <span>Diajukan</span>
+                      <span>Aksi</span>
+                    </div>
+                    <div className="divide-y divide-[#edf2f7]">
+                      {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
+                        <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[1.1fr_1.2fr_0.75fr_0.85fr_auto] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                          <span className="font-semibold text-slate-800">{item.merchant}</span>
+                          <span className="text-slate-600">{item.product}</span>
+                          <span><span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-600">{item.type}</span></span>
+                          <span className="text-xs text-slate-500">{item.time}</span>
+                          <span className="text-xs font-semibold text-orange-600">Review</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
 
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah (Affiliate)</h2>
-                <Link href="/admin/bookings" className="text-xs font-semibold text-orange-600">Buka booking center</Link>
-              </div>
-              <div className="mt-4 overflow-hidden rounded-[16px] border border-[#f0e6dd]">
-                <div className="grid grid-cols-[1fr_0.9fr_0.9fr_auto] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  <span>Produk</span>
-                  <span>Partner</span>
-                  <span>Issue</span>
-                  <span>Waktu</span>
+              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah <span className="text-xs font-normal text-slate-400">(Affiliate)</span></h2>
+                  <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="divide-y divide-[#f0e6dd]">
-                  {(affiliateOperationalIssueItems.length > 0
-                    ? affiliateOperationalIssueItems
-                    : [{ id: "empty-affiliate-ops", product: "-", supplier: "TRAVELOKA", issue: "Belum ada issue affiliate", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
-                    <Link key={item.id} href={item.href} className="grid grid-cols-[1fr_0.9fr_0.9fr_auto] gap-3 px-4 py-3 text-sm transition hover:bg-orange-50">
-                      <span className="font-semibold text-slate-800">{item.product}</span>
-                      <span className="text-slate-600">{item.supplier}</span>
-                      <span>
-                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                          item.issue === "Belum ada issue affiliate" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-                        }`}>
-                          {item.issue}
+                <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                  <div className="grid grid-cols-[1fr_0.85fr_0.9fr_auto] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                    <span>Produk</span>
+                    <span>Penyedia</span>
+                    <span>Masalah</span>
+                    <span>Waktu</span>
+                  </div>
+                  <div className="divide-y divide-[#edf2f7]">
+                    {(affiliateOperationalIssueItems.length > 0
+                      ? affiliateOperationalIssueItems
+                      : [{ id: "empty-affiliate-ops", product: "-", supplier: "TRAVELOKA", issue: "Belum ada issue affiliate", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
+                      <Link key={item.id} href={item.href} className="grid grid-cols-[1fr_0.85fr_0.9fr_auto] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                        <span className="font-semibold text-slate-800">{item.product}</span>
+                        <span className="text-slate-600">{item.supplier}</span>
+                        <span>
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue affiliate" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                            {item.issue}
+                          </span>
                         </span>
-                      </span>
-                      <span className="text-xs text-slate-500">{item.time}</span>
-                    </Link>
+                        <span className="text-xs text-slate-500">{item.time}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
+                  <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {recentAnomalies.map((item) => (
+                    <div key={`${item.title}-${item.source}-${item.time}`} className="rounded-[16px] border border-[#edf2f7] px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full ${item.tone}`}>
+                          <DashboardGlyph kind="anomaly" className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-slate-500">{item.source}</p>
+                          <p className="mt-2 text-[11px] text-slate-400">{item.time}</p>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </div>
-
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Anomali</h2>
-                <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
-              </div>
-              <div className="mt-5 max-h-[360px] divide-y divide-[#f0e6dd] overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
-                {recentAnomalies.map((item) => (
-                  <div key={`${item.title}-${item.source}-${item.time}`} className="flex items-center justify-between gap-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">{item.source}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-400">{item.time}</p>
-                      <span className={`mt-1 inline-flex rounded-[10px] px-2.5 py-1 text-xs font-semibold ${item.tone}`}>{item.severity}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
+              </section>
+            </section>
           ) : null}
 
-          {showAlertWorkspace && showAlertsOverviewWidget ? (
-          <section className="grid gap-5 xl:grid-cols-3">
-            {alertCards.map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className={`rounded-[20px] border p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 ${item.tone}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{item.title}</p>
-                    <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</p>
-                    <p className="mt-3 text-xs font-semibold">{item.delta}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-slate-400">Alert</span>
-                </div>
-              </Link>
-            ))}
-          </section>
-          ) : null}
-
-          {showBookingWorkspace && (showActivityFeedWidget || showTopDestinationsWidget) ? (
-          <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
-            {showActivityFeedWidget ? (
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Aktivitas Terakhir</h2>
-                <Link href="/admin/audit-log" className="text-xs font-semibold text-orange-600">Lihat semua aktivitas -&gt;</Link>
-              </div>
-              <div className="mt-5 max-h-[320px] space-y-3 overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
-                {activityFeed.map((item) => (
-                  <div key={`${item.title}-${item.time}`} className="flex items-center justify-between gap-4 rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] p-4">
-                    <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${item.tone}`}>{item.title[0]}</span>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                      <p className="mt-1 text-xs text-slate-500">{item.detail}</p>
-                    </div>
-                    <span className="ml-auto whitespace-nowrap text-xs text-slate-400">{item.time}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            ) : null}
-
-            {showTopDestinationsWidget ? (
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Performa Top Destinasi (Booking)</h2>
-                <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
-              </div>
-              <div className="mt-5 space-y-3">
-                {topDestinations.map((item, index) => (
-                  <div key={item.name} className="grid grid-cols-[24px_1fr_auto] items-center gap-3 text-sm">
-                    <span className="font-semibold text-slate-500">{index + 1}</span>
-                    <div>
-                      <p className="font-medium text-slate-700">{item.name}</p>
-                      <div className="mt-2 h-1.5 rounded-full bg-[#f0e6dd]"><div className={`h-1.5 rounded-full ${item.tone}`} style={{ width: `${item.percent}%` }} /></div>
-                    </div>
-                    <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            ) : null}
-
-          </section>
-          ) : null}
-
-          {showQuickActionsWorkspace && showQuickActionsWidget ? (
-          <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-            <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {globalQuickActions.map((item) => (
-                <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
-                  {item.label}
-                  {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
+          {showAlertWorkspace && showAlertsOverviewWidget && operationsWorkspace === "alerts_overview" ? (
+            <section className="grid gap-4 xl:grid-cols-3">
+              {alertCards.map((item) => (
+                <Link key={item.title} href={item.href} className={`rounded-[22px] border p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 ${item.tone}`}>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{item.title}</p>
+                  <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</p>
+                  <p className="mt-3 text-xs font-semibold">{item.delta}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
                 </Link>
               ))}
-            </div>
+            </section>
+          ) : null}
+
+            <section className="grid gap-4 xl:grid-cols-[repeat(5,minmax(0,1fr))_1.45fr]">
+            {bottomSummaryCards.map((card) => (
+              <article key={card.label} className="rounded-[20px] border border-[#e9eef6] bg-white px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl ${card.bg} ${card.tone}`}>
+                    <DashboardGlyph kind="booking" className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm font-medium text-slate-600">{card.label}</p>
+                </div>
+                <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</p>
+                <p className={`mt-1 text-xs font-semibold ${card.tone}`}>{card.delta}</p>
+              </article>
+            ))}
+            <article className="rounded-[20px] border border-[#e9eef6] bg-[linear-gradient(135deg,#fffaf2,white)] px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
+              <div className="flex items-start gap-3">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+                  <DashboardGlyph kind="alert" className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Tips Hari Ini</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{dailyTip}</p>
+                </div>
+              </div>
+            </article>
           </section>
+
+          {showQuickActionsWorkspace && showQuickActionsWidget && operationsWorkspace === "quick_actions" ? (
+            <section className="rounded-[22px] border border-[#e5eaf3] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)]">
+              <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {globalQuickActions.map((item) => (
+                  <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#edf2f7] bg-[#fbfdff] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
+                    {item.label}
+                    {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
+                  </Link>
+                ))}
+              </div>
+            </section>
           ) : null}
         </div>
       </main>
