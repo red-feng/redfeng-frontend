@@ -947,6 +947,7 @@ export default async function AdminDashboard({
     const periodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodAuditLogs = globalPeriodAuditLogs
+    const packageTourAuditLogs = periodAuditLogs.filter((log) => log.target_type === "package")
     const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
       if (operationsProduct === "all") return true
       return transaction.bookingProductType === operationsProduct
@@ -970,10 +971,10 @@ export default async function AdminDashboard({
     const packageTourBookingStalledCount = packageTourPeriodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
+    const packageTourSlaReviewCount = periodPackageOverdueCount + packageTourBookingStalledCount
     const periodOperationalWarnings =
       merchantOverdueCount + periodPackageOverdueCount + periodBookingStalledCount + periodDeletionRequests.length + periodReviewRequests.length
-    const packageTourOperationalWarnings =
-      merchantOverdueCount + periodPackageOverdueCount + packageTourBookingStalledCount + periodDeletionRequests.length + periodReviewRequests.length
+    const packageTourOperationalWarnings = packageTourSlaReviewCount
     const totalBookings = periodBookings.length
     const packageTourTotalBookings = packageTourPeriodBookings.length
     const packageTourRevenue = packageTourPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
@@ -1104,8 +1105,8 @@ export default async function AdminDashboard({
       calculatedRecentAnomalies.length > 0
         ? calculatedRecentAnomalies
         : [{ title: "Tidak ada anomali terbuka", source: "Semua queue operasional aman", time: "Saat ini", severity: "OK", tone: "bg-emerald-50 text-emerald-600" }]
-    const activityFeed = periodAuditLogs.length > 0
-      ? periodAuditLogs.map((log) => ({
+    const activityFeed = packageTourAuditLogs.length > 0
+      ? packageTourAuditLogs.map((log) => ({
           title: log.summary || titleCase(log.action),
           detail: `${titleCase(log.actor_role)} - ${titleCase(log.target_type)}`,
           time: formatRelativeHours(log.created_at),
@@ -1353,16 +1354,16 @@ export default async function AdminDashboard({
                   return {
                     ...fallbackCard,
                     value: packageTourOperationalWarnings.toLocaleString("id-ID"),
-                    detail: "Gabungan SLA, deletion request, approval request, dan booking stalled.",
-                    meta: "Operational warning aktif",
+                    detail: "Gabungan paket review overdue dan booking Paket Wisata yang stalled di handoff finance.",
+                    meta: "Warning khusus Paket Wisata",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
                   }
                 case "package_tour_sla_review":
                   return {
                     ...fallbackCard,
-                    value: (periodPackageOverdueCount + packageTourBookingStalledCount).toLocaleString("id-ID"),
-                    detail: "Item yang sudah mendekati atau melewati SLA operasional.",
-                    meta: "SLA review package & booking",
+                    value: packageTourSlaReviewCount.toLocaleString("id-ID"),
+                    detail: "Item Paket Wisata yang sudah mendekati atau melewati SLA review dan handoff booking.",
+                    meta: "SLA Paket Wisata",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
                   }
                 case "package_tour_deletion_request":
@@ -1400,9 +1401,9 @@ export default async function AdminDashboard({
                 case "package_tour_activity_feed":
                   return {
                     ...fallbackCard,
-                    value: periodAuditLogs.length.toLocaleString("id-ID"),
-                    detail: "Jumlah aktivitas terbaru yang tercatat di audit log operasional.",
-                    meta: "Activity feed live",
+                    value: packageTourAuditLogs.length.toLocaleString("id-ID"),
+                    detail: "Jumlah aktivitas terbaru yang tercatat khusus untuk target package di audit log operasional.",
+                    meta: "Activity feed Paket Wisata",
                     valueClassName: "text-3xl font-semibold tracking-[-0.03em] text-slate-950",
                   }
                 case "package_tour_quick_actions":
