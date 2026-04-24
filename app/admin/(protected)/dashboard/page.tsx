@@ -334,7 +334,7 @@ function isWithinPeriod(value: string | null | undefined, start: Date | null) {
 
 function getOperationsWorkspace(value: string | null | undefined) {
   const normalized = String(value || "all").trim().toLowerCase()
-  if (["merchant", "package_review", "booking_center", "anomalies"].includes(normalized)) {
+  if (["merchant", "package_review", "booking_center", "anomalies", "kpi_overview", "product_performance", "quick_actions"].includes(normalized)) {
     return normalized
   }
   return "all"
@@ -1391,10 +1391,13 @@ export default async function AdminDashboard({
         { cursor: 0, parts: [] as string[] },
       )
       .parts.join(", ")
+    const showKpiWorkspace = operationsWorkspace === "all" || operationsWorkspace === "kpi_overview"
+    const showProductSummaryWorkspace = operationsWorkspace === "all" || operationsWorkspace === "product_performance"
     const showBookingWorkspace = operationsWorkspace === "all" || operationsWorkspace === "booking_center"
     const showPackageWorkspace = operationsWorkspace === "all" || operationsWorkspace === "package_review"
-    const showMerchantWorkspace = operationsWorkspace === "all" || operationsWorkspace === "merchant" || operationsWorkspace === "anomalies"
-    const showAnomalyWorkspace = operationsWorkspace === "all" || operationsWorkspace === "anomalies" || operationsWorkspace === "merchant"
+    const showMerchantWorkspace = operationsWorkspace === "all" || operationsWorkspace === "merchant"
+    const showAnomalyWorkspace = operationsWorkspace === "all" || operationsWorkspace === "anomalies"
+    const showQuickActionsWorkspace = operationsWorkspace === "all" || operationsWorkspace === "quick_actions"
     const showKpiOverviewWidget = enabledOperationsWidgetKeys.has("kpi_overview")
     const showProductPerformanceWidget = enabledOperationsWidgetKeys.has("product_performance")
     const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
@@ -1711,10 +1714,13 @@ export default async function AdminDashboard({
                 className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
               >
                 <option value="all">Workspace: Semua</option>
-                <option value="merchant">Merchant</option>
+                <option value="kpi_overview">KPI Utama</option>
+                <option value="product_performance">Performa Produk</option>
+                <option value="merchant">Merchant & SLA</option>
                 <option value="package_review">Package Review</option>
-                <option value="booking_center">Booking Center</option>
+                <option value="booking_center">Booking & Aktivitas</option>
                 <option value="anomalies">Anomali</option>
+                <option value="quick_actions">Quick Actions</option>
               </select>
               <button className="rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Terapkan
@@ -1742,7 +1748,7 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-          {showKpiOverviewWidget ? (
+          {showKpiWorkspace && showKpiOverviewWidget ? (
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
             {managerVisibleKpiCards.map((card) => (
               <div key={card.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -1760,7 +1766,7 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          {showProductPerformanceWidget ? (
+          {showProductSummaryWorkspace && showProductPerformanceWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-base font-semibold text-slate-950">Performa per Produk <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
@@ -1837,7 +1843,7 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          {selectedProductWidgetGroups.length > 0 ? (
+          {showProductSummaryWorkspace && selectedProductWidgetGroups.length > 0 ? (
           <section className="space-y-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -2128,7 +2134,7 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          {showBookingWorkspace && (showActivityFeedWidget || showTopDestinationsWidget || showQuickActionsWidget) ? (
+          {showBookingWorkspace && (showActivityFeedWidget || showTopDestinationsWidget) ? (
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
             {showActivityFeedWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -2172,21 +2178,10 @@ export default async function AdminDashboard({
             </div>
             ) : null}
 
-            {showQuickActionsWidget ? (
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                {globalQuickActions.map((item) => (
-                  <Link key={item.label} href={item.href} className="flex items-center justify-between rounded-[16px] border border-[#f0e6dd] bg-[#fffdfa] px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600">
-                    {item.label}
-                    {item.badge > 0 ? <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-600">{item.badge}</span> : null}
-                  </Link>
-                ))}
-              </div>
-            </div>
-            ) : null}
           </section>
-          ) : !showBookingWorkspace && showQuickActionsWidget ? (
+          ) : null}
+
+          {showQuickActionsWorkspace && showQuickActionsWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <h2 className="text-base font-semibold text-slate-950">Quick Actions Global</h2>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
