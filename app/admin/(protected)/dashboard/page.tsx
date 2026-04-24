@@ -1754,10 +1754,10 @@ export default async function AdminDashboard({
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
 
     return (
-      <main className="min-h-screen bg-[#f5f7fb] px-5 py-6 sm:px-7 lg:px-10 xl:px-12">
+      <main className="min-h-screen bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="w-full space-y-7">
-          <section className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-            <div>
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+            <div className="max-w-[760px]">
               <h1 className="text-[2.2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.55rem]">
                 Selamat pagi, {greetingLabel}!
               </h1>
@@ -1765,8 +1765,8 @@ export default async function AdminDashboard({
                 Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jujur antara jalur internal dan affiliate Traveloka.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <form className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 xl:justify-end">
+              <form className="flex flex-wrap items-center gap-3 xl:max-w-[620px] xl:justify-end">
                 {params.view ? <input type="hidden" name="view" value={params.view} /> : null}
                 <label className="inline-flex min-w-[220px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
                   <DashboardGlyph kind="booking" className="h-4 w-4 text-slate-400" />
@@ -1839,7 +1839,7 @@ export default async function AdminDashboard({
           ) : null}
 
           {showKpiWorkspace && showKpiOverviewWidget ? (
-            <section className="grid gap-5 xl:grid-cols-6">
+            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6">
               <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
@@ -1982,7 +1982,7 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-            <section className="grid items-start gap-5 xl:grid-cols-[1.14fr_1.02fr_1.02fr_0.74fr]">
+            <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px]">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
               <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
@@ -1993,7 +1993,7 @@ export default async function AdminDashboard({
                   <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
                 <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf2f7]">
-                  <div className="grid grid-cols-[minmax(0,1.35fr)_96px_120px_70px_70px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                  <div className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Kategori</span>
                     <span>Booking</span>
                     <span>Revenue</span>
@@ -2002,7 +2002,7 @@ export default async function AdminDashboard({
                   </div>
                   <div className="divide-y divide-[#edf2f7]">
                     {productPerformanceCards.map((product) => (
-                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(0,1.35fr)_96px_120px_70px_70px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="flex min-w-0 items-center gap-3">
                           <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
                             <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
@@ -2080,7 +2080,7 @@ export default async function AdminDashboard({
           </section>
 
           {showOperationalWorkspace && showOperationalTasksWidget ? (
-            <section className="grid items-start gap-5 xl:grid-cols-[1.12fr_1fr_1fr]">
+            <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.18fr)_minmax(320px,1fr)_minmax(320px,1fr)]">
               {canAccessPackageTour ? (
                 <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
@@ -2092,8 +2092,8 @@ export default async function AdminDashboard({
                       <span key={item.label}>{item.label} ({item.value})</span>
                     ))}
                   </div>
-                  <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
-                    <div className="grid grid-cols-[1.1fr_1.2fr_0.75fr_0.85fr_auto] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                    <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                      <div className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                       <span>Merchant</span>
                       <span>Produk</span>
                       <span>Kategori</span>
@@ -2102,7 +2102,7 @@ export default async function AdminDashboard({
                     </div>
                     <div className="divide-y divide-[#edf2f7]">
                       {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
-                        <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[1.1fr_1.2fr_0.75fr_0.85fr_auto] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                        <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                           <span className="font-semibold text-slate-800">{item.merchant}</span>
                           <span className="text-slate-600">{item.product}</span>
                           <span><span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-600">{item.type}</span></span>
@@ -2120,8 +2120,8 @@ export default async function AdminDashboard({
                   <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah <span className="text-xs font-normal text-slate-400">(Affiliate)</span></h2>
                   <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
-                  <div className="grid grid-cols-[1fr_0.85fr_0.9fr_auto] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                  <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                    <div className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Produk</span>
                     <span>Penyedia</span>
                     <span>Masalah</span>
@@ -2131,7 +2131,7 @@ export default async function AdminDashboard({
                     {(affiliateOperationalIssueItems.length > 0
                       ? affiliateOperationalIssueItems
                       : [{ id: "empty-affiliate-ops", product: "-", supplier: "TRAVELOKA", issue: "Belum ada issue affiliate", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
-                      <Link key={item.id} href={item.href} className="grid grid-cols-[1fr_0.85fr_0.9fr_auto] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                      <Link key={item.id} href={item.href} className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="font-semibold text-slate-800">{item.product}</span>
                         <span className="text-slate-600">{item.supplier}</span>
                         <span>
@@ -2184,7 +2184,7 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-            <section className="grid gap-4 xl:grid-cols-[repeat(5,minmax(0,1fr))_1.45fr]">
+            <section className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[repeat(5,minmax(0,1fr))_1.35fr]">
             {bottomSummaryCards.map((card) => (
               <article key={card.label} className="rounded-[20px] border border-[#e9eef6] bg-white px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
                 <div className="flex items-center gap-3">

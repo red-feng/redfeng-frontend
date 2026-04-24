@@ -136,7 +136,7 @@ export default async function AdminProtectedLayout({
     <div className="min-h-screen bg-[#fbfaf8] text-slate-900 lg:flex">
       <AdminNavSeenTracker />
       <SuperadminAdminRouteSeenBridge enabled={profile.role === "superadmin"} />
-      <aside className={`sticky top-0 z-40 flex max-h-screen w-full flex-col border-b bg-white lg:h-screen lg:shrink-0 lg:border-b-0 lg:border-r ${isOperationsManager ? "border-[#eef2f7] lg:w-[308px]" : "border-[#eee5dc] lg:w-[280px]"}`}>
+      <aside className={`sticky top-0 z-40 flex max-h-screen w-full flex-col border-b bg-white lg:h-screen lg:shrink-0 lg:border-b-0 lg:border-r ${isOperationsManager ? "border-[#eef2f7] lg:w-[264px]" : "border-[#eee5dc] lg:w-[280px]"}`}>
         <div className={`flex items-center justify-between gap-3 px-5 lg:px-7 ${isOperationsManager ? "py-7" : "py-5 lg:py-7"}`}>
           <div className="flex items-center gap-3">
             <span className={`inline-flex items-center justify-center rounded-2xl ${isOperationsManager ? "h-10 w-10 bg-[#fff1eb] text-orange-600" : "h-8 w-8 bg-orange-600 text-white"} text-sm font-black`}>
