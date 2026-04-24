@@ -1,12 +1,14 @@
+import { PACKAGE_TOUR_DELETION_ROLES, PACKAGE_TOUR_REVIEW_ROLES } from "@/lib/package-tour-lock"
+
 export const MERCHANT_REVIEW_ROLES = {
-  requester: "admin",
-  decider: "operations_manager",
+  requester: PACKAGE_TOUR_REVIEW_ROLES.requester,
+  decider: PACKAGE_TOUR_REVIEW_ROLES.decider,
 } as const
 
 export const MERCHANT_DELETION_ROLES = {
-  requester: "admin",
-  decider: "operations_manager",
-  overrideCloser: "superadmin",
+  requester: PACKAGE_TOUR_DELETION_ROLES.requester,
+  decider: PACKAGE_TOUR_DELETION_ROLES.decider,
+  overrideCloser: PACKAGE_TOUR_DELETION_ROLES.overrideCloser,
 } as const
 
 export const MERCHANT_REVIEW_BUTTONS = {

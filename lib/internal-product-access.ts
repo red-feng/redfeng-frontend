@@ -1,8 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { BookingProductType } from "@/lib/booking-products"
+import {
+  mergePackageTourLockedAccess,
+  PACKAGE_TOUR_ADMIN_HREF,
+  PACKAGE_TOUR_ADMIN_FILTER,
+  PACKAGE_TOUR_PRODUCT_TYPE,
+} from "@/lib/package-tour-lock"
 
 export const INTERNAL_PRODUCT_TYPES = [
-  "package_tour",
+  PACKAGE_TOUR_PRODUCT_TYPE,
   "flight",
   "hotel",
   "train",
@@ -51,19 +57,22 @@ const ACCESS_LEVEL_WEIGHT: Record<InternalProductAccessLevel, number> = {
 
 function getDefaultRoleProductAccess(role: InternalRole | null): Array<{ productType: InternalProductType; accessLevel: InternalProductAccessLevel }> {
   if (!role) return []
-  if (role === "superadmin" || role === "operations_manager" || role === "finance_manager") {
-    return INTERNAL_PRODUCT_TYPES.map((productType) => ({ productType, accessLevel: "manage" }))
-  }
-  if (role === "finance") {
-    return INTERNAL_PRODUCT_TYPES.map((productType) => ({ productType, accessLevel: "execute" }))
-  }
-  if (role === "admin") {
-    return INTERNAL_PRODUCT_TYPES.map((productType) => ({
-      productType,
-      accessLevel: productType === "package_tour" ? "manage" : "execute",
-    }))
-  }
-  return []
+  const defaultEntries =
+    role === "superadmin" || role === "operations_manager" || role === "finance_manager"
+      ? INTERNAL_PRODUCT_TYPES.map((productType) => ({ productType, accessLevel: "manage" as const }))
+      : role === "finance"
+        ? INTERNAL_PRODUCT_TYPES.map((productType) => ({ productType, accessLevel: "execute" as const }))
+        : role === "admin"
+          ? INTERNAL_PRODUCT_TYPES.map((productType) => ({
+              productType,
+              accessLevel: productType === PACKAGE_TOUR_PRODUCT_TYPE ? "manage" : "execute",
+            }))
+          : []
+
+  return mergePackageTourLockedAccess(defaultEntries, role) as Array<{
+    productType: InternalProductType
+    accessLevel: InternalProductAccessLevel
+  }>
 }
 
 export async function ensureInternalProductAccess(
@@ -158,7 +167,10 @@ export async function getAccessibleInternalProducts(
     })
     .filter(Boolean) as Array<{ productType: InternalProductType; accessLevel: InternalProductAccessLevel }>
 
-  return rows.length > 0 ? rows : getDefaultRoleProductAccess(normalizedRole)
+  return mergePackageTourLockedAccess(rows.length > 0 ? rows : getDefaultRoleProductAccess(normalizedRole), normalizedRole) as Array<{
+    productType: InternalProductType
+    accessLevel: InternalProductAccessLevel
+  }>
 }
 
 export function hasInternalProductAccess(
@@ -185,7 +197,7 @@ export function toDashboardOperationsProduct(productType: InternalProductType) {
 }
 
 export function toAdminProductFilter(productType: InternalProductType) {
-  if (productType === "package_tour") return "paket-tour" as const
+  if (productType === PACKAGE_TOUR_PRODUCT_TYPE) return PACKAGE_TOUR_ADMIN_FILTER
   if (productType === "flight") return "pesawat" as const
   if (productType === "hotel") return "hotel" as const
   if (productType === "train") return "kereta-api" as const
@@ -195,7 +207,7 @@ export function toAdminProductFilter(productType: InternalProductType) {
 }
 
 export function toAdminProductNavHref(productType: InternalProductType) {
-  if (productType === "package_tour") return "/admin/paket-tour"
+  if (productType === PACKAGE_TOUR_PRODUCT_TYPE) return PACKAGE_TOUR_ADMIN_HREF
   if (productType === "flight") return "/admin/pesawat"
   if (productType === "hotel") return "/admin/hotel"
   if (productType === "train") return "/admin/kereta-api"
