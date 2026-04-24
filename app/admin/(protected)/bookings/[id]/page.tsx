@@ -103,7 +103,7 @@ type ProfileRow = {
 }
 
 type NoteStatusFilter = "all" | "active" | "done"
-type NoteTypeFilter = "all" | "general" | "urgent" | "follow_up_merchant" | "follow_up_payment" | "finance_issue"
+type NoteTypeFilter = "all" | "general" | "urgent" | "follow_up_partner" | "follow_up_merchant" | "follow_up_payment" | "finance_issue"
 type NotePinFilter = "all" | "pinned"
 
 function titleCaseStatus(value: string | null) {
@@ -366,7 +366,7 @@ function getOperationalOwnerCue(booking: BookingDetailRow, locale: "id" | "en" |
 function noteTypeLabel(value: string | null) {
   const normalized = normalizeStatus(value)
   if (normalized === "urgent") return "Urgent"
-  if (normalized === "follow_up_merchant") return "Follow Up Merchant"
+  if (normalized === "follow_up_merchant" || normalized === "follow_up_partner") return "Follow Up Partner"
   if (normalized === "follow_up_payment") return "Follow Up Payment"
   if (normalized === "finance_issue") return "Finance Issue"
   return "General"
@@ -375,7 +375,7 @@ function noteTypeLabel(value: string | null) {
 function noteTypeTone(value: string | null) {
   const normalized = normalizeStatus(value)
   if (normalized === "urgent") return "border-rose-200 bg-rose-50 text-rose-700"
-  if (normalized === "follow_up_merchant") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (normalized === "follow_up_merchant" || normalized === "follow_up_partner") return "border-amber-200 bg-amber-50 text-amber-700"
   if (normalized === "follow_up_payment") return "border-sky-200 bg-sky-50 text-sky-700"
   if (normalized === "finance_issue") return "border-violet-200 bg-violet-50 text-violet-700"
   return "border-slate-200 bg-slate-100 text-slate-700"
@@ -393,6 +393,7 @@ function normalizeNoteTypeFilter(value: string | null | undefined): NoteTypeFilt
     normalized === "general" ||
     normalized === "urgent" ||
     normalized === "follow_up_merchant" ||
+    normalized === "follow_up_partner" ||
     normalized === "follow_up_payment" ||
     normalized === "finance_issue"
   ) {
@@ -584,9 +585,12 @@ export default async function AdminBookingDetailPage({
     { value: "general", label: "General", count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "general").length },
     { value: "urgent", label: "Urgent", count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "urgent").length },
     {
-      value: "follow_up_merchant",
-      label: "Follow Up Merchant",
-      count: adminNotes.filter((item) => normalizeStatus(item.note_type) === "follow_up_merchant").length,
+      value: "follow_up_partner",
+      label: "Follow Up Partner",
+      count: adminNotes.filter((item) => {
+        const normalized = normalizeStatus(item.note_type)
+        return normalized === "follow_up_merchant" || normalized === "follow_up_partner"
+      }).length,
     },
     {
       value: "follow_up_payment",
@@ -616,7 +620,7 @@ export default async function AdminBookingDetailPage({
               </p>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">{formatBookingCode(booking.booking_code, booking.id)}</h1>
               <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Detail lengkap booking untuk investigasi admin, pengecekan auto-queue finance, dan koordinasi ke merchant atau finance.
+                Detail lengkap booking untuk investigasi admin, pengecekan auto-queue finance, dan koordinasi ke pihak operasional terkait.
               </p>
             </div>
             <Link
@@ -692,9 +696,9 @@ export default async function AdminBookingDetailPage({
               </div>
             ) : (
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Merchant workspace</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Workspace merchant</p>
                 <p className="mt-3 text-lg font-semibold text-slate-900">Belum tersedia</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">Merchant belum terhubung atau data package tidak ditemukan.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Workspace produk belum terhubung atau data referensi tidak ditemukan.</p>
               </div>
             )}
 
@@ -919,7 +923,7 @@ export default async function AdminBookingDetailPage({
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Internal notes</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Tambahkan catatan operasional admin</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Catatan ini hanya untuk tim internal dan tidak tampil ke customer atau merchant.
+              Catatan ini hanya untuk tim internal dan tidak tampil ke customer atau partner eksternal.
             </p>
             {canExecuteAdminOps ? (
               <form action={addBookingAdminNote} className="mt-6 space-y-4">
@@ -938,7 +942,7 @@ export default async function AdminBookingDetailPage({
                     >
                       <option value="general">General</option>
                       <option value="urgent">Urgent</option>
-                      <option value="follow_up_merchant">Follow Up Merchant</option>
+                      <option value="follow_up_partner">Follow Up Partner</option>
                       <option value="follow_up_payment">Follow Up Payment</option>
                       <option value="finance_issue">Finance Issue</option>
                     </select>

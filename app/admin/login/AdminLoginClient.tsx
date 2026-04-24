@@ -17,10 +17,10 @@ function getAdminLoginCopy(locale: Locale) {
       heroEyebrow: "Red Feng Admin",
       heroTitle: "Secure access for the Red Feng internal team.",
       heroBody:
-        "This page is dedicated to administrators who manage merchant reviews, packages, bookings, and internal operations.",
+        "This page is dedicated to administrators who manage approvals, products, bookings, and internal operations.",
       bullets: [
-        "Merchant approvals and document revisions",
-        "Monitoring bookings, packages, and listing quality",
+        "Approval queue and operational follow-up",
+        "Monitoring bookings, products, and service quality",
         "Internal access for admin and operations manager",
       ],
       footer: "Not an admin? Use the merchant or customer portal based on your account role.",
@@ -81,10 +81,10 @@ function getAdminLoginCopy(locale: Locale) {
     heroEyebrow: "Red Feng Admin",
     heroTitle: "Secure access untuk tim internal Red Feng.",
     heroBody:
-      "Halaman ini khusus untuk administrator yang mengelola merchant review, paket, booking, dan operasional internal.",
+      "Halaman ini khusus untuk administrator yang mengelola approval, produk, booking, dan operasional internal.",
     bullets: [
-      "Merchant approvals dan revisi dokumen",
-      "Monitoring booking, paket, dan kualitas listing",
+      "Approval queue dan tindak lanjut operasional",
+      "Monitoring booking, produk, dan kualitas layanan",
       "Akses internal untuk admin dan operations manager",
     ],
     footer: "Bukan admin? Gunakan portal merchant atau customer sesuai peran akun Anda.",
@@ -205,7 +205,7 @@ export default function AdminLoginClient({ initialLocale }: { initialLocale: Loc
                   key={item}
                   className="rounded-[24px] border border-white/18 bg-white/10 px-5 py-4 text-sm leading-7 text-orange-50/90 backdrop-blur"
                 >
-                  <span className="mr-3 text-amber-200">•</span>
+                  <span className="mr-3 text-amber-200">*</span>
                   {item}
                 </div>
               ))}

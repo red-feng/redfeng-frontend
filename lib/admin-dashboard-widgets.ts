@@ -42,7 +42,7 @@ export const OPERATIONS_DASHBOARD_WIDGETS: OperationsDashboardWidgetDefinition[]
   {
     key: "kpi_overview",
     title: "KPI Utama",
-    description: "Total booking, revenue, merchant aktif, pending review, dan anomali terbuka.",
+    description: "Total booking, revenue, partner aktif, queue review, dan anomali terbuka.",
     status: "connected",
     defaultEnabled: true,
     scope: "global_only",
@@ -69,7 +69,7 @@ export const OPERATIONS_DASHBOARD_WIDGETS: OperationsDashboardWidgetDefinition[]
   {
     key: "quick_actions",
     title: "Quick Actions",
-    description: "Shortcut cepat ke anomali, deletion request, audit log, booking center, dan laporan lintas workspace.",
+    description: "Shortcut cepat ke anomali, approval queue, audit log, booking center, dan laporan lintas workspace.",
     status: "connected",
     defaultEnabled: true,
     scope: "global_only",

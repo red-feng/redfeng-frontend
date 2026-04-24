@@ -109,6 +109,19 @@ function formatMetadataValue(value: unknown) {
   return JSON.stringify(value)
 }
 
+function normalizeMetadataEntries(metadata: Record<string, unknown> | null) {
+  if (!metadata) return []
+
+  return Object.entries(metadata).filter(([key]) => key.trim().toLowerCase() !== "supplier_name")
+}
+
+function getMetadataLabel(key: string) {
+  const normalizedKey = key.trim().toLowerCase()
+  if (normalizedKey === "supplierlabel" || normalizedKey === "supplier_label") return "Partner Reservasi"
+  if (normalizedKey === "supplierreference" || normalizedKey === "supplier_reference") return "Referensi Partner"
+  return titleCase(key)
+}
+
 function buildHref(portal: AuditLogPortal, target: FilterTarget, action: FilterAction, q: string, from: string, to: string) {
   const basePath =
     portal === "superadmin" ? "/superadmin/audit-log" : portal === "finance" ? "/finance/audit-log" : "/admin/audit-log"
@@ -197,8 +210,8 @@ export default async function AdminAuditLogPage({
 
   const targetFilters: Array<{ value: FilterTarget; label: string }> = [
     { value: "all", label: "Semua Target" },
-    { value: "merchant", label: "Merchant" },
-    { value: "package", label: "Package" },
+    { value: "merchant", label: "Merchant Paket" },
+    { value: "package", label: "Produk / Package" },
     { value: "booking", label: "Booking" },
     { value: "internal_account", label: "Internal Account" },
   ]
@@ -226,10 +239,10 @@ export default async function AdminAuditLogPage({
             Audit Log
           </p>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Jejak keputusan admin untuk merchant, package, dan booking.
+            Jejak keputusan admin untuk approval, produk, booking, dan akses internal.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
-            Halaman ini membantu admin dan superadmin melihat histori keputusan terbaru berdasarkan actor, target, dan jenis aksi yang benar-benar tercatat dari server action admin.
+            Halaman ini membantu admin dan superadmin menelusuri histori keputusan terbaru berdasarkan actor, target, dan jenis aksi yang benar-benar tercatat dari server action internal.
           </p>
         </section>
 
@@ -291,7 +304,7 @@ export default async function AdminAuditLogPage({
                   type="text"
                   name="q"
                   defaultValue={searchQuery}
-                  placeholder="Username actor, booking ID, package ID, merchant ID, atau ringkasan aksi"
+                  placeholder="Username actor, booking ID, product ID, merchant package ID, atau ringkasan aksi"
                   className="mt-2 w-full rounded-[18px] border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
                 />
               </div>
@@ -360,15 +373,15 @@ export default async function AdminAuditLogPage({
                         Actor: {actor?.username || log.actor_id || "-"} | Target: {log.target_id}
                       </p>
                       <p className="mt-1 text-xs text-slate-500">{formatDateTime(log.created_at)}</p>
-                      {log.metadata && Object.keys(log.metadata).length ? (
+                      {normalizeMetadataEntries(log.metadata).length ? (
                         <details className="mt-3 rounded-[18px] border border-[#efe1cf] bg-white px-4 py-3">
                           <summary className="cursor-pointer text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
                             Metadata detail
                           </summary>
                           <div className="mt-3 grid gap-2">
-                            {Object.entries(log.metadata).map(([key, value]) => (
+                            {normalizeMetadataEntries(log.metadata).map(([key, value]) => (
                               <div key={key} className="rounded-[14px] border border-slate-200 bg-slate-50 px-3 py-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{titleCase(key)}</p>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">{getMetadataLabel(key)}</p>
                                 <p className="mt-1 break-all text-sm text-slate-700">{formatMetadataValue(value)}</p>
                               </div>
                             ))}

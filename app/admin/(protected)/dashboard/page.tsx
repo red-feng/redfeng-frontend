@@ -587,7 +587,7 @@ export default async function AdminDashboard({
     {
       label: "Merchant overdue",
       value: merchantOverdueCount,
-      note: "Merchant pending 3 hari atau lebih.",
+      note: "Antrean partner/merchant yang belum selesai ditinjau selama 3 hari atau lebih.",
     },
     {
       label: "Package overdue",
@@ -619,7 +619,7 @@ export default async function AdminDashboard({
   ]
   const metricCards = [
     {
-      label: "Merchant pending",
+      label: "Approval pending",
       value: String(pendingMerchants),
       note: "Partner menunggu approval admin.",
     },
@@ -777,7 +777,7 @@ export default async function AdminDashboard({
     {
       label: "Merchant pending",
       value: String(pendingMerchants),
-      note: "Queue merchant yang masih menunggu keputusan tim admin.",
+      note: "Queue approval yang masih menunggu keputusan tim admin.",
     },
     {
       label: "Handoff finance",
@@ -899,7 +899,7 @@ export default async function AdminDashboard({
     {
       label: "Perlu Perhatian",
       value: totalOperationalWarnings,
-      note: "Overdue merchant, paket, dan booking stalled.",
+      note: "Overdue approval, paket, dan booking yang tertahan.",
       href: "/admin/dashboard",
       cta: "Lihat detail",
       tone: "text-rose-600",
@@ -1073,7 +1073,7 @@ export default async function AdminDashboard({
         tone: "bg-orange-50 text-orange-600",
       })),
       ...(merchantOverdueCount > 0
-        ? [{ title: "Merchant pending melewati SLA", source: `${merchantOverdueCount} merchant perlu ditinjau`, time: "SLA 3 hari", severity: "High", tone: "bg-rose-50 text-rose-600" }]
+        ? [{ title: "Approval pending melewati SLA", source: `${merchantOverdueCount} item perlu ditinjau`, time: "SLA 3 hari", severity: "High", tone: "bg-rose-50 text-rose-600" }]
         : []),
       ...(periodPackageOverdueCount > 0
         ? [{ title: "Paket pending melewati SLA", source: `${periodPackageOverdueCount} paket perlu direview`, time: "SLA 3 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
@@ -1095,8 +1095,8 @@ export default async function AdminDashboard({
         }))
       : [
           { title: `Paket pending review: ${periodPendingPackages}`, detail: "Data live dari package queue", time: "Saat ini", tone: "bg-emerald-50 text-emerald-600" },
-          { title: `Merchant baru menunggu approval: ${pendingMerchants}`, detail: "Data live dari merchant pending", time: "Saat ini", tone: "bg-sky-50 text-sky-600" },
-          { title: `Booking siap finance: ${periodFinanceReadyCount}`, detail: "Data live dari booking center", time: "Saat ini", tone: "bg-orange-50 text-orange-600" },
+          { title: `Approval pending: ${pendingMerchants}`, detail: "Data live dari queue approval", time: "Saat ini", tone: "bg-sky-50 text-sky-600" },
+          { title: `Booking perlu monitor finance: ${periodFinanceReadyCount}`, detail: "Data live dari booking center", time: "Saat ini", tone: "bg-orange-50 text-orange-600" },
           { title: `Item perlu perhatian: ${periodOperationalWarnings}`, detail: "SLA, deletion, dan approval", time: "Saat ini", tone: "bg-rose-50 text-rose-600" },
         ]
     const destinationMap = periodBookings.reduce((map, booking) => {
@@ -2013,7 +2013,7 @@ export default async function AdminDashboard({
               </span>
               <h1 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-4xl">Dashboard Admin</h1>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Fokus ke pekerjaan hari ini: approval merchant, review paket, dan booking yang perlu tindakan.
+                Fokus ke pekerjaan hari ini: approval, review produk, dan booking yang perlu tindakan.
               </p>
             </div>
             <div className="rounded-[18px] border border-[#eee3d9] bg-white px-5 py-4 text-sm text-slate-500 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
@@ -2039,7 +2039,7 @@ export default async function AdminDashboard({
               <h2 className="text-base font-semibold text-slate-950">Prioritas Hari Ini</h2>
               <div className="mt-5 space-y-3">
                 {[
-                  { title: "Review merchant baru", value: pendingMerchants, href: "/admin/merchants/pending-approvals" },
+                  { title: "Review approval baru", value: pendingMerchants, href: "/admin/merchants/pending-approvals" },
                   { title: "Review paket pending", value: pendingPackages, href: "/admin/packages" },
                   { title: "Cek booking siap finance", value: financeReadyCount, href: "/admin/bookings" },
                   { title: "Tindak overdue", value: totalOperationalWarnings, href: "/admin/dashboard" },
@@ -2091,7 +2091,7 @@ export default async function AdminDashboard({
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <h2 className="text-base font-semibold text-slate-950">Catatan Untuk Admin</h2>
               <div className="mt-5 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Mulai dari merchant dan paket yang paling lama pending.</p>
+                <p>1. Mulai dari approval dan paket yang paling lama pending.</p>
                 <p>2. Gunakan Pending approvals untuk mengajukan keputusan final ke operations manager.</p>
                 <p>3. Pastikan booking yang sudah siap handoff tidak tertahan sebelum masuk finance.</p>
                 <p>4. Gunakan audit log untuk melacak keputusan sensitif.</p>
@@ -2106,7 +2106,7 @@ export default async function AdminDashboard({
   if (showOperationsManagerView) {
     const operationalLoad = pendingMerchants + pendingPackages + financeReadyCount
     const queueChartItems = [
-      { label: "Merchant pending", value: pendingMerchants, tone: "bg-amber-400" },
+      { label: "Approval pending", value: pendingMerchants, tone: "bg-amber-400" },
       { label: "Review paket", value: pendingPackages, tone: "bg-sky-500" },
       { label: "Siap ke finance", value: financeReadyCount, tone: "bg-emerald-500" },
     ]
@@ -2144,7 +2144,7 @@ export default async function AdminDashboard({
                   Monitor SLA, backlog, dan ritme kerja tim operasional Red Feng.
                 </h1>
                 <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                  Dashboard ini dirancang untuk operations manager agar cepat melihat antrian yang menumpuk, area yang mulai overdue, dan jalur tindak lanjut untuk merchant, package, serta Booking Center.
+                  Dashboard ini dirancang untuk operations manager agar cepat melihat antrean yang menumpuk, area yang mulai overdue, dan jalur tindak lanjut untuk approval, package, serta Booking Center.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-2 sm:gap-3">
                   <Link
@@ -2316,7 +2316,7 @@ export default async function AdminDashboard({
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Grafik backlog dan status dana</h2>
               <ChartLegend
                 items={[
-                  { label: "Merchant pending", tone: "bg-amber-400" },
+                  { label: "Approval pending", tone: "bg-amber-400" },
                    { label: "Review paket", tone: "bg-sky-500" },
                    { label: "Siap ke finance", tone: "bg-emerald-500" },
                 ]}
@@ -2399,7 +2399,7 @@ export default async function AdminDashboard({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Laporan</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Hal wajib yang dilaporkan ke superadmin</h2>
               <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Status antrean merchant, paket, dan booking yang sedang berjalan.</p>
+                <p>1. Status antrean approval, paket, dan booking yang sedang berjalan.</p>
                 <p>2. Kondisi SLA, backlog, overdue, dan titik kemacetan terbesar.</p>
                 <p>3. Ringkasan transaksi customer: DP, pelunasan, full payment, admin fee, dan pajak yang masuk.</p>
                 <p>4. Status dana customer: held, partial hold, siap handoff, tertahan operasional, dan sudah dibayar keluar.</p>
@@ -2465,7 +2465,7 @@ export default async function AdminDashboard({
                   <textarea
                     name="queue_status"
                     required
-                    placeholder="Jelaskan kondisi merchant pending, review paket, booking siap handoff, dan area backlog yang paling berat."
+                    placeholder="Jelaskan kondisi approval pending, review paket, booking siap handoff, dan area backlog yang paling berat."
                     className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
@@ -2525,7 +2525,7 @@ export default async function AdminDashboard({
                   <textarea
                     name="escalations"
                     required
-                    placeholder="Sebutkan merchant, package, booking, atau isu sensitif yang perlu diketahui atau diputuskan superadmin."
+                    placeholder="Sebutkan approval, package, booking, atau isu sensitif yang perlu diketahui atau diputuskan superadmin."
                     className="min-h-[120px] w-full rounded-[20px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
                   />
                 </div>
@@ -3420,7 +3420,7 @@ export default async function AdminDashboard({
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Live queue snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
-                  <p className="text-sm text-orange-50/80">Merchant pending</p>
+                  <p className="text-sm text-orange-50/80">Approval pending</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{pendingMerchants}</p>
                 </div>
                 <div>
