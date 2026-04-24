@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { getVisibleSupplierLabel } from "@/lib/affiliate-suppliers"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { getAccessibleInternalProducts, getAccessibleInternalProductTypes, toAdminProductFilter } from "@/lib/internal-product-access"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
-import { resolveBookingProductType, toAdminBookingFilter } from "@/lib/booking-products"
+import { getBookingProductLabel, resolveBookingProductType, toAdminBookingFilter } from "@/lib/booking-products"
 import { isBookingExpiredForNonPayment, isBookingPastRetentionWindow } from "@/lib/bookings/draft-cleanup"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { cleanupExpiredPendingBookings, handoffBookingToFinance } from "./actions"
@@ -17,6 +18,7 @@ type BookingPortal = "admin" | "superadmin"
 type BookingRow = {
   id: string
   package_id: string | null
+  supplier_id: string | null
   booking_product_type: string | null
   booking_code: string | null
   customer_name: string | null
@@ -61,6 +63,13 @@ type MerchantRow = {
   id: string
   brand_name: string | null
   company_name: string | null
+}
+
+type SupplierRow = {
+  id: string
+  supplier_name: string | null
+  internal_display_name: string | null
+  internal_alias: string | null
 }
 
 function formatDate(value: string | null) {
@@ -241,9 +250,9 @@ function deriveActionNow(booking: BookingRow) {
   return "Lanjutkan validasi booking sesuai status operasional terbaru."
 }
 
-function hasCompleteAdminData(booking: BookingRow, packageTitle: string | null | undefined) {
+function hasCompleteAdminData(booking: BookingRow, bookingTitle: string | null | undefined) {
   return Boolean(
-    packageTitle &&
+    bookingTitle &&
       booking.customer_name &&
       booking.pickup_date &&
       booking.total_amount !== null &&
@@ -305,6 +314,15 @@ function deriveBookingProduct(booking: BookingRow): Exclude<ProductFilter, "all"
   )
 }
 
+function getBookingHeadline(booking: BookingRow, packageTitle: string | null | undefined) {
+  if (booking.package_id && packageTitle) return packageTitle
+  const productType = resolveBookingProductType({
+    bookingProductType: booking.booking_product_type,
+    packageId: booking.package_id,
+  })
+  return `Reservasi ${getBookingProductLabel(productType)}`
+}
+
 function isNeedsAttentionBooking(booking: BookingRow) {
   return normalizeStatus(booking.booking_status) !== "finance_review" && deriveAttentionReasons(booking).length > 0
 }
@@ -364,7 +382,7 @@ export default async function AdminBookingsPage({
   const { data: bookingsData, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, package_id, booking_product_type, booking_code, customer_name, pickup_date, created_at, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, package_id, supplier_id, booking_product_type, booking_code, customer_name, pickup_date, created_at, display_currency, display_subtotal_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, total_amount, payment_status, booking_status, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .order("created_at", { ascending: false })
 
@@ -379,10 +397,19 @@ export default async function AdminBookingsPage({
 
   const packages = (packageData as PackageRow[] | null) || []
   const merchantIds = [...new Set(packages.map((pkg) => pkg.merchant_id).filter(Boolean))] as string[]
+  const supplierIds = [...new Set(bookings.map((booking) => booking.supplier_id).filter(Boolean))] as string[]
   const { data: merchantsData } =
     merchantIds.length > 0
       ? await adminSupabase.from("merchants").select("id, brand_name, company_name").in("id", merchantIds)
       : { data: [] as MerchantRow[] }
+  const { data: suppliersData } =
+    supplierIds.length > 0
+      ? await adminSupabase
+          .from("suppliers")
+          .select("id, supplier_name, internal_display_name, internal_alias")
+          .in("id", supplierIds)
+          .returns<SupplierRow[]>()
+      : { data: [] as SupplierRow[] }
 
   const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg.title || "-"]))
   const packageMerchantMap = new Map(packages.map((pkg) => [pkg.id, pkg.merchant_id]))
@@ -392,11 +419,17 @@ export default async function AdminBookingsPage({
       merchant.brand_name || merchant.company_name || merchant.id,
     ]),
   )
+  const supplierMap = new Map(
+    (((suppliersData as SupplierRow[] | null) || []) as SupplierRow[]).map((supplier) => [
+      supplier.id,
+      getVisibleSupplierLabel(supplier),
+    ]),
+  )
   const validBookings = bookings.filter(
-    (booking) => hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")) && isVisiblePaidBooking(booking),
+    (booking) => hasCompleteAdminData(booking, getBookingHeadline(booking, packageMap.get(booking.package_id || ""))) && isVisiblePaidBooking(booking),
   )
   const incompleteBookings = bookings.filter(
-    (booking) => !hasCompleteAdminData(booking, packageMap.get(booking.package_id || "")),
+    (booking) => !hasCompleteAdminData(booking, getBookingHeadline(booking, packageMap.get(booking.package_id || ""))),
   )
 
   const productScopedBookings =
@@ -406,9 +439,10 @@ export default async function AdminBookingsPage({
 
   const searchedBookings = productScopedBookings.filter((booking) => {
     if (!searchQuery) return true
-    const packageTitle = packageMap.get(booking.package_id || "") || ""
+    const bookingTitle = getBookingHeadline(booking, packageMap.get(booking.package_id || "")) || ""
     const merchantName = merchantMap.get(packageMerchantMap.get(booking.package_id || "") || "") || ""
-    return [booking.booking_code || "", booking.id, booking.customer_name || "", packageTitle, merchantName]
+    const supplierLabel = supplierMap.get(booking.supplier_id || "") || ""
+    return [booking.booking_code || "", booking.id, booking.customer_name || "", bookingTitle, merchantName, supplierLabel]
       .map((value) => value.toLowerCase())
       .some((value) => value.includes(searchQuery))
   })
@@ -534,7 +568,7 @@ export default async function AdminBookingsPage({
 
         {incompleteBookings.length > 0 && (
           <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700">
-            {incompleteBookings.length} booking lama / belum lengkap disembunyikan dari queue admin karena data paket atau nominalnya belum sinkron.
+            {incompleteBookings.length} booking lama / belum lengkap disembunyikan dari queue admin karena konteks produk atau nominalnya belum sinkron.
           </div>
         )}
 
@@ -806,8 +840,9 @@ export default async function AdminBookingsPage({
               {sortedBookings.map((booking) => {
                 const ready = canHandoffToFinance(booking)
                 const phase = journeyPhase(booking)
-                const packageTitle = packageMap.get(booking.package_id || "") || "-"
+                const bookingTitle = getBookingHeadline(booking, packageMap.get(booking.package_id || "")) || "-"
                 const merchantName = merchantMap.get(packageMerchantMap.get(booking.package_id || "") || "") || "-"
+                const supplierLabel = supplierMap.get(booking.supplier_id || "") || "-"
                 const productLabel = productFilters.find((item) => item.value === deriveBookingProduct(booking))?.label || "Produk"
                 const attentionReasons = deriveAttentionReasons(booking)
                 const actionNow = deriveActionNow(booking)
@@ -822,7 +857,7 @@ export default async function AdminBookingsPage({
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
                           {formatBookingCode(booking.booking_code, booking.id)}
                         </p>
-                        <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">{packageTitle}</h3>
+                        <h3 className="mt-2 text-lg font-semibold text-slate-950 sm:text-xl">{bookingTitle}</h3>
                         <p className="mt-2 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-700">
                           {productLabel}
                         </p>
@@ -830,6 +865,7 @@ export default async function AdminBookingsPage({
                           {booking.customer_name || "-"} • {formatDate(booking.pickup_date)} • {formatMoney(booking.total_amount)}
                         </p>
                         {booking.package_id ? <p className="mt-2 text-xs text-slate-500">Merchant: {merchantName}</p> : null}
+                        {!booking.package_id && booking.supplier_id ? <p className="mt-2 text-xs text-slate-500">Partner reservasi: {supplierLabel}</p> : null}
                         {booking.display_currency && (
                           <p className="mt-2 text-xs text-slate-500">
                             Harga sesuai bahasa customer:{" "}
@@ -893,7 +929,7 @@ export default async function AdminBookingsPage({
 
                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-[20px] border border-white bg-white p-4">
-                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Paket</p>
+                        <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Subtotal Booking</p>
                         <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.subtotal_amount)}</p>
                       </div>
                       <div className="rounded-[20px] border border-white bg-white p-4">
@@ -936,7 +972,7 @@ export default async function AdminBookingsPage({
                       )}
                       {!ready && (
                         <span className="rounded-[20px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-700">
-                          Menunggu lunas dan urutan pickup lengkap
+                          Menunggu lunas dan tahapan operasional lengkap
                         </span>
                       )}
                     </div>

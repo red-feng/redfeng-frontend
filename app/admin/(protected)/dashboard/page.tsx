@@ -124,6 +124,7 @@ type DashboardBookingRow = {
   id: string
   package_id: string | null
   booking_product_type: string | null
+  supplier_id: string | null
   booking_status: string | null
   created_at: string | null
   payment_status: string | null
@@ -488,6 +489,7 @@ export default async function AdminDashboard({
     activeMerchantResult,
     packageResult,
     bookingResult,
+    supplierResult,
     webVitalsResult,
     deletionRequestResult,
     reviewRequestResult,
@@ -507,8 +509,9 @@ export default async function AdminDashboard({
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, package_id, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
+      .select("id, package_id, supplier_id, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
+    adminSupabase.from("suppliers").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase
       .from("web_vitals_events")
       .select("event_type, metric_name, metric_value, path, rating, created_at")
@@ -535,6 +538,7 @@ export default async function AdminDashboard({
 
   const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
   const activeMerchantCount = canAccessPackageTour ? activeMerchantResult.count || 0 : 0
+  const activeSupplierCount = supplierResult.error ? 0 : supplierResult.count || 0
   const packages = canAccessPackageTour ? ((packageResult.data as DashboardPackageRow[] | null) || []) : []
   const bookings = (((bookingResult.data as DashboardBookingRow[] | null) || []) as DashboardBookingRow[])
     .filter((booking) => accessibleProductTypes.includes(classifyBookingProduct(booking)))
@@ -989,6 +993,37 @@ export default async function AdminDashboard({
       { label: "Queue Review", value: globalReviewQueueCount.toLocaleString("id-ID"), delta: `${globalPendingPackages} paket • ${pendingMerchants} merchant`, sub: "Review, approval, dan deletion request", tone: "text-orange-600", bg: "bg-orange-50" },
       { label: "Anomali Terbuka", value: globalOperationalWarnings.toLocaleString("id-ID"), delta: `${globalFinanceReadyCount} booking siap finance`, sub: "SLA, deletion, approval, dan handoff", tone: "text-rose-600", bg: "bg-rose-50" },
     ]
+    const managerVisibleKpiCards = managerKpiCards.map((card) => {
+      if (card.label === "Produk Live") {
+        return {
+          ...card,
+          sub: `${connectedProductCount} connected | ${partialProductCount} partial dari ${OPERATIONS_PRODUCT_SUMMARIES.length} produk`,
+        }
+      }
+      if (card.label === "Merchant Aktif") {
+        return {
+          ...card,
+          label: "Partner Reservasi",
+          value: activeSupplierCount.toLocaleString("id-ID"),
+          delta: `${activeMerchantCount} merchant aktif`,
+          sub: "Partner fulfillment aktif lintas produk",
+        }
+      }
+      if (card.label === "Queue Review") {
+        return {
+          ...card,
+          delta: `${globalPendingPackages} paket | ${pendingMerchants} merchant`,
+        }
+      }
+      if (card.label === "Anomali Terbuka") {
+        return {
+          ...card,
+          delta: `${globalFinanceReadyCount} booking perlu monitor`,
+          sub: "SLA, review, fulfillment, dan handoff",
+        }
+      }
+      return card
+    })
     const bookingCategoryCounts = periodBookings.reduce((map, booking) => {
       const label = getOperationsProductLabel(classifyBookingProduct(booking))
       map.set(label, (map.get(label) || 0) + 1)
@@ -1521,7 +1556,7 @@ export default async function AdminDashboard({
 
           {showKpiOverviewWidget ? (
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
-            {managerKpiCards.map((card) => (
+            {managerVisibleKpiCards.map((card) => (
               <div key={card.label} className="rounded-[18px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
                 <div className="flex items-start gap-3">
                   <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black ${card.bg} ${card.tone}`}>{card.label[0]}</span>

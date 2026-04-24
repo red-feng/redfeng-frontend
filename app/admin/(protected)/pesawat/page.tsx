@@ -5,11 +5,14 @@ export default function AdminFlightsWorkspacePage() {
     <AdminProductWorkspace
       productType="flight"
       productLabel="Pesawat"
-      description="Submenu admin untuk produk Pesawat sudah disiapkan terpisah agar nanti queue supplier, fare rules, schedule, dan operasional bisa berdiri sendiri tanpa bercampur dengan Paket Tour."
-      primaryActionHref="/admin/bookings?product=pesawat"
-      primaryActionLabel="Lihat booking Pesawat"
-      secondaryActionHref="/admin/dashboard"
-      secondaryActionLabel="Kembali ke dashboard admin"
+      description="Workspace Pesawat sekarang dipakai untuk booking affiliate dasar, sehingga tim operasional bisa mulai mencatat supplier, rute, jadwal, dan status issue tiket tanpa tercampur dengan workflow Paket Tour."
+      statusLabel="Flow dasar aktif"
+      statusNote="Create booking affiliate Pesawat sudah tersedia. Queue supplier dan sinkronisasi API bisa menyusul di tahap berikutnya."
+      primaryActionHref="/admin/pesawat/bookings/new"
+      primaryActionLabel="Buat booking Pesawat"
+      secondaryActionHref="/admin/bookings?product=pesawat"
+      secondaryActionLabel="Lihat booking Pesawat"
+      preparedModules={["Create booking", "Supplier affiliate", "Flight details", "Booking Center", "Issue status"]}
     />
   )
 }

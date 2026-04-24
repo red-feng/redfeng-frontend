@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+import { getSupplierOrderStatusLabel, getVisibleSupplierLabel, getVisibleSupplierReference, normalizeSupplierOrderStatus } from "@/lib/affiliate-suppliers"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
@@ -28,6 +29,10 @@ type BookingDetailRow = {
   customer_admin_fee_amount: number | null
   customer_tax_amount: number | null
   final_payment_amount: number | null
+  supplier_id: string | null
+  supplier_booking_reference: string | null
+  supplier_order_status: string | null
+  fulfillment_mode: string | null
   display_currency: string | null
   display_subtotal_amount: number | null
   display_price_adult: number | null
@@ -61,6 +66,13 @@ type MerchantRow = {
   bank_name: string | null
   bank_account_number: string | null
   bank_account_holder: string | null
+}
+
+type SupplierRow = {
+  id: string
+  supplier_name: string | null
+  internal_display_name: string | null
+  internal_alias: string | null
 }
 
 type PayoutRow = {
@@ -449,7 +461,7 @@ export default async function AdminBookingDetailPage({
   const { data: booking, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, supplier_id, supplier_booking_reference, supplier_order_status, fulfillment_mode, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .eq("id", id)
     .maybeSingle<BookingDetailRow>()
@@ -473,6 +485,13 @@ export default async function AdminBookingDetailPage({
         .eq("id", pkg.merchant_id)
         .maybeSingle<MerchantRow>()
     : { data: null as MerchantRow | null }
+  const { data: supplier } = booking.supplier_id
+    ? await adminSupabase
+        .from("suppliers")
+        .select("id, supplier_name, internal_display_name, internal_alias")
+        .eq("id", booking.supplier_id)
+        .maybeSingle<SupplierRow>()
+    : { data: null as SupplierRow | null }
 
   const { data: payout } = await adminSupabase
     .from("payout_requests")
@@ -520,6 +539,9 @@ export default async function AdminBookingDetailPage({
     }),
   )
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
+  const supplierLabel = supplier ? getVisibleSupplierLabel(supplier) : "-"
+  const supplierReferenceLabel = supplier ? getVisibleSupplierReference(supplier) : "-"
+  const supplierStatus = normalizeSupplierOrderStatus(booking.supplier_order_status)
   const timeline = [
     {
       label: "Merchant Arrived",
@@ -661,6 +683,13 @@ export default async function AdminBookingDetailPage({
                 <p className="mt-3 text-lg font-semibold text-slate-950">{merchantName}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">Masuk ke semua paket dan konteks merchant dari booking ini.</p>
               </Link>
+            ) : supplier ? (
+              <div className="rounded-[24px] border border-[#efe1cf] bg-white p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Partner reservasi</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">{supplierLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">Label partner internal untuk fulfillment booking non-paket.</p>
+                <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-400">{supplierReferenceLabel}</p>
+              </div>
             ) : (
               <div className="rounded-[24px] border border-slate-200 bg-slate-50/80 p-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500">Merchant workspace</p>
@@ -691,7 +720,7 @@ export default async function AdminBookingDetailPage({
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Booking context</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Informasi customer, package, dan merchant</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Informasi customer, produk, dan partner operasional</h2>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Customer</p>
@@ -713,10 +742,18 @@ export default async function AdminBookingDetailPage({
                 ) : null}
               </div>
               <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant</p>
-                <p className="mt-2 text-sm font-medium text-slate-900">{merchantName}</p>
-                <p className="mt-2 text-sm text-slate-600">{merchant?.email || "-"}</p>
-                <p className="mt-2 text-sm text-slate-600">{[merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{merchant?.id ? "Merchant" : supplier ? "Partner reservasi" : "Partner operasional"}</p>
+                <p className="mt-2 text-sm font-medium text-slate-900">{merchant?.id ? merchantName : supplierLabel}</p>
+                <p className="mt-2 text-sm text-slate-600">{merchant?.id ? merchant?.email || "-" : supplierReferenceLabel}</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {merchant?.id
+                    ? [merchant?.city, merchant?.province].filter(Boolean).join(", ") || "-"
+                    : supplierStatus
+                      ? `Status supplier: ${getSupplierOrderStatusLabel(supplierStatus)}`
+                      : booking.fulfillment_mode
+                        ? `Fulfillment: ${titleCaseStatus(booking.fulfillment_mode)}`
+                        : "-"}
+                </p>
                 {merchant?.id ? (
                   <Link href={merchantHref} className="mt-3 inline-flex text-sm font-semibold text-orange-600 hover:text-orange-700">
                     Buka workspace merchant
@@ -856,10 +893,23 @@ export default async function AdminBookingDetailPage({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em]">{operationalOwnerCue.label}</p>
                 <p className="mt-2">{operationalOwnerCue.body}</p>
               </div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant payout destination</p>
-              <p className="mt-2 text-sm text-slate-700">Bank: {merchant?.bank_name || "-"}</p>
-              <p className="mt-2 text-sm text-slate-700">No. Rekening: {merchant?.bank_account_number || "-"}</p>
-              <p className="mt-2 text-sm text-slate-700">Atas Nama: {merchant?.bank_account_holder || "-"}</p>
+              {merchant?.id ? (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Merchant payout destination</p>
+                  <p className="mt-2 text-sm text-slate-700">Bank: {merchant?.bank_name || "-"}</p>
+                  <p className="mt-2 text-sm text-slate-700">No. Rekening: {merchant?.bank_account_number || "-"}</p>
+                  <p className="mt-2 text-sm text-slate-700">Atas Nama: {merchant?.bank_account_holder || "-"}</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Fulfillment partner</p>
+                  <p className="mt-2 text-sm text-slate-700">{supplierLabel}</p>
+                  <p className="mt-2 text-sm text-slate-700">Referensi internal: {supplierReferenceLabel}</p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    {supplierStatus ? `Status supplier: ${getSupplierOrderStatusLabel(supplierStatus)}` : "Status supplier belum tersedia."}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </section>
