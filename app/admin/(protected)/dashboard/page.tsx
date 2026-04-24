@@ -125,6 +125,8 @@ type DashboardBookingRow = {
   package_id: string | null
   booking_product_type: string | null
   supplier_id: string | null
+  fulfillment_mode: string | null
+  supplier_order_status: string | null
   booking_status: string | null
   created_at: string | null
   payment_status: string | null
@@ -165,6 +167,13 @@ type DashboardAuditLogRow = {
   created_at: string | null
 }
 
+type DashboardSupplierRow = {
+  id: string
+  supplier_code: string
+  supplier_type: string | null
+  status: string | null
+}
+
 function averageMetricValue(rows: WebVitalEventRow[], metricName: string) {
   const matchingRows = rows.filter((row) => row.metric_name === metricName && Number.isFinite(Number(row.metric_value)))
   if (matchingRows.length === 0) return null
@@ -187,6 +196,14 @@ function formatRelativeHours(value: string | null | undefined) {
   if (diffHours < 24) return `${diffHours} jam lalu`
   const diffDays = Math.floor(diffHours / 24)
   return `${diffDays} hari lalu`
+}
+
+function normalizeFulfillmentMode(value: string | null | undefined) {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (normalized === "affiliate_api" || normalized === "affiliate_manual" || normalized === "internal") {
+    return normalized
+  }
+  return "internal"
 }
 
 function formatShortDate(value: string | null | undefined) {
@@ -334,7 +351,7 @@ function isWithinPeriod(value: string | null | undefined, start: Date | null) {
 
 function getOperationsWorkspace(value: string | null | undefined) {
   const normalized = String(value || "all").trim().toLowerCase()
-  if (["merchant", "package_review", "booking_center", "anomalies", "kpi_overview", "product_performance", "quick_actions"].includes(normalized)) {
+  if (["merchant", "package_review", "booking_center", "anomalies", "kpi_overview", "product_performance", "quick_actions", "source_performance"].includes(normalized)) {
     return normalized
   }
   return "all"
@@ -520,6 +537,7 @@ export default async function AdminDashboard({
     packageResult,
     bookingResult,
     supplierResult,
+    supplierCatalogResult,
     webVitalsResult,
     deletionRequestResult,
     reviewRequestResult,
@@ -539,9 +557,10 @@ export default async function AdminDashboard({
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, package_id, supplier_id, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
+      .select("id, package_id, supplier_id, fulfillment_mode, supplier_order_status, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
     adminSupabase.from("suppliers").select("id", { count: "exact", head: true }).eq("status", "active"),
+    adminSupabase.from("suppliers").select("id, supplier_code, supplier_type, status"),
     adminSupabase
       .from("web_vitals_events")
       .select("event_type, metric_name, metric_value, path, rating, created_at")
@@ -569,6 +588,7 @@ export default async function AdminDashboard({
   const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
   const activeMerchantCount = canAccessPackageTour ? activeMerchantResult.count || 0 : 0
   const activeSupplierCount = supplierResult.error ? 0 : supplierResult.count || 0
+  const suppliers = supplierCatalogResult.error ? [] : ((supplierCatalogResult.data as DashboardSupplierRow[] | null) || [])
   const packages = canAccessPackageTour ? ((packageResult.data as DashboardPackageRow[] | null) || []) : []
   const bookings = (((bookingResult.data as DashboardBookingRow[] | null) || []) as DashboardBookingRow[])
     .filter((booking) => accessibleProductTypes.includes(classifyBookingProduct(booking)))
@@ -587,6 +607,7 @@ export default async function AdminDashboard({
   const pendingMerchants = pendingMerchantsData.length
 
   const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
+  const supplierMap = new Map(suppliers.map((supplier) => [supplier.id, supplier]))
   const packageMerchantIds = Array.from(new Set(packages.map((pkg) => pkg.merchant_id).filter((id): id is string => Boolean(id))))
   const packageMerchantIdSet = new Set(packageMerchantIds)
   const packageMerchants =
@@ -601,6 +622,16 @@ export default async function AdminDashboard({
   const merchantNameMap = new Map(
     packageMerchants.map((merchant) => [merchant.id, merchant.brand_name || merchant.company_name || "Merchant tanpa nama"]),
   )
+  const classifyBookingSource = (booking: DashboardBookingRow) => {
+    const supplier = booking.supplier_id ? supplierMap.get(booking.supplier_id) : null
+    const fulfillmentMode = normalizeFulfillmentMode(booking.fulfillment_mode)
+    return fulfillmentMode !== "internal" ||
+      supplier?.supplier_type === "affiliate" ||
+      supplier?.supplier_type === "aggregator" ||
+      supplier?.supplier_code === "TRAVELOKA"
+      ? "affiliate"
+      : "internal"
+  }
 
   const pendingPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
   const approvedPackages = packages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
@@ -718,11 +749,19 @@ export default async function AdminDashboard({
       const receivedAmount =
         paymentStatus === "paid" ? totalAmount : paymentStatus === "dp_paid" ? dpAmount : 0
       const receivedRatio = totalAmount > 0 ? Math.min(receivedAmount / totalAmount, 1) : 0
+      const supplier = booking.supplier_id ? supplierMap.get(booking.supplier_id) : null
+      const fulfillmentMode = normalizeFulfillmentMode(booking.fulfillment_mode)
+      const bookingSource = classifyBookingSource(booking)
 
       return {
         id: booking.id,
         packageId: booking.package_id,
         bookingProductType: classifyBookingProduct(booking),
+        bookingSource,
+        fulfillmentMode,
+        supplierType: String(supplier?.supplier_type || "").trim().toLowerCase() || null,
+        supplierCode: supplier?.supplier_code || null,
+        supplierOrderStatus: normalizeStatus(booking.supplier_order_status),
         createdAt: booking.created_at,
         paymentStatus,
         paymentType,
@@ -939,6 +978,8 @@ export default async function AdminDashboard({
 
   if (showOperationsManagerView) {
     const globalPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
+    const globalPeriodInternalBookings = globalPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
+    const globalPeriodAffiliateBookings = globalPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
     const globalPeriodPackages = packages.filter((pkg) => isWithinPeriod(pkg.created_at, operationsPeriodStart))
     const globalPeriodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const globalPeriodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
@@ -946,6 +987,8 @@ export default async function AdminDashboard({
     const globalPeriodCustomerTransactionRows = customerTransactionRows.filter((transaction) =>
       isWithinPeriod(transaction.createdAt, operationsPeriodStart),
     )
+    const globalPeriodInternalTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => transaction.bookingSource === "internal")
+    const globalPeriodAffiliateTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => transaction.bookingSource === "affiliate")
     const globalPendingPackages = globalPeriodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
     const globalPackageOverdueCount = globalPeriodPackages.filter(
       (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
@@ -962,6 +1005,47 @@ export default async function AdminDashboard({
     const roadmapProductCount = accessibleProductSummaries.filter((product) => product.status === "roadmap").length
     const totalLiveProducts = connectedProductCount + partialProductCount
     const globalRevenueTotal = globalPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const globalInternalRevenueTotal = globalPeriodInternalTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const globalAffiliateRevenueTotal = globalPeriodAffiliateTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+    const totalBookingBase = Math.max(globalPeriodBookings.length, 1)
+    const totalRevenueBase = Math.max(globalRevenueTotal, 1)
+    const internalBookingShare = Math.round((globalPeriodInternalBookings.length / totalBookingBase) * 1000) / 10
+    const affiliateBookingShare = Math.round((globalPeriodAffiliateBookings.length / totalBookingBase) * 1000) / 10
+    const internalRevenueShare = Math.round((globalInternalRevenueTotal / totalRevenueBase) * 1000) / 10
+    const affiliateRevenueShare = Math.round((globalAffiliateRevenueTotal / totalRevenueBase) * 1000) / 10
+    const affiliateIssueCount = globalPeriodAffiliateBookings.filter((booking) =>
+      ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+    ).length
+    const sourcePerformanceCards = [
+      {
+        title: "Booking Source Mix",
+        summary: `${internalBookingShare}% internal | ${affiliateBookingShare}% affiliate`,
+        detail: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking internal dan ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate pada ${operationsPeriod.label.toLowerCase()}.`,
+        rows: [
+          { label: "Internal RedFeng", value: `${internalBookingShare}%`, width: internalBookingShare, valueNote: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking`, tone: "bg-sky-500" },
+          { label: "Affiliate Traveloka", value: `${affiliateBookingShare}%`, width: affiliateBookingShare, valueNote: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking`, tone: "bg-orange-500" },
+        ],
+      },
+      {
+        title: "Revenue Source Mix",
+        summary: `${internalRevenueShare}% internal | ${affiliateRevenueShare}% affiliate`,
+        detail: `${formatMoney(globalInternalRevenueTotal)} revenue internal dan ${formatMoney(globalAffiliateRevenueTotal)} revenue affiliate pada ${operationsPeriod.label.toLowerCase()}.`,
+        rows: [
+          { label: "Internal RedFeng", value: `${internalRevenueShare}%`, width: internalRevenueShare, valueNote: formatMoney(globalInternalRevenueTotal), tone: "bg-emerald-500" },
+          { label: "Affiliate Traveloka", value: `${affiliateRevenueShare}%`, width: affiliateRevenueShare, valueNote: formatMoney(globalAffiliateRevenueTotal), tone: "bg-orange-500" },
+        ],
+      },
+      {
+        title: "Affiliate Snapshot",
+        summary: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate`,
+        detail: "Snapshot awal channel affiliate Traveloka. Conversion belum ditampilkan sampai denominator funnel affiliate tersedia di data operasional.",
+        rows: [
+          { label: "Booking Affiliate", value: globalPeriodAffiliateBookings.length.toLocaleString("id-ID"), width: affiliateBookingShare, valueNote: "Traveloka", tone: "bg-violet-500" },
+          { label: "Revenue Affiliate", value: formatMoney(globalAffiliateRevenueTotal), width: affiliateRevenueShare, valueNote: `${affiliateRevenueShare}% share`, tone: "bg-fuchsia-500" },
+          { label: "Issue Affiliate", value: affiliateIssueCount.toLocaleString("id-ID"), width: Math.min(Math.max(affiliateIssueCount * 12, affiliateIssueCount > 0 ? 12 : 0), 100), valueNote: "Perlu follow-up", tone: "bg-rose-500" },
+        ],
+      },
+    ]
 
     const periodBookings = bookings.filter((booking) => {
       if (!isWithinPeriod(booking.created_at, operationsPeriodStart)) return false
@@ -1037,7 +1121,6 @@ export default async function AdminDashboard({
     })
     const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
     const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
-    const globalBookingTrendTotal = globalPeriodBookings.length
     const flightStalledBookingCount = globalPeriodBookings.filter(
       (booking) => classifyBookingProduct(booking) === "flight" && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
@@ -1056,8 +1139,8 @@ export default async function AdminDashboard({
     const globalReviewQueueCount = crossProductReviewQueueCount
     const globalOperationalWarnings = crossProductOperationalWarnings
     const managerKpiCards = [
-      { label: "Total Booking", value: globalPeriodBookings.length.toLocaleString("id-ID"), delta: `${globalBookingTrendTotal.toLocaleString("id-ID")} booking`, sub: `Global ${currentMonthLabel}`, tone: "text-sky-600", bg: "bg-sky-50" },
-      { label: "Total Revenue (IDR)", value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(globalRevenueTotal), sub: `Semua produk ${currentMonthLabel}`, tone: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Total Booking", value: globalPeriodBookings.length.toLocaleString("id-ID"), delta: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} internal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} affiliate`, sub: `Global ${currentMonthLabel}`, tone: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Total Revenue (IDR)", value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0", delta: `${formatMoney(globalInternalRevenueTotal)} internal | ${formatMoney(globalAffiliateRevenueTotal)} affiliate`, sub: `Semua produk ${currentMonthLabel}`, tone: "text-emerald-600", bg: "bg-emerald-50" },
       { label: "Produk Live", value: totalLiveProducts.toLocaleString("id-ID"), delta: `${roadmapProductCount} roadmap`, sub: `${connectedProductCount} connected • ${partialProductCount} partial dari ${OPERATIONS_PRODUCT_SUMMARIES.length} produk`, tone: "text-violet-600", bg: "bg-violet-50" },
       { label: "Merchant Aktif", value: activeMerchantCount.toLocaleString("id-ID"), delta: `${pendingMerchants} pending`, sub: "Merchant approved lintas dashboard", tone: "text-amber-600", bg: "bg-amber-50" },
       { label: "Queue Review", value: globalReviewQueueCount.toLocaleString("id-ID"), delta: `${globalPendingPackages} paket • ${pendingMerchants} merchant`, sub: "Review, approval, dan deletion request", tone: "text-orange-600", bg: "bg-orange-50" },
@@ -1392,6 +1475,7 @@ export default async function AdminDashboard({
       )
       .parts.join(", ")
     const showKpiWorkspace = operationsWorkspace === "all" || operationsWorkspace === "kpi_overview"
+    const showSourcePerformanceWorkspace = operationsWorkspace === "all" || operationsWorkspace === "source_performance"
     const showProductSummaryWorkspace = operationsWorkspace === "all" || operationsWorkspace === "product_performance"
     const showBookingWorkspace = operationsWorkspace === "all" || operationsWorkspace === "booking_center"
     const showPackageWorkspace = operationsWorkspace === "all" || operationsWorkspace === "package_review"
@@ -1662,6 +1746,7 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => a.order - b.order || a.productLabel.localeCompare(b.productLabel))
     const hasAnyDashboardWidget =
+      showSourcePerformanceWorkspace ||
       showKpiOverviewWidget ||
       showProductPerformanceWidget ||
       showBookingTrendsWidget ||
@@ -1715,6 +1800,7 @@ export default async function AdminDashboard({
               >
                 <option value="all">Workspace: Semua</option>
                 <option value="kpi_overview">KPI Utama</option>
+                <option value="source_performance">Source Performance</option>
                 <option value="product_performance">Performa Produk</option>
                 <option value="merchant">Merchant & SLA</option>
                 <option value="package_review">Package Review</option>
@@ -1763,6 +1849,43 @@ export default async function AdminDashboard({
                 </div>
               </div>
             ))}
+          </section>
+          ) : null}
+
+          {showSourcePerformanceWorkspace ? (
+          <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">Source Performance</h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Pisahkan performa channel internal RedFeng vs affiliate Traveloka supaya dashboard tidak bias ke satu model bisnis saja.
+                </p>
+              </div>
+              <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
+            </div>
+            <div className="mt-5 grid gap-4 lg:grid-cols-3">
+              {sourcePerformanceCards.map((card) => (
+                <div key={card.title} className="rounded-[18px] border border-[#edf0f4] bg-[#fffdfa] p-4">
+                  <p className="text-sm font-semibold text-slate-900">{card.title}</p>
+                  <p className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950">{card.summary}</p>
+                  <p className="mt-2 text-xs leading-5 text-slate-500">{card.detail}</p>
+                  <div className="mt-4 space-y-3">
+                    {card.rows.map((row) => (
+                      <div key={`${card.title}-${row.label}`} className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-3 text-[11px]">
+                          <span className="font-medium text-slate-600">{row.label}</span>
+                          <span className="font-semibold text-slate-900">{row.value}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#eef2f7]">
+                          <div className={`h-2 rounded-full ${row.tone}`} style={{ width: `${Math.min(Math.max(row.width, 0), 100)}%` }} />
+                        </div>
+                        <p className="text-[11px] text-slate-400">{row.valueNote}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
           ) : null}
 
