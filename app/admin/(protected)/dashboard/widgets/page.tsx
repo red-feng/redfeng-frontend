@@ -194,9 +194,9 @@ export default async function OperationsDashboardWidgetsPage({
                 <span className="inline-flex rounded-full border border-[#f0d8c3] bg-white px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-600">
                   Widget Global
                 </span>
-                <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Ringkasan Lintas Produk</h2>
+                <h2 className="mt-4 text-3xl font-semibold tracking-[-0.04em] text-slate-950">Struktur Dashboard Utama</h2>
                 <p className="mt-3 max-w-3xl text-[15px] leading-7 text-slate-500">
-                  Bagian ini hanya berisi widget yang sifatnya dashboard-level dan tidak digantikan oleh katalog widget per produk.
+                  Bagian ini berisi blok dashboard-level untuk KPI, source performance, per kategori, operational task, trend, dan alert. Quick actions tetap tersedia sebagai utilitas opsional.
                 </p>
               </div>
               <div className="rounded-[20px] border border-[#eadfd5] bg-white px-5 py-4 text-right shadow-[0_12px_28px_rgba(15,23,42,0.04)]">

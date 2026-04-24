@@ -349,9 +349,28 @@ function isWithinPeriod(value: string | null | undefined, start: Date | null) {
   return parsed >= start
 }
 
+function isWithinDateRange(value: string | null | undefined, start: Date | null, end: Date | null) {
+  if (!start || !end) return false
+  if (!value) return false
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return false
+  return parsed >= start && parsed < end
+}
+
 function getOperationsWorkspace(value: string | null | undefined) {
   const normalized = String(value || "all").trim().toLowerCase()
-  if (["merchant", "package_review", "booking_center", "anomalies", "kpi_overview", "product_performance", "quick_actions", "source_performance"].includes(normalized)) {
+  if ([
+    "merchant",
+    "package_review",
+    "booking_center",
+    "anomalies",
+    "kpi_overview",
+    "product_performance",
+    "quick_actions",
+    "source_performance",
+    "operational_tasks",
+    "alerts_overview",
+  ].includes(normalized)) {
     return normalized
   }
   return "all"
@@ -536,7 +555,6 @@ export default async function AdminDashboard({
     activeMerchantResult,
     packageResult,
     bookingResult,
-    supplierResult,
     supplierCatalogResult,
     webVitalsResult,
     deletionRequestResult,
@@ -559,7 +577,6 @@ export default async function AdminDashboard({
       .from("bookings")
       .select("id, package_id, supplier_id, fulfillment_mode, supplier_order_status, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
-    adminSupabase.from("suppliers").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("suppliers").select("id, supplier_code, supplier_type, status"),
     adminSupabase
       .from("web_vitals_events")
@@ -587,7 +604,6 @@ export default async function AdminDashboard({
 
   const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
   const activeMerchantCount = canAccessPackageTour ? activeMerchantResult.count || 0 : 0
-  const activeSupplierCount = supplierResult.error ? 0 : supplierResult.count || 0
   const suppliers = supplierCatalogResult.error ? [] : ((supplierCatalogResult.data as DashboardSupplierRow[] | null) || [])
   const packages = canAccessPackageTour ? ((packageResult.data as DashboardPackageRow[] | null) || []) : []
   const bookings = (((bookingResult.data as DashboardBookingRow[] | null) || []) as DashboardBookingRow[])
@@ -1000,10 +1016,6 @@ export default async function AdminDashboard({
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
     const accessibleProductSummaries = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => accessibleProductTypes.includes(product.key))
-    const connectedProductCount = accessibleProductSummaries.filter((product) => product.status === "connected").length
-    const partialProductCount = accessibleProductSummaries.filter((product) => product.status === "partial").length
-    const roadmapProductCount = accessibleProductSummaries.filter((product) => product.status === "roadmap").length
-    const totalLiveProducts = connectedProductCount + partialProductCount
     const globalRevenueTotal = globalPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const globalInternalRevenueTotal = globalPeriodInternalTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const globalAffiliateRevenueTotal = globalPeriodAffiliateTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
@@ -1016,6 +1028,70 @@ export default async function AdminDashboard({
     const affiliateIssueCount = globalPeriodAffiliateBookings.filter((booking) =>
       ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
     ).length
+    const affiliateApiErrorCount = globalPeriodAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length
+    const affiliateFailureCount = globalPeriodAffiliateBookings.filter((booking) => {
+      const supplierStatus = normalizeStatus(booking.supplier_order_status)
+      return ["failed", "cancel_requested", "cancelled", "refund_requested", "refunded"].includes(supplierStatus)
+    }).length
+    const internalPendingIssueCount = pendingMerchants + globalPendingPackages
+    const totalPendingIssueCount = internalPendingIssueCount + affiliateIssueCount
+    const slaTrackedItemCount = pendingMerchants + globalPendingPackages + globalFinanceReadyCount
+    const slaBreachCount = merchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount
+    const slaComplianceRate =
+      slaTrackedItemCount > 0 ? Math.max(0, Math.round(((slaTrackedItemCount - slaBreachCount) / slaTrackedItemCount) * 1000) / 10) : 100
+    const affiliateFailureRate =
+      globalPeriodAffiliateBookings.length > 0
+        ? Math.round((affiliateFailureCount / globalPeriodAffiliateBookings.length) * 1000) / 10
+        : 0
+    const alertRecentWindowStart = getPeriodStart(7)
+    const alertPreviousWindowStart = getPeriodStart(14)
+    const anomalySignalCurrentCount =
+      pendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertRecentWindowStart, new Date())).length +
+      packages.filter(
+        (pkg) =>
+          normalizeStatus(pkg.status) === "pending" &&
+          (daysSince(pkg.created_at) >= 3 || isWithinDateRange(pkg.created_at, alertRecentWindowStart, new Date())),
+      ).length +
+      deletionRequests.filter((request) => isWithinDateRange(request.requested_at, alertRecentWindowStart, new Date())).length +
+      reviewRequests.filter((request) => isWithinDateRange(request.requested_at, alertRecentWindowStart, new Date())).length +
+      bookings.filter(
+        (booking) =>
+          ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) &&
+          isWithinDateRange(booking.created_at, alertRecentWindowStart, new Date()),
+      ).length +
+      bookings.filter(
+        (booking) =>
+          classifyBookingSource(booking) === "affiliate" &&
+          normalizeStatus(booking.supplier_order_status) === "failed" &&
+          isWithinDateRange(booking.created_at, alertRecentWindowStart, new Date()),
+      ).length
+    const anomalySignalPreviousCount =
+      pendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertPreviousWindowStart, alertRecentWindowStart)).length +
+      packages.filter(
+        (pkg) =>
+          normalizeStatus(pkg.status) === "pending" &&
+          isWithinDateRange(pkg.created_at, alertPreviousWindowStart, alertRecentWindowStart),
+      ).length +
+      deletionRequests.filter((request) => isWithinDateRange(request.requested_at, alertPreviousWindowStart, alertRecentWindowStart)).length +
+      reviewRequests.filter((request) => isWithinDateRange(request.requested_at, alertPreviousWindowStart, alertRecentWindowStart)).length +
+      bookings.filter(
+        (booking) =>
+          ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) &&
+          isWithinDateRange(booking.created_at, alertPreviousWindowStart, alertRecentWindowStart),
+      ).length +
+      bookings.filter(
+        (booking) =>
+          classifyBookingSource(booking) === "affiliate" &&
+          normalizeStatus(booking.supplier_order_status) === "failed" &&
+          isWithinDateRange(booking.created_at, alertPreviousWindowStart, alertRecentWindowStart),
+      ).length
+    const anomalySpikeDelta = Math.max(anomalySignalCurrentCount - anomalySignalPreviousCount, 0)
+    const anomalySpikeRate =
+      anomalySignalPreviousCount > 0
+        ? Math.round((anomalySpikeDelta / anomalySignalPreviousCount) * 1000) / 10
+        : anomalySignalCurrentCount > 0
+          ? 100
+          : 0
     const sourcePerformanceCards = [
       {
         title: "Booking Source Mix",
@@ -1061,9 +1137,6 @@ export default async function AdminDashboard({
       (request) => Boolean(request.merchant_id) && packageMerchantIdSet.has(request.merchant_id as string),
     )
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
-    const packageTourReviewRequests = periodReviewRequests.filter(
-      (request) => Boolean(request.merchant_id) && packageMerchantIdSet.has(request.merchant_id as string),
-    )
     const periodAuditLogs = globalPeriodAuditLogs
     const packageTourAuditLogs = periodAuditLogs.filter((log) => log.target_type === "package")
     const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
@@ -1096,12 +1169,19 @@ export default async function AdminDashboard({
     const totalBookings = periodBookings.length
     const packageTourTotalBookings = packageTourPeriodBookings.length
     const packageTourRevenue = packageTourPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
-    const bookingTrendRows = buildRecentDayBuckets(operationsChartDays)
+    const bookingTrendRows = buildRecentDayBuckets(operationsChartDays).map((row) => ({ ...row, internal: 0, affiliate: 0 }))
     const bookingTrendMap = new Map(bookingTrendRows.map((row) => [row.key, row]))
     periodBookings.forEach((booking) => {
       const dayKey = getDayKey(booking.created_at)
       const bucket = dayKey ? bookingTrendMap.get(dayKey) : null
-      if (bucket) bucket.value += 1
+      if (bucket) {
+        bucket.value += 1
+        if (classifyBookingSource(booking) === "affiliate") {
+          bucket.affiliate += 1
+        } else {
+          bucket.internal += 1
+        }
+      }
     })
     const bookingTrendMax = Math.max(...bookingTrendRows.map((row) => row.value), 1)
     const packageTourBookingTrendRows = buildRecentDayBuckets(operationsChartDays)
@@ -1112,75 +1192,67 @@ export default async function AdminDashboard({
       if (bucket) bucket.value += 1
     })
     const packageTourBookingTrendMax = Math.max(...packageTourBookingTrendRows.map((row) => row.value), 1)
-    const revenueTrendRows = buildRecentDayBuckets(operationsChartDays)
+    const revenueTrendRows = buildRecentDayBuckets(operationsChartDays).map((row) => ({ ...row, internal: 0, affiliate: 0 }))
     const revenueTrendMap = new Map(revenueTrendRows.map((row) => [row.key, row]))
     periodCustomerTransactionRows.forEach((transaction) => {
       const dayKey = getDayKey(transaction.createdAt)
       const bucket = dayKey ? revenueTrendMap.get(dayKey) : null
-      if (bucket) bucket.value += transaction.receivedAmount
+      if (bucket) {
+        bucket.value += transaction.receivedAmount
+        if (transaction.bookingSource === "affiliate") {
+          bucket.affiliate += transaction.receivedAmount
+        } else {
+          bucket.internal += transaction.receivedAmount
+        }
+      }
     })
     const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
     const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
     const flightStalledBookingCount = globalPeriodBookings.filter(
       (booking) => classifyBookingProduct(booking) === "flight" && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
-    const crossProductReviewQueueCount =
-      pendingMerchants +
-      (accessibleProductTypes.includes("package_tour")
-        ? globalPendingPackages + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
-        : 0) +
-      (accessibleProductTypes.includes("flight") ? flightStalledBookingCount : 0)
-    const crossProductOperationalWarnings =
-      merchantOverdueCount +
-      (accessibleProductTypes.includes("package_tour")
-        ? globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
-        : 0) +
-      globalBookingStalledCount
-    const globalReviewQueueCount = crossProductReviewQueueCount
-    const globalOperationalWarnings = crossProductOperationalWarnings
-    const managerKpiCards = [
-      { label: "Total Booking", value: globalPeriodBookings.length.toLocaleString("id-ID"), delta: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} internal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} affiliate`, sub: `Global ${currentMonthLabel}`, tone: "text-sky-600", bg: "bg-sky-50" },
-      { label: "Total Revenue (IDR)", value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0", delta: `${formatMoney(globalInternalRevenueTotal)} internal | ${formatMoney(globalAffiliateRevenueTotal)} affiliate`, sub: `Semua produk ${currentMonthLabel}`, tone: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Produk Live", value: totalLiveProducts.toLocaleString("id-ID"), delta: `${roadmapProductCount} roadmap`, sub: `${connectedProductCount} connected • ${partialProductCount} partial dari ${OPERATIONS_PRODUCT_SUMMARIES.length} produk`, tone: "text-violet-600", bg: "bg-violet-50" },
-      { label: "Merchant Aktif", value: activeMerchantCount.toLocaleString("id-ID"), delta: `${pendingMerchants} pending`, sub: "Merchant approved lintas dashboard", tone: "text-amber-600", bg: "bg-amber-50" },
-      { label: "Queue Review", value: globalReviewQueueCount.toLocaleString("id-ID"), delta: `${globalPendingPackages} paket • ${pendingMerchants} merchant`, sub: "Review, approval, dan deletion request", tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Anomali Terbuka", value: globalOperationalWarnings.toLocaleString("id-ID"), delta: `${globalFinanceReadyCount} booking siap finance`, sub: "SLA, deletion, approval, dan handoff", tone: "text-rose-600", bg: "bg-rose-50" },
+    const managerVisibleKpiCards = [
+      {
+        label: "Total Booking",
+        value: globalPeriodBookings.length.toLocaleString("id-ID"),
+        delta: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} internal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} affiliate`,
+        sub: `Global ${currentMonthLabel}`,
+        tone: "text-sky-600",
+        bg: "bg-sky-50",
+      },
+      {
+        label: "Total Revenue (IDR)",
+        value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0",
+        delta: `${formatMoney(globalInternalRevenueTotal)} internal | ${formatMoney(globalAffiliateRevenueTotal)} affiliate`,
+        sub: `Semua produk ${currentMonthLabel}`,
+        tone: "text-emerald-600",
+        bg: "bg-emerald-50",
+      },
+      {
+        label: "Pending Issue",
+        value: totalPendingIssueCount.toLocaleString("id-ID"),
+        delta: `${internalPendingIssueCount} internal | ${affiliateIssueCount} affiliate`,
+        sub: "Approval merchant, review paket, dan issue booking affiliate yang perlu follow-up",
+        tone: "text-amber-600",
+        bg: "bg-amber-50",
+      },
+      {
+        label: "SLA Compliance",
+        value: `${slaComplianceRate.toLocaleString("id-ID")}%`,
+        delta: `${slaBreachCount.toLocaleString("id-ID")} breach | ${Math.max(slaTrackedItemCount - slaBreachCount, 0).toLocaleString("id-ID")} on-track`,
+        sub: "Monitor SLA approval merchant, package review, dan booking handoff",
+        tone: "text-violet-600",
+        bg: "bg-violet-50",
+      },
+      {
+        label: "Failure Rate",
+        value: `${affiliateFailureRate.toLocaleString("id-ID")}%`,
+        delta: `${affiliateFailureCount.toLocaleString("id-ID")} gagal | ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate`,
+        sub: "Failed, cancel, dan refund di channel affiliate Traveloka",
+        tone: "text-rose-600",
+        bg: "bg-rose-50",
+      },
     ]
-    const managerVisibleKpiCards = managerKpiCards.map((card) => {
-      if (card.label === "Produk Live") {
-        return {
-          ...card,
-          sub: `${connectedProductCount} connected | ${partialProductCount} partial dari ${accessibleProductSummaries.length} produk akses`,
-        }
-      }
-      if (card.label === "Merchant Aktif") {
-        return {
-          ...card,
-          label: "Partner Reservasi",
-          value: activeSupplierCount.toLocaleString("id-ID"),
-          delta: `${activeMerchantCount} merchant aktif`,
-          sub: "Partner fulfillment aktif lintas produk",
-        }
-      }
-      if (card.label === "Queue Review") {
-        return {
-          ...card,
-          label: "Queue Operasional",
-          value: crossProductReviewQueueCount.toLocaleString("id-ID"),
-          delta: `${pendingMerchants} merchant | ${globalPendingPackages} paket | ${flightStalledBookingCount} flight`,
-          sub: "Approval merchant, review paket, dan booking yang perlu follow-up",
-        }
-      }
-      if (card.label === "Anomali Terbuka") {
-        return {
-          ...card,
-          value: crossProductOperationalWarnings.toLocaleString("id-ID"),
-          delta: `${merchantOverdueCount} merchant | ${globalBookingStalledCount} booking`,
-          sub: "SLA, review, deletion request, dan booking handoff lintas workspace",
-        }
-      }
-      return card
-    })
     const bookingCategoryCounts = periodBookings.reduce((map, booking) => {
       const label = getOperationsProductLabel(classifyBookingProduct(booking))
       map.set(label, (map.get(label) || 0) + 1)
@@ -1239,36 +1311,12 @@ export default async function AdminDashboard({
         ? [{ title: "Booking stalled di handoff finance", source: `${periodBookingStalledCount} booking perlu follow-up`, time: "SLA 1 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
         : []),
     ].slice(0, 5)
-    const packageTourRecentAnomalies = [
-      ...packageTourDeletionRequests.map((request) => ({
-        title: "Deletion request merchant paket",
-        source: request.merchant_name || request.merchant_email || "Merchant Paket Wisata",
-        time: formatRelativeHours(request.requested_at),
-        severity: "High",
-        tone: "bg-rose-50 text-rose-600",
-      })),
-      ...packageTourReviewRequests.map((request) => ({
-        title: `Approval merchant paket ${titleCase(request.request_type)}`,
-        source: request.admin_note || request.merchant_id || "Merchant review Paket Wisata",
-        time: formatRelativeHours(request.requested_at),
-        severity: "Medium",
-        tone: "bg-orange-50 text-orange-600",
-      })),
-      ...(periodPackageOverdueCount > 0
-        ? [{ title: "Paket pending melewati SLA", source: `${periodPackageOverdueCount} paket perlu direview`, time: "SLA 3 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
-        : []),
-      ...(packageTourBookingStalledCount > 0
-        ? [{ title: "Booking paket stalled di handoff finance", source: `${packageTourBookingStalledCount} booking perlu follow-up`, time: "SLA 1 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
-        : []),
-    ].slice(0, 5)
-    const useGlobalLatestAnomalies = enabledOperationsWidgetKeys.has("latest_anomalies")
-    const recentAnomaliesSource = useGlobalLatestAnomalies ? calculatedRecentAnomalies : packageTourRecentAnomalies
     const recentAnomalies =
-      recentAnomaliesSource.length > 0
-        ? recentAnomaliesSource
+      calculatedRecentAnomalies.length > 0
+        ? calculatedRecentAnomalies
         : [{
-            title: useGlobalLatestAnomalies ? "Tidak ada anomali terbuka" : "Tidak ada anomali Paket Wisata",
-            source: useGlobalLatestAnomalies ? "Semua queue operasional aman" : "Queue Paket Wisata aman pada periode ini",
+            title: "Tidak ada anomali terbuka",
+            source: "Semua queue operasional aman pada periode ini",
             time: "Saat ini",
             severity: "OK",
             tone: "bg-emerald-50 text-emerald-600",
@@ -1327,6 +1375,32 @@ export default async function AdminDashboard({
       { label: `Workspace ${primaryAccessibleProductLabel}`, href: primaryAccessibleProductHref, badge: 0 },
       { label: "Kelola Widget", href: "/admin/dashboard/widgets", badge: 0 },
       { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
+    ]
+    const alertCards = [
+      {
+        title: "SLA Warning",
+        value: slaBreachCount.toLocaleString("id-ID"),
+        delta: `${merchantOverdueCount} merchant | ${globalPackageOverdueCount} paket | ${globalBookingStalledCount} booking`,
+        note: "Item yang sudah melewati SLA internal untuk approval, review, atau handoff booking.",
+        href: canAccessPackageTour ? "/admin/packages" : "/admin/bookings",
+        tone: slaBreachCount > 0 ? "border-orange-200 bg-orange-50/60 text-orange-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
+      },
+      {
+        title: "API Error",
+        value: affiliateApiErrorCount.toLocaleString("id-ID"),
+        delta: `${affiliateFailureCount.toLocaleString("id-ID")} total failure affiliate`,
+        note: "Indikasi error supplier/order pada jalur affiliate seperti Traveloka yang perlu follow-up operasional.",
+        href: "/admin/bookings",
+        tone: affiliateApiErrorCount > 0 ? "border-rose-200 bg-rose-50/70 text-rose-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
+      },
+      {
+        title: "Spike Anomaly",
+        value: anomalySpikeDelta.toLocaleString("id-ID"),
+        delta: `${anomalySpikeRate.toLocaleString("id-ID")}% dibanding 7 hari sebelumnya`,
+        note: "Kenaikan sinyal anomaly dari approval, review, booking stalled, dan failed affiliate dibanding minggu sebelumnya.",
+        href: "/admin/dashboard?workspace=alerts_overview",
+        tone: anomalySpikeDelta > 0 ? "border-violet-200 bg-violet-50/70 text-violet-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
+      },
     ]
     const packageTourTopDestination = packageTourTopDestinations[0] || null
     const packageTourTopMerchantRevenue =
@@ -1411,6 +1485,18 @@ export default async function AdminDashboard({
             : liveTrendPoints || hasLiveRevenue
               ? "Lihat Data"
               : "Buka Workspace"
+        const issueCount =
+          product.key === "package_tour"
+            ? (productAnomalyCounts.get(product.key) ?? 0)
+            : product.key === "flight"
+              ? flightStalledBookingCount
+              : 0
+        const statusDescription =
+          product.status === "roadmap"
+            ? "Roadmap"
+            : product.status === "partial"
+              ? "Sebagian"
+              : "Terhubung"
         const metricRows = product.status === "roadmap"
           ? [
               { label: "Status Modul", value: "Roadmap" },
@@ -1433,6 +1519,9 @@ export default async function AdminDashboard({
           href: product.href,
           booking: isConnected ? bookingCount : null,
           revenue: isConnected ? (revenueTotal > 0 ? `Rp ${(revenueTotal / 1000000).toFixed(2)} M` : "Rp 0") : "-",
+          revenueValue: revenueTotal,
+          issueCount,
+          statusDescription,
           growth: isConnected ? statusMeta.label : "Roadmap",
           connected: isConnected,
           tone: product.tone,
@@ -1458,47 +1547,61 @@ export default async function AdminDashboard({
         time: formatDateTime(pkg.created_at),
         href: `/admin/packages/${pkg.id}`,
       }))
-    const slaTotal = Math.max(periodPendingPackages + periodPackageOverdueCount + periodBookingStalledCount, 1)
-    const slaRows = [
-      { label: "Tepat Waktu", value: Math.max(periodPendingPackages - periodPackageOverdueCount, 0), tone: "bg-emerald-500" },
-      { label: "Mendekati Batas", value: periodPackageOverdueCount, tone: "bg-orange-400" },
-      { label: "Lewat Batas", value: periodBookingStalledCount, tone: "bg-rose-500" },
-    ]
-    const slaGradient = slaRows
-      .reduce(
-        (state, item) => {
-          const nextCursor = state.cursor + (item.value / slaTotal) * 100
-          const color = item.tone === "bg-emerald-500" ? "#10b981" : item.tone === "bg-orange-400" ? "#fb923c" : "#f43f5e"
-          return { cursor: nextCursor, parts: [...state.parts, `${color} ${state.cursor}% ${nextCursor}%`] }
-        },
-        { cursor: 0, parts: [] as string[] },
+    const affiliateOperationalIssueItems = globalPeriodAffiliateBookings
+      .filter((booking) =>
+        [
+          "failed",
+          "cancel_requested",
+          "refund_requested",
+          "cancelled",
+          "refunded",
+          "awaiting_admin_handoff",
+          "finance_review",
+        ].includes(normalizeStatus(booking.supplier_order_status)) ||
+        ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
       )
-      .parts.join(", ")
+      .slice(0, 6)
+      .map((booking) => {
+        const supplier = booking.supplier_id ? supplierMap.get(booking.supplier_id) : null
+        const supplierStatus = normalizeStatus(booking.supplier_order_status)
+        const bookingStatus = normalizeStatus(booking.booking_status)
+        const issueLabel =
+          supplierStatus === "failed"
+            ? "Supplier failed"
+            : supplierStatus === "refund_requested"
+              ? "Refund requested"
+              : supplierStatus === "cancel_requested"
+                ? "Cancel requested"
+                : supplierStatus === "cancelled"
+                  ? "Cancelled"
+                  : supplierStatus === "refunded"
+                    ? "Refunded"
+                    : bookingStatus === "finance_review"
+                      ? "Finance review"
+                      : "Admin handoff"
+        return {
+          id: booking.id,
+          product: getOperationsProductLabel(classifyBookingProduct(booking)),
+          supplier: supplier?.supplier_code || "AFFILIATE",
+          issue: issueLabel,
+          time: formatDateTime(booking.created_at),
+          href: "/admin/bookings",
+        }
+      })
     const showKpiWorkspace = operationsWorkspace === "all" || operationsWorkspace === "kpi_overview"
     const showSourcePerformanceWorkspace = operationsWorkspace === "all" || operationsWorkspace === "source_performance"
     const showProductSummaryWorkspace = operationsWorkspace === "all" || operationsWorkspace === "product_performance"
+    const showOperationalWorkspace =
+      operationsWorkspace === "all" || operationsWorkspace === "operational_tasks" || operationsWorkspace === "package_review"
     const showBookingWorkspace = operationsWorkspace === "all" || operationsWorkspace === "booking_center"
-    const showPackageWorkspace = operationsWorkspace === "all" || operationsWorkspace === "package_review"
-    const showMerchantWorkspace = operationsWorkspace === "all" || operationsWorkspace === "merchant"
-    const showAnomalyWorkspace = operationsWorkspace === "all" || operationsWorkspace === "anomalies"
+    const showAlertWorkspace = operationsWorkspace === "all" || operationsWorkspace === "alerts_overview" || operationsWorkspace === "anomalies"
     const showQuickActionsWorkspace = operationsWorkspace === "all" || operationsWorkspace === "quick_actions"
     const showKpiOverviewWidget = enabledOperationsWidgetKeys.has("kpi_overview")
+    const showSourcePerformanceWidget = enabledOperationsWidgetKeys.has("source_performance")
     const showProductPerformanceWidget = enabledOperationsWidgetKeys.has("product_performance")
+    const showOperationalTasksWidget = enabledOperationsWidgetKeys.has("operational_tasks")
     const showBookingTrendsWidget = enabledOperationsWidgetKeys.has("booking_trends")
-    const showPackageReviewQueueWidget =
-      canAccessPackageTour &&
-      (enabledOperationsWidgetKeys.has("package_review_queue") ||
-        enabledOperationsWidgetKeys.has("package_tour_review_queue") ||
-        enabledOperationsWidgetKeys.has("package_tour_pending_review"))
-    const showLatestAnomaliesWidget =
-      canAccessPackageTour &&
-      (enabledOperationsWidgetKeys.has("latest_anomalies") ||
-        enabledOperationsWidgetKeys.has("package_tour_open_anomalies") ||
-        enabledOperationsWidgetKeys.has("package_tour_deletion_request"))
-    const showSlaReviewWidget =
-      canAccessPackageTour &&
-      (enabledOperationsWidgetKeys.has("sla_review") ||
-        enabledOperationsWidgetKeys.has("package_tour_sla_review"))
+    const showAlertsOverviewWidget = enabledOperationsWidgetKeys.has("alerts_overview")
     const showActivityFeedWidget =
       canAccessPackageTour &&
       (enabledOperationsWidgetKeys.has("activity_feed") ||
@@ -1746,13 +1849,12 @@ export default async function AdminDashboard({
       }))
       .sort((a, b) => a.order - b.order || a.productLabel.localeCompare(b.productLabel))
     const hasAnyDashboardWidget =
-      showSourcePerformanceWorkspace ||
       showKpiOverviewWidget ||
+      showSourcePerformanceWidget ||
       showProductPerformanceWidget ||
+      showOperationalTasksWidget ||
       showBookingTrendsWidget ||
-      showPackageReviewQueueWidget ||
-      showLatestAnomaliesWidget ||
-      showSlaReviewWidget ||
+      showAlertsOverviewWidget ||
       showActivityFeedWidget ||
       showTopDestinationsWidget ||
       showQuickActionsWidget ||
@@ -1801,11 +1903,10 @@ export default async function AdminDashboard({
                 <option value="all">Workspace: Semua</option>
                 <option value="kpi_overview">KPI Utama</option>
                 <option value="source_performance">Source Performance</option>
-                <option value="product_performance">Performa Produk</option>
-                <option value="merchant">Merchant & SLA</option>
-                <option value="package_review">Package Review</option>
-                <option value="booking_center">Booking & Aktivitas</option>
-                <option value="anomalies">Anomali</option>
+                <option value="product_performance">Per Kategori</option>
+                <option value="operational_tasks">Operational Task</option>
+                <option value="booking_center">Trend & Aktivitas</option>
+                <option value="alerts_overview">Alert</option>
                 <option value="quick_actions">Quick Actions</option>
               </select>
               <button className="rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
@@ -1852,7 +1953,7 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          {showSourcePerformanceWorkspace ? (
+          {showSourcePerformanceWorkspace && showSourcePerformanceWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -1892,76 +1993,60 @@ export default async function AdminDashboard({
           {showProductSummaryWorkspace && showProductPerformanceWidget ? (
           <section className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-semibold text-slate-950">Performa per Produk <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">Per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Bandingkan volume booking, revenue, dan issue tiap produk tanpa mencampur konteks internal RedFeng dengan channel affiliate Traveloka.
+                </p>
+              </div>
               <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-orange-600">Buka workspace produk yang tersedia -&gt;</Link>
             </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-              {productPerformanceCards.map((product) => (
-                <Link key={product.label} href={product.href} className="flex min-h-[272px] flex-col rounded-[16px] border border-[#edf0f4] bg-white p-4 shadow-[0_8px_20px_rgba(15,23,42,0.03)] transition hover:border-orange-200 hover:shadow-[0_14px_26px_rgba(249,115,22,0.08)]">
-                  <div className="flex items-center gap-3">
-                    <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
-                      <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
-                    </span>
-                    <div>
-                      <p className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">{product.label}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 text-[11px]">
-                    <div>
-                      <p className="text-slate-400">Booking</p>
-                      <p className="mt-1 text-[15px] font-semibold text-slate-950">{product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400">Revenue</p>
-                      <p className="mt-1 text-[15px] font-semibold text-slate-950">{product.revenue}</p>
-                    </div>
-                  </div>
-                  <p className={`mt-2 text-[11px] font-semibold ${product.connected ? "text-emerald-600" : "text-slate-400"}`}>{product.growth}</p>
-                  <div className="mt-3 h-14 rounded-[14px] bg-[linear-gradient(180deg,rgba(99,102,241,0.06),rgba(255,255,255,0))] px-1 py-1">
-                    {product.hasLiveTrend && product.sparkPoints ? (
-                      <svg viewBox="0 0 100 28" className="h-full w-full" aria-hidden="true">
-                        <polyline
-                          points={product.sparkPoints}
-                          fill="none"
-                          stroke={product.sparkColor}
-                          strokeWidth="1.8"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {product.sparkPoints.split(" ").map((point) => {
-                          const [cx, cy] = point.split(",")
-                          return <circle key={point} cx={cx} cy={cy} r="1.4" fill={product.sparkColor} />
-                        })}
-                      </svg>
-                    ) : (
-                      <div className="flex h-full items-center justify-center rounded-[12px] border border-dashed border-[#d9e2ef] bg-white/55 text-[10px] font-medium text-slate-400">
-                        Belum ada trend live
+            <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf0f4]">
+              <div className="grid grid-cols-[minmax(0,1.35fr)_120px_140px_110px_140px] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                <span>Produk</span>
+                <span>Booking</span>
+                <span>Revenue</span>
+                <span>Issue</span>
+                <span>Status</span>
+              </div>
+              <div className="divide-y divide-[#edf0f4]">
+                {productPerformanceCards.map((product) => (
+                  <Link
+                    key={product.label}
+                    href={product.href}
+                    className="grid grid-cols-[minmax(0,1.35fr)_120px_140px_110px_140px] gap-3 px-4 py-4 text-sm transition hover:bg-orange-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
+                          <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-900">{product.label}</p>
+                          <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{product.stateNote}</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <p className="mt-2 text-[11px] leading-5 text-slate-500">{product.stateNote}</p>
-                  <div className="mt-3 space-y-2 border-t border-[#eef2f7] pt-3 text-[11px]">
-                    {product.metricRows.map((metric, index) => {
-                      const dotClassName =
-                        index === 0 ? "bg-emerald-400" : index === 1 ? "bg-rose-400" : "bg-orange-400"
-                      return (
-                        <p key={`${product.label}-${metric.label}`} className="flex items-center justify-between text-slate-500">
-                          <span className="inline-flex items-center gap-2">
-                            <span className={`h-1.5 w-1.5 rounded-full ${dotClassName}`} />
-                            {metric.label}
-                          </span>
-                          <span className="font-semibold text-slate-900">{metric.value}</span>
-                        </p>
-                      )
-                    })}
-                  </div>
-                  <div className="mt-auto pt-4">
-                    <div className="rounded-[10px] border border-[#e8edf3] bg-[#fbfdff] px-3 py-2 text-center text-[11px] font-semibold text-[#2563eb]">
-                    {product.ctaLabel}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="flex items-center font-semibold text-slate-900">
+                      {product.booking == null ? "-" : product.booking.toLocaleString("id-ID")}
+                    </div>
+                    <div className="flex items-center font-semibold text-slate-900">
+                      {product.revenue}
+                    </div>
+                    <div className="flex items-center">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${product.issueCount > 0 ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-600"}`}>
+                        {product.issueCount.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="flex flex-col justify-center gap-1">
+                      <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-semibold ${product.connected ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
+                        {product.statusDescription}
+                      </span>
+                      <span className="text-xs text-slate-400">{product.ctaLabel}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </section>
           ) : null}
@@ -2098,22 +2183,39 @@ export default async function AdminDashboard({
           <section className="grid gap-5 xl:grid-cols-[1fr_1fr_1.05fr]">
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Tren Booking</h2>
+                <h2 className="text-base font-semibold text-slate-950">Booking Trend</h2>
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
               </div>
               <div className="mt-6 flex flex-wrap gap-4 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Semua booking</span>
-                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Dari tabel bookings</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-sky-500" />Internal RedFeng</span>
+                <span className="inline-flex items-center gap-2"><span className="h-0.5 w-6 bg-orange-500" />Affiliate Traveloka</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[14px] border border-sky-100 bg-sky-50/70 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-600">Internal</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking</p>
+                </div>
+                <div className="rounded-[14px] border border-orange-100 bg-orange-50/70 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">Affiliate</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking</p>
+                </div>
               </div>
               <div className="mt-5 h-48 rounded-[18px] bg-[linear-gradient(180deg,rgba(59,130,246,0.07),transparent)] p-4">
                 <div className="flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
                   {bookingTrendRows.map((row, index) => (
                     <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                      <div
-                        className="w-full rounded-t-full bg-sky-500/80 transition group-hover:bg-orange-500"
-                        style={{ height: `${Math.max((row.value / bookingTrendMax) * 100, row.value > 0 ? 8 : 2)}%` }}
-                        title={`${row.label}: ${row.value.toLocaleString("id-ID")} booking`}
-                      />
+                      <div className="flex h-full w-full items-end justify-center gap-0.5">
+                        <div
+                          className="w-full rounded-t-full bg-sky-500/80 transition group-hover:bg-sky-600"
+                          style={{ height: `${Math.max((row.internal / bookingTrendMax) * 100, row.internal > 0 ? 8 : 2)}%` }}
+                          title={`${row.label}: ${row.internal.toLocaleString("id-ID")} booking internal`}
+                        />
+                        <div
+                          className="w-full rounded-t-full bg-orange-500/80 transition group-hover:bg-orange-600"
+                          style={{ height: `${Math.max((row.affiliate / bookingTrendMax) * 100, row.affiliate > 0 ? 8 : 2)}%` }}
+                          title={`${row.label}: ${row.affiliate.toLocaleString("id-ID")} booking affiliate`}
+                        />
+                      </div>
                       {index === 0 || index === bookingTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
                     </div>
                   ))}
@@ -2123,18 +2225,35 @@ export default async function AdminDashboard({
 
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">Tren Revenue (IDR)</h2>
+                <h2 className="text-base font-semibold text-slate-950">Revenue Trend (IDR)</h2>
                 <span className="rounded-[12px] border border-[#eadfd5] px-3 py-1 text-xs text-slate-500">{operationsPeriod.label}</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[14px] border border-emerald-100 bg-emerald-50/70 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-600">Internal</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(globalInternalRevenueTotal)}</p>
+                </div>
+                <div className="rounded-[14px] border border-orange-100 bg-orange-50/70 px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-600">Affiliate</p>
+                  <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(globalAffiliateRevenueTotal)}</p>
+                </div>
               </div>
               <div className="mt-8 h-56 rounded-[18px] bg-[linear-gradient(180deg,rgba(124,92,255,0.09),transparent)] p-4">
                 <div className="relative flex h-full items-end gap-1 border-b border-l border-[#eadfd5] px-2 pb-2">
                   {revenueTrendRows.map((row, index) => (
                     <div key={row.key} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                      <div
-                        className="w-full rounded-t-full bg-violet-500/80 transition group-hover:bg-orange-500"
-                        style={{ height: `${Math.max((row.value / revenueTrendMax) * 100, row.value > 0 ? 8 : 2)}%` }}
-                        title={`${row.label}: ${formatMoney(row.value)}`}
-                      />
+                      <div className="flex h-full w-full items-end justify-center gap-0.5">
+                        <div
+                          className="w-full rounded-t-full bg-emerald-500/80 transition group-hover:bg-emerald-600"
+                          style={{ height: `${Math.max((row.internal / revenueTrendMax) * 100, row.internal > 0 ? 8 : 2)}%` }}
+                          title={`${row.label}: ${formatMoney(row.internal)} revenue internal`}
+                        />
+                        <div
+                          className="w-full rounded-t-full bg-orange-500/80 transition group-hover:bg-orange-600"
+                          style={{ height: `${Math.max((row.affiliate / revenueTrendMax) * 100, row.affiliate > 0 ? 8 : 2)}%` }}
+                          title={`${row.label}: ${formatMoney(row.affiliate)} revenue affiliate`}
+                        />
+                      </div>
                       {index === 0 || index === revenueTrendRows.length - 1 ? <span className="text-[10px] text-slate-400">{row.label}</span> : null}
                     </div>
                   ))}
@@ -2169,11 +2288,9 @@ export default async function AdminDashboard({
           </section>
           ) : null}
 
-          {(showPackageWorkspace && showPackageReviewQueueWidget) ||
-          (showAnomalyWorkspace && showLatestAnomaliesWidget) ||
-          (showMerchantWorkspace && showSlaReviewWidget) ? (
+          {showOperationalWorkspace && showOperationalTasksWidget ? (
           <section className="grid items-start gap-5 xl:grid-cols-[1fr_1fr_1fr]">
-            {showPackageWorkspace && showPackageReviewQueueWidget ? (
+            {canAccessPackageTour ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
                 <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
@@ -2207,10 +2324,42 @@ export default async function AdminDashboard({
             </div>
             ) : null}
 
-            {showAnomalyWorkspace && showLatestAnomaliesWidget ? (
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">{useGlobalLatestAnomalies ? "Anomali Terbaru" : "Anomali Paket Wisata"}</h2>
+                <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah (Affiliate)</h2>
+                <Link href="/admin/bookings" className="text-xs font-semibold text-orange-600">Buka booking center</Link>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-[16px] border border-[#f0e6dd]">
+                <div className="grid grid-cols-[1fr_0.9fr_0.9fr_auto] gap-3 bg-[#fff7ef] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  <span>Produk</span>
+                  <span>Partner</span>
+                  <span>Issue</span>
+                  <span>Waktu</span>
+                </div>
+                <div className="divide-y divide-[#f0e6dd]">
+                  {(affiliateOperationalIssueItems.length > 0
+                    ? affiliateOperationalIssueItems
+                    : [{ id: "empty-affiliate-ops", product: "-", supplier: "TRAVELOKA", issue: "Belum ada issue affiliate", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
+                    <Link key={item.id} href={item.href} className="grid grid-cols-[1fr_0.9fr_0.9fr_auto] gap-3 px-4 py-3 text-sm transition hover:bg-orange-50">
+                      <span className="font-semibold text-slate-800">{item.product}</span>
+                      <span className="text-slate-600">{item.supplier}</span>
+                      <span>
+                        <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                          item.issue === "Belum ada issue affiliate" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                        }`}>
+                          {item.issue}
+                        </span>
+                      </span>
+                      <span className="text-xs text-slate-500">{item.time}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-slate-950">Anomali</h2>
                 <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-orange-600">Lihat semua</Link>
               </div>
               <div className="mt-5 max-h-[360px] divide-y divide-[#f0e6dd] overflow-y-auto pr-2 [scrollbar-color:#f97316_#fff7ed] [scrollbar-width:thin]">
@@ -2228,32 +2377,28 @@ export default async function AdminDashboard({
                 ))}
               </div>
             </div>
-            ) : null}
+          </section>
+          ) : null}
 
-            {showMerchantWorkspace && showSlaReviewWidget ? (
-            <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-base font-semibold text-slate-950">SLA Review</h2>
-                <Link href="/admin/dashboard?workspace=anomalies" className="text-xs font-semibold text-orange-600">Lihat detail SLA -&gt;</Link>
-              </div>
-              <div className="mt-7 grid gap-6 sm:grid-cols-[180px_1fr] sm:items-center">
-                <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full" style={{ background: `conic-gradient(${slaGradient})` }}>
-                  <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-2xl font-semibold text-slate-950">{slaTotal.toLocaleString("id-ID")}</p>
-                    <p className="text-xs text-slate-500">Total SLA</p>
+          {showAlertWorkspace && showAlertsOverviewWidget ? (
+          <section className="grid gap-5 xl:grid-cols-3">
+            {alertCards.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className={`rounded-[20px] border p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 ${item.tone}`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{item.title}</p>
+                    <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</p>
+                    <p className="mt-3 text-xs font-semibold">{item.delta}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
                   </div>
+                  <span className="text-sm font-semibold text-slate-400">Alert</span>
                 </div>
-                <div className="space-y-3">
-                  {slaRows.map((item) => (
-                    <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="inline-flex items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 rounded-full ${item.tone}`} />{item.label}</span>
-                      <span className="font-semibold text-slate-900">{item.value.toLocaleString("id-ID")} <span className="text-xs font-normal text-slate-400">({Math.round((item.value / slaTotal) * 1000) / 10}%)</span></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            ) : null}
+              </Link>
+            ))}
           </section>
           ) : null}
 

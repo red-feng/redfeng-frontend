@@ -1,7 +1,10 @@
 export type OperationsDashboardCoreWidgetKey =
   | "kpi_overview"
+  | "source_performance"
   | "product_performance"
+  | "operational_tasks"
   | "booking_trends"
+  | "alerts_overview"
   | "quick_actions"
 
 export type OperationsDashboardWidgetKey = string
@@ -42,38 +45,65 @@ export const OPERATIONS_DASHBOARD_WIDGETS: OperationsDashboardWidgetDefinition[]
   {
     key: "kpi_overview",
     title: "KPI Utama",
-    description: "Total booking, revenue, partner aktif, queue review, dan anomali terbuka.",
+    description: "Total booking, total revenue, pending issue, SLA compliance, dan failure rate.",
     status: "connected",
     defaultEnabled: true,
     scope: "global_only",
     scopeNote: "Hanya muncul di level dashboard utama lintas semua produk.",
   },
   {
+    key: "source_performance",
+    title: "Source Performance",
+    description: "Split performa channel internal RedFeng vs affiliate Traveloka untuk booking dan revenue.",
+    status: "connected",
+    defaultEnabled: true,
+    scope: "global_only",
+    scopeNote: "Dipakai untuk membaca kontribusi channel, bukan performa per produk.",
+  },
+  {
     key: "product_performance",
-    title: "Performa per Produk",
-    description: "Ringkasan Paket Wisata, Pesawat, Hotel, Kereta, Bus, Kapal Laut, dan Kapal Pesiar.",
+    title: "Per Kategori",
+    description: "Tabel ringkas booking, revenue, issue, dan status tiap produk yang bisa diakses.",
     status: "partial",
     defaultEnabled: true,
     scope: "global_only",
-    scopeNote: "Dipakai untuk membandingkan semua produk dalam satu ringkasan.",
+    scopeNote: "Dipakai untuk membandingkan performa tiap kategori produk dalam satu ringkasan.",
+  },
+  {
+    key: "operational_tasks",
+    title: "Operational Task",
+    description: "Paket menunggu review, booking bermasalah affiliate, dan anomali yang perlu tindakan.",
+    status: "connected",
+    defaultEnabled: true,
+    scope: "global_only",
+    scopeNote: "Fokus ke workload operasional yang harus segera ditindak.",
   },
   {
     key: "booking_trends",
-    title: "Booking & Revenue Trend",
-    description: "Grafik booking, revenue, dan distribusi booking per kategori.",
+    title: "Trend",
+    description: "Booking trend, revenue trend, dan distribusi booking per kategori dengan split internal vs affiliate.",
     status: "connected",
     defaultEnabled: true,
     scope: "hybrid",
     scopeNote: "Versi global merangkum semua produk, versi detail bisa hidup lagi di masing-masing produk.",
   },
   {
+    key: "alerts_overview",
+    title: "Alert",
+    description: "SLA warning, API error affiliate, dan spike anomaly sebagai lapisan alarm dashboard.",
+    status: "partial",
+    defaultEnabled: true,
+    scope: "global_only",
+    scopeNote: "Dipakai sebagai lapisan alarm setelah workload operasional dan trend.",
+  },
+  {
     key: "quick_actions",
     title: "Quick Actions",
     description: "Shortcut cepat ke anomali, approval queue, audit log, booking center, dan laporan lintas workspace.",
     status: "connected",
-    defaultEnabled: true,
+    defaultEnabled: false,
     scope: "global_only",
-    scopeNote: "Dipakai sebagai shortcut lintas workspace. Action yang spesifik produk dipindahkan ke widget produk.",
+    scopeNote: "Opsional sebagai shortcut lintas workspace. Action yang spesifik produk dipindahkan ke widget produk.",
   },
 ]
 
@@ -324,10 +354,18 @@ export function resolveOperationsDashboardWidgetKeys(
   }
 
   const validKeys = new Set(ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS)
-  return new Set(
+  const preferenceMap = new Map(
     preferences
-      .filter((preference) => preference.enabled && preference.widget_key && validKeys.has(preference.widget_key))
-      .map((preference) => preference.widget_key as OperationsDashboardWidgetKey),
+      .filter((preference) => preference.widget_key && validKeys.has(preference.widget_key))
+      .map((preference) => [preference.widget_key as OperationsDashboardWidgetKey, Boolean(preference.enabled)]),
+  )
+
+  return new Set(
+    ALL_OPERATIONS_DASHBOARD_WIDGET_KEYS.filter((widgetKey) =>
+      preferenceMap.has(widgetKey as OperationsDashboardWidgetKey)
+        ? preferenceMap.get(widgetKey as OperationsDashboardWidgetKey)
+        : DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS.includes(widgetKey as (typeof DEFAULT_OPERATIONS_DASHBOARD_WIDGET_KEYS)[number]),
+    ),
   )
 }
 
