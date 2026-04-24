@@ -324,6 +324,28 @@ function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap
   return { label: "Roadmap", className: "bg-slate-100 text-slate-500" }
 }
 
+type OperationsProductKey = "package_tour" | "flight" | "hotel" | "train" | "bus" | "sea" | "cruise"
+
+const OPERATIONS_PRODUCT_SUMMARIES: Array<{
+  key: OperationsProductKey
+  label: string
+  href: string
+  status: "connected" | "partial" | "roadmap"
+  icon: "package" | "flight" | "hotel" | "train" | "bus" | "ship" | "cruise"
+  tone: string
+  bg: string
+  sparkColor: string
+  sparkPoints: string
+}> = [
+  { key: "package_tour", label: "Paket Wisata", href: "/admin/paket-tour", status: "connected", icon: "package", tone: "text-violet-600", bg: "bg-violet-50", sparkColor: "#7c3aed", sparkPoints: "2,22 14,24 26,18 38,12 50,20 62,8 74,17 86,10 98,6" },
+  { key: "flight", label: "Pesawat", href: "/admin/pesawat", status: "partial", icon: "flight", tone: "text-sky-600", bg: "bg-sky-50", sparkColor: "#2563eb", sparkPoints: "2,22 14,23 26,18 38,21 50,14 62,10 74,16 86,9 98,7" },
+  { key: "hotel", label: "Hotel", href: "/admin/hotel", status: "roadmap", icon: "hotel", tone: "text-emerald-600", bg: "bg-emerald-50", sparkColor: "#16a34a", sparkPoints: "2,23 14,14 26,20 38,12 50,18 62,10 74,17 86,14 98,8" },
+  { key: "train", label: "Kereta Api", href: "/admin/kereta-api", status: "roadmap", icon: "train", tone: "text-orange-600", bg: "bg-orange-50", sparkColor: "#ea580c", sparkPoints: "2,20 14,24 26,22 38,17 50,10 62,16 74,9 86,12 98,8" },
+  { key: "bus", label: "Bus & Travel", href: "/admin/bus-travel", status: "roadmap", icon: "bus", tone: "text-blue-600", bg: "bg-blue-50", sparkColor: "#2563eb", sparkPoints: "2,24 14,18 26,15 38,19 50,12 62,16 74,10 86,13 98,9" },
+  { key: "sea", label: "Kapal Laut", href: "/admin/kapal-laut", status: "roadmap", icon: "ship", tone: "text-cyan-600", bg: "bg-cyan-50", sparkColor: "#0f766e", sparkPoints: "2,22 14,19 26,16 38,18 50,13 62,17 74,12 86,14 98,10" },
+  { key: "cruise", label: "Kapal Pesiar", href: "/admin/kapal-pesiar", status: "roadmap", icon: "cruise", tone: "text-rose-600", bg: "bg-rose-50", sparkColor: "#f43f5e", sparkPoints: "2,24 14,10 26,20 38,18 50,16 62,19 74,14 86,15 98,11" },
+]
+
 function getProductIconKind(productLabel: string) {
   if (productLabel === "Pesawat") return "flight" as const
   if (productLabel === "Hotel") return "hotel" as const
@@ -366,8 +388,12 @@ function getProductFilterFromLabel(productLabel: string) {
   return "all"
 }
 
-function classifyBookingProduct(booking: DashboardBookingRow) {
-  return booking.package_id ? "Paket Tour" : "Pesawat"
+function getOperationsProductLabel(productKey: OperationsProductKey) {
+  return OPERATIONS_PRODUCT_SUMMARIES.find((product) => product.key === productKey)?.label || "Produk"
+}
+
+function classifyBookingProduct(booking: DashboardBookingRow): OperationsProductKey {
+  return booking.package_id ? "package_tour" : "flight"
 }
 
 export default async function AdminDashboard({
@@ -862,6 +888,34 @@ export default async function AdminDashboard({
   ]
 
   if (showOperationsManagerView) {
+    const globalPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
+    const globalPeriodPackages = packages.filter((pkg) => isWithinPeriod(pkg.created_at, operationsPeriodStart))
+    const globalPeriodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
+    const globalPeriodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
+    const globalPeriodAuditLogs = recentAuditLogs.filter((log) => isWithinPeriod(log.created_at, operationsPeriodStart))
+    const globalPeriodCustomerTransactionRows = customerTransactionRows.filter((transaction) =>
+      isWithinPeriod(transaction.createdAt, operationsPeriodStart),
+    )
+    const globalPendingPackages = globalPeriodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
+    const globalPackageOverdueCount = globalPeriodPackages.filter(
+      (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
+    ).length
+    const globalFinanceReadyCount = globalPeriodBookings.filter((item) =>
+      ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(item.booking_status)),
+    ).length
+    const globalBookingStalledCount = globalPeriodBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
+    ).length
+    const globalOperationalWarnings =
+      merchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
+    const globalReviewQueueCount =
+      pendingMerchants + globalPendingPackages + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length
+    const connectedProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "connected").length
+    const partialProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "partial").length
+    const roadmapProductCount = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => product.status === "roadmap").length
+    const totalLiveProducts = connectedProductCount + partialProductCount
+    const globalRevenueTotal = globalPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
+
     const periodBookings = bookings.filter((booking) => {
       if (!isWithinPeriod(booking.created_at, operationsPeriodStart)) return false
       if (operationsProduct === "all") return true
@@ -875,12 +929,14 @@ export default async function AdminDashboard({
     })
     const periodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const periodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
-    const periodAuditLogs = recentAuditLogs.filter((log) => isWithinPeriod(log.created_at, operationsPeriodStart))
-    const periodCustomerTransactionRows = customerTransactionRows.filter((transaction) =>
-      isWithinPeriod(transaction.createdAt, operationsPeriodStart),
-    )
+    const periodAuditLogs = globalPeriodAuditLogs
+    const periodCustomerTransactionRows = globalPeriodCustomerTransactionRows.filter((transaction) => {
+      if (operationsProduct === "all") return true
+      if (operationsProduct === "package_tour") return Boolean(transaction.packageId)
+      if (operationsProduct === "flight") return !transaction.packageId
+      return false
+    })
     const periodPendingPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
-    const periodApprovedPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "approved").length
     const periodDraftPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "draft").length
     const periodRejectedPackages = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "rejected").length
     const periodPackageOverdueCount = periodPackages.filter(
@@ -913,16 +969,17 @@ export default async function AdminDashboard({
     })
     const revenueTrendMax = Math.max(...revenueTrendRows.map((row) => row.value), 1)
     const currentMonthLabel = `${bookingTrendRows[0]?.label || "-"} - ${bookingTrendRows[bookingTrendRows.length - 1]?.label || "-"}`
+    const globalBookingTrendTotal = globalPeriodBookings.length
     const managerKpiCards = [
-      { label: "Total Booking", value: totalBookings.toLocaleString("id-ID"), delta: `${bookingTrendRows.reduce((sum, row) => sum + row.value, 0).toLocaleString("id-ID")} booking`, sub: currentMonthLabel, tone: "text-sky-600", bg: "bg-sky-50" },
-      { label: "Total Revenue (IDR)", value: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(totalRevenue), sub: currentMonthLabel, tone: "text-emerald-600", bg: "bg-emerald-50" },
-      { label: "Merchant Aktif", value: (operationsProduct === "all" || operationsProduct === "package_tour" ? activeMerchantCount : 0).toLocaleString("id-ID"), delta: `${operationsProduct === "all" || operationsProduct === "package_tour" ? pendingMerchants : 0} pending`, sub: operationsProduct === "all" || operationsProduct === "package_tour" ? "Dari data merchant approved" : "Belum ada merchant map untuk produk ini", tone: "text-violet-600", bg: "bg-violet-50" },
-      { label: "Paket Disetujui", value: periodApprovedPackages.toLocaleString("id-ID"), delta: `${periodPackages.length.toLocaleString("id-ID")} total paket`, sub: "Status package approved", tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Pending Review", value: periodPendingPackages.toLocaleString("id-ID"), delta: `${periodPackageOverdueCount} overdue`, sub: "Paket menunggu review", tone: "text-orange-600", bg: "bg-orange-50" },
-      { label: "Anomali Terbuka", value: periodOperationalWarnings.toLocaleString("id-ID"), delta: `${periodDeletionRequests.length + periodReviewRequests.length} request aktif`, sub: "SLA, deletion, dan approval", tone: "text-rose-600", bg: "bg-rose-50" },
+      { label: "Total Booking", value: globalPeriodBookings.length.toLocaleString("id-ID"), delta: `${globalBookingTrendTotal.toLocaleString("id-ID")} booking`, sub: `Global ${currentMonthLabel}`, tone: "text-sky-600", bg: "bg-sky-50" },
+      { label: "Total Revenue (IDR)", value: globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0", delta: formatMoney(globalRevenueTotal), sub: `Semua produk ${currentMonthLabel}`, tone: "text-emerald-600", bg: "bg-emerald-50" },
+      { label: "Produk Live", value: totalLiveProducts.toLocaleString("id-ID"), delta: `${roadmapProductCount} roadmap`, sub: `${connectedProductCount} connected • ${partialProductCount} partial dari ${OPERATIONS_PRODUCT_SUMMARIES.length} produk`, tone: "text-violet-600", bg: "bg-violet-50" },
+      { label: "Merchant Aktif", value: activeMerchantCount.toLocaleString("id-ID"), delta: `${pendingMerchants} pending`, sub: "Merchant approved lintas dashboard", tone: "text-amber-600", bg: "bg-amber-50" },
+      { label: "Queue Review", value: globalReviewQueueCount.toLocaleString("id-ID"), delta: `${globalPendingPackages} paket • ${pendingMerchants} merchant`, sub: "Review, approval, dan deletion request", tone: "text-orange-600", bg: "bg-orange-50" },
+      { label: "Anomali Terbuka", value: globalOperationalWarnings.toLocaleString("id-ID"), delta: `${globalFinanceReadyCount} booking siap finance`, sub: "SLA, deletion, approval, dan handoff", tone: "text-rose-600", bg: "bg-rose-50" },
     ]
     const bookingCategoryCounts = periodBookings.reduce((map, booking) => {
-      const label = classifyBookingProduct(booking)
+      const label = getOperationsProductLabel(classifyBookingProduct(booking))
       map.set(label, (map.get(label) || 0) + 1)
       return map
     }, new Map<string, number>())
@@ -1036,30 +1093,58 @@ export default async function AdminDashboard({
           name: merchantNameMap.get(merchantId) || "Merchant tanpa nama",
         }))
         .sort((a, b) => b.revenue - a.revenue)[0] || null
-    const productPerformanceCards = [
-      {
-        label: "Paket Wisata",
-        href: "/admin/paket-tour",
-        booking: totalBookings,
-        revenue: totalRevenue > 0 ? `Rp ${(totalRevenue / 1000000).toFixed(2)} M` : "Rp 0",
-        pending: periodPendingPackages,
-        anomaly: periodOperationalWarnings,
-        sla: periodPackageOverdueCount + periodBookingStalledCount,
-        growth: totalBookings > 0 ? "+ 18.6%" : "0%",
-        connected: true,
-        tone: "text-violet-600",
-        bg: "bg-violet-50",
-        icon: "package" as const,
-        sparkColor: "#7c3aed",
-        sparkPoints: "2,22 14,24 26,18 38,12 50,20 62,8 74,17 86,10 98,6",
-      },
-      { label: "Pesawat", href: "/admin/pesawat", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-sky-600", bg: "bg-sky-50", icon: "flight" as const, sparkColor: "#2563eb", sparkPoints: "2,22 14,23 26,18 38,21 50,14 62,10 74,16 86,9 98,7" },
-      { label: "Hotel", href: "/admin/hotel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-emerald-600", bg: "bg-emerald-50", icon: "hotel" as const, sparkColor: "#16a34a", sparkPoints: "2,23 14,14 26,20 38,12 50,18 62,10 74,17 86,14 98,8" },
-      { label: "Kereta Api", href: "/admin/kereta-api", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-orange-600", bg: "bg-orange-50", icon: "train" as const, sparkColor: "#ea580c", sparkPoints: "2,20 14,24 26,22 38,17 50,10 62,16 74,9 86,12 98,8" },
-      { label: "Bus & Travel", href: "/admin/bus-travel", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-blue-600", bg: "bg-blue-50", icon: "bus" as const, sparkColor: "#2563eb", sparkPoints: "2,24 14,18 26,15 38,19 50,12 62,16 74,10 86,13 98,9" },
-      { label: "Kapal Laut", href: "/admin/kapal-laut", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-cyan-600", bg: "bg-cyan-50", icon: "ship" as const, sparkColor: "#0f766e", sparkPoints: "2,22 14,19 26,16 38,18 50,13 62,17 74,12 86,14 98,10" },
-      { label: "Kapal Pesiar", href: "/admin/kapal-pesiar", booking: null, revenue: "-", pending: null, anomaly: null, sla: null, growth: "Belum terhubung", connected: false, tone: "text-rose-600", bg: "bg-rose-50", icon: "cruise" as const, sparkColor: "#f43f5e", sparkPoints: "2,24 14,10 26,20 38,18 50,16 62,19 74,14 86,15 98,11" },
-    ].filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.label) === operationsProduct)
+    const productBookingCounts = globalPeriodBookings.reduce((map, booking) => {
+      const productKey = classifyBookingProduct(booking)
+      map.set(productKey, (map.get(productKey) || 0) + 1)
+      return map
+    }, new Map<OperationsProductKey, number>())
+    const productRevenueTotals = globalPeriodCustomerTransactionRows.reduce((map, item) => {
+      const productKey: OperationsProductKey = item.packageId ? "package_tour" : "flight"
+      map.set(productKey, (map.get(productKey) || 0) + item.receivedAmount)
+      return map
+    }, new Map<OperationsProductKey, number>())
+    const productAnomalyCounts = new Map<OperationsProductKey, number>([
+      ["package_tour", merchantOverdueCount + globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length],
+      ["flight", globalPeriodBookings.filter((booking) => !booking.package_id && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length],
+      ["hotel", 0],
+      ["train", 0],
+      ["bus", 0],
+      ["sea", 0],
+      ["cruise", 0],
+    ])
+    const productSlaCounts = new Map<OperationsProductKey, number>([
+      ["package_tour", globalPackageOverdueCount + globalPeriodBookings.filter((booking) => Boolean(booking.package_id) && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length],
+      ["flight", globalPeriodBookings.filter((booking) => !booking.package_id && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length],
+      ["hotel", 0],
+      ["train", 0],
+      ["bus", 0],
+      ["sea", 0],
+      ["cruise", 0],
+    ])
+    const productPerformanceCards = OPERATIONS_PRODUCT_SUMMARIES
+      .map((product) => {
+        const bookingCount = productBookingCounts.get(product.key) || 0
+        const revenueTotal = productRevenueTotals.get(product.key) || 0
+        const isConnected = product.status !== "roadmap"
+        const statusMeta = getDashboardWidgetStatusMeta(product.status)
+        return {
+          label: product.label,
+          href: product.href,
+          booking: isConnected ? bookingCount : null,
+          revenue: isConnected ? (revenueTotal > 0 ? `Rp ${(revenueTotal / 1000000).toFixed(2)} M` : "Rp 0") : "-",
+          pending: product.key === "package_tour" ? globalPendingPackages : 0,
+          anomaly: productAnomalyCounts.get(product.key) ?? 0,
+          sla: productSlaCounts.get(product.key) ?? 0,
+          growth: isConnected ? statusMeta.label : "Roadmap",
+          connected: isConnected,
+          tone: product.tone,
+          bg: product.bg,
+          icon: product.icon,
+          sparkColor: product.sparkColor,
+          sparkPoints: product.sparkPoints,
+        }
+      })
+      .filter((product) => operationsProduct === "all" || getProductFilterFromLabel(product.label) === operationsProduct)
     const reviewQueueItems = periodPackages
       .filter((pkg) => ["pending", "draft", "rejected"].includes(normalizeStatus(pkg.status)))
       .slice(0, 6)
