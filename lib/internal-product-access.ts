@@ -126,7 +126,7 @@ export async function getAccessibleInternalProducts(
   adminSupabase: SupabaseClient,
   userId: string | null | undefined,
   role: string | null | undefined,
-) {
+): Promise<Array<{ productType: InternalProductType; accessLevel: InternalProductAccessLevel }>> {
   const normalizedRole = normalizeInternalRole(role)
   if (!userId) {
     return getDefaultRoleProductAccess(normalizedRole)
@@ -173,7 +173,7 @@ export function hasInternalProductAccess(
 export function getAccessibleInternalProductTypes(
   entries: Array<{ productType: InternalProductType; accessLevel: InternalProductAccessLevel }>,
   minimumLevel: InternalProductAccessLevel = "view",
-) {
+): InternalProductType[] {
   const requiredWeight = ACCESS_LEVEL_WEIGHT[minimumLevel]
   return entries
     .filter((entry) => ACCESS_LEVEL_WEIGHT[entry.accessLevel] >= requiredWeight)

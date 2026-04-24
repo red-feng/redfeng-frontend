@@ -309,10 +309,10 @@ function getOperationsWorkspace(value: string | null | undefined) {
   return "all"
 }
 
-function getOperationsProduct(value: string | null | undefined) {
+function getOperationsProduct(value: string | null | undefined): "all" | BookingProductType {
   const normalized = String(value || "all").trim().toLowerCase()
   if (["package_tour", "flight", "hotel", "train", "bus", "sea", "cruise"].includes(normalized)) {
-    return normalized
+    return normalized as BookingProductType
   }
   return "all"
 }
