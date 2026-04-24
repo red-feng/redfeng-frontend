@@ -3,6 +3,7 @@ import AdminProductWorkspace from "@/app/components/AdminProductWorkspace"
 export default function AdminHotelWorkspacePage() {
   return (
     <AdminProductWorkspace
+      productType="hotel"
       productLabel="Hotel"
       description="Submenu admin untuk Hotel dipisahkan agar inventory kamar, supplier, rate plan, dan operasional hotel bisa punya workflow sendiri."
       primaryActionHref="/admin/bookings?product=hotel"

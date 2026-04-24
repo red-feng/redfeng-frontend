@@ -8,6 +8,8 @@ import AdminNavSeenTracker from "@/app/components/AdminNavSeenTracker"
 import SuperadminAdminRouteSeenBridge from "@/app/components/SuperadminAdminRouteSeenBridge"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { getRoleLabel, isAdminPortalRole } from "@/lib/internal-roles"
+import { getAccessibleInternalProducts, toAdminProductNavHref } from "@/lib/internal-product-access"
+import { getBookingProductLabel } from "@/lib/booking-products"
 import { getMerchantSupportUnreadCountForAdmin, loadMerchantSupportRoomsForAdmin } from "@/lib/merchant-support/index"
 import { ADMIN_ACTIVE_BOOKING_BADGE_STATUSES, ADMIN_ACTIVE_PACKAGE_BADGE_STATUSES } from "@/lib/nav-badge-policy"
 
@@ -48,6 +50,8 @@ export default async function AdminProtectedLayout({
   const isOperationsManager = profile.role === "operations_manager"
   const adminCode = formatAdminCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
+  const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, profile.role)
+  const visibleProductTypes = accessibleProducts.map((entry) => entry.productType)
 
   const [merchantResult, packageResult, bookingResult, merchantDeletionRequestResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
     adminSupabase
@@ -78,6 +82,7 @@ export default async function AdminProtectedLayout({
   const pendingPackagesBadgeCount = packageResult.count || 0
   const financeReadyBadgeCount = bookingResult.count || 0
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
+  const canAccessPackageTour = visibleProductTypes.includes("package_tour")
 
   const merchantNavChildren = [
     {
@@ -94,15 +99,11 @@ export default async function AdminProtectedLayout({
     { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
     { href: "/admin/merchants/anomalies", label: "Anomalis", badgeCount: 0 },
   ]
-  const productNavChildren = [
-    { href: "/admin/paket-tour", label: "Paket Tour", badgeCount: pendingPackagesBadgeCount },
-    { href: "/admin/pesawat", label: "Pesawat", badgeCount: 0 },
-    { href: "/admin/hotel", label: "Hotel", badgeCount: 0 },
-    { href: "/admin/kereta-api", label: "Kereta Api", badgeCount: 0 },
-    { href: "/admin/bus-travel", label: "Bus & Travel", badgeCount: 0 },
-    { href: "/admin/kapal-laut", label: "Kapal Laut", badgeCount: 0 },
-    { href: "/admin/kapal-pesiar", label: "Kapal Pesiar", badgeCount: 0 },
-  ]
+  const productNavChildren = visibleProductTypes.map((productType) => ({
+    href: toAdminProductNavHref(productType),
+    label: getBookingProductLabel(productType),
+    badgeCount: productType === "package_tour" ? pendingPackagesBadgeCount : 0,
+  }))
   const dashboardNavChildren = [
     { href: "/admin/dashboard", label: "Ringkasan", badgeCount: 0 },
     { href: "/admin/dashboard/widgets", label: "Widget", badgeCount: 0 },
@@ -112,16 +113,16 @@ export default async function AdminProtectedLayout({
         { label: "Dashboard", children: dashboardNavChildren },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
-        { label: "Merchant", children: merchantNavChildren },
-        { label: "Produk", children: productNavChildren },
+        ...(canAccessPackageTour ? [{ label: "Merchant", children: merchantNavChildren }] : []),
+        ...(productNavChildren.length > 0 ? [{ label: "Produk", children: productNavChildren }] : []),
         { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/team-accounts", label: "Team Accounts", badgeCount: 0 },
         { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
       ]
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },
-        { label: "Merchant", children: merchantNavChildren },
-        { label: "Produk", children: productNavChildren },
+        ...(canAccessPackageTour ? [{ label: "Merchant", children: merchantNavChildren }] : []),
+        ...(productNavChildren.length > 0 ? [{ label: "Produk", children: productNavChildren }] : []),
         { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },

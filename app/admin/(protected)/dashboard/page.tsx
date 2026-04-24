@@ -6,6 +6,7 @@ import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getBookingProductLabel, resolveBookingProductType, type BookingProductType } from "@/lib/booking-products"
+import { getAccessibleInternalProducts, getAccessibleInternalProductTypes, hasInternalProductAccess } from "@/lib/internal-product-access"
 import {
   OPERATIONS_DASHBOARD_SCOPE,
   OPERATIONS_PRODUCT_WIDGET_CATALOG,
@@ -452,11 +453,18 @@ export default async function AdminDashboard({
   const showOperationsManagerView = isOperationsManager || (isSuperadmin && params.view === "operations-manager")
   const reportReturnTo =
     portal === "superadmin" && params.view === "operations-manager" ? "/superadmin/operations-manager" : fallbackDashboardPath
+  const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, currentProfile?.role)
+  const accessibleProductTypes = getAccessibleInternalProductTypes(accessibleProducts)
+  const canAccessPackageTour = hasInternalProductAccess(accessibleProducts, "package_tour")
   const operationsPeriod = getDashboardPeriod(params.period)
   const operationsPeriodStart = getPeriodStart(operationsPeriod.days)
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
-  const operationsProduct = getOperationsProduct(params.product)
+  const requestedOperationsProduct = getOperationsProduct(params.product)
+  const operationsProduct =
+    requestedOperationsProduct === "all" || accessibleProductTypes.includes(requestedOperationsProduct)
+      ? requestedOperationsProduct
+      : "all"
   const widgetPreferenceResult = showOperationsManagerView
     ? await adminSupabase
         .from("dashboard_widget_preferences")
@@ -525,10 +533,11 @@ export default async function AdminDashboard({
       .limit(12),
   ])
 
-  const pendingMerchantsData = (merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []
-  const activeMerchantCount = activeMerchantResult.count || 0
-  const packages = (packageResult.data as DashboardPackageRow[] | null) || []
-  const bookings = (bookingResult.data as DashboardBookingRow[] | null) || []
+  const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
+  const activeMerchantCount = canAccessPackageTour ? activeMerchantResult.count || 0 : 0
+  const packages = canAccessPackageTour ? ((packageResult.data as DashboardPackageRow[] | null) || []) : []
+  const bookings = (((bookingResult.data as DashboardBookingRow[] | null) || []) as DashboardBookingRow[])
+    .filter((booking) => accessibleProductTypes.includes(classifyBookingProduct(booking)))
   const webVitalEvents = webVitalsResult.error
     ? []
     : ((webVitalsResult.data as WebVitalEventRow[] | null) || [])
@@ -1124,6 +1133,7 @@ export default async function AdminDashboard({
       ["cruise", 0],
     ])
     const productPerformanceCards = OPERATIONS_PRODUCT_SUMMARIES
+      .filter((product) => accessibleProductTypes.includes(product.key))
       .map((product) => {
         const bookingCount = productBookingCounts.get(product.key) || 0
         const revenueTotal = productRevenueTotals.get(product.key) || 0
@@ -1201,6 +1211,7 @@ export default async function AdminDashboard({
       enabledOperationsWidgetKeys.has("package_tour_top_merchant_revenue")
     const showQuickActionsWidget = enabledOperationsWidgetKeys.has("quick_actions")
     const selectedProductWidgetGroups = OPERATIONS_PRODUCT_WIDGET_CATALOG
+      .filter((product) => accessibleProductTypes.includes(getProductFilterFromLabel(product.productLabel) as BookingProductType))
       .map((product) => {
         const iconKind = getProductIconKind(product.productLabel)
         const productStatus = getDashboardWidgetStatusMeta(product.status)
@@ -1463,13 +1474,13 @@ export default async function AdminDashboard({
                 className="rounded-[14px] border border-[#eadfd5] bg-white px-4 py-3 text-sm font-medium text-slate-700 outline-none"
               >
                 <option value="all">Produk: Semua</option>
-                <option value="package_tour">Paket Wisata</option>
-                <option value="flight">Pesawat</option>
-                <option value="hotel">Hotel</option>
-                <option value="train">Kereta Api</option>
-                <option value="bus">Bus & Travel</option>
-                <option value="sea">Kapal Laut</option>
-                <option value="cruise">Kapal Pesiar</option>
+                {accessibleProductTypes.includes("package_tour") ? <option value="package_tour">Paket Wisata</option> : null}
+                {accessibleProductTypes.includes("flight") ? <option value="flight">Pesawat</option> : null}
+                {accessibleProductTypes.includes("hotel") ? <option value="hotel">Hotel</option> : null}
+                {accessibleProductTypes.includes("train") ? <option value="train">Kereta Api</option> : null}
+                {accessibleProductTypes.includes("bus") ? <option value="bus">Bus & Travel</option> : null}
+                {accessibleProductTypes.includes("sea") ? <option value="sea">Kapal Laut</option> : null}
+                {accessibleProductTypes.includes("cruise") ? <option value="cruise">Kapal Pesiar</option> : null}
               </select>
               <select
                 name="workspace"

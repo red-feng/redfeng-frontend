@@ -1,6 +1,11 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { getAccessibleInternalProducts, hasInternalProductAccess, type InternalProductType } from "@/lib/internal-product-access"
 
 type AdminProductWorkspaceProps = {
+  productType: InternalProductType
   productLabel: string
   description: string
   statusLabel?: string
@@ -12,7 +17,8 @@ type AdminProductWorkspaceProps = {
   preparedModules?: string[]
 }
 
-export default function AdminProductWorkspace({
+export default async function AdminProductWorkspace({
+  productType,
   productLabel,
   description,
   statusLabel = "Segera aktif",
@@ -23,6 +29,23 @@ export default function AdminProductWorkspace({
   secondaryActionLabel,
   preparedModules = ["Workspace", "Booking shortcut", "Operational queue", "Supplier / inventory"],
 }: AdminProductWorkspaceProps) {
+  const supabase = await createClient("admin")
+  const adminSupabase = createAdminClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect("/admin/login?error=no-session")
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+  const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user.id, profile?.role)
+
+  if (!hasInternalProductAccess(accessibleProducts, productType, "view")) {
+    redirect("/admin/dashboard?error=Akses%20produk%20tidak%20diizinkan")
+  }
+
   const futureKpis = [
     { label: "Total Booking", value: "-", note: "Aktif saat modul booking tersedia.", tone: "text-sky-600", bg: "bg-sky-50" },
     { label: "Revenue", value: "-", note: "Menunggu transaksi produk live.", tone: "text-emerald-600", bg: "bg-emerald-50" },

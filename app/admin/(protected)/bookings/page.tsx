@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { getAccessibleInternalProducts, getAccessibleInternalProductTypes, toAdminProductFilter } from "@/lib/internal-product-access"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { resolveBookingProductType, toAdminBookingFilter } from "@/lib/booking-products"
@@ -342,10 +343,17 @@ export default async function AdminBookingsPage({
   const { data: currentProfile } = user
     ? await supabase.from("profiles").select("role").eq("id", user.id).single()
     : { data: null }
+  const accessibleProducts = await getAccessibleInternalProducts(adminSupabase, user?.id, currentProfile?.role)
+  const accessibleProductTypes = getAccessibleInternalProductTypes(accessibleProducts)
+  const accessibleAdminFilters = accessibleProductTypes.map((productType) => toAdminProductFilter(productType))
   const canExecuteAdminOps = isAdminExecutionRole(currentProfile?.role)
   const successMessage = params.success ? String(params.success) : ""
   const errorMessage = params.error ? String(params.error) : ""
-  const activeProduct = normalizeProductFilter(params.product)
+  const requestedProduct = normalizeProductFilter(params.product)
+  const activeProduct =
+    requestedProduct === "all" || accessibleAdminFilters.includes(requestedProduct)
+      ? requestedProduct
+      : "all"
   const activeQueue = normalizeQueueFilter(params.queue)
   const activeFocus = normalizeAttentionFocus(params.focus)
   const searchQuery = String(params.q || "").trim().toLowerCase()
@@ -360,7 +368,9 @@ export default async function AdminBookingsPage({
     )
     .order("created_at", { ascending: false })
 
-  const bookings = (bookingsData as BookingRow[] | null) || []
+  const bookings = (((bookingsData as BookingRow[] | null) || []) as BookingRow[]).filter((booking) =>
+    accessibleAdminFilters.includes(deriveBookingProduct(booking)),
+  )
   const packageIds = [...new Set(bookings.map((booking) => booking.package_id).filter(Boolean))]
   const { data: packageData } =
     packageIds.length > 0
@@ -459,13 +469,13 @@ export default async function AdminBookingsPage({
 
   const productFilters: Array<{ value: ProductFilter; label: string }> = [
     { value: "all", label: "Semua Produk" },
-    { value: "paket-tour", label: "Paket Tour" },
-    { value: "pesawat", label: "Pesawat" },
-    { value: "hotel", label: "Hotel" },
-    { value: "bus-travel", label: "Bus & Travel" },
-    { value: "kereta-api", label: "Kereta Api" },
-    { value: "kapal-laut", label: "Kapal Laut" },
-    { value: "kapal-pesiar", label: "Kapal Pesiar" },
+    ...(accessibleAdminFilters.includes("paket-tour") ? [{ value: "paket-tour" as ProductFilter, label: "Paket Tour" }] : []),
+    ...(accessibleAdminFilters.includes("pesawat") ? [{ value: "pesawat" as ProductFilter, label: "Pesawat" }] : []),
+    ...(accessibleAdminFilters.includes("hotel") ? [{ value: "hotel" as ProductFilter, label: "Hotel" }] : []),
+    ...(accessibleAdminFilters.includes("bus-travel") ? [{ value: "bus-travel" as ProductFilter, label: "Bus & Travel" }] : []),
+    ...(accessibleAdminFilters.includes("kereta-api") ? [{ value: "kereta-api" as ProductFilter, label: "Kereta Api" }] : []),
+    ...(accessibleAdminFilters.includes("kapal-laut") ? [{ value: "kapal-laut" as ProductFilter, label: "Kapal Laut" }] : []),
+    ...(accessibleAdminFilters.includes("kapal-pesiar") ? [{ value: "kapal-pesiar" as ProductFilter, label: "Kapal Pesiar" }] : []),
   ]
   const queueFilters: Array<{ value: QueueFilter; label: string; count: number }> = [
     { value: "all", label: "Semua Queue", count: searchedBookings.length },

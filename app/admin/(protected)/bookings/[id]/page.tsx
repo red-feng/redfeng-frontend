@@ -7,6 +7,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { formatBookingCode } from "@/lib/merchant-code"
 import { formatPackageMoney } from "@/lib/package-pricing"
+import { getBookingProductLabel, resolveBookingProductType } from "@/lib/booking-products"
 import { getEscrowStatusTone, getJourneyStageTone, getPaymentStatusTone, normalizeStatus } from "@/lib/status-tones"
 import { handoffBookingToFinance } from "../actions"
 import { addBookingAdminNote, reopenBookingAdminNote, resolveBookingAdminNote } from "./actions"
@@ -35,6 +36,7 @@ type BookingDetailRow = {
   booking_status: string | null
   payment_status: string | null
   package_id: string | null
+  booking_product_type: string | null
   escrow_status: string | null
   merchant_arrived_at: string | null
   customer_picked_up_at: string | null
@@ -447,7 +449,7 @@ export default async function AdminBookingDetailPage({
   const { data: booking, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .eq("id", id)
     .maybeSingle<BookingDetailRow>()
@@ -511,7 +513,12 @@ export default async function AdminBookingDetailPage({
   const auditLogHref = `${portal === "superadmin" ? "/superadmin/audit-log" : "/admin/audit-log"}?target=booking&q=${encodeURIComponent(booking.id)}`
   const merchantHref = merchant?.id ? (portal === "superadmin" ? `/superadmin/merchants/${merchant.id}` : `/admin/merchants/${merchant.id}`) : ""
   const packageHref = pkg?.id ? (portal === "superadmin" ? `/superadmin/packages/${pkg.id}` : `/admin/packages/${pkg.id}`) : ""
-  const productLabel = booking.package_id ? "Paket Tour" : "Pesawat"
+  const productLabel = getBookingProductLabel(
+    resolveBookingProductType({
+      bookingProductType: booking.booking_product_type,
+      packageId: booking.package_id,
+    }),
+  )
   const merchantName = merchant?.brand_name || merchant?.company_name || merchant?.id || "-"
   const timeline = [
     {
