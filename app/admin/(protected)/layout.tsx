@@ -136,8 +136,8 @@ export default async function AdminProtectedLayout({
     <div className="min-h-screen bg-[#fbfaf8] text-slate-900 lg:flex">
       <AdminNavSeenTracker />
       <SuperadminAdminRouteSeenBridge enabled={profile.role === "superadmin"} />
-      <aside className={`sticky top-0 z-40 flex max-h-screen w-full flex-col border-b bg-white lg:h-screen lg:shrink-0 lg:border-b-0 lg:border-r ${isOperationsManager ? "border-[#eef2f7] lg:w-[274px]" : "border-[#eee5dc] lg:w-[280px]"}`}>
-        <div className={`flex items-center justify-between gap-3 px-5 lg:px-6 ${isOperationsManager ? "py-6" : "py-5 lg:py-7"}`}>
+      <aside className={`sticky top-0 z-40 flex max-h-screen w-full flex-col border-b bg-white lg:h-screen lg:shrink-0 lg:border-b-0 lg:border-r ${isOperationsManager ? "border-[#eef2f7] lg:w-[308px]" : "border-[#eee5dc] lg:w-[280px]"}`}>
+        <div className={`flex items-center justify-between gap-3 px-5 lg:px-7 ${isOperationsManager ? "py-7" : "py-5 lg:py-7"}`}>
           <div className="flex items-center gap-3">
             <span className={`inline-flex items-center justify-center rounded-2xl ${isOperationsManager ? "h-10 w-10 bg-[#fff1eb] text-orange-600" : "h-8 w-8 bg-orange-600 text-white"} text-sm font-black`}>
               {isOperationsManager ? (
@@ -155,15 +155,15 @@ export default async function AdminProtectedLayout({
             {roleLabel}
           </span>
         </div>
-        <div className={`hidden px-6 pb-3 lg:block ${isOperationsManager ? "pt-1" : ""}`}>
+        <div className={`hidden px-7 pb-4 lg:block ${isOperationsManager ? "pt-1" : ""}`}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
           <p className="mt-3 text-xs font-semibold text-slate-700">{roleLabel}</p>
           <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
         </div>
-        <nav className={`flex-1 overflow-auto pb-4 ${isOperationsManager ? "px-4" : "px-4 lg:px-5"}`}>
+        <nav className={`flex-1 overflow-auto pb-5 ${isOperationsManager ? "px-5" : "px-4 lg:px-5"}`}>
           <AdminNavLinks items={adminNav} />
         </nav>
-        <div className={`hidden px-6 py-5 lg:block ${isOperationsManager ? "" : "border-t border-[#f0e6dd]"}`}>
+        <div className={`hidden px-7 py-6 lg:block ${isOperationsManager ? "" : "border-t border-[#f0e6dd]"}`}>
           {isOperationsManager ? (
             <div className="mb-4 flex items-center gap-3 rounded-[18px] border border-[#eef2f7] bg-[#f8fafc] px-4 py-3">
               <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">

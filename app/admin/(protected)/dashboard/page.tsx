@@ -382,11 +382,20 @@ function DashboardLineChart({
     ...series.flatMap((item) => item.values),
     1,
   )
+  const hasData = series.some((item) => item.values.some((value) => value > 0))
   const tickValues = [0, maxValue * 0.33, maxValue * 0.66, maxValue]
   const formatValue = valueFormatter || ((value: number) => value.toLocaleString("id-ID"))
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 rounded-[18px] border border-[#edf2f7] bg-[linear-gradient(180deg,#ffffff,rgba(248,250,252,0.9))] p-4">
+      {!hasData ? (
+        <div className="flex h-[240px] flex-col items-center justify-center rounded-[14px] border border-dashed border-[#dbe4f0] bg-[#fbfdff] text-center">
+          <p className="text-sm font-semibold text-slate-700">Belum ada trend live</p>
+          <p className="mt-1 max-w-[240px] text-xs leading-5 text-slate-400">
+            Grafik akan aktif otomatis setelah ada booking atau revenue yang tercatat pada periode ini.
+          </p>
+        </div>
+      ) : (
       <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="h-[240px] w-full">
         {tickValues.map((value, index) => {
           const y = height - 22 - ((height - 36) * value) / maxValue
@@ -419,6 +428,7 @@ function DashboardLineChart({
           )
         })}
       </svg>
+      )}
     </div>
   )
 }
@@ -1744,14 +1754,14 @@ export default async function AdminDashboard({
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
 
     return (
-      <main className="min-h-screen bg-[#f5f7fb] px-4 py-5 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1680px] space-y-6">
-          <section className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <main className="min-h-screen bg-[#f5f7fb] px-5 py-6 sm:px-7 lg:px-10 xl:px-12">
+        <div className="w-full space-y-7">
+          <section className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[2.2rem]">
+              <h1 className="text-[2.2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.55rem]">
                 Selamat pagi, {greetingLabel}!
               </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
+              <p className="mt-2 text-[15px] leading-7 text-slate-500">
                 Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jujur antara jalur internal dan affiliate Traveloka.
               </p>
             </div>
@@ -1829,44 +1839,44 @@ export default async function AdminDashboard({
           ) : null}
 
           {showKpiWorkspace && showKpiOverviewWidget ? (
-            <section className="grid gap-4 xl:grid-cols-6">
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+            <section className="grid gap-5 xl:grid-cols-6">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
                     <DashboardGlyph kind="booking" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">Total Booking</p>
+                  <p className="text-[15px] font-medium text-slate-700">Total Booking</p>
                 </div>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{globalPeriodBookings.length.toLocaleString("id-ID")}</p>
-                <p className={`mt-1 text-xs font-semibold ${bookingDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{bookingDeltaLabel}</p>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{globalPeriodBookings.length.toLocaleString("id-ID")}</p>
+                <p className={`mt-1 text-[12px] font-semibold ${bookingDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{bookingDeltaLabel}</p>
                 <TinySparkline points={bookingSparkline} stroke="#2563eb" />
                 <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
               </article>
 
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <DashboardGlyph kind="revenue" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">Total Revenue (GMV)</p>
+                  <p className="text-[15px] font-medium text-slate-700">Total Revenue (GMV)</p>
                 </div>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0"}</p>
-                <p className={`mt-1 text-xs font-semibold ${revenueDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{revenueDeltaLabel}</p>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0"}</p>
+                <p className={`mt-1 text-[12px] font-semibold ${revenueDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{revenueDeltaLabel}</p>
                 <TinySparkline points={revenueSparkline} stroke="#10b981" />
                 <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">
                   Internal {formatMoney(globalInternalRevenueTotal)} | Affiliate {formatMoney(globalAffiliateRevenueTotal)}
                 </div>
               </article>
 
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                     <DashboardGlyph kind="issue" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">Pending Issue (Semua)</p>
+                  <p className="text-[15px] font-medium text-slate-700">Pending Issue (Semua)</p>
                 </div>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
-                <p className="mt-1 text-xs font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
+                <p className="mt-1 text-[12px] font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
                 <div className="mt-5 space-y-3 text-sm">
                   {[
                     { label: "Approval Merchant", value: pendingMerchants },
@@ -1881,17 +1891,17 @@ export default async function AdminDashboard({
                 </div>
               </article>
 
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <DashboardGlyph kind="sla" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">SLA Compliance</p>
+                  <p className="text-[15px] font-medium text-slate-700">SLA Compliance</p>
                 </div>
-                <div className="mt-4 grid grid-cols-[120px_1fr] items-center gap-4">
-                  <div className="mx-auto flex h-[108px] w-[108px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
-                    <div className="flex h-[76px] w-[76px] flex-col items-center justify-center rounded-full bg-white">
-                      <p className="text-2xl font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                <div className="mt-5 grid grid-cols-[132px_1fr] items-center gap-4">
+                  <div className="mx-auto flex h-[120px] w-[120px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
+                    <div className="flex h-[84px] w-[84px] flex-col items-center justify-center rounded-full bg-white">
+                      <p className="text-[1.85rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
                       <p className="text-[11px] text-slate-400">On Time</p>
                     </div>
                   </div>
@@ -1911,15 +1921,15 @@ export default async function AdminDashboard({
                 </div>
               </article>
 
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
                     <DashboardGlyph kind="anomaly" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">Anomali Aktif</p>
+                  <p className="text-[15px] font-medium text-slate-700">Anomali Aktif</p>
                 </div>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{recentAnomalies.length}</p>
-                <p className="mt-1 text-xs font-semibold text-rose-500">{severityRows[0].value} high | {severityRows[1].value} medium | {severityRows[2].value} low</p>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{recentAnomalies.length}</p>
+                <p className="mt-1 text-[12px] font-semibold text-rose-500">{severityRows[0].value} high | {severityRows[1].value} medium | {severityRows[2].value} low</p>
                 <div className="mt-5 space-y-3 text-sm">
                   {severityRows.map((row) => (
                     <div key={row.label} className="flex items-center justify-between gap-3 text-slate-600">
@@ -1930,15 +1940,15 @@ export default async function AdminDashboard({
                 </div>
               </article>
 
-              <article className="min-h-[224px] rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                     <DashboardGlyph kind="failure" className="h-5 w-5" />
                   </span>
-                  <p className="text-sm font-medium text-slate-700">Failure Rate (Affiliate)</p>
+                  <p className="text-[15px] font-medium text-slate-700">Failure Rate (Affiliate)</p>
                 </div>
-                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.05em] text-slate-950">{affiliateFailureRate.toLocaleString("id-ID")}%</p>
-                <p className={`mt-1 text-xs font-semibold ${affiliateFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{affiliateFailureRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-[12px] font-semibold ${affiliateFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
                   {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate
                 </p>
                 <div className="mt-5 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target: &lt;= 3%</div>

@@ -266,7 +266,7 @@ export default function AdminNavLinks({
   }, [realtimeBadgeConfigs, supabase])
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {items.map((item) => {
           const isSectionHeading = !item.href && !item.children
           if (isSectionHeading) {
@@ -297,7 +297,7 @@ export default function AdminNavLinks({
                   onClick={() =>
                     setOpenGroupLabel((current) => (current === item.label ? null : item.label))
                   }
-                  className={`flex w-full items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-sm font-semibold transition ${
+                  className={`flex w-full items-center justify-between gap-3 rounded-[14px] px-3.5 py-3 text-[13px] font-semibold transition ${
                     isHighlighted
                       ? "bg-[#fff2e8] text-orange-600"
                       : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
@@ -326,7 +326,7 @@ export default function AdminNavLinks({
                         <Link
                           key={child.href}
                           href={child.href}
-                          className={`flex items-center justify-between gap-3 rounded-[12px] px-4 py-2.5 text-sm font-medium transition ${
+                          className={`flex items-center justify-between gap-3 rounded-[12px] px-4 py-2.5 text-[13px] font-medium transition ${
                             isActive
                               ? "bg-[#fff2e8] text-orange-600"
                               : "text-slate-500 hover:bg-[#fff7f1] hover:text-orange-600"
@@ -356,7 +356,7 @@ export default function AdminNavLinks({
               <Link
                 key={item.label}
                 href={item.href}
-                className={`flex items-center justify-between gap-3 rounded-[14px] px-3 py-2.5 text-sm font-semibold transition ${
+                className={`flex items-center justify-between gap-3 rounded-[14px] px-3.5 py-3 text-[13px] font-semibold transition ${
                   isHighlighted
                     ? "bg-[#fff2e8] text-orange-600"
                     : "text-slate-600 hover:bg-[#fff7f1] hover:text-orange-600"
