@@ -2107,7 +2107,7 @@ export default async function AdminDashboard({
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                  <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto pr-1">
+                  <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {alertRailItems.map((item) => (
                     <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-3.5 transition hover:-translate-y-0.5 ${item.tone}`}>
                       <div className="flex items-start gap-3">

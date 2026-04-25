@@ -91,7 +91,7 @@ function SidebarContent({
         <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
       </div>
 
-      <nav className={`flex-1 overflow-auto pb-5 ${isDesktop ? (isOperationsManager ? "px-5" : "px-4 lg:px-5") : "px-5"}`}>
+      <nav className={`flex-1 overflow-auto pb-5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${isDesktop ? (isOperationsManager ? "px-5" : "px-4 lg:px-5") : "px-5"}`}>
         <AdminNavLinks items={items} onNavigate={onNavigate} />
       </nav>
 
