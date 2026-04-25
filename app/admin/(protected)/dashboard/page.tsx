@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import AdminDashboardHeightSync from "@/app/components/AdminDashboardHeightSync"
+import AdminDashboardToolbarActions from "@/app/components/AdminDashboardToolbarActions"
 import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { canAccessInternalPortal, getInternalPortalHomePath, getRoleLabel } from "@/lib/internal-roles"
 import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-role-lock"
@@ -1785,12 +1786,75 @@ export default async function AdminDashboard({
         bg: "bg-emerald-50",
       },
     ]
-    const dailyTip =
+    const alertSignalCount = slaBreachCount + affiliateApiErrorCount + calculatedRecentAnomalies.length
+    const alertsToolbarParams = new URLSearchParams({
+      period: operationsPeriod.value,
+      product: operationsProduct,
+      workspace: "alerts_overview",
+    })
+    if (params.view) {
+      alertsToolbarParams.set("view", params.view)
+    }
+    const alertsWorkspaceHref = `/admin/dashboard?${alertsToolbarParams.toString()}`
+    const operationalPriorityItems = [
+      merchantOverdueCount > 0
+        ? {
+            title: "Approval merchant melewati SLA",
+            value: merchantOverdueCount,
+            note: "Perlu keputusan final agar queue onboarding tidak menumpuk.",
+            href: "/admin/merchants/pending-approvals",
+            tone: "border-rose-200 bg-rose-50/80 text-rose-600",
+          }
+        : null,
+      globalPackageOverdueCount > 0
+        ? {
+            title: "Paket review overdue",
+            value: globalPackageOverdueCount,
+            note: "Ada paket pending yang sudah lewat SLA review 3 hari.",
+            href: "/admin/packages",
+            tone: "border-orange-200 bg-orange-50/80 text-orange-600",
+          }
+        : null,
+      globalBookingStalledCount > 0
+        ? {
+            title: "Booking stalled di handoff",
+            value: globalBookingStalledCount,
+            note: "Booking siap finance perlu follow-up agar tidak tertahan lebih lama.",
+            href: "/admin/bookings",
+            tone: "border-amber-200 bg-amber-50/80 text-amber-600",
+          }
+        : null,
       affiliateApiErrorCount > 0
-        ? "Error channel mitra sedang naik. Prioritaskan cek status order penyedia eksternal sebelum antrean finance menumpuk."
-        : slaBreachCount > 0
-          ? "SLA internal sedang tertekan. Mulai dari approval merchant dan package review yang sudah melewati batas."
-          : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
+        ? {
+            title: "Error channel affiliate",
+            value: affiliateApiErrorCount,
+            note: "Status order penyedia eksternal perlu dicek ulang oleh tim operasional.",
+            href: "/admin/bookings",
+            tone: "border-violet-200 bg-violet-50/80 text-violet-600",
+          }
+        : null,
+      slaNearDueCount > 0
+        ? {
+            title: "Queue mendekati SLA",
+            value: slaNearDueCount,
+            note: "Item ini belum breach, tapi perlu diprioritaskan di shift berjalan.",
+            href: alertsWorkspaceHref,
+            tone: "border-sky-200 bg-sky-50/80 text-sky-600",
+          }
+        : null,
+    ].filter(
+      (
+        item,
+      ): item is {
+        title: string
+        value: number
+        note: string
+        href: string
+        tone: string
+      } => Boolean(item),
+    )
+    const operationalPriorityTotal = operationalPriorityItems.reduce((sum, item) => sum + item.value, 0)
+    const topOperationalPriority = operationalPriorityItems[0] || null
     const greetingPrefix = getGreetingByJakartaTime()
 
     return (
@@ -1845,23 +1909,7 @@ export default async function AdminDashboard({
                   Terapkan
                 </button>
               </form>
-              <Link
-                href={`/admin/dashboard?period=${operationsPeriod.value}&product=${operationsProduct}&workspace=${operationsWorkspace}`}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
-              >
-                <DashboardGlyph kind="refresh" className="h-5 w-5" />
-              </Link>
-              <Link
-                href="/admin/dashboard?workspace=alerts_overview"
-                className="relative inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
-              >
-                <DashboardGlyph kind="bell" className="h-5 w-5" />
-                {recentAnomalies.length > 0 ? (
-                  <span className="absolute right-2 top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-rose-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                    {recentAnomalies.length}
-                  </span>
-                ) : null}
-              </Link>
+              <AdminDashboardToolbarActions alertsCount={alertSignalCount} alertsHref={alertsWorkspaceHref} />
             </div>
           </section>
 
@@ -2271,15 +2319,66 @@ export default async function AdminDashboard({
               </article>
             ))}
             <article className="rounded-[20px] border border-[#e9eef6] bg-[linear-gradient(135deg,#fffaf2,white)] px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
-              <div className="flex items-start gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
-                  <DashboardGlyph kind="alert" className="h-5 w-5" />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Tips Hari Ini</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{dailyTip}</p>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+                    <DashboardGlyph kind="alert" className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Prioritas Operasional</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {operationalPriorityItems.length > 0
+                        ? `${operationalPriorityTotal.toLocaleString("id-ID")} item aktif perlu dipantau dari queue operasional.`
+                        : "Tidak ada antrean kritis. Fokus bisa digeser ke monitoring dan pencegahan breach baru."}
+                    </p>
+                  </div>
                 </div>
+                <span className="inline-flex rounded-full border border-[#f6dcb9] bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">
+                  {operationalPriorityItems.length > 0 ? `${operationalPriorityItems.length} fokus` : "Stabil"}
+                </span>
               </div>
+              {topOperationalPriority ? (
+                <div className="mt-4 space-y-3">
+                  <Link
+                    href={topOperationalPriority.href}
+                    className={`block rounded-[16px] border px-4 py-3 transition hover:-translate-y-0.5 ${topOperationalPriority.tone}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">{topOperationalPriority.title}</p>
+                        <p className="mt-1 text-xs leading-5 text-slate-600">{topOperationalPriority.note}</p>
+                      </div>
+                      <span className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                        {topOperationalPriority.value.toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                  </Link>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {operationalPriorityItems.slice(1, 3).map((item) => (
+                      <Link
+                        key={item.title}
+                        href={item.href}
+                        className={`rounded-[14px] border px-4 py-3 transition hover:-translate-y-0.5 ${item.tone}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Queue</p>
+                            <p className="mt-1 text-sm font-semibold text-slate-900">{item.title}</p>
+                          </div>
+                          <span className="text-lg font-semibold text-slate-950">{item.value.toLocaleString("id-ID")}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-[16px] border border-emerald-200 bg-emerald-50/70 px-4 py-3">
+                  <p className="text-sm font-semibold text-emerald-700">Queue utama terkendali</p>
+                  <p className="mt-1 text-xs leading-5 text-emerald-700/80">
+                    Approval merchant, package review, booking handoff, dan channel affiliate belum menunjukkan tekanan operasional yang perlu eskalasi cepat.
+                  </p>
+                </div>
+              )}
             </article>
           </section>
 
