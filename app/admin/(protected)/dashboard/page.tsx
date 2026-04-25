@@ -1664,6 +1664,7 @@ export default async function AdminDashboard({
           supplier: "Internal RedFeng",
           issue: issueLabel,
           time: formatDateTime(booking.created_at),
+          rawCreatedAt: booking.created_at || "",
           href: "/admin/bookings",
         }
       })
@@ -1705,6 +1706,7 @@ export default async function AdminDashboard({
           supplier: getMaskedSupplierLabel(supplier),
           issue: issueLabel,
           time: formatDateTime(booking.created_at),
+          rawCreatedAt: booking.created_at || "",
           href: "/admin/bookings",
         }
       })
@@ -1715,8 +1717,8 @@ export default async function AdminDashboard({
           ? affiliateOperationalIssueItems
           : [...internalOperationalIssueItems, ...affiliateOperationalIssueItems]
               .sort((a, b) => {
-                if (a.time === b.time) return a.product.localeCompare(b.product, "id")
-                return b.time.localeCompare(a.time, "id")
+                if (a.rawCreatedAt === b.rawCreatedAt) return a.product.localeCompare(b.product, "id")
+                return b.rawCreatedAt.localeCompare(a.rawCreatedAt, "id")
               })
               .slice(0, 6)
     const showKpiWorkspace = operationsWorkspace === "all" || operationsWorkspace === "kpi_overview"
@@ -2010,12 +2012,42 @@ export default async function AdminDashboard({
     const alertsOverviewTitle = operationsSource === "all" ? "Alert & Notifikasi" : `Alert & Notifikasi (${operationsSourceLabel})`
     const bookingIssueTitle = operationsSource === "all" ? "Booking Bermasalah" : `Booking Bermasalah (${operationsSourceLabel})`
     const recentAnomalyTitle = operationsSource === "all" ? "Anomali Terbaru" : `Anomali Terbaru (${operationsSourceLabel})`
+    const pendingIssueRows = [
+      {
+        label: "Approval Merchant",
+        source: "Internal",
+        value: sourcePendingMerchants,
+        href: "/admin/merchants/pending-approvals",
+      },
+      {
+        label: "Paket Wisata",
+        source: "Internal",
+        value: globalPendingPackages,
+        href: "/admin/packages",
+      },
+      ...accessibleProductSummaries
+        .filter((product) => product.key !== "package_tour")
+        .map((product) => ({
+          label: product.label,
+          source: "Affiliate",
+          value: affiliatePendingIssueCounts.get(product.key) || 0,
+          href: product.href,
+        })),
+    ]
+      .filter((item) => item.value > 0)
+      .sort((a, b) => {
+        if (a.source !== b.source) return a.source === "Internal" ? -1 : 1
+        if (b.value !== a.value) return b.value - a.value
+        return a.label.localeCompare(b.label, "id")
+      })
+    const showSplitKpiStory = showKpiWorkspace && showKpiOverviewWidget && operationsWorkspace === "all"
+    const showCompactKpiGrid = showKpiWorkspace && showKpiOverviewWidget && operationsWorkspace !== "all"
     const emptyOperationalIssueItem =
       operationsSource === "internal"
-        ? { id: "empty-internal-ops", product: "-", supplier: "Internal RedFeng", issue: "Belum ada issue internal", time: "Saat ini", href: "/admin/bookings" }
+        ? { id: "empty-internal-ops", product: "-", supplier: "Internal RedFeng", issue: "Belum ada issue internal", time: "Saat ini", rawCreatedAt: "", href: "/admin/bookings" }
         : operationsSource === "affiliate"
-          ? { id: "empty-affiliate-ops", product: "-", supplier: "Mitra Eksternal", issue: "Belum ada issue mitra", time: "Saat ini", href: "/admin/bookings" }
-          : { id: "empty-all-ops", product: "-", supplier: "Semua Channel", issue: "Belum ada issue booking", time: "Saat ini", href: "/admin/bookings" }
+          ? { id: "empty-affiliate-ops", product: "-", supplier: "Mitra Eksternal", issue: "Belum ada issue mitra", time: "Saat ini", rawCreatedAt: "", href: "/admin/bookings" }
+          : { id: "empty-all-ops", product: "-", supplier: "Semua Channel", issue: "Belum ada issue booking", time: "Saat ini", rawCreatedAt: "", href: "/admin/bookings" }
 
     return (
       <main className="min-h-screen min-w-0 w-full bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -2099,15 +2131,16 @@ export default async function AdminDashboard({
           ) : null}
 
           {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-3">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-600">1</span>
+            <section className="flex items-center gap-2.5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-600">1</span>
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Kita Hidup Dari Mana</h2>
             </section>
           ) : null}
 
-          {showKpiWorkspace && showKpiOverviewWidget ? (
-            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6">
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+          {showSplitKpiStory ? (
+            <>
+              <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
                     <DashboardGlyph kind="booking" className="h-5 w-5" />
@@ -2129,7 +2162,7 @@ export default async function AdminDashboard({
                 <TinySparkline points={bookingSparkline} stroke="#2563eb" />
               </article>
 
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <DashboardGlyph kind="revenue" className="h-5 w-5" />
@@ -2151,7 +2184,33 @@ export default async function AdminDashboard({
                 <TinySparkline points={revenueSparkline} stroke="#10b981" />
               </article>
 
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                    <DashboardGlyph kind="booking" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">Source Mix</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{internalBookingShare.toLocaleString("id-ID")}%</p>
+                <p className="mt-1 text-[12px] font-semibold text-slate-500">internal booking share</p>
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Booking</span>
+                    <span className="font-semibold text-slate-900">{internalBookingShare}% internal | {affiliateBookingShare}% affiliate</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Revenue</span>
+                    <span className="font-semibold text-slate-900">{internalRevenueShare}% internal | {affiliateRevenueShare}% affiliate</span>
+                  </div>
+                </div>
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#eef2f7]">
+                  <div className="h-full rounded-full bg-sky-500" style={{ width: `${Math.min(Math.max(internalBookingShare, 0), 100)}%` }} />
+                </div>
+              </article>
+            </section>
+
+            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                     <DashboardGlyph kind="issue" className="h-5 w-5" />
@@ -2162,35 +2221,7 @@ export default async function AdminDashboard({
                 <p className="mt-1 text-[12px] font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
                 <div className="mt-5 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
                   <div className="space-y-2.5 text-sm">
-                  {[
-                    {
-                      label: "Approval Merchant",
-                      source: "Internal",
-                      value: sourcePendingMerchants,
-                      href: "/admin/merchants/pending-approvals",
-                    },
-                    {
-                      label: "Paket Wisata",
-                      source: "Internal",
-                      value: globalPendingPackages,
-                      href: "/admin/packages",
-                    },
-                    ...accessibleProductSummaries
-                      .filter((product) => product.key !== "package_tour")
-                      .map((product) => ({
-                        label: product.label,
-                        source: "Affiliate",
-                        value: affiliatePendingIssueCounts.get(product.key) || 0,
-                        href: product.href,
-                      })),
-                  ]
-                    .filter((item) => item.value > 0)
-                    .sort((a, b) => {
-                      if (a.source !== b.source) return a.source === "Internal" ? -1 : 1
-                      if (b.value !== a.value) return b.value - a.value
-                      return a.label.localeCompare(b.label, "id")
-                    })
-                    .map((item) => (
+                  {pendingIssueRows.length > 0 ? pendingIssueRows.map((item) => (
                     <Link
                       key={`${item.label}-${item.source}`}
                       href={item.href}
@@ -2204,12 +2235,14 @@ export default async function AdminDashboard({
                         <span className="font-semibold text-slate-900">{item.value}</span>
                       </span>
                     </Link>
-                  ))}
+                  )) : (
+                    <div className="rounded-[12px] px-2 py-1.5 text-sm text-slate-400">- Tidak ada issue aktif</div>
+                  )}
                   </div>
                 </div>
               </article>
 
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <DashboardGlyph kind="sla" className="h-5 w-5" />
@@ -2255,7 +2288,7 @@ export default async function AdminDashboard({
                 </div>
               </article>
 
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
                     <DashboardGlyph kind="anomaly" className="h-5 w-5" />
@@ -2274,7 +2307,188 @@ export default async function AdminDashboard({
                 </div>
               </article>
 
-              <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
+                    <DashboardGlyph kind="failure" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">{failureRateTitle}</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalFailureRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-[12px] font-semibold ${totalFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {totalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodBookings.length.toLocaleString("id-ID")} total booking
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Internal</span>
+                      <span className="font-semibold text-slate-900">
+                        {internalFailureRate.toLocaleString("id-ID")}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-slate-700">
+                      {internalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking
+                    </p>
+                  </div>
+                  <div className="rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Affiliate</span>
+                      <span className="font-semibold text-slate-900">
+                        {affiliateFailureRate.toLocaleString("id-ID")}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-slate-700">
+                      {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking
+                    </p>
+                  </div>
+                </div>
+              </article>
+            </section>
+            </>
+          ) : showCompactKpiGrid ? (
+            <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6">
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+                    <DashboardGlyph kind="booking" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">Total Booking</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{globalPeriodBookings.length.toLocaleString("id-ID")}</p>
+                <p className={`mt-1 text-[12px] font-semibold ${bookingDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{bookingDeltaLabel}</p>
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Internal</span>
+                    <span className="font-semibold text-slate-900">{globalPeriodInternalBookings.length.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Affiliate</span>
+                    <span className="font-semibold text-slate-900">{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
+                <TinySparkline points={bookingSparkline} stroke="#2563eb" />
+              </article>
+
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <DashboardGlyph kind="revenue" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">Total Revenue (GMV)</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{formatCompactMoney(globalRevenueTotal)}</p>
+                <p className={`mt-1 text-[12px] font-semibold ${revenueDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{revenueDeltaLabel}</p>
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Internal</span>
+                    <span className="font-semibold text-slate-900">{formatMoney(globalInternalRevenueTotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Affiliate</span>
+                    <span className="font-semibold text-slate-900">{formatMoney(globalAffiliateRevenueTotal)}</span>
+                  </div>
+                </div>
+                <TinySparkline points={revenueSparkline} stroke="#10b981" />
+              </article>
+
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                    <DashboardGlyph kind="issue" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">{pendingIssueTitle}</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
+                <p className="mt-1 text-[12px] font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
+                <div className="mt-5 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="space-y-2.5 text-sm">
+                  {pendingIssueRows.length > 0 ? pendingIssueRows.map((item) => (
+                    <Link
+                      key={`${item.label}-${item.source}`}
+                      href={item.href}
+                      className="block rounded-[12px] px-2 py-1.5 text-slate-600 transition hover:bg-white hover:text-orange-600"
+                    >
+                      <span className="block truncate">
+                        <span className="text-slate-400">- </span>
+                        <span>{item.label}</span>
+                        <span className="text-slate-500"> ({item.source})</span>
+                        <span className="text-slate-400">: </span>
+                        <span className="font-semibold text-slate-900">{item.value}</span>
+                      </span>
+                    </Link>
+                  )) : (
+                    <div className="rounded-[12px] px-2 py-1.5 text-sm text-slate-400">- Tidak ada issue aktif</div>
+                  )}
+                  </div>
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                    <DashboardGlyph kind="sla" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">{slaTitle}</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-[12px] font-semibold ${slaComplianceRate >= 90 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {slaBreachCount.toLocaleString("id-ID")} breach dari {slaTrackedItemCount.toLocaleString("id-ID")} item operasional
+                </p>
+                <div className="mt-5 flex flex-col items-center gap-4">
+                  <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
+                    <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
+                      <p className="text-[1.55rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                    </div>
+                  </div>
+                  <div className="w-full max-w-[210px] space-y-2.5">
+                    {[
+                      { label: "On Time", value: slaOnTimeCount, tone: "bg-emerald-500" },
+                      { label: "Mendekati", value: slaNearDueCount, tone: "bg-orange-400" },
+                      { label: "Terlambat", value: slaBreachCount, tone: "bg-rose-500" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="inline-flex min-w-0 items-center gap-2 text-slate-600"><span className={`h-2.5 w-2.5 shrink-0 rounded-full ${item.tone}`} />{item.label}</span>
+                        <span className="shrink-0 font-semibold text-slate-900">{slaTrackedItemCount > 0 ? Math.round((item.value / slaTrackedItemCount) * 100) : 0}%</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="w-full space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Internal SLA</span>
+                      <span className="text-right font-semibold text-slate-900">
+                        {internalSlaComplianceRate.toLocaleString("id-ID")}% ({internalSlaBreachCount}/{internalSlaTrackedCount || 0})
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Affiliate SLA</span>
+                      <span className="text-right font-semibold text-slate-900">
+                        {affiliateSlaComplianceRate.toLocaleString("id-ID")}% ({affiliateSlaBreachCount}/{affiliateSlaTrackedCount || 0})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+                    <DashboardGlyph kind="anomaly" className="h-5 w-5" />
+                  </span>
+                  <p className="text-[15px] font-medium text-slate-700">{activeAnomalyTitle}</p>
+                </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{recentAnomalies.length}</p>
+                <p className="mt-1 text-[12px] font-semibold text-rose-500">{severityRows[0].value} high | {severityRows[1].value} medium | {severityRows[2].value} low</p>
+                <div className="mt-5 space-y-3 text-sm">
+                  {severityRows.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between gap-3 text-slate-600">
+                      <span className="inline-flex items-center gap-2"><span className={`h-2.5 w-2.5 rounded-full ${row.tone}`} />{row.label}</span>
+                      <span className="font-semibold text-slate-900">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="min-h-[224px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center gap-3">
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                     <DashboardGlyph kind="failure" className="h-5 w-5" />
@@ -2338,8 +2552,8 @@ export default async function AdminDashboard({
           ) : null}
 
           {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-3">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-sm font-semibold text-rose-600">2</span>
+            <section className="flex items-center gap-2.5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-600">2</span>
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Bermasalah</h2>
             </section>
           ) : null}
@@ -2406,7 +2620,7 @@ export default async function AdminDashboard({
                         <span className="font-semibold text-slate-800">{item.product}</span>
                         <span className="text-slate-600">{item.supplier}</span>
                         <span>
-                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue mitra" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue.startsWith("Belum ada issue") ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
                             {item.issue}
                           </span>
                         </span>
@@ -2444,8 +2658,8 @@ export default async function AdminDashboard({
           ) : null}
 
           {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-3">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-600">3</span>
+            <section className="flex items-center gap-2.5">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-600">3</span>
               <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Harus Didorong</h2>
             </section>
           ) : null}
