@@ -78,6 +78,18 @@ function getGreetingByJakartaTime() {
   return "Selamat malam"
 }
 
+function getCurrentJakartaDateTimeLabel() {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: JAKARTA_TIMEZONE,
+  }).format(new Date())
+}
+
 function getMetricText(snapshot: Record<string, unknown> | null | undefined, key: string) {
   const value = snapshot?.[key]
   return typeof value === "string" ? value.trim() : ""
@@ -1180,6 +1192,9 @@ export default async function AdminDashboard({
     },
   ]
 
+  // PROTECTED-OPS-DASHBOARD-START
+  // Dashboard manager operasional dikunci secara struktural.
+  // Saat mengedit dashboard lain, hindari mengubah blok ini tanpa review khusus.
   if (showOperationsManagerView) {
     const allPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
     const allPeriodInternalBookings = allPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
@@ -2000,6 +2015,7 @@ export default async function AdminDashboard({
     }
     const topOperationalPriority = operationalPriorityItems[0] || null
     const greetingPrefix = getGreetingByJakartaTime()
+    const currentJakartaDateTimeLabel = getCurrentJakartaDateTimeLabel()
     const operationsSourceLabel =
       operationsSource === "internal" ? "Internal" : operationsSource === "affiliate" ? "Affiliate" : "Semua"
     const pendingIssueTitle = operationsSource === "all" ? "Pending Issue (Semua)" : `Pending Issue (${operationsSourceLabel})`
@@ -2057,6 +2073,9 @@ export default async function AdminDashboard({
               <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.95rem]">
                 {greetingPrefix}, {greetingLabel}!
               </h1>
+              <p className="mt-2 text-sm font-medium text-slate-500">
+                {currentJakartaDateTimeLabel} WIB
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
               <form className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
@@ -2859,6 +2878,8 @@ export default async function AdminDashboard({
       </main>
     )
   }
+
+  // PROTECTED-OPS-DASHBOARD-END
 
   if (!isSuperadmin) {
     return (
