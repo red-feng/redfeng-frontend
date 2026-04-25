@@ -20,9 +20,11 @@ const protectedRegion = source.slice(startIndex, endIndex);
 const requiredAnchors = [
   'if (showOperationsManagerView) {',
   'const allPeriodBookings = bookings.filter',
+  'const currentJakartaDateTimeLabel = getCurrentJakartaDateTimeLabel()',
   'const sourcePerformanceCards = [',
   'const operationalIssueItems =',
   'const showSplitKpiStory =',
+  '{currentJakartaDateTimeLabel} WIB',
   '{showOperationalWorkspace && showOperationalTasksWidget ? (',
   '<AdminDashboardHeightSync />',
   'Prioritas Operasional',
@@ -38,7 +40,9 @@ for (const anchor of requiredAnchors) {
 const orderedAnchors = [
   'const sourcePerformanceCards = [',
   'const operationalIssueItems =',
+  'const currentJakartaDateTimeLabel = getCurrentJakartaDateTimeLabel()',
   'const showSplitKpiStory =',
+  '{currentJakartaDateTimeLabel} WIB',
   '{showSplitKpiStory ? (',
   '{showOperationalWorkspace && showOperationalTasksWidget ? (',
   '<AdminDashboardHeightSync />',
