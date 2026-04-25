@@ -409,16 +409,16 @@ function DashboardLineChart({
   const formatValue = valueFormatter || ((value: number) => value.toLocaleString("id-ID"))
 
   return (
-    <div className="mt-4 rounded-[18px] border border-[#edf2f7] bg-[linear-gradient(180deg,#ffffff,rgba(248,250,252,0.9))] p-4">
+    <div className="mt-4 rounded-[18px] border border-[#edf2f7] bg-[linear-gradient(180deg,#ffffff,rgba(248,250,252,0.9))] p-3.5">
       {!hasData ? (
-        <div className="flex h-[240px] flex-col items-center justify-center rounded-[14px] border border-dashed border-[#dbe4f0] bg-[#fbfdff] text-center">
+        <div className="flex h-[212px] flex-col items-center justify-center rounded-[14px] border border-dashed border-[#dbe4f0] bg-[#fbfdff] text-center">
           <p className="text-sm font-semibold text-slate-700">Belum ada trend live</p>
           <p className="mt-1 max-w-[240px] text-xs leading-5 text-slate-400">
             Grafik akan aktif otomatis setelah ada booking atau revenue yang tercatat pada periode ini.
           </p>
         </div>
       ) : (
-      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="h-[240px] w-full">
+      <svg viewBox={`0 0 ${width} ${height}`} aria-hidden="true" className="h-[212px] w-full">
         {tickValues.map((value, index) => {
           const y = height - 22 - ((height - 36) * value) / maxValue
           return (
@@ -2016,7 +2016,7 @@ export default async function AdminDashboard({
                   </div>
                   <Link href={primaryProductOverviewHref} className="shrink-0 text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf2f7]">
+                <div className="mt-4 overflow-hidden rounded-[18px] border border-[#edf2f7]">
                   <div className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Kategori</span>
                     <span>Booking</span>
@@ -2026,7 +2026,7 @@ export default async function AdminDashboard({
                   </div>
                   <div className="divide-y divide-[#edf2f7]">
                     {productPerformanceCards.map((product) => (
-                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 px-4 py-3 text-sm transition hover:bg-[#f8fbff]">
                         <span className="flex min-w-0 items-center gap-3">
                           <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
                             <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
@@ -2086,9 +2086,9 @@ export default async function AdminDashboard({
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 flex-1 space-y-3 overflow-y-auto pr-1">
-                  {alertRailItems.map((item) => (
-                    <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-4 transition hover:-translate-y-0.5 ${item.tone}`}>
+                  <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto pr-1">
+                    {alertRailItems.map((item) => (
+                    <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-3.5 transition hover:-translate-y-0.5 ${item.tone}`}>
                       <div className="flex items-start gap-3">
                         <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white ${item.iconTone}`}>
                           <DashboardGlyph kind="alert" className="h-4 w-4" />
