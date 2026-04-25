@@ -2047,10 +2047,16 @@ export default async function AdminDashboard({
                   <div className="mt-3 space-y-2.5 text-sm">
                   {[
                     {
+                      label: "Approval Merchant",
+                      source: "Internal",
+                      value: pendingMerchants,
+                      href: "/admin/merchants/pending-approvals",
+                    },
+                    {
                       label: "Paket Wisata",
                       source: "Internal",
-                      value: internalPendingIssueCount,
-                      href: "/admin/merchants/pending-approvals",
+                      value: globalPendingPackages,
+                      href: "/admin/packages",
                     },
                     ...accessibleProductSummaries
                       .filter((product) => product.key !== "package_tour")
@@ -2071,20 +2077,15 @@ export default async function AdminDashboard({
                     <Link
                       key={`${item.label}-${item.source}`}
                       href={item.href}
-                      className="flex items-center justify-between gap-3 rounded-[12px] px-2 py-1.5 text-slate-600 transition hover:bg-white hover:text-orange-600"
+                      className="block rounded-[12px] px-2 py-1.5 text-slate-600 transition hover:bg-white hover:text-orange-600"
                     >
-                      <span className="min-w-0 inline-flex items-center gap-2">
-                        <span className="text-slate-400">-</span>
-                        <span className="truncate">{item.label}</span>
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
-                            item.source === "Internal" ? "bg-sky-100 text-sky-700" : "bg-orange-100 text-orange-700"
-                          }`}
-                        >
-                          {item.source}
-                        </span>
+                      <span className="block truncate">
+                        <span className="text-slate-400">- </span>
+                        <span>{item.label}</span>
+                        <span className="text-slate-500"> ({item.source})</span>
+                        <span className="text-slate-400">: </span>
+                        <span className="font-semibold text-slate-900">{item.value}</span>
                       </span>
-                      <span className="font-semibold text-slate-900">{item.value}</span>
                     </Link>
                   ))}
                   </div>
