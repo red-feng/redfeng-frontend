@@ -609,6 +609,12 @@ function getOperationsProduct(value: string | null | undefined): "all" | Booking
   return "all"
 }
 
+function getOperationsSource(value: string | null | undefined): "all" | "internal" | "affiliate" {
+  const normalized = String(value || "all").trim().toLowerCase()
+  if (normalized === "internal" || normalized === "affiliate") return normalized
+  return "all"
+}
+
 function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap") {
   if (status === "connected") {
     return { label: "Terhubung", className: "bg-emerald-50 text-emerald-600" }
@@ -667,7 +673,7 @@ export default async function AdminDashboard({
   searchParams,
   portal = "admin",
 }: {
-  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string; source?: string }>
   portal?: AdminWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
@@ -721,6 +727,7 @@ export default async function AdminDashboard({
   const operationsPeriodStart = getPeriodStart(operationsPeriod.days)
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
+  const operationsSource = getOperationsSource(params.source)
   const requestedOperationsProduct = getOperationsProduct(params.product)
   const operationsProduct =
     requestedOperationsProduct === "all" || accessibleProductTypes.includes(requestedOperationsProduct)
@@ -1174,10 +1181,22 @@ export default async function AdminDashboard({
   ]
 
   if (showOperationsManagerView) {
-    const globalPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
-    const globalPeriodInternalBookings = globalPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
-    const globalPeriodAffiliateBookings = globalPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
-    const globalPeriodPackages = packages.filter((pkg) => isWithinPeriod(pkg.created_at, operationsPeriodStart))
+    const allPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
+    const allPeriodInternalBookings = allPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
+    const allPeriodAffiliateBookings = allPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
+    const sourcePendingMerchantsData = operationsSource === "affiliate" ? [] : pendingMerchantsData
+    const sourcePendingMerchants = sourcePendingMerchantsData.length
+    const sourceMerchantOverdueCount = operationsSource === "affiliate" ? 0 : merchantOverdueCount
+    const allPeriodPackages = packages.filter((pkg) => isWithinPeriod(pkg.created_at, operationsPeriodStart))
+    const globalPeriodBookings =
+      operationsSource === "internal"
+        ? allPeriodInternalBookings
+        : operationsSource === "affiliate"
+          ? allPeriodAffiliateBookings
+          : allPeriodBookings
+    const globalPeriodInternalBookings = operationsSource === "affiliate" ? [] : allPeriodInternalBookings
+    const globalPeriodAffiliateBookings = operationsSource === "internal" ? [] : allPeriodAffiliateBookings
+    const globalPeriodPackages = operationsSource === "affiliate" ? [] : allPeriodPackages
     const globalPeriodDeletionRequests = deletionRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const globalPeriodReviewRequests = reviewRequests.filter((request) => isWithinPeriod(request.requested_at, operationsPeriodStart))
     const globalPeriodAuditLogs = recentAuditLogs.filter((log) => isWithinPeriod(log.created_at, operationsPeriodStart))
@@ -1208,7 +1227,12 @@ export default async function AdminDashboard({
     const globalBookingStalledCount = globalPeriodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
-    const accessibleProductSummaries = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => accessibleProductTypes.includes(product.key))
+    const accessibleProductSummaries = OPERATIONS_PRODUCT_SUMMARIES.filter((product) => {
+      if (!accessibleProductTypes.includes(product.key)) return false
+      if (operationsSource === "internal") return product.key === "package_tour"
+      if (operationsSource === "affiliate") return product.key !== "package_tour"
+      return true
+    })
     const globalRevenueTotal = globalPeriodCustomerTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const globalInternalRevenueTotal = globalPeriodInternalTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
     const globalAffiliateRevenueTotal = globalPeriodAffiliateTransactionRows.reduce((sum, item) => sum + item.receivedAmount, 0)
@@ -1230,14 +1254,14 @@ export default async function AdminDashboard({
       const bookingStatus = normalizeStatus(booking.booking_status)
       return ["cancel_requested", "cancelled", "refund_requested", "refunded", "failed"].includes(bookingStatus)
     }).length
-    const internalPendingIssueCount = pendingMerchants + globalPendingPackages
+    const internalPendingIssueCount = sourcePendingMerchants + globalPendingPackages
     const totalPendingIssueCount = internalPendingIssueCount + affiliateIssueCount
-    const slaTrackedItemCount = pendingMerchants + globalPendingPackages + globalFinanceReadyCount
-    const slaBreachCount = merchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount
+    const slaTrackedItemCount = sourcePendingMerchants + globalPendingPackages + globalFinanceReadyCount
+    const slaBreachCount = sourceMerchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount
     const slaComplianceRate =
       slaTrackedItemCount > 0 ? Math.max(0, Math.round(((slaTrackedItemCount - slaBreachCount) / slaTrackedItemCount) * 1000) / 10) : 100
-    const internalSlaTrackedCount = pendingMerchants + globalPendingPackages + globalInternalFinanceReadyCount
-    const internalSlaBreachCount = merchantOverdueCount + globalPackageOverdueCount + globalInternalBookingStalledCount
+    const internalSlaTrackedCount = sourcePendingMerchants + globalPendingPackages + globalInternalFinanceReadyCount
+    const internalSlaBreachCount = sourceMerchantOverdueCount + globalPackageOverdueCount + globalInternalBookingStalledCount
     const affiliateSlaTrackedCount = globalAffiliateFinanceReadyCount
     const affiliateSlaBreachCount = globalAffiliateBookingStalledCount
     const affiliateFailureRate =
@@ -1256,8 +1280,8 @@ export default async function AdminDashboard({
     const alertRecentWindowStart = getPeriodStart(7)
     const alertPreviousWindowStart = getPeriodStart(14)
     const anomalySignalCurrentCount =
-      pendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertRecentWindowStart, new Date())).length +
-      packages.filter(
+      sourcePendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertRecentWindowStart, new Date())).length +
+      globalPeriodPackages.filter(
         (pkg) =>
           normalizeStatus(pkg.status) === "pending" &&
           (daysSince(pkg.created_at) >= 3 || isWithinDateRange(pkg.created_at, alertRecentWindowStart, new Date())),
@@ -1276,8 +1300,8 @@ export default async function AdminDashboard({
           isWithinDateRange(booking.created_at, alertRecentWindowStart, new Date()),
       ).length
     const anomalySignalPreviousCount =
-      pendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertPreviousWindowStart, alertRecentWindowStart)).length +
-      packages.filter(
+      sourcePendingMerchantsData.filter((merchant) => isWithinDateRange(merchant.created_at, alertPreviousWindowStart, alertRecentWindowStart)).length +
+      globalPeriodPackages.filter(
         (pkg) =>
           normalizeStatus(pkg.status) === "pending" &&
           isWithinDateRange(pkg.created_at, alertPreviousWindowStart, alertRecentWindowStart),
@@ -1333,12 +1357,12 @@ export default async function AdminDashboard({
       },
     ]
 
-    const periodBookings = bookings.filter((booking) => {
+    const periodBookings = globalPeriodBookings.filter((booking) => {
       if (!isWithinPeriod(booking.created_at, operationsPeriodStart)) return false
       if (operationsProduct === "all") return true
       return classifyBookingProduct(booking) === operationsProduct
     })
-    const periodPackages = packages.filter((pkg) => {
+    const periodPackages = globalPeriodPackages.filter((pkg) => {
       if (!isWithinPeriod(pkg.created_at, operationsPeriodStart)) return false
       return operationsProduct === "all" || operationsProduct === "package_tour"
     })
@@ -1414,7 +1438,7 @@ export default async function AdminDashboard({
         tone: "bg-orange-50 text-orange-600",
       })),
       ...(merchantOverdueCount > 0
-        ? [{ title: "Approval pending melewati SLA", source: `${merchantOverdueCount} item perlu ditinjau`, time: "SLA 3 hari", severity: "High", tone: "bg-rose-50 text-rose-600" }]
+        ? [{ title: "Approval pending melewati SLA", source: `${sourceMerchantOverdueCount} item perlu ditinjau`, time: "SLA 3 hari", severity: "High", tone: "bg-rose-50 text-rose-600" }]
         : []),
       ...(periodPackageOverdueCount > 0
         ? [{ title: "Paket pending melewati SLA", source: `${periodPackageOverdueCount} paket perlu direview`, time: "SLA 3 hari", severity: "Medium", tone: "bg-orange-50 text-orange-600" }]
@@ -1438,7 +1462,7 @@ export default async function AdminDashboard({
     const globalQuickActions = [
       { label: "Booking Center", href: "/admin/bookings", badge: periodFinanceReadyCount },
       { label: "Audit Log", href: "/admin/audit-log", badge: periodAuditLogs.length },
-      { label: "Approval Merchant", href: "/admin/merchants/pending-approvals", badge: pendingMerchants },
+      { label: "Approval Merchant", href: "/admin/merchants/pending-approvals", badge: sourcePendingMerchants },
       { label: `Workspace ${primaryAccessibleProductLabel}`, href: primaryAccessibleProductHref, badge: 0 },
       { label: "Kelola Widget", href: "/admin/dashboard/widgets", badge: 0 },
       { label: "Lihat Report", href: "/admin/dashboard", badge: operationsReports.length },
@@ -1447,7 +1471,7 @@ export default async function AdminDashboard({
       {
         title: "SLA Warning",
         value: slaBreachCount.toLocaleString("id-ID"),
-        delta: `${merchantOverdueCount} merchant | ${globalPackageOverdueCount} paket | ${globalBookingStalledCount} booking`,
+        delta: `${sourceMerchantOverdueCount} merchant | ${globalPackageOverdueCount} paket | ${globalBookingStalledCount} booking`,
         note: "Item yang sudah melewati SLA internal untuk approval, review, atau handoff booking.",
         href: canAccessPackageTour ? "/admin/packages" : "/admin/bookings",
         tone: slaBreachCount > 0 ? "border-orange-200 bg-orange-50/60 text-orange-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
@@ -1502,7 +1526,7 @@ export default async function AdminDashboard({
       }),
     )
     const productAnomalyCounts = new Map<OperationsProductKey, number>([
-      ["package_tour", merchantOverdueCount + globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length],
+      ["package_tour", sourceMerchantOverdueCount + globalPackageOverdueCount + globalPeriodDeletionRequests.length + globalPeriodReviewRequests.length],
       ["flight", globalPeriodBookings.filter((booking) => !booking.package_id && ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length],
       ["hotel", 0],
       ["train", 0],
@@ -1605,6 +1629,44 @@ export default async function AdminDashboard({
         time: formatDateTime(pkg.created_at),
         href: `/admin/packages/${pkg.id}`,
       }))
+    const internalOperationalIssueItems = globalPeriodInternalBookings
+      .filter((booking) =>
+        [
+          "failed",
+          "cancel_requested",
+          "refund_requested",
+          "cancelled",
+          "refunded",
+          "awaiting_admin_handoff",
+          "finance_review",
+        ].includes(normalizeStatus(booking.booking_status)),
+      )
+      .slice(0, 6)
+      .map((booking) => {
+        const bookingStatus = normalizeStatus(booking.booking_status)
+        const issueLabel =
+          bookingStatus === "failed"
+            ? "Booking failed"
+            : bookingStatus === "refund_requested"
+              ? "Refund requested"
+              : bookingStatus === "cancel_requested"
+                ? "Cancel requested"
+                : bookingStatus === "cancelled"
+                  ? "Cancelled"
+                  : bookingStatus === "refunded"
+                    ? "Refunded"
+                    : bookingStatus === "finance_review"
+                      ? "Finance review"
+                      : "Admin handoff"
+        return {
+          id: booking.id,
+          product: getOperationsProductLabel(classifyBookingProduct(booking)),
+          supplier: "Internal RedFeng",
+          issue: issueLabel,
+          time: formatDateTime(booking.created_at),
+          href: "/admin/bookings",
+        }
+      })
     const affiliateOperationalIssueItems = globalPeriodAffiliateBookings
       .filter((booking) =>
         [
@@ -1646,6 +1708,17 @@ export default async function AdminDashboard({
           href: "/admin/bookings",
         }
       })
+    const operationalIssueItems =
+      operationsSource === "internal"
+        ? internalOperationalIssueItems
+        : operationsSource === "affiliate"
+          ? affiliateOperationalIssueItems
+          : [...internalOperationalIssueItems, ...affiliateOperationalIssueItems]
+              .sort((a, b) => {
+                if (a.time === b.time) return a.product.localeCompare(b.product, "id")
+                return b.time.localeCompare(a.time, "id")
+              })
+              .slice(0, 6)
     const showKpiWorkspace = operationsWorkspace === "all" || operationsWorkspace === "kpi_overview"
     const showSourcePerformanceWorkspace = operationsWorkspace === "all" || operationsWorkspace === "source_performance"
     const showProductSummaryWorkspace = operationsWorkspace === "all" || operationsWorkspace === "product_performance"
@@ -1737,9 +1810,6 @@ export default async function AdminDashboard({
     const bookingDeltaLabel = formatTrendDelta(globalPeriodBookings.length, previousBookingCount)
     const revenueDeltaLabel = formatTrendDelta(globalRevenueTotal, previousRevenueTotal)
     const greetingLabel = currentProfile?.role === "operations_manager" ? "Manager Operasional" : getRoleLabel(currentProfile?.role)
-    const rangeStartLabel = operationsPeriodStart ? formatShortDate(operationsPeriodStart.toISOString()) : "Semua waktu"
-    const rangeEndLabel = formatShortDate(new Date().toISOString())
-    const dashboardDateRangeLabel = operationsPeriod.days ? `${rangeStartLabel} ${new Date().getFullYear()} - ${rangeEndLabel} ${new Date().getFullYear()}` : "Semua waktu"
     const merchantNearDueCount = pendingMerchantsData.filter((merchant) => daysSince(merchant.created_at) === 2).length
     const packageNearDueCount = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) === 2).length
     const internalBookingNearDueCount = periodBookings.filter(
@@ -1812,14 +1882,14 @@ export default async function AdminDashboard({
       {
         label: "Merchant Paket Aktif",
         value: packageMerchantIds.length.toLocaleString("id-ID"),
-        delta: `${pendingMerchants.toLocaleString("id-ID")} approval pending`,
+        delta: `${sourcePendingMerchants.toLocaleString("id-ID")} approval pending`,
         tone: "text-sky-600",
         bg: "bg-sky-50",
       },
       {
         label: "Merchant Perlu Tindak",
-        value: (merchantOverdueCount + globalPeriodDeletionRequests.length).toLocaleString("id-ID"),
-        delta: `${merchantOverdueCount} SLA | ${globalPeriodDeletionRequests.length} deletion`,
+        value: (sourceMerchantOverdueCount + globalPeriodDeletionRequests.length).toLocaleString("id-ID"),
+        delta: `${sourceMerchantOverdueCount} SLA | ${globalPeriodDeletionRequests.length} deletion`,
         tone: "text-rose-600",
         bg: "bg-rose-50",
       },
@@ -1850,16 +1920,17 @@ export default async function AdminDashboard({
       period: operationsPeriod.value,
       product: operationsProduct,
       workspace: "alerts_overview",
+      source: operationsSource,
     })
     if (params.view) {
       alertsToolbarParams.set("view", params.view)
     }
     const alertsWorkspaceHref = `/admin/dashboard?${alertsToolbarParams.toString()}`
     const operationalPriorityItems = [
-      merchantOverdueCount > 0
+      sourceMerchantOverdueCount > 0
         ? {
             title: "Approval merchant melewati SLA",
-            value: merchantOverdueCount,
+            value: sourceMerchantOverdueCount,
             note: "Perlu keputusan final agar queue onboarding tidak menumpuk.",
             href: "/admin/merchants/pending-approvals",
             tone: "border-rose-200 bg-rose-50/80 text-rose-600",
@@ -1912,9 +1983,39 @@ export default async function AdminDashboard({
         tone: string
       } => Boolean(item),
     )
-    const operationalPriorityTotal = operationalPriorityItems.reduce((sum, item) => sum + item.value, 0)
+    const createOperationsDashboardHref = (overrides?: {
+      workspace?: string
+      product?: string
+      source?: "all" | "internal" | "affiliate"
+    }) => {
+      const nextParams = new URLSearchParams()
+      nextParams.set("period", operationsPeriod.value)
+      nextParams.set("product", overrides?.product ?? operationsProduct)
+      nextParams.set("workspace", overrides?.workspace ?? operationsWorkspace)
+      nextParams.set("source", overrides?.source ?? operationsSource)
+      if (params.view) nextParams.set("view", params.view)
+      return `/admin/dashboard?${nextParams.toString()}`
+    }
     const topOperationalPriority = operationalPriorityItems[0] || null
     const greetingPrefix = getGreetingByJakartaTime()
+    const operationsSourceLabel =
+      operationsSource === "internal" ? "Internal" : operationsSource === "affiliate" ? "Affiliate" : "Semua"
+    const pendingIssueTitle = operationsSource === "all" ? "Pending Issue (Semua)" : `Pending Issue (${operationsSourceLabel})`
+    const slaTitle = operationsSource === "all" ? "SLA Compliance" : `SLA Compliance (${operationsSourceLabel})`
+    const activeAnomalyTitle = operationsSource === "all" ? "Anomali Aktif" : `Anomali Aktif (${operationsSourceLabel})`
+    const failureRateTitle = operationsSource === "all" ? "Failure Rate" : `Failure Rate (${operationsSourceLabel})`
+    const productPerformanceTitle = operationsSource === "all" ? "Performa per Kategori" : `Performa per Kategori (${operationsSourceLabel})`
+    const bookingTrendTitle = operationsSource === "all" ? "Trend Booking" : `Trend Booking (${operationsSourceLabel})`
+    const revenueTrendTitle = operationsSource === "all" ? "Trend Revenue" : `Trend Revenue (${operationsSourceLabel})`
+    const alertsOverviewTitle = operationsSource === "all" ? "Alert & Notifikasi" : `Alert & Notifikasi (${operationsSourceLabel})`
+    const bookingIssueTitle = operationsSource === "all" ? "Booking Bermasalah" : `Booking Bermasalah (${operationsSourceLabel})`
+    const recentAnomalyTitle = operationsSource === "all" ? "Anomali Terbaru" : `Anomali Terbaru (${operationsSourceLabel})`
+    const emptyOperationalIssueItem =
+      operationsSource === "internal"
+        ? { id: "empty-internal-ops", product: "-", supplier: "Internal RedFeng", issue: "Belum ada issue internal", time: "Saat ini", href: "/admin/bookings" }
+        : operationsSource === "affiliate"
+          ? { id: "empty-affiliate-ops", product: "-", supplier: "Mitra Eksternal", issue: "Belum ada issue mitra", time: "Saat ini", href: "/admin/bookings" }
+          : { id: "empty-all-ops", product: "-", supplier: "Semua Channel", issue: "Belum ada issue booking", time: "Saat ini", href: "/admin/bookings" }
 
     return (
       <main className="min-h-screen min-w-0 w-full bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -1924,13 +2025,11 @@ export default async function AdminDashboard({
               <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.95rem]">
                 {greetingPrefix}, {greetingLabel}!
               </h1>
-              <p className="mt-2 text-[15px] leading-7 text-slate-500">
-                Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jelas antara jalur internal dan channel mitra eksternal.
-              </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
               <form className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
                 {params.view ? <input type="hidden" name="view" value={params.view} /> : null}
+                <input type="hidden" name="source" value={operationsSource} />
                 <label className="inline-flex h-11 min-w-[208px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
                   <DashboardGlyph kind="booking" className="h-4 w-4 text-slate-400" />
                   <select name="period" defaultValue={operationsPeriod.value} className="w-full bg-transparent font-medium outline-none">
@@ -1968,6 +2067,23 @@ export default async function AdminDashboard({
                   Terapkan
                 </button>
               </form>
+              <div className="inline-flex h-11 items-center rounded-[14px] border border-[#e9eef6] bg-white p-1 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                {([
+                  { key: "all", label: "All" },
+                  { key: "internal", label: "Internal" },
+                  { key: "affiliate", label: "Affiliate" },
+                ] as const).map((item) => (
+                  <Link
+                    key={item.key}
+                    href={createOperationsDashboardHref({ source: item.key })}
+                    className={`inline-flex h-9 items-center justify-center rounded-[10px] px-3 text-sm font-semibold transition ${
+                      operationsSource === item.key ? "bg-[#fff7f1] text-orange-600" : "text-slate-500 hover:text-orange-600"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
               <AdminDashboardToolbarActions alertsCount={alertSignalCount} alertsHref={alertsWorkspaceHref} />
             </div>
           </section>
@@ -1976,9 +2092,6 @@ export default async function AdminDashboard({
             <section className="rounded-[28px] border border-dashed border-orange-200 bg-white px-6 py-14 text-center shadow-[0_20px_45px_rgba(15,23,42,0.04)]">
               <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-full bg-orange-50 text-lg font-black text-orange-600">W</span>
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Dashboard belum memiliki widget aktif</h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-                Pilih widget yang ingin ditampilkan di dashboard operasional. Layout baru ini bisa tetap kosong, lalu diaktifkan lagi kapan saja dari pengaturan widget.
-              </p>
               <Link href="/admin/dashboard/widgets" className="mt-6 inline-flex rounded-[14px] bg-orange-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-700">
                 Kelola Widget
               </Link>
@@ -2007,7 +2120,6 @@ export default async function AdminDashboard({
                   </div>
                 </div>
                 <TinySparkline points={bookingSparkline} stroke="#2563eb" />
-                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
               </article>
 
               <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
@@ -2030,7 +2142,6 @@ export default async function AdminDashboard({
                   </div>
                 </div>
                 <TinySparkline points={revenueSparkline} stroke="#10b981" />
-                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
               </article>
 
               <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
@@ -2038,18 +2149,17 @@ export default async function AdminDashboard({
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                     <DashboardGlyph kind="issue" className="h-5 w-5" />
                   </span>
-                  <p className="text-[15px] font-medium text-slate-700">Pending Issue (Semua)</p>
+                  <p className="text-[15px] font-medium text-slate-700">{pendingIssueTitle}</p>
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
                 <p className="mt-1 text-[12px] font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
                 <div className="mt-5 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Split Detail</p>
-                  <div className="mt-3 space-y-2.5 text-sm">
+                  <div className="space-y-2.5 text-sm">
                   {[
                     {
                       label: "Approval Merchant",
                       source: "Internal",
-                      value: pendingMerchants,
+                      value: sourcePendingMerchants,
                       href: "/admin/merchants/pending-approvals",
                     },
                     {
@@ -2097,7 +2207,7 @@ export default async function AdminDashboard({
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                     <DashboardGlyph kind="sla" className="h-5 w-5" />
                   </span>
-                  <p className="text-[15px] font-medium text-slate-700">SLA Compliance</p>
+                  <p className="text-[15px] font-medium text-slate-700">{slaTitle}</p>
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
                 <p className={`mt-1 text-[12px] font-semibold ${slaComplianceRate >= 90 ? "text-emerald-600" : "text-rose-500"}`}>
@@ -2107,7 +2217,6 @@ export default async function AdminDashboard({
                   <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
                     <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
                       <p className="text-[1.55rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
-                      <p className="text-[11px] text-slate-400">Total SLA</p>
                     </div>
                   </div>
                   <div className="w-full max-w-[210px] space-y-2.5">
@@ -2136,7 +2245,6 @@ export default async function AdminDashboard({
                       </span>
                     </div>
                   </div>
-                  <p className="text-center text-xs text-slate-400">Target kualitas per jalur: &gt;= 90%</p>
                 </div>
               </article>
 
@@ -2145,7 +2253,7 @@ export default async function AdminDashboard({
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
                     <DashboardGlyph kind="anomaly" className="h-5 w-5" />
                   </span>
-                  <p className="text-[15px] font-medium text-slate-700">Anomali Aktif</p>
+                  <p className="text-[15px] font-medium text-slate-700">{activeAnomalyTitle}</p>
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{recentAnomalies.length}</p>
                 <p className="mt-1 text-[12px] font-semibold text-rose-500">{severityRows[0].value} high | {severityRows[1].value} medium | {severityRows[2].value} low</p>
@@ -2164,7 +2272,7 @@ export default async function AdminDashboard({
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                     <DashboardGlyph kind="failure" className="h-5 w-5" />
                   </span>
-                  <p className="text-[15px] font-medium text-slate-700">Failure Rate</p>
+                  <p className="text-[15px] font-medium text-slate-700">{failureRateTitle}</p>
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalFailureRate.toLocaleString("id-ID")}%</p>
                 <p className={`mt-1 text-[12px] font-semibold ${totalFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
@@ -2194,7 +2302,6 @@ export default async function AdminDashboard({
                     </p>
                   </div>
                 </div>
-                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target per source: &lt;= 3%</div>
               </article>
             </section>
           ) : null}
@@ -2205,7 +2312,6 @@ export default async function AdminDashboard({
                 <div key={card.title} className="rounded-[22px] border border-[#e5eaf3] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)]">
                   <p className="text-sm font-semibold text-slate-900">{card.title}</p>
                   <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{card.summary}</p>
-                  <p className="mt-2 text-xs leading-5 text-slate-500">{card.detail}</p>
                   <div className="mt-5 space-y-3">
                     {card.rows.map((row) => (
                       <div key={`${card.title}-${row.label}`} className="space-y-1.5">
@@ -2216,7 +2322,6 @@ export default async function AdminDashboard({
                         <div className="h-2 rounded-full bg-[#eef2f7]">
                           <div className={`h-2 rounded-full ${row.tone}`} style={{ width: `${Math.min(Math.max(row.width, 0), 100)}%` }} />
                         </div>
-                        <p className="text-[11px] text-slate-400">{row.valueNote}</p>
                       </div>
                     ))}
                   </div>
@@ -2235,10 +2340,9 @@ export default async function AdminDashboard({
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h2 className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-base font-semibold text-slate-950">
-                      <span>Performa per Kategori</span>
+                      <span>{productPerformanceTitle}</span>
                       <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span>
                     </h2>
-                    <p className="mt-1 text-xs text-slate-500">View kategori dibaca dari sisi produk, jadi booking dan revenue tetap gabungan per kategori tanpa split internal vs affiliate.</p>
                   </div>
                   <Link href={primaryProductOverviewHref} className="shrink-0 text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
@@ -2281,7 +2385,7 @@ export default async function AdminDashboard({
                   className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                    <h2 className="text-base font-semibold text-slate-950">{bookingTrendTitle} <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
@@ -2301,7 +2405,7 @@ export default async function AdminDashboard({
                   className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+                    <h2 className="text-base font-semibold text-slate-950">{revenueTrendTitle} <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
@@ -2323,7 +2427,7 @@ export default async function AdminDashboard({
                 className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
+                  <h2 className="text-base font-semibold text-slate-950">{alertsOverviewTitle}</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
                   <div className="mt-4 flex-1 space-y-2.5 overflow-y-auto pr-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -2335,8 +2439,6 @@ export default async function AdminDashboard({
                         </span>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-500">{item.detail}</p>
-                          <p className="mt-2 text-[11px] text-slate-400">{item.time}</p>
                         </div>
                       </div>
                     </Link>
@@ -2390,7 +2492,7 @@ export default async function AdminDashboard({
                 className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah <span className="text-xs font-normal text-slate-400">(Affiliate)</span></h2>
+                  <h2 className="text-base font-semibold text-slate-950">{bookingIssueTitle}</h2>
                   <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
                   <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
@@ -2401,9 +2503,9 @@ export default async function AdminDashboard({
                     <span>Waktu</span>
                   </div>
                   <div className="divide-y divide-[#edf2f7]">
-                    {(affiliateOperationalIssueItems.length > 0
-                      ? affiliateOperationalIssueItems
-                      : [{ id: "empty-affiliate-ops", product: "-", supplier: "Mitra Eksternal", issue: "Belum ada issue mitra", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
+                    {(operationalIssueItems.length > 0
+                      ? operationalIssueItems
+                      : [emptyOperationalIssueItem]).map((item) => (
                       <Link key={item.id} href={item.href} className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="font-semibold text-slate-800">{item.product}</span>
                         <span className="text-slate-600">{item.supplier}</span>
@@ -2424,7 +2526,7 @@ export default async function AdminDashboard({
                 className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
               >
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
+                  <h2 className="text-base font-semibold text-slate-950">{recentAnomalyTitle}</h2>
                   <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
                 <div className="mt-4 space-y-3">
@@ -2436,8 +2538,6 @@ export default async function AdminDashboard({
                         </span>
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                          <p className="mt-1 text-xs leading-5 text-slate-500">{item.source}</p>
-                          <p className="mt-2 text-[11px] text-slate-400">{item.time}</p>
                         </div>
                       </div>
                     </div>
@@ -2473,22 +2573,17 @@ export default async function AdminDashboard({
                 <p className={`mt-1 text-xs font-semibold ${card.tone}`}>{card.delta}</p>
               </article>
             ))}
-            <article className="rounded-[20px] border border-[#e9eef6] bg-[linear-gradient(135deg,#fffaf2,white)] px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
-                    <DashboardGlyph kind="alert" className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">Prioritas Operasional</p>
-                    <p className="mt-1 text-xs leading-5 text-slate-500">
-                      {operationalPriorityItems.length > 0
-                        ? `${operationalPriorityTotal.toLocaleString("id-ID")} item aktif perlu dipantau dari queue operasional.`
-                        : "Tidak ada antrean kritis. Fokus bisa digeser ke monitoring dan pencegahan breach baru."}
-                    </p>
+              <article className="rounded-[20px] border border-[#e9eef6] bg-[linear-gradient(135deg,#fffaf2,white)] px-5 py-4 shadow-[0_14px_28px_rgba(15,23,42,0.03)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-amber-500">
+                      <DashboardGlyph kind="alert" className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">Prioritas Operasional</p>
+                    </div>
                   </div>
-                </div>
-                <span className="inline-flex rounded-full border border-[#f6dcb9] bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">
+                  <span className="inline-flex rounded-full border border-[#f6dcb9] bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">
                   {operationalPriorityItems.length > 0 ? `${operationalPriorityItems.length} fokus` : "Stabil"}
                 </span>
               </div>
@@ -2498,13 +2593,12 @@ export default async function AdminDashboard({
                     href={topOperationalPriority.href}
                     className={`block rounded-[16px] border px-4 py-3 transition hover:-translate-y-0.5 ${topOperationalPriority.tone}`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">{topOperationalPriority.title}</p>
-                        <p className="mt-1 text-xs leading-5 text-slate-600">{topOperationalPriority.note}</p>
-                      </div>
-                      <span className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                        {topOperationalPriority.value.toLocaleString("id-ID")}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">{topOperationalPriority.title}</p>
+                        </div>
+                        <span className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                          {topOperationalPriority.value.toLocaleString("id-ID")}
                       </span>
                     </div>
                   </Link>
@@ -2529,9 +2623,6 @@ export default async function AdminDashboard({
               ) : (
                 <div className="mt-4 rounded-[16px] border border-emerald-200 bg-emerald-50/70 px-4 py-3">
                   <p className="text-sm font-semibold text-emerald-700">Queue utama terkendali</p>
-                  <p className="mt-1 text-xs leading-5 text-emerald-700/80">
-                    Approval merchant, package review, booking handoff, dan channel affiliate belum menunjukkan tekanan operasional yang perlu eskalasi cepat.
-                  </p>
                 </div>
               )}
             </article>
@@ -2591,8 +2682,8 @@ export default async function AdminDashboard({
             <div className="rounded-[20px] border border-[#eee3d9] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.04)]">
               <h2 className="text-base font-semibold text-slate-950">Prioritas Hari Ini</h2>
               <div className="mt-5 space-y-3">
-                {[
-                  { title: "Review approval baru", value: pendingMerchants, href: "/admin/merchants/pending-approvals" },
+                  {[
+                  { title: "Review approval baru", value: sourcePendingMerchants, href: "/admin/merchants/pending-approvals" },
                   { title: "Review paket pending", value: pendingPackages, href: "/admin/packages" },
                   { title: "Cek booking siap finance", value: financeReadyCount, href: "/admin/bookings" },
                   { title: "Tindak overdue", value: totalOperationalWarnings, href: "/admin/dashboard" },
