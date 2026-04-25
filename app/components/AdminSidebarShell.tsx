@@ -15,13 +15,13 @@ type AdminSidebarShellProps = {
 
 function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
   return (
-    <span className={`relative shrink-0 overflow-hidden ${isOperationsManager ? "h-16 w-[220px] max-w-full" : "h-10 w-10 rounded-2xl bg-orange-600"}`}>
+    <span className={`relative shrink-0 overflow-hidden ${isOperationsManager ? "h-[72px] w-[202px] max-w-full" : "h-10 w-10 rounded-2xl bg-orange-600"}`}>
       {isOperationsManager ? (
         <Image
           src="/logo-redfeng.png"
           alt="RedFeng"
           fill
-          sizes="220px"
+          sizes="202px"
           className="object-contain object-left"
           priority
         />
@@ -62,7 +62,7 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className={`flex items-center justify-between gap-3 ${isDesktop ? (isOperationsManager ? "px-5 py-7 lg:px-7" : "px-5 py-5 lg:px-7 lg:py-7") : "px-5 py-5"}`}>
+      <div className={`flex items-center justify-between gap-3 ${isDesktop ? (isOperationsManager ? "px-5 py-5 lg:px-7" : "px-5 py-5 lg:px-7 lg:py-7") : "px-5 py-5"}`}>
         <div className="flex items-center gap-3">
           <BrandMark isOperationsManager={isOperationsManager} />
           {!isOperationsManager ? (

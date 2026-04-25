@@ -1798,27 +1798,27 @@ export default async function AdminDashboard({
         <div className="w-full space-y-7">
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
             <div className="max-w-[760px]">
-              <h1 className="text-[1.95rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.2rem]">
+              <h1 className="text-[1.72rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[1.95rem]">
                 {greetingPrefix}, {greetingLabel}!
               </h1>
               <p className="mt-2 text-[15px] leading-7 text-slate-500">
                 Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jelas antara jalur internal dan channel mitra eksternal.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-3 xl:justify-end">
-              <form className="flex flex-wrap items-center gap-3 xl:max-w-[620px] xl:justify-end">
+            <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
+              <form className="flex flex-wrap items-center gap-3 xl:flex-nowrap xl:justify-end">
                 {params.view ? <input type="hidden" name="view" value={params.view} /> : null}
-                <label className="inline-flex min-w-[220px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                <label className="inline-flex h-11 min-w-[208px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
                   <DashboardGlyph kind="booking" className="h-4 w-4 text-slate-400" />
-                  <select name="period" defaultValue={operationsPeriod.value} className="bg-transparent font-medium outline-none">
+                  <select name="period" defaultValue={operationsPeriod.value} className="w-full bg-transparent font-medium outline-none">
                     <option value="7d">7 hari terakhir</option>
                     <option value="30d">30 hari terakhir</option>
                     <option value="90d">90 hari terakhir</option>
                     <option value="all">Semua waktu</option>
                   </select>
                 </label>
-                <label className="inline-flex min-w-[170px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
-                  <select name="product" defaultValue={operationsProduct} className="bg-transparent font-medium outline-none">
+                <label className="inline-flex h-11 min-w-[160px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                  <select name="product" defaultValue={operationsProduct} className="w-full bg-transparent font-medium outline-none">
                     <option value="all">Semua Produk</option>
                     {accessibleProductTypes.includes("package_tour") ? <option value="package_tour">Paket Wisata</option> : null}
                     {accessibleProductTypes.includes("flight") ? <option value="flight">Pesawat</option> : null}
@@ -1829,8 +1829,8 @@ export default async function AdminDashboard({
                     {accessibleProductTypes.includes("cruise") ? <option value="cruise">Kapal Pesiar</option> : null}
                   </select>
                 </label>
-                <label className="inline-flex min-w-[170px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 py-3 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
-                  <select name="workspace" defaultValue={operationsWorkspace} className="bg-transparent font-medium outline-none">
+                <label className="inline-flex h-11 min-w-[174px] items-center gap-2 rounded-[14px] border border-[#e9eef6] bg-white px-4 text-sm text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.03)]">
+                  <select name="workspace" defaultValue={operationsWorkspace} className="w-full bg-transparent font-medium outline-none">
                     <option value="all">Semua Workspace</option>
                     <option value="kpi_overview">KPI Utama</option>
                     <option value="source_performance">Source Performance</option>
@@ -1841,19 +1841,19 @@ export default async function AdminDashboard({
                     <option value="quick_actions">Quick Actions</option>
                   </select>
                 </label>
-                <button className="inline-flex h-12 items-center justify-center rounded-[14px] bg-[#f97316] px-5 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(249,115,22,0.22)] transition hover:bg-[#ea580c]">
+                <button className="inline-flex h-11 items-center justify-center rounded-[14px] bg-[#f97316] px-5 text-sm font-semibold text-white shadow-[0_14px_24px_rgba(249,115,22,0.22)] transition hover:bg-[#ea580c]">
                   Terapkan
                 </button>
               </form>
               <Link
                 href={`/admin/dashboard?period=${operationsPeriod.value}&product=${operationsProduct}&workspace=${operationsWorkspace}`}
-                className="inline-flex h-12 w-12 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
               >
                 <DashboardGlyph kind="refresh" className="h-5 w-5" />
               </Link>
               <Link
                 href="/admin/dashboard?workspace=alerts_overview"
-                className="relative inline-flex h-12 w-12 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[#e9eef6] bg-white text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition hover:text-orange-600"
               >
                 <DashboardGlyph kind="bell" className="h-5 w-5" />
                 {recentAnomalies.length > 0 ? (
