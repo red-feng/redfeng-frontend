@@ -15,13 +15,13 @@ type AdminSidebarShellProps = {
 
 function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
   return (
-    <span className={`relative shrink-0 overflow-hidden ${isOperationsManager ? "h-12 w-[152px]" : "h-10 w-10 rounded-2xl bg-orange-600"}`}>
+    <span className={`relative shrink-0 overflow-hidden ${isOperationsManager ? "h-16 w-[220px] max-w-full" : "h-10 w-10 rounded-2xl bg-orange-600"}`}>
       {isOperationsManager ? (
         <Image
           src="/logo-redfeng.png"
           alt="RedFeng"
           fill
-          sizes="152px"
+          sizes="220px"
           className="object-contain object-left"
           priority
         />

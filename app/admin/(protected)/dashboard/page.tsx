@@ -1798,7 +1798,7 @@ export default async function AdminDashboard({
         <div className="w-full space-y-7">
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
             <div className="max-w-[760px]">
-              <h1 className="text-[2.2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.55rem]">
+              <h1 className="text-[1.95rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.2rem]">
                 {greetingPrefix}, {greetingLabel}!
               </h1>
               <p className="mt-2 text-[15px] leading-7 text-slate-500">
