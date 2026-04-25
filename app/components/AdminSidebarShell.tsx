@@ -17,7 +17,7 @@ function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
   return (
     <span
       className={`relative overflow-hidden ${
-        isOperationsManager ? "block h-[96px] w-full" : "shrink-0 h-10 w-10 rounded-2xl bg-orange-600"
+        isOperationsManager ? "block h-[96px] w-[260px] max-w-full" : "shrink-0 h-10 w-10 rounded-2xl bg-orange-600"
       }`}
     >
       {isOperationsManager ? (
@@ -25,7 +25,7 @@ function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
           src="/logo-redfeng.png"
           alt="RedFeng"
           fill
-          sizes="240px"
+          sizes="260px"
           className="object-contain object-left"
           priority
         />
