@@ -2683,7 +2683,7 @@ export default async function AdminDashboard({
               <h2 className="text-base font-semibold text-slate-950">Prioritas Hari Ini</h2>
               <div className="mt-5 space-y-3">
                   {[
-                  { title: "Review approval baru", value: sourcePendingMerchants, href: "/admin/merchants/pending-approvals" },
+                  { title: "Review approval baru", value: pendingMerchants, href: "/admin/merchants/pending-approvals" },
                   { title: "Review paket pending", value: pendingPackages, href: "/admin/packages" },
                   { title: "Cek booking siap finance", value: financeReadyCount, href: "/admin/bookings" },
                   { title: "Tindak overdue", value: totalOperationalWarnings, href: "/admin/dashboard" },
