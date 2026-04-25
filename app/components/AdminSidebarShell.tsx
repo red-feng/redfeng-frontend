@@ -126,10 +126,11 @@ export default function AdminSidebarShell({
   items,
   roleLabel,
 }: AdminSidebarShellProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const [isDesktopOpen, setIsDesktopOpen] = useState(true)
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isMobileOpen) return
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
@@ -137,14 +138,16 @@ export default function AdminSidebarShell({
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [isOpen])
+  }, [isMobileOpen])
+
+  const desktopSidebarWidthClass = isOperationsManager ? "lg:pl-[264px]" : "lg:pl-[280px]"
 
   return (
-    <div className="min-h-screen bg-[#fbfaf8] text-slate-900 lg:flex">
+    <div className="min-h-screen bg-[#fbfaf8] text-slate-900">
       <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-[#eef2f7] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={() => setIsMobileOpen(true)}
           aria-label="Buka sidebar"
           className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#efd8c8] bg-[#fff7f1] text-slate-700 transition hover:text-orange-600"
         >
@@ -161,12 +164,12 @@ export default function AdminSidebarShell({
         </span>
       </div>
 
-      {isOpen ? (
+      {isMobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
             aria-label="Tutup sidebar"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setIsMobileOpen(false)}
             className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px]"
           />
           <aside
@@ -179,28 +182,60 @@ export default function AdminSidebarShell({
               isDesktop={false}
               isOperationsManager={isOperationsManager}
               items={items}
-              onNavigate={() => setIsOpen(false)}
+              onNavigate={() => setIsMobileOpen(false)}
               roleLabel={roleLabel}
             />
           </aside>
         </div>
       ) : null}
 
+      {!isDesktopOpen ? (
+        <button
+          type="button"
+          onClick={() => setIsDesktopOpen(true)}
+          aria-label="Buka sidebar desktop"
+          className="fixed left-4 top-5 z-30 hidden h-11 items-center gap-2 rounded-2xl border border-[#efd8c8] bg-white/95 px-3 text-sm font-semibold text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:inline-flex"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5 text-orange-600">
+            <path d="M9.2 5.3L15.9 12l-6.7 6.7-1.4-1.4 5.3-5.3-5.3-5.3z" fill="currentColor" />
+          </svg>
+          Menu
+        </button>
+      ) : null}
+
       <aside
-        className={`sticky top-0 z-40 hidden max-h-screen h-screen shrink-0 flex-col border-r bg-white lg:flex ${
+        className={`fixed inset-y-0 left-0 z-40 hidden h-screen flex-col border-r bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)] transition-transform duration-300 ease-out lg:flex ${
           isOperationsManager ? "w-[264px] border-[#eef2f7]" : "w-[280px] border-[#eee5dc]"
-        }`}
+        } ${isDesktopOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
-        <SidebarContent
-          adminCode={adminCode}
-          isDesktop
-          isOperationsManager={isOperationsManager}
-          items={items}
-          roleLabel={roleLabel}
-        />
+        <div className="flex items-center justify-end px-5 pt-4">
+          <button
+            type="button"
+            onClick={() => setIsDesktopOpen(false)}
+            aria-label="Sembunyikan sidebar"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#efd8c8] bg-[#fff7f1] text-slate-600 transition hover:text-orange-600"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+              <path d="M14.8 5.3L8.1 12l6.7 6.7 1.4-1.4-5.3-5.3 5.3-5.3z" fill="currentColor" />
+            </svg>
+          </button>
+        </div>
+        <div className="-mt-3 flex min-h-0 flex-1 flex-col">
+          <SidebarContent
+            adminCode={adminCode}
+            isDesktop
+            isOperationsManager={isOperationsManager}
+            items={items}
+            roleLabel={roleLabel}
+          />
+        </div>
       </aside>
 
-      <div className="min-w-0 flex-1">{children}</div>
+      <div
+        className={`min-w-0 transition-[padding] duration-300 ease-out ${isDesktopOpen ? desktopSidebarWidthClass : "lg:pl-0"}`}
+      >
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
     </div>
   )
 }
