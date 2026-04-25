@@ -2005,7 +2005,7 @@ export default async function AdminDashboard({
 
             <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-stretch">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
-              <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section className="flex h-full min-h-[580px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold text-slate-950">Performa per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
@@ -2045,7 +2045,7 @@ export default async function AdminDashboard({
 
             {showBookingWorkspace && showBookingTrendsWidget ? (
               <>
-                <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex h-full min-h-[580px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2060,7 +2060,7 @@ export default async function AdminDashboard({
                   </div>
                 </section>
 
-                <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex h-full min-h-[580px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2078,7 +2078,7 @@ export default async function AdminDashboard({
             ) : null}
 
             {showAlertWorkspace && showAlertsOverviewWidget ? (
-              <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section className="flex h-full min-h-[580px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
