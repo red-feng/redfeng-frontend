@@ -169,6 +169,9 @@ type DashboardAuditLogRow = {
 type DashboardSupplierRow = {
   id: string
   supplier_code: string
+  internal_display_name: string | null
+  internal_alias: string | null
+  brand_visibility: string | null
   supplier_type: string | null
   status: string | null
 }
@@ -203,6 +206,25 @@ function normalizeFulfillmentMode(value: string | null | undefined) {
     return normalized
   }
   return "internal"
+}
+
+function getMaskedSupplierLabel(supplier: DashboardSupplierRow | null | undefined) {
+  if (!supplier) return "Mitra Eksternal"
+
+  const supplierType = String(supplier.supplier_type || "").trim().toLowerCase()
+  const brandVisibility = String(supplier.brand_visibility || "").trim().toLowerCase()
+
+  if (
+    supplierType === "affiliate" ||
+    supplierType === "aggregator" ||
+    brandVisibility === "owner_only" ||
+    brandVisibility === "superadmin_only" ||
+    brandVisibility === "restricted_internal"
+  ) {
+    return supplier.internal_alias || supplier.internal_display_name || "Mitra Eksternal"
+  }
+
+  return supplier.internal_display_name || supplier.supplier_code || "Mitra Eksternal"
 }
 
 function formatShortDate(value: string | null | undefined) {
@@ -715,7 +737,7 @@ export default async function AdminDashboard({
       .from("bookings")
       .select("id, package_id, supplier_id, fulfillment_mode, supplier_order_status, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
       .order("created_at", { ascending: false }),
-    adminSupabase.from("suppliers").select("id, supplier_code, supplier_type, status"),
+    adminSupabase.from("suppliers").select("id, supplier_code, internal_display_name, internal_alias, brand_visibility, supplier_type, status"),
     adminSupabase
       .from("web_vitals_events")
       .select("event_type, metric_name, metric_value, path, rating, created_at")
@@ -778,8 +800,7 @@ export default async function AdminDashboard({
     const fulfillmentMode = normalizeFulfillmentMode(booking.fulfillment_mode)
     return fulfillmentMode !== "internal" ||
       supplier?.supplier_type === "affiliate" ||
-      supplier?.supplier_type === "aggregator" ||
-      supplier?.supplier_code === "TRAVELOKA"
+      supplier?.supplier_type === "aggregator"
       ? "affiliate"
       : "internal"
   }
@@ -1234,7 +1255,7 @@ export default async function AdminDashboard({
         detail: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking internal dan ${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate pada ${operationsPeriod.label.toLowerCase()}.`,
         rows: [
           { label: "Internal RedFeng", value: `${internalBookingShare}%`, width: internalBookingShare, valueNote: `${globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking`, tone: "bg-sky-500" },
-          { label: "Affiliate Traveloka", value: `${affiliateBookingShare}%`, width: affiliateBookingShare, valueNote: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking`, tone: "bg-orange-500" },
+          { label: "Channel Mitra", value: `${affiliateBookingShare}%`, width: affiliateBookingShare, valueNote: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking`, tone: "bg-orange-500" },
         ],
       },
       {
@@ -1243,15 +1264,15 @@ export default async function AdminDashboard({
         detail: `${formatMoney(globalInternalRevenueTotal)} revenue internal dan ${formatMoney(globalAffiliateRevenueTotal)} revenue affiliate pada ${operationsPeriod.label.toLowerCase()}.`,
         rows: [
           { label: "Internal RedFeng", value: `${internalRevenueShare}%`, width: internalRevenueShare, valueNote: formatMoney(globalInternalRevenueTotal), tone: "bg-emerald-500" },
-          { label: "Affiliate Traveloka", value: `${affiliateRevenueShare}%`, width: affiliateRevenueShare, valueNote: formatMoney(globalAffiliateRevenueTotal), tone: "bg-orange-500" },
+          { label: "Channel Mitra", value: `${affiliateRevenueShare}%`, width: affiliateRevenueShare, valueNote: formatMoney(globalAffiliateRevenueTotal), tone: "bg-orange-500" },
         ],
       },
       {
         title: "Affiliate Snapshot",
         summary: `${globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate`,
-        detail: "Snapshot awal channel affiliate Traveloka. Conversion belum ditampilkan sampai denominator funnel affiliate tersedia di data operasional.",
+        detail: "Snapshot awal channel mitra. Conversion belum ditampilkan sampai denominator channel mitra tersedia di data operasional.",
         rows: [
-          { label: "Booking Affiliate", value: globalPeriodAffiliateBookings.length.toLocaleString("id-ID"), width: affiliateBookingShare, valueNote: "Traveloka", tone: "bg-violet-500" },
+          { label: "Booking Mitra", value: globalPeriodAffiliateBookings.length.toLocaleString("id-ID"), width: affiliateBookingShare, valueNote: "Mitra eksternal", tone: "bg-violet-500" },
           { label: "Revenue Affiliate", value: formatMoney(globalAffiliateRevenueTotal), width: affiliateRevenueShare, valueNote: `${affiliateRevenueShare}% share`, tone: "bg-fuchsia-500" },
           { label: "Issue Affiliate", value: affiliateIssueCount.toLocaleString("id-ID"), width: Math.min(Math.max(affiliateIssueCount * 12, affiliateIssueCount > 0 ? 12 : 0), 100), valueNote: "Perlu follow-up", tone: "bg-rose-500" },
         ],
@@ -1381,7 +1402,7 @@ export default async function AdminDashboard({
         title: "API Error",
         value: affiliateApiErrorCount.toLocaleString("id-ID"),
         delta: `${affiliateFailureCount.toLocaleString("id-ID")} total failure affiliate`,
-        note: "Indikasi error supplier/order pada jalur affiliate seperti Traveloka yang perlu follow-up operasional.",
+        note: "Indikasi error supplier/order pada jalur mitra eksternal yang perlu follow-up operasional.",
         href: "/admin/bookings",
         tone: affiliateApiErrorCount > 0 ? "border-rose-200 bg-rose-50/70 text-rose-600" : "border-emerald-200 bg-emerald-50/70 text-emerald-600",
       },
@@ -1557,7 +1578,7 @@ export default async function AdminDashboard({
         return {
           id: booking.id,
           product: getOperationsProductLabel(classifyBookingProduct(booking)),
-          supplier: supplier?.supplier_code || "AFFILIATE",
+          supplier: getMaskedSupplierLabel(supplier),
           issue: issueLabel,
           time: formatDateTime(booking.created_at),
           href: "/admin/bookings",
@@ -1686,7 +1707,7 @@ export default async function AdminDashboard({
       },
       {
         title: "API Error Affiliate",
-        detail: `${affiliateApiErrorCount} error order Traveloka`,
+        detail: `${affiliateApiErrorCount} error order mitra eksternal`,
         time: "Affiliate channel",
         href: "/admin/bookings",
         tone: "border-amber-100 bg-amber-50/80",
@@ -1748,7 +1769,7 @@ export default async function AdminDashboard({
     ]
     const dailyTip =
       affiliateApiErrorCount > 0
-        ? "Error affiliate sedang naik. Prioritaskan cek supplier order status Traveloka sebelum antrean finance menumpuk."
+        ? "Error channel mitra sedang naik. Prioritaskan cek status order penyedia eksternal sebelum antrean finance menumpuk."
         : slaBreachCount > 0
           ? "SLA internal sedang tertekan. Mulai dari approval merchant dan package review yang sudah melewati batas."
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
@@ -1762,7 +1783,7 @@ export default async function AdminDashboard({
                 Selamat pagi, {greetingLabel}!
               </h1>
               <p className="mt-2 text-[15px] leading-7 text-slate-500">
-                Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jujur antara jalur internal dan affiliate Traveloka.
+                Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jelas antara jalur internal dan channel mitra eksternal.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3 xl:justify-end">
@@ -1881,7 +1902,7 @@ export default async function AdminDashboard({
                   {[
                     { label: "Approval Merchant", value: pendingMerchants },
                     { label: "Paket Wisata", value: globalPendingPackages },
-                    { label: "Affiliate Traveloka", value: affiliateIssueCount },
+                    { label: "Channel Mitra", value: affiliateIssueCount },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-3 text-slate-600">
                       <span>{item.label}</span>
@@ -2130,12 +2151,12 @@ export default async function AdminDashboard({
                   <div className="divide-y divide-[#edf2f7]">
                     {(affiliateOperationalIssueItems.length > 0
                       ? affiliateOperationalIssueItems
-                      : [{ id: "empty-affiliate-ops", product: "-", supplier: "TRAVELOKA", issue: "Belum ada issue affiliate", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
+                      : [{ id: "empty-affiliate-ops", product: "-", supplier: "Mitra Eksternal", issue: "Belum ada issue mitra", time: "Saat ini", href: "/admin/bookings" }]).map((item) => (
                       <Link key={item.id} href={item.href} className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="font-semibold text-slate-800">{item.product}</span>
                         <span className="text-slate-600">{item.supplier}</span>
                         <span>
-                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue affiliate" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue mitra" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
                             {item.issue}
                           </span>
                         </span>

@@ -11,17 +11,17 @@ insert into public.suppliers (
   metadata
 )
 values (
-  'TRAVELOKA',
-  'Traveloka',
+  'AFFILIATE_PARTNER_01',
+  'Primary Reservation Partner',
   'Primary Reservation Partner',
   'PARTNER-RSV-01',
   'owner_only',
   'affiliate',
   'portal',
   'active',
-  'Seed supplier utama untuk channel affiliate Red Feng. Ubah integration_mode ke api jika integrasi langsung sudah siap.',
+  'Seed supplier utama untuk channel mitra Red Feng. Ubah integration_mode ke api jika integrasi langsung sudah siap.',
   jsonb_build_object(
-    'seed_source', '2026042405_seed_traveloka_supplier',
+    'seed_source', '2026042405_seed_affiliate_partner_supplier',
     'recommended_products', jsonb_build_array('flight', 'hotel', 'train', 'sea')
   )
 )
@@ -41,7 +41,7 @@ set
 with seeded_supplier as (
   select id
   from public.suppliers
-  where supplier_code = 'TRAVELOKA'
+  where supplier_code = 'AFFILIATE_PARTNER_01'
 )
 insert into public.supplier_product_channels (
   supplier_id,

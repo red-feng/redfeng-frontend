@@ -43,4 +43,4 @@ set
   internal_alias = 'PARTNER-RSV-01',
   brand_visibility = 'owner_only',
   updated_at = timezone('utc', now())
-where supplier_code = 'TRAVELOKA';
+where supplier_code = 'AFFILIATE_PARTNER_01';

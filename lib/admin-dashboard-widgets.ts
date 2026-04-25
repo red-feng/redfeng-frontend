@@ -54,7 +54,7 @@ export const OPERATIONS_DASHBOARD_WIDGETS: OperationsDashboardWidgetDefinition[]
   {
     key: "source_performance",
     title: "Source Performance",
-    description: "Split performa channel internal RedFeng vs affiliate Traveloka untuk booking dan revenue.",
+    description: "Split performa channel internal RedFeng vs channel mitra untuk booking dan revenue.",
     status: "connected",
     defaultEnabled: true,
     scope: "global_only",
