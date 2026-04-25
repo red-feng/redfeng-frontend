@@ -2098,6 +2098,13 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
+          {operationsWorkspace === "all" ? (
+            <section className="flex items-center gap-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-orange-100 text-sm font-semibold text-orange-600">1</span>
+              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Kita Hidup Dari Mana</h2>
+            </section>
+          ) : null}
+
           {showKpiWorkspace && showKpiOverviewWidget ? (
             <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-5 2xl:grid-cols-6">
               <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
@@ -2330,6 +2337,119 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
+          {operationsWorkspace === "all" ? (
+            <section className="flex items-center gap-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-rose-100 text-sm font-semibold text-rose-600">2</span>
+              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Bermasalah</h2>
+            </section>
+          ) : null}
+
+          {showOperationalWorkspace && showOperationalTasksWidget ? (
+            <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.18fr)_minmax(320px,1fr)_minmax(320px,1fr)]">
+              {canAccessPackageTour ? (
+                <section
+                  data-dashboard-height-source="operational"
+                  className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
+                    <Link href="/admin/packages" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-4 border-b border-[#edf2f7] pb-3 text-xs font-medium text-slate-500">
+                    {packageQueueRows.map((item) => (
+                      <span key={item.label}>{item.label} ({item.value})</span>
+                    ))}
+                  </div>
+                    <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                      <div className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                      <span>Merchant</span>
+                      <span>Produk</span>
+                      <span>Kategori</span>
+                      <span>Diajukan</span>
+                      <span>Aksi</span>
+                    </div>
+                    <div className="divide-y divide-[#edf2f7]">
+                      {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
+                        <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                          <span className="font-semibold text-slate-800">{item.merchant}</span>
+                          <span className="text-slate-600">{item.product}</span>
+                          <span><span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-600">{item.type}</span></span>
+                          <span className="text-xs text-slate-500">{item.time}</span>
+                          <span className="text-xs font-semibold text-orange-600">Review</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
+              <section
+                data-dashboard-height-target="operational"
+                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-slate-950">{bookingIssueTitle}</h2>
+                  <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                </div>
+                  <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
+                    <div className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                    <span>Produk</span>
+                    <span>Penyedia</span>
+                    <span>Masalah</span>
+                    <span>Waktu</span>
+                  </div>
+                  <div className="divide-y divide-[#edf2f7]">
+                    {(operationalIssueItems.length > 0
+                      ? operationalIssueItems
+                      : [emptyOperationalIssueItem]).map((item) => (
+                      <Link key={item.id} href={item.href} className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                        <span className="font-semibold text-slate-800">{item.product}</span>
+                        <span className="text-slate-600">{item.supplier}</span>
+                        <span>
+                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue mitra" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
+                            {item.issue}
+                          </span>
+                        </span>
+                        <span className="text-xs text-slate-500">{item.time}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section
+                data-dashboard-height-target="operational"
+                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-base font-semibold text-slate-950">{recentAnomalyTitle}</h2>
+                  <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                </div>
+                <div className="mt-4 space-y-3">
+                  {recentAnomalies.map((item) => (
+                    <div key={`${item.title}-${item.source}-${item.time}`} className="rounded-[16px] border border-[#edf2f7] px-4 py-3">
+                      <div className="flex items-start gap-3">
+                        <span className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full ${item.tone}`}>
+                          <DashboardGlyph kind="anomaly" className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-800">{item.title}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </section>
+          ) : null}
+
+          {operationsWorkspace === "all" ? (
+            <section className="flex items-center gap-3">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-600">3</span>
+              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Harus Didorong</h2>
+            </section>
+          ) : null}
+
             <AdminDashboardHeightSync />
             <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-start">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
@@ -2447,105 +2567,6 @@ export default async function AdminDashboard({
               </section>
             ) : null}
           </section>
-
-          {showOperationalWorkspace && showOperationalTasksWidget ? (
-            <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.18fr)_minmax(320px,1fr)_minmax(320px,1fr)]">
-              {canAccessPackageTour ? (
-                <section
-                  data-dashboard-height-source="operational"
-                  className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
-                    <Link href="/admin/packages" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
-                  </div>
-                  <div className="mt-4 flex flex-wrap gap-4 border-b border-[#edf2f7] pb-3 text-xs font-medium text-slate-500">
-                    {packageQueueRows.map((item) => (
-                      <span key={item.label}>{item.label} ({item.value})</span>
-                    ))}
-                  </div>
-                    <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
-                      <div className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
-                      <span>Merchant</span>
-                      <span>Produk</span>
-                      <span>Kategori</span>
-                      <span>Diajukan</span>
-                      <span>Aksi</span>
-                    </div>
-                    <div className="divide-y divide-[#edf2f7]">
-                      {(reviewQueueItems.length > 0 ? reviewQueueItems : [{ merchant: "-", product: "Tidak ada paket menunggu review", type: "-", status: "-", time: "-", href: "/admin/packages" }]).map((item) => (
-                        <Link key={`${item.product}-${item.time}`} href={item.href} className="grid grid-cols-[minmax(92px,1fr)_minmax(140px,1.25fr)_76px_84px_56px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
-                          <span className="font-semibold text-slate-800">{item.merchant}</span>
-                          <span className="text-slate-600">{item.product}</span>
-                          <span><span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-600">{item.type}</span></span>
-                          <span className="text-xs text-slate-500">{item.time}</span>
-                          <span className="text-xs font-semibold text-orange-600">Review</span>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-              ) : null}
-
-              <section
-                data-dashboard-height-target="operational"
-                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">{bookingIssueTitle}</h2>
-                  <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
-                </div>
-                  <div className="mt-4 overflow-hidden rounded-[16px] border border-[#edf2f7]">
-                    <div className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
-                    <span>Produk</span>
-                    <span>Penyedia</span>
-                    <span>Masalah</span>
-                    <span>Waktu</span>
-                  </div>
-                  <div className="divide-y divide-[#edf2f7]">
-                    {(operationalIssueItems.length > 0
-                      ? operationalIssueItems
-                      : [emptyOperationalIssueItem]).map((item) => (
-                      <Link key={item.id} href={item.href} className="grid grid-cols-[minmax(88px,1fr)_88px_minmax(108px,1fr)_72px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
-                        <span className="font-semibold text-slate-800">{item.product}</span>
-                        <span className="text-slate-600">{item.supplier}</span>
-                        <span>
-                          <span className={`rounded-full px-2 py-1 text-[11px] font-semibold ${item.issue === "Belum ada issue mitra" ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
-                            {item.issue}
-                          </span>
-                        </span>
-                        <span className="text-xs text-slate-500">{item.time}</span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </section>
-
-              <section
-                data-dashboard-height-target="operational"
-                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-base font-semibold text-slate-950">{recentAnomalyTitle}</h2>
-                  <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
-                </div>
-                <div className="mt-4 space-y-3">
-                  {recentAnomalies.map((item) => (
-                    <div key={`${item.title}-${item.source}-${item.time}`} className="rounded-[16px] border border-[#edf2f7] px-4 py-3">
-                      <div className="flex items-start gap-3">
-                        <span className={`mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full ${item.tone}`}>
-                          <DashboardGlyph kind="anomaly" className="h-4 w-4" />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-slate-800">{item.title}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </section>
-          ) : null}
 
           {showAlertWorkspace && showAlertsOverviewWidget && operationsWorkspace === "alerts_overview" ? (
             <section className="grid gap-4 xl:grid-cols-3">
