@@ -2130,7 +2130,10 @@ export default async function AdminDashboard({
           {showOperationalWorkspace && showOperationalTasksWidget ? (
             <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.18fr)_minmax(320px,1fr)_minmax(320px,1fr)]">
               {canAccessPackageTour ? (
-                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section
+                  data-dashboard-height-source="operational"
+                  className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Paket Menunggu Review</h2>
                     <Link href="/admin/packages" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
@@ -2163,7 +2166,10 @@ export default async function AdminDashboard({
                 </section>
               ) : null}
 
-              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section
+                data-dashboard-height-target="operational"
+                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Booking Bermasalah <span className="text-xs font-normal text-slate-400">(Affiliate)</span></h2>
                   <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
@@ -2194,7 +2200,10 @@ export default async function AdminDashboard({
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section
+                data-dashboard-height-target="operational"
+                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Anomali Terbaru</h2>
                   <Link href="/admin/merchants/anomalies" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
