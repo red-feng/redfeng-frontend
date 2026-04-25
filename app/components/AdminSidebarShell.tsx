@@ -141,6 +141,7 @@ export default function AdminSidebarShell({
   }, [isMobileOpen])
 
   const desktopSidebarWidthClass = isOperationsManager ? "lg:pl-[264px]" : "lg:pl-[280px]"
+  const desktopContentOffsetClass = isDesktopOpen ? desktopSidebarWidthClass : "lg:pl-24"
 
   return (
     <div className="min-h-screen bg-[#fbfaf8] text-slate-900">
@@ -231,9 +232,7 @@ export default function AdminSidebarShell({
         </div>
       </aside>
 
-      <div
-        className={`min-w-0 transition-[padding] duration-300 ease-out ${isDesktopOpen ? desktopSidebarWidthClass : "lg:pl-0"}`}
-      >
+      <div className={`min-w-0 transition-[padding] duration-300 ease-out ${desktopContentOffsetClass}`}>
         <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>

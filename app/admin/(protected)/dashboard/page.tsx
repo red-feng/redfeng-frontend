@@ -1754,10 +1754,7 @@ export default async function AdminDashboard({
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
 
     return (
-      <main
-        className="min-h-screen w-[125%] bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10"
-        style={{ zoom: "0.8" }}
-      >
+      <main className="min-h-screen min-w-0 w-full bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
         <div className="w-full space-y-7">
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
             <div className="max-w-[760px]">
