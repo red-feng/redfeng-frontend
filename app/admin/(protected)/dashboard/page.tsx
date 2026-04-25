@@ -17,6 +17,7 @@ import { createAdminAccount } from "@/app/admin/(protected)/team-accounts/action
 import { createFinanceAccount } from "@/app/finance/(protected)/team-accounts/finance-actions"
 
 type AdminWorkspacePortal = "admin" | "superadmin"
+const JAKARTA_TIMEZONE = "Asia/Jakarta"
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
@@ -52,6 +53,20 @@ function titleCase(value: string | null | undefined) {
 
 function formatMoney(value: number | null | undefined) {
   return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function getGreetingByJakartaTime() {
+  const hourLabel = new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    hour12: false,
+    timeZone: JAKARTA_TIMEZONE,
+  }).format(new Date())
+  const hour = Number.parseInt(hourLabel, 10)
+
+  if (hour >= 4 && hour < 11) return "Selamat pagi"
+  if (hour >= 11 && hour < 15) return "Selamat siang"
+  if (hour >= 15 && hour < 18) return "Selamat sore"
+  return "Selamat malam"
 }
 
 function getMetricText(snapshot: Record<string, unknown> | null | undefined, key: string) {
@@ -1776,6 +1791,7 @@ export default async function AdminDashboard({
         : slaBreachCount > 0
           ? "SLA internal sedang tertekan. Mulai dari approval merchant dan package review yang sudah melewati batas."
           : "Dashboard relatif stabil. Fokuskan tim ke issue affiliate dan paket review yang mendekati SLA agar tidak berubah jadi breach."
+    const greetingPrefix = getGreetingByJakartaTime()
 
     return (
       <main className="min-h-screen min-w-0 w-full bg-[#f5f7fb] px-4 py-6 sm:px-6 lg:px-8 xl:px-10">
@@ -1783,7 +1799,7 @@ export default async function AdminDashboard({
           <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
             <div className="max-w-[760px]">
               <h1 className="text-[2.2rem] font-semibold tracking-[-0.05em] text-slate-950 sm:text-[2.55rem]">
-                Selamat pagi, {greetingLabel}!
+                {greetingPrefix}, {greetingLabel}!
               </h1>
               <p className="mt-2 text-[15px] leading-7 text-slate-500">
                 Berikut ringkasan performa operasional RedFeng hari ini, dengan pemisahan yang jelas antara jalur internal dan channel mitra eksternal.

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import AdminNavLinks, { type AdminNavItem } from "@/app/components/AdminNavLinks"
 import SignOutButton from "@/app/components/SignOutButton"
@@ -14,20 +15,18 @@ type AdminSidebarShellProps = {
 
 function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-2xl text-sm font-black ${
-        isOperationsManager ? "h-10 w-10 bg-[#fff1eb] text-orange-600" : "h-8 w-8 bg-orange-600 text-white"
-      }`}
-    >
+    <span className={`relative shrink-0 overflow-hidden ${isOperationsManager ? "h-12 w-[152px]" : "h-10 w-10 rounded-2xl bg-orange-600"}`}>
       {isOperationsManager ? (
-        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
-          <path
-            d="M8 3c3 0 5 1.8 5 4.5 0 2.2-1.2 4-3.5 5.1L7 14l2.3-4H6.5C5.1 10 4 8.8 4 7.2 4 4.8 5.8 3 8 3zm6.3 5.5c2.1 0 3.7 1.5 3.7 3.4 0 2-1.5 3.7-4.2 4.7l-4 1.5 1.8-3.1H9.8l1.1-1.9 2.6-.9c1.5-.5 2.4-1.2 2.4-2.2 0-.8-.7-1.5-1.8-1.5z"
-            fill="currentColor"
-          />
-        </svg>
+        <Image
+          src="/logo-redfeng.png"
+          alt="RedFeng"
+          fill
+          sizes="152px"
+          className="object-contain object-left"
+          priority
+        />
       ) : (
-        "RF"
+        <span className="inline-flex h-full w-full items-center justify-center text-sm font-black text-white">RF</span>
       )}
     </span>
   )
@@ -66,10 +65,11 @@ function SidebarContent({
       <div className={`flex items-center justify-between gap-3 ${isDesktop ? (isOperationsManager ? "px-5 py-7 lg:px-7" : "px-5 py-5 lg:px-7 lg:py-7") : "px-5 py-5"}`}>
         <div className="flex items-center gap-3">
           <BrandMark isOperationsManager={isOperationsManager} />
-          <div>
-            <span className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{isOperationsManager ? "RedFeng" : "Red Feng"}</span>
-            {isOperationsManager ? <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Operational</p> : null}
-          </div>
+          {!isOperationsManager ? (
+            <div>
+              <span className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">Red Feng</span>
+            </div>
+          ) : null}
         </div>
         {!isDesktop ? (
           <button
