@@ -2003,9 +2003,9 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-            <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px]">
+            <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-stretch">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
-              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <h2 className="text-base font-semibold text-slate-950">Performa per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
@@ -2013,7 +2013,7 @@ export default async function AdminDashboard({
                   </div>
                   <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf2f7]">
+                <div className="mt-5 flex-1 overflow-hidden rounded-[18px] border border-[#edf2f7]">
                   <div className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Kategori</span>
                     <span>Booking</span>
@@ -2021,7 +2021,7 @@ export default async function AdminDashboard({
                     <span>Issue</span>
                     <span>SLA</span>
                   </div>
-                  <div className="divide-y divide-[#edf2f7]">
+                  <div className="max-h-[440px] divide-y divide-[#edf2f7] overflow-y-auto">
                     {productPerformanceCards.map((product) => (
                       <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="flex min-w-0 items-center gap-3">
@@ -2045,21 +2045,22 @@ export default async function AdminDashboard({
 
             {showBookingWorkspace && showBookingTrendsWidget ? (
               <>
-                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
                   </div>
-                  <ChartLegend items={bookingTrendSeries.map((item) => ({ label: item.label, tone: "" }))} />
                   <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[11px] text-slate-500">
                     {bookingTrendSeries.map((item) => (
                       <span key={item.label} className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.label}</span>
                     ))}
                   </div>
-                  <DashboardLineChart labels={bookingTrendRows.map((row) => row.label)} series={bookingTrendSeries} />
+                  <div className="mt-4 flex-1">
+                    <DashboardLineChart labels={bookingTrendRows.map((row) => row.label)} series={bookingTrendSeries} />
+                  </div>
                 </section>
 
-                <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2069,18 +2070,20 @@ export default async function AdminDashboard({
                       <span key={item.label} className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />{item.label}</span>
                     ))}
                   </div>
-                  <DashboardLineChart labels={revenueTrendRows.map((row) => row.label)} series={revenueTrendSeries} valueFormatter={(value) => `${Math.round(value / 1000000)}M`} />
+                  <div className="mt-4 flex-1">
+                    <DashboardLineChart labels={revenueTrendRows.map((row) => row.label)} series={revenueTrendSeries} valueFormatter={(value) => `${Math.round(value / 1000000)}M`} />
+                  </div>
                 </section>
               </>
             ) : null}
 
             {showAlertWorkspace && showAlertsOverviewWidget ? (
-              <section className="rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section className="flex h-full min-h-[540px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 space-y-3">
+                <div className="mt-5 flex-1 space-y-3 overflow-y-auto pr-1">
                   {alertRailItems.map((item) => (
                     <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-4 transition hover:-translate-y-0.5 ${item.tone}`}>
                       <div className="flex items-start gap-3">
