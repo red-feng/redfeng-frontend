@@ -2229,7 +2229,7 @@ export default async function AdminDashboard({
                       </span>
                     </Link>
                   )) : (
-                    <div className="rounded-[12px] px-2 py-1.5 text-sm text-slate-400">- Tidak ada issue aktif</div>
+                    <div className="rounded-[12px] px-2 py-1.5 text-[12px] text-slate-400">- Tidak ada issue aktif</div>
                   )}
                   </div>
                 </div>
@@ -2249,7 +2249,7 @@ export default async function AdminDashboard({
                 <div className="mt-5 flex flex-col items-center gap-4">
                   <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
                     <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
-                      <p className="text-[1.55rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                      <p className="text-[2rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
                     </div>
                   </div>
                   <div className="w-full max-w-[210px] space-y-2.5">
@@ -2410,7 +2410,7 @@ export default async function AdminDashboard({
                       </span>
                     </Link>
                   )) : (
-                    <div className="rounded-[12px] px-2 py-1.5 text-sm text-slate-400">- Tidak ada issue aktif</div>
+                    <div className="rounded-[12px] px-2 py-1.5 text-[12px] text-slate-400">- Tidak ada issue aktif</div>
                   )}
                   </div>
                 </div>
@@ -2430,7 +2430,7 @@ export default async function AdminDashboard({
                 <div className="mt-5 flex flex-col items-center gap-4">
                   <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
                     <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
-                      <p className="text-[1.55rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                      <p className="text-[2rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
                     </div>
                   </div>
                   <div className="w-full max-w-[210px] space-y-2.5">
@@ -2525,7 +2525,7 @@ export default async function AdminDashboard({
               {sourcePerformanceCards.map((card) => (
                 <div key={card.title} className="rounded-[22px] border border-[#e5eaf3] bg-white p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)]">
                   <p className="text-sm font-semibold text-slate-900">{card.title}</p>
-                  <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{card.summary}</p>
+                  <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">{card.summary}</p>
                   <div className="mt-5 space-y-3">
                     {card.rows.map((row) => (
                       <div key={`${card.title}-${row.label}`} className="space-y-1.5">
@@ -2766,7 +2766,7 @@ export default async function AdminDashboard({
               {alertCards.map((item) => (
                 <Link key={item.title} href={item.href} className={`rounded-[22px] border p-5 shadow-[0_16px_36px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 ${item.tone}`}>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">{item.title}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{item.value}</p>
+                  <p className="mt-3 text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">{item.value}</p>
                   <p className="mt-3 text-xs font-semibold">{item.delta}</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">{item.note}</p>
                 </Link>
@@ -2783,7 +2783,7 @@ export default async function AdminDashboard({
                   </span>
                   <p className="text-sm font-medium text-slate-600">{card.label}</p>
                 </div>
-                <p className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-slate-950">{card.value}</p>
+                <p className="mt-4 text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">{card.value}</p>
                 <p className={`mt-1 text-xs font-semibold ${card.tone}`}>{card.delta}</p>
               </article>
             ))}
@@ -2811,7 +2811,7 @@ export default async function AdminDashboard({
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900">{topOperationalPriority.title}</p>
                         </div>
-                        <span className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                        <span className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">
                           {topOperationalPriority.value.toLocaleString("id-ID")}
                       </span>
                     </div>
