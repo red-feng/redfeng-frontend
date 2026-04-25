@@ -21,6 +21,8 @@ type AdminNavItem = {
   children?: AdminNavChild[]
 }
 
+export type { AdminNavChild, AdminNavItem }
+
 function NavIcon({
   label,
   className,
@@ -152,8 +154,10 @@ function renderBadge(count: number, tone: "primary" | "danger") {
 
 export default function AdminNavLinks({
   items,
+  onNavigate,
 }: {
   items: AdminNavItem[]
+  onNavigate?: () => void
 }) {
   const supabase = useMemo(() => createClient(), [])
   const pathname = usePathname()
@@ -326,6 +330,7 @@ export default function AdminNavLinks({
                         <Link
                           key={child.href}
                           href={child.href}
+                          onClick={onNavigate}
                           className={`flex items-center justify-between gap-3 rounded-[12px] px-4 py-2.5 text-[13px] font-medium transition ${
                             isActive
                               ? "bg-[#fff2e8] text-orange-600"
@@ -356,6 +361,7 @@ export default function AdminNavLinks({
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={onNavigate}
                 className={`flex items-center justify-between gap-3 rounded-[14px] px-3.5 py-3 text-[13px] font-semibold transition ${
                   isHighlighted
                     ? "bg-[#fff2e8] text-orange-600"

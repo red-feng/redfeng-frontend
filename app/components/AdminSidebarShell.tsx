@@ -1,0 +1,206 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import AdminNavLinks, { type AdminNavItem } from "@/app/components/AdminNavLinks"
+import SignOutButton from "@/app/components/SignOutButton"
+
+type AdminSidebarShellProps = {
+  adminCode: string
+  children: React.ReactNode
+  isOperationsManager: boolean
+  items: AdminNavItem[]
+  roleLabel: string
+}
+
+function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-2xl text-sm font-black ${
+        isOperationsManager ? "h-10 w-10 bg-[#fff1eb] text-orange-600" : "h-8 w-8 bg-orange-600 text-white"
+      }`}
+    >
+      {isOperationsManager ? (
+        <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+          <path
+            d="M8 3c3 0 5 1.8 5 4.5 0 2.2-1.2 4-3.5 5.1L7 14l2.3-4H6.5C5.1 10 4 8.8 4 7.2 4 4.8 5.8 3 8 3zm6.3 5.5c2.1 0 3.7 1.5 3.7 3.4 0 2-1.5 3.7-4.2 4.7l-4 1.5 1.8-3.1H9.8l1.1-1.9 2.6-.9c1.5-.5 2.4-1.2 2.4-2.2 0-.8-.7-1.5-1.8-1.5z"
+            fill="currentColor"
+          />
+        </svg>
+      ) : (
+        "RF"
+      )}
+    </span>
+  )
+}
+
+function RoleInitials({ roleLabel }: { roleLabel: string }) {
+  return (
+    <>
+      {roleLabel
+        .split(" ")
+        .map((part) => part[0] || "")
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()}
+    </>
+  )
+}
+
+function SidebarContent({
+  adminCode,
+  isDesktop,
+  isOperationsManager,
+  items,
+  onNavigate,
+  roleLabel,
+}: {
+  adminCode: string
+  isDesktop: boolean
+  isOperationsManager: boolean
+  items: AdminNavItem[]
+  onNavigate?: () => void
+  roleLabel: string
+}) {
+  return (
+    <>
+      <div className={`flex items-center justify-between gap-3 ${isDesktop ? (isOperationsManager ? "px-5 py-7 lg:px-7" : "px-5 py-5 lg:px-7 lg:py-7") : "px-5 py-5"}`}>
+        <div className="flex items-center gap-3">
+          <BrandMark isOperationsManager={isOperationsManager} />
+          <div>
+            <span className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">{isOperationsManager ? "RedFeng" : "Red Feng"}</span>
+            {isOperationsManager ? <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">Operational</p> : null}
+          </div>
+        </div>
+        {!isDesktop ? (
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label="Tutup sidebar"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#efd8c8] bg-[#fff7f1] text-slate-600 transition hover:text-orange-600"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+              <path d="M6.7 5.3L12 10.6l5.3-5.3 1.4 1.4L13.4 12l5.3 5.3-1.4 1.4L12 13.4l-5.3 5.3-1.4-1.4 5.3-5.3-5.3-5.3z" fill="currentColor" />
+            </svg>
+          </button>
+        ) : null}
+      </div>
+
+      <div className={isDesktop ? `hidden px-7 pb-4 lg:block ${isOperationsManager ? "pt-1" : ""}` : "px-5 pb-4"}>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
+        <p className="mt-3 text-xs font-semibold text-slate-700">{roleLabel}</p>
+        <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
+      </div>
+
+      <nav className={`flex-1 overflow-auto pb-5 ${isDesktop ? (isOperationsManager ? "px-5" : "px-4 lg:px-5") : "px-5"}`}>
+        <AdminNavLinks items={items} onNavigate={onNavigate} />
+      </nav>
+
+      <div className={isDesktop ? `hidden px-7 py-6 lg:block ${isOperationsManager ? "" : "border-t border-[#f0e6dd]"}` : "border-t border-[#f0e6dd] px-5 py-5"}>
+        {isOperationsManager ? (
+          <div className="mb-4 flex items-center gap-3 rounded-[18px] border border-[#eef2f7] bg-[#f8fafc] px-4 py-3">
+            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+              <RoleInitials roleLabel={roleLabel} />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">{roleLabel}</p>
+              <p className="mt-1 text-xs text-slate-400">{adminCode}</p>
+            </div>
+          </div>
+        ) : null}
+        <SignOutButton
+          portal="admin"
+          redirectTo="https://app.redfeng.co/admin/login"
+          className={`inline-flex w-full items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
+            isOperationsManager ? "border border-[#f4d7d7] bg-white text-rose-500 hover:bg-rose-50" : "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+          }`}
+        />
+      </div>
+    </>
+  )
+}
+
+export default function AdminSidebarShell({
+  adminCode,
+  children,
+  isOperationsManager,
+  items,
+  roleLabel,
+}: AdminSidebarShellProps) {
+  const [isOpen, setIsOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen])
+
+  return (
+    <div className="min-h-screen bg-[#fbfaf8] text-slate-900 lg:flex">
+      <div className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-[#eef2f7] bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          aria-label="Buka sidebar"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#efd8c8] bg-[#fff7f1] text-slate-700 transition hover:text-orange-600"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-5 w-5">
+            <path d="M4 7h16v2H4V7zm0 4h16v2H4v-2zm0 4h16v2H4v-2z" fill="currentColor" />
+          </svg>
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-slate-950">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
+          <p className="truncate text-[11px] text-slate-400">{roleLabel}</p>
+        </div>
+        <span className="rounded-full border border-[#efd8c8] bg-[#fff7f1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">
+          {roleLabel}
+        </span>
+      </div>
+
+      {isOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            aria-label="Tutup sidebar"
+            onClick={() => setIsOpen(false)}
+            className="absolute inset-0 bg-slate-950/30 backdrop-blur-[2px]"
+          />
+          <aside
+            className={`absolute inset-y-0 left-0 flex w-[min(86vw,320px)] flex-col bg-white shadow-[0_24px_80px_rgba(15,23,42,0.24)] ${
+              isOperationsManager ? "border-r border-[#eef2f7]" : "border-r border-[#eee5dc]"
+            }`}
+          >
+            <SidebarContent
+              adminCode={adminCode}
+              isDesktop={false}
+              isOperationsManager={isOperationsManager}
+              items={items}
+              onNavigate={() => setIsOpen(false)}
+              roleLabel={roleLabel}
+            />
+          </aside>
+        </div>
+      ) : null}
+
+      <aside
+        className={`sticky top-0 z-40 hidden max-h-screen h-screen shrink-0 flex-col border-r bg-white lg:flex ${
+          isOperationsManager ? "w-[264px] border-[#eef2f7]" : "w-[280px] border-[#eee5dc]"
+        }`}
+      >
+        <SidebarContent
+          adminCode={adminCode}
+          isDesktop
+          isOperationsManager={isOperationsManager}
+          items={items}
+          roleLabel={roleLabel}
+        />
+      </aside>
+
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  )
+}
