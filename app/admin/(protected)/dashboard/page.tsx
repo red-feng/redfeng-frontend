@@ -2042,7 +2042,9 @@ export default async function AdminDashboard({
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalPendingIssueCount.toLocaleString("id-ID")}</p>
                 <p className="mt-1 text-[12px] font-semibold text-rose-500">{internalPendingIssueCount} internal | {affiliateIssueCount} affiliate</p>
-                <div className="mt-5 space-y-3 text-sm">
+                <div className="mt-5 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Split Detail</p>
+                  <div className="mt-3 space-y-2.5 text-sm">
                   {[
                     {
                       label: "Paket Wisata",
@@ -2060,14 +2062,32 @@ export default async function AdminDashboard({
                       })),
                   ]
                     .filter((item) => item.value > 0)
+                    .sort((a, b) => {
+                      if (a.source !== b.source) return a.source === "Internal" ? -1 : 1
+                      if (b.value !== a.value) return b.value - a.value
+                      return a.label.localeCompare(b.label, "id")
+                    })
                     .map((item) => (
-                    <Link key={`${item.label}-${item.source}`} href={item.href} className="flex items-center justify-between gap-3 text-slate-600 transition hover:text-orange-600">
-                      <span className="min-w-0">
-                        {item.label} <span className="text-slate-400">({item.source})</span>
+                    <Link
+                      key={`${item.label}-${item.source}`}
+                      href={item.href}
+                      className="flex items-center justify-between gap-3 rounded-[12px] px-2 py-1.5 text-slate-600 transition hover:bg-white hover:text-orange-600"
+                    >
+                      <span className="min-w-0 inline-flex items-center gap-2">
+                        <span className="text-slate-400">-</span>
+                        <span className="truncate">{item.label}</span>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${
+                            item.source === "Internal" ? "bg-sky-100 text-sky-700" : "bg-orange-100 text-orange-700"
+                          }`}
+                        >
+                          {item.source}
+                        </span>
                       </span>
                       <span className="font-semibold text-slate-900">{item.value}</span>
                     </Link>
                   ))}
+                  </div>
                 </div>
               </article>
 
