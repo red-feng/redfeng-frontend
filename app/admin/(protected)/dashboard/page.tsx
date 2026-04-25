@@ -2014,7 +2014,7 @@ export default async function AdminDashboard({
                   <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
                 <div className="mt-5 flex-1 overflow-hidden rounded-[18px] border border-[#edf2f7]">
-                  <div className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
+                  <div className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Kategori</span>
                     <span>Booking</span>
                     <span>Revenue</span>
@@ -2023,7 +2023,7 @@ export default async function AdminDashboard({
                   </div>
                   <div className="divide-y divide-[#edf2f7]">
                     {productPerformanceCards.map((product) => (
-                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
+                      <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="flex min-w-0 items-center gap-3">
                           <span className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${product.bg} ${product.tone}`}>
                             <ProductMiniIcon kind={product.icon} className="h-4 w-4" />
