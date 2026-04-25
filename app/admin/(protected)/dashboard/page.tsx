@@ -56,6 +56,14 @@ function formatMoney(value: number | null | undefined) {
   return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
 }
 
+function formatCompactMoney(value: number | null | undefined) {
+  const amount = Number(value || 0)
+  if (amount >= 1000000000) return `Rp ${(amount / 1000000000).toFixed(2)} B`
+  if (amount >= 1000000) return `Rp ${(amount / 1000000).toFixed(2)} M`
+  if (amount >= 1000) return `Rp ${(amount / 1000).toFixed(1)} K`
+  return `Rp ${amount.toLocaleString("id-ID")}`
+}
+
 function getGreetingByJakartaTime() {
   const hourLabel = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
@@ -1206,6 +1214,10 @@ export default async function AdminDashboard({
       const supplierStatus = normalizeStatus(booking.supplier_order_status)
       return ["failed", "cancel_requested", "cancelled", "refund_requested", "refunded"].includes(supplierStatus)
     }).length
+    const internalFailureCount = globalPeriodInternalBookings.filter((booking) => {
+      const bookingStatus = normalizeStatus(booking.booking_status)
+      return ["cancel_requested", "cancelled", "refund_requested", "refunded", "failed"].includes(bookingStatus)
+    }).length
     const internalPendingIssueCount = pendingMerchants + globalPendingPackages
     const totalPendingIssueCount = internalPendingIssueCount + affiliateIssueCount
     const slaTrackedItemCount = pendingMerchants + globalPendingPackages + globalFinanceReadyCount
@@ -1215,6 +1227,15 @@ export default async function AdminDashboard({
     const affiliateFailureRate =
       globalPeriodAffiliateBookings.length > 0
         ? Math.round((affiliateFailureCount / globalPeriodAffiliateBookings.length) * 1000) / 10
+        : 0
+    const internalFailureRate =
+      globalPeriodInternalBookings.length > 0
+        ? Math.round((internalFailureCount / globalPeriodInternalBookings.length) * 1000) / 10
+        : 0
+    const totalFailureCount = internalFailureCount + affiliateFailureCount
+    const totalFailureRate =
+      globalPeriodBookings.length > 0
+        ? Math.round((totalFailureCount / globalPeriodBookings.length) * 1000) / 10
         : 0
     const alertRecentWindowStart = getPeriodStart(7)
     const alertPreviousWindowStart = getPeriodStart(14)
@@ -1937,6 +1958,16 @@ export default async function AdminDashboard({
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{globalPeriodBookings.length.toLocaleString("id-ID")}</p>
                 <p className={`mt-1 text-[12px] font-semibold ${bookingDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{bookingDeltaLabel}</p>
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Internal</span>
+                    <span className="font-semibold text-slate-900">{globalPeriodInternalBookings.length.toLocaleString("id-ID")}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Affiliate</span>
+                    <span className="font-semibold text-slate-900">{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")}</span>
+                  </div>
+                </div>
                 <TinySparkline points={bookingSparkline} stroke="#2563eb" />
                 <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
               </article>
@@ -1948,12 +1979,20 @@ export default async function AdminDashboard({
                   </span>
                   <p className="text-[15px] font-medium text-slate-700">Total Revenue (GMV)</p>
                 </div>
-                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{globalRevenueTotal > 0 ? `Rp ${(globalRevenueTotal / 1000000).toFixed(2)} M` : "Rp 0"}</p>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{formatCompactMoney(globalRevenueTotal)}</p>
                 <p className={`mt-1 text-[12px] font-semibold ${revenueDeltaLabel.startsWith("-") ? "text-rose-500" : "text-emerald-600"}`}>{revenueDeltaLabel}</p>
-                <TinySparkline points={revenueSparkline} stroke="#10b981" />
-                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">
-                  Internal {formatMoney(globalInternalRevenueTotal)} | Affiliate {formatMoney(globalAffiliateRevenueTotal)}
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Internal</span>
+                    <span className="font-semibold text-slate-900">{formatMoney(globalInternalRevenueTotal)}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Affiliate</span>
+                    <span className="font-semibold text-slate-900">{formatMoney(globalAffiliateRevenueTotal)}</span>
+                  </div>
                 </div>
+                <TinySparkline points={revenueSparkline} stroke="#10b981" />
+                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Range: {dashboardDateRangeLabel}</div>
               </article>
 
               <article className="min-h-[252px] rounded-[24px] border border-[#e9eef6] bg-white p-6 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
@@ -2033,13 +2072,27 @@ export default async function AdminDashboard({
                   <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                     <DashboardGlyph kind="failure" className="h-5 w-5" />
                   </span>
-                  <p className="text-[15px] font-medium text-slate-700">Failure Rate (Affiliate)</p>
+                  <p className="text-[15px] font-medium text-slate-700">Failure Rate</p>
                 </div>
-                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{affiliateFailureRate.toLocaleString("id-ID")}%</p>
-                <p className={`mt-1 text-[12px] font-semibold ${affiliateFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
-                  {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking affiliate
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalFailureRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-[12px] font-semibold ${affiliateFailureRate <= 3 && internalFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {totalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodBookings.length.toLocaleString("id-ID")} total booking
                 </p>
-                <div className="mt-5 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target: &lt;= 3%</div>
+                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Internal</span>
+                    <span className="font-semibold text-slate-900">
+                      {internalFailureRate.toLocaleString("id-ID")}% ({internalFailureCount.toLocaleString("id-ID")}/{globalPeriodInternalBookings.length.toLocaleString("id-ID")})
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-slate-500">Affiliate</span>
+                    <span className="font-semibold text-slate-900">
+                      {affiliateFailureRate.toLocaleString("id-ID")}% ({affiliateFailureCount.toLocaleString("id-ID")}/{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")})
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target per source: &lt;= 3%</div>
               </article>
             </section>
           ) : null}
