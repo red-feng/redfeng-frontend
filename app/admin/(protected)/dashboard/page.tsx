@@ -2048,7 +2048,7 @@ export default async function AdminDashboard({
 
             {showBookingWorkspace && showBookingTrendsWidget ? (
               <>
-                <section className="flex min-h-[520px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex min-h-[540px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2063,7 +2063,7 @@ export default async function AdminDashboard({
                   </div>
                 </section>
 
-                <section className="flex min-h-[520px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section className="flex min-h-[540px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2081,12 +2081,12 @@ export default async function AdminDashboard({
             ) : null}
 
             {showAlertWorkspace && showAlertsOverviewWidget ? (
-              <section className="flex min-h-[520px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section className="flex min-h-[540px] flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 max-h-[390px] flex-1 space-y-3 overflow-y-auto pr-1">
+                <div className="mt-5 max-h-[410px] flex-1 space-y-3 overflow-y-auto pr-1">
                   {alertRailItems.map((item) => (
                     <Link key={item.title} href={item.href} className={`block rounded-[16px] border p-4 transition hover:-translate-y-0.5 ${item.tone}`}>
                       <div className="flex items-start gap-3">
