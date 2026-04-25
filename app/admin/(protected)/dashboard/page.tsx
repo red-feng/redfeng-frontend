@@ -2021,7 +2021,7 @@ export default async function AdminDashboard({
                     <span>Issue</span>
                     <span>SLA</span>
                   </div>
-                  <div className="max-h-[440px] divide-y divide-[#edf2f7] overflow-y-auto">
+                  <div className="divide-y divide-[#edf2f7]">
                     {productPerformanceCards.map((product) => (
                       <Link key={product.label} href={product.href} className="grid grid-cols-[minmax(180px,1.5fr)_92px_116px_62px_88px] gap-3 px-4 py-3.5 text-sm transition hover:bg-[#f8fbff]">
                         <span className="flex min-w-0 items-center gap-3">
