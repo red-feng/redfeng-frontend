@@ -2005,15 +2005,18 @@ export default async function AdminDashboard({
 
             <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-stretch">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
-              <section className="flex h-full min-h-[580px] flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-base font-semibold text-slate-950">Performa per Kategori <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
+              <section className="flex flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-base font-semibold text-slate-950">
+                      <span>Performa per Kategori</span>
+                      <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span>
+                    </h2>
                     <p className="mt-1 text-xs text-slate-500">Grid ini tetap jujur: produk roadmap tidak dipaksa terlihat live.</p>
                   </div>
-                  <Link href={primaryProductOverviewHref} className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
+                  <Link href={primaryProductOverviewHref} className="shrink-0 text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
-                <div className="mt-5 flex-1 overflow-hidden rounded-[18px] border border-[#edf2f7]">
+                <div className="mt-5 overflow-hidden rounded-[18px] border border-[#edf2f7]">
                   <div className="grid grid-cols-[minmax(132px,1.55fr)_minmax(56px,0.58fr)_minmax(84px,0.8fr)_minmax(44px,0.42fr)_minmax(64px,0.55fr)] gap-2.5 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold text-slate-400">
                     <span>Kategori</span>
                     <span>Booking</span>
