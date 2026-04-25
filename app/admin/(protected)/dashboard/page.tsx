@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
+import AdminDashboardHeightSync from "@/app/components/AdminDashboardHeightSync"
 import { formatAdminCode, formatFinanceCode } from "@/lib/merchant-code"
 import { canAccessInternalPortal, getInternalPortalHomePath, getRoleLabel } from "@/lib/internal-roles"
 import { getPublicAccountHomePath, resolvePublicAccountRole } from "@/lib/login-role-lock"
@@ -2003,9 +2004,13 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-            <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-stretch">
+            <AdminDashboardHeightSync />
+            <section className="grid gap-5 xl:grid-cols-[minmax(420px,1.35fr)_minmax(280px,1fr)_minmax(280px,1fr)_280px] xl:items-start">
             {showProductSummaryWorkspace && showProductPerformanceWidget ? (
-              <section className="flex h-full flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section
+                data-dashboard-height-source="category"
+                className="flex flex-col self-start rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <h2 className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-base font-semibold text-slate-950">
@@ -2048,7 +2053,10 @@ export default async function AdminDashboard({
 
             {showBookingWorkspace && showBookingTrendsWidget ? (
               <>
-                <section className="flex h-full flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section
+                  data-dashboard-height-target="category"
+                  className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Booking <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2063,7 +2071,10 @@ export default async function AdminDashboard({
                   </div>
                 </section>
 
-                <section className="flex h-full flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+                <section
+                  data-dashboard-height-target="category"
+                  className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+                >
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-semibold text-slate-950">Trend Revenue <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span></h2>
                     <Link href="/admin/bookings" className="text-xs font-semibold text-[#2563eb]">Lihat detail</Link>
@@ -2081,7 +2092,10 @@ export default async function AdminDashboard({
             ) : null}
 
             {showAlertWorkspace && showAlertsOverviewWidget ? (
-              <section className="flex h-full flex-col rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]">
+              <section
+                data-dashboard-height-target="category"
+                className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-base font-semibold text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/admin/dashboard?workspace=alerts_overview" className="text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
