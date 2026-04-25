@@ -2130,13 +2130,6 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-          {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-2.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-600">1</span>
-              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Kita Hidup Dari Mana</h2>
-            </section>
-          ) : null}
-
           {showSplitKpiStory ? (
             <>
               <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -2551,13 +2544,6 @@ export default async function AdminDashboard({
             </section>
           ) : null}
 
-          {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-2.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-rose-100 text-xs font-semibold text-rose-600">2</span>
-              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Bermasalah</h2>
-            </section>
-          ) : null}
-
           {showOperationalWorkspace && showOperationalTasksWidget ? (
             <section className="grid items-start gap-5 xl:grid-cols-[minmax(420px,1.18fr)_minmax(320px,1fr)_minmax(320px,1fr)]">
               {canAccessPackageTour ? (
@@ -2654,13 +2640,6 @@ export default async function AdminDashboard({
                   ))}
                 </div>
               </section>
-            </section>
-          ) : null}
-
-          {operationsWorkspace === "all" ? (
-            <section className="flex items-center gap-2.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-xs font-semibold text-emerald-600">3</span>
-              <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Mana yang Harus Didorong</h2>
             </section>
           ) : null}
 
