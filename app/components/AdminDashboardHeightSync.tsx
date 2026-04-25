@@ -22,7 +22,9 @@ export default function AdminDashboardHeightSync() {
 
       const height = source.getBoundingClientRect().height
       targets.forEach((target) => {
-        target.style.height = `${Math.ceil(height)}px`
+        const syncMode = target.dataset.dashboardHeightMode || "always"
+        const isActive = target.dataset.dashboardHeightActive !== "false"
+        target.style.height = syncMode === "when-active" && !isActive ? "" : `${Math.ceil(height)}px`
       })
     }
 

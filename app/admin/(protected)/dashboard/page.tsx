@@ -1646,6 +1646,8 @@ export default async function AdminDashboard({
         color: productMeta?.sparkColor || "#2563eb",
       }
     })
+    const bookingTrendHasData = bookingTrendSeries.some((series) => series.values.some((value) => value > 0))
+    const revenueTrendHasData = revenueTrendSeries.some((series) => series.values.some((value) => value > 0))
     const bookingSparkline = buildSparklinePoints(bookingTrendRows.map((row) => ({ value: row.value })), 100, 28)
     const revenueSparkline = buildSparklinePoints(revenueTrendRows.map((row) => ({ value: row.value })), 100, 28)
     const comparisonWindowStart =
@@ -2055,6 +2057,8 @@ export default async function AdminDashboard({
               <>
                 <section
                   data-dashboard-height-target="category"
+                  data-dashboard-height-mode="when-active"
+                  data-dashboard-height-active={bookingTrendHasData ? "true" : "false"}
                   className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -2073,6 +2077,8 @@ export default async function AdminDashboard({
 
                 <section
                   data-dashboard-height-target="category"
+                  data-dashboard-height-mode="when-active"
+                  data-dashboard-height-active={revenueTrendHasData ? "true" : "false"}
                   className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -2094,6 +2100,7 @@ export default async function AdminDashboard({
             {showAlertWorkspace && showAlertsOverviewWidget ? (
               <section
                 data-dashboard-height-target="category"
+                data-dashboard-height-mode="always"
                 className="flex flex-col overflow-hidden rounded-[22px] border border-[#e9eef6] bg-white p-5 shadow-[0_18px_36px_rgba(15,23,42,0.035)]"
               >
                 <div className="flex items-center justify-between gap-3">
