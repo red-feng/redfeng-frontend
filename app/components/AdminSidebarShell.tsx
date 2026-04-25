@@ -22,7 +22,7 @@ function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
     >
       {isOperationsManager ? (
         <Image
-          src="/logo-redfeng.png"
+          src="/logo-redfeng2.png"
           alt="RedFeng"
           fill
           sizes="260px"
