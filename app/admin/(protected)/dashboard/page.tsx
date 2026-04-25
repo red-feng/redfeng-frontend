@@ -1190,8 +1190,20 @@ export default async function AdminDashboard({
     const globalPackageOverdueCount = globalPeriodPackages.filter(
       (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
     ).length
+    const globalInternalFinanceReadyCount = globalPeriodInternalBookings.filter((booking) =>
+      ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+    ).length
+    const globalAffiliateFinanceReadyCount = globalPeriodAffiliateBookings.filter((booking) =>
+      ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+    ).length
     const globalFinanceReadyCount = globalPeriodBookings.filter((item) =>
       ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(item.booking_status)),
+    ).length
+    const globalInternalBookingStalledCount = globalPeriodInternalBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
+    ).length
+    const globalAffiliateBookingStalledCount = globalPeriodAffiliateBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
     ).length
     const globalBookingStalledCount = globalPeriodBookings.filter(
       (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
@@ -1224,6 +1236,10 @@ export default async function AdminDashboard({
     const slaBreachCount = merchantOverdueCount + globalPackageOverdueCount + globalBookingStalledCount
     const slaComplianceRate =
       slaTrackedItemCount > 0 ? Math.max(0, Math.round(((slaTrackedItemCount - slaBreachCount) / slaTrackedItemCount) * 1000) / 10) : 100
+    const internalSlaTrackedCount = pendingMerchants + globalPendingPackages + globalInternalFinanceReadyCount
+    const internalSlaBreachCount = merchantOverdueCount + globalPackageOverdueCount + globalInternalBookingStalledCount
+    const affiliateSlaTrackedCount = globalAffiliateFinanceReadyCount
+    const affiliateSlaBreachCount = globalAffiliateBookingStalledCount
     const affiliateFailureRate =
       globalPeriodAffiliateBookings.length > 0
         ? Math.round((affiliateFailureCount / globalPeriodAffiliateBookings.length) * 1000) / 10
@@ -1726,11 +1742,25 @@ export default async function AdminDashboard({
     const dashboardDateRangeLabel = operationsPeriod.days ? `${rangeStartLabel} ${new Date().getFullYear()} - ${rangeEndLabel} ${new Date().getFullYear()}` : "Semua waktu"
     const merchantNearDueCount = pendingMerchantsData.filter((merchant) => daysSince(merchant.created_at) === 2).length
     const packageNearDueCount = periodPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) === 2).length
-    const bookingNearDueCount = periodBookings.filter(
-      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) === 0,
+    const internalBookingNearDueCount = periodBookings.filter(
+      (booking) =>
+        classifyBookingSource(booking) === "internal" &&
+        ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) &&
+        daysSince(booking.created_at) === 0,
     ).length
+    const affiliateBookingNearDueCount = periodBookings.filter(
+      (booking) =>
+        classifyBookingSource(booking) === "affiliate" &&
+        ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) &&
+        daysSince(booking.created_at) === 0,
+    ).length
+    const bookingNearDueCount = internalBookingNearDueCount + affiliateBookingNearDueCount
     const slaNearDueCount = merchantNearDueCount + packageNearDueCount + bookingNearDueCount
     const slaOnTimeCount = Math.max(slaTrackedItemCount - slaBreachCount - slaNearDueCount, 0)
+    const internalSlaComplianceRate =
+      internalSlaTrackedCount > 0 ? Math.max(0, Math.round(((internalSlaTrackedCount - internalSlaBreachCount) / internalSlaTrackedCount) * 1000) / 10) : 100
+    const affiliateSlaComplianceRate =
+      affiliateSlaTrackedCount > 0 ? Math.max(0, Math.round(((affiliateSlaTrackedCount - affiliateSlaBreachCount) / affiliateSlaTrackedCount) * 1000) / 10) : 100
     const severityRows = [
       { label: "High", value: recentAnomalies.filter((item) => item.severity === "High").length, tone: "bg-rose-500" },
       { label: "Medium", value: recentAnomalies.filter((item) => item.severity === "Medium").length, tone: "bg-amber-500" },
@@ -2048,11 +2078,15 @@ export default async function AdminDashboard({
                   </span>
                   <p className="text-[15px] font-medium text-slate-700">SLA Compliance</p>
                 </div>
+                <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                <p className={`mt-1 text-[12px] font-semibold ${slaComplianceRate >= 90 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {slaBreachCount.toLocaleString("id-ID")} breach dari {slaTrackedItemCount.toLocaleString("id-ID")} item operasional
+                </p>
                 <div className="mt-5 flex flex-col items-center gap-4">
                   <div className="flex h-[124px] w-[124px] items-center justify-center rounded-full" style={{ background: `conic-gradient(#22c55e 0% ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}%, #fb923c ${slaTrackedItemCount > 0 ? (slaOnTimeCount / slaTrackedItemCount) * 100 : 100}% ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}%, #ef4444 ${slaTrackedItemCount > 0 ? ((slaOnTimeCount + slaNearDueCount) / slaTrackedItemCount) * 100 : 100}% 100%)` }}>
                     <div className="flex h-[86px] w-[86px] flex-col items-center justify-center rounded-full bg-white">
-                      <p className="text-[1.85rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
-                      <p className="text-[11px] text-slate-400">On Time</p>
+                      <p className="text-[1.55rem] font-semibold text-slate-950">{slaComplianceRate.toLocaleString("id-ID")}%</p>
+                      <p className="text-[11px] text-slate-400">Total SLA</p>
                     </div>
                   </div>
                   <div className="w-full max-w-[210px] space-y-2.5">
@@ -2067,7 +2101,27 @@ export default async function AdminDashboard({
                       </div>
                     ))}
                   </div>
-                  <p className="text-center text-xs text-slate-400">Target internal: &gt;= 90%</p>
+                  <div className="w-full space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Internal SLA</span>
+                      <span className="text-right font-semibold text-slate-900">
+                        {internalSlaComplianceRate.toLocaleString("id-ID")}% ({internalSlaBreachCount}/{internalSlaTrackedCount || 0})
+                      </span>
+                    </div>
+                    <p className="text-xs leading-5 text-slate-400">
+                      Approval merchant, review paket, dan booking internal yang melewati jalur operasional RedFeng.
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">Affiliate SLA</span>
+                      <span className="text-right font-semibold text-slate-900">
+                        {affiliateSlaComplianceRate.toLocaleString("id-ID")}% ({affiliateSlaBreachCount}/{affiliateSlaTrackedCount || 0})
+                      </span>
+                    </div>
+                    <p className="text-xs leading-5 text-slate-400">
+                      Booking handling affiliate dari handoff sampai review finance untuk channel mitra eksternal.
+                    </p>
+                  </div>
+                  <p className="text-center text-xs text-slate-400">Target kualitas per jalur: &gt;= 90%</p>
                 </div>
               </article>
 
@@ -2098,21 +2152,33 @@ export default async function AdminDashboard({
                   <p className="text-[15px] font-medium text-slate-700">Failure Rate</p>
                 </div>
                 <p className="mt-5 text-[2.35rem] font-semibold tracking-[-0.06em] text-slate-950">{totalFailureRate.toLocaleString("id-ID")}%</p>
-                <p className={`mt-1 text-[12px] font-semibold ${affiliateFailureRate <= 3 && internalFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
+                <p className={`mt-1 text-[12px] font-semibold ${totalFailureRate <= 3 ? "text-emerald-600" : "text-rose-500"}`}>
                   {totalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodBookings.length.toLocaleString("id-ID")} total booking
                 </p>
-                <div className="mt-4 space-y-2 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-500">Internal</span>
-                    <span className="font-semibold text-slate-900">
-                      {internalFailureRate.toLocaleString("id-ID")}% ({internalFailureCount.toLocaleString("id-ID")}/{globalPeriodInternalBookings.length.toLocaleString("id-ID")})
-                    </span>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Internal</span>
+                      <span className="font-semibold text-slate-900">
+                        {internalFailureRate.toLocaleString("id-ID")}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-slate-700">
+                      {internalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-400">Cancel, refund, atau failed booking di jalur internal tetap dihitung sebagai sinyal kualitas.</p>
                   </div>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-slate-500">Affiliate</span>
-                    <span className="font-semibold text-slate-900">
-                      {affiliateFailureRate.toLocaleString("id-ID")}% ({affiliateFailureCount.toLocaleString("id-ID")}/{globalPeriodAffiliateBookings.length.toLocaleString("id-ID")})
-                    </span>
+                  <div className="rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-500">Affiliate</span>
+                      <span className="font-semibold text-slate-900">
+                        {affiliateFailureRate.toLocaleString("id-ID")}%
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-slate-700">
+                      {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking
+                    </p>
+                    <p className="mt-2 text-xs leading-5 text-slate-400">API error, cancel, refund request, dan booking gagal dari channel mitra eksternal.</p>
                   </div>
                 </div>
                 <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target per source: &lt;= 3%</div>
