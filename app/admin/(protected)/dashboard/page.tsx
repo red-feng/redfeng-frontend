@@ -2129,18 +2129,12 @@ export default async function AdminDashboard({
                         {internalSlaComplianceRate.toLocaleString("id-ID")}% ({internalSlaBreachCount}/{internalSlaTrackedCount || 0})
                       </span>
                     </div>
-                    <p className="text-xs leading-5 text-slate-400">
-                      Approval merchant, review paket, dan booking internal yang melewati jalur operasional RedFeng.
-                    </p>
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-slate-500">Affiliate SLA</span>
                       <span className="text-right font-semibold text-slate-900">
                         {affiliateSlaComplianceRate.toLocaleString("id-ID")}% ({affiliateSlaBreachCount}/{affiliateSlaTrackedCount || 0})
                       </span>
                     </div>
-                    <p className="text-xs leading-5 text-slate-400">
-                      Booking handling affiliate dari handoff sampai review finance untuk channel mitra eksternal.
-                    </p>
                   </div>
                   <p className="text-center text-xs text-slate-400">Target kualitas per jalur: &gt;= 90%</p>
                 </div>
@@ -2187,7 +2181,6 @@ export default async function AdminDashboard({
                     <p className="mt-2 text-xs font-semibold text-slate-700">
                       {internalFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodInternalBookings.length.toLocaleString("id-ID")} booking
                     </p>
-                    <p className="mt-2 text-xs leading-5 text-slate-400">Cancel, refund, atau failed booking di jalur internal tetap dihitung sebagai sinyal kualitas.</p>
                   </div>
                   <div className="rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] px-4 py-3">
                     <div className="flex items-center justify-between gap-3 text-sm">
@@ -2199,7 +2192,6 @@ export default async function AdminDashboard({
                     <p className="mt-2 text-xs font-semibold text-slate-700">
                       {affiliateFailureCount.toLocaleString("id-ID")} gagal dari {globalPeriodAffiliateBookings.length.toLocaleString("id-ID")} booking
                     </p>
-                    <p className="mt-2 text-xs leading-5 text-slate-400">API error, cancel, refund request, dan booking gagal dari channel mitra eksternal.</p>
                   </div>
                 </div>
                 <div className="mt-3 border-t border-[#eef2f7] pt-3 text-xs text-slate-400">Target per source: &lt;= 3%</div>
@@ -2246,7 +2238,7 @@ export default async function AdminDashboard({
                       <span>Performa per Kategori</span>
                       <span className="text-xs font-normal text-slate-400">({operationsPeriod.label})</span>
                     </h2>
-                    <p className="mt-1 text-xs text-slate-500">Grid ini tetap jujur: produk roadmap tidak dipaksa terlihat live.</p>
+                    <p className="mt-1 text-xs text-slate-500">View kategori dibaca dari sisi produk, jadi booking dan revenue tetap gabungan per kategori tanpa split internal vs affiliate.</p>
                   </div>
                   <Link href={primaryProductOverviewHref} className="shrink-0 text-xs font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
