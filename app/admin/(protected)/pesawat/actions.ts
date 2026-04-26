@@ -79,6 +79,7 @@ export async function createFlightBooking(formData: FormData) {
   const notes = String(formData.get("notes") || "").trim()
   const passengerCount = Math.max(Number(formData.get("passenger_count") || 1), 1)
   const subtotalAmount = Math.max(Number(formData.get("subtotal_amount") || 0), 0)
+  const supplierCostAmount = Math.max(Number(formData.get("supplier_cost_amount") || 0), 0)
   const paymentType = String(formData.get("payment_type") || "full").trim().toLowerCase() === "dp" ? "dp" : "full"
   const paymentMethod = resolveActiveCustomerPaymentMethod(String(formData.get("payment_method") || "bank_transfer"))
 
@@ -96,6 +97,10 @@ export async function createFlightBooking(formData: FormData) {
 
   if (subtotalAmount <= 0) {
     backToFlightCreate("Subtotal booking pesawat harus lebih besar dari nol.", "error")
+  }
+
+  if (supplierCostAmount <= 0) {
+    backToFlightCreate("Biaya supplier pesawat harus diisi agar spread harga RedFeng tercatat jujur.", "error")
   }
 
   const { data: supplier } = await actor.adminSupabase
@@ -138,6 +143,7 @@ export async function createFlightBooking(formData: FormData) {
 
   const settings = await getFinanceSettings(actor.adminSupabase as unknown as Parameters<typeof getFinanceSettings>[0])
   const priceBreakdown = calculateBookingAmounts(subtotalAmount, paymentMethod, settings)
+  const recordedSpreadAmount = Math.round(subtotalAmount - supplierCostAmount)
   const bookingCode = generateBookingCode()
   const expiry = new Date()
   expiry.setMinutes(expiry.getMinutes() + 30)
@@ -164,6 +170,11 @@ export async function createFlightBooking(formData: FormData) {
       subtotal_amount: priceBreakdown.subtotalAmount,
       customer_admin_fee_amount: priceBreakdown.customerAdminFeeAmount,
       customer_tax_amount: priceBreakdown.customerTaxAmount,
+      redfeng_profit_source: "non_package_spread",
+      supplier_net_cost_amount: supplierCostAmount,
+      redfeng_spread_amount: recordedSpreadAmount,
+      redfeng_recorded_profit_amount: recordedSpreadAmount,
+      profit_recorded_at: new Date().toISOString(),
       customer_admin_fee_percent: priceBreakdown.customerAdminFeePercent,
       customer_tax_percent: priceBreakdown.customerTaxPercent,
       total_amount: priceBreakdown.totalAmount,
@@ -189,6 +200,9 @@ export async function createFlightBooking(formData: FormData) {
       supplier_order_id: supplierOrderId || null,
       supplier_reference: supplierReference || null,
       supplier_status: supplierOrderStatus,
+      supplier_cost_amount: supplierCostAmount,
+      supplier_cost_currency: "IDR",
+      supplier_cost_recorded_at: new Date().toISOString(),
       submission_mode: supplier.integration_mode,
       submitted_at: supplierOrderStatus === "submitted" ? new Date().toISOString() : null,
       created_by: actor.user.id,
@@ -249,6 +263,8 @@ export async function createFlightBooking(formData: FormData) {
       destinationAirportCode,
       passengerCount,
       subtotalAmount: priceBreakdown.subtotalAmount,
+      supplierCostAmount,
+      recordedSpreadAmount,
       totalAmount: priceBreakdown.totalAmount,
     },
   })

@@ -186,6 +186,10 @@ type DashboardBookingRow = {
   final_payment_amount: number | null
   customer_admin_fee_amount: number | null
   customer_tax_amount: number | null
+  redfeng_profit_source?: string | null
+  supplier_net_cost_amount?: number | null
+  redfeng_spread_amount?: number | null
+  redfeng_recorded_profit_amount?: number | null
 }
 
 type MerchantDeletionRequestRow = {
@@ -816,7 +820,7 @@ export default async function AdminDashboard({
       .order("created_at", { ascending: false }),
     adminSupabase
       .from("bookings")
-      .select("id, package_id, supplier_id, fulfillment_mode, supplier_order_status, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount")
+      .select("id, package_id, supplier_id, fulfillment_mode, supplier_order_status, booking_product_type, booking_status, created_at, payment_status, payment_type, escrow_status, total_amount, dp_amount, final_payment_amount, customer_admin_fee_amount, customer_tax_amount, redfeng_profit_source, supplier_net_cost_amount, redfeng_spread_amount, redfeng_recorded_profit_amount")
       .order("created_at", { ascending: false }),
     adminSupabase.from("suppliers").select("id, supplier_code, internal_display_name, internal_alias, brand_visibility, supplier_type, status"),
     adminSupabase

@@ -332,6 +332,11 @@ export default async function AdminCreateFlightBookingPage({
                   <TextInput name="subtotal_amount" type="number" min={1} step={1000} required placeholder="Mis. 2500000" />
                 </div>
                 <div>
+                  <FieldLabel>Biaya supplier</FieldLabel>
+                  <TextInput name="supplier_cost_amount" type="number" min={1} step={1000} required placeholder="Mis. 2350000" />
+                  <p className="mt-2 text-xs text-slate-500">Field ini wajib diisi agar spread harga non-paket RedFeng bisa dihitung jujur dari harga jual dikurangi biaya supplier.</p>
+                </div>
+                <div>
                   <FieldLabel>Jenis pembayaran</FieldLabel>
                   <select
                     name="payment_type"
@@ -388,7 +393,7 @@ export default async function AdminCreateFlightBookingPage({
               <div className="mt-5 space-y-3">
                 {[
                   "Tabel bookings untuk master transaksi Red Feng.",
-                  "Tabel supplier_orders untuk referensi order ke partner reservasi.",
+                  "Tabel supplier_orders untuk referensi order ke partner reservasi dan biaya supplier.",
                   "Tabel flight_booking_details untuk data rute, jadwal, dan status issue tiket.",
                 ].map((item) => (
                   <div key={item} className="rounded-[18px] border border-[#f1e6dc] bg-[#fffdfa] px-4 py-3 text-sm leading-6 text-slate-600">
