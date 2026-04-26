@@ -575,6 +575,22 @@ function DashboardGlyph({
   )
 }
 
+function DataSourceBadge({
+  kind,
+}: {
+  kind: "raw" | "derived"
+}) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+        kind === "raw" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+      }`}
+    >
+      {kind === "raw" ? "Raw KPI" : "Derived"}
+    </span>
+  )
+}
+
 function getDashboardPeriod(value: string | null | undefined) {
   const normalized = String(value || "30d").trim().toLowerCase()
   if (normalized === "7d") return { value: "7d", label: "7 hari terakhir", days: 7 }
@@ -637,34 +653,6 @@ function getOperationsProduct(value: string | null | undefined): "all" | Booking
 function getOperationsSource(value: string | null | undefined): "all" | "internal" | "affiliate" {
   const normalized = String(value || "all").trim().toLowerCase()
   if (normalized === "internal" || normalized === "affiliate") return normalized
-  return "all"
-}
-
-function getSuperadminRegion(
-  value: string | null | undefined,
-):
-  | "all"
-  | "indonesia"
-  | "international"
-  | "bali"
-  | "jawa"
-  | "sumatera"
-  | "kalimantan"
-  | "sulawesi"
-  | "nusa_tenggara" {
-  const normalized = String(value || "all").trim().toLowerCase()
-  if (
-    normalized === "indonesia" ||
-    normalized === "international" ||
-    normalized === "bali" ||
-    normalized === "jawa" ||
-    normalized === "sumatera" ||
-    normalized === "kalimantan" ||
-    normalized === "sulawesi" ||
-    normalized === "nusa_tenggara"
-  ) {
-    return normalized
-  }
   return "all"
 }
 
@@ -732,7 +720,7 @@ export default async function AdminDashboard({
   searchParams,
   portal = "admin",
 }: {
-  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string; source?: string; region?: string; super_workspace?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string; source?: string; super_workspace?: string }>
   portal?: AdminWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
@@ -787,7 +775,6 @@ export default async function AdminDashboard({
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
   const operationsSource = getOperationsSource(params.source)
-  const superadminRegion = getSuperadminRegion(params.region)
   const superadminWorkspace = getSuperadminWorkspace(params.super_workspace)
   const requestedOperationsProduct = getOperationsProduct(params.product)
   const operationsProduct =
@@ -3632,90 +3619,22 @@ export default async function AdminDashboard({
       }
     }
     const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
-    const normalizeRegionText = (value: string | null | undefined) => normalizeStatus(value ?? null)
-    const matchesProvinceGroup = (province: string, city: string, regionKey: typeof superadminRegion) => {
-      if (regionKey === "bali") {
-        return province.includes("bali") || city.includes("bali")
-      }
-      if (regionKey === "jawa") {
-        return (
-          province.includes("jakarta") ||
-          province.includes("banten") ||
-          province.includes("jawa barat") ||
-          province.includes("jawa tengah") ||
-          province.includes("yogyakarta") ||
-          province.includes("jawa timur") ||
-          city.includes("jakarta") ||
-          city.includes("bandung") ||
-          city.includes("surabaya") ||
-          city.includes("yogyakarta")
-        )
-      }
-      if (regionKey === "sumatera") {
-        return (
-          province.includes("aceh") ||
-          province.includes("sumatera") ||
-          province.includes("riau") ||
-          province.includes("jambi") ||
-          province.includes("bengkulu") ||
-          province.includes("lampung") ||
-          city.includes("medan") ||
-          city.includes("padang") ||
-          city.includes("palembang")
-        )
-      }
-      if (regionKey === "kalimantan") {
-        return province.includes("kalimantan") || city.includes("pontianak") || city.includes("balikpapan")
-      }
-      if (regionKey === "sulawesi") {
-        return province.includes("sulawesi") || city.includes("makassar") || city.includes("manado")
-      }
-      if (regionKey === "nusa_tenggara") {
-        return province.includes("nusa tenggara") || city.includes("lombok") || city.includes("labuan bajo")
-      }
-      return false
-    }
-    const isDomesticPackage = (pkg: DashboardPackageRow | null | undefined) => {
-      const country = normalizeStatus(pkg?.country ?? null)
-      const destinationCountryId = normalizeStatus(pkg?.destination_country_id ?? null)
-      return !country || country === "indonesia" || destinationCountryId === "indonesia"
-    }
-    const matchesSelectedRegion = (packageId: string | null | undefined) => {
-      if (superadminRegion === "all") return true
-      if (!packageId) return false
-      const pkg = packageMap.get(packageId)
-      if (!pkg) return false
-      const isDomestic = isDomesticPackage(pkg)
-      if (superadminRegion === "indonesia") return isDomestic
-      if (superadminRegion === "international") return !isDomestic
-      if (!isDomestic) return false
-      const province = normalizeRegionText(pkg.destination_province)
-      const city = normalizeRegionText(pkg.city)
-      return matchesProvinceGroup(province, city, superadminRegion)
-    }
-    const regionPackages = packages.filter((pkg) => matchesSelectedRegion(pkg.id))
-    const isRegionScoped = superadminRegion !== "all"
-    const regionFilterNote =
-      superadminRegion === "all"
-        ? "Semua data ikut terbaca."
-        : "Filter region hanya menghitung package dan booking yang punya mapping destination valid."
-    const regionPendingMerchants = isRegionScoped ? 0 : pendingMerchants
-    const regionMerchantOverdueCount = isRegionScoped ? 0 : merchantOverdueCount
-    const regionReviewRequests = isRegionScoped ? [] : reviewRequests
-    const regionDeletionRequests = isRegionScoped ? [] : deletionRequests
-    const superadminPeriodBookings = bookings.filter(
-      (booking) => isWithinPeriod(booking.created_at, operationsPeriodStart) && matchesSelectedRegion(booking.package_id),
-    )
+    const regionPackages = packages
+    const regionPendingMerchants = pendingMerchants
+    const regionMerchantOverdueCount = merchantOverdueCount
+    const regionReviewRequests = reviewRequests
+    const regionDeletionRequests = deletionRequests
+    const superadminPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
     const superadminPreviousBookings =
       compareRangeStart && compareRangeEnd
-        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, compareRangeStart, compareRangeEnd) && matchesSelectedRegion(booking.package_id))
+        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, compareRangeStart, compareRangeEnd))
         : []
     const superadminPeriodTransactions = customerTransactionRows.filter((transaction) =>
-      isWithinPeriod(transaction.createdAt, operationsPeriodStart) && matchesSelectedRegion(transaction.packageId),
+      isWithinPeriod(transaction.createdAt, operationsPeriodStart),
     )
     const superadminPreviousTransactions =
       compareRangeStart && compareRangeEnd
-        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, compareRangeStart, compareRangeEnd) && matchesSelectedRegion(transaction.packageId))
+        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, compareRangeStart, compareRangeEnd))
         : []
     const superadminInternalBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
     const superadminAffiliateBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
@@ -3994,21 +3913,6 @@ export default async function AdminDashboard({
                 </div>
                 <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
                   <label className="block">
-                    <select name="region" defaultValue={superadminRegion} className="bg-transparent text-[13px] font-medium text-slate-600 outline-none">
-                      <option value="all">Semua Region</option>
-                      <option value="indonesia">Indonesia</option>
-                      <option value="international">Luar Indonesia</option>
-                      <option value="bali">Bali</option>
-                      <option value="jawa">Jawa</option>
-                      <option value="sumatera">Sumatera</option>
-                      <option value="kalimantan">Kalimantan</option>
-                      <option value="sulawesi">Sulawesi</option>
-                      <option value="nusa_tenggara">Nusa Tenggara</option>
-                    </select>
-                  </label>
-                </div>
-                <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                  <label className="block">
                     <select name="super_workspace" defaultValue={superadminWorkspace} className="bg-transparent text-[13px] font-medium text-slate-600 outline-none">
                       <option value="all">Semua Workspace</option>
                       <option value="commercial">Commercial</option>
@@ -4023,11 +3927,6 @@ export default async function AdminDashboard({
                 >
                   Terapkan
                 </button>
-                {superadminRegion !== "all" ? (
-                  <span className="inline-flex max-w-[360px] rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[12px] leading-5 text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                    {regionFilterNote}
-                  </span>
-                ) : null}
               </form>
               <div className="flex items-center gap-2">
                 <AdminDashboardToolbarActions alertsCount={alertItems.length} alertsHref={alertsHref} />
@@ -4052,7 +3951,10 @@ export default async function AdminDashboard({
                 </div>
                 <span className="text-slate-300">^</span>
               </div>
-              <p className="mt-4 text-[13px] font-semibold text-slate-700">Total Booking</p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">Total Booking</p>
+                <DataSourceBadge kind="raw" />
+              </div>
               <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactCount(totalBookingValue)}</p>
               <p className={`mt-1 text-[12px] font-semibold ${bookingGrowthMeta.className}`}>{bookingGrowthMeta.label}</p>
               <TinySparkline points={bookingSparkPoints} stroke="#3b82f6" />
@@ -4075,7 +3977,10 @@ export default async function AdminDashboard({
                 </div>
                 <span className="text-slate-300">^</span>
               </div>
-              <p className="mt-4 text-[13px] font-semibold text-slate-700">Total Revenue (GMV)</p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">Total Revenue (GMV)</p>
+                <DataSourceBadge kind="raw" />
+              </div>
               <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(totalRevenueValue)}</p>
               <p className={`mt-1 text-[12px] font-semibold ${revenueGrowthMeta.className}`}>{revenueGrowthMeta.label}</p>
               <TinySparkline points={revenueSparkPoints} stroke="#10b981" />
@@ -4098,7 +4003,10 @@ export default async function AdminDashboard({
                 </div>
                 <span className="text-slate-300">^</span>
               </div>
-              <p className="mt-4 text-[13px] font-semibold text-slate-700">Net Commission</p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">Net Commission</p>
+                <DataSourceBadge kind="raw" />
+              </div>
               <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(totalCommissionValue)}</p>
               <p className={`mt-1 text-[12px] font-semibold ${commissionGrowthMeta.className}`}>{commissionGrowthMeta.label}</p>
               <TinySparkline points={commissionSparkPoints} stroke="#f97316" />
@@ -4121,7 +4029,10 @@ export default async function AdminDashboard({
                 </div>
                 <span className="text-slate-300">^</span>
               </div>
-              <p className="mt-4 text-[13px] font-semibold text-slate-700">Platform Accounts</p>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">Platform Accounts</p>
+                <DataSourceBadge kind="raw" />
+              </div>
               <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactCount(totalAccountsValue)}</p>
               <p className={`mt-1 text-[12px] font-semibold ${accountGrowthMeta.className}`}>{accountGrowthMeta.label}</p>
               <TinySparkline points={accountSparkPoints} stroke="#6366f1" />
@@ -4139,9 +4050,13 @@ export default async function AdminDashboard({
 
             {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[13px] font-semibold text-slate-700">System Health</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-slate-700">System Health</p>
+                  <DataSourceBadge kind="derived" />
+                </div>
                 <span className="text-slate-300">^</span>
               </div>
+              <p className="mt-2 text-[11px] leading-5 text-slate-400">Derived from healthy vs poor web vitals samples.</p>
               <div className="mt-4 flex items-center gap-4">
                 <div
                   className="relative flex h-28 w-28 items-center justify-center rounded-full"
@@ -4174,7 +4089,10 @@ export default async function AdminDashboard({
             {showOperationalWorkspace ? <div className="rounded-[26px] border border-[#f3d6d6] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
+                    <DataSourceBadge kind="derived" />
+                  </div>
                   <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-rose-600">{pendingCriticalValue}</p>
                 </div>
                 <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-rose-50 px-2 py-1 text-sm font-semibold text-rose-600">
@@ -4397,9 +4315,13 @@ export default async function AdminDashboard({
             <div className="space-y-6">
               {showOperationalWorkspace ? <div id="alerts" className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Alert & Notifikasi</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Alert & Notifikasi</h2>
+                    <DataSourceBadge kind="derived" />
+                  </div>
                   <Link href="/superadmin/audit-log" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
+                <p className="mt-2 text-[11px] leading-5 text-slate-400">Derived from SLA breach, review queue, affiliate sync failure, and poor vitals.</p>
                 <div className="mt-5 space-y-3">
                   {alertItems.length === 0 ? (
                     <div className="rounded-[18px] border border-emerald-100 bg-emerald-50/60 px-4 py-4 text-sm text-emerald-700">
@@ -4431,9 +4353,13 @@ export default async function AdminDashboard({
 
               {showPlatformWorkspace ? <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">System Status</h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">System Status</h2>
+                    <DataSourceBadge kind="derived" />
+                  </div>
                   <span className="text-slate-300">^</span>
                 </div>
+                <p className="mt-2 text-[11px] leading-5 text-slate-400">Derived from queue load, sync signal, and audit freshness thresholds.</p>
                 <div className="mt-5 space-y-3">
                   {systemStatusItems.map((item) => (
                     <div key={item.label} className="flex items-center justify-between gap-3 rounded-[18px] bg-[#f8fafc] px-4 py-3.5">
