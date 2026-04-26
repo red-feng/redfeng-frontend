@@ -4158,7 +4158,7 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentOtherNonPackageSpreadValue)}</p>
                 </div>
               </div>
-              <p className="mt-3 text-[11px] leading-5 text-slate-400">Spread dihitung dari harga jual dikurangi biaya supplier yang sudah tercatat, lalu dikoleksi proporsional mengikuti pembayaran customer.</p>
+              <p className="mt-3 text-[11px] leading-5 text-slate-400">Saat ini spread non-paket baru tercatat otomatis untuk Pesawat. Produk lain akan ikut terbaca setelah flow booking dan biaya supplier-nya live.</p>
             </div> : null}
 
             {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">

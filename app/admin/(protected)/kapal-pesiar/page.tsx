@@ -6,6 +6,7 @@ export default function AdminCruiseWorkspacePage() {
       productType="cruise"
       productLabel="Kapal Pesiar"
       description="Submenu admin untuk Kapal Pesiar disiapkan agar itinerary cruise, cabin inventory, supplier, dan operasional bisa dikelola dalam channel yang terpisah."
+      statusNote="Flow booking Kapal Pesiar belum live, jadi spread harga dan biaya supplier belum tercatat otomatis di dashboard profit RedFeng."
       primaryActionHref="/admin/bookings?product=kapal-pesiar"
       primaryActionLabel="Lihat booking Kapal Pesiar"
       secondaryActionHref="/admin/dashboard"

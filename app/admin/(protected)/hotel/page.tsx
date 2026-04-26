@@ -6,6 +6,7 @@ export default function AdminHotelWorkspacePage() {
       productType="hotel"
       productLabel="Hotel"
       description="Submenu admin untuk Hotel dipisahkan agar inventory kamar, supplier, rate plan, dan operasional hotel bisa punya workflow sendiri."
+      statusNote="Flow booking Hotel belum live, jadi spread harga dan biaya supplier belum tercatat otomatis di dashboard profit RedFeng."
       primaryActionHref="/admin/bookings?product=hotel"
       primaryActionLabel="Lihat booking Hotel"
       secondaryActionHref="/admin/dashboard"
