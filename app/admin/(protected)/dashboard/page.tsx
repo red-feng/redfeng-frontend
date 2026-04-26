@@ -1050,6 +1050,10 @@ export default async function AdminDashboard({
         finalPaymentAmount,
         customerAdminFeeCollected: Math.round(Number(booking.customer_admin_fee_amount || 0) * receivedRatio),
         customerTaxCollected: Math.round(Number(booking.customer_tax_amount || 0) * receivedRatio),
+        nonPackageSpreadCollected:
+          classifyBookingProduct(booking) !== "package_tour"
+            ? Math.round(Number(booking.redfeng_recorded_profit_amount || booking.redfeng_spread_amount || 0) * receivedRatio)
+            : 0,
       }
     })
     .filter((item) => item.receivedAmount > 0)
@@ -3711,6 +3715,16 @@ export default async function AdminDashboard({
     )
     const currentPackageProfitValue = currentPackageAdminFeeValue + currentPackageMerchantCutValue
     const previousPackageProfitValue = previousPackageAdminFeeValue + previousPackageMerchantCutValue
+    const currentNonPackageSpreadValue = superadminPeriodTransactions
+      .filter((transaction) => transaction.bookingProductType !== "package_tour")
+      .reduce((sum, transaction) => sum + transaction.nonPackageSpreadCollected, 0)
+    const previousNonPackageSpreadValue = superadminPreviousTransactions
+      .filter((transaction) => transaction.bookingProductType !== "package_tour")
+      .reduce((sum, transaction) => sum + transaction.nonPackageSpreadCollected, 0)
+    const currentFlightSpreadValue = superadminPeriodTransactions
+      .filter((transaction) => transaction.bookingProductType === "flight")
+      .reduce((sum, transaction) => sum + transaction.nonPackageSpreadCollected, 0)
+    const currentOtherNonPackageSpreadValue = Math.max(currentNonPackageSpreadValue - currentFlightSpreadValue, 0)
     const totalBookingValue = superadminPeriodBookings.length
     const previousBookingValue = superadminPreviousBookings.length
     const totalRevenueValue = superadminPeriodTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0)
@@ -3795,7 +3809,7 @@ export default async function AdminDashboard({
         count: poorWebVitalsCount,
       },
     ].filter((item) => item.count > 0)
-    const recentActivityBuckets = buildRecentDayBuckets(7).map((bucket) => ({ ...bucket, booking: 0, revenue: 0, packageProfit: 0, activity: 0 }))
+    const recentActivityBuckets = buildRecentDayBuckets(7).map((bucket) => ({ ...bucket, booking: 0, revenue: 0, packageProfit: 0, nonPackageSpread: 0, activity: 0 }))
     const bucketMap = new Map(recentActivityBuckets.map((bucket) => [bucket.key, bucket]))
     const bookingLookupMap = new Map(bookings.map((booking) => [booking.id, booking]))
     for (const booking of bookings) {
@@ -3813,6 +3827,8 @@ export default async function AdminDashboard({
       bucket.revenue += transaction.receivedAmount
       if (transaction.bookingProductType === "package_tour") {
         bucket.packageProfit += transaction.customerAdminFeeCollected
+      } else {
+        bucket.nonPackageSpread += transaction.nonPackageSpreadCollected
       }
     }
     for (const payout of payoutRequests) {
@@ -3835,6 +3851,7 @@ export default async function AdminDashboard({
     const bookingSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.booking })))
     const revenueSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.revenue })))
     const packageProfitSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.packageProfit })))
+    const nonPackageSpreadSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.nonPackageSpread })))
     const accountSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.activity })))
     const categoryRows = OPERATIONS_PRODUCT_SUMMARIES.map((product) => {
       const currentBookings = superadminPeriodBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
@@ -3958,6 +3975,7 @@ export default async function AdminDashboard({
     const bookingGrowthMeta = describeGrowth(totalBookingValue, previousBookingValue)
     const revenueGrowthMeta = describeGrowth(totalRevenueValue, previousRevenueValue)
     const packageProfitGrowthMeta = describeGrowth(currentPackageProfitValue, previousPackageProfitValue)
+    const nonPackageSpreadGrowthMeta = describeGrowth(currentNonPackageSpreadValue, previousNonPackageSpreadValue)
     const accountGrowthMeta = {
       label: `${internalAccountValue} internal account aktif terdata`,
       className: "text-emerald-500",
@@ -4114,6 +4132,33 @@ export default async function AdminDashboard({
                 </div>
               </div>
               <p className="mt-3 text-[11px] leading-5 text-slate-400">Spread non-paket belum tercatat resmi di database, jadi card ini hanya menghitung profit paket tour.</p>
+            </div> : null}
+
+            {showCommercialWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
+                  <DashboardGlyph kind="revenue" className="h-5 w-5" />
+                </div>
+                <span className="text-slate-300">^</span>
+              </div>
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">Non-Package Spread</p>
+                <DataSourceBadge kind="raw" />
+              </div>
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(currentNonPackageSpreadValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${nonPackageSpreadGrowthMeta.className}`}>{nonPackageSpreadGrowthMeta.label}</p>
+              <TinySparkline points={nonPackageSpreadSparkPoints} stroke="#06b6d4" />
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f5fdff] p-3">
+                <div>
+                  <p className="text-[11px] text-slate-500">Pesawat</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentFlightSpreadValue)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Produk Lain</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentOtherNonPackageSpreadValue)}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-[11px] leading-5 text-slate-400">Spread dihitung dari harga jual dikurangi biaya supplier yang sudah tercatat, lalu dikoleksi proporsional mengikuti pembayaran customer.</p>
             </div> : null}
 
             {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">

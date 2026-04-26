@@ -33,6 +33,9 @@ type BookingDetailRow = {
   supplier_booking_reference: string | null
   supplier_order_status: string | null
   fulfillment_mode: string | null
+  supplier_net_cost_amount: number | null
+  redfeng_spread_amount: number | null
+  redfeng_recorded_profit_amount: number | null
   display_currency: string | null
   display_subtotal_amount: number | null
   display_price_adult: number | null
@@ -462,7 +465,7 @@ export default async function AdminBookingDetailPage({
   const { data: booking, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, supplier_id, supplier_booking_reference, supplier_order_status, fulfillment_mode, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, supplier_id, supplier_booking_reference, supplier_order_status, fulfillment_mode, supplier_net_cost_amount, redfeng_spread_amount, redfeng_recorded_profit_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
     )
     .eq("id", id)
     .maybeSingle<BookingDetailRow>()
@@ -845,7 +848,26 @@ export default async function AdminBookingDetailPage({
                 <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Sisa Pelunasan</p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.final_payment_amount)}</p>
               </div>
+              {booking.booking_product_type !== "package_tour" && booking.supplier_net_cost_amount !== null ? (
+                <div className="rounded-[20px] border border-white bg-white p-4">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Biaya Supplier</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{formatMoney(booking.supplier_net_cost_amount)}</p>
+                </div>
+              ) : null}
+              {booking.booking_product_type !== "package_tour" && booking.redfeng_spread_amount !== null ? (
+                <div className="rounded-[20px] border border-white bg-white p-4">
+                  <p className="text-[11px] uppercase tracking-[0.22em] text-slate-400">Spread RedFeng</p>
+                  <p className={`mt-2 text-sm font-semibold ${Number(booking.redfeng_spread_amount || 0) >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                    {formatMoney(booking.redfeng_spread_amount)}
+                  </p>
+                </div>
+              ) : null}
             </div>
+            {booking.booking_product_type !== "package_tour" ? (
+              <p className="mt-4 text-[12px] leading-6 text-slate-500">
+                Untuk booking non-paket, profit RedFeng dibaca dari spread harga jual terhadap biaya supplier yang tercatat.
+              </p>
+            ) : null}
 
             {(booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date) && (
               <div className="mt-6 rounded-[24px] border border-blue-100 bg-blue-50 p-5">
