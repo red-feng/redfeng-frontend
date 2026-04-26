@@ -640,6 +640,40 @@ function getOperationsSource(value: string | null | undefined): "all" | "interna
   return "all"
 }
 
+function getSuperadminRegion(
+  value: string | null | undefined,
+):
+  | "all"
+  | "indonesia"
+  | "international"
+  | "bali"
+  | "jawa"
+  | "sumatera"
+  | "kalimantan"
+  | "sulawesi"
+  | "nusa_tenggara" {
+  const normalized = String(value || "all").trim().toLowerCase()
+  if (
+    normalized === "indonesia" ||
+    normalized === "international" ||
+    normalized === "bali" ||
+    normalized === "jawa" ||
+    normalized === "sumatera" ||
+    normalized === "kalimantan" ||
+    normalized === "sulawesi" ||
+    normalized === "nusa_tenggara"
+  ) {
+    return normalized
+  }
+  return "all"
+}
+
+function getSuperadminWorkspace(value: string | null | undefined): "all" | "commercial" | "operational" | "platform" {
+  const normalized = String(value || "all").trim().toLowerCase()
+  if (normalized === "commercial" || normalized === "operational" || normalized === "platform") return normalized
+  return "all"
+}
+
 function getDashboardWidgetStatusMeta(status: "connected" | "partial" | "roadmap") {
   if (status === "connected") {
     return { label: "Terhubung", className: "bg-emerald-50 text-emerald-600" }
@@ -698,7 +732,7 @@ export default async function AdminDashboard({
   searchParams,
   portal = "admin",
 }: {
-  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string; source?: string }>
+  searchParams?: Promise<{ success?: string; error?: string; view?: string; period?: string; workspace?: string; product?: string; source?: string; region?: string; super_workspace?: string }>
   portal?: AdminWorkspacePortal
 }) {
   const adminSupabase = createAdminClient()
@@ -753,6 +787,8 @@ export default async function AdminDashboard({
   const operationsChartDays = operationsPeriod.days || 30
   const operationsWorkspace = getOperationsWorkspace(params.workspace)
   const operationsSource = getOperationsSource(params.source)
+  const superadminRegion = getSuperadminRegion(params.region)
+  const superadminWorkspace = getSuperadminWorkspace(params.super_workspace)
   const requestedOperationsProduct = getOperationsProduct(params.product)
   const operationsProduct =
     requestedOperationsProduct === "all" || accessibleProductTypes.includes(requestedOperationsProduct)
@@ -3580,10 +3616,6 @@ export default async function AdminDashboard({
       compareRangeEnd && operationsPeriod.days
         ? new Date(compareRangeEnd.getTime() - operationsPeriod.days * 24 * 60 * 60 * 1000)
         : null
-    const periodEnd = new Date()
-    const headerRangeLabel = operationsPeriodStart
-      ? `${formatDateRangeLabel(operationsPeriodStart)} - ${formatDateRangeLabel(periodEnd)}`
-      : "Semua waktu"
     const headerCompareLabel =
       compareRangeStart && compareRangeEnd
         ? `Perbandingan: ${formatDateRangeLabel(compareRangeStart)} - ${formatDateRangeLabel(new Date(compareRangeEnd.getTime() - 24 * 60 * 60 * 1000))}`
@@ -3599,18 +3631,91 @@ export default async function AdminDashboard({
         className: isPositive ? "text-emerald-500" : "text-rose-500",
       }
     }
-
-    const superadminPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
+    const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
+    const normalizeRegionText = (value: string | null | undefined) => normalizeStatus(value ?? null)
+    const matchesProvinceGroup = (province: string, city: string, regionKey: typeof superadminRegion) => {
+      if (regionKey === "bali") {
+        return province.includes("bali") || city.includes("bali")
+      }
+      if (regionKey === "jawa") {
+        return (
+          province.includes("jakarta") ||
+          province.includes("banten") ||
+          province.includes("jawa barat") ||
+          province.includes("jawa tengah") ||
+          province.includes("yogyakarta") ||
+          province.includes("jawa timur") ||
+          city.includes("jakarta") ||
+          city.includes("bandung") ||
+          city.includes("surabaya") ||
+          city.includes("yogyakarta")
+        )
+      }
+      if (regionKey === "sumatera") {
+        return (
+          province.includes("aceh") ||
+          province.includes("sumatera") ||
+          province.includes("riau") ||
+          province.includes("jambi") ||
+          province.includes("bengkulu") ||
+          province.includes("lampung") ||
+          city.includes("medan") ||
+          city.includes("padang") ||
+          city.includes("palembang")
+        )
+      }
+      if (regionKey === "kalimantan") {
+        return province.includes("kalimantan") || city.includes("pontianak") || city.includes("balikpapan")
+      }
+      if (regionKey === "sulawesi") {
+        return province.includes("sulawesi") || city.includes("makassar") || city.includes("manado")
+      }
+      if (regionKey === "nusa_tenggara") {
+        return province.includes("nusa tenggara") || city.includes("lombok") || city.includes("labuan bajo")
+      }
+      return false
+    }
+    const isDomesticPackage = (pkg: DashboardPackageRow | null | undefined) => {
+      const country = normalizeStatus(pkg?.country ?? null)
+      const destinationCountryId = normalizeStatus(pkg?.destination_country_id ?? null)
+      return !country || country === "indonesia" || destinationCountryId === "indonesia"
+    }
+    const matchesSelectedRegion = (packageId: string | null | undefined) => {
+      if (superadminRegion === "all") return true
+      if (!packageId) return false
+      const pkg = packageMap.get(packageId)
+      if (!pkg) return false
+      const isDomestic = isDomesticPackage(pkg)
+      if (superadminRegion === "indonesia") return isDomestic
+      if (superadminRegion === "international") return !isDomestic
+      if (!isDomestic) return false
+      const province = normalizeRegionText(pkg.destination_province)
+      const city = normalizeRegionText(pkg.city)
+      return matchesProvinceGroup(province, city, superadminRegion)
+    }
+    const regionPackages = packages.filter((pkg) => matchesSelectedRegion(pkg.id))
+    const isRegionScoped = superadminRegion !== "all"
+    const regionFilterNote =
+      superadminRegion === "all"
+        ? "Semua data ikut terbaca."
+        : "Filter region hanya menghitung package dan booking yang punya mapping destination valid."
+    const regionPendingMerchants = isRegionScoped ? 0 : pendingMerchants
+    const regionMerchantOverdueCount = isRegionScoped ? 0 : merchantOverdueCount
+    const regionReviewRequests = isRegionScoped ? [] : reviewRequests
+    const regionDeletionRequests = isRegionScoped ? [] : deletionRequests
+    const superadminPeriodBookings = bookings.filter(
+      (booking) => isWithinPeriod(booking.created_at, operationsPeriodStart) && matchesSelectedRegion(booking.package_id),
+    )
     const superadminPreviousBookings =
       compareRangeStart && compareRangeEnd
-        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, compareRangeStart, compareRangeEnd))
+        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, compareRangeStart, compareRangeEnd) && matchesSelectedRegion(booking.package_id))
         : []
     const superadminPeriodTransactions = customerTransactionRows.filter((transaction) =>
-      isWithinPeriod(transaction.createdAt, operationsPeriodStart),
+      isWithinPeriod(transaction.createdAt, operationsPeriodStart) && matchesSelectedRegion(transaction.packageId),
     )
     const superadminPreviousTransactions =
       compareRangeStart && compareRangeEnd
-        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, compareRangeStart, compareRangeEnd))
+        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, compareRangeStart, compareRangeEnd) && matchesSelectedRegion(transaction.packageId))
         : []
     const superadminInternalBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
     const superadminAffiliateBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
@@ -3628,37 +3733,47 @@ export default async function AdminDashboard({
     const internalAccountValue = adminProfiles.length + financeProfiles.length + 1
     const businessMixTotal = Math.max(totalBookingValue, 1)
     const affiliateShareValue = Math.round((superadminAffiliateBookings.length / businessMixTotal) * 100)
+    const regionPendingPackages = regionPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
+    const regionPackageOverdueCount = regionPackages.filter(
+      (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
+    ).length
+    const regionFinanceReadyCount = superadminPeriodBookings.filter((booking) =>
+      ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)),
+    ).length
+    const regionBookingStalledCount = superadminPeriodBookings.filter(
+      (booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1,
+    ).length
     const healthyWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating !== "poor").length
     const poorWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating === "poor").length
     const systemHealthRate =
       recentWebVitalEvents.length > 0 ? Math.round((healthyWebVitalsCount / recentWebVitalEvents.length) * 10000) / 100 : 100
     const pendingCriticalItems = [
-      { label: "SLA Terlambat", value: merchantOverdueCount + packageOverdueCount + bookingStalledCount },
+      { label: "SLA Terlambat", value: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount },
       { label: "Booking Gagal", value: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length },
-      { label: "Review Sensitif", value: reviewRequests.length },
+      { label: "Review Sensitif", value: regionReviewRequests.length },
       { label: "Poor Vitals", value: poorWebVitalsCount },
     ].filter((item) => item.value > 0)
     const pendingCriticalValue = pendingCriticalItems.reduce((sum, item) => sum + item.value, 0)
     const alertItems = [
       {
         title: "SLA Terlambat",
-        detail: `${merchantOverdueCount + packageOverdueCount + bookingStalledCount} antrean melewati SLA aktif`,
+        detail: `${regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount} antrean melewati SLA aktif`,
         level: "High",
         levelClassName: "bg-rose-50 text-rose-600",
         toneClassName: "border-rose-100 bg-rose-50/55",
         iconClassName: "bg-rose-50 text-rose-500",
         timeLabel: formatRelativeHours(recentAuditLogs[0]?.created_at || null),
-        count: merchantOverdueCount + packageOverdueCount + bookingStalledCount,
+        count: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount,
       },
       {
         title: "Anomali Harga",
-        detail: `${reviewRequests.length} review merchant sensitif menunggu keputusan`,
+        detail: `${regionReviewRequests.length} review merchant sensitif menunggu keputusan`,
         level: "Medium",
         levelClassName: "bg-amber-50 text-amber-600",
         toneClassName: "border-amber-100 bg-amber-50/55",
         iconClassName: "bg-amber-50 text-amber-500",
-        timeLabel: formatRelativeHours(reviewRequests[0]?.requested_at || null),
-        count: reviewRequests.length,
+        timeLabel: formatRelativeHours(regionReviewRequests[0]?.requested_at || null),
+        count: regionReviewRequests.length,
       },
       {
         title: "API Error Affiliate",
@@ -3709,19 +3824,18 @@ export default async function AdminDashboard({
     const revenueSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.revenue })))
     const commissionSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.commission })))
     const accountSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.activity })))
-    const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
     const categoryRows = OPERATIONS_PRODUCT_SUMMARIES.map((product) => {
       const currentBookings = superadminPeriodBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
       const previousBookings = superadminPreviousBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
       const currentTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingProductType === product.key)
       const pendingQueueCount =
         product.key === "package_tour"
-          ? packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length +
+          ? regionPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length +
             currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status))).length
           : currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status))).length
       const breachCount =
         product.key === "package_tour"
-          ? packages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3).length +
+          ? regionPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3).length +
             currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length
           : currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length
       const slaRate = pendingQueueCount > 0 ? Math.max(0, Math.round(((pendingQueueCount - breachCount) / pendingQueueCount) * 100)) : 100
@@ -3782,7 +3896,7 @@ export default async function AdminDashboard({
       .map(([, value]) => value)
       .sort((a, b) => b.revenue - a.revenue || b.bookings - a.bookings)
       .slice(0, 5)
-    const pendingPackageRows = packages
+    const pendingPackageRows = regionPackages
       .filter((pkg) => normalizeStatus(pkg.status) === "pending")
       .slice(0, 5)
       .map((pkg) => ({
@@ -3804,13 +3918,13 @@ export default async function AdminDashboard({
       },
       {
         label: "Merchant Queue",
-        status: pendingMerchants === 0 ? "Healthy" : pendingMerchants <= 8 ? "Review" : "Busy",
-        className: pendingMerchants === 0 ? "bg-emerald-50 text-emerald-600" : pendingMerchants <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
+        status: regionPendingMerchants === 0 ? "Healthy" : regionPendingMerchants <= 8 ? "Review" : "Busy",
+        className: regionPendingMerchants === 0 ? "bg-emerald-50 text-emerald-600" : regionPendingMerchants <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
       },
       {
         label: "Booking Queue",
-        status: financeReadyCount === 0 ? "Healthy" : financeReadyCount <= 8 ? "Review" : "Busy",
-        className: financeReadyCount === 0 ? "bg-emerald-50 text-emerald-600" : financeReadyCount <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
+        status: regionFinanceReadyCount === 0 ? "Healthy" : regionFinanceReadyCount <= 8 ? "Review" : "Busy",
+        className: regionFinanceReadyCount === 0 ? "bg-emerald-50 text-emerald-600" : regionFinanceReadyCount <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
       },
       {
         label: "Affiliate Sync",
@@ -3824,7 +3938,7 @@ export default async function AdminDashboard({
       },
     ]
     const platformMetricRows = [
-      { label: "Total Merchant", value: totalMerchantCount, note: `${pendingMerchants} menunggu approval`, tone: "bg-blue-50 text-blue-600" },
+      { label: "Total Merchant", value: totalMerchantCount, note: `${regionPendingMerchants} menunggu approval`, tone: "bg-blue-50 text-blue-600" },
       { label: "Supplier Aktif", value: activeSupplierCount || suppliers.filter((supplier) => normalizeStatus(supplier.status) === "active").length, note: `${suppliers.filter((supplier) => normalizeStatus(supplier.supplier_type) === "affiliate").length} channel affiliate`, tone: "bg-orange-50 text-orange-600" },
       { label: "Internal Account", value: internalAccountValue, note: `${financeProfiles.length} finance | ${adminProfiles.length} ops`, tone: "bg-violet-50 text-violet-600" },
       { label: "Report Feed", value: managerReports.length, note: `${operationsReports.length} ops | ${financeReports.length} finance`, tone: "bg-emerald-50 text-emerald-600" },
@@ -3837,6 +3951,9 @@ export default async function AdminDashboard({
       className: "text-emerald-500",
     }
     const alertsHref = "/superadmin/dashboard#alerts"
+    const showCommercialWorkspace = superadminWorkspace === "all" || superadminWorkspace === "commercial"
+    const showOperationalWorkspace = superadminWorkspace === "all" || superadminWorkspace === "operational"
+    const showPlatformWorkspace = superadminWorkspace === "all" || superadminWorkspace === "platform"
 
     return (
       <main className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
@@ -3863,16 +3980,55 @@ export default async function AdminDashboard({
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                <p className="text-[13px] font-semibold text-slate-700">{headerRangeLabel}</p>
-                <p className="mt-1 text-[11px] text-slate-400">{headerCompareLabel}</p>
-              </div>
-              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[13px] font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                Semua Region
-              </div>
-              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[13px] font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
-                Semua Workspace
-              </div>
+              <form method="get" className="flex flex-wrap items-center gap-3">
+                <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                  <label className="block">
+                    <select name="period" defaultValue={operationsPeriod.value} className="bg-transparent text-[13px] font-semibold text-slate-700 outline-none">
+                      <option value="7d">7 hari terakhir</option>
+                      <option value="30d">30 hari terakhir</option>
+                      <option value="90d">90 hari terakhir</option>
+                      <option value="all">Semua waktu</option>
+                    </select>
+                  </label>
+                  <p className="mt-1 text-[11px] text-slate-400">{headerCompareLabel}</p>
+                </div>
+                <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                  <label className="block">
+                    <select name="region" defaultValue={superadminRegion} className="bg-transparent text-[13px] font-medium text-slate-600 outline-none">
+                      <option value="all">Semua Region</option>
+                      <option value="indonesia">Indonesia</option>
+                      <option value="international">Luar Indonesia</option>
+                      <option value="bali">Bali</option>
+                      <option value="jawa">Jawa</option>
+                      <option value="sumatera">Sumatera</option>
+                      <option value="kalimantan">Kalimantan</option>
+                      <option value="sulawesi">Sulawesi</option>
+                      <option value="nusa_tenggara">Nusa Tenggara</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                  <label className="block">
+                    <select name="super_workspace" defaultValue={superadminWorkspace} className="bg-transparent text-[13px] font-medium text-slate-600 outline-none">
+                      <option value="all">Semua Workspace</option>
+                      <option value="commercial">Commercial</option>
+                      <option value="operational">Operational</option>
+                      <option value="platform">Platform</option>
+                    </select>
+                  </label>
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-[16px] bg-[#f97316] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_12px_24px_rgba(249,115,22,0.24)] transition hover:bg-[#ea580c]"
+                >
+                  Terapkan
+                </button>
+                {superadminRegion !== "all" ? (
+                  <span className="inline-flex max-w-[360px] rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[12px] leading-5 text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                    {regionFilterNote}
+                  </span>
+                ) : null}
+              </form>
               <div className="flex items-center gap-2">
                 <AdminDashboardToolbarActions alertsCount={alertItems.length} alertsHref={alertsHref} />
                 <div className="flex items-center gap-3 rounded-[16px] border border-[#e5ebf3] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
@@ -3889,7 +4045,7 @@ export default async function AdminDashboard({
           </section>
 
           <section className="grid gap-4 xl:grid-cols-6">
-            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showCommercialWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                   <DashboardGlyph kind="booking" className="h-5 w-5" />
@@ -3910,9 +4066,9 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(superadminAffiliateBookings.length)}</p>
                 </div>
               </div>
-            </div>
+            </div> : null}
 
-            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showCommercialWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                   <DashboardGlyph kind="revenue" className="h-5 w-5" />
@@ -3933,9 +4089,9 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(superadminAffiliateTransactions.reduce((sum, item) => sum + item.receivedAmount, 0))}</p>
                 </div>
               </div>
-            </div>
+            </div> : null}
 
-            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showCommercialWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
                   <DashboardGlyph kind="issue" className="h-5 w-5" />
@@ -3956,9 +4112,9 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(affiliateCommissionValue)}</p>
                 </div>
               </div>
-            </div>
+            </div> : null}
 
-            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
                   <DashboardGlyph kind="bell" className="h-5 w-5" />
@@ -3979,9 +4135,9 @@ export default async function AdminDashboard({
                   <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(totalMerchantCount)}</p>
                 </div>
               </div>
-            </div>
+            </div> : null}
 
-            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-[13px] font-semibold text-slate-700">System Health</p>
                 <span className="text-slate-300">^</span>
@@ -4013,9 +4169,9 @@ export default async function AdminDashboard({
                   </div>
                 </div>
               </div>
-            </div>
+            </div> : null}
 
-            <div className="rounded-[26px] border border-[#f3d6d6] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+            {showOperationalWorkspace ? <div className="rounded-[26px] border border-[#f3d6d6] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
@@ -4037,12 +4193,12 @@ export default async function AdminDashboard({
                   ))
                 )}
               </div>
-            </div>
+            </div> : null}
           </section>
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_320px]">
             <div className="space-y-6">
-              <div className="grid gap-6 xl:grid-cols-[0.95fr_1.2fr_1.25fr]">
+              {showCommercialWorkspace ? <div className="grid gap-6 xl:grid-cols-[0.95fr_1.2fr_1.25fr]">
                 <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Business Mix</h2>
@@ -4130,20 +4286,20 @@ export default async function AdminDashboard({
                   </div>
                   <DashboardLineChart labels={trendRows.map((row) => row.label)} series={trendSeries} />
                 </div>
-              </div>
+              </div> : null}
 
               <div className="grid gap-6 xl:grid-cols-[1.65fr_0.8fr_0.85fr]">
-                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                {showOperationalWorkspace ? <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Operasional Real-Time</h2>
                     <Link href="/superadmin/bookings" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
                   </div>
                   <div className="mt-5 flex flex-wrap gap-2">
                     {[
-                      { label: "Paket Menunggu Review", value: pendingPackages, active: true },
-                      { label: "Booking Bermasalah", value: financeReadyCount, active: false },
-                      { label: "Anomali Aktif", value: reviewRequests.length + deletionRequests.length, active: false },
-                      { label: "Merchant Pending", value: pendingMerchants, active: false },
+                      { label: "Paket Menunggu Review", value: regionPendingPackages, active: true },
+                      { label: "Booking Bermasalah", value: regionFinanceReadyCount, active: false },
+                      { label: "Anomali Aktif", value: regionReviewRequests.length + regionDeletionRequests.length, active: false },
+                      { label: "Merchant Pending", value: regionPendingMerchants, active: false },
                     ].map((tab) => (
                       <span
                         key={tab.label}
@@ -4189,9 +4345,9 @@ export default async function AdminDashboard({
                       )}
                     </div>
                   </div>
-                </div>
+                </div> : null}
 
-                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                {showCommercialWorkspace ? <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Top Merchant & Partner</h2>
                     <Link href="/superadmin/bookings" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
@@ -4211,9 +4367,9 @@ export default async function AdminDashboard({
                       ))
                     )}
                   </div>
-                </div>
+                </div> : null}
 
-                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                {showPlatformWorkspace ? <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Platform Metrics</h2>
                     <span className="text-slate-300">^</span>
@@ -4234,12 +4390,12 @@ export default async function AdminDashboard({
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> : null}
               </div>
             </div>
 
             <div className="space-y-6">
-              <div id="alerts" className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              {showOperationalWorkspace ? <div id="alerts" className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Alert & Notifikasi</h2>
                   <Link href="/superadmin/audit-log" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
@@ -4271,9 +4427,9 @@ export default async function AdminDashboard({
                     ))
                   )}
                 </div>
-              </div>
+              </div> : null}
 
-              <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              {showPlatformWorkspace ? <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">System Status</h2>
                   <span className="text-slate-300">^</span>
@@ -4291,7 +4447,7 @@ export default async function AdminDashboard({
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> : null}
             </div>
           </section>
         </div>
