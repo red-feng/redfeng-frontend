@@ -105,12 +105,12 @@ export default async function SuperadminProtectedLayout({
   const navItems = [
     { label: "Overview" },
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
-    { href: "/superadmin/operations-manager", label: "Business Overview", badgeCount: 0 },
-    { href: "/superadmin/finance-manager", label: "Platform Health", badgeCount: 0 },
+    { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
+    { href: "/superadmin/finance-manager", label: "Preview Finance Manager", badgeCount: 0 },
     { label: "Operational" },
     { href: "/superadmin/bookings", label: "Booking & Transaksi", badgeCount: bookingsBadgeCount },
-    { href: "/superadmin/merchant-support", label: "Merchant Management", badgeCount: merchantSupportBadgeCount },
-    { href: "/superadmin/internal-chat", label: "User & Access", badgeCount: internalChatUnreadBadgeCount },
+    { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
+    { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
     { label: "System" },
     {
       label: "Internal Control",
