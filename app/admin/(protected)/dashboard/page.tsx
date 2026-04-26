@@ -804,6 +804,7 @@ export default async function AdminDashboard({
     deletionRequestResult,
     reviewRequestResult,
     auditLogResult,
+    payoutRequestResult,
   ] = await Promise.all([
     adminSupabase
       .from("merchants")
@@ -840,6 +841,13 @@ export default async function AdminDashboard({
       .select("id, actor_role, target_type, action, summary, created_at")
       .order("created_at", { ascending: false })
       .limit(12),
+    isSuperadmin
+      ? adminSupabase
+          .from("payout_requests")
+          .select("booking_id, redfeng_commission_amount, requested_at")
+          .not("booking_id", "is", null)
+          .order("requested_at", { ascending: false })
+      : { data: null, error: null },
   ])
 
   const pendingMerchantsData = canAccessPackageTour ? ((merchantResult.data as Array<{ id: string; created_at: string | null }> | null) || []) : []
@@ -859,6 +867,20 @@ export default async function AdminDashboard({
   const recentAuditLogs = auditLogResult.error
     ? []
     : ((auditLogResult.data as DashboardAuditLogRow[] | null) || [])
+  const payoutRequests =
+    payoutRequestResult && "error" in payoutRequestResult && payoutRequestResult.error
+      ? []
+      : ((((payoutRequestResult as {
+          data?: Array<{
+            booking_id: string | null
+            redfeng_commission_amount: number | null
+            requested_at: string | null
+          }> | null
+        } | null)?.data) || []) as Array<{
+          booking_id: string | null
+          redfeng_commission_amount: number | null
+          requested_at: string | null
+        }>)
   const pendingMerchants = pendingMerchantsData.length
 
   const supplierMap = new Map(suppliers.map((supplier) => [supplier.id, supplier]))
@@ -1075,6 +1097,15 @@ export default async function AdminDashboard({
           .from("profiles")
           .select("id, role")
           .in("role", ["finance", "finance_manager"])).data as Array<{ id: string; role: string | null }> | null
+      ) || []
+    : []
+
+  const superadminRoleProfiles = isSuperadmin
+    ? (
+        (await adminSupabase
+          .from("profiles")
+          .select("id")
+          .eq("role", "superadmin")).data as Array<{ id: string }> | null
       ) || []
     : []
 
@@ -3640,18 +3671,50 @@ export default async function AdminDashboard({
     const superadminAffiliateBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
     const superadminInternalTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingSource === "internal")
     const superadminAffiliateTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingSource === "affiliate")
+    const latestPayoutByBookingId = payoutRequests.reduce(
+      (map, payout) => {
+        if (!payout.booking_id) return map
+        if (!map.has(payout.booking_id)) {
+          map.set(payout.booking_id, payout)
+        }
+        return map
+      },
+      new Map<string, { booking_id: string | null; redfeng_commission_amount: number | null; requested_at: string | null }>(),
+    )
+    const currentPackageBookingIds = new Set(
+      superadminPeriodBookings
+        .filter((booking) => classifyBookingProduct(booking) === "package_tour")
+        .map((booking) => booking.id),
+    )
+    const previousPackageBookingIds = new Set(
+      superadminPreviousBookings
+        .filter((booking) => classifyBookingProduct(booking) === "package_tour")
+        .map((booking) => booking.id),
+    )
+    const currentPackageAdminFeeValue = superadminPeriodTransactions
+      .filter((transaction) => transaction.bookingProductType === "package_tour")
+      .reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const previousPackageAdminFeeValue = superadminPreviousTransactions
+      .filter((transaction) => transaction.bookingProductType === "package_tour")
+      .reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const currentPackageMerchantCutValue = Array.from(currentPackageBookingIds).reduce(
+      (sum, bookingId) => sum + Number(latestPayoutByBookingId.get(bookingId)?.redfeng_commission_amount || 0),
+      0,
+    )
+    const previousPackageMerchantCutValue = Array.from(previousPackageBookingIds).reduce(
+      (sum, bookingId) => sum + Number(latestPayoutByBookingId.get(bookingId)?.redfeng_commission_amount || 0),
+      0,
+    )
+    const currentPackageProfitValue = currentPackageAdminFeeValue + currentPackageMerchantCutValue
+    const previousPackageProfitValue = previousPackageAdminFeeValue + previousPackageMerchantCutValue
     const totalBookingValue = superadminPeriodBookings.length
     const previousBookingValue = superadminPreviousBookings.length
     const totalRevenueValue = superadminPeriodTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0)
     const previousRevenueValue = superadminPreviousTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0)
-    const totalCommissionValue = superadminPeriodTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
-    const previousCommissionValue = superadminPreviousTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
-    const internalCommissionValue = superadminInternalTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
-    const affiliateCommissionValue = superadminAffiliateTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
     const totalAccountsValue = totalPlatformProfiles
-    const internalAccountValue = adminProfiles.length + financeProfiles.length + 1
-    const businessMixTotal = Math.max(totalBookingValue, 1)
-    const affiliateShareValue = Math.round((superadminAffiliateBookings.length / businessMixTotal) * 100)
+    const internalAccountValue = adminProfiles.length + financeProfiles.length + superadminRoleProfiles.length
+    const hasBusinessMixData = totalBookingValue > 0
+    const affiliateShareValue = hasBusinessMixData ? Math.round((superadminAffiliateBookings.length / totalBookingValue) * 100) : null
     const regionPendingPackages = regionPackages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length
     const regionPackageOverdueCount = regionPackages.filter(
       (pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3,
@@ -3680,12 +3743,12 @@ export default async function AdminDashboard({
     const appPerformanceHealthRate =
       Math.round(((webVitalsHealthRate + affiliateSyncHealthRate + handoffFlowHealthRate) / 3) * 100) / 100
     const pendingCriticalItems = [
-      { label: "SLA Terlambat", value: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount },
-      { label: "Booking Gagal", value: affiliateSyncFailureCount },
-      { label: "Review Sensitif", value: regionReviewRequests.length },
-      { label: "Poor Vitals", value: poorWebVitalsCount },
+      { label: "SLA Critical", value: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount },
+      { label: "Booking Failed", value: affiliateSyncFailureCount },
+      { label: "Review Sensitive", value: regionReviewRequests.length },
+      { label: "Poor Web Vitals", value: poorWebVitalsCount },
     ].filter((item) => item.value > 0)
-    const pendingCriticalValue = pendingCriticalItems.reduce((sum, item) => sum + item.value, 0)
+    const pendingCriticalLead = pendingCriticalItems[0] || null
     const alertItems = [
       {
         title: "SLA Terlambat",
@@ -3698,7 +3761,7 @@ export default async function AdminDashboard({
         count: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount,
       },
       {
-        title: "Anomali Harga",
+        title: "Review Sensitif Merchant",
         detail: `${regionReviewRequests.length} review merchant sensitif menunggu keputusan`,
         level: "Medium",
         levelClassName: "bg-amber-50 text-amber-600",
@@ -3718,7 +3781,7 @@ export default async function AdminDashboard({
         count: affiliateSyncFailureCount,
       },
       {
-        title: "Data Tidak Valid",
+        title: "Poor Web Vitals",
         detail: `${poorWebVitalsCount} sampel web vitals masuk kategori poor`,
         level: poorWebVitalsCount > 0 ? "Medium" : "Low",
         levelClassName: poorWebVitalsCount > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600",
@@ -3728,8 +3791,9 @@ export default async function AdminDashboard({
         count: poorWebVitalsCount,
       },
     ].filter((item) => item.count > 0)
-    const recentActivityBuckets = buildRecentDayBuckets(7).map((bucket) => ({ ...bucket, booking: 0, revenue: 0, commission: 0, activity: 0 }))
+    const recentActivityBuckets = buildRecentDayBuckets(7).map((bucket) => ({ ...bucket, booking: 0, revenue: 0, packageProfit: 0, activity: 0 }))
     const bucketMap = new Map(recentActivityBuckets.map((bucket) => [bucket.key, bucket]))
+    const bookingLookupMap = new Map(bookings.map((booking) => [booking.id, booking]))
     for (const booking of bookings) {
       const key = getDayKey(booking.created_at)
       if (!key) continue
@@ -3743,7 +3807,19 @@ export default async function AdminDashboard({
       const bucket = bucketMap.get(key)
       if (!bucket) continue
       bucket.revenue += transaction.receivedAmount
-      bucket.commission += transaction.customerAdminFeeCollected
+      if (transaction.bookingProductType === "package_tour") {
+        bucket.packageProfit += transaction.customerAdminFeeCollected
+      }
+    }
+    for (const payout of payoutRequests) {
+      if (!payout.booking_id) continue
+      const booking = bookingLookupMap.get(payout.booking_id)
+      if (!booking || classifyBookingProduct(booking) !== "package_tour") continue
+      const key = getDayKey(booking.created_at)
+      if (!key) continue
+      const bucket = bucketMap.get(key)
+      if (!bucket) continue
+      bucket.packageProfit += Number(payout.redfeng_commission_amount || 0)
     }
     for (const log of teamActionLogs) {
       const key = getDayKey(log.created_at)
@@ -3754,7 +3830,7 @@ export default async function AdminDashboard({
     }
     const bookingSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.booking })))
     const revenueSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.revenue })))
-    const commissionSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.commission })))
+    const packageProfitSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.packageProfit })))
     const accountSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.activity })))
     const categoryRows = OPERATIONS_PRODUCT_SUMMARIES.map((product) => {
       const currentBookings = superadminPeriodBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
@@ -3877,9 +3953,9 @@ export default async function AdminDashboard({
     ]
     const bookingGrowthMeta = describeGrowth(totalBookingValue, previousBookingValue)
     const revenueGrowthMeta = describeGrowth(totalRevenueValue, previousRevenueValue)
-    const commissionGrowthMeta = describeGrowth(totalCommissionValue, previousCommissionValue)
+    const packageProfitGrowthMeta = describeGrowth(currentPackageProfitValue, previousPackageProfitValue)
     const accountGrowthMeta = {
-      label: `${internalAccountValue} internal account aktif`,
+      label: `${internalAccountValue} internal account aktif terdata`,
       className: "text-emerald-500",
     }
     const alertsHref = "/superadmin/dashboard#alerts"
@@ -4017,22 +4093,23 @@ export default async function AdminDashboard({
                 <span className="text-slate-300">^</span>
               </div>
               <div className="mt-4 flex items-center justify-between gap-3">
-                <p className="text-[13px] font-semibold text-slate-700">Net Commission</p>
+                <p className="text-[13px] font-semibold text-slate-700">Package Tour Profit</p>
                 <DataSourceBadge kind="raw" />
               </div>
-              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(totalCommissionValue)}</p>
-              <p className={`mt-1 text-[12px] font-semibold ${commissionGrowthMeta.className}`}>{commissionGrowthMeta.label}</p>
-              <TinySparkline points={commissionSparkPoints} stroke="#f97316" />
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(currentPackageProfitValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${packageProfitGrowthMeta.className}`}>{packageProfitGrowthMeta.label}</p>
+              <TinySparkline points={packageProfitSparkPoints} stroke="#f97316" />
               <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fffaf5] p-3">
                 <div>
-                  <p className="text-[11px] text-slate-500">Internal Margin</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(internalCommissionValue)}</p>
+                  <p className="text-[11px] text-slate-500">Admin Fee</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentPackageAdminFeeValue)}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500">Affiliate Komisi</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(affiliateCommissionValue)}</p>
+                  <p className="text-[11px] text-slate-500">Potongan Merchant</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(currentPackageMerchantCutValue)}</p>
                 </div>
               </div>
+              <p className="mt-3 text-[11px] leading-5 text-slate-400">Spread non-paket belum tercatat resmi di database, jadi card ini hanya menghitung profit paket tour.</p>
             </div> : null}
 
             {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
@@ -4104,13 +4181,16 @@ export default async function AdminDashboard({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
+                  <p className="text-[13px] font-semibold text-slate-700">Critical Signals</p>
                     <DataSourceBadge kind="composite" />
                   </div>
-                  <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-rose-600">{pendingCriticalValue}</p>
+                  <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-rose-600">{pendingCriticalItems.length}</p>
+                  <p className="mt-1 text-[12px] text-slate-500">
+                    {pendingCriticalLead ? `${pendingCriticalLead.label}: ${pendingCriticalLead.value}` : "Tidak ada sinyal kritikal aktif"}
+                  </p>
                 </div>
                 <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-rose-50 px-2 py-1 text-sm font-semibold text-rose-600">
-                  {pendingCriticalValue}
+                  {pendingCriticalItems.length}
                 </span>
               </div>
               <div className="mt-5 space-y-3">
@@ -4134,16 +4214,20 @@ export default async function AdminDashboard({
                 <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Business Mix</h2>
-                    <span className="text-[12px] text-slate-400">Hari ini</span>
+                    <span className="text-[12px] text-slate-400">{hasBusinessMixData ? "Hari ini" : "Belum ada data"}</span>
                   </div>
                   <div className="mt-6 flex flex-col items-center">
                     <div
                       className="relative flex h-56 w-56 items-center justify-center rounded-full"
-                      style={{ background: `conic-gradient(#2f6bff 0 ${affiliateShareValue}%, #33c684 ${affiliateShareValue}% 100%)` }}
+                      style={{
+                        background: hasBusinessMixData
+                          ? `conic-gradient(#2f6bff 0 ${affiliateShareValue}%, #33c684 ${affiliateShareValue}% 100%)`
+                          : "conic-gradient(#cbd5e1 0 100%, #cbd5e1 100% 100%)",
+                      }}
                     >
                       <div className="flex h-[164px] w-[164px] flex-col items-center justify-center rounded-full bg-white text-center">
-                        <p className="text-[2.3rem] font-semibold tracking-[-0.04em] text-slate-950">{affiliateShareValue}%</p>
-                        <p className="text-base text-slate-500">Affiliate</p>
+                        <p className="text-[2.3rem] font-semibold tracking-[-0.04em] text-slate-950">{hasBusinessMixData ? `${affiliateShareValue}%` : "N/A"}</p>
+                        <p className="text-base text-slate-500">{hasBusinessMixData ? "Affiliate" : "Belum ada booking"}</p>
                       </div>
                     </div>
                     <div className="mt-6 grid w-full gap-3">
