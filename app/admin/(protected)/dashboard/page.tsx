@@ -64,6 +64,19 @@ function formatCompactMoney(value: number | null | undefined) {
   return `Rp ${amount.toLocaleString("id-ID")}`
 }
 
+function formatCompactCount(value: number | null | undefined) {
+  const amount = Number(value || 0)
+  if (amount >= 1000000) return `${(amount / 1000000).toFixed(2)} M`
+  if (amount >= 1000) return `${(amount / 1000).toFixed(1)} K`
+  return amount.toLocaleString("id-ID")
+}
+
+function calculateGrowthRate(current: number, previous: number) {
+  if (previous > 0) return Math.round(((current - previous) / previous) * 1000) / 10
+  if (current > 0) return 100
+  return 0
+}
+
 function getGreetingByJakartaTime() {
   const hourLabel = new Intl.DateTimeFormat("en-GB", {
     hour: "2-digit",
@@ -1155,6 +1168,20 @@ export default async function AdminDashboard({
     ...financeProfiles.map((profile): [string, string] => [profile.id, profile.email || formatFinanceCode(profile.id)]),
   ]
   const reportActorMap = new Map<string, string>(reportActorEntries)
+  const [platformProfileCountResult, totalMerchantCountResult, activeSupplierCountResult] = isSuperadmin
+    ? await Promise.all([
+        adminSupabase.from("profiles").select("id", { head: true, count: "exact" }),
+        adminSupabase.from("merchants").select("id", { head: true, count: "exact" }),
+        adminSupabase.from("suppliers").select("id", { head: true, count: "exact" }).eq("status", "active"),
+      ])
+    : [
+        { count: 0, error: null, data: null },
+        { count: 0, error: null, data: null },
+        { count: 0, error: null, data: null },
+      ]
+  const totalPlatformProfiles = Number(platformProfileCountResult.count || 0)
+  const totalMerchantCount = Number(totalMerchantCountResult.count || 0)
+  const activeSupplierCount = Number(activeSupplierCountResult.count || 0)
 
   const totalOperationalWarnings = merchantOverdueCount + packageOverdueCount + bookingStalledCount + deletionRequests.length + reviewRequests.length
   const adminWorkCards = [
@@ -3541,6 +3568,738 @@ export default async function AdminDashboard({
   }
 
   if (isSuperadmin) {
+    const formatDateRangeLabel = (date: Date) =>
+      date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: JAKARTA_TIMEZONE,
+      })
+    const compareRangeEnd = operationsPeriodStart ? new Date(operationsPeriodStart) : null
+    const compareRangeStart =
+      compareRangeEnd && operationsPeriod.days
+        ? new Date(compareRangeEnd.getTime() - operationsPeriod.days * 24 * 60 * 60 * 1000)
+        : null
+    const periodEnd = new Date()
+    const headerRangeLabel = operationsPeriodStart
+      ? `${formatDateRangeLabel(operationsPeriodStart)} - ${formatDateRangeLabel(periodEnd)}`
+      : "Semua waktu"
+    const headerCompareLabel =
+      compareRangeStart && compareRangeEnd
+        ? `Perbandingan: ${formatDateRangeLabel(compareRangeStart)} - ${formatDateRangeLabel(new Date(compareRangeEnd.getTime() - 24 * 60 * 60 * 1000))}`
+        : "Perbandingan: semua data historis"
+    const describeGrowth = (current: number, previous: number) => {
+      if (!operationsPeriod.days) {
+        return { label: "Semua waktu", className: "text-slate-400" }
+      }
+      const rate = calculateGrowthRate(current, previous)
+      const isPositive = rate >= 0
+      return {
+        label: `${isPositive ? "↑" : "↓"} ${Math.abs(rate).toFixed(1)}% vs kemarin`,
+        className: isPositive ? "text-emerald-500" : "text-rose-500",
+      }
+    }
+
+    const superadminPeriodBookings = bookings.filter((booking) => isWithinPeriod(booking.created_at, operationsPeriodStart))
+    const superadminPreviousBookings =
+      compareRangeStart && compareRangeEnd
+        ? bookings.filter((booking) => isWithinDateRange(booking.created_at, compareRangeStart, compareRangeEnd))
+        : []
+    const superadminPeriodTransactions = customerTransactionRows.filter((transaction) =>
+      isWithinPeriod(transaction.createdAt, operationsPeriodStart),
+    )
+    const superadminPreviousTransactions =
+      compareRangeStart && compareRangeEnd
+        ? customerTransactionRows.filter((transaction) => isWithinDateRange(transaction.createdAt, compareRangeStart, compareRangeEnd))
+        : []
+    const superadminInternalBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "internal")
+    const superadminAffiliateBookings = superadminPeriodBookings.filter((booking) => classifyBookingSource(booking) === "affiliate")
+    const superadminInternalTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingSource === "internal")
+    const superadminAffiliateTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingSource === "affiliate")
+    const totalBookingValue = superadminPeriodBookings.length
+    const previousBookingValue = superadminPreviousBookings.length
+    const totalRevenueValue = superadminPeriodTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0)
+    const previousRevenueValue = superadminPreviousTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0)
+    const totalCommissionValue = superadminPeriodTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const previousCommissionValue = superadminPreviousTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const internalCommissionValue = superadminInternalTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const affiliateCommissionValue = superadminAffiliateTransactions.reduce((sum, transaction) => sum + transaction.customerAdminFeeCollected, 0)
+    const totalAccountsValue = totalPlatformProfiles
+    const internalAccountValue = adminProfiles.length + financeProfiles.length + 1
+    const businessMixTotal = Math.max(totalBookingValue, 1)
+    const affiliateShareValue = Math.round((superadminAffiliateBookings.length / businessMixTotal) * 100)
+    const healthyWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating !== "poor").length
+    const poorWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating === "poor").length
+    const systemHealthRate =
+      recentWebVitalEvents.length > 0 ? Math.round((healthyWebVitalsCount / recentWebVitalEvents.length) * 10000) / 100 : 100
+    const pendingCriticalItems = [
+      { label: "SLA Terlambat", value: merchantOverdueCount + packageOverdueCount + bookingStalledCount },
+      { label: "Booking Gagal", value: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length },
+      { label: "Review Sensitif", value: reviewRequests.length },
+      { label: "Poor Vitals", value: poorWebVitalsCount },
+    ].filter((item) => item.value > 0)
+    const pendingCriticalValue = pendingCriticalItems.reduce((sum, item) => sum + item.value, 0)
+    const alertItems = [
+      {
+        title: "SLA Terlambat",
+        detail: `${merchantOverdueCount + packageOverdueCount + bookingStalledCount} antrean melewati SLA aktif`,
+        level: "High",
+        levelClassName: "bg-rose-50 text-rose-600",
+        toneClassName: "border-rose-100 bg-rose-50/55",
+        iconClassName: "bg-rose-50 text-rose-500",
+        timeLabel: formatRelativeHours(recentAuditLogs[0]?.created_at || null),
+        count: merchantOverdueCount + packageOverdueCount + bookingStalledCount,
+      },
+      {
+        title: "Anomali Harga",
+        detail: `${reviewRequests.length} review merchant sensitif menunggu keputusan`,
+        level: "Medium",
+        levelClassName: "bg-amber-50 text-amber-600",
+        toneClassName: "border-amber-100 bg-amber-50/55",
+        iconClassName: "bg-amber-50 text-amber-500",
+        timeLabel: formatRelativeHours(reviewRequests[0]?.requested_at || null),
+        count: reviewRequests.length,
+      },
+      {
+        title: "API Error Affiliate",
+        detail: `${superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length} booking affiliate gagal sinkron`,
+        level: "High",
+        levelClassName: "bg-orange-50 text-orange-600",
+        toneClassName: "border-orange-100 bg-orange-50/55",
+        iconClassName: "bg-orange-50 text-orange-500",
+        timeLabel: formatRelativeHours(superadminAffiliateBookings[0]?.created_at || null),
+        count: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length,
+      },
+      {
+        title: "Data Tidak Valid",
+        detail: `${poorWebVitalsCount} sampel web vitals masuk kategori poor`,
+        level: poorWebVitalsCount > 0 ? "Medium" : "Low",
+        levelClassName: poorWebVitalsCount > 0 ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600",
+        toneClassName: poorWebVitalsCount > 0 ? "border-amber-100 bg-amber-50/55" : "border-emerald-100 bg-emerald-50/55",
+        iconClassName: poorWebVitalsCount > 0 ? "bg-amber-50 text-amber-500" : "bg-emerald-50 text-emerald-500",
+        timeLabel: formatRelativeHours(latestPerformanceSampleAt),
+        count: poorWebVitalsCount,
+      },
+    ].filter((item) => item.count > 0)
+    const recentActivityBuckets = buildRecentDayBuckets(7).map((bucket) => ({ ...bucket, booking: 0, revenue: 0, commission: 0, activity: 0 }))
+    const bucketMap = new Map(recentActivityBuckets.map((bucket) => [bucket.key, bucket]))
+    for (const booking of bookings) {
+      const key = getDayKey(booking.created_at)
+      if (!key) continue
+      const bucket = bucketMap.get(key)
+      if (!bucket) continue
+      bucket.booking += 1
+    }
+    for (const transaction of customerTransactionRows) {
+      const key = getDayKey(transaction.createdAt)
+      if (!key) continue
+      const bucket = bucketMap.get(key)
+      if (!bucket) continue
+      bucket.revenue += transaction.receivedAmount
+      bucket.commission += transaction.customerAdminFeeCollected
+    }
+    for (const log of teamActionLogs) {
+      const key = getDayKey(log.created_at)
+      if (!key) continue
+      const bucket = bucketMap.get(key)
+      if (!bucket) continue
+      bucket.activity += 1
+    }
+    const bookingSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.booking })))
+    const revenueSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.revenue })))
+    const commissionSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.commission })))
+    const accountSparkPoints = buildSparklinePoints(recentActivityBuckets.map((bucket) => ({ value: bucket.activity })))
+    const packageMap = new Map(packages.map((pkg) => [pkg.id, pkg]))
+    const categoryRows = OPERATIONS_PRODUCT_SUMMARIES.map((product) => {
+      const currentBookings = superadminPeriodBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
+      const previousBookings = superadminPreviousBookings.filter((booking) => classifyBookingProduct(booking) === product.key)
+      const currentTransactions = superadminPeriodTransactions.filter((transaction) => transaction.bookingProductType === product.key)
+      const pendingQueueCount =
+        product.key === "package_tour"
+          ? packages.filter((pkg) => normalizeStatus(pkg.status) === "pending").length +
+            currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status))).length
+          : currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status))).length
+      const breachCount =
+        product.key === "package_tour"
+          ? packages.filter((pkg) => normalizeStatus(pkg.status) === "pending" && daysSince(pkg.created_at) >= 3).length +
+            currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length
+          : currentBookings.filter((booking) => ["awaiting_admin_handoff", "finance_review"].includes(normalizeStatus(booking.booking_status)) && daysSince(booking.created_at) >= 1).length
+      const slaRate = pendingQueueCount > 0 ? Math.max(0, Math.round(((pendingQueueCount - breachCount) / pendingQueueCount) * 100)) : 100
+      return {
+        product,
+        bookings: currentBookings.length,
+        revenue: currentTransactions.reduce((sum, transaction) => sum + transaction.receivedAmount, 0),
+        growth: calculateGrowthRate(currentBookings.length, previousBookings.length),
+        slaRate,
+      }
+    })
+      .filter((row) => row.bookings > 0 || row.revenue > 0 || row.product.key === "package_tour")
+      .sort((a, b) => b.bookings - a.bookings || b.revenue - a.revenue)
+    const topCategoryRows = categoryRows.slice(0, 7)
+    const trendRows = buildRecentDayBuckets(7).map((row) => ({
+      ...row,
+      package_tour: 0,
+      flight: 0,
+      hotel: 0,
+      train: 0,
+      bus: 0,
+      sea: 0,
+      cruise: 0,
+    }))
+    const trendRowMap = new Map(trendRows.map((row) => [row.key, row]))
+    for (const booking of bookings.filter((item) => isWithinPeriod(item.created_at, getPeriodStart(7)))) {
+      const key = getDayKey(booking.created_at)
+      if (!key) continue
+      const row = trendRowMap.get(key)
+      if (!row) continue
+      row[classifyBookingProduct(booking)] += 1
+    }
+    const topTrendProducts = categoryRows.slice(0, 6).map((row) => row.product)
+    const trendSeries = topTrendProducts.map((product) => ({
+      label: product.label,
+      values: trendRows.map((row) => row[product.key]),
+      color: product.sparkColor,
+    }))
+    const bookingByIdMap = new Map(superadminPeriodBookings.map((booking) => [booking.id, booking]))
+    const merchantRevenueRows = Array.from(
+      superadminPeriodTransactions.reduce((map, transaction) => {
+        const packageRow = transaction.packageId ? packageMap.get(transaction.packageId) : null
+        const merchantId = packageRow?.merchant_id || null
+        const booking = bookingByIdMap.get(transaction.id)
+        const supplier = booking?.supplier_id ? supplierMap.get(booking.supplier_id) : null
+        const merchantLabel =
+          merchantId && merchantNameMap.get(merchantId)
+            ? merchantNameMap.get(merchantId)!
+            : getMaskedSupplierLabel(supplier)
+        const sourceLabel = merchantId ? "Merchant" : "Partner"
+        const current = map.get(merchantLabel) || { label: merchantLabel, sourceLabel, revenue: 0, bookings: 0 }
+        current.revenue += transaction.receivedAmount
+        current.bookings += 1
+        map.set(merchantLabel, current)
+        return map
+      }, new Map<string, { label: string; sourceLabel: string; revenue: number; bookings: number }>()),
+    )
+      .map(([, value]) => value)
+      .sort((a, b) => b.revenue - a.revenue || b.bookings - a.bookings)
+      .slice(0, 5)
+    const pendingPackageRows = packages
+      .filter((pkg) => normalizeStatus(pkg.status) === "pending")
+      .slice(0, 5)
+      .map((pkg) => ({
+        id: pkg.id,
+        merchant: merchantNameMap.get(pkg.merchant_id || "") || "Merchant tanpa nama",
+        product: pkg.title || "Paket tanpa judul",
+        category: "Paket Wisata",
+        submittedAt: formatDateTime(pkg.created_at),
+        submittedLabel: formatRelativeHours(pkg.created_at),
+        slaLabel: daysSince(pkg.created_at) >= 3 ? "Melewati SLA" : `${Math.max(1, 3 - daysSince(pkg.created_at))} hari lagi`,
+        slaClassName: daysSince(pkg.created_at) >= 3 ? "bg-rose-50 text-rose-600" : "bg-amber-50 text-amber-600",
+        href: `/superadmin/packages/${pkg.id}`,
+      }))
+    const systemStatusItems = [
+      {
+        label: "Website & App",
+        status: poorWebVitalsCount === 0 ? "Healthy" : poorWebVitalsCount <= 4 ? "Review" : "Degraded",
+        className: poorWebVitalsCount === 0 ? "bg-emerald-50 text-emerald-600" : poorWebVitalsCount <= 4 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
+      },
+      {
+        label: "Merchant Queue",
+        status: pendingMerchants === 0 ? "Healthy" : pendingMerchants <= 8 ? "Review" : "Busy",
+        className: pendingMerchants === 0 ? "bg-emerald-50 text-emerald-600" : pendingMerchants <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
+      },
+      {
+        label: "Booking Queue",
+        status: financeReadyCount === 0 ? "Healthy" : financeReadyCount <= 8 ? "Review" : "Busy",
+        className: financeReadyCount === 0 ? "bg-emerald-50 text-emerald-600" : financeReadyCount <= 8 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600",
+      },
+      {
+        label: "Affiliate Sync",
+        status: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length === 0 ? "Healthy" : "Syncing",
+        className: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length === 0 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600",
+      },
+      {
+        label: "Audit Trail",
+        status: recentAuditLogs.length > 0 ? formatRelativeHours(recentAuditLogs[0]?.created_at) : "Belum ada data",
+        className: "bg-slate-100 text-slate-600",
+      },
+    ]
+    const platformMetricRows = [
+      { label: "Total Merchant", value: totalMerchantCount, note: `${pendingMerchants} menunggu approval`, tone: "bg-blue-50 text-blue-600" },
+      { label: "Supplier Aktif", value: activeSupplierCount || suppliers.filter((supplier) => normalizeStatus(supplier.status) === "active").length, note: `${suppliers.filter((supplier) => normalizeStatus(supplier.supplier_type) === "affiliate").length} channel affiliate`, tone: "bg-orange-50 text-orange-600" },
+      { label: "Internal Account", value: internalAccountValue, note: `${financeProfiles.length} finance | ${adminProfiles.length} ops`, tone: "bg-violet-50 text-violet-600" },
+      { label: "Report Feed", value: managerReports.length, note: `${operationsReports.length} ops | ${financeReports.length} finance`, tone: "bg-emerald-50 text-emerald-600" },
+    ]
+    const bookingGrowthMeta = describeGrowth(totalBookingValue, previousBookingValue)
+    const revenueGrowthMeta = describeGrowth(totalRevenueValue, previousRevenueValue)
+    const commissionGrowthMeta = describeGrowth(totalCommissionValue, previousCommissionValue)
+    const accountGrowthMeta = {
+      label: `${internalAccountValue} internal account aktif`,
+      className: "text-emerald-500",
+    }
+    const alertsHref = "/superadmin/dashboard#alerts"
+
+    return (
+      <main className="min-h-screen bg-[#f4f7fb] px-4 py-5 sm:px-6 lg:px-8 xl:px-10">
+        <div className="mx-auto max-w-[1680px] space-y-6">
+          {params.success ? (
+            <div className="rounded-[22px] border border-emerald-200 bg-emerald-50 px-5 py-3.5 text-sm text-emerald-700">
+              {params.success}
+            </div>
+          ) : null}
+          {params.error ? (
+            <div className="rounded-[22px] border border-rose-200 bg-rose-50 px-5 py-3.5 text-sm text-rose-700">
+              {params.error}
+            </div>
+          ) : null}
+
+          <section className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-950">Dashboard Super Admin</h1>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-600">✓</span>
+              </div>
+              <p className="mt-2 text-sm text-slate-500">
+                Kontrol penuh ekosistem RedFeng untuk channel, integrasi, antrean operasional, dan kualitas sistem.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                <p className="text-[13px] font-semibold text-slate-700">{headerRangeLabel}</p>
+                <p className="mt-1 text-[11px] text-slate-400">{headerCompareLabel}</p>
+              </div>
+              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[13px] font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                Semua Region
+              </div>
+              <div className="rounded-[16px] border border-[#e5ebf3] bg-white px-4 py-3 text-[13px] font-medium text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                Semua Workspace
+              </div>
+              <div className="flex items-center gap-2">
+                <AdminDashboardToolbarActions alertsCount={alertItems.length} alertsHref={alertsHref} />
+                <div className="flex items-center gap-3 rounded-[16px] border border-[#e5ebf3] bg-white px-3 py-2.5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]">
+                  <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#f97316,#fb7185)] text-sm font-semibold text-white">
+                    SA
+                  </span>
+                  <div className="hidden min-w-0 sm:block">
+                    <p className="truncate text-sm font-semibold text-slate-900">Super Admin</p>
+                    <p className="truncate text-xs text-slate-400">{formatAdminCode(user.id)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-4 xl:grid-cols-6">
+            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                  <DashboardGlyph kind="booking" className="h-5 w-5" />
+                </div>
+                <span className="text-slate-300">^</span>
+              </div>
+              <p className="mt-4 text-[13px] font-semibold text-slate-700">Total Booking</p>
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactCount(totalBookingValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${bookingGrowthMeta.className}`}>{bookingGrowthMeta.label}</p>
+              <TinySparkline points={bookingSparkPoints} stroke="#3b82f6" />
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f8fbff] p-3">
+                <div>
+                  <p className="text-[11px] text-slate-500">Internal</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(superadminInternalBookings.length)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Affiliate</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(superadminAffiliateBookings.length)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                  <DashboardGlyph kind="revenue" className="h-5 w-5" />
+                </div>
+                <span className="text-slate-300">^</span>
+              </div>
+              <p className="mt-4 text-[13px] font-semibold text-slate-700">Total Revenue (GMV)</p>
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(totalRevenueValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${revenueGrowthMeta.className}`}>{revenueGrowthMeta.label}</p>
+              <TinySparkline points={revenueSparkPoints} stroke="#10b981" />
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f7fffb] p-3">
+                <div>
+                  <p className="text-[11px] text-slate-500">Internal</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(superadminInternalTransactions.reduce((sum, item) => sum + item.receivedAmount, 0))}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Affiliate</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(superadminAffiliateTransactions.reduce((sum, item) => sum + item.receivedAmount, 0))}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                  <DashboardGlyph kind="issue" className="h-5 w-5" />
+                </div>
+                <span className="text-slate-300">^</span>
+              </div>
+              <p className="mt-4 text-[13px] font-semibold text-slate-700">Net Commission</p>
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactMoney(totalCommissionValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${commissionGrowthMeta.className}`}>{commissionGrowthMeta.label}</p>
+              <TinySparkline points={commissionSparkPoints} stroke="#f97316" />
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#fffaf5] p-3">
+                <div>
+                  <p className="text-[11px] text-slate-500">Internal Margin</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(internalCommissionValue)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Affiliate Komisi</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactMoney(affiliateCommissionValue)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                  <DashboardGlyph kind="bell" className="h-5 w-5" />
+                </div>
+                <span className="text-slate-300">^</span>
+              </div>
+              <p className="mt-4 text-[13px] font-semibold text-slate-700">Platform Accounts</p>
+              <p className="mt-2 text-[2.1rem] font-semibold tracking-[-0.04em] text-slate-950">{formatCompactCount(totalAccountsValue)}</p>
+              <p className={`mt-1 text-[12px] font-semibold ${accountGrowthMeta.className}`}>{accountGrowthMeta.label}</p>
+              <TinySparkline points={accountSparkPoints} stroke="#6366f1" />
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-[18px] bg-[#f8f8ff] p-3">
+                <div>
+                  <p className="text-[11px] text-slate-500">Internal</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(internalAccountValue)}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-500">Merchant</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(totalMerchantCount)}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[13px] font-semibold text-slate-700">System Health</p>
+                <span className="text-slate-300">^</span>
+              </div>
+              <div className="mt-4 flex items-center gap-4">
+                <div
+                  className="relative flex h-28 w-28 items-center justify-center rounded-full"
+                  style={{ background: `conic-gradient(#22c55e 0 ${systemHealthRate}%, #e2e8f0 ${systemHealthRate}% 100%)` }}
+                >
+                  <div className="flex h-[84px] w-[84px] flex-col items-center justify-center rounded-full bg-white">
+                    <p className="text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-950">{systemHealthRate.toFixed(2)}%</p>
+                    <p className="text-[11px] text-slate-400">Uptime</p>
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 space-y-2 text-[12px] text-slate-600">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Web Vitals Sehat</span>
+                    <span className="font-semibold text-slate-900">{healthyWebVitalsCount}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Tracked Paths</span>
+                    <span className="font-semibold text-slate-900">{trackedPublicPaths}</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Error Rate</span>
+                    <span className={`font-semibold ${poorWebVitalsCount > 0 ? "text-rose-600" : "text-slate-900"}`}>
+                      {recentWebVitalEvents.length > 0 ? `${((poorWebVitalsCount / recentWebVitalEvents.length) * 100).toFixed(2)}%` : "0.00%"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-[#f3d6d6] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
+                  <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-rose-600">{pendingCriticalValue}</p>
+                </div>
+                <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-rose-50 px-2 py-1 text-sm font-semibold text-rose-600">
+                  {pendingCriticalValue}
+                </span>
+              </div>
+              <div className="mt-5 space-y-3">
+                {pendingCriticalItems.length === 0 ? (
+                  <p className="text-sm text-slate-500">Tidak ada sinyal kritikal aktif.</p>
+                ) : (
+                  pendingCriticalItems.slice(0, 4).map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-slate-600">{item.label}</span>
+                      <span className="font-semibold text-slate-900">{item.value}</span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_320px]">
+            <div className="space-y-6">
+              <div className="grid gap-6 xl:grid-cols-[0.95fr_1.2fr_1.25fr]">
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Business Mix</h2>
+                    <span className="text-[12px] text-slate-400">Hari ini</span>
+                  </div>
+                  <div className="mt-6 flex flex-col items-center">
+                    <div
+                      className="relative flex h-56 w-56 items-center justify-center rounded-full"
+                      style={{ background: `conic-gradient(#2f6bff 0 ${affiliateShareValue}%, #33c684 ${affiliateShareValue}% 100%)` }}
+                    >
+                      <div className="flex h-[164px] w-[164px] flex-col items-center justify-center rounded-full bg-white text-center">
+                        <p className="text-[2.3rem] font-semibold tracking-[-0.04em] text-slate-950">{affiliateShareValue}%</p>
+                        <p className="text-base text-slate-500">Affiliate</p>
+                      </div>
+                    </div>
+                    <div className="mt-6 grid w-full gap-3">
+                      <div className="flex items-center justify-between gap-3 rounded-[18px] bg-[#f8fbff] px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#2f6bff]" />
+                          <span className="text-sm font-medium text-slate-600">Affiliate</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">{formatCompactCount(superadminAffiliateBookings.length)} booking</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-[18px] bg-[#f7fffb] px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className="h-3.5 w-3.5 rounded-full bg-[#33c684]" />
+                          <span className="text-sm font-medium text-slate-600">Internal</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-900">{formatCompactCount(superadminInternalBookings.length)} booking</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Performa per Kategori</h2>
+                    <Link href="/superadmin/bookings" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
+                  </div>
+                  <div className="mt-5 overflow-hidden rounded-[20px] border border-[#eef2f7]">
+                    <div className="grid grid-cols-[1.6fr_0.8fr_1fr_0.8fr_0.7fr] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <span>Kategori</span>
+                      <span>Booking</span>
+                      <span>Revenue</span>
+                      <span>Growth</span>
+                      <span>SLA</span>
+                    </div>
+                    <div className="divide-y divide-[#eef2f7]">
+                      {topCategoryRows.map((row) => (
+                        <div key={row.product.key} className="grid grid-cols-[1.6fr_0.8fr_1fr_0.8fr_0.7fr] gap-3 px-4 py-3.5 text-sm">
+                          <div className="flex items-center gap-3">
+                            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-full ${row.product.bg} ${row.product.tone}`}>
+                              <ProductMiniIcon kind={row.product.icon} className="h-4 w-4" />
+                            </span>
+                            <span className="font-medium text-slate-700">{row.product.label}</span>
+                          </div>
+                          <span className="font-semibold text-slate-900">{formatCompactCount(row.bookings)}</span>
+                          <span className="font-semibold text-slate-900">{formatCompactMoney(row.revenue)}</span>
+                          <span className={row.growth >= 0 ? "font-semibold text-emerald-600" : "font-semibold text-rose-600"}>
+                            {row.growth >= 0 ? "↑" : "↓"} {Math.abs(row.growth).toFixed(0)}%
+                          </span>
+                          <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            row.slaRate >= 90 ? "bg-emerald-50 text-emerald-600" : row.slaRate >= 75 ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
+                          }`}>
+                            {row.slaRate}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Trend 7 Hari</h2>
+                    <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-[12px] font-semibold text-blue-600">Booking</span>
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-4">
+                    {topTrendProducts.map((product) => (
+                      <div key={product.key} className="inline-flex items-center gap-2 text-[12px] text-slate-500">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: product.sparkColor }} />
+                        <span>{product.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <DashboardLineChart labels={trendRows.map((row) => row.label)} series={trendSeries} />
+                </div>
+              </div>
+
+              <div className="grid gap-6 xl:grid-cols-[1.65fr_0.8fr_0.85fr]">
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Operasional Real-Time</h2>
+                    <Link href="/superadmin/bookings" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
+                  </div>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {[
+                      { label: "Paket Menunggu Review", value: pendingPackages, active: true },
+                      { label: "Booking Bermasalah", value: financeReadyCount, active: false },
+                      { label: "Anomali Aktif", value: reviewRequests.length + deletionRequests.length, active: false },
+                      { label: "Merchant Pending", value: pendingMerchants, active: false },
+                    ].map((tab) => (
+                      <span
+                        key={tab.label}
+                        className={`inline-flex rounded-full px-3 py-1.5 text-[12px] font-semibold ${
+                          tab.active ? "bg-[#fff1eb] text-orange-600" : "bg-[#f8fafc] text-slate-400"
+                        }`}
+                      >
+                        {tab.label} ({tab.value})
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-5 overflow-hidden rounded-[20px] border border-[#eef2f7]">
+                    <div className="grid grid-cols-[1.25fr_1.4fr_0.8fr_0.95fr_0.9fr_0.8fr] gap-3 bg-[#f8fafc] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <span>Merchant</span>
+                      <span>Produk</span>
+                      <span>Kategori</span>
+                      <span>Diajukan</span>
+                      <span>SLA</span>
+                      <span>Aksi</span>
+                    </div>
+                    <div className="divide-y divide-[#eef2f7]">
+                      {pendingPackageRows.length === 0 ? (
+                        <div className="px-4 py-8 text-sm text-slate-500">Belum ada paket yang menunggu review.</div>
+                      ) : (
+                        pendingPackageRows.map((row) => (
+                          <div key={row.id} className="grid grid-cols-[1.25fr_1.4fr_0.8fr_0.95fr_0.9fr_0.8fr] gap-3 px-4 py-3.5 text-sm">
+                            <span className="font-medium text-slate-700">{row.merchant}</span>
+                            <span className="text-slate-600">{row.product}</span>
+                            <span className="inline-flex w-fit rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-600">{row.category}</span>
+                            <div className="text-slate-500">
+                              <p>{row.submittedAt}</p>
+                              <p className="mt-1 text-[11px]">{row.submittedLabel}</p>
+                            </div>
+                            <span className={`inline-flex w-fit rounded-full px-2.5 py-1 text-[11px] font-semibold ${row.slaClassName}`}>{row.slaLabel}</span>
+                            <Link
+                              href={row.href}
+                              className="inline-flex w-fit items-center justify-center rounded-[12px] bg-[#3b82f6] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#2563eb]"
+                            >
+                              Review
+                            </Link>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Top Merchant & Partner</h2>
+                    <Link href="/superadmin/bookings" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
+                  </div>
+                  <div className="mt-5 space-y-4">
+                    {merchantRevenueRows.length === 0 ? (
+                      <p className="text-sm text-slate-500">Belum ada merchant atau partner dengan revenue tercatat.</p>
+                    ) : (
+                      merchantRevenueRows.map((row) => (
+                        <div key={row.label} className="flex items-start justify-between gap-4 rounded-[18px] bg-[#f8fbff] px-4 py-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900">{row.label}</p>
+                            <p className="mt-1 text-[12px] text-slate-400">{row.sourceLabel} • {formatCompactCount(row.bookings)} booking</p>
+                          </div>
+                          <p className="whitespace-nowrap text-sm font-semibold text-slate-900">{formatCompactMoney(row.revenue)}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                  <div className="flex items-center justify-between gap-3">
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Platform Metrics</h2>
+                    <span className="text-slate-300">^</span>
+                  </div>
+                  <div className="mt-5 space-y-4">
+                    {platformMetricRows.map((row) => (
+                      <div key={row.label} className="flex items-start gap-3 rounded-[18px] bg-[#f8fafc] px-4 py-3.5">
+                        <span className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${row.tone}`}>
+                          <DashboardGlyph kind="booking" className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-medium text-slate-600">{row.label}</p>
+                            <p className="text-lg font-semibold text-slate-950">{formatCompactCount(row.value)}</p>
+                          </div>
+                          <p className="mt-1 text-[12px] text-slate-400">{row.note}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div id="alerts" className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Alert & Notifikasi</h2>
+                  <Link href="/superadmin/audit-log" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {alertItems.length === 0 ? (
+                    <div className="rounded-[18px] border border-emerald-100 bg-emerald-50/60 px-4 py-4 text-sm text-emerald-700">
+                      Tidak ada alert kritikal. Sistem terlihat stabil pada periode ini.
+                    </div>
+                  ) : (
+                    alertItems.map((item) => (
+                      <div key={item.title} className={`rounded-[20px] border px-4 py-4 ${item.toneClassName}`}>
+                        <div className="flex items-start gap-3">
+                          <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${item.iconClassName}`}>
+                            <DashboardGlyph kind="alert" className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                                <p className="mt-1 text-[13px] leading-6 text-slate-500">{item.detail}</p>
+                              </div>
+                              <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.levelClassName}`}>{item.level}</span>
+                            </div>
+                            <p className="mt-2 text-[12px] text-slate-400">{item.timeLabel}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">System Status</h2>
+                  <span className="text-slate-300">^</span>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {systemStatusItems.map((item) => (
+                    <div key={item.label} className="flex items-center justify-between gap-3 rounded-[18px] bg-[#f8fafc] px-4 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-emerald-500 shadow-[0_6px_20px_rgba(15,23,42,0.06)]">
+                          <span className="h-2.5 w-2.5 rounded-full bg-current" />
+                        </span>
+                        <span className="text-sm font-medium text-slate-600">{item.label}</span>
+                      </div>
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${item.className}`}>{item.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    )
+  }
+
+  if (isSuperadmin && params.view === "__legacy_superadmin_disabled__") {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-6 py-8 sm:px-8 lg:px-10">
         <div className="mx-auto max-w-7xl space-y-8">

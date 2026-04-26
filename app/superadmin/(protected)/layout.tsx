@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
-import SignOutButton from "@/app/components/SignOutButton"
-import AdminNavLinks from "@/app/components/AdminNavLinks"
+import AdminSidebarShell from "@/app/components/AdminSidebarShell"
 import SuperadminNavSeenTracker from "@/app/components/SuperadminNavSeenTracker"
 import { formatAdminCode } from "@/lib/merchant-code"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
@@ -104,16 +103,15 @@ export default async function SuperadminProtectedLayout({
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
 
   const navItems = [
+    { label: "Overview" },
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
-    { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
-    { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
-    {
-      label: "Manager Dashboard Preview",
-      children: [
-        { href: "/superadmin/operations-manager", label: "Preview Ops Manager", badgeCount: 0 },
-        { href: "/superadmin/finance-manager", label: "Preview Finance Manager", badgeCount: 0 },
-      ],
-    },
+    { href: "/superadmin/operations-manager", label: "Business Overview", badgeCount: 0 },
+    { href: "/superadmin/finance-manager", label: "Platform Health", badgeCount: 0 },
+    { label: "Operational" },
+    { href: "/superadmin/bookings", label: "Booking & Transaksi", badgeCount: bookingsBadgeCount },
+    { href: "/superadmin/merchant-support", label: "Merchant Management", badgeCount: merchantSupportBadgeCount },
+    { href: "/superadmin/internal-chat", label: "User & Access", badgeCount: internalChatUnreadBadgeCount },
+    { label: "System" },
     {
       label: "Internal Control",
       children: [
@@ -122,47 +120,22 @@ export default async function SuperadminProtectedLayout({
         { href: "/superadmin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: superadminAccountsBadgeCount },
       ],
     },
-    { href: "/superadmin/bookings", label: "Booking Center", badgeCount: bookingsBadgeCount },
-    { href: "/superadmin/audit-log", label: "Audit Log", badgeCount: auditLogBadgeCount },
+    { href: "/superadmin/audit-log", label: "Audit Trail", badgeCount: auditLogBadgeCount },
   ]
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
+    <div className="min-h-screen bg-[#f4f7fb]">
       <SuperadminNavSeenTracker />
-      <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-7xl px-6 py-4 sm:px-8 lg:px-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-700">
-                  Superadmin Workspace
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-950">Executive control center Red Feng</p>
-                <p className="text-xs text-slate-500">
-                  Area pengawasan manager, preview dashboard manager, audit lintas tim, dan kontrol internal tertinggi
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-                    {formatAdminCode(user.id)}
-                  </span>
-                  <span className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-violet-700">
-                    Superadmin
-                  </span>
-                </div>
-              </div>
-              <SignOutButton
-                portal="superadmin"
-                redirectTo="https://app.redfeng.co/superadmin/login"
-                className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
-              />
-            </div>
-            <nav className="overflow-x-auto pb-1">
-              <AdminNavLinks items={navItems} />
-            </nav>
-          </div>
-        </div>
-      </header>
-      {children}
+      <AdminSidebarShell
+        adminCode={formatAdminCode(user.id)}
+        isOperationsManager={false}
+        items={navItems}
+        portal="superadmin"
+        roleLabel="Super Admin"
+        showFullBrand
+      >
+        {children}
+      </AdminSidebarShell>
     </div>
   )
 }

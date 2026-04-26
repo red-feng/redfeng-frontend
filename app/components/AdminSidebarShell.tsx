@@ -4,28 +4,41 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import AdminNavLinks, { type AdminNavItem } from "@/app/components/AdminNavLinks"
 import SignOutButton from "@/app/components/SignOutButton"
+import type { ActivePortal } from "@/lib/portal-context"
 
 type AdminSidebarShellProps = {
   adminCode: string
   children: React.ReactNode
   isOperationsManager: boolean
   items: AdminNavItem[]
+  portal?: ActivePortal
   roleLabel: string
+  showFullBrand?: boolean
 }
 
-function BrandMark({ isOperationsManager }: { isOperationsManager: boolean }) {
+function BrandMark({
+  isOperationsManager,
+  showFullBrand,
+}: {
+  isOperationsManager: boolean
+  showFullBrand?: boolean
+}) {
   return (
     <span
       className={`relative overflow-hidden ${
-        isOperationsManager ? "block h-[96px] w-[260px] max-w-full" : "shrink-0 h-10 w-10 rounded-2xl bg-orange-600"
+        isOperationsManager
+          ? "block h-[96px] w-[260px] max-w-full"
+          : showFullBrand
+            ? "block h-[58px] w-[176px] max-w-full"
+            : "shrink-0 h-10 w-10 rounded-2xl bg-orange-600"
       }`}
     >
-      {isOperationsManager ? (
+      {isOperationsManager || showFullBrand ? (
         <Image
           src="/logo-redfeng2.png"
           alt="RedFeng"
           fill
-          sizes="260px"
+          sizes={isOperationsManager ? "260px" : "176px"}
           className="object-contain object-left"
           priority
         />
@@ -55,14 +68,18 @@ function SidebarContent({
   isOperationsManager,
   items,
   onNavigate,
+  portal,
   roleLabel,
+  showFullBrand,
 }: {
   adminCode: string
   isDesktop: boolean
   isOperationsManager: boolean
   items: AdminNavItem[]
   onNavigate?: () => void
+  portal: ActivePortal
   roleLabel: string
+  showFullBrand?: boolean
 }) {
   return (
     <>
@@ -72,8 +89,8 @@ function SidebarContent({
         }`}
       >
         <div className={isOperationsManager ? "min-w-0 flex-1" : "flex items-center gap-3"}>
-          <BrandMark isOperationsManager={isOperationsManager} />
-          {!isOperationsManager ? (
+          <BrandMark isOperationsManager={isOperationsManager} showFullBrand={showFullBrand} />
+          {!isOperationsManager && !showFullBrand ? (
             <div>
               <span className="text-[1.8rem] font-semibold tracking-[-0.05em] text-slate-950">Red Feng</span>
             </div>
@@ -94,7 +111,9 @@ function SidebarContent({
       </div>
 
       <div className={isDesktop ? `hidden px-7 pb-4 lg:block ${isOperationsManager ? "pt-1" : ""}` : "px-5 pb-4"}>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">
+          {isOperationsManager ? "Dashboard Operasional" : showFullBrand ? "Super Admin" : "Admin Workspace"}
+        </p>
         <p className="mt-3 text-xs font-semibold text-slate-700">{roleLabel}</p>
         <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
       </div>
@@ -116,8 +135,8 @@ function SidebarContent({
           </div>
         ) : null}
         <SignOutButton
-          portal="admin"
-          redirectTo="https://app.redfeng.co/admin/login"
+          portal={portal}
+          redirectTo={portal === "superadmin" ? "https://app.redfeng.co/superadmin/login" : "https://app.redfeng.co/admin/login"}
           className={`inline-flex w-full items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
             isOperationsManager ? "border border-[#f4d7d7] bg-white text-rose-500 hover:bg-rose-50" : "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
           }`}
@@ -132,7 +151,9 @@ export default function AdminSidebarShell({
   children,
   isOperationsManager,
   items,
+  portal = "admin",
   roleLabel,
+  showFullBrand = false,
 }: AdminSidebarShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDesktopOpen, setIsDesktopOpen] = useState(true)
@@ -165,7 +186,9 @@ export default function AdminSidebarShell({
           </svg>
         </button>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-950">{isOperationsManager ? "Dashboard Operasional" : "Admin Workspace"}</p>
+          <p className="truncate text-sm font-semibold text-slate-950">
+            {isOperationsManager ? "Dashboard Operasional" : showFullBrand ? "Super Admin" : "Admin Workspace"}
+          </p>
           <p className="truncate text-[11px] text-slate-400">{roleLabel}</p>
         </div>
         <span className="rounded-full border border-[#efd8c8] bg-[#fff7f1] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-600">
@@ -192,7 +215,9 @@ export default function AdminSidebarShell({
               isOperationsManager={isOperationsManager}
               items={items}
               onNavigate={() => setIsMobileOpen(false)}
+              portal={portal}
               roleLabel={roleLabel}
+              showFullBrand={showFullBrand}
             />
           </aside>
         </div>
@@ -235,7 +260,9 @@ export default function AdminSidebarShell({
             isDesktop
             isOperationsManager={isOperationsManager}
             items={items}
+            portal={portal}
             roleLabel={roleLabel}
+            showFullBrand={showFullBrand}
           />
         </div>
       </aside>
