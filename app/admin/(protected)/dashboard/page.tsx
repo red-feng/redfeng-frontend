@@ -578,7 +578,7 @@ function DashboardGlyph({
 function DataSourceBadge({
   kind,
 }: {
-  kind: "raw" | "derived"
+  kind: "raw" | "composite"
 }) {
   return (
     <span
@@ -586,7 +586,7 @@ function DataSourceBadge({
         kind === "raw" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
       }`}
     >
-      {kind === "raw" ? "Raw KPI" : "Derived"}
+      {kind === "raw" ? "Raw KPI" : "Composite"}
     </span>
   )
 }
@@ -3664,11 +3664,24 @@ export default async function AdminDashboard({
     ).length
     const healthyWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating !== "poor").length
     const poorWebVitalsCount = recentWebVitalEvents.filter((row) => row.rating === "poor").length
-    const systemHealthRate =
+    const webVitalsHealthRate =
       recentWebVitalEvents.length > 0 ? Math.round((healthyWebVitalsCount / recentWebVitalEvents.length) * 10000) / 100 : 100
+    const affiliateSyncFailureCount = superadminAffiliateBookings.filter(
+      (booking) => normalizeStatus(booking.supplier_order_status) === "failed",
+    ).length
+    const affiliateSyncHealthRate =
+      superadminAffiliateBookings.length > 0
+        ? Math.round(((superadminAffiliateBookings.length - affiliateSyncFailureCount) / superadminAffiliateBookings.length) * 10000) / 100
+        : 100
+    const handoffFlowHealthRate =
+      regionFinanceReadyCount > 0
+        ? Math.round(((regionFinanceReadyCount - regionBookingStalledCount) / regionFinanceReadyCount) * 10000) / 100
+        : 100
+    const appPerformanceHealthRate =
+      Math.round(((webVitalsHealthRate + affiliateSyncHealthRate + handoffFlowHealthRate) / 3) * 100) / 100
     const pendingCriticalItems = [
       { label: "SLA Terlambat", value: regionMerchantOverdueCount + regionPackageOverdueCount + regionBookingStalledCount },
-      { label: "Booking Gagal", value: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length },
+      { label: "Booking Gagal", value: affiliateSyncFailureCount },
       { label: "Review Sensitif", value: regionReviewRequests.length },
       { label: "Poor Vitals", value: poorWebVitalsCount },
     ].filter((item) => item.value > 0)
@@ -3696,13 +3709,13 @@ export default async function AdminDashboard({
       },
       {
         title: "API Error Affiliate",
-        detail: `${superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length} booking affiliate gagal sinkron`,
+        detail: `${affiliateSyncFailureCount} booking affiliate gagal sinkron`,
         level: "High",
         levelClassName: "bg-orange-50 text-orange-600",
         toneClassName: "border-orange-100 bg-orange-50/55",
         iconClassName: "bg-orange-50 text-orange-500",
         timeLabel: formatRelativeHours(superadminAffiliateBookings[0]?.created_at || null),
-        count: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length,
+        count: affiliateSyncFailureCount,
       },
       {
         title: "Data Tidak Valid",
@@ -3847,8 +3860,8 @@ export default async function AdminDashboard({
       },
       {
         label: "Affiliate Sync",
-        status: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length === 0 ? "Healthy" : "Syncing",
-        className: superadminAffiliateBookings.filter((booking) => normalizeStatus(booking.supplier_order_status) === "failed").length === 0 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600",
+        status: affiliateSyncFailureCount === 0 ? "Healthy" : "Syncing",
+        className: affiliateSyncFailureCount === 0 ? "bg-emerald-50 text-emerald-600" : "bg-blue-50 text-blue-600",
       },
       {
         label: "Audit Trail",
@@ -4049,39 +4062,40 @@ export default async function AdminDashboard({
             </div> : null}
 
             {showPlatformWorkspace ? <div className="rounded-[26px] border border-[#e8edf5] bg-white px-5 py-5 shadow-[0_18px_48px_rgba(15,23,42,0.05)]">
-              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <p className="text-[13px] font-semibold text-slate-700">System Health</p>
-                  <DataSourceBadge kind="derived" />
+                  <p className="text-[13px] font-semibold text-slate-700">App Performance Health</p>
+                  <DataSourceBadge kind="composite" />
                 </div>
                 <span className="text-slate-300">^</span>
               </div>
-              <p className="mt-2 text-[11px] leading-5 text-slate-400">Derived from healthy vs poor web vitals samples.</p>
+              <p className="mt-2 text-[11px] leading-5 text-slate-400">Derived from web vitals, affiliate sync, and booking handoff flow.</p>
               <div className="mt-4 flex items-center gap-4">
                 <div
                   className="relative flex h-28 w-28 items-center justify-center rounded-full"
-                  style={{ background: `conic-gradient(#22c55e 0 ${systemHealthRate}%, #e2e8f0 ${systemHealthRate}% 100%)` }}
+                  style={{ background: `conic-gradient(#22c55e 0 ${appPerformanceHealthRate}%, #e2e8f0 ${appPerformanceHealthRate}% 100%)` }}
                 >
                   <div className="flex h-[84px] w-[84px] flex-col items-center justify-center rounded-full bg-white">
-                    <p className="text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-950">{systemHealthRate.toFixed(2)}%</p>
-                    <p className="text-[11px] text-slate-400">Uptime</p>
+                    <p className="text-[1.6rem] font-semibold tracking-[-0.04em] text-slate-950">{appPerformanceHealthRate.toFixed(2)}%</p>
+                    <p className="text-[11px] text-slate-400">Health</p>
                   </div>
                 </div>
                 <div className="min-w-0 flex-1 space-y-2 text-[12px] text-slate-600">
                   <div className="flex items-center justify-between gap-3">
-                    <span>Web Vitals Sehat</span>
-                    <span className="font-semibold text-slate-900">{healthyWebVitalsCount}</span>
+                    <span>Web Vitals</span>
+                    <span className="font-semibold text-slate-900">{webVitalsHealthRate.toFixed(2)}%</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span>Tracked Paths</span>
-                    <span className="font-semibold text-slate-900">{trackedPublicPaths}</span>
+                    <span>Affiliate Sync</span>
+                    <span className="font-semibold text-slate-900">{affiliateSyncHealthRate.toFixed(2)}%</span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span>Error Rate</span>
-                    <span className={`font-semibold ${poorWebVitalsCount > 0 ? "text-rose-600" : "text-slate-900"}`}>
-                      {recentWebVitalEvents.length > 0 ? `${((poorWebVitalsCount / recentWebVitalEvents.length) * 100).toFixed(2)}%` : "0.00%"}
+                    <span>Handoff Flow</span>
+                    <span className={`font-semibold ${regionBookingStalledCount > 0 ? "text-amber-600" : "text-slate-900"}`}>
+                      {handoffFlowHealthRate.toFixed(2)}%
                     </span>
                   </div>
+                  <div className="pt-1 text-[11px] text-slate-400">{trackedPublicPaths} tracked paths • {affiliateSyncFailureCount} sync failures</div>
                 </div>
               </div>
             </div> : null}
@@ -4091,7 +4105,7 @@ export default async function AdminDashboard({
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-[13px] font-semibold text-slate-700">Pending Critical</p>
-                    <DataSourceBadge kind="derived" />
+                    <DataSourceBadge kind="composite" />
                   </div>
                   <p className="mt-2 text-[2rem] font-semibold tracking-[-0.04em] text-rose-600">{pendingCriticalValue}</p>
                 </div>
@@ -4317,7 +4331,7 @@ export default async function AdminDashboard({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">Alert & Notifikasi</h2>
-                    <DataSourceBadge kind="derived" />
+                    <DataSourceBadge kind="composite" />
                   </div>
                   <Link href="/superadmin/audit-log" className="text-[12px] font-semibold text-[#2563eb]">Lihat semua</Link>
                 </div>
@@ -4355,7 +4369,7 @@ export default async function AdminDashboard({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-semibold tracking-[-0.03em] text-slate-950">System Status</h2>
-                    <DataSourceBadge kind="derived" />
+                    <DataSourceBadge kind="composite" />
                   </div>
                   <span className="text-slate-300">^</span>
                 </div>
