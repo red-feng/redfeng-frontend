@@ -140,24 +140,24 @@ export default async function HomePage() {
   const locale = await getCurrentLocale()
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef5ff_0%,#ffffff_25%,#fffefc_100%)] text-slate-900">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(238,245,255,0.98)_0%,rgba(255,255,255,0.96)_32%,rgba(255,255,255,1)_100%)]" />
           <div
-            className="absolute inset-x-0 top-0 h-[460px] bg-cover bg-center md:h-[600px]"
+            className="absolute inset-x-0 top-0 h-[500px] bg-cover bg-center md:h-[640px]"
             style={{
               backgroundImage:
                 "linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_24%,rgba(255,255,255,0.28)_52%,rgba(255,255,255,0.06)_100%), url('https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1800&q=80')",
             }}
           />
-          <div className="relative mx-auto max-w-[1240px] px-4 pb-10 pt-5 sm:px-6 lg:px-8">
+          <div className="relative mx-auto max-w-[1240px] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
             <header className="flex items-center justify-between gap-4">
               <Link href="/" className="flex items-center gap-2">
                 <Image src="/logo-redfeng.png" alt="RedFeng" width={150} height={52} priority className="h-9 w-auto" />
               </Link>
 
-              <nav className="hidden items-center gap-8 text-[14px] font-medium text-slate-800 lg:flex">
+              <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
                 <a href="https://redfeng.co/pesawat/" className="hover:text-[#ef3b2d]">Pesawat</a>
                 <a href="https://redfeng.co/hotel/" className="hover:text-[#ef3b2d]">Hotel</a>
                 <a href="https://redfeng.co/kereta_api/" className="hover:text-[#ef3b2d]">Kereta</a>
@@ -189,26 +189,26 @@ export default async function HomePage() {
             </header>
 
             <div className="pt-10 md:pt-12">
-              <div className="max-w-[420px]">
-                <h1 className="text-[36px] font-black leading-[1.02] tracking-[-0.04em] text-slate-900 sm:text-[48px] lg:text-[58px]">
+              <div className="max-w-[440px]">
+                <h1 className="text-[38px] font-black leading-[1.02] tracking-[-0.045em] text-slate-900 sm:text-[52px] lg:text-[62px]">
                   Semua kebutuhan perjalanan Anda,
                   <span className="mt-1 block text-[#ef3b2d]">dalam satu platform</span>
                 </h1>
-                <p className="mt-5 max-w-[340px] text-[15px] leading-7 text-slate-600 sm:text-base">
+                <p className="mt-5 max-w-[360px] text-[15px] leading-8 text-slate-600 sm:text-[16px]">
                   Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                 </p>
               </div>
             </div>
 
-            <div className="relative z-10 mt-6 md:mt-8">
-              <div className="overflow-hidden rounded-[24px] border border-[#eceff6] bg-white/96 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.22)]">
+            <div className="relative z-10 mt-5 md:mt-7">
+              <div className="overflow-hidden rounded-[24px] border border-[#eceff6] bg-white/97 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-3.5 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
                     const Icon = tab.icon
                     return (
                       <button
                         key={tab.label}
-                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent"}`}
+                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-700"}`}
                       >
                         <Icon className="h-4 w-4" />
                         {tab.label}
@@ -224,7 +224,7 @@ export default async function HomePage() {
                   <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="Minggu" />
                   <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="Rabu" />
                   <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
-                  <Link href="/packages" className="m-2 inline-flex min-h-[66px] items-center justify-center rounded-xl bg-[#ef3b2d] px-8 text-base font-semibold text-white">
+                  <Link href="/packages" className="m-2 inline-flex min-h-[66px] items-center justify-center rounded-xl bg-[#ef3b2d] px-8 text-[17px] font-semibold text-white">
                     Cari Tiket
                   </Link>
                 </div>
@@ -240,7 +240,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1240px] px-4 pb-4 sm:px-6 lg:px-8">
+        <section className="mx-auto max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
             {serviceCards.map((card) => {
               const Icon = card.icon
@@ -265,14 +265,14 @@ export default async function HomePage() {
             {promoCards.map((card) => (
               <article
                 key={card.title}
-                className={`relative min-h-[154px] overflow-hidden rounded-[16px] bg-gradient-to-br ${card.gradient} px-5 py-4 text-white`}
+                className={`relative min-h-[170px] overflow-hidden rounded-[16px] bg-gradient-to-br ${card.gradient} px-5 py-4 text-white`}
               >
                 <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url('${card.image}')` }} />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_42%,rgba(15,23,42,0.16)_100%)]" />
                 <div className="relative z-10 max-w-[220px]">
-                  <h3 className="whitespace-pre-line text-[18px] font-bold leading-[1.15]">{card.title}</h3>
+                  <h3 className="whitespace-pre-line text-[19px] font-bold leading-[1.15]">{card.title}</h3>
                   <p className="mt-4 text-[11px] text-white/85">{card.eyebrow}</p>
-                  <p className="mt-1 text-[18px] font-black">{card.price}</p>
+                  <p className="mt-1 text-[19px] font-black">{card.price}</p>
                   <button className="mt-4 rounded-md bg-white px-3 py-2 text-[11px] font-semibold text-slate-900">{card.cta}</button>
                 </div>
               </article>
@@ -393,7 +393,7 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto max-w-[1240px] px-4 pb-6 sm:px-6 lg:px-8">
-          <h2 className="text-[34px] font-black tracking-[-0.04em] text-slate-900">Mengapa memilih RedFeng?</h2>
+          <h2 className="text-[28px] font-black tracking-[-0.04em] text-slate-900">Mengapa memilih RedFeng?</h2>
           <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {whyChoose.map((item) => {
               const Icon = item.icon
