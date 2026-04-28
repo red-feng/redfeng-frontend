@@ -36,8 +36,7 @@ const promoCards = [
     eyebrow: "Diskon hingga",
     price: "Rp 500.000*",
     cta: "Pesan Sekarang",
-    image:
-      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80",
+    image: "/home-assets/promo-flight.png",
     gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
   },
   {
@@ -45,8 +44,7 @@ const promoCards = [
     eyebrow: "Diskon hingga",
     price: "40%*",
     cta: "Booking Sekarang",
-    image:
-      "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80",
+    image: "/home-assets/promo-hotel.png",
     gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
   },
   {
@@ -54,8 +52,7 @@ const promoCards = [
     eyebrow: "Mulai dari",
     price: "Rp 1,9 Juta*",
     cta: "Lihat Paket",
-    image:
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80",
+    image: "/home-assets/promo-package.png",
     gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
   },
 ]
@@ -69,8 +66,7 @@ const popularBookings = [
     subtitle: "Sekali Jalan",
     price: "Rp 690.000",
     rating: "4.8",
-    image:
-      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=900&q=80",
+    image: "/home-assets/card-flight.png",
     tone: "bg-[#ebf4ff] text-[#4a8dff]",
   },
   {
@@ -80,8 +76,7 @@ const popularBookings = [
     price: "Rp 850.000",
     suffix: "/malam",
     rating: "4.7",
-    image:
-      "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=900&q=80",
+    image: "/home-assets/card-hotel-1.png",
     tone: "bg-[#f3efff] text-[#9f7aea]",
   },
   {
@@ -90,8 +85,7 @@ const popularBookings = [
     subtitle: "Termasuk Hotel & Tour",
     price: "Rp 1.990.000",
     rating: "4.9",
-    image:
-      "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80",
+    image: "/home-assets/card-package.png",
     tone: "bg-[#ebfff3] text-[#38a169]",
   },
   {
@@ -100,8 +94,7 @@ const popularBookings = [
     subtitle: "Kereta Cepat WHOOSH",
     price: "Rp 150.000",
     rating: "4.8",
-    image:
-      "https://images.unsplash.com/photo-1474487548417-781cb71495f3?auto=format&fit=crop&w=900&q=80",
+    image: "/home-assets/card-train.png",
     tone: "bg-[#f1efff] text-[#8b6bff]",
   },
   {
@@ -111,19 +104,18 @@ const popularBookings = [
     price: "Rp 2.350.000",
     suffix: "/malam",
     rating: "4.9",
-    image:
-      "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80",
+    image: "/home-assets/card-hotel-2.png",
     tone: "bg-[#f3efff] text-[#9f7aea]",
   },
 ]
 
 const destinations = [
-  { name: "Bali", country: "Indonesia", image: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=900&q=80" },
-  { name: "Jakarta", country: "Indonesia", image: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?auto=format&fit=crop&w=900&q=80" },
-  { name: "Tokyo", country: "Jepang", image: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=900&q=80" },
-  { name: "Singapore", country: "Singapura", image: "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=80" },
-  { name: "Bangkok", country: "Thailand", image: "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=900&q=80" },
-  { name: "Labuan Bajo", country: "Indonesia", image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=900&q=80" },
+  { name: "Bali", country: "Indonesia", image: "/home-assets/dest-bali.png" },
+  { name: "Jakarta", country: "Indonesia", image: "/home-assets/dest-jakarta.png" },
+  { name: "Tokyo", country: "Jepang", image: "/home-assets/dest-tokyo.png" },
+  { name: "Singapore", country: "Singapura", image: "/home-assets/dest-singapore.png" },
+  { name: "Bangkok", country: "Thailand", image: "/home-assets/dest-bangkok.png" },
+  { name: "Labuan Bajo", country: "Indonesia", image: "/home-assets/dest-labuanbajo.png" },
 ]
 
 const whyChoose = [
@@ -133,7 +125,14 @@ const whyChoose = [
   { title: "Support 24/7", body: "Tim kami siap membantu kapan pun Anda butuh", icon: HeadsetIcon },
 ]
 
-const partnerLogos = ["Garuda Indonesia", "Lion Air", "Citilink", "AirAsia", "Batik Air", "Sriwijaya Air"]
+const partnerLogos = [
+  { kind: "image", src: "/home-assets/partner-garuda.png", alt: "Garuda Indonesia" },
+  { kind: "text", label: "Lion Air" },
+  { kind: "text", label: "Citilink" },
+  { kind: "text", label: "AirAsia" },
+  { kind: "text", label: "Batik Air" },
+  { kind: "text", label: "Sriwijaya Air" },
+] as const
 const payments = ["VISA", "mastercard", "BCA", "mandiri", "BNI", "BRI", "gopay", "OVO", "dana", "ShopeePay"]
 
 export default async function HomePage() {
@@ -148,13 +147,13 @@ export default async function HomePage() {
             className="absolute inset-x-0 top-0 h-[500px] bg-cover bg-center md:h-[640px]"
             style={{
               backgroundImage:
-                "linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_24%,rgba(255,255,255,0.28)_52%,rgba(255,255,255,0.06)_100%), url('https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1800&q=80')",
+                "linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_24%,rgba(255,255,255,0.28)_52%,rgba(255,255,255,0.06)_100%), url('/home-assets/hero-bg.png')",
             }}
           />
           <div className="relative mx-auto max-w-[1240px] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
             <header className="flex items-center justify-between gap-4">
               <Link href="/" className="flex items-center gap-2">
-                <Image src="/logo-redfeng.png" alt="RedFeng" width={150} height={52} priority className="h-9 w-auto" />
+                <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
               </Link>
 
               <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
@@ -352,24 +351,33 @@ export default async function HomePage() {
             <div className="border-b border-[#f0e5d6] pb-5 lg:border-b-0 lg:border-r lg:px-6 lg:pb-0">
               <h3 className="text-[15px] font-bold">Partner Resmi Kami</h3>
               <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-4 text-center">
-                {partnerLogos.map((logo, index) => (
-                  <span
-                    key={logo}
-                    className={`text-[22px] italic tracking-[-0.04em] ${
-                      index === 0
-                        ? "text-slate-500"
-                        : index === 1 || index === 4
+                {partnerLogos.map((logo, index) =>
+                  logo.kind === "image" ? (
+                    <Image
+                      key={logo.alt}
+                      src={logo.src}
+                      alt={logo.alt}
+                      width={220}
+                      height={60}
+                      className="h-8 w-auto object-contain"
+                    />
+                  ) : (
+                    <span
+                      key={logo.label}
+                      className={`text-[22px] italic tracking-[-0.04em] ${
+                        index === 1 || index === 4
                           ? "font-black text-[#ef3b2d]"
                           : index === 2
                             ? "font-black text-[#38a169]"
                             : index === 3
                               ? "font-black text-[#ef3b2d]"
                               : "font-medium text-[#4c51bf]"
-                    }`}
-                  >
-                    {logo}
-                  </span>
-                ))}
+                      }`}
+                    >
+                      {logo.label}
+                    </span>
+                  )
+                )}
               </div>
             </div>
 
@@ -444,7 +452,7 @@ export default async function HomePage() {
             <div className="grid gap-8 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr]">
               <div>
                 <Link href="/" className="flex items-center gap-2">
-                  <Image src="/logo-redfeng.png" alt="RedFeng" width={150} height={52} className="h-9 w-auto" />
+                  <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} className="h-10 w-auto" />
                 </Link>
                 <p className="mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
                   Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
