@@ -134,6 +134,11 @@ const partnerLogos = [
   { kind: "text", label: "Sriwijaya Air" },
 ] as const
 const payments = ["VISA", "mastercard", "BCA", "mandiri", "BNI", "BRI", "gopay", "OVO", "dana", "ShopeePay"]
+const heroBenefits = [
+  { title: "Harga Terbaik", body: "Pilihan terbaik untukmu", icon: PriceTagIcon },
+  { title: "Aman & Terpercaya", body: "Transaksi aman terjamin", icon: ShieldIcon },
+  { title: "Customer Support 24/7", body: "Siap membantu kapan saja", icon: HeadsetIcon },
+]
 
 export default async function HomePage() {
   const locale = await getCurrentLocale()
@@ -141,80 +146,102 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,#edf5fc_0%,#fffaf6_48%,#ffffff_100%)]" />
-          <div className="absolute inset-x-0 top-0 h-[560px] bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.22),transparent_36%),radial-gradient(circle_at_top_left,rgba(255,186,122,0.2),transparent_34%)] md:h-[700px]" />
-          <div className="relative mx-auto max-w-[1240px] px-4 pb-10 pt-5 sm:px-6 lg:px-8">
-            <header className="flex items-center justify-between gap-4">
-              <Link href="/" className="flex items-center gap-2">
-                <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
-              </Link>
+        <section className="px-4 pt-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
+            <div className="relative overflow-hidden px-5 pt-5 sm:px-6 lg:px-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.6)_0%,rgba(255,255,255,0.16)_100%)]" />
 
-              <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
-                <a href="https://redfeng.co/pesawat/" className="hover:text-[#ef3b2d]">Pesawat</a>
-                <a href="https://redfeng.co/hotel/" className="hover:text-[#ef3b2d]">Hotel</a>
-                <a href="https://redfeng.co/kereta_api/" className="hover:text-[#ef3b2d]">Kereta</a>
-                <a href="https://redfeng.co/bus-travel/" className="hover:text-[#ef3b2d]">Bus</a>
-                <a href="https://redfeng.co/kapal_laut/" className="hover:text-[#ef3b2d]">Kapal</a>
-                <a href="https://redfeng.co/aktivitas/" className="hover:text-[#ef3b2d]">Aktivitas</a>
-                <Link href="/packages" className="hover:text-[#ef3b2d]">Paket Wisata</Link>
-              </nav>
-
-              <div className="hidden items-center gap-5 lg:flex">
-                <a href="https://redfeng.co/promo/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Promo</a>
-                <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
-                <button className="flex items-center gap-1 text-sm text-slate-700">
-                  <GlobeIcon className="h-4 w-4" />
-                  IDR
-                  <ChevronDownIcon className="h-4 w-4" />
-                </button>
-                <button className="text-slate-700">
-                  <BellIcon className="h-5 w-5" />
-                </button>
-                <Link href="/login" className="rounded-xl bg-[#ef3b2d] px-5 py-2.5 text-sm font-semibold text-white">
-                  Login / Daftar
+              <header className="relative z-10 flex items-center justify-between gap-4">
+                <Link href="/" className="flex items-center gap-2">
+                  <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
                 </Link>
-              </div>
 
-              <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm lg:hidden">
-                <MenuIcon className="h-5 w-5" />
-              </button>
-            </header>
+                <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
+                  <Link href="/" className="relative pb-3 text-slate-950 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-10 after:rounded-full after:bg-[#ff5a43]">
+                    Beranda
+                  </Link>
+                  <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
+                  <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
+                  <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
+                  <a href="https://redfeng.co/bus-travel/" className="pb-3 hover:text-[#ef3b2d]">Bus</a>
+                  <a href="https://redfeng.co/kapal_laut/" className="pb-3 hover:text-[#ef3b2d]">Kapal</a>
+                  <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
+                  <a href="https://redfeng.co/aktivitas/" className="pb-3 hover:text-[#ef3b2d]">Aktivitas</a>
+                </nav>
 
-            <div className="grid items-end gap-8 pt-10 md:pt-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-10">
-              <div className="max-w-[500px] rounded-[28px] bg-white/62 p-0 backdrop-blur-[2px]">
-                <h1 className="text-[38px] font-black leading-[1.01] tracking-[-0.05em] text-slate-950 sm:text-[52px] lg:text-[62px]">
-                  Semua kebutuhan perjalanan Anda,
-                  <span className="mt-2 block text-[#d94831]">dalam satu platform</span>
-                </h1>
-                <p className="mt-5 max-w-[420px] text-[15px] leading-7 text-slate-700 sm:text-[16px]">
-                  Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
-                </p>
-              </div>
+                <div className="hidden items-center gap-5 lg:flex">
+                  <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
+                  <button className="flex items-center gap-1 text-sm text-slate-700">
+                    IDR
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </button>
+                  <button className="text-slate-700">
+                    <BellIcon className="h-5 w-5" />
+                  </button>
+                  <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white">
+                    Login / Daftar
+                  </Link>
+                </div>
 
-              <div className="relative hidden lg:block">
-                <div className="absolute -left-6 top-10 h-24 w-24 rounded-full bg-[#ffd4bf]/60 blur-3xl" />
-                <div className="absolute right-4 top-0 h-28 w-28 rounded-full bg-sky-200/60 blur-3xl" />
-                <div className="relative h-[360px] overflow-hidden rounded-[34px] border border-white/70 shadow-[0_32px_90px_-34px_rgba(15,23,42,0.38)] xl:h-[420px]">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center"
-                    style={{ backgroundImage: "url('/home-assets/hero-bg.png')" }}
-                  />
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,15,30,0.02)_0%,rgba(8,15,30,0.1)_100%)]" />
-                  <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.18)_42%,rgba(255,255,255,0.72)_100%)]" />
+                <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm lg:hidden">
+                  <MenuIcon className="h-5 w-5" />
+                </button>
+              </header>
+
+              <div className="relative z-10 grid items-end gap-8 pt-8 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:pt-10">
+                <div className="max-w-[500px] pb-8 lg:pb-24">
+                  <h1 className="text-[38px] font-black leading-[1.06] tracking-[-0.05em] text-slate-950 sm:text-[52px] lg:text-[72px]">
+                    Perjalanan terbaik
+                    <span className="block">dimulai dari sini</span>
+                    <span className="mt-1 block text-[#ff5a43]">RedFeng</span>
+                  </h1>
+                  <p className="mt-5 max-w-[430px] text-[15px] leading-8 text-slate-600 sm:text-[18px] sm:leading-9">
+                    Pesawat, Hotel, Kereta, Bus, Kapal, Aktivitas, dan Paket Wisata terbaik untukmu.
+                  </p>
+
+                  <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                    {heroBenefits.map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <div key={item.title} className="flex items-start gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#ff6b4a] shadow-[0_12px_26px_-18px_rgba(255,90,67,0.65)] ring-1 ring-[#ffe6de]">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{item.title}</p>
+                            <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.body}</p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="relative hidden min-h-[420px] lg:block xl:min-h-[480px]">
+                  <div className="absolute inset-0 rounded-[34px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.58)_24%,rgba(255,255,255,0)_44%)]" />
+                  <div className="absolute inset-y-0 right-[-40px] w-[118%] overflow-hidden rounded-[34px]">
+                    <Image
+                      src="/home-assets/hero-reference.png"
+                      alt="Hero RedFeng"
+                      fill
+                      priority
+                      className="object-cover object-[74%_18%]"
+                    />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.8)_0%,rgba(255,251,247,0.34)_24%,rgba(255,255,255,0.02)_54%),linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_100%)]" />
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-10 mt-5 md:mt-7">
-              <div className="overflow-hidden rounded-[24px] border border-[#eceff6] bg-white/97 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
-                <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-3.5 text-sm font-semibold text-slate-700">
+            <div className="relative z-20 mx-auto -mt-10 max-w-[1100px] px-4 pb-8 sm:px-6 lg:px-8">
+              <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
+                <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
                     const Icon = tab.icon
                     return (
                       <button
                         key={tab.label}
-                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-700"}`}
+                        className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2 ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-500"}`}
                       >
                         <Icon className="h-4 w-4" />
                         {tab.label}
@@ -224,22 +251,31 @@ export default async function HomePage() {
                   })}
                 </div>
 
-                <div className="grid gap-0 px-4 py-4 md:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] md:px-5">
-                  <SearchField label="Dari" value="Jakarta (CGK)" sublabel="Soekarno Hatta Int." withSwap />
-                  <SearchField label="Ke" value="Bali / Denpasar (DPS)" sublabel="Ngurah Rai Int." />
-                  <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="Minggu" />
-                  <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="Rabu" />
-                  <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
-                  <Link href="/packages" className="m-2 inline-flex min-h-[66px] items-center justify-center rounded-xl bg-[#ef3b2d] px-8 text-[17px] font-semibold text-white">
-                    Cari Tiket
-                  </Link>
-                </div>
+                <div className="px-5 py-4">
+                  <div className="flex flex-wrap gap-6 text-[13px] text-slate-600">
+                    <label className="inline-flex items-center gap-2 font-medium text-slate-800">
+                      <span className="h-2.5 w-2.5 rounded-full bg-[#ff5a43]" />
+                      Sekali Jalan
+                    </label>
+                    <label className="inline-flex items-center gap-2 font-medium">
+                      <span className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
+                      Pulang - Pergi
+                    </label>
+                    <label className="inline-flex items-center gap-2 font-medium">
+                      <span className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
+                      Multi Kota
+                    </label>
+                  </div>
 
-                <div className="grid gap-3 border-t border-slate-200/80 px-5 py-4 text-sm text-slate-600 md:grid-cols-4">
-                  <BenefitItem icon={ClockIcon} text="Harga terbaik setiap hari" />
-                  <BenefitItem icon={ShieldIcon} text="Transaksi aman & terpercaya" />
-                  <BenefitItem icon={HeadsetIcon} text="Customer support 24/7" />
-                  <BenefitItem icon={CardIcon} text="Pembayaran fleksibel" />
+                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.72fr_0.82fr_auto]">
+                    <SearchField label="Dari" value="CGK   Jakarta (Semua Bandara)" sublabel="" withSwap />
+                    <SearchField label="Ke" value="DPS   Denpasar (Bali)" sublabel="" />
+                    <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="" />
+                    <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
+                    <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-xl bg-[#ff5a43] px-8 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
+                      Cari Penerbangan
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
@@ -253,13 +289,13 @@ export default async function HomePage() {
               return (
                 <article
                   key={card.label}
-                  className="rounded-[22px] border border-slate-200 bg-white px-4 py-5 text-center shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]"
+                  className="rounded-[24px] border border-white bg-white px-4 py-5 text-center shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] ring-1 ring-slate-100"
                 >
                   <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#f8fafc] ${card.tone}`}>
                     <Icon className="h-7 w-7" />
                   </div>
                   <h3 className="mt-4 text-[16px] font-bold">{card.label}</h3>
-                  <p className="mt-2 text-[13px] leading-5 text-slate-500">{card.desc}</p>
+                  <p className="mt-2 text-[12px] leading-5 text-slate-400">{card.desc}</p>
                 </article>
               )
             })}
@@ -549,12 +585,12 @@ function SearchField({
   withChevron?: boolean
 }) {
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white px-4 py-3 md:rounded-none md:border-b-0 md:border-l-0 md:border-r md:border-t-0 md:first:rounded-l-2xl md:first:border-l md:last:rounded-r-2xl md:last:border-r">
+    <div className="relative rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]">
       <p className="text-[11px] font-medium text-slate-400">{label}</p>
-      <p className="mt-2 text-[15px] font-bold text-slate-900">{value}</p>
+      <p className="mt-2 pr-8 text-[15px] font-bold text-slate-900">{value}</p>
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
       {withSwap ? (
-        <span className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500">
+        <span className="absolute -right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.4)]">
           <SwapIcon className="h-4 w-4" />
         </span>
       ) : null}
@@ -563,17 +599,6 @@ function SearchField({
           <ChevronDownIcon className="h-4 w-4" />
         </span>
       ) : null}
-    </div>
-  )
-}
-
-function BenefitItem({ icon: Icon, text }: { icon: CardIcon; text: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-50 text-slate-700">
-        <Icon className="h-4 w-4" />
-      </div>
-      <span className="text-[13px] font-medium">{text}</span>
     </div>
   )
 }
@@ -649,9 +674,6 @@ function CardIcon({ className }: IconProps) {
 function CardIconBadge({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><rect x="3" y="6" width="18" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.8" /><path d="M3 10h18M7 15h4M16 15h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
 }
-function ClockIcon({ className }: IconProps) {
-  return <svg viewBox="0 0 24 24" fill="none" className={className}><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" /><path d="M12 8v4l2.5 1.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-}
 function HeartIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 9.2 6.5c1.3 0 2.5.6 3.3 1.7.8-1.1 2-1.7 3.3-1.7A4.2 4.2 0 0 1 20 10.7C20 15.6 12 20 12 20Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
 }
@@ -666,9 +688,6 @@ function ChevronDownIcon({ className }: IconProps) {
 }
 function ArrowRightIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-}
-function GlobeIcon({ className }: IconProps) {
-  return <svg viewBox="0 0 24 24" fill="none" className={className}><circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" /><path d="M4 12h16M12 4a13 13 0 0 1 0 16M12 4a13 13 0 0 0 0 16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
 }
 function BellIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M12 5a6 6 0 0 0-6 6c0 4.5-2 5.5-2 5.5h16S18 15.5 18 11a6 6 0 0 0-6-6Z" stroke="currentColor" strokeWidth="1.8" /><path d="M10 19a2.2 2.2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
