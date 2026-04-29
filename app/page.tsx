@@ -142,12 +142,12 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(232,241,252,0.86)_0%,rgba(255,255,255,0.82)_34%,rgba(255,255,255,0.96)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(231,240,250,0.7)_0%,rgba(255,252,248,0.72)_32%,rgba(255,250,246,0.93)_100%)]" />
           <div
             className="absolute inset-x-0 top-0 h-[500px] bg-cover bg-center md:h-[640px]"
             style={{
               backgroundImage:
-                "linear-gradient(90deg,rgba(255,250,245,0.97)_0%,rgba(255,248,243,0.9)_18%,rgba(255,255,255,0.54)_42%,rgba(255,255,255,0.14)_68%,rgba(255,255,255,0.04)_100%), linear-gradient(180deg,rgba(10,22,40,0.06)_0%,rgba(10,22,40,0.02)_38%,rgba(10,22,40,0.18)_100%), url('/home-assets/hero-bg.png')",
+                "linear-gradient(90deg,rgba(255,249,243,0.95)_0%,rgba(255,247,240,0.86)_18%,rgba(255,251,246,0.46)_40%,rgba(255,255,255,0.14)_66%,rgba(255,255,255,0.03)_100%), linear-gradient(180deg,rgba(15,31,54,0.08)_0%,rgba(15,31,54,0.03)_36%,rgba(15,31,54,0.22)_100%), url('/home-assets/hero-bg.png')",
             }}
           />
           <div className="relative mx-auto max-w-[1240px] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
@@ -188,12 +188,12 @@ export default async function HomePage() {
             </header>
 
             <div className="pt-10 md:pt-12">
-              <div className="max-w-[440px]">
-                <h1 className="text-[38px] font-black leading-[1.02] tracking-[-0.045em] text-slate-900 sm:text-[52px] lg:text-[62px]">
+              <div className="max-w-[470px]">
+                <h1 className="text-[38px] font-black leading-[1.01] tracking-[-0.05em] text-slate-950 sm:text-[52px] lg:text-[62px]">
                   Semua kebutuhan perjalanan Anda,
-                  <span className="mt-1 block text-[#ef3b2d]">dalam satu platform</span>
+                  <span className="mt-2 block text-[#d94831]">dalam satu platform</span>
                 </h1>
-                <p className="mt-5 max-w-[360px] text-[15px] leading-8 text-slate-600 sm:text-[16px]">
+                <p className="mt-5 max-w-[400px] text-[15px] leading-7 text-slate-700 sm:text-[16px]">
                   Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                 </p>
               </div>
