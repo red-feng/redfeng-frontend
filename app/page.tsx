@@ -142,15 +142,9 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(231,240,250,0.7)_0%,rgba(255,252,248,0.72)_32%,rgba(255,250,246,0.93)_100%)]" />
-          <div
-            className="absolute inset-x-0 top-0 h-[500px] bg-cover bg-center md:h-[640px]"
-            style={{
-              backgroundImage:
-                "linear-gradient(90deg,rgba(255,249,243,0.95)_0%,rgba(255,247,240,0.86)_18%,rgba(255,251,246,0.46)_40%,rgba(255,255,255,0.14)_66%,rgba(255,255,255,0.03)_100%), linear-gradient(180deg,rgba(15,31,54,0.08)_0%,rgba(15,31,54,0.03)_36%,rgba(15,31,54,0.22)_100%), url('/home-assets/hero-bg.png')",
-            }}
-          />
-          <div className="relative mx-auto max-w-[1240px] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,#edf5fc_0%,#fffaf6_48%,#ffffff_100%)]" />
+          <div className="absolute inset-x-0 top-0 h-[560px] bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.22),transparent_36%),radial-gradient(circle_at_top_left,rgba(255,186,122,0.2),transparent_34%)] md:h-[700px]" />
+          <div className="relative mx-auto max-w-[1240px] px-4 pb-10 pt-5 sm:px-6 lg:px-8">
             <header className="flex items-center justify-between gap-4">
               <Link href="/" className="flex items-center gap-2">
                 <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
@@ -187,15 +181,28 @@ export default async function HomePage() {
               </button>
             </header>
 
-            <div className="pt-10 md:pt-12">
-              <div className="max-w-[470px]">
+            <div className="grid items-end gap-8 pt-10 md:pt-12 lg:grid-cols-[0.88fr_1.12fr] lg:gap-10">
+              <div className="max-w-[500px] rounded-[28px] bg-white/62 p-0 backdrop-blur-[2px]">
                 <h1 className="text-[38px] font-black leading-[1.01] tracking-[-0.05em] text-slate-950 sm:text-[52px] lg:text-[62px]">
                   Semua kebutuhan perjalanan Anda,
                   <span className="mt-2 block text-[#d94831]">dalam satu platform</span>
                 </h1>
-                <p className="mt-5 max-w-[400px] text-[15px] leading-7 text-slate-700 sm:text-[16px]">
+                <p className="mt-5 max-w-[420px] text-[15px] leading-7 text-slate-700 sm:text-[16px]">
                   Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                 </p>
+              </div>
+
+              <div className="relative hidden lg:block">
+                <div className="absolute -left-6 top-10 h-24 w-24 rounded-full bg-[#ffd4bf]/60 blur-3xl" />
+                <div className="absolute right-4 top-0 h-28 w-28 rounded-full bg-sky-200/60 blur-3xl" />
+                <div className="relative h-[360px] overflow-hidden rounded-[34px] border border-white/70 shadow-[0_32px_90px_-34px_rgba(15,23,42,0.38)] xl:h-[420px]">
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: "url('/home-assets/hero-bg.png')" }}
+                  />
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,15,30,0.02)_0%,rgba(8,15,30,0.1)_100%)]" />
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.18)_42%,rgba(255,255,255,0.72)_100%)]" />
+                </div>
               </div>
             </div>
 
