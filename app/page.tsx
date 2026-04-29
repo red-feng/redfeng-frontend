@@ -221,11 +221,11 @@ export default async function HomePage() {
                   <div className="absolute inset-0 rounded-[34px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.58)_24%,rgba(255,255,255,0)_44%)]" />
                   <div className="absolute inset-y-0 right-[-40px] w-[118%] overflow-hidden rounded-[34px]">
                     <Image
-                      src="/home-assets/hero-reference.png"
+                      src="/home-assets/hero-bg.png"
                       alt="Hero RedFeng"
                       fill
                       priority
-                      className="object-cover object-[74%_18%]"
+                      className="object-cover object-center"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.8)_0%,rgba(255,251,247,0.34)_24%,rgba(255,255,255,0.02)_54%),linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_100%)]" />
                   </div>
