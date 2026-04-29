@@ -149,16 +149,16 @@ export default async function HomePage() {
         <section className="px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
             <div className="relative overflow-hidden px-5 pb-24 pt-5 sm:px-6 lg:px-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_26%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.12),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.28)_0%,rgba(255,255,255,0.04)_100%)]" />
-              <div className="absolute inset-y-[72px] right-0 hidden w-[74%] overflow-hidden rounded-bl-[140px] lg:block">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.1),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.03)_100%)]" />
+              <div className="absolute inset-y-[72px] right-0 hidden w-[76%] overflow-hidden rounded-bl-[140px] lg:block">
                 <Image
                   src="/home-assets/hero-bg.png"
                   alt="Hero RedFeng"
                   fill
                   priority
-                  className="object-cover object-[24%_52%]"
+                  className="object-cover object-[28%_52%]"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,245,0.94)_0%,rgba(255,250,245,0.82)_14%,rgba(255,250,245,0.46)_28%,rgba(255,250,245,0.12)_42%,rgba(255,255,255,0)_58%),linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,245,0.88)_0%,rgba(255,250,245,0.7)_12%,rgba(255,250,245,0.36)_24%,rgba(255,250,245,0.1)_38%,rgba(255,255,255,0)_54%),linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_100%)]" />
               </div>
 
               <header className="relative z-10 flex items-center justify-between gap-4">
@@ -196,9 +196,9 @@ export default async function HomePage() {
                 </button>
               </header>
 
-              <div className="relative z-10 pt-8 lg:pt-10">
-                <div className="max-w-[500px] pb-4 lg:min-h-[520px] lg:pb-0">
-                  <h1 className="text-[36px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[48px] lg:text-[58px]">
+              <div className="relative z-10 pt-8 lg:pt-12">
+                <div className="max-w-[520px] pb-4 lg:min-h-[560px] lg:pb-0">
+                  <h1 className="text-[36px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[48px] lg:text-[60px]">
                     Semua kebutuhan
                     <span className="block">perjalanan Anda,</span>
                     <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
@@ -227,7 +227,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto -mt-20 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="relative z-20 mx-auto -mt-16 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
               <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
@@ -261,8 +261,11 @@ export default async function HomePage() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_1.1fr_0.78fr_0.78fr_0.92fr_auto]">
+                  <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-[1.1fr_44px_1.1fr_0.78fr_0.78fr_0.92fr_auto] lg:items-center">
                     <SearchField label="Dari" value="CGK   Jakarta (Semua Bandara)" sublabel="" withSwap />
+                    <button className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] lg:flex">
+                      <SwapIcon className="h-4 w-4" />
+                    </button>
                     <SearchField label="Ke" value="DPS   Denpasar (Bali)" sublabel="" />
                     <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="" />
                     <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="" />
@@ -591,7 +594,7 @@ function SearchField({
       <p className="mt-2 pr-8 text-[15px] font-bold text-slate-900">{value}</p>
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
       {withSwap ? (
-        <span className="absolute -right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.4)]">
+        <span className="absolute -right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.4)] lg:hidden">
           <SwapIcon className="h-4 w-4" />
         </span>
       ) : null}
