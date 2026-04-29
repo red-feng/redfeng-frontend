@@ -148,7 +148,7 @@ export default async function HomePage() {
       <main className="pb-28 md:pb-0">
         <section className="px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
-            <div className="relative overflow-hidden px-5 pt-5 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden px-5 pb-8 pt-5 sm:px-6 lg:px-8">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.6)_0%,rgba(255,255,255,0.16)_100%)]" />
 
               <header className="relative z-10 flex items-center justify-between gap-4">
@@ -186,14 +186,14 @@ export default async function HomePage() {
                 </button>
               </header>
 
-              <div className="relative z-10 grid items-end gap-8 pt-8 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:pt-10">
-                <div className="max-w-[560px] pb-8 lg:pb-24">
-                  <h1 className="text-[38px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[52px] lg:text-[68px]">
+              <div className="relative z-10 grid items-center gap-8 pt-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8 lg:pt-10">
+                <div className="max-w-[520px] pb-2 lg:pb-10">
+                  <h1 className="text-[38px] font-black leading-[1.04] tracking-[-0.055em] text-slate-950 sm:text-[52px] lg:text-[62px]">
                     Semua kebutuhan
                     <span className="block">perjalanan Anda,</span>
                     <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
                   </h1>
-                  <p className="mt-5 max-w-[430px] text-[15px] leading-8 text-slate-600 sm:text-[17px] sm:leading-8">
+                  <p className="mt-5 max-w-[420px] text-[15px] leading-8 text-slate-600 sm:text-[16px] sm:leading-8">
                     Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                   </p>
 
@@ -215,23 +215,23 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                <div className="relative hidden min-h-[430px] lg:block xl:min-h-[490px]">
-                  <div className="absolute inset-0 rounded-[34px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.58)_24%,rgba(255,255,255,0)_44%)]" />
-                  <div className="absolute inset-y-0 right-[-40px] w-[118%] overflow-hidden rounded-[34px]">
+                <div className="relative hidden lg:block">
+                  <div className="absolute inset-0 rounded-[32px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.9),rgba(255,255,255,0.54)_24%,rgba(255,255,255,0)_44%)]" />
+                  <div className="relative ml-auto h-[340px] max-w-[760px] overflow-hidden rounded-[32px] xl:h-[380px]">
                     <Image
                       src="/home-assets/hero-bg.png"
                       alt="Hero RedFeng"
                       fill
                       priority
-                      className="object-cover object-[58%_50%]"
+                      className="object-cover object-[56%_54%]"
                     />
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.8)_0%,rgba(255,251,247,0.34)_24%,rgba(255,255,255,0.02)_54%),linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_100%)]" />
+                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.45)_0%,rgba(255,251,247,0.12)_18%,rgba(255,255,255,0)_38%),linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_100%)]" />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto -mt-10 max-w-[1100px] px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="relative z-20 mx-auto mt-2 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
               <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
@@ -265,7 +265,7 @@ export default async function HomePage() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.05fr_1.05fr_0.72fr_0.72fr_0.82fr_auto]">
+                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.1fr_1.1fr_0.78fr_0.78fr_0.92fr_auto]">
                     <SearchField label="Dari" value="CGK   Jakarta (Semua Bandara)" sublabel="" withSwap />
                     <SearchField label="Ke" value="DPS   Denpasar (Bali)" sublabel="" />
                     <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="" />
