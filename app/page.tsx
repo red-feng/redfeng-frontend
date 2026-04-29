@@ -148,7 +148,7 @@ export default async function HomePage() {
       <main className="pb-28 md:pb-0">
         <section className="px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
-            <div className="relative overflow-hidden px-5 pb-24 pt-5 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden px-5 pb-16 pt-5 sm:px-6 lg:px-8">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.1),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.03)_100%)]" />
               <div className="absolute inset-y-[72px] right-0 hidden w-[76%] overflow-hidden rounded-bl-[140px] lg:block">
                 <Image
@@ -197,7 +197,7 @@ export default async function HomePage() {
               </header>
 
               <div className="relative z-10 pt-8 lg:pt-12">
-                <div className="max-w-[520px] pb-4 lg:min-h-[560px] lg:pb-0">
+                <div className="max-w-[520px] pb-4 lg:min-h-[430px] lg:pb-0">
                   <h1 className="text-[36px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[48px] lg:text-[60px]">
                     Semua kebutuhan
                     <span className="block">perjalanan Anda,</span>
@@ -207,7 +207,7 @@ export default async function HomePage() {
                     Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                   </p>
 
-                  <div className="mt-10 grid gap-4 sm:grid-cols-3">
+                  <div className="mt-7 grid max-w-[620px] gap-5 sm:grid-cols-3">
                     {heroBenefits.map((item) => {
                       const Icon = item.icon
                       return (
@@ -227,7 +227,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto -mt-16 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="relative z-20 mx-auto -mt-28 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
               <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
