@@ -157,16 +157,14 @@ export default async function HomePage() {
                 </Link>
 
                 <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
-                  <Link href="/" className="relative pb-3 text-slate-950 after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-10 after:rounded-full after:bg-[#ff5a43]">
-                    Beranda
-                  </Link>
                   <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
                   <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
                   <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
                   <a href="https://redfeng.co/bus-travel/" className="pb-3 hover:text-[#ef3b2d]">Bus</a>
                   <a href="https://redfeng.co/kapal_laut/" className="pb-3 hover:text-[#ef3b2d]">Kapal</a>
-                  <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
                   <a href="https://redfeng.co/aktivitas/" className="pb-3 hover:text-[#ef3b2d]">Aktivitas</a>
+                  <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
+                  <a href="https://redfeng.co/promo/" className="pb-3 hover:text-[#ef3b2d]">Promo</a>
                 </nav>
 
                 <div className="hidden items-center gap-5 lg:flex">
@@ -189,14 +187,14 @@ export default async function HomePage() {
               </header>
 
               <div className="relative z-10 grid items-end gap-8 pt-8 lg:grid-cols-[0.92fr_1.08fr] lg:gap-10 lg:pt-10">
-                <div className="max-w-[500px] pb-8 lg:pb-24">
-                  <h1 className="text-[38px] font-black leading-[1.06] tracking-[-0.05em] text-slate-950 sm:text-[52px] lg:text-[72px]">
-                    Perjalanan terbaik
-                    <span className="block">dimulai dari sini</span>
-                    <span className="mt-1 block text-[#ff5a43]">RedFeng</span>
+                <div className="max-w-[560px] pb-8 lg:pb-24">
+                  <h1 className="text-[38px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[52px] lg:text-[68px]">
+                    Semua kebutuhan
+                    <span className="block">perjalanan Anda,</span>
+                    <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
                   </h1>
-                  <p className="mt-5 max-w-[430px] text-[15px] leading-8 text-slate-600 sm:text-[18px] sm:leading-9">
-                    Pesawat, Hotel, Kereta, Bus, Kapal, Aktivitas, dan Paket Wisata terbaik untukmu.
+                  <p className="mt-5 max-w-[430px] text-[15px] leading-8 text-slate-600 sm:text-[17px] sm:leading-8">
+                    Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                   </p>
 
                   <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -217,7 +215,7 @@ export default async function HomePage() {
                   </div>
                 </div>
 
-                <div className="relative hidden min-h-[420px] lg:block xl:min-h-[480px]">
+                <div className="relative hidden min-h-[430px] lg:block xl:min-h-[490px]">
                   <div className="absolute inset-0 rounded-[34px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.58)_24%,rgba(255,255,255,0)_44%)]" />
                   <div className="absolute inset-y-0 right-[-40px] w-[118%] overflow-hidden rounded-[34px]">
                     <Image
@@ -225,7 +223,7 @@ export default async function HomePage() {
                       alt="Hero RedFeng"
                       fill
                       priority
-                      className="object-cover object-center"
+                      className="object-cover object-[58%_50%]"
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.8)_0%,rgba(255,251,247,0.34)_24%,rgba(255,255,255,0.02)_54%),linear-gradient(180deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_100%)]" />
                   </div>
@@ -274,7 +272,7 @@ export default async function HomePage() {
                     <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="" />
                     <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
                     <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-xl bg-[#ff5a43] px-8 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
-                      Cari Penerbangan
+                      Cari Tiket
                     </Link>
                   </div>
                 </div>
