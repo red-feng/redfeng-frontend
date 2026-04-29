@@ -156,7 +156,7 @@ export default async function HomePage() {
                   alt="Hero RedFeng"
                   fill
                   priority
-                  className="object-cover object-[56%_52%]"
+                  className="object-cover object-[46%_52%]"
                 />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.92)_0%,rgba(255,249,243,0.76)_10%,rgba(255,249,243,0.28)_28%,rgba(255,255,255,0)_52%),linear-gradient(180deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0)_100%)]" />
               </div>
