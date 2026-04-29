@@ -110,12 +110,12 @@ const popularBookings = [
 ]
 
 const destinations = [
-  { name: "Bali", country: "Indonesia", image: "/home-assets/dest-bali.png" },
-  { name: "Jakarta", country: "Indonesia", image: "/home-assets/dest-jakarta.png" },
-  { name: "Tokyo", country: "Jepang", image: "/home-assets/dest-tokyo.png" },
-  { name: "Singapore", country: "Singapura", image: "/home-assets/dest-singapore.png" },
-  { name: "Bangkok", country: "Thailand", image: "/home-assets/dest-bangkok.png" },
-  { name: "Labuan Bajo", country: "Indonesia", image: "/home-assets/dest-labuanbajo.png" },
+  { name: "Bali", country: "Indonesia", teaser: "Mulai dari Rp 1,2 Jt", image: "/home-assets/dest-bali.png" },
+  { name: "Jakarta", country: "Indonesia", teaser: "Mulai dari Rp 600 rb", image: "/home-assets/dest-jakarta.png" },
+  { name: "Tokyo", country: "Jepang", teaser: "Mulai dari Rp 3,5 Jt", image: "/home-assets/dest-tokyo.png" },
+  { name: "Singapore", country: "Singapura", teaser: "Mulai dari Rp 2,1 Jt", image: "/home-assets/dest-singapore.png" },
+  { name: "Bangkok", country: "Thailand", teaser: "Mulai dari Rp 1,8 Jt", image: "/home-assets/dest-bangkok.png" },
+  { name: "Labuan Bajo", country: "Indonesia", teaser: "Mulai dari Rp 1,3 Jt", image: "/home-assets/dest-labuanbajo.png" },
 ]
 
 const whyChoose = [
@@ -267,10 +267,11 @@ export default async function HomePage() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.72fr_0.82fr_auto]">
+                  <div className="mt-4 grid gap-3 lg:grid-cols-[1.05fr_1.05fr_0.72fr_0.72fr_0.82fr_auto]">
                     <SearchField label="Dari" value="CGK   Jakarta (Semua Bandara)" sublabel="" withSwap />
                     <SearchField label="Ke" value="DPS   Denpasar (Bali)" sublabel="" />
                     <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="" />
+                    <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="" />
                     <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
                     <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-xl bg-[#ff5a43] px-8 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
                       Cari Penerbangan
@@ -303,19 +304,24 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto max-w-[1240px] px-4 py-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {promoCards.map((card) => (
+          <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr_1fr]">
+            {promoCards.map((card, index) => (
               <article
                 key={card.title}
-                className={`relative min-h-[170px] overflow-hidden rounded-[16px] bg-gradient-to-br ${card.gradient} px-5 py-4 text-white`}
+                className={`relative overflow-hidden rounded-[20px] px-6 py-5 text-white shadow-[0_24px_50px_-34px_rgba(15,23,42,0.3)] ${
+                  index === 0
+                    ? `min-h-[190px] bg-gradient-to-br ${card.gradient} lg:col-span-1`
+                    : `min-h-[190px] bg-gradient-to-br ${card.gradient}`
+                }`}
               >
                 <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url('${card.image}')` }} />
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_42%,rgba(15,23,42,0.16)_100%)]" />
-                <div className="relative z-10 max-w-[220px]">
-                  <h3 className="whitespace-pre-line text-[19px] font-bold leading-[1.15]">{card.title}</h3>
-                  <p className="mt-4 text-[11px] text-white/85">{card.eyebrow}</p>
-                  <p className="mt-1 text-[19px] font-black">{card.price}</p>
-                  <button className="mt-4 rounded-md bg-white px-3 py-2 text-[11px] font-semibold text-slate-900">{card.cta}</button>
+                <div className="relative z-10 max-w-[240px]">
+                  {index === 0 ? <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#ff5a43]">Promo Terbatas</span> : null}
+                  <h3 className={`whitespace-pre-line font-bold leading-[1.15] ${index === 0 ? "mt-4 text-[34px] tracking-[-0.05em]" : "text-[26px] tracking-[-0.04em]"}`}>{card.title}</h3>
+                  <p className="mt-4 text-[12px] text-white/85">{card.eyebrow}</p>
+                  <p className={`mt-1 font-black ${index === 0 ? "text-[24px]" : "text-[22px]"}`}>{card.price}</p>
+                  <button className="mt-4 rounded-lg bg-white px-4 py-2 text-[12px] font-semibold text-slate-900">{card.cta}</button>
                 </div>
               </article>
             ))}
@@ -324,22 +330,22 @@ export default async function HomePage() {
 
         <SectionHeader title="Paling Banyak Dipesan" showTabs />
         <section className="mx-auto max-w-[1240px] px-4 pb-4 sm:px-6 lg:px-8">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {popularBookings.map((item) => (
-              <article key={item.title} className="overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)]">
-                <div className="relative h-[128px] overflow-hidden">
+              <article key={item.title} className="overflow-hidden rounded-[18px] border border-[#ebedf3] bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.2)]">
+                <div className="relative h-[152px] overflow-hidden">
                   <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
                   <button className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700">
                     <HeartIcon className="h-3.5 w-3.5" />
                   </button>
                 </div>
-                <div className="p-3.5">
+                <div className="p-4">
                   <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.tone}`}>{item.category}</span>
-                  <h3 className="mt-2 text-[13px] font-bold leading-5">{item.title}</h3>
-                  <p className="mt-1 text-[11px] text-slate-500">{item.subtitle}</p>
+                  <h3 className="mt-3 text-[18px] font-bold tracking-[-0.03em] text-slate-900">{item.title}</h3>
+                  <p className="mt-1 text-[12px] text-slate-500">{item.subtitle}</p>
                   <p className="mt-3 text-[10px] text-slate-400">Mulai dari</p>
                   <div className="mt-1 flex items-end justify-between gap-2">
-                    <p className="text-[14px] font-black">
+                    <p className="text-[18px] font-black text-slate-900">
                       {item.price}
                       {item.suffix ? <span className="ml-1 text-[11px] font-medium text-slate-500">{item.suffix}</span> : null}
                     </p>
@@ -358,20 +364,21 @@ export default async function HomePage() {
         <section className="mx-auto max-w-[1240px] px-4 pb-6 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {destinations.map((destination) => (
-              <article key={destination.name} className="group relative h-[150px] overflow-hidden rounded-[14px]">
+              <article key={destination.name} className="group relative h-[160px] overflow-hidden rounded-[18px] shadow-[0_18px_34px_-28px_rgba(15,23,42,0.3)]">
                 <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${destination.image}')` }} />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04)_0%,rgba(15,23,42,0.72)_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06)_0%,rgba(15,23,42,0.82)_100%)]" />
                 <div className="absolute inset-x-4 bottom-4 text-white">
-                  <h3 className="text-[18px] font-bold leading-none">{destination.name}</h3>
-                  <p className="mt-1 text-[11px] text-white/90">{destination.country}</p>
+                  <h3 className="text-[24px] font-bold leading-none tracking-[-0.04em]">{destination.name}</h3>
+                  <p className="mt-1 text-[12px] font-medium text-white/95">{destination.country}</p>
+                  <p className="mt-1 text-[11px] text-white/80">{destination.teaser}</p>
                 </div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1240px] px-4 pb-6 sm:px-6 lg:px-8">
-          <div className="grid gap-6 rounded-[22px] border border-[#f1e8dd] bg-[linear-gradient(135deg,#fffaf5_0%,#ffffff_52%,#fff9f2_100%)] px-6 py-6 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.2)] lg:grid-cols-[0.95fr_1.4fr_1fr]">
+        <section className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
+          <div className="grid gap-6 rounded-[24px] border border-[#f3e8de] bg-[linear-gradient(135deg,#fffaf6_0%,#fffefc_52%,#fff8f2_100%)] px-6 py-6 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.18)] lg:grid-cols-[0.95fr_1.4fr_1fr]">
             <div className="border-b border-[#f0e5d6] pb-5 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-6">
               <div className="flex items-start gap-4">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff1ea] text-[#ff8b5b]">
@@ -449,7 +456,7 @@ export default async function HomePage() {
             {whyChoose.map((item) => {
               const Icon = item.icon
               return (
-                <article key={item.title} className="flex gap-4">
+                <article key={item.title} className="flex gap-4 rounded-[18px] bg-white/70 p-2">
                   <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[#ffe2d6] bg-[#fff8f4] text-[#ff8b5b]">
                     <Icon className="h-6 w-6" />
                   </div>
@@ -465,16 +472,16 @@ export default async function HomePage() {
 
         <section className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
           <div
-            className="overflow-hidden rounded-[18px] border border-[#f4ddd5] px-6 py-6"
+            className="overflow-hidden rounded-[22px] border border-[#f4ddd5] px-6 py-6 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)]"
             style={{
               backgroundImage:
                 "linear-gradient(90deg,rgba(255,245,242,0.98)_0%,rgba(255,250,248,0.94)_42%,rgba(255,239,233,0.88)_100%), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1400&q=80')",
             }}
           >
-            <div className="grid gap-5 lg:grid-cols-[0.9fr_1.2fr] lg:items-center">
+            <div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
               <div>
-                <h2 className="text-[18px] font-black leading-7 tracking-[-0.03em]">Dapatkan promo & info terbaru dari RedFeng!</h2>
-                <p className="mt-2 max-w-sm text-[13px] leading-6 text-slate-600">
+                <h2 className="text-[28px] font-black leading-8 tracking-[-0.04em] text-slate-900">Dapatkan promo & info terbaru dari RedFeng!</h2>
+                <p className="mt-3 max-w-sm text-[13px] leading-6 text-slate-600">
                   Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.
                 </p>
               </div>
@@ -482,9 +489,9 @@ export default async function HomePage() {
                 <input
                   type="email"
                   placeholder="Masukkan email Anda"
-                  className="h-12 rounded-xl border border-white bg-white px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                  className="h-12 rounded-xl border border-white bg-white px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.25)]"
                 />
-                <button className="h-12 rounded-xl bg-[#ef3b2d] px-8 text-sm font-semibold text-white">Langganan</button>
+                <button className="h-12 rounded-xl bg-[#ef3b2d] px-8 text-sm font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">Langganan</button>
               </div>
             </div>
           </div>
@@ -492,7 +499,7 @@ export default async function HomePage() {
 
         <footer className="border-t border-slate-200 bg-white">
           <div className="mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
-            <div className="grid gap-8 xl:grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr]">
+            <div className="grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
               <div>
                 <Link href="/" className="flex items-center gap-2">
                   <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} className="h-10 w-auto" />
@@ -515,7 +522,7 @@ export default async function HomePage() {
               <div>
                 <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
                 <div className="mt-4 flex flex-wrap gap-2.5">
-                  {payments.slice(0, 5).map((payment) => (
+                  {payments.slice(0, 10).map((payment) => (
                     <span
                       key={payment}
                       className="inline-flex h-8 items-center justify-center rounded-md bg-white px-3 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200"
@@ -548,7 +555,7 @@ function SectionHeader({ title, showTabs = false }: { title: string; showTabs?: 
     <section className="mx-auto max-w-[1240px] px-4 pb-4 pt-5 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <h2 className="text-[34px] font-black tracking-[-0.04em] text-slate-900">{title}</h2>
+          <h2 className="text-[28px] font-black tracking-[-0.04em] text-slate-900">{title}</h2>
           {showTabs ? (
             <div className="flex flex-wrap gap-2">
               {bookingTabs.map((tab, index) => (
