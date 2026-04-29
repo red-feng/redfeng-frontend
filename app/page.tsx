@@ -207,22 +207,6 @@ export default async function HomePage() {
                     Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
                   </p>
 
-                  <div className="mt-7 grid max-w-[620px] gap-5 sm:grid-cols-3">
-                    {heroBenefits.map((item) => {
-                      const Icon = item.icon
-                      return (
-                        <div key={item.title} className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#ff6b4a] shadow-[0_12px_26px_-18px_rgba(255,90,67,0.65)] ring-1 ring-[#ffe6de]">
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-[13px] font-bold text-slate-800">{item.title}</p>
-                            <p className="mt-1 text-[11px] leading-4 text-slate-500">{item.body}</p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
                 </div>
               </div>
             </div>
@@ -273,6 +257,26 @@ export default async function HomePage() {
                     <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-xl bg-[#ff5a43] px-8 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
                       Cari Tiket
                     </Link>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 border-t border-slate-200/80 pt-4 text-sm text-slate-600 md:grid-cols-2 lg:grid-cols-4">
+                    {heroBenefits.map((item) => {
+                      const Icon = item.icon
+                      return (
+                        <div key={item.title} className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 ring-1 ring-slate-200">
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-[13px] font-medium text-slate-600">{item.title}</span>
+                        </div>
+                      )
+                    })}
+                    <div className="hidden items-center gap-3 lg:flex">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-700 ring-1 ring-slate-200">
+                        <CardIcon className="h-4 w-4" />
+                      </div>
+                      <span className="text-[13px] font-medium text-slate-600">Pembayaran fleksibel</span>
+                    </div>
                   </div>
                 </div>
               </div>
