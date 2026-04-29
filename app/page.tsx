@@ -142,12 +142,12 @@ export default async function HomePage() {
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(238,245,255,0.98)_0%,rgba(255,255,255,0.96)_32%,rgba(255,255,255,1)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(232,241,252,0.86)_0%,rgba(255,255,255,0.82)_34%,rgba(255,255,255,0.96)_100%)]" />
           <div
             className="absolute inset-x-0 top-0 h-[500px] bg-cover bg-center md:h-[640px]"
             style={{
               backgroundImage:
-                "linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_24%,rgba(255,255,255,0.28)_52%,rgba(255,255,255,0.06)_100%), url('/home-assets/hero-bg.png')",
+                "linear-gradient(90deg,rgba(255,250,245,0.97)_0%,rgba(255,248,243,0.9)_18%,rgba(255,255,255,0.54)_42%,rgba(255,255,255,0.14)_68%,rgba(255,255,255,0.04)_100%), linear-gradient(180deg,rgba(10,22,40,0.06)_0%,rgba(10,22,40,0.02)_38%,rgba(10,22,40,0.18)_100%), url('/home-assets/hero-bg.png')",
             }}
           />
           <div className="relative mx-auto max-w-[1240px] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
