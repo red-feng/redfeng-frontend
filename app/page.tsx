@@ -148,8 +148,18 @@ export default async function HomePage() {
       <main className="pb-28 md:pb-0">
         <section className="px-4 pt-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
-            <div className="relative overflow-hidden px-5 pb-8 pt-5 sm:px-6 lg:px-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.6)_0%,rgba(255,255,255,0.16)_100%)]" />
+            <div className="relative overflow-hidden px-5 pb-20 pt-5 sm:px-6 lg:px-8">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.18),transparent_28%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.46)_0%,rgba(255,255,255,0.1)_100%)]" />
+              <div className="absolute inset-y-[72px] right-0 hidden w-[68%] overflow-hidden rounded-bl-[120px] lg:block">
+                <Image
+                  src="/home-assets/hero-bg.png"
+                  alt="Hero RedFeng"
+                  fill
+                  priority
+                  className="object-cover object-[56%_52%]"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,249,243,0.92)_0%,rgba(255,249,243,0.76)_10%,rgba(255,249,243,0.28)_28%,rgba(255,255,255,0)_52%),linear-gradient(180deg,rgba(255,255,255,0.1)_0%,rgba(255,255,255,0)_100%)]" />
+              </div>
 
               <header className="relative z-10 flex items-center justify-between gap-4">
                 <Link href="/" className="flex items-center gap-2">
@@ -186,8 +196,8 @@ export default async function HomePage() {
                 </button>
               </header>
 
-              <div className="relative z-10 grid items-center gap-8 pt-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-8 lg:pt-10">
-                <div className="max-w-[520px] pb-2 lg:pb-10">
+              <div className="relative z-10 pt-8 lg:pt-10">
+                <div className="max-w-[520px] pb-4 lg:min-h-[460px] lg:pb-0">
                   <h1 className="text-[38px] font-black leading-[1.04] tracking-[-0.055em] text-slate-950 sm:text-[52px] lg:text-[62px]">
                     Semua kebutuhan
                     <span className="block">perjalanan Anda,</span>
@@ -214,24 +224,10 @@ export default async function HomePage() {
                     })}
                   </div>
                 </div>
-
-                <div className="relative hidden lg:block">
-                  <div className="absolute inset-0 rounded-[32px] bg-[radial-gradient(circle_at_18%_30%,rgba(255,255,255,0.9),rgba(255,255,255,0.54)_24%,rgba(255,255,255,0)_44%)]" />
-                  <div className="relative ml-auto h-[340px] max-w-[760px] overflow-hidden rounded-[32px] xl:h-[380px]">
-                    <Image
-                      src="/home-assets/hero-bg.png"
-                      alt="Hero RedFeng"
-                      fill
-                      priority
-                      className="object-cover object-[56%_54%]"
-                    />
-                    <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,243,0.45)_0%,rgba(255,251,247,0.12)_18%,rgba(255,255,255,0)_38%),linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_100%)]" />
-                  </div>
-                </div>
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto mt-2 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="relative z-20 mx-auto -mt-16 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
               <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
