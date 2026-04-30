@@ -212,7 +212,7 @@ export default async function HomePage() {
             </div>
 
             <div className="relative z-20 mx-auto -mt-28 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
-              <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white/98 shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
+              <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
                     const Icon = tab.icon
