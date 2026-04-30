@@ -146,7 +146,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
-        <section className="pt-4">
+        <section>
           <div className="overflow-hidden border-y border-white/70 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
             <div className="relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
@@ -212,8 +212,8 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto -mt-28 max-w-[1120px] px-4 pb-8 sm:px-6 lg:px-8">
-              <div className="overflow-hidden rounded-[26px] border border-[#eceff6] bg-white shadow-[0_28px_70px_-34px_rgba(15,23,42,0.2)]">
+            <div className="relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
+              <div className="overflow-hidden rounded-[30px] border border-white/85 bg-white shadow-[0_24px_50px_-36px_rgba(15,23,42,0.18)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
                     const Icon = tab.icon
@@ -230,7 +230,7 @@ export default async function HomePage() {
                   })}
                 </div>
 
-                <div className="px-5 py-4">
+                <div className="px-5 py-5 lg:px-6 lg:py-6">
                   <div className="flex flex-wrap gap-6 text-[13px] text-slate-600">
                     <label className="inline-flex items-center gap-2 font-medium text-slate-800">
                       <span className="h-2.5 w-2.5 rounded-full bg-[#ff5a43]" />
@@ -246,7 +246,7 @@ export default async function HomePage() {
                     </label>
                   </div>
 
-                  <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-[1.1fr_44px_1.1fr_0.78fr_0.78fr_0.92fr_auto] lg:items-center">
+                  <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-[1.22fr_44px_1.22fr_0.86fr_0.86fr_1fr_auto] lg:items-center">
                     <SearchField label="Dari" value="CGK   Jakarta (Semua Bandara)" sublabel="" withSwap />
                     <button className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] lg:flex">
                       <SwapIcon className="h-4 w-4" />
@@ -255,7 +255,7 @@ export default async function HomePage() {
                     <SearchField label="Tanggal Berangkat" value="25 Mei 2026" sublabel="" />
                     <SearchField label="Tanggal Pulang" value="28 Mei 2026" sublabel="" />
                     <SearchField label="Penumpang & Kelas" value="1 Dewasa, Ekonomi" sublabel="" withChevron />
-                    <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-xl bg-[#ff5a43] px-8 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
+                    <Link href="/packages" className="inline-flex min-h-[76px] items-center justify-center rounded-2xl bg-[#ff5a43] px-10 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
                       Cari Tiket
                     </Link>
                   </div>
@@ -594,7 +594,7 @@ function SearchField({
   withChevron?: boolean
 }) {
   return (
-    <div className="relative rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-[0_10px_24px_-22px_rgba(15,23,42,0.28)]">
+    <div className="relative rounded-[20px] border border-slate-200 bg-[#fdfefe] px-4 py-3.5 shadow-[0_8px_20px_-24px_rgba(15,23,42,0.18)]">
       <p className="text-[11px] font-medium text-slate-400">{label}</p>
       <p className="mt-2 pr-8 text-[15px] font-bold text-slate-900">{value}</p>
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
