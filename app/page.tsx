@@ -144,7 +144,7 @@ export default async function HomePage() {
   const locale = await getCurrentLocale()
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fffaf7_0%,#f7fbff_24%,#ffffff_46%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
         <section>
           <div className="overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_30px_70px_-56px_rgba(15,23,42,0.18)]">
@@ -285,7 +285,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
+        <section className="mx-auto -mt-1 max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
             {serviceCards.map((card) => {
               const Icon = card.icon
