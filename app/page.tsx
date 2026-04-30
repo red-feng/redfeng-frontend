@@ -212,7 +212,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
+            <div className="relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-2 sm:px-6 lg:px-8">
               <div className="overflow-hidden rounded-[30px] border border-white/85 bg-white shadow-[0_24px_50px_-36px_rgba(15,23,42,0.18)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
@@ -285,7 +285,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="mx-auto -mt-1 max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
+        <section className="mx-auto -mt-4 max-w-[1240px] px-4 pb-4 pt-0 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
             {serviceCards.map((card) => {
               const Icon = card.icon
