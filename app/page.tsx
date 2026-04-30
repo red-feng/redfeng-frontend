@@ -36,7 +36,7 @@ const promoCards = [
     eyebrow: "Diskon hingga",
     price: "Rp 500.000*",
     cta: "Pesan Sekarang",
-    image: "/home-assets/card-flight.png",
+    image: "/home-assets/promo-flight.png",
     gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
   },
   {
@@ -44,7 +44,7 @@ const promoCards = [
     eyebrow: "Diskon hingga",
     price: "40%*",
     cta: "Booking Sekarang",
-    image: "/home-assets/card-hotel-2.png",
+    image: "/home-assets/promo-hotel.png",
     gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
   },
   {
@@ -52,7 +52,7 @@ const promoCards = [
     eyebrow: "Mulai dari",
     price: "Rp 1,9 Juta*",
     cta: "Lihat Paket",
-    image: "/home-assets/dest-labuanbajo.png",
+    image: "/home-assets/promo-package.png",
     gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
   },
 ]
