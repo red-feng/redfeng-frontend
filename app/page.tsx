@@ -38,7 +38,7 @@ const promoCards = [
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
-    imageClass: "bg-[length:190%] bg-[position:84%_57%] opacity-52",
+    imageClass: "bg-[length:190%] bg-[position:84%_50%] opacity-52",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
