@@ -38,6 +38,7 @@ const promoCards = [
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
+    imageClass: "bg-[length:126%] bg-[position:68%_52%] opacity-52",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
@@ -46,6 +47,7 @@ const promoCards = [
     cta: "Booking Sekarang",
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
+    imageClass: "bg-cover bg-[position:center] opacity-44",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
@@ -54,6 +56,7 @@ const promoCards = [
     cta: "Lihat Paket",
     image: "/home-assets/promo-package.png",
     gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
+    imageClass: "bg-cover bg-[position:center] opacity-42",
   },
 ]
 
@@ -316,8 +319,8 @@ export default async function HomePage() {
                     : `min-h-[190px] bg-gradient-to-br ${card.gradient}`
                 }`}
               >
-                <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url('${card.image}')` }} />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_42%,rgba(15,23,42,0.16)_100%)]" />
+                <div className={`absolute inset-0 ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_38%,rgba(15,23,42,0.08)_100%)]" />
                 <div className="relative z-10 max-w-[240px]">
                   {index === 0 ? <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#ff5a43]">Promo Terbatas</span> : null}
                   <h3 className={`whitespace-pre-line font-bold leading-[1.15] ${index === 0 ? "mt-4 text-[34px] tracking-[-0.05em]" : "text-[26px] tracking-[-0.04em]"}`}>{card.title}</h3>
