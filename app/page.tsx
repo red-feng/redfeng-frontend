@@ -294,15 +294,11 @@ export default async function HomePage() {
                   key={card.label}
                   className={`rounded-[24px] px-4 py-5 text-center ${
                     index === 0
-                      ? "border border-[#ffd8cf] bg-[#fff8f5] shadow-[0_20px_34px_-26px_rgba(255,90,67,0.18)]"
-                      : "border border-slate-200 bg-[#fffefd] shadow-[0_14px_28px_-24px_rgba(15,23,42,0.12)]"
+                      ? "border border-[#ffc9bd] bg-[#fff8f5] shadow-[0_24px_40px_-28px_rgba(255,90,67,0.24)]"
+                      : "border border-[#e7edf5] bg-white shadow-[0_8px_18px_-24px_rgba(15,23,42,0.06)]"
                   }`}
                 >
-                  <div
-                    className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] ${
-                      index === 0 ? "bg-[#fff1ea]" : "bg-white"
-                    } ${card.tone}`}
-                  >
+                  <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-white ${card.tone}`}>
                     <Icon className="h-7 w-7" />
                   </div>
                   <h3 className="mt-4 text-[16px] font-bold">{card.label}</h3>
