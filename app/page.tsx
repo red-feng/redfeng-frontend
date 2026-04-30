@@ -292,11 +292,7 @@ export default async function HomePage() {
               return (
                 <article
                   key={card.label}
-                  className={`rounded-[24px] px-4 py-5 text-center ${
-                    index === 0
-                      ? "border border-[#ffc9bd] bg-[#fff8f5] shadow-[0_24px_40px_-28px_rgba(255,90,67,0.24)]"
-                      : "border border-[#e7edf5] bg-white shadow-[0_8px_18px_-24px_rgba(15,23,42,0.06)]"
-                  }`}
+                  className="rounded-[24px] border border-[#e7edf5] bg-white px-4 py-5 text-center shadow-[0_8px_18px_-24px_rgba(15,23,42,0.06)]"
                 >
                   <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-white ${card.tone}`}>
                     <Icon className="h-7 w-7" />
