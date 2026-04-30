@@ -298,7 +298,11 @@ export default async function HomePage() {
                       : "border border-slate-200 bg-[#fffefd] shadow-[0_14px_28px_-24px_rgba(15,23,42,0.12)]"
                   }`}
                 >
-                  <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#f8fafc] ${card.tone}`}>
+                  <div
+                    className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] ${
+                      index === 0 ? "bg-[#fff1ea]" : "bg-white"
+                    } ${card.tone}`}
+                  >
                     <Icon className="h-7 w-7" />
                   </div>
                   <h3 className="mt-4 text-[16px] font-bold">{card.label}</h3>
