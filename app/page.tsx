@@ -37,7 +37,9 @@ const promoCards = [
     price: "Rp 500.000*",
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
-    gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
+    gradient: "from-[#ffb3aa] via-[#ff8f7f] to-[#ff6f61]",
+    imageClass: "bg-[length:108%] bg-[position:78%_52%] opacity-50",
+    overlay: "bg-[linear-gradient(120deg,rgba(255,255,255,0.24)_0%,rgba(255,255,255,0.08)_24%,rgba(117,24,24,0.18)_100%)]",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
@@ -45,7 +47,9 @@ const promoCards = [
     price: "40%*",
     cta: "Booking Sekarang",
     image: "/home-assets/promo-hotel.png",
-    gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
+    gradient: "from-[#7fb8ff] via-[#3d8df2] to-[#145cb8]",
+    imageClass: "bg-cover bg-[position:58%_50%] opacity-42",
+    overlay: "bg-[linear-gradient(120deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.02)_34%,rgba(9,39,89,0.3)_100%)]",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
@@ -53,7 +57,9 @@ const promoCards = [
     price: "Rp 1,9 Juta*",
     cta: "Lihat Paket",
     image: "/home-assets/promo-package.png",
-    gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
+    gradient: "from-[#7bd0bc] via-[#2ca58d] to-[#167a72]",
+    imageClass: "bg-[length:118%] bg-[position:70%_48%] opacity-40",
+    overlay: "bg-[linear-gradient(125deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.02)_40%,rgba(9,59,53,0.3)_100%)]",
   },
 ]
 
@@ -316,8 +322,8 @@ export default async function HomePage() {
                     : `min-h-[190px] bg-gradient-to-br ${card.gradient}`
                 }`}
               >
-                <div className="absolute inset-0 bg-cover bg-center opacity-35" style={{ backgroundImage: `url('${card.image}')` }} />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.08)_0%,rgba(255,255,255,0)_42%,rgba(15,23,42,0.16)_100%)]" />
+                <div className={`absolute inset-0 ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
+                <div className={`absolute inset-0 ${card.overlay}`} />
                 <div className="relative z-10 max-w-[240px]">
                   {index === 0 ? <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#ff5a43]">Promo Terbatas</span> : null}
                   <h3 className={`whitespace-pre-line font-bold leading-[1.15] ${index === 0 ? "mt-4 text-[34px] tracking-[-0.05em]" : "text-[26px] tracking-[-0.04em]"}`}>{card.title}</h3>
