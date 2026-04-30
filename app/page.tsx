@@ -287,12 +287,16 @@ export default async function HomePage() {
 
         <section className="mx-auto -mt-1 max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
-            {serviceCards.map((card) => {
+            {serviceCards.map((card, index) => {
               const Icon = card.icon
               return (
                 <article
                   key={card.label}
-                  className="rounded-[24px] border border-slate-100 bg-white px-4 py-5 text-center shadow-[0_10px_24px_-26px_rgba(15,23,42,0.08)]"
+                  className={`rounded-[24px] px-4 py-5 text-center ${
+                    index === 0
+                      ? "border border-[#ffd8cf] bg-[#fff8f5] shadow-[0_20px_34px_-26px_rgba(255,90,67,0.18)]"
+                      : "border border-slate-200 bg-[#fffefd] shadow-[0_14px_28px_-24px_rgba(15,23,42,0.12)]"
+                  }`}
                 >
                   <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#f8fafc] ${card.tone}`}>
                     <Icon className="h-7 w-7" />
