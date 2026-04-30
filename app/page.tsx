@@ -146,67 +146,68 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#eef4fb_0%,#ffffff_22%,#fffdf9_100%)] text-slate-900">
       <main className="pb-28 md:pb-0">
-        <section className="px-4 pt-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-[1240px] overflow-hidden rounded-[36px] border border-white/80 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
-            <div className="relative overflow-hidden px-5 pb-16 pt-5 sm:px-6 lg:px-8">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.12),transparent_26%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.1),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.03)_100%)]" />
-              <div className="absolute inset-y-[72px] right-0 hidden w-[76%] overflow-hidden rounded-bl-[140px] lg:block">
+        <section className="pt-4">
+          <div className="overflow-hidden border-y border-white/70 bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_35px_90px_-52px_rgba(15,23,42,0.32)]">
+            <div className="relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
+              <div className="absolute inset-0 hidden lg:block">
                 <Image
                   src="/home-assets/hero-bg.png"
                   alt="Hero RedFeng"
                   fill
                   priority
-                  className="object-cover object-[28%_52%]"
+                  className="object-cover object-center"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,245,0.88)_0%,rgba(255,250,245,0.7)_12%,rgba(255,250,245,0.36)_24%,rgba(255,250,245,0.1)_38%,rgba(255,255,255,0)_54%),linear-gradient(180deg,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0)_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,250,245,0.96)_0%,rgba(255,250,245,0.88)_16%,rgba(255,250,245,0.56)_30%,rgba(255,250,245,0.18)_46%,rgba(255,255,255,0.03)_62%,rgba(255,255,255,0)_76%),linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0.02)_100%)]" />
               </div>
 
-              <header className="relative z-10 flex items-center justify-between gap-4">
-                <Link href="/" className="flex items-center gap-2">
-                  <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
-                </Link>
-
-                <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
-                  <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
-                  <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
-                  <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
-                  <a href="https://redfeng.co/bus-travel/" className="pb-3 hover:text-[#ef3b2d]">Bus</a>
-                  <a href="https://redfeng.co/kapal_laut/" className="pb-3 hover:text-[#ef3b2d]">Kapal</a>
-                  <a href="https://redfeng.co/aktivitas/" className="pb-3 hover:text-[#ef3b2d]">Aktivitas</a>
-                  <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
-                  <a href="https://redfeng.co/promo/" className="pb-3 hover:text-[#ef3b2d]">Promo</a>
-                </nav>
-
-                <div className="hidden items-center gap-5 lg:flex">
-                  <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
-                  <button className="flex items-center gap-1 text-sm text-slate-700">
-                    IDR
-                    <ChevronDownIcon className="h-4 w-4" />
-                  </button>
-                  <button className="text-slate-700">
-                    <BellIcon className="h-5 w-5" />
-                  </button>
-                  <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white">
-                    Login / Daftar
+              <div className="relative mx-auto max-w-[1240px] px-5 pb-16 pt-5 sm:px-6 lg:px-8">
+                <header className="relative z-10 flex items-center justify-between gap-4">
+                  <Link href="/" className="flex items-center gap-2">
+                    <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto" />
                   </Link>
-                </div>
 
-                <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm lg:hidden">
-                  <MenuIcon className="h-5 w-5" />
-                </button>
-              </header>
+                  <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
+                    <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
+                    <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
+                    <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
+                    <a href="https://redfeng.co/bus-travel/" className="pb-3 hover:text-[#ef3b2d]">Bus</a>
+                    <a href="https://redfeng.co/kapal_laut/" className="pb-3 hover:text-[#ef3b2d]">Kapal</a>
+                    <a href="https://redfeng.co/aktivitas/" className="pb-3 hover:text-[#ef3b2d]">Aktivitas</a>
+                    <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
+                    <a href="https://redfeng.co/promo/" className="pb-3 hover:text-[#ef3b2d]">Promo</a>
+                  </nav>
 
-              <div className="relative z-10 pt-8 lg:pt-12">
-                <div className="max-w-[520px] pb-4 lg:min-h-[430px] lg:pb-0">
-                  <h1 className="text-[36px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[48px] lg:text-[60px]">
-                    Semua kebutuhan
-                    <span className="block">perjalanan Anda,</span>
-                    <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
-                  </h1>
-                  <p className="mt-5 max-w-[400px] text-[15px] leading-8 text-slate-600 sm:text-[16px] sm:leading-8">
-                    Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
-                  </p>
+                  <div className="hidden items-center gap-5 lg:flex">
+                    <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
+                    <button className="flex items-center gap-1 text-sm text-slate-700">
+                      IDR
+                      <ChevronDownIcon className="h-4 w-4" />
+                    </button>
+                    <button className="text-slate-700">
+                      <BellIcon className="h-5 w-5" />
+                    </button>
+                    <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white">
+                      Login / Daftar
+                    </Link>
+                  </div>
 
+                  <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm lg:hidden">
+                    <MenuIcon className="h-5 w-5" />
+                  </button>
+                </header>
+
+                <div className="relative z-10 pt-8 lg:pt-12">
+                  <div className="max-w-[520px] pb-4 lg:min-h-[430px] lg:pb-0">
+                    <h1 className="text-[36px] font-black leading-[1.05] tracking-[-0.055em] text-slate-950 sm:text-[48px] lg:text-[60px]">
+                      Semua kebutuhan
+                      <span className="block">perjalanan Anda,</span>
+                      <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
+                    </h1>
+                    <p className="mt-5 max-w-[400px] text-[15px] leading-8 text-slate-600 sm:text-[16px] sm:leading-8">
+                      Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
