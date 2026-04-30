@@ -144,10 +144,10 @@ export default async function HomePage() {
   const locale = await getCurrentLocale()
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fffaf7_0%,#f7fbff_24%,#ffffff_46%,#fffdf9_100%)] text-slate-900">
+    <div className="min-h-screen bg-white text-slate-900">
       <main className="pb-28 md:pb-0">
         <section>
-          <div className="overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_30px_70px_-56px_rgba(15,23,42,0.18)]">
+          <div className="overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_18px_36px_-34px_rgba(15,23,42,0.08)]">
             <div className="relative overflow-hidden">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
               <div className="absolute inset-0 hidden lg:block">
@@ -213,7 +213,7 @@ export default async function HomePage() {
             </div>
 
             <div className="relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
-              <div className="overflow-hidden rounded-[30px] border border-white/85 bg-white shadow-[0_24px_50px_-36px_rgba(15,23,42,0.18)]">
+              <div className="overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_16px_30px_-28px_rgba(15,23,42,0.08)]">
                 <div className="flex gap-2 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-semibold text-slate-700">
                   {heroTabs.map((tab, index) => {
                     const Icon = tab.icon
@@ -292,7 +292,7 @@ export default async function HomePage() {
               return (
                 <article
                   key={card.label}
-                  className="rounded-[24px] border border-white bg-white px-4 py-5 text-center shadow-[0_18px_36px_-30px_rgba(15,23,42,0.16)] ring-1 ring-slate-100"
+                  className="rounded-[24px] border border-slate-100 bg-white px-4 py-5 text-center shadow-[0_10px_24px_-26px_rgba(15,23,42,0.08)]"
                 >
                   <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-[#f8fafc] ${card.tone}`}>
                     <Icon className="h-7 w-7" />
