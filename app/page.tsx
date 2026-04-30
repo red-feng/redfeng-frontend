@@ -287,14 +287,14 @@ export default async function HomePage() {
 
         <section className="mx-auto -mt-1 max-w-[1240px] px-4 pb-4 pt-1 sm:px-6 lg:px-8">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
-            {serviceCards.map((card, index) => {
+            {serviceCards.map((card) => {
               const Icon = card.icon
               return (
                 <article
                   key={card.label}
-                  className="rounded-[24px] border border-[#e7edf5] bg-white px-4 py-5 text-center shadow-[0_8px_18px_-24px_rgba(15,23,42,0.06)]"
+                  className="group rounded-[24px] border border-[#e7edf5] bg-white px-4 py-5 text-center shadow-[0_8px_18px_-24px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-1 hover:border-[#d8e3f0] hover:shadow-[0_18px_36px_-24px_rgba(15,23,42,0.12)]"
                 >
-                  <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-white ${card.tone}`}>
+                  <div className={`mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] bg-white transition-transform duration-200 group-hover:scale-105 ${card.tone}`}>
                     <Icon className="h-7 w-7" />
                   </div>
                   <h3 className="mt-4 text-[16px] font-bold">{card.label}</h3>
