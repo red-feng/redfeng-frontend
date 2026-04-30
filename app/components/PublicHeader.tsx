@@ -39,10 +39,10 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <a href="https://redfeng.co/" className="flex items-center gap-3">
               <Image
-                src="/logo-redfeng.png"
+                src="/home-assets/logo-redfeng-header.png"
                 alt="Red Feng"
-                width={295}
-                height={101}
+                width={1536}
+                height={1024}
                 priority
                 className="h-9 w-auto sm:h-14 md:h-16 lg:h-20"
               />

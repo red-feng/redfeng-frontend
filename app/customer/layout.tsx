@@ -116,10 +116,10 @@ export default async function CustomerLayout({
             <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <Link href="/customer" className="inline-flex items-center">
                 <Image
-                  src="/logo-redfeng.png"
+                  src="/home-assets/logo-redfeng-header.png"
                   alt="RedFeng"
-                  width={220}
-                  height={64}
+                  width={1536}
+                  height={1024}
                   priority
                   className="h-10 w-auto sm:h-11 md:h-12 lg:h-14"
                 />

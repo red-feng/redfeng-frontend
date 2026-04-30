@@ -385,11 +385,10 @@ export default function Step1Basic({
         {/* HEADER LOGO */}
         <div className="px-4 py-4 sm:px-6 sm:py-5 lg:px-8 lg:py-6">
           <Image
-            src="/logo-redfeng.png"
+            src="/home-assets/logo-redfeng-header.png"
             alt="Red Feng"
-            width={0}
-            height={0}
-            sizes="100vw"
+            width={1536}
+            height={1024}
             className="h-20 w-auto sm:h-24 lg:h-32"
             priority
           />

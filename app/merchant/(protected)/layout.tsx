@@ -242,10 +242,10 @@ export default async function MerchantLayout({
               <div className="flex items-center gap-3 sm:gap-4">
                 <Link href="/merchant/dashboard" className="inline-flex items-center">
                   <Image
-                    src="/logo-redfeng.png"
+                    src="/home-assets/logo-redfeng-header.png"
                     alt="Red Feng"
-                    width={220}
-                    height={64}
+                    width={1536}
+                    height={1024}
                     priority
                     className="h-10 w-auto sm:h-12 md:h-14"
                   />

@@ -35,7 +35,7 @@ function BrandMark({
     >
       {isOperationsManager || showFullBrand ? (
         <Image
-          src="/logo-redfeng2.png"
+          src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"
           fill
           sizes={isOperationsManager ? "260px" : "176px"}

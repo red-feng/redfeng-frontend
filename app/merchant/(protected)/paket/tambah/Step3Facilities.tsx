@@ -93,11 +93,10 @@ export default function Step3Facilities({
       {/* HEADER AREA */}
             <div className="px-8 py-6">
               <Image
-                        src="/logo-redfeng.png"
+                        src="/home-assets/logo-redfeng-header.png"
                         alt="Red Feng"
-                        width={0}
-                        height={0}
-                        sizes="100vw"
+                        width={1536}
+                        height={1024}
                         className="h-32 w-auto"
                         priority
                       />
