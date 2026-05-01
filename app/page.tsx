@@ -39,7 +39,7 @@ const promoCards = [
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
     imageClass: "bg-[length:190%] bg-[position:84%_50%] opacity-52",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(255,244,240,0.24)_0%,rgba(255,118,90,0.34)_30%,rgba(157,42,35,0.52)_100%)]",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(255, 244, 240, 0.1)_0%,rgba(252, 104, 74, 0.34)_30%,rgba(157,42,35,0.52)_100%)]",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
