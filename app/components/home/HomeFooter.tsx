@@ -9,7 +9,7 @@ export default function HomeFooter() {
         <div className="grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
           <div>
             <Link href="/" className="flex items-center gap-2">
-              <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} className="h-[3.4rem] w-auto" />
+              <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} className="h-[4.6rem] w-auto" />
             </Link>
             <p className="mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
               Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
