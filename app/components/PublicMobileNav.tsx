@@ -66,15 +66,15 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   const copy = {
     id: {
       home: "Beranda",
-      packages: "Paket",
-      verify: "Invoice",
-      account: "Akun",
+      packages: "Pesanan",
+      verify: "Promo",
+      account: "Akun Saya",
     },
     en: {
       home: "Home",
-      packages: "Packages",
-      verify: "Invoice",
-      account: "Account",
+      packages: "Orders",
+      verify: "Promo",
+      account: "My Account",
     },
     zh: {
       home: "首页",
@@ -97,31 +97,31 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
       ),
     },
     {
-      href: "/packages",
+      href: "/customer/bookings",
       label: copy.packages,
-      accent: "from-[#fb7185] to-[#ef5b2a]",
+      accent: "from-[#94a3b8] to-[#64748b]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
-          <rect x="4" y="5" width="16" height="14" rx="3" />
-          <path d="M8 9h8M8 13h5" />
+          <path d="M7 5.5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19.5H7A1.5 1.5 0 0 1 5.5 18V7A1.5 1.5 0 0 1 7 5.5Z" />
+          <path d="M9 4v3M15 4v3M8.5 10h7M8.5 14H12" />
         </svg>
       ),
     },
     {
-      href: "/verifikasi-invoice",
+      href: "/promo",
       label: copy.verify,
-      accent: "from-[#38bdf8] to-[#06b6d4]",
+      accent: "from-[#94a3b8] to-[#64748b]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
-          <path d="M7 4h8l4 4v11a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z" />
-          <path d="M15 4v4h4M9 13h6M9 17h4" />
+          <path d="m12 4 6 6-6 6-6-6 6-6Z" />
+          <path d="M12 8.2v3.6M10.2 10h3.6" />
         </svg>
       ),
     },
     {
       href: accountHref,
       label: copy.account,
-      accent: "from-[#22c55e] to-[#84cc16]",
+      accent: "from-[#94a3b8] to-[#64748b]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <circle cx="12" cy="8" r="3.5" />
@@ -150,13 +150,15 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
               <span
                 className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
                   isActive
-                    ? `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(239,91,42,0.9)]`
-                    : "bg-slate-100 text-slate-500"
+                    ? item.href === "/"
+                      ? "bg-[linear-gradient(180deg,#ffede8_0%,#fff6f3_100%)] text-[#ef5b2a] shadow-[0_16px_30px_-18px_rgba(239,91,42,0.36)]"
+                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(100,116,139,0.35)]`
+                    : "bg-white text-slate-500"
                 }`}
               >
                 {item.icon}
               </span>
-              <span className={`mt-1.5 ${isActive ? "font-bold" : "font-semibold"}`}>{item.label}</span>
+              <span className={`mt-1.5 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
               {isActive ? <span className="mt-1 h-1 w-5 rounded-full bg-[#ef5b2a]" /> : <span className="mt-1 h-1 w-5 rounded-full bg-transparent" />}
             </Link>
           )
