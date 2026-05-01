@@ -9,20 +9,20 @@ export default function HomeNewsletterSection() {
         }}
       >
         <div className="relative grid gap-5 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
-          <div className="absolute -right-5 top-2 hidden h-[160px] w-[180px] bg-[url('/home-assets/promo-flight.png')] bg-contain bg-no-repeat opacity-45 sm:block lg:hidden" />
+          <div className="absolute -right-4 top-3 h-[120px] w-[150px] bg-[url('/home-assets/promo-flight.png')] bg-contain bg-no-repeat opacity-45 sm:h-[160px] sm:w-[180px]" />
           <div className="relative z-10">
-            <h2 className="max-w-[260px] text-[18px] font-black leading-8 tracking-[-0.04em] text-slate-900 lg:max-w-none lg:text-[28px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
-            <p className="mt-3 max-w-[250px] text-[13px] leading-6 text-slate-600 lg:max-w-sm">
+            <h2 className="max-w-[240px] text-[18px] font-black leading-8 tracking-[-0.04em] text-slate-900 lg:max-w-none lg:text-[28px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
+            <p className="mt-3 max-w-[220px] text-[13px] leading-6 text-slate-600 lg:max-w-sm">
               Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.
             </p>
           </div>
-          <div className="relative z-10 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <div className="relative z-10 grid grid-cols-[1fr_auto] gap-3">
             <input
               type="email"
               placeholder="Masukkan email Anda"
               className="h-12 rounded-xl border border-white bg-white px-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.25)]"
             />
-            <button className="h-12 rounded-xl bg-[#ef3b2d] px-8 text-sm font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">Langganan</button>
+            <button className="h-12 min-w-[116px] rounded-xl bg-[#ef3b2d] px-6 text-sm font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">Langganan</button>
           </div>
         </div>
       </div>

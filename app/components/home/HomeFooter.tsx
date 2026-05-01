@@ -15,10 +15,10 @@ export default function HomeFooter() {
               Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
             </p>
             <div className="mt-4 flex gap-3 text-slate-500">
-              <SocialCircle label="ig" />
-              <SocialCircle label="fb" />
-              <SocialCircle label="yt" />
-              <SocialCircle label="tt" />
+              <SocialIcon kind="ig" />
+              <SocialIcon kind="fb" />
+              <SocialIcon kind="yt" />
+              <SocialIcon kind="tt" />
             </div>
           </div>
 
@@ -86,10 +86,15 @@ function FooterColumn({ title, items }: { title: string; items: string[] }) {
   )
 }
 
-function SocialCircle({ label }: { label: string }) {
-  return (
-    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-[10px] font-bold uppercase">
-      {label}
-    </span>
-  )
+function SocialIcon({ kind }: { kind: "ig" | "fb" | "yt" | "tt" }) {
+  if (kind === "ig") {
+    return <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 ring-1 ring-slate-200"><svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><rect x="5" y="5" width="14" height="14" rx="4" /><circle cx="12" cy="12" r="3.2" /><circle cx="16.5" cy="7.5" r="0.8" fill="currentColor" stroke="none" /></svg></span>
+  }
+  if (kind === "fb") {
+    return <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 ring-1 ring-slate-200"><svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><path d="M13.5 20v-7h2.3l.5-3h-2.8V8.3c0-.9.4-1.8 1.9-1.8H16V4.1c-.4-.1-1.2-.2-2.2-.2-2.4 0-4 1.4-4 4.1V10H7.5v3h2.3v7" /></svg></span>
+  }
+  if (kind === "yt") {
+    return <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 ring-1 ring-slate-200"><svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><path d="M20 8.8a2.3 2.3 0 0 0-1.6-1.6C17 6.8 12 6.8 12 6.8s-5 0-6.4.4A2.3 2.3 0 0 0 4 8.8c-.4 1.4-.4 3.2-.4 3.2s0 1.8.4 3.2a2.3 2.3 0 0 0 1.6 1.6c1.4.4 6.4.4 6.4.4s5 0 6.4-.4a2.3 2.3 0 0 0 1.6-1.6c.4-1.4.4-3.2.4-3.2s0-1.8-.4-3.2Z" /><path d="m10 15.2 4.2-3.2L10 8.8v6.4Z" fill="currentColor" stroke="none" /></svg></span>
+  }
+  return <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 ring-1 ring-slate-200"><svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><path d="M14 10.5a3.4 3.4 0 1 0 0 3" /><path d="M9.5 8.5v7M14.5 8.5v7M6 8.5v7M18 8.5v7" /></svg></span>
 }

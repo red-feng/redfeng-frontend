@@ -133,7 +133,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
-      <div className="mx-auto max-w-xl rounded-[28px] border border-white/70 bg-white/96 px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.38)] backdrop-blur">
+      <div className="mx-auto max-w-xl rounded-[28px] border border-[#eceff5] bg-white px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.24)]">
         <div className="grid grid-cols-4 gap-1.5">
         {items.map((item) => {
           const isActive =
@@ -152,7 +152,7 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
                   isActive
                     ? item.href === "/"
                       ? "bg-[linear-gradient(180deg,#ffede8_0%,#fff6f3_100%)] text-[#ef5b2a] shadow-[0_16px_30px_-18px_rgba(239,91,42,0.36)]"
-                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(100,116,139,0.35)]`
+                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(100,116,139,0.2)]`
                     : "bg-white text-slate-500"
                 }`}
               >

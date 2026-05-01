@@ -6,7 +6,7 @@ export default function HeroHeader() {
   return (
     <header className="relative z-10 flex items-center justify-between gap-4">
       <Link href="/" className="flex items-center gap-2">
-        <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-10 w-auto sm:h-11" />
+        <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-9 w-auto sm:h-11" />
       </Link>
 
       <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
@@ -35,10 +35,10 @@ export default function HeroHeader() {
       </div>
 
       <div className="flex items-center gap-2 lg:hidden">
-        <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
+        <button className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
           <BellIcon className="h-5 w-5" />
         </button>
-        <button className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
+        <button className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
           <MenuIcon className="h-5 w-5" />
         </button>
       </div>

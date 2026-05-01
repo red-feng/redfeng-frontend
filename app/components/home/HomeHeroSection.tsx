@@ -13,14 +13,14 @@ export default function HomeHeroSection() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
           <DesktopHeroBackdrop />
 
-          <div className="relative mx-auto max-w-[1240px] px-5 pb-16 pt-5 sm:px-6 lg:px-8">
+          <div className="relative mx-auto max-w-[1240px] px-5 pb-12 pt-5 sm:px-6 lg:px-8">
             <HeroHeader />
             <MobileHeroBackdrop />
             <HeroIntro />
           </div>
         </div>
 
-        <div className="relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-8 sm:-mt-36 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_16px_30px_-28px_rgba(15,23,42,0.08)]">
             <HeroTabs />
             <HeroSearchPanel />
@@ -43,8 +43,8 @@ function DesktopHeroBackdrop() {
 function MobileHeroBackdrop() {
   return (
     <div className="absolute inset-0 lg:hidden">
-      <Image src="/home-assets/hero-bg.png" alt="Hero RedFeng" fill priority className="object-cover object-[66%_center]" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.88)_38%,rgba(255,255,255,0.2)_72%,rgba(255,255,255,0.02)_100%),linear-gradient(180deg,rgba(255,252,247,0.65)_0%,rgba(255,252,247,0.12)_100%)]" />
+      <Image src="/home-assets/hero-bg.png" alt="Hero RedFeng" fill priority className="object-cover object-[72%_center]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.97)_0%,rgba(255,255,255,0.9)_36%,rgba(255,255,255,0.18)_72%,rgba(255,255,255,0.02)_100%),linear-gradient(180deg,rgba(255,252,247,0.52)_0%,rgba(255,252,247,0.1)_100%)]" />
     </div>
   )
 }
@@ -52,13 +52,13 @@ function MobileHeroBackdrop() {
 function HeroIntro() {
   return (
     <div className="relative z-10 pt-8 lg:pt-12">
-      <div className="max-w-[520px] pb-44 lg:min-h-[430px] lg:pb-0">
-        <h1 className="text-[28px] font-black leading-[1.08] tracking-[-0.05em] text-slate-950 sm:text-[48px] lg:text-[60px]">
+      <div className="max-w-[520px] pb-40 lg:min-h-[430px] lg:pb-0">
+        <h1 className="max-w-[290px] text-[28px] font-black leading-[1.08] tracking-[-0.05em] text-slate-950 sm:text-[48px] lg:max-w-none lg:text-[60px]">
           Semua kebutuhan
           <span className="block">perjalanan Anda,</span>
           <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
         </h1>
-        <p className="mt-4 max-w-[330px] text-[15px] leading-8 text-slate-700 sm:text-[16px] sm:leading-8">
+        <p className="mt-4 max-w-[295px] text-[15px] leading-8 text-slate-700 sm:text-[16px] sm:leading-8">
           Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
         </p>
       </div>

@@ -11,7 +11,7 @@ export default function HeroSearchMobile() {
         <HeroSearchField label="Pulang" value="28 Mei 2026" sublabel="Rabu" compact />
         <HeroSearchField label="Penumpang" value="1 Dewasa" sublabel="Ekonomi" withChevron compact />
       </div>
-      <Link href="/packages" className="mt-4 inline-flex min-h-[56px] w-full items-center justify-center rounded-[16px] bg-[#ff3a31] px-10 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
+      <Link href="/packages" className="mt-5 inline-flex min-h-[54px] w-full items-center justify-center rounded-[14px] bg-[#ff3a31] px-10 text-[15px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
         Cari Tiket
       </Link>
     </div>
