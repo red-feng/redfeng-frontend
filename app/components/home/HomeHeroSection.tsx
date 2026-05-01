@@ -20,8 +20,8 @@ export default function HomeHeroSection() {
           </div>
         </div>
 
-        <div className="relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-8 sm:-mt-36 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_16px_30px_-28px_rgba(15,23,42,0.08)]">
+        <div className="relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:pb-14 lg:px-8">
+          <div className="overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs />
             <HeroSearchPanel />
           </div>
@@ -68,7 +68,7 @@ function HeroIntro() {
 
 function HeroSearchPanel() {
   return (
-    <div className="px-4 py-5 lg:px-6 lg:py-6">
+    <div className="px-4 py-5 lg:px-6 lg:py-7">
       <div className="hidden flex-wrap gap-6 text-[13px] text-slate-600 lg:flex">
         <label className="inline-flex items-center gap-2 font-medium text-slate-800">
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5a43]" />
