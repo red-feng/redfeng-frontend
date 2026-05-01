@@ -49,7 +49,7 @@ const promoCards = [
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
     imageClass: "bg-cover bg-[position:center] opacity-44",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(239,246,255,0.22)_0%,rgba(36,116,226,0.34)_30%,rgba(12,52,122,0.54)_100%)]",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(239, 246, 255, 0.1)_0%,rgba(36,116,226,0.34)_30%,rgba(12,52,122,0.54)_100%)]",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
@@ -59,7 +59,7 @@ const promoCards = [
     image: "/home-assets/promo-package.png",
     gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
     imageClass: "bg-cover bg-[position:center] opacity-42",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(240,255,249,0.2)_0%,rgba(28,157,131,0.32)_32%,rgba(8,88,76,0.5)_100%)]",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(240, 255, 249, 0.1)_0%,rgba(28,157,131,0.32)_32%,rgba(8,88,76,0.5)_100%)]",
   },
 ]
 
