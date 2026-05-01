@@ -5,8 +5,17 @@ import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/homeC
 export default function HeroHeader() {
   return (
     <header className="relative z-10 flex items-center justify-between gap-4">
-      <Link href="/" className="flex items-center gap-2">
-        <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-16 w-auto sm:h-[5.1rem]" />
+      <Link href="/" className="flex items-center gap-2 rounded-[20px] bg-white/96 px-1.5 py-1">
+        <Image
+          src="/home-assets/logo-redfeng-header.png"
+          alt="RedFeng"
+          width={1536}
+          height={1024}
+          quality={100}
+          unoptimized
+          priority
+          className="h-16 w-auto sm:h-[5.1rem]"
+        />
       </Link>
 
       <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">

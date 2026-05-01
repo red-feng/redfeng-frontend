@@ -8,8 +8,16 @@ export default function HomeFooter() {
       <div className="mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
           <div>
-            <Link href="/" className="flex items-center gap-2">
-              <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} className="h-[4.6rem] w-auto" />
+            <Link href="/" className="flex w-fit items-center gap-2 rounded-[20px] bg-white px-1.5 py-1">
+              <Image
+                src="/home-assets/logo-redfeng-header.png"
+                alt="RedFeng"
+                width={1536}
+                height={1024}
+                quality={100}
+                unoptimized
+                className="h-[4.6rem] w-auto"
+              />
             </Link>
             <p className="mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
               Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
