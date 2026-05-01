@@ -14,7 +14,7 @@ export default function HeroHeader() {
           quality={100}
           unoptimized
           priority
-          className="h-16 w-auto sm:h-[5.1rem]"
+          className="h-[5.2rem] w-auto sm:h-[6.6rem]"
         />
       </Link>
 
