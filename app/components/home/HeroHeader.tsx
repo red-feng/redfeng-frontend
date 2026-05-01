@@ -6,7 +6,7 @@ export default function HeroHeader() {
   return (
     <header className="relative z-10 flex items-center justify-between gap-4">
       <Link href="/" className="flex items-center gap-2">
-        <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-9 w-auto sm:h-11" />
+        <Image src="/home-assets/logo-redfeng-header.png" alt="RedFeng" width={240} height={80} priority className="h-12 w-auto sm:h-[3.8rem]" />
       </Link>
 
       <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
