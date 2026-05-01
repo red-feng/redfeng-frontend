@@ -5,7 +5,7 @@ import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/homeC
 export default function HeroHeader() {
   return (
     <header className="relative z-10 flex items-center justify-between gap-4">
-      <Link href="/" className="flex items-center gap-2 rounded-[20px] bg-white/96 px-1.5 py-1">
+      <Link href="/" className="flex items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"

@@ -8,7 +8,7 @@ export default function HomeFooter() {
       <div className="mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
           <div>
-            <Link href="/" className="flex w-fit items-center gap-2 rounded-[20px] bg-white px-1.5 py-1">
+            <Link href="/" className="flex w-fit items-center gap-2">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
                 alt="RedFeng"
