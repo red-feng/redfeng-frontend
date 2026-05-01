@@ -33,13 +33,14 @@ const serviceCards: { label: string; desc: string; icon: CardIcon; tone: string 
 const promoCards = [
   {
     title: "Terbang Hemat\nke Banyak Destinasi",
+    badge: "Promo Terbatas",
     eyebrow: "Diskon hingga",
     price: "Rp 500.000*",
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
-    gradient: "from-[#ff7f73] via-[#ff6958] to-[#ff8f80]",
-    imageClass: "bg-[length:190%] bg-[position:84%_50%] opacity-52",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(255, 214, 205, 0.72)_0%,rgba(231, 63, 34, 0.76)_30%,rgba(110, 12, 10, 0.9)_100%)]",
+    gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
+    imageClass: "bg-[length:180%] bg-[position:84%_58%] opacity-60",
+    overlayClass: "bg-[linear-gradient(100deg,rgba(154,90,118,0.9)_0%,rgba(173,108,134,0.78)_36%,rgba(241,161,142,0.54)_100%)]",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
@@ -47,19 +48,19 @@ const promoCards = [
     price: "40%*",
     cta: "Booking Sekarang",
     image: "/home-assets/promo-hotel.png",
-    gradient: "from-[#1f6fd3] via-[#2079de] to-[#55a6f4]",
-    imageClass: "bg-cover bg-[position:center] opacity-44",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(27, 44, 73, 0.76)_0%,rgba(10, 84, 196, 0.72)_30%,rgba(4, 26, 80, 0.9)_100%)]",
+    gradient: "from-[#2874d8] via-[#327ee1] to-[#175ec3]",
+    imageClass: "bg-cover bg-[position:center] opacity-42",
+    overlayClass: "bg-[linear-gradient(100deg,rgba(37,103,201,0.88)_0%,rgba(49,123,222,0.7)_34%,rgba(17,64,140,0.72)_100%)]",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
     eyebrow: "Mulai dari",
-    price: "Rp 1 Juta*",
+    price: "Rp 1,9 Juta*",
     cta: "Lihat Paket",
     image: "/home-assets/promo-package.png",
-    gradient: "from-[#1b8a72] via-[#1e9b83] to-[#38b8a1]",
-    imageClass: "bg-cover bg-[position:center] opacity-42",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(213, 255, 239, 0.72)_0%,rgba(6, 129, 102, 0.7)_32%,rgba(3, 59, 50, 0.88)_100%)]",
+    gradient: "from-[#1799aa] via-[#1a96a9] to-[#256f87]",
+    imageClass: "bg-cover bg-[position:center] opacity-46",
+    overlayClass: "bg-[linear-gradient(100deg,rgba(23,153,170,0.82)_0%,rgba(37,170,155,0.56)_36%,rgba(40,110,116,0.66)_100%)]",
   },
 ]
 
@@ -318,18 +319,26 @@ export default async function HomePage() {
                 key={card.title}
                 className={`relative overflow-hidden rounded-[20px] px-6 py-5 text-white shadow-[0_24px_50px_-34px_rgba(15,23,42,0.3)] ${
                   index === 0
-                    ? `min-h-[190px] bg-gradient-to-br ${card.gradient} lg:col-span-1`
-                    : `min-h-[190px] bg-gradient-to-br ${card.gradient}`
+                    ? `min-h-[218px] bg-gradient-to-br ${card.gradient} lg:col-span-1 lg:px-6 lg:py-6`
+                    : `min-h-[218px] bg-gradient-to-br ${card.gradient} lg:px-6 lg:py-6`
                 }`}
               >
                 <div className={`absolute inset-0 ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
                 <div className={`absolute inset-0 ${card.overlayClass}`} />
-                <div className="relative z-10 max-w-[240px]">
-                  {index === 0 ? <span className="inline-flex rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#ff5a43]">Promo Terbatas</span> : null}
-                  <h3 className={`whitespace-pre-line font-bold leading-[1.15] ${index === 0 ? "mt-4 text-[34px] tracking-[-0.05em]" : "text-[26px] tracking-[-0.04em]"}`}>{card.title}</h3>
-                  <p className="mt-4 text-[12px] text-white/85">{card.eyebrow}</p>
-                  <p className={`mt-1 font-black ${index === 0 ? "text-[24px]" : "text-[22px]"}`}>{card.price}</p>
-                  <button className="mt-4 rounded-lg bg-white px-4 py-2 text-[12px] font-semibold text-slate-900">{card.cta}</button>
+                <div className={`relative z-10 ${index === 0 ? "max-w-[255px]" : "max-w-[235px]"}`}>
+                  {card.badge ? (
+                    <span className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.05em] text-[#ff5b4d]">
+                      {card.badge}
+                    </span>
+                  ) : null}
+                  <h3 className={`whitespace-pre-line font-bold leading-[1.08] ${index === 0 ? "mt-6 text-[32px] tracking-[-0.06em]" : "text-[26px] tracking-[-0.05em]"}`}>
+                    {card.title}
+                  </h3>
+                  <p className={`text-white/90 ${index === 0 ? "mt-5 text-[13px]" : "mt-4 text-[13px]"}`}>{card.eyebrow}</p>
+                  <p className={`mt-1 font-black tracking-[-0.03em] ${index === 0 ? "text-[22px]" : "text-[18px] sm:text-[20px]"}`}>{card.price}</p>
+                  <button className="mt-5 rounded-[11px] bg-white px-4 py-2.5 text-[12px] font-bold text-slate-900 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.45)]">
+                    {card.cta}
+                  </button>
                 </div>
               </article>
             ))}
