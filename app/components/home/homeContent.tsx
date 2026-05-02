@@ -35,7 +35,7 @@ export const promoCards = [
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
-    imageClass: "bg-[length:162%] bg-[position:96%_65%] opacity-36",
+    imageClass: "bg-[length:162%] bg-[position:8%_65%] opacity-36",
     overlayClass: "bg-[linear-gradient(92deg,rgba(133,72,104,0.92)_0%,rgba(167,101,129,0.86)_34%,rgba(208,132,145,0.7)_68%,rgba(239,165,144,0.5)_100%)]",
     glowClass: "bg-[radial-gradient(circle_at_78%_22%,rgba(255,224,212,0.24)_0%,rgba(255,224,212,0.12)_18%,rgba(255,224,212,0)_42%)]",
   },
