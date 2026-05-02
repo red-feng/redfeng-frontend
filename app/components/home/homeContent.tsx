@@ -36,7 +36,7 @@ export const promoCards = [
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
     imageClass: "bg-[length:162%] bg-[position:8%_65%] opacity-36",
-    overlayClass: "bg-[linear-gradient(92deg,rgba(133,72,104,0.18)_0%,rgba(167,101,129,0.4)_28%,rgba(208,132,145,0.68)_64%,rgba(239,165,144,0.88)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(133,72,104,0)_0%,rgba(167,101,129,0.08)_24%,rgba(208,132,145,0.38)_58%,rgba(239,165,144,0.8)_100%)]",
     glowClass: "bg-[radial-gradient(circle_at_78%_22%,rgba(255,224,212,0.24)_0%,rgba(255,224,212,0.12)_18%,rgba(255,224,212,0)_42%)]",
   },
   {
@@ -47,7 +47,7 @@ export const promoCards = [
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#2874d8] via-[#327ee1] to-[#175ec3]",
     imageClass: "bg-cover bg-[position:66%_center] opacity-34",
-    overlayClass: "bg-[linear-gradient(92deg,rgba(25,88,192,0.94)_0%,rgba(39,108,211,0.88)_32%,rgba(59,133,233,0.72)_58%,rgba(28,92,191,0.38)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(25,88,192,0)_0%,rgba(39,108,211,0.08)_24%,rgba(59,133,233,0.36)_58%,rgba(28,92,191,0.78)_100%)]",
     glowClass: "bg-[radial-gradient(circle_at_24%_18%,rgba(151,202,255,0.22)_0%,rgba(151,202,255,0.11)_16%,rgba(151,202,255,0)_38%)]",
   },
   {
@@ -58,7 +58,7 @@ export const promoCards = [
     image: "/home-assets/promo-package.png",
     gradient: "from-[#1799aa] via-[#1a96a9] to-[#256f87]",
     imageClass: "bg-cover bg-[position:61%_center] opacity-34",
-    overlayClass: "bg-[linear-gradient(92deg,rgba(18,140,154,0.9)_0%,rgba(25,156,166,0.82)_30%,rgba(82,192,173,0.5)_58%,rgba(28,109,121,0.46)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(18,140,154,0)_0%,rgba(25,156,166,0.08)_24%,rgba(82,192,173,0.34)_58%,rgba(28,109,121,0.76)_100%)]",
     glowClass: "bg-[radial-gradient(circle_at_28%_22%,rgba(191,255,234,0.18)_0%,rgba(191,255,234,0.09)_18%,rgba(191,255,234,0)_40%)]",
   },
 ]
