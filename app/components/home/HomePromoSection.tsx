@@ -2,36 +2,35 @@ import { HeartIcon, promoCards } from "@/app/components/home/homeContent"
 
 export default function HomePromoSection() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 py-5 sm:px-6 lg:px-8">
-      <div className="grid gap-3 lg:grid-cols-[1.1fr_1fr_1fr] lg:gap-4">
+    <section className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
+      <div className="grid gap-4 lg:grid-cols-3 lg:gap-[18px]">
         {promoCards.map((card, index) => (
           <article
             key={card.title}
-            className={`relative overflow-hidden rounded-[20px] px-6 py-5 text-white shadow-[0_24px_50px_-34px_rgba(15,23,42,0.3)] ${
-              index === 0
-                ? `min-h-[172px] bg-gradient-to-br ${card.gradient} lg:col-span-1 lg:min-h-[218px] lg:px-6 lg:py-6`
-                : `min-h-[172px] bg-gradient-to-br ${card.gradient} lg:min-h-[218px] lg:px-6 lg:py-6`
-            }`}
+            className={`group relative flex min-h-[286px] flex-col overflow-hidden rounded-[26px] bg-gradient-to-br ${card.gradient} px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:px-6 sm:py-6 lg:min-h-[332px]`}
           >
-            <div className={`absolute inset-0 ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
+            <div className={`absolute inset-0 scale-[1.01] bg-no-repeat transition-transform duration-500 group-hover:scale-[1.05] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
             <div className={`absolute inset-0 ${card.overlayClass}`} />
+            <div className="absolute inset-x-0 bottom-0 h-[52%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.18)_100%)]" />
             {index > 0 ? (
-              <button className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/12 text-white backdrop-blur">
+              <button className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
                 <HeartIcon className="h-4 w-4" />
               </button>
             ) : null}
-            <div className={`relative z-10 ${index === 0 ? "max-w-[185px] lg:max-w-[255px]" : "max-w-[185px] lg:max-w-[235px]"}`}>
+            <div className={`relative z-10 flex h-full flex-col ${index === 0 ? "max-w-[220px] sm:max-w-[232px]" : "max-w-[232px] sm:max-w-[242px]"}`}>
               {card.badge ? (
-                <span className="inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-extrabold uppercase tracking-[0.05em] text-[#ff5b4d]">
+                <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
                   {card.badge}
                 </span>
               ) : null}
-              <h3 className={`whitespace-pre-line font-bold leading-[1.14] ${index === 0 ? "mt-1 text-[19px] tracking-[-0.05em] lg:mt-6 lg:text-[32px] lg:tracking-[-0.06em]" : "text-[17px] tracking-[-0.04em] lg:text-[26px] lg:tracking-[-0.05em]"}`}>
+              <h3 className={`whitespace-pre-line font-black leading-[1.08] tracking-[-0.07em] ${index === 0 ? "mt-7 text-[24px] sm:text-[31px]" : "mt-7 text-[24px] sm:text-[29px]"}`}>
                 {card.title}
               </h3>
-              <p className={`text-white/90 ${index === 0 ? "mt-2 lg:mt-5" : "mt-2 lg:mt-4"} text-[13px]`}>{card.eyebrow}</p>
-              <p className={`mt-1 font-black tracking-[-0.03em] ${index === 0 ? "text-[17px] lg:text-[22px]" : "text-[15px] sm:text-[18px] lg:text-[20px]"}`}>{card.price}</p>
-              <button className="mt-3 rounded-[11px] bg-white px-4 py-2.5 text-[12px] font-bold text-slate-900 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.45)] lg:mt-5">
+              <div className="mt-auto pt-8">
+                <p className="text-[14px] font-medium leading-none text-white/92">{card.eyebrow}</p>
+                <p className={`mt-2 font-black leading-none tracking-[-0.05em] ${index === 0 ? "text-[19px] sm:text-[22px]" : "text-[19px] sm:text-[21px]"}`}>{card.price}</p>
+              </div>
+              <button className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-bold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]">
                 {card.cta}
               </button>
             </div>

@@ -35,8 +35,8 @@ export const promoCards = [
     cta: "Pesan Sekarang",
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
-    imageClass: "bg-[length:180%] bg-[position:84%_58%] opacity-60",
-    overlayClass: "bg-[linear-gradient(100deg,rgba(154,90,118,0.9)_0%,rgba(173,108,134,0.78)_36%,rgba(241,161,142,0.54)_100%)]",
+    imageClass: "bg-[length:162%] bg-[position:82%_65%] opacity-36",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(153,92,119,0.9)_0%,rgba(181,119,142,0.78)_48%,rgba(241,163,141,0.58)_100%)]",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
@@ -45,8 +45,8 @@ export const promoCards = [
     cta: "Booking Sekarang",
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#2874d8] via-[#327ee1] to-[#175ec3]",
-    imageClass: "bg-cover bg-[position:center] opacity-42",
-    overlayClass: "bg-[linear-gradient(100deg,rgba(37,103,201,0.88)_0%,rgba(49,123,222,0.7)_34%,rgba(17,64,140,0.72)_100%)]",
+    imageClass: "bg-cover bg-[position:66%_center] opacity-34",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(37,103,201,0.86)_0%,rgba(51,125,225,0.62)_44%,rgba(19,71,156,0.56)_100%)]",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
@@ -55,8 +55,8 @@ export const promoCards = [
     cta: "Lihat Paket",
     image: "/home-assets/promo-package.png",
     gradient: "from-[#1799aa] via-[#1a96a9] to-[#256f87]",
-    imageClass: "bg-cover bg-[position:center] opacity-46",
-    overlayClass: "bg-[linear-gradient(100deg,rgba(23,153,170,0.82)_0%,rgba(37,170,155,0.56)_36%,rgba(40,110,116,0.66)_100%)]",
+    imageClass: "bg-cover bg-[position:61%_center] opacity-34",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(23,153,170,0.82)_0%,rgba(30,160,151,0.5)_42%,rgba(35,106,119,0.54)_100%)]",
   },
 ]
 
