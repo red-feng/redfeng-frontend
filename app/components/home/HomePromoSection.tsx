@@ -11,7 +11,8 @@ export default function HomePromoSection() {
           >
             <div className={`absolute inset-0 scale-[1.01] bg-no-repeat transition-transform duration-500 group-hover:scale-[1.05] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
             <div className={`absolute inset-0 ${card.overlayClass}`} />
-            <div className="absolute inset-x-0 bottom-0 h-[52%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.18)_100%)]" />
+            <div className={`absolute inset-0 ${card.glowClass}`} />
+            <div className="absolute inset-x-0 bottom-0 h-[58%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.14)_46%,rgba(15,23,42,0.28)_100%)]" />
             {index > 0 ? (
               <button className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
                 <HeartIcon className="h-4 w-4" />

@@ -36,7 +36,8 @@ export const promoCards = [
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
     imageClass: "bg-[length:162%] bg-[position:82%_65%] opacity-36",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(153,92,119,0.9)_0%,rgba(181,119,142,0.78)_48%,rgba(241,163,141,0.58)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(133,72,104,0.92)_0%,rgba(167,101,129,0.86)_34%,rgba(208,132,145,0.7)_68%,rgba(239,165,144,0.5)_100%)]",
+    glowClass: "bg-[radial-gradient(circle_at_78%_22%,rgba(255,224,212,0.24)_0%,rgba(255,224,212,0.12)_18%,rgba(255,224,212,0)_42%)]",
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
@@ -46,7 +47,8 @@ export const promoCards = [
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#2874d8] via-[#327ee1] to-[#175ec3]",
     imageClass: "bg-cover bg-[position:66%_center] opacity-34",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(37,103,201,0.86)_0%,rgba(51,125,225,0.62)_44%,rgba(19,71,156,0.56)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(25,88,192,0.94)_0%,rgba(39,108,211,0.88)_32%,rgba(59,133,233,0.72)_58%,rgba(28,92,191,0.38)_100%)]",
+    glowClass: "bg-[radial-gradient(circle_at_24%_18%,rgba(151,202,255,0.22)_0%,rgba(151,202,255,0.11)_16%,rgba(151,202,255,0)_38%)]",
   },
   {
     title: "Paket Wisata\nDomestik & Internasional",
@@ -56,7 +58,8 @@ export const promoCards = [
     image: "/home-assets/promo-package.png",
     gradient: "from-[#1799aa] via-[#1a96a9] to-[#256f87]",
     imageClass: "bg-cover bg-[position:61%_center] opacity-34",
-    overlayClass: "bg-[linear-gradient(90deg,rgba(23,153,170,0.82)_0%,rgba(30,160,151,0.5)_42%,rgba(35,106,119,0.54)_100%)]",
+    overlayClass: "bg-[linear-gradient(92deg,rgba(18,140,154,0.9)_0%,rgba(25,156,166,0.82)_30%,rgba(82,192,173,0.5)_58%,rgba(28,109,121,0.46)_100%)]",
+    glowClass: "bg-[radial-gradient(circle_at_28%_22%,rgba(191,255,234,0.18)_0%,rgba(191,255,234,0.09)_18%,rgba(191,255,234,0)_40%)]",
   },
 ]
 
