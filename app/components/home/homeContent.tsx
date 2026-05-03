@@ -150,13 +150,13 @@ export const partnerLogos = [
 export const payments: PaymentLogo[] = [
   { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22 },
   { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22 },
-  { label: "BCA", src: "/home-assets/payment-bca.svg", width: 54, height: 22 },
-  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 84, height: 28 },
+  { label: "BCA", src: "/home-assets/payment-bca.svg", width: 60, height: 22 },
+  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22 },
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22 },
-  { label: "BRI", src: "/home-assets/payment-bri.png", width: 68, height: 28 },
+  { label: "BRI", src: "/home-assets/payment-bri.png", width: 54, height: 22 },
   { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22 },
   { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22 },
-  { label: "DANA", src: "/home-assets/payment-dana.svg", width: 64, height: 22 },
+  { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22 },
   { label: "ShopeePay", src: "/home-assets/payment-shopeepay.svg", width: 116, height: 22 },
 ]
 
