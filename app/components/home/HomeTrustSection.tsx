@@ -64,16 +64,29 @@ export default function HomeTrustSection() {
           </h3>
           <div className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start lg:gap-2.5">
             {payments.map((payment) => (
-              <span
-                key={payment}
-                className="inline-flex h-6 items-center justify-center rounded-md bg-white px-1.5 text-[8px] font-bold uppercase tracking-[0.04em] text-slate-700 ring-1 ring-slate-200 lg:h-8 lg:px-3 lg:text-[11px] lg:tracking-[0.08em]"
-              >
-                {payment}
-              </span>
+              <PaymentBadge key={payment.label} label={payment.label} src={payment.src} width={payment.width} height={payment.height} />
             ))}
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function PaymentBadge({ label, src, width = 96, height = 24 }: { label: string; src?: string; width?: number; height?: number }) {
+  return (
+    <span className="inline-flex min-h-6 min-w-[3rem] items-center justify-center rounded-md bg-white px-2 py-1 text-[8px] font-bold uppercase tracking-[0.04em] text-slate-700 ring-1 ring-slate-200 lg:min-h-8 lg:px-3 lg:py-1.5 lg:text-[11px] lg:tracking-[0.08em]">
+      {src ? (
+        <Image
+          src={src}
+          alt={label}
+          width={width}
+          height={height}
+          className="h-3 w-auto object-contain lg:h-5"
+        />
+      ) : (
+        label
+      )}
+    </span>
   )
 }

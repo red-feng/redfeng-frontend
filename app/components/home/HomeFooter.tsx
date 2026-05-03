@@ -40,12 +40,7 @@ export default function HomeFooter() {
             <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
             <div className="mt-4 flex flex-wrap gap-2.5">
               {payments.slice(0, 10).map((payment) => (
-                <span
-                  key={payment}
-                  className="inline-flex h-8 items-center justify-center rounded-md bg-white px-3 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200"
-                >
-                  {payment}
-                </span>
+                <PaymentBadge key={payment.label} label={payment.label} src={payment.src} width={payment.width} height={payment.height} />
               ))}
             </div>
           </div>
@@ -67,6 +62,24 @@ export default function HomeFooter() {
         </div>
       </div>
     </footer>
+  )
+}
+
+function PaymentBadge({ label, src, width = 96, height = 24 }: { label: string; src?: string; width?: number; height?: number }) {
+  return (
+    <span className="inline-flex min-h-8 min-w-[3.25rem] items-center justify-center rounded-md bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
+      {src ? (
+        <Image
+          src={src}
+          alt={label}
+          width={width}
+          height={height}
+          className="h-5 w-auto object-contain"
+        />
+      ) : (
+        label
+      )}
+    </span>
   )
 }
 

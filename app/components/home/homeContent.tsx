@@ -6,6 +6,13 @@ export type IconProps = {
 
 export type CardIcon = ComponentType<IconProps>
 
+export type PaymentLogo = {
+  label: string
+  src?: string
+  width?: number
+  height?: number
+}
+
 export const heroTabs = [
   { label: "Pesawat", badge: false, icon: PlaneIcon },
   { label: "Hotel", badge: false, icon: BuildingIcon },
@@ -140,7 +147,18 @@ export const partnerLogos = [
   { kind: "text", label: "Sriwijaya Air" },
 ] as const
 
-export const payments = ["VISA", "mastercard", "BCA", "mandiri", "BNI", "BRI", "gopay", "OVO", "dana", "ShopeePay"]
+export const payments: PaymentLogo[] = [
+  { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22 },
+  { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22 },
+  { label: "BCA", src: "/home-assets/payment-bca.svg", width: 54, height: 22 },
+  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 84, height: 28 },
+  { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22 },
+  { label: "BRI", src: "/home-assets/payment-bri.png", width: 68, height: 28 },
+  { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22 },
+  { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22 },
+  { label: "DANA", src: "/home-assets/payment-dana.svg", width: 64, height: 22 },
+  { label: "ShopeePay", src: "/home-assets/payment-shopeepay.svg", width: 116, height: 22 },
+]
 
 export const heroBenefits = [
   { title: "Harga Terbaik", body: "Pilihan terbaik untukmu", icon: PriceTagIcon },
