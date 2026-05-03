@@ -67,7 +67,7 @@ export default function HomeFooter() {
 
 function PaymentBadge({ label, src, width = 96, height = 24 }: { label: string; src?: string; width?: number; height?: number }) {
   return (
-    <span className="inline-flex min-h-8 min-w-[3.25rem] items-center justify-center rounded-md bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 ring-1 ring-slate-200">
+    <span className="inline-flex min-h-9 min-w-[4.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]">
       {src ? (
         <Image
           src={src}
