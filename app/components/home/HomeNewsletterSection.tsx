@@ -2,13 +2,13 @@ export default function HomeNewsletterSection() {
   return (
     <section className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
       <div
-        className="overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-5 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-6"
+        className="relative overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-5 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-6"
         style={{
-          backgroundImage:
-            "linear-gradient(90deg,rgba(255,252,250,0.92)_0%,rgba(255,249,246,0.8)_38%,rgba(255,245,240,0.58)_62%,rgba(255,242,237,0.72)_100%), url('/home-assets/newsletter-bg-china-2.png')",
+          backgroundImage: "url('/home-assets/newsletter-bg-china-2.png')",
           backgroundPosition: "center",
         }}
       >
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,251,248,0.62)_0%,rgba(255,248,244,0.42)_38%,rgba(255,244,239,0.22)_62%,rgba(255,246,241,0.38)_100%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
           <div className="relative z-10">
             <h2 className="max-w-[240px] text-[18px] font-black leading-8 tracking-[-0.04em] text-slate-900 lg:max-w-none lg:text-[28px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
