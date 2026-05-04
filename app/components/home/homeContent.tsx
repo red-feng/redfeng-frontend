@@ -159,7 +159,7 @@ export const payments: PaymentLogo[] = [
   { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
   { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 66 },
-  { label: "ShopeePay", src: "/home-assets/payment-shopeepay.svg", width: 116, height: 22, mobileRenderWidth: 84, desktopRenderWidth: 96 },
+  { label: "Alipay", src: "/home-assets/payment-alipay.svg", width: 2500, height: 630, mobileRenderWidth: 78, desktopRenderWidth: 92 },
 ]
 
 export const heroBenefits = [
