@@ -156,7 +156,7 @@ export const payments: PaymentLogo[] = [
   { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "BRI", src: "/home-assets/payment-bri.png", width: 54, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 48 },
-  { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
+  { label: "Midtrans", src: "/home-assets/payment-midtrans.jpg", width: 550, height: 101, mobileRenderWidth: 72, desktopRenderWidth: 86 },
   { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
   { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 66 },
   { label: "Alipay", src: "/home-assets/payment-alipay.svg", width: 2500, height: 630, mobileRenderWidth: 78, desktopRenderWidth: 92 },
