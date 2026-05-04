@@ -39,7 +39,7 @@ export default function HomeFooter() {
           <div className="hidden xl:block">
             <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
             <div className="mt-4 flex flex-wrap gap-2.5">
-              {payments.slice(0, 10).map((payment) => (
+              {payments.map((payment) => (
                 <PaymentBadge
                   key={payment.label}
                   label={payment.label}
