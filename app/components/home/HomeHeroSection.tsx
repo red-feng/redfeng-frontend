@@ -53,7 +53,7 @@ function HeroIntro() {
   return (
     <div className="home-hero-intro relative z-10 pt-8 lg:pt-12">
       <div className="home-hero-intro-shell max-w-[520px] pb-40 lg:min-h-[430px] lg:pb-0">
-        <h1 className="home-hero-title max-w-[290px] text-[28px] font-black leading-[1.08] tracking-[-0.05em] text-slate-950 sm:text-[48px] lg:max-w-none lg:text-[60px]">
+        <h1 className="home-hero-title max-w-[290px] text-[28px] font-black leading-[1.08] tracking-[-0.05em] text-slate-950 sm:text-[48px] lg:max-w-none lg:text-[52px] lg:leading-[1.04]">
           Semua kebutuhan
           <span className="block">perjalanan Anda,</span>
           <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
