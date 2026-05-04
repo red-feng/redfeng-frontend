@@ -161,7 +161,7 @@ export const payments: PaymentLogo[] = [
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "BRI", src: "/home-assets/payment-bri.jpg", width: 750, height: 185, mobileRenderWidth: 42, desktopRenderWidth: 48, mobileScale: 1.96, desktopScale: 1.96, mobileBoxWidth: 88, desktopBoxWidth: 104 },
   { label: "Midtrans", src: "/home-assets/payment-midtrans.jpg", width: 550, height: 101, mobileRenderWidth: 72, desktopRenderWidth: 86, mobileScale: 1.25, desktopScale: 1.25, mobileBoxWidth: 96, desktopBoxWidth: 112 },
-  { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
+  { label: "OVO", src: "/home-assets/payment-ovo.png", width: 1280, height: 399, mobileRenderWidth: 42, desktopRenderWidth: 46 },
   { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 66, mobileScale: 1.25, desktopScale: 1.25, mobileBoxWidth: 90, desktopBoxWidth: 104 },
   { label: "Alipay", src: "/home-assets/payment-alipay.svg", width: 2500, height: 630, mobileRenderWidth: 78, desktopRenderWidth: 92 },
   { label: "ATM Bersama", src: "/home-assets/payment-atm-bersama.jpg", width: 750, height: 402, mobileRenderWidth: 76, desktopRenderWidth: 92, mobileScale: 1.1, desktopScale: 1.1, mobileBoxWidth: 96, desktopBoxWidth: 112 },
