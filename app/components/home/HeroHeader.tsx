@@ -20,7 +20,7 @@ export default function HeroHeader() {
 
       <div className="hidden items-center gap-5 rounded-[24px] border border-white/45 bg-white/34 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.28)] backdrop-blur-[10px] lg:flex">
         <nav className="home-hero-primary-nav flex items-center gap-2 text-[15px] font-medium text-slate-800">
-          <a href="https://redfeng.co/pesawat/" className="rounded-full bg-white/72 px-3.5 py-2 text-[#ef3b2d] shadow-[0_10px_20px_-18px_rgba(15,23,42,0.35)] transition hover:bg-white/82">Pesawat</a>
+          <a href="https://redfeng.co/pesawat/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</a>
           <a href="https://redfeng.co/hotel/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</a>
           <a href="https://redfeng.co/kereta_api/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</a>
           <a href="https://redfeng.co/bus-travel/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</a>
