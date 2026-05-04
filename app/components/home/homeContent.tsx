@@ -154,7 +154,7 @@ export const payments: PaymentLogo[] = [
   { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22, mobileRenderWidth: 78, desktopRenderWidth: 90 },
   { label: "BCA", src: "/home-assets/payment-bca.png", width: 1011, height: 325, mobileRenderWidth: 56, desktopRenderWidth: 66 },
   { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
-  { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 68 },
+  { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "BRI", src: "/home-assets/payment-bri.png", width: 54, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 48 },
   { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
