@@ -2,7 +2,7 @@ import { serviceCards } from "@/app/components/home/homeContent"
 
 export default function HomeServicesSection() {
   return (
-    <section className="home-services-section mx-auto max-w-[1240px] px-4 pb-5 pt-2 sm:px-6 lg:px-8">
+    <section className="home-services-section mx-auto max-w-[1240px] px-4 pb-5 pt-2 sm:px-6 md:hidden lg:px-8">
       <div className="home-services-grid grid grid-cols-4 gap-3 sm:grid-cols-2 lg:grid-cols-7 lg:gap-4">
         {serviceCards.map((card) => {
           const Icon = card.icon
