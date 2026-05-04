@@ -11,6 +11,8 @@ export type PaymentLogo = {
   src?: string
   width?: number
   height?: number
+  mobileRenderWidth?: number
+  desktopRenderWidth?: number
 }
 
 export const heroTabs = [
@@ -148,16 +150,16 @@ export const partnerLogos = [
 ] as const
 
 export const payments: PaymentLogo[] = [
-  { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22 },
-  { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22 },
-  { label: "BCA", src: "/home-assets/payment-bca.svg", width: 60, height: 22 },
-  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22 },
-  { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22 },
-  { label: "BRI", src: "/home-assets/payment-bri.png", width: 54, height: 22 },
-  { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22 },
-  { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22 },
-  { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22 },
-  { label: "ShopeePay", src: "/home-assets/payment-shopeepay.svg", width: 116, height: 22 },
+  { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22, mobileRenderWidth: 50, desktopRenderWidth: 58 },
+  { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22, mobileRenderWidth: 78, desktopRenderWidth: 90 },
+  { label: "BCA", src: "/home-assets/payment-bca.svg", width: 60, height: 22, mobileRenderWidth: 44, desktopRenderWidth: 52 },
+  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
+  { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 68 },
+  { label: "BRI", src: "/home-assets/payment-bri.png", width: 54, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 48 },
+  { label: "GoPay", src: "/home-assets/payment-gopay.svg", width: 74, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
+  { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
+  { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 66 },
+  { label: "ShopeePay", src: "/home-assets/payment-shopeepay.svg", width: 116, height: 22, mobileRenderWidth: 84, desktopRenderWidth: 96 },
 ]
 
 export const heroBenefits = [

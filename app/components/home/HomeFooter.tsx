@@ -40,7 +40,15 @@ export default function HomeFooter() {
             <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
             <div className="mt-4 flex flex-wrap gap-2.5">
               {payments.slice(0, 10).map((payment) => (
-                <PaymentBadge key={payment.label} label={payment.label} src={payment.src} width={payment.width} height={payment.height} />
+                <PaymentBadge
+                  key={payment.label}
+                  label={payment.label}
+                  src={payment.src}
+                  width={payment.width}
+                  height={payment.height}
+                  mobileRenderWidth={payment.mobileRenderWidth}
+                  desktopRenderWidth={payment.desktopRenderWidth}
+                />
               ))}
             </div>
           </div>
@@ -65,17 +73,33 @@ export default function HomeFooter() {
   )
 }
 
-function PaymentBadge({ label, src, width = 96, height = 24 }: { label: string; src?: string; width?: number; height?: number }) {
+function PaymentBadge({
+  label,
+  src,
+  width = 96,
+  height = 24,
+  mobileRenderWidth = 56,
+  desktopRenderWidth = 64,
+}: {
+  label: string
+  src?: string
+  width?: number
+  height?: number
+  mobileRenderWidth?: number
+  desktopRenderWidth?: number
+}) {
   return (
     <span className="inline-flex min-h-9 min-w-[4.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]">
       {src ? (
-        <Image
-          src={src}
-          alt={label}
-          width={width}
-          height={height}
-          className="h-5 w-auto object-contain"
-        />
+        <span className="flex h-5 items-center justify-center" style={{ width: `${desktopRenderWidth}px` }}>
+          <Image
+            src={src}
+            alt={label}
+            width={width}
+            height={height}
+            className="h-5 w-auto object-contain"
+          />
+        </span>
       ) : (
         label
       )}
