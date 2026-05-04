@@ -72,6 +72,8 @@ export default function HomeTrustSection() {
                 height={payment.height}
                 mobileRenderWidth={payment.mobileRenderWidth}
                 desktopRenderWidth={payment.desktopRenderWidth}
+                mobileScale={payment.mobileScale}
+                desktopScale={payment.desktopScale}
               />
             ))}
           </div>
@@ -88,6 +90,8 @@ function PaymentBadge({
   height = 24,
   mobileRenderWidth = 56,
   desktopRenderWidth = 64,
+  mobileScale = 1,
+  desktopScale = 1,
 }: {
   label: string
   src?: string
@@ -95,6 +99,8 @@ function PaymentBadge({
   height?: number
   mobileRenderWidth?: number
   desktopRenderWidth?: number
+  mobileScale?: number
+  desktopScale?: number
 }) {
   return (
     <span className="inline-flex min-h-7 min-w-[3.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.04em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)] lg:min-h-9 lg:min-w-[4.5rem] lg:px-3.5 lg:py-1.5 lg:text-[11px] lg:tracking-[0.08em]">
@@ -107,6 +113,7 @@ function PaymentBadge({
               width={width}
               height={height}
               className="h-3.5 w-auto object-contain"
+              style={{ transform: `scale(${mobileScale})` }}
             />
           </span>
           <span className="hidden lg:flex lg:h-5 lg:items-center lg:justify-center" style={{ width: `${desktopRenderWidth}px` }}>
@@ -116,6 +123,7 @@ function PaymentBadge({
               width={width}
               height={height}
               className="h-5 w-auto object-contain"
+              style={{ transform: `scale(${desktopScale})` }}
             />
           </span>
         </>
