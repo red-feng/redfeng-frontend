@@ -20,7 +20,7 @@ export default function HomeHeroSection() {
           </div>
         </div>
 
-        <div className="home-hero-search-wrap relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-32 lg:pb-14 lg:px-8">
+        <div className="home-hero-search-wrap relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-44 lg:pb-14 lg:px-8">
           <div className="home-hero-search-card overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs />
             <HeroSearchPanel />
@@ -58,9 +58,6 @@ function HeroIntro() {
           <span className="block">perjalanan Anda,</span>
           <span className="mt-1 block text-[#ff5a43]">dalam satu platform</span>
         </h1>
-        <p className="home-hero-copy mt-4 max-w-[295px] text-[15px] leading-8 text-slate-700 sm:text-[16px] sm:leading-8">
-          Pesawat, hotel, kereta, bus, kapal, aktivitas, dan paket wisata terbaik untuk Anda.
-        </p>
       </div>
     </div>
   )
