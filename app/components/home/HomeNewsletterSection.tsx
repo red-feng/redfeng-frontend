@@ -5,7 +5,7 @@ export default function HomeNewsletterSection() {
         className="overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-5 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-6"
         style={{
           backgroundImage:
-            "linear-gradient(90deg,rgba(255,252,250,0.92)_0%,rgba(255,249,246,0.8)_38%,rgba(255,245,240,0.58)_62%,rgba(255,242,237,0.72)_100%), url('/home-assets/newsletter-bg-china.png')",
+            "linear-gradient(90deg,rgba(255,252,250,0.92)_0%,rgba(255,249,246,0.8)_38%,rgba(255,245,240,0.58)_62%,rgba(255,242,237,0.72)_100%), url('/home-assets/newsletter-bg-china-2.png')",
           backgroundPosition: "center",
         }}
       >
