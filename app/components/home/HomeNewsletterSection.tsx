@@ -5,7 +5,7 @@ export default function HomeNewsletterSection() {
         className="relative overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-5 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-6"
         style={{
           backgroundImage: "url('/home-assets/newsletter-bg-china-2.png')",
-          backgroundPosition: "center",
+          backgroundPosition: "center top",
         }}
       >
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,251,248,0.62)_0%,rgba(255,248,244,0.42)_38%,rgba(255,244,239,0.22)_62%,rgba(255,246,241,0.38)_100%)]" />
