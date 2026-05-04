@@ -6,7 +6,7 @@ export default function HomeFooter() {
   return (
     <footer className="home-footer border-t border-slate-200 bg-white">
       <div className="home-footer-shell mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
-        <div className="home-footer-grid grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
+        <div className="home-footer-grid grid gap-8 xl:grid-cols-[1.2fr_0.6fr_0.6fr_0.6fr_1.3fr]">
           <div className="home-footer-brand">
             <Link href="/" className="home-footer-logo-link flex w-fit items-center gap-2">
               <Image
@@ -35,7 +35,7 @@ export default function HomeFooter() {
 
           <div className="home-footer-payments hidden xl:block">
             <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
-            <div className="mt-4 flex flex-wrap gap-2.5">
+            <div className="mt-4 grid grid-cols-3 gap-2.5">
               {payments.map((payment) => (
                 <PaymentBadge
                   key={payment.label}
@@ -47,7 +47,6 @@ export default function HomeFooter() {
                   desktopRenderWidth={payment.desktopRenderWidth}
                   mobileScale={payment.mobileScale}
                   desktopScale={payment.desktopScale}
-                  desktopBoxWidth={payment.desktopBoxWidth}
                 />
               ))}
             </div>
@@ -82,7 +81,6 @@ function PaymentBadge({
   desktopRenderWidth = 64,
   mobileScale = 1,
   desktopScale = 1,
-  desktopBoxWidth = 104,
 }: {
   label: string
   src?: string
@@ -92,12 +90,10 @@ function PaymentBadge({
   desktopRenderWidth?: number
   mobileScale?: number
   desktopScale?: number
-  desktopBoxWidth?: number
 }) {
   return (
     <span
-      className="inline-flex h-11 w-[104px] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]"
-      style={{ width: `${desktopBoxWidth}px` }}
+      className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]"
     >
       {src ? (
         <>
