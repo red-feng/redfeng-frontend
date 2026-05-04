@@ -157,7 +157,7 @@ export const payments: PaymentLogo[] = [
   { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22, mobileRenderWidth: 50, desktopRenderWidth: 58 },
   { label: "Mastercard", src: "/home-assets/payment-mastercard.svg", width: 112, height: 22, mobileRenderWidth: 78, desktopRenderWidth: 90 },
   { label: "BCA", src: "/home-assets/payment-bca.png", width: 1011, height: 325, mobileRenderWidth: 56, desktopRenderWidth: 66 },
-  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62, mobileScale: 1.3, desktopScale: 1.3 },
+  { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62, mobileScale: 1.625, desktopScale: 1.625, mobileBoxWidth: 88, desktopBoxWidth: 100 },
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
   { label: "BRI", src: "/home-assets/payment-bri.jpg", width: 750, height: 185, mobileRenderWidth: 42, desktopRenderWidth: 48, mobileScale: 1.96, desktopScale: 1.96, mobileBoxWidth: 88, desktopBoxWidth: 104 },
   { label: "Midtrans", src: "/home-assets/payment-midtrans.jpg", width: 550, height: 101, mobileRenderWidth: 72, desktopRenderWidth: 86 },
