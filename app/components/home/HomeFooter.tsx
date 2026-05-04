@@ -19,9 +19,6 @@ export default function HomeFooter() {
                 className="home-footer-logo h-[4.6rem] w-auto"
               />
             </Link>
-            <p className="home-footer-copy mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
-              Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
-            </p>
             <div className="home-footer-social mt-4 flex gap-3 text-slate-500">
               <SocialIcon kind="ig" />
               <SocialIcon kind="fb" />
