@@ -50,6 +50,8 @@ export default function HomeFooter() {
                   desktopRenderWidth={payment.desktopRenderWidth}
                   mobileScale={payment.mobileScale}
                   desktopScale={payment.desktopScale}
+                  mobileBoxWidth={payment.mobileBoxWidth}
+                  desktopBoxWidth={payment.desktopBoxWidth}
                 />
               ))}
             </div>
@@ -84,6 +86,8 @@ function PaymentBadge({
   desktopRenderWidth = 64,
   mobileScale = 1,
   desktopScale = 1,
+  mobileBoxWidth,
+  desktopBoxWidth,
 }: {
   label: string
   src?: string
@@ -93,9 +97,14 @@ function PaymentBadge({
   desktopRenderWidth?: number
   mobileScale?: number
   desktopScale?: number
+  mobileBoxWidth?: number
+  desktopBoxWidth?: number
 }) {
   return (
-    <span className="inline-flex min-h-9 min-w-[4.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]">
+    <span
+      className="inline-flex min-h-9 min-w-[4.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]"
+      style={{ minWidth: desktopBoxWidth ?? mobileBoxWidth ? `${desktopBoxWidth ?? mobileBoxWidth}px` : undefined }}
+    >
       {src ? (
         <span className="flex h-5 items-center justify-center" style={{ width: `${desktopRenderWidth}px` }}>
           <Image

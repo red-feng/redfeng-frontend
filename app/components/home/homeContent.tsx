@@ -15,6 +15,8 @@ export type PaymentLogo = {
   desktopRenderWidth?: number
   mobileScale?: number
   desktopScale?: number
+  mobileBoxWidth?: number
+  desktopBoxWidth?: number
 }
 
 export const heroTabs = [
@@ -157,7 +159,7 @@ export const payments: PaymentLogo[] = [
   { label: "BCA", src: "/home-assets/payment-bca.png", width: 1011, height: 325, mobileRenderWidth: 56, desktopRenderWidth: 66 },
   { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62, mobileScale: 1.3, desktopScale: 1.3 },
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
-  { label: "BRI", src: "/home-assets/payment-bri.jpg", width: 750, height: 185, mobileRenderWidth: 42, desktopRenderWidth: 48 },
+  { label: "BRI", src: "/home-assets/payment-bri.jpg", width: 750, height: 185, mobileRenderWidth: 42, desktopRenderWidth: 48, mobileScale: 1.96, desktopScale: 1.96, mobileBoxWidth: 88, desktopBoxWidth: 104 },
   { label: "Midtrans", src: "/home-assets/payment-midtrans.jpg", width: 550, height: 101, mobileRenderWidth: 72, desktopRenderWidth: 86 },
   { label: "OVO", src: "/home-assets/payment-ovo.svg", width: 50, height: 22, mobileRenderWidth: 42, desktopRenderWidth: 46 },
   { label: "DANA", src: "/home-assets/payment-dana.svg", width: 71, height: 22, mobileRenderWidth: 58, desktopRenderWidth: 66 },

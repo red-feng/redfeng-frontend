@@ -74,6 +74,8 @@ export default function HomeTrustSection() {
                 desktopRenderWidth={payment.desktopRenderWidth}
                 mobileScale={payment.mobileScale}
                 desktopScale={payment.desktopScale}
+                mobileBoxWidth={payment.mobileBoxWidth}
+                desktopBoxWidth={payment.desktopBoxWidth}
               />
             ))}
           </div>
@@ -92,6 +94,8 @@ function PaymentBadge({
   desktopRenderWidth = 64,
   mobileScale = 1,
   desktopScale = 1,
+  mobileBoxWidth,
+  desktopBoxWidth,
 }: {
   label: string
   src?: string
@@ -101,9 +105,14 @@ function PaymentBadge({
   desktopRenderWidth?: number
   mobileScale?: number
   desktopScale?: number
+  mobileBoxWidth?: number
+  desktopBoxWidth?: number
 }) {
   return (
-    <span className="inline-flex min-h-7 min-w-[3.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.04em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)] lg:min-h-9 lg:min-w-[4.5rem] lg:px-3.5 lg:py-1.5 lg:text-[11px] lg:tracking-[0.08em]">
+    <span
+      className="inline-flex min-h-7 min-w-[3.5rem] items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-2.5 py-1 text-[8px] font-bold uppercase tracking-[0.04em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)] lg:min-h-9 lg:min-w-[4.5rem] lg:px-3.5 lg:py-1.5 lg:text-[11px] lg:tracking-[0.08em]"
+      style={{ minWidth: desktopBoxWidth ?? mobileBoxWidth ? `${desktopBoxWidth ?? mobileBoxWidth}px` : undefined }}
+    >
       {src ? (
         <>
           <span className="flex h-3.5 items-center justify-center lg:hidden" style={{ width: `${mobileRenderWidth}px` }}>
