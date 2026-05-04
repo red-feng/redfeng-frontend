@@ -18,29 +18,31 @@ export default function HeroHeader() {
         />
       </Link>
 
-      <nav className="home-hero-primary-nav hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
-        <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
-        <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
-        <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
-        <a href="https://redfeng.co/bus-travel/" className="pb-3 hover:text-[#ef3b2d]">Bus</a>
-        <a href="https://redfeng.co/kapal_laut/" className="pb-3 hover:text-[#ef3b2d]">Kapal</a>
-        <a href="https://redfeng.co/aktivitas/" className="pb-3 hover:text-[#ef3b2d]">Aktivitas</a>
-        <Link href="/packages" className="pb-3 hover:text-[#ef3b2d]">Paket Wisata</Link>
-        <a href="https://redfeng.co/promo/" className="pb-3 hover:text-[#ef3b2d]">Promo</a>
-      </nav>
+      <div className="hidden items-center gap-5 rounded-[24px] border border-white/45 bg-white/34 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.28)] backdrop-blur-[10px] lg:flex">
+        <nav className="home-hero-primary-nav flex items-center gap-8 text-[15px] font-medium text-slate-800">
+          <a href="https://redfeng.co/pesawat/" className="hover:text-[#ef3b2d]">Pesawat</a>
+          <a href="https://redfeng.co/hotel/" className="hover:text-[#ef3b2d]">Hotel</a>
+          <a href="https://redfeng.co/kereta_api/" className="hover:text-[#ef3b2d]">Kereta</a>
+          <a href="https://redfeng.co/bus-travel/" className="hover:text-[#ef3b2d]">Bus</a>
+          <a href="https://redfeng.co/kapal_laut/" className="hover:text-[#ef3b2d]">Kapal</a>
+          <a href="https://redfeng.co/aktivitas/" className="hover:text-[#ef3b2d]">Aktivitas</a>
+          <Link href="/packages" className="hover:text-[#ef3b2d]">Paket Wisata</Link>
+          <a href="https://redfeng.co/promo/" className="hover:text-[#ef3b2d]">Promo</a>
+        </nav>
 
-      <div className="home-hero-secondary-actions hidden items-center gap-5 lg:flex">
-        <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
-        <button className="flex items-center gap-1 text-sm text-slate-700">
-          IDR
-          <ChevronDownIcon className="h-4 w-4" />
-        </button>
-        <button className="text-slate-700">
-          <BellIcon className="h-5 w-5" />
-        </button>
-        <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white">
-          Login / Daftar
-        </Link>
+        <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/45 pl-4">
+          <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
+          <button className="flex items-center gap-1 text-sm text-slate-700">
+            IDR
+            <ChevronDownIcon className="h-4 w-4" />
+          </button>
+          <button className="text-slate-700">
+            <BellIcon className="h-5 w-5" />
+          </button>
+          <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(239,90,67,0.6)]">
+            Login / Daftar
+          </Link>
+        </div>
       </div>
 
       <div className="home-hero-mobile-actions flex items-center gap-2 lg:hidden">
