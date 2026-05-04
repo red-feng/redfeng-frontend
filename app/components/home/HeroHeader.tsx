@@ -19,15 +19,15 @@ export default function HeroHeader() {
       </Link>
 
       <div className="hidden items-center gap-5 rounded-[24px] border border-white/45 bg-white/34 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.28)] backdrop-blur-[10px] lg:flex">
-        <nav className="home-hero-primary-nav flex items-center gap-2 text-[15px] font-medium text-slate-800">
-          <a href="https://redfeng.co/pesawat/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</a>
-          <a href="https://redfeng.co/hotel/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</a>
-          <a href="https://redfeng.co/kereta_api/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</a>
-          <a href="https://redfeng.co/bus-travel/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</a>
-          <a href="https://redfeng.co/kapal_laut/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</a>
-          <a href="https://redfeng.co/aktivitas/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</a>
-          <Link href="/packages" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
-          <a href="https://redfeng.co/promo/" className="rounded-full px-3.5 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</a>
+        <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-medium text-slate-800">
+          <a href="https://redfeng.co/pesawat/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</a>
+          <a href="https://redfeng.co/hotel/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</a>
+          <a href="https://redfeng.co/kereta_api/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</a>
+          <a href="https://redfeng.co/bus-travel/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</a>
+          <a href="https://redfeng.co/kapal_laut/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</a>
+          <a href="https://redfeng.co/aktivitas/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</a>
+          <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
+          <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</a>
         </nav>
 
         <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/45 pl-4">
@@ -39,7 +39,7 @@ export default function HeroHeader() {
           <button className="text-slate-700">
             <BellIcon className="h-5 w-5" />
           </button>
-          <Link href="/login" className="rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(239,90,67,0.6)]">
+          <Link href="/login" className="whitespace-nowrap rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(239,90,67,0.6)]">
             Login / Daftar
           </Link>
         </div>
