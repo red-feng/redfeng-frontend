@@ -4,8 +4,8 @@ import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/homeC
 
 export default function HeroHeader() {
   return (
-    <header className="relative z-10 flex items-center justify-between gap-4">
-      <Link href="/" className="flex items-center gap-2">
+    <header className="home-hero-header relative z-10 flex items-center justify-between gap-4">
+      <Link href="/" className="home-hero-logo-link flex items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"
@@ -14,11 +14,11 @@ export default function HeroHeader() {
           quality={100}
           unoptimized
           priority
-          className="h-[5.2rem] w-auto sm:h-[6.6rem]"
+          className="home-hero-logo h-[5.2rem] w-auto sm:h-[6.6rem]"
         />
       </Link>
 
-      <nav className="hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
+      <nav className="home-hero-primary-nav hidden items-center gap-8 text-[15px] font-medium text-slate-800 lg:flex">
         <a href="https://redfeng.co/pesawat/" className="pb-3 hover:text-[#ef3b2d]">Pesawat</a>
         <a href="https://redfeng.co/hotel/" className="pb-3 hover:text-[#ef3b2d]">Hotel</a>
         <a href="https://redfeng.co/kereta_api/" className="pb-3 hover:text-[#ef3b2d]">Kereta</a>
@@ -29,7 +29,7 @@ export default function HeroHeader() {
         <a href="https://redfeng.co/promo/" className="pb-3 hover:text-[#ef3b2d]">Promo</a>
       </nav>
 
-      <div className="hidden items-center gap-5 lg:flex">
+      <div className="home-hero-secondary-actions hidden items-center gap-5 lg:flex">
         <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
         <button className="flex items-center gap-1 text-sm text-slate-700">
           IDR
@@ -43,7 +43,7 @@ export default function HeroHeader() {
         </Link>
       </div>
 
-      <div className="flex items-center gap-2 lg:hidden">
+      <div className="home-hero-mobile-actions flex items-center gap-2 lg:hidden">
         <button className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
           <BellIcon className="h-5 w-5" />
         </button>

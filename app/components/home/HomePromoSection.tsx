@@ -2,12 +2,12 @@ import { HeartIcon, promoCards } from "@/app/components/home/homeContent"
 
 export default function HomePromoSection() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
-      <div className="grid gap-4 lg:grid-cols-3 lg:gap-[18px]">
+    <section className="home-promo-section mx-auto max-w-[1240px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
+      <div className="home-promo-grid grid gap-4 lg:grid-cols-3 lg:gap-[18px]">
         {promoCards.map((card, index) => (
           <article
             key={card.title}
-            className={`group relative flex min-h-[286px] flex-col overflow-hidden rounded-[26px] bg-gradient-to-br ${card.gradient} px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:px-6 sm:py-6 lg:min-h-[332px]`}
+            className={`home-promo-card group relative flex min-h-[286px] flex-col overflow-hidden rounded-[26px] bg-gradient-to-br ${card.gradient} px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:px-6 sm:py-6 lg:min-h-[332px]`}
           >
             <div className={`absolute inset-0 scale-[1.01] bg-no-repeat transition-transform duration-500 group-hover:scale-[1.05] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
             <div className={`absolute inset-0 ${card.overlayClass}`} />

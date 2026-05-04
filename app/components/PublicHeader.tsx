@@ -33,18 +33,18 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
     languageOptions && languageOptions.length > 0 ? languageOptions : (["id", "en", "zh"] as Locale[])
 
   return (
-    <header className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
-      <div className="mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
+    <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
+      <div className="public-header-shell mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <a href="https://redfeng.co/" className="flex items-center gap-3">
+            <a href="https://redfeng.co/" className="public-header-logo-link flex items-center gap-3">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
                 alt="Red Feng"
                 width={1536}
                 height={1024}
                 priority
-                className="h-9 w-auto sm:h-14 md:h-16 lg:h-20"
+                className="public-header-logo h-9 w-auto sm:h-14 md:h-16 lg:h-20"
               />
             </a>
 
@@ -55,7 +55,7 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
             />
           </div>
 
-          <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
+          <div className="public-header-topnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
             <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
               <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.promo}</a>
               <a href="https://redfeng.co/pesanan/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.orders}</a>
@@ -75,7 +75,7 @@ export default async function PublicHeader({ locale, languageOptions, redirectSu
             </nav>
           </div>
 
-          <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
+          <div className="public-header-productnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
             <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
               <Link href="/packages" className="whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none">{t.packageTour}</Link>
               <a href="https://redfeng.co/pesawat/" className="whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none">{t.flight}</a>

@@ -49,3 +49,187 @@ body {
     transform: translateY(0);
   }
 }
+
+html[data-display-mode="standalone"] .public-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  backdrop-filter: blur(14px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 250, 244, 0.92) 100%);
+}
+
+html[data-display-mode="standalone"] .public-header-shell {
+  padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+  padding-bottom: 0.75rem;
+}
+
+html[data-display-mode="standalone"] .public-header-logo {
+  height: 2.6rem;
+}
+
+html[data-display-mode="standalone"] .public-header-topnav,
+html[data-display-mode="standalone"] .public-header-productnav {
+  display: none;
+}
+
+html[data-display-mode="standalone"] .home-hero-surface {
+  box-shadow: none;
+}
+
+html[data-display-mode="standalone"] .home-hero-shell {
+  padding-top: calc(env(safe-area-inset-top) + 0.75rem);
+  padding-bottom: 6rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-header {
+  gap: 0.75rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-logo {
+  height: 3.6rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-primary-nav,
+html[data-display-mode="standalone"] .home-hero-secondary-actions {
+  display: none;
+}
+
+html[data-display-mode="standalone"] .home-hero-mobile-actions {
+  gap: 0.5rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-intro {
+  padding-top: 1.25rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-intro-shell {
+  max-width: 26rem;
+  padding-bottom: 2.25rem;
+  min-height: 0;
+}
+
+html[data-display-mode="standalone"] .home-hero-title {
+  max-width: 18rem;
+  font-size: clamp(2rem, 5.5vw, 3rem);
+}
+
+html[data-display-mode="standalone"] .home-hero-copy {
+  margin-top: 0.75rem;
+  max-width: 20rem;
+  line-height: 1.8;
+}
+
+html[data-display-mode="standalone"] .home-hero-search-wrap {
+  margin-top: -3rem;
+  padding-bottom: 1rem;
+}
+
+html[data-display-mode="standalone"] .home-hero-search-card {
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 42px -28px rgba(15, 23, 42, 0.16);
+}
+
+html[data-display-mode="standalone"] .home-footer-shell {
+  padding-top: 1.5rem;
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+}
+
+html[data-display-mode="standalone"] .home-footer-grid {
+  gap: 1.25rem;
+}
+
+html[data-display-mode="standalone"] .home-footer-logo {
+  height: 3.5rem;
+}
+
+html[data-display-mode="standalone"] .home-footer-copy,
+html[data-display-mode="standalone"] .home-footer-social,
+html[data-display-mode="standalone"] .home-footer-link-columns,
+html[data-display-mode="standalone"] .home-footer-mobile-accordion {
+  display: none;
+}
+
+html[data-display-mode="standalone"] .home-footer-payments {
+  display: block;
+}
+
+html[data-display-mode="standalone"] .home-footer-legal {
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-shell {
+  border-radius: 1.5rem;
+  padding: 0.5rem 0.625rem;
+  box-shadow: 0 -14px 38px -28px rgba(15, 23, 42, 0.3);
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-grid {
+  gap: 0.25rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-item {
+  border-radius: 1.125rem;
+  padding: 0.45rem 0.35rem;
+  font-size: 0.625rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-icon {
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-label {
+  margin-top: 0.375rem;
+}
+
+html[data-display-mode="standalone"] .public-mobile-nav-indicator {
+  margin-top: 0.35rem;
+  width: 1rem;
+}
+
+html[data-display-mode="standalone"] .home-promo-section {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+html[data-display-mode="standalone"] .home-promo-grid {
+  gap: 0.75rem;
+}
+
+html[data-display-mode="standalone"] .home-promo-card {
+  min-height: 15.5rem;
+  border-radius: 1.35rem;
+  padding: 1.1rem;
+}
+
+html[data-display-mode="standalone"] .home-trust-section {
+  padding-bottom: 1rem;
+}
+
+html[data-display-mode="standalone"] .home-trust-shell {
+  grid-template-columns: 1fr;
+  gap: 0;
+  border-radius: 1.35rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+html[data-display-mode="standalone"] .home-trust-rating,
+html[data-display-mode="standalone"] .home-trust-partners,
+html[data-display-mode="standalone"] .home-trust-payments {
+  padding: 1rem 0;
+}
+
+html[data-display-mode="standalone"] .home-trust-partners {
+  border-left: 0;
+  border-right: 0;
+  border-top: 1px solid #f0e5d6;
+  border-bottom: 1px solid #f0e5d6;
+}

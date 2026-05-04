@@ -4,11 +4,11 @@ import { ChevronDownIcon, payments } from "@/app/components/home/homeContent"
 
 export default function HomeFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
-          <div>
-            <Link href="/" className="flex w-fit items-center gap-2">
+    <footer className="home-footer border-t border-slate-200 bg-white">
+      <div className="home-footer-shell mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
+        <div className="home-footer-grid grid gap-8 xl:grid-cols-[1.25fr_0.72fr_0.72fr_0.72fr_1fr]">
+          <div className="home-footer-brand">
+            <Link href="/" className="home-footer-logo-link flex w-fit items-center gap-2">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
                 alt="RedFeng"
@@ -16,13 +16,13 @@ export default function HomeFooter() {
                 height={1024}
                 quality={100}
                 unoptimized
-                className="h-[4.6rem] w-auto"
+                className="home-footer-logo h-[4.6rem] w-auto"
               />
             </Link>
-            <p className="mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
+            <p className="home-footer-copy mt-4 max-w-sm text-[13px] leading-6 text-slate-500">
               Platform perjalanan terlengkap untuk semua kebutuhan Anda. Booking mudah, cepat, dan aman.
             </p>
-            <div className="mt-4 flex gap-3 text-slate-500">
+            <div className="home-footer-social mt-4 flex gap-3 text-slate-500">
               <SocialIcon kind="ig" />
               <SocialIcon kind="fb" />
               <SocialIcon kind="yt" />
@@ -30,13 +30,13 @@ export default function HomeFooter() {
             </div>
           </div>
 
-          <div className="hidden xl:contents">
+          <div className="home-footer-link-columns hidden xl:contents">
             <FooterColumn title="Perusahaan" items={["Tentang Kami", "Karir", "Blog", "Kontak Kami"]} />
             <FooterColumn title="Bantuan" items={["Pusat Bantuan", "Cara Pemesanan", "Pembayaran", "Kebijakan & Privasi"]} />
             <FooterColumn title="Partner" items={["Jadi Partner", "Affiliate", "Kerja Sama Korporat"]} />
           </div>
 
-          <div className="hidden xl:block">
+          <div className="home-footer-payments hidden xl:block">
             <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
             <div className="mt-4 flex flex-wrap gap-2.5">
               {payments.map((payment) => (
@@ -56,14 +56,14 @@ export default function HomeFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-slate-200 xl:hidden">
+        <div className="home-footer-mobile-accordion mt-8 border-t border-slate-200 xl:hidden">
           <FooterAccordionRow title="Perusahaan" />
           <FooterAccordionRow title="Bantuan" />
           <FooterAccordionRow title="Partner" />
           <FooterAccordionRow title="Metode Pembayaran" />
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 text-center text-[12px] text-slate-400 md:flex-row md:items-center md:justify-between md:text-left">
+        <div className="home-footer-legal mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 text-center text-[12px] text-slate-400 md:flex-row md:items-center md:justify-between md:text-left">
           <p>&copy; 2026 RedFeng. All rights reserved.</p>
           <div className="hidden gap-5 md:flex">
             <a href="/terms" className="hover:text-slate-700">Syarat & Ketentuan</a>
@@ -80,18 +80,14 @@ function PaymentBadge({
   src,
   width = 96,
   height = 24,
-  mobileRenderWidth = 56,
   desktopRenderWidth = 64,
-  mobileScale = 1,
   desktopScale = 1,
 }: {
   label: string
   src?: string
   width?: number
   height?: number
-  mobileRenderWidth?: number
   desktopRenderWidth?: number
-  mobileScale?: number
   desktopScale?: number
 }) {
   return (

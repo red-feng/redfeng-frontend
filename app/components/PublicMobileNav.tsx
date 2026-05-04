@@ -132,9 +132,9 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   ]
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
-      <div className="mx-auto max-w-xl rounded-[28px] border border-[#eceff5] bg-white px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.24)]">
-        <div className="grid grid-cols-4 gap-1.5">
+    <nav className="public-mobile-nav fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
+      <div className="public-mobile-nav-shell mx-auto max-w-xl rounded-[28px] border border-[#eceff5] bg-white px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.24)]">
+        <div className="public-mobile-nav-grid grid grid-cols-4 gap-1.5">
         {items.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -143,12 +143,12 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-col items-center justify-center rounded-[22px] px-2 py-2 text-[11px] font-semibold transition ${
+              className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[22px] px-2 py-2 text-[11px] font-semibold transition ${
                 isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
               }`}
             >
               <span
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${
+                className={`public-mobile-nav-icon flex h-10 w-10 items-center justify-center rounded-full transition ${
                   isActive
                     ? item.href === "/"
                       ? "bg-[linear-gradient(180deg,#ffede8_0%,#fff6f3_100%)] text-[#ef5b2a] shadow-[0_16px_30px_-18px_rgba(239,91,42,0.36)]"
@@ -158,8 +158,8 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
               >
                 {item.icon}
               </span>
-              <span className={`mt-1.5 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
-              {isActive ? <span className="mt-1 h-1 w-5 rounded-full bg-[#ef5b2a]" /> : <span className="mt-1 h-1 w-5 rounded-full bg-transparent" />}
+              <span className={`public-mobile-nav-label mt-1.5 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
+              {isActive ? <span className="public-mobile-nav-indicator mt-1 h-1 w-5 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-1 w-5 rounded-full bg-transparent" />}
             </Link>
           )
         })}

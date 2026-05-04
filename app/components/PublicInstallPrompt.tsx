@@ -10,6 +10,16 @@ type BeforeInstallPromptEvent = Event & {
 
 const storageKey = "rf_install_prompt_dismissed"
 
+function isStandaloneMode() {
+  if (typeof window === "undefined") return false
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+    ("standalone" in window.navigator && Boolean((window.navigator as Navigator & { standalone?: boolean }).standalone))
+  )
+}
+
 export default function PublicInstallPrompt({ locale }: { locale: Locale }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -38,6 +48,7 @@ export default function PublicInstallPrompt({ locale }: { locale: Locale }) {
   useEffect(() => {
     if (typeof window === "undefined") return
     if (window.localStorage.getItem(storageKey) === "1") return
+    if (isStandaloneMode()) return
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault()

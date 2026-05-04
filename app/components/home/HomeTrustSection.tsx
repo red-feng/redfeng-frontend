@@ -3,9 +3,9 @@ import { CardIconBadge, partnerLogos, payments, ShieldCheckIcon, StarIcon } from
 
 export default function HomeTrustSection() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-3 gap-0 rounded-[24px] border border-[#f3e8de] bg-[linear-gradient(135deg,#fffaf6_0%,#fffefc_52%,#fff8f2_100%)] px-4 py-5 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.18)] lg:px-6">
-        <div className="pr-3 sm:pr-5 lg:pr-6">
+    <section className="home-trust-section mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8">
+      <div className="home-trust-shell grid grid-cols-3 gap-0 rounded-[24px] border border-[#f3e8de] bg-[linear-gradient(135deg,#fffaf6_0%,#fffefc_52%,#fff8f2_100%)] px-4 py-5 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.18)] lg:px-6">
+        <div className="home-trust-rating pr-3 sm:pr-5 lg:pr-6">
           <div className="flex items-start gap-4">
             <div className="hidden h-11 w-11 items-center justify-center rounded-full bg-[#fff1ea] text-[#ff8b5b] lg:flex">
               <ShieldCheckIcon className="h-5 w-5" />
@@ -24,7 +24,7 @@ export default function HomeTrustSection() {
           </div>
         </div>
 
-        <div className="border-x border-[#f0e5d6] px-3 sm:px-5 lg:px-6">
+        <div className="home-trust-partners border-x border-[#f0e5d6] px-3 sm:px-5 lg:px-6">
           <h3 className="text-center text-[10px] font-semibold text-slate-700 lg:text-left lg:text-[15px] lg:font-bold">Partner Resmi Kami</h3>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-3 text-center lg:justify-start lg:gap-x-6 lg:gap-y-4">
             {partnerLogos.map((logo, index) =>
@@ -57,7 +57,7 @@ export default function HomeTrustSection() {
           </div>
         </div>
 
-        <div className="pl-3 sm:pl-5 lg:pl-6">
+        <div className="home-trust-payments pl-3 sm:pl-5 lg:pl-6">
           <h3 className="text-center text-[10px] font-semibold text-slate-700 lg:flex lg:items-center lg:gap-2 lg:text-left lg:text-[15px] lg:font-bold">
             <CardIconBadge className="hidden h-5 w-5 text-[#ff8b5b] lg:block" />
             Pembayaran Aman & Terpercaya

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import PublicPerformanceTracker from "@/app/components/PublicPerformanceTracker";
 import Script from "next/script";
+import AppDisplayModeBridge from "@/app/components/AppDisplayModeBridge";
 import ServiceWorkerRegistrar from "@/app/components/ServiceWorkerRegistrar";
 import { getOptionalEnv } from "@/lib/env";
 import "./globals.css";
@@ -47,6 +48,7 @@ export default function RootLayout({
       >
         <PublicPerformanceTracker />
         <ServiceWorkerRegistrar />
+        <AppDisplayModeBridge />
         {children}
 
         {midtransClientKey && (
