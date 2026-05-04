@@ -155,7 +155,7 @@ export const partnerLogos = [
 
 export const payments: PaymentLogo[] = [
   { label: "VISA", src: "/home-assets/payment-visa.svg", width: 68, height: 22, mobileRenderWidth: 50, desktopRenderWidth: 58 },
-  { label: "AMEX", src: "/home-assets/payment-amex.png", width: 1875, height: 1875, mobileRenderWidth: 42, desktopRenderWidth: 48, mobileScale: 1.15, desktopScale: 1.15, mobileBoxWidth: 76, desktopBoxWidth: 88 },
+  { label: "AMEX", src: "/home-assets/payment-amex.jpg", width: 750, height: 359, mobileRenderWidth: 42, desktopRenderWidth: 48, mobileScale: 1.15, desktopScale: 1.15, mobileBoxWidth: 76, desktopBoxWidth: 88 },
   { label: "BCA", src: "/home-assets/payment-bca.png", width: 1011, height: 325, mobileRenderWidth: 56, desktopRenderWidth: 66 },
   { label: "Mandiri", src: "/home-assets/payment-mandiri.png", width: 66, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62, mobileScale: 1.625, desktopScale: 1.625, mobileBoxWidth: 88, desktopBoxWidth: 100 },
   { label: "BNI", src: "/home-assets/payment-bni.png", width: 76, height: 22, mobileRenderWidth: 54, desktopRenderWidth: 62 },
