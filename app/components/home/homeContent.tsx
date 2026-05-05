@@ -87,6 +87,17 @@ export const promoCards = [
     overlayClass: "bg-[linear-gradient(90deg,rgba(18,140,154,0.86)_0%,rgba(25,156,166,0.62)_26%,rgba(82,192,173,0.24)_52%,rgba(28,109,121,0.06)_76%,rgba(28,109,121,0)_100%)]",
     glowClass: "bg-[radial-gradient(circle_at_28%_22%,rgba(191,255,234,0.18)_0%,rgba(191,255,234,0.09)_18%,rgba(191,255,234,0)_40%)]",
   },
+  {
+    title: "Promo Kereta\nAntarkota Favorit",
+    eyebrow: "Mulai dari",
+    price: "Rp 150.000*",
+    cta: "Pesan Kereta",
+    image: "/home-assets/card-train.png",
+    gradient: "from-[#5a63d8] via-[#5d71e6] to-[#8b74f7]",
+    imageClass: "bg-cover bg-[position:center_center] opacity-32",
+    overlayClass: "bg-[linear-gradient(90deg,rgba(62,74,180,0.9)_0%,rgba(84,97,214,0.68)_26%,rgba(128,120,238,0.24)_54%,rgba(91,98,197,0.06)_76%,rgba(91,98,197,0)_100%)]",
+    glowClass: "bg-[radial-gradient(circle_at_24%_18%,rgba(214,220,255,0.18)_0%,rgba(214,220,255,0.09)_18%,rgba(214,220,255,0)_40%)]",
+  },
 ]
 
 export const bookingTabs = ["Semua", "Pesawat", "Hotel", "Paket Wisata", "Kereta"]

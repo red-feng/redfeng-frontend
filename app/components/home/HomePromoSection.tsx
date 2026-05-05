@@ -3,7 +3,7 @@ import { HeartIcon, promoCards } from "@/app/components/home/homeContent"
 export default function HomePromoSection() {
   return (
     <section className="home-promo-section mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-7 lg:pb-12">
-      <div className="home-promo-grid grid gap-4 lg:grid-cols-3 lg:gap-[18px]">
+      <div className="home-promo-grid grid gap-4 md:grid-cols-2 lg:gap-[18px] xl:grid-cols-4">
         {promoCards.map((card, index) => (
           <article
             key={card.title}
