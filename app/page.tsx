@@ -2,6 +2,7 @@ import PublicMobileNav from "@/app/components/PublicMobileNav"
 import HomeDestinationsSection from "@/app/components/home/HomeDestinationsSection"
 import HomeFooter from "@/app/components/home/HomeFooter"
 import HomeHeroSection from "@/app/components/home/HomeHeroSection"
+import HomeInspirationSection from "@/app/components/home/HomeInspirationSection"
 import HomeNewsletterSection from "@/app/components/home/HomeNewsletterSection"
 import HomePopularSection from "@/app/components/home/HomePopularSection"
 import HomePromoSection from "@/app/components/home/HomePromoSection"
@@ -21,6 +22,7 @@ export default async function HomePage() {
         <HomePromoSection />
         <HomePopularSection />
         <HomeDestinationsSection />
+        <HomeInspirationSection />
         <HomeTrustSection />
         <HomeWhyChooseSection />
         <HomeNewsletterSection />

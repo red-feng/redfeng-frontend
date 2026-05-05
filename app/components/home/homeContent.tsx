@@ -24,6 +24,14 @@ export type PaymentLogo = {
   desktopBoxWidth?: number
 }
 
+export type HomeArticleCard = {
+  title: string
+  category: string
+  readTime: string
+  image: string
+  href: string
+}
+
 export const heroTabs = [
   { key: "flight" as const, label: "Pesawat", badge: false, icon: PlaneIcon },
   { key: "hotel" as const, label: "Hotel", badge: false, icon: BuildingIcon },
@@ -140,6 +148,37 @@ export const destinations = [
   { name: "Singapore", country: "Singapura", teaser: "Mulai dari Rp 2,1 Jt", image: "/home-assets/dest-singapore.png" },
   { name: "Bangkok", country: "Thailand", teaser: "Mulai dari Rp 1,8 Jt", image: "/home-assets/dest-bangkok.png" },
   { name: "Labuan Bajo", country: "Indonesia", teaser: "Mulai dari Rp 1,3 Jt", image: "/home-assets/dest-labuanbajo.png" },
+]
+
+export const inspirationArticles: HomeArticleCard[] = [
+  {
+    title: "Panduan Liburan Hemat ke Bali untuk First Timer",
+    category: "Travel Guide",
+    readTime: "Baca 4 menit",
+    image: "/home-assets/dest-bali.png",
+    href: "/packages",
+  },
+  {
+    title: "Tips Booking Hotel Saat Musim Liburan Biar Tetap Untung",
+    category: "Hotel Insight",
+    readTime: "Baca 3 menit",
+    image: "/home-assets/card-hotel-1.png",
+    href: "/packages",
+  },
+  {
+    title: "Rute Wisata Populer di Labuan Bajo yang Wajib Dicoba",
+    category: "Destinasi Favorit",
+    readTime: "Baca 5 menit",
+    image: "/home-assets/dest-labuanbajo.png",
+    href: "/packages",
+  },
+  {
+    title: "Checklist Perjalanan Keluarga Supaya Liburan Makin Nyaman",
+    category: "Travel Tips",
+    readTime: "Baca 3 menit",
+    image: "/home-assets/promo-package.png",
+    href: "/packages",
+  },
 ]
 
 export const whyChoose = [
@@ -279,4 +318,7 @@ export function BellIcon({ className }: IconProps) {
 }
 export function MenuIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+}
+export function ArticleIcon({ className }: IconProps) {
+  return <svg viewBox="0 0 24 24" fill="none" className={className}><rect x="5" y="4" width="14" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.8" /><path d="M8 8h8M8 12h8M8 16h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
 }
