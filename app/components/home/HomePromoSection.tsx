@@ -20,18 +20,18 @@ export default function HomePromoSection() {
             ) : null}
             <div className={`relative z-10 flex h-full flex-col ${index === 0 ? "max-w-[220px] sm:max-w-[232px]" : "max-w-[232px] sm:max-w-[242px]"}`}>
               {card.badge ? (
-                <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
+                <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
                   {card.badge}
                 </span>
               ) : null}
-              <h3 className={`whitespace-pre-line font-black leading-[1.08] tracking-[-0.06em] ${index === 0 ? "mt-7 text-[22px] sm:text-[28px]" : "mt-7 text-[22px] sm:text-[27px]"}`}>
+              <h3 className={`whitespace-pre-line font-bold leading-[1.1] tracking-[-0.035em] ${index === 0 ? "mt-7 text-[19px] sm:text-[24px]" : "mt-7 text-[19px] sm:text-[24px]"}`}>
                 {card.title}
               </h3>
               <div className="mt-auto pt-8">
-                <p className="text-[14px] font-medium leading-none text-white/92">{card.eyebrow}</p>
-                <p className={`mt-2 font-black leading-none tracking-[-0.05em] ${index === 0 ? "text-[18px] sm:text-[20px]" : "text-[18px] sm:text-[20px]"}`}>{card.price}</p>
+                <p className="text-[13px] font-medium leading-none text-white/88">{card.eyebrow}</p>
+                <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{card.price}</p>
               </div>
-              <button className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-bold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]">
+              <button className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]">
                 {card.cta}
               </button>
             </div>
