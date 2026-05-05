@@ -4,16 +4,20 @@ import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
 
 type HeroSearchMobileProps = {
   config: HeroSearchConfig
+  fields?: HeroSearchConfig["mobileFields"]
+  onFieldClick?: (index: number) => void
+  onSwap?: () => void
 }
 
-export default function HeroSearchMobile({ config }: HeroSearchMobileProps) {
-  const primaryFields = config.mobileFields.slice(0, config.mobilePrimaryCount)
-  const compactFields = config.mobileFields.slice(config.mobilePrimaryCount)
+export default function HeroSearchMobile({ config, fields, onFieldClick, onSwap }: HeroSearchMobileProps) {
+  const mobileFields = fields ?? config.mobileFields
+  const primaryFields = mobileFields.slice(0, config.mobilePrimaryCount)
+  const compactFields = mobileFields.slice(config.mobilePrimaryCount)
   const compactGridClass = compactFields.length === 2 ? "grid-cols-2" : "grid-cols-3"
 
   return (
     <div className="lg:hidden">
-      {primaryFields.map((field) => (
+      {primaryFields.map((field, index) => (
         <HeroSearchField
           key={field.label}
           label={field.label}
@@ -21,12 +25,14 @@ export default function HeroSearchMobile({ config }: HeroSearchMobileProps) {
           sublabel={field.sublabel ?? ""}
           withChevron={field.withChevron}
           withSwap={field.withSwap}
+          interactive
+          onClick={field.withSwap ? onSwap : () => onFieldClick?.(index)}
         />
       ))}
 
       {compactFields.length > 0 ? (
         <div className={`grid ${compactGridClass}`}>
-          {compactFields.map((field) => (
+          {compactFields.map((field, index) => (
             <HeroSearchField
               key={field.label}
               label={field.label}
@@ -34,6 +40,8 @@ export default function HeroSearchMobile({ config }: HeroSearchMobileProps) {
               sublabel={field.sublabel ?? ""}
               withChevron={field.withChevron}
               compact
+              interactive
+              onClick={() => onFieldClick?.(index + config.mobilePrimaryCount)}
             />
           ))}
         </div>

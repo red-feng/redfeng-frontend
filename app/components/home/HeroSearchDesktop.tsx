@@ -5,38 +5,46 @@ import { SwapIcon } from "@/app/components/home/homeContent"
 
 type HeroSearchDesktopProps = {
   config: HeroSearchConfig
+  fields?: HeroSearchConfig["desktopFields"]
+  onFieldClick?: (index: number) => void
+  onSwap?: () => void
 }
 
-export default function HeroSearchDesktop({ config }: HeroSearchDesktopProps) {
-  const { ctaHref, ctaLabel, desktopFields, desktopGridClass, showDesktopSwap = false } = config
+export default function HeroSearchDesktop({ config, fields, onFieldClick, onSwap }: HeroSearchDesktopProps) {
+  const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
+  const desktopFields = fields ?? config.desktopFields
 
   return (
     <div className={desktopGridClass}>
       {showDesktopSwap ? (
         <>
-          <HeroSearchField label={desktopFields[0].label} value={desktopFields[0].value} sublabel={desktopFields[0].sublabel ?? ""} />
-          <button type="button" className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] lg:flex">
+          <HeroSearchField label={desktopFields[0].label} value={desktopFields[0].value} sublabel={desktopFields[0].sublabel ?? ""} interactive onClick={() => onFieldClick?.(0)} />
+          <button type="button" onClick={onSwap} className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
             <SwapIcon className="h-4 w-4" />
           </button>
-          <HeroSearchField label={desktopFields[1].label} value={desktopFields[1].value} sublabel={desktopFields[1].sublabel ?? ""} />
-          {desktopFields.slice(2).map((field) => (
+          <HeroSearchField label={desktopFields[1].label} value={desktopFields[1].value} sublabel={desktopFields[1].sublabel ?? ""} interactive onClick={() => onFieldClick?.(1)} />
+          {desktopFields.slice(2).map((field, index) => (
             <HeroSearchField
               key={field.label}
               label={field.label}
               value={field.value}
               sublabel={field.sublabel ?? ""}
               withChevron={field.withChevron}
+              interactive
+              onClick={() => onFieldClick?.(index + 2)}
             />
           ))}
         </>
       ) : (
-        desktopFields.map((field) => (
+        desktopFields.map((field, index) => (
           <HeroSearchField
             key={field.label}
             label={field.label}
             value={field.value}
             sublabel={field.sublabel ?? ""}
             withChevron={field.withChevron}
+            interactive
+            onClick={() => onFieldClick?.(index)}
           />
         ))
       )}

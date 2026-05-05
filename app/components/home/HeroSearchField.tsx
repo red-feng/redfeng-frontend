@@ -8,6 +8,8 @@ type HeroSearchFieldProps = {
   withSwap?: boolean
   withChevron?: boolean
   compact?: boolean
+  interactive?: boolean
+  onClick?: () => void
 }
 
 export default function HeroSearchField({
@@ -18,9 +20,15 @@ export default function HeroSearchField({
   withSwap = false,
   withChevron = false,
   compact = false,
+  interactive = false,
+  onClick,
 }: HeroSearchFieldProps) {
   return (
-    <div className={`relative bg-[#fdfefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5"} ${className}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative w-full bg-[#fdfefe] text-left ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5"} ${interactive ? "cursor-pointer transition hover:border-[#ffd4cb] hover:bg-[#fffdfa]" : "cursor-default"} ${className}`}
+    >
       <p className="text-[11px] font-medium text-slate-400">{label}</p>
       <p className="mt-2 pr-8 text-[15px] font-bold text-slate-900">{value}</p>
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
@@ -34,6 +42,6 @@ export default function HeroSearchField({
           <ChevronDownIcon className="h-4 w-4" />
         </span>
       ) : null}
-    </div>
+    </button>
   )
 }
