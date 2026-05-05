@@ -79,7 +79,7 @@ function HeroIntro() {
   return (
     <div className="home-hero-intro relative z-10 flex justify-center pt-8 text-center lg:pt-12">
       <div className="home-hero-intro-shell max-w-[760px] pb-40 lg:min-h-[430px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[28px] font-black leading-[1.08] tracking-[-0.05em] text-slate-950 sm:max-w-[620px] sm:text-[48px] lg:max-w-[760px] lg:text-[52px] lg:leading-[1.04]">
+        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.12] tracking-[-0.03em] text-slate-950 sm:max-w-[620px] sm:text-[42px] lg:max-w-[760px] lg:text-[46px] lg:leading-[1.08]">
           Ekosistem perjalanan
           <span className="mt-1 block text-[#ff5a43]">dalam satu genggaman</span>
         </h1>

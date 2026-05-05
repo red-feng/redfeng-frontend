@@ -98,7 +98,7 @@ export default function HeroSearchField({
           type="date"
           value={value}
           onChange={(event) => onValueChange?.(event.target.value)}
-          className="mt-2 w-full bg-transparent pr-8 text-[15px] font-bold text-slate-900 outline-none"
+          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none"
         />
       ) : inputType === "autocomplete" ? (
         <input
@@ -112,13 +112,13 @@ export default function HeroSearchField({
             onValueChange?.(nextValue)
           }}
           placeholder={label.includes("Destinasi") ? "Cari destinasi atau nama paket" : "Cari kota, bandara, atau tujuan"}
-          className="mt-2 w-full bg-transparent pr-8 text-[15px] font-bold text-slate-900 outline-none placeholder:text-slate-300"
+          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
         />
       ) : hasDropdown ? (
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="mt-2 flex w-full items-center justify-between gap-3 bg-transparent pr-8 text-left text-[15px] font-bold text-slate-900 outline-none"
+          className="mt-2 flex w-full items-center justify-between gap-3 bg-transparent pr-8 text-left text-[14px] font-semibold text-slate-900 outline-none"
         >
           <span className="truncate">{value}</span>
         </button>
@@ -127,7 +127,7 @@ export default function HeroSearchField({
           type="text"
           value={value}
           onChange={(event) => onValueChange?.(event.target.value)}
-          className="mt-2 w-full bg-transparent pr-8 text-[15px] font-bold text-slate-900 outline-none placeholder:text-slate-300"
+          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
         />
       )}
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
