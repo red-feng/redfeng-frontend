@@ -5,7 +5,7 @@ export default function HomePopularSection() {
   return (
     <>
       <HomeSectionHeader title="Paling Banyak Dipesan" showTabs />
-      <section className="home-popular-section mx-auto max-w-[1240px] px-4 pb-4 sm:px-6 lg:px-8">
+      <section className="home-popular-section mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
         <div className="home-popular-grid flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:overflow-visible xl:grid-cols-5">
           {popularBookings.map((item) => (
             <article key={item.title} className="home-popular-card w-[138px] min-w-[138px] overflow-hidden rounded-[18px] border border-[#ebedf3] bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.2)] md:w-auto md:min-w-0">

@@ -5,7 +5,7 @@ export default function HomeDestinationsSection() {
   return (
     <>
       <HomeSectionHeader title="Destinasi Populer" />
-      <section className="home-destinations-section mx-auto max-w-[1240px] px-4 pb-6 sm:px-6 lg:px-8">
+      <section className="home-destinations-section mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8 lg:pb-10">
         <div className="home-destinations-grid flex gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3 xl:grid-cols-6">
           {destinations.map((destination) => (
             <article key={destination.name} className="home-destinations-card group relative h-[150px] w-[106px] min-w-[106px] overflow-hidden rounded-[18px] shadow-[0_18px_34px_-28px_rgba(15,23,42,0.3)] sm:h-[160px] sm:w-auto sm:min-w-0">
