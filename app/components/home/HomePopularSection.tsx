@@ -16,16 +16,16 @@ export default function HomePopularSection() {
                 </button>
               </div>
               <div className="home-popular-body p-3.5 md:p-4">
-                <span className={`rounded-md px-2 py-1 text-[9px] font-semibold ${item.tone}`}>{item.category}</span>
-                <h3 className="home-popular-title mt-3 text-[12px] font-bold tracking-[-0.03em] text-slate-900 md:text-[18px]">{item.title}</h3>
-                <p className="home-popular-copy mt-1 text-[11px] text-slate-500">{item.subtitle}</p>
-                <p className="home-popular-copy mt-3 text-[10px] text-slate-400">Mulai dari</p>
+                <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.tone}`}>{item.category}</span>
+                <h3 className="home-popular-title mt-3 text-[14px] font-semibold leading-[1.3] tracking-[-0.02em] text-slate-900 md:text-[17px]">{item.title}</h3>
+                <p className="home-popular-copy mt-1 text-[12px] text-slate-500">{item.subtitle}</p>
+                <p className="home-popular-copy mt-3 text-[11px] text-slate-400">Mulai dari</p>
                 <div className="mt-1 flex items-end justify-between gap-2">
-                  <p className="text-[11px] font-black text-slate-900 md:text-[18px]">
+                  <p className="text-[14px] font-bold text-slate-900 md:text-[17px]">
                     {item.price}
-                    {item.suffix ? <span className="ml-1 text-[10px] font-medium text-slate-500">{item.suffix}</span> : null}
+                    {item.suffix ? <span className="ml-1 text-[11px] font-medium text-slate-500">{item.suffix}</span> : null}
                   </p>
-                  <div className="flex items-center gap-1 text-[11px] font-semibold text-slate-700">
+                  <div className="flex items-center gap-1 text-[12px] font-medium text-slate-700">
                     <StarIcon className="h-3 w-3 text-[#f5a623]" />
                     {item.rating}
                   </div>
