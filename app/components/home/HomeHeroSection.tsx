@@ -532,18 +532,19 @@ function formatOptionPrimaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldD
     return extractFlightCity(choice.value)
   }
 
-  return choice.value
+  return choice.value ?? ""
 }
 
 function formatOptionSecondaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
   const normalized = field.label.toLowerCase()
 
   if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+    return choice.sublabel ?? ""
     const code = extractFlightCode(choice.value)
     return code ? `${code} • ${choice.sublabel ?? ""}` : choice.sublabel
   }
 
-  return choice.sublabel
+  return choice.sublabel ?? ""
 }
 
 function extractFlightCode(input: string) {

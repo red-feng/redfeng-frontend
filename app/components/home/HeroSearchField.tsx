@@ -139,9 +139,9 @@ export default function HeroSearchField({
           <div className="max-h-[380px] overflow-y-auto py-2">
             {filteredOptions.length > 0 ? (
               groupedOptions.map(([groupLabel, groupItems]) => (
-                <div key={`${label}-${groupLabel}`}>
-                  <div className="px-4 pb-2 pt-3 first:pt-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">{groupLabel}</p>
+                <div key={`${label}-${groupLabel}`} className="border-t border-slate-100/80 first:border-t-0">
+                  <div className="px-4 pb-1 pt-4 first:pt-2">
+                    <p className="text-[14px] font-semibold text-slate-700">{groupLabel}</p>
                   </div>
                   {groupItems.map((option) => {
                     const isActive = option.value === value
@@ -155,17 +155,17 @@ export default function HeroSearchField({
                           onValueChange?.(option.value)
                           setIsOpen(false)
                         }}
-                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${isActive ? "bg-[#fff4f1]" : "hover:bg-slate-50"}`}
+                        className={`flex w-full items-start gap-3 px-4 py-2.5 text-left transition ${isActive ? "bg-[#fff4f1]" : "hover:bg-slate-50"}`}
                       >
-                        <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-[#ffe4de] text-[#ff5a43]" : "bg-slate-100 text-slate-500"}`}>
+                        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-[#ffe4de] text-[#ff5a43]" : "bg-slate-100 text-slate-500"}`}>
                           <DropdownItemIcon className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-semibold text-slate-900">{option.label}</span>
-                      {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
-                    </span>
-                  </button>
-                )
+                          {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                        </span>
+                      </button>
+                    )
                   })}
                 </div>
               ))
@@ -237,5 +237,5 @@ function formatOptionSublabel(option: HeroSearchFieldOption) {
   if (!option.group || !option.sublabel) return option.sublabel ?? ""
 
   const normalizedLabel = option.label.trim()
-  return option.sublabel.replace(new RegExp(`^${normalizedLabel}\\s+[^A-Za-z0-9]+\\s*`), "").trim()
+  return option.sublabel.replace(new RegExp(`^${normalizedLabel}\\s+[•\\-]\\s*`), "").trim()
 }
