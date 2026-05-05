@@ -6,6 +6,10 @@ export type IconProps = {
 
 export type CardIcon = ComponentType<IconProps>
 export type HeroTabKey = "flight" | "hotel" | "train" | "bus" | "ship" | "activity" | "package"
+export type HeroBenefitItem = {
+  title: string
+  icon: CardIcon
+}
 
 export type PaymentLogo = {
   label: string
@@ -169,11 +173,43 @@ export const payments: PaymentLogo[] = [
   { label: "ATM Bersama", src: "/home-assets/payment-atm-bersama.jpg", width: 750, height: 402, mobileRenderWidth: 76, desktopRenderWidth: 92, mobileScale: 1.1, desktopScale: 1.1, mobileBoxWidth: 96, desktopBoxWidth: 112 },
 ]
 
-export const heroBenefits = [
-  { title: "Harga Terbaik", body: "Pilihan terbaik untukmu", icon: PriceTagIcon },
-  { title: "Aman & Terpercaya", body: "Transaksi aman terjamin", icon: ShieldIcon },
-  { title: "Customer Support 24/7", body: "Siap membantu kapan saja", icon: HeadsetIcon },
-]
+export const heroBenefitsByTab: Record<HeroTabKey, HeroBenefitItem[]> = {
+  flight: [
+    { title: "Harga tiket terbaik", icon: PriceTagIcon },
+    { title: "Maskapai terpercaya", icon: ShieldIcon },
+    { title: "Support 24/7", icon: HeadsetIcon },
+  ],
+  hotel: [
+    { title: "Properti terkurasi", icon: BuildingIcon },
+    { title: "Booking aman", icon: ShieldIcon },
+    { title: "Harga promo hotel", icon: PriceTagIcon },
+  ],
+  train: [
+    { title: "Rute populer", icon: TrainIcon },
+    { title: "Jadwal akurat", icon: ShieldIcon },
+    { title: "Tarif terbaik", icon: PriceTagIcon },
+  ],
+  bus: [
+    { title: "Operator pilihan", icon: BusIcon },
+    { title: "Kursi nyaman", icon: ShieldIcon },
+    { title: "Harga hemat", icon: PriceTagIcon },
+  ],
+  ship: [
+    { title: "Pelabuhan utama", icon: ShipIcon },
+    { title: "Pelayaran aman", icon: ShieldIcon },
+    { title: "Tarif fleksibel", icon: PriceTagIcon },
+  ],
+  activity: [
+    { title: "Atraksi favorit", icon: SparklesIcon },
+    { title: "Voucher instan", icon: ShieldIcon },
+    { title: "Promo tiket seru", icon: PriceTagIcon },
+  ],
+  package: [
+    { title: "Paket terlengkap", icon: PalmIcon },
+    { title: "Partner terpercaya", icon: ShieldIcon },
+    { title: "Harga bundling hemat", icon: PriceTagIcon },
+  ],
+}
 
 export function PlaneIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M3 13.5l7-1.7 6.8-7.2 2.2 2.2-5.6 8 4.6 3.1-1.8 1.8-5.8-2-2.2 2.7H5.6l1.9-4.6-4.5-2.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>

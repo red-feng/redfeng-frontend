@@ -1,9 +1,16 @@
-import { CardIcon, heroBenefits } from "@/app/components/home/homeContent"
+import { CardIcon, heroBenefitsByTab } from "@/app/components/home/homeContent"
+import type { HeroTabKey } from "@/app/components/home/homeContent"
 
-export default function HeroBenefits() {
+type HeroBenefitsProps = {
+  activeTab: HeroTabKey
+}
+
+export default function HeroBenefits({ activeTab }: HeroBenefitsProps) {
+  const benefits = heroBenefitsByTab[activeTab]
+
   return (
     <div className="mt-6 grid grid-cols-4 gap-3 border-t border-slate-200/80 pt-5 text-sm text-slate-600">
-      {heroBenefits.map((item) => {
+      {benefits.map((item) => {
         const Icon = item.icon
         return (
           <div key={item.title} className="flex flex-col items-center gap-2 text-center">
