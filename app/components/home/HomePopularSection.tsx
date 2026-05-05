@@ -15,18 +15,18 @@ export default function HomePopularSection() {
                   <HeartIcon className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="home-popular-body flex flex-1 flex-col p-3.5 md:p-4">
-                <span className={`rounded-md px-2 py-1 text-[10px] font-semibold ${item.tone}`}>{item.category}</span>
-                <h3 className="home-popular-title mt-3 min-h-[56px] text-[14px] font-semibold leading-[1.3] tracking-[-0.02em] text-slate-900 md:min-h-[46px] md:text-[17px]">{item.title}</h3>
-                <p className="home-popular-copy mt-1 min-h-[36px] text-[12px] text-slate-500">{item.subtitle}</p>
-                <div className="mt-auto pt-4">
-                  <p className="home-popular-copy text-[11px] text-slate-400">Mulai dari</p>
-                  <div className="mt-1 flex min-h-[44px] items-end justify-between gap-2">
-                    <p className="text-[14px] font-bold leading-tight text-slate-900 md:text-[17px]">
+              <div className="home-popular-body flex flex-1 flex-col p-4 md:px-4 md:pt-4 md:pb-[18px]">
+                <span className={`inline-flex rounded-[7px] px-3 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>
+                <h3 className="home-popular-title mt-4 min-h-[52px] text-[14px] font-semibold leading-[1.34] tracking-[-0.015em] text-slate-900 md:min-h-[48px] md:text-[17px] md:leading-[1.32]">{item.title}</h3>
+                <p className="home-popular-copy mt-2 min-h-[34px] text-[12px] leading-[1.45] text-slate-500">{item.subtitle}</p>
+                <div className="mt-auto pt-5">
+                  <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
+                  <div className="mt-2 flex min-h-[40px] items-end justify-between gap-2">
+                    <p className="text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">
                       {item.price}
-                      {item.suffix ? <span className="ml-1 text-[11px] font-medium text-slate-500">{item.suffix}</span> : null}
+                      {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{item.suffix}</span> : null}
                     </p>
-                    <div className="flex items-center gap-1 text-[12px] font-medium text-slate-700">
+                    <div className="flex items-center gap-1 text-[12px] font-medium leading-none text-slate-700">
                       <StarIcon className="h-3 w-3 text-[#f5a623]" />
                       {item.rating}
                     </div>
