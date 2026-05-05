@@ -310,12 +310,23 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
             { label: field.label, value: "SUB   Surabaya", sublabel: "Juanda" },
             { label: field.label, value: "KNO   Medan", sublabel: "Kualanamu" },
             { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
+            { label: field.label, value: "YIA   Yogyakarta", sublabel: "Yogyakarta International" },
+            { label: field.label, value: "UPG   Makassar", sublabel: "Sultan Hasanuddin" },
+            { label: field.label, value: "BPN   Balikpapan", sublabel: "Sultan Aji Muhammad Sulaiman" },
+            { label: field.label, value: "PLM   Palembang", sublabel: "Sultan Mahmud Badaruddin II" },
+            { label: field.label, value: "PNK   Pontianak", sublabel: "Supadio" },
+            { label: field.label, value: "BDO   Bandung", sublabel: "Husein Sastranegara" },
+            { label: field.label, value: "SOC   Solo", sublabel: "Adi Soemarmo" },
+            { label: field.label, value: "SRG   Semarang", sublabel: "Jenderal Ahmad Yani" },
           ]
         : [
             ...current,
             { label: field.label, value: activeTab === "ship" ? "Ketapang" : "Surabaya", sublabel: activeTab === "ship" ? "Banyuwangi" : "Pasar Turi", withSwap: field.withSwap },
             { label: field.label, value: activeTab === "ship" ? "Gilimanuk" : "Semarang", sublabel: activeTab === "ship" ? "Bali" : "Tawang", withSwap: field.withSwap },
             { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Bandung", sublabel: activeTab === "ship" ? "Karangasem" : "Hall", withSwap: field.withSwap },
+            { label: field.label, value: activeTab === "ship" ? "Tanjung Perak" : "Yogyakarta", sublabel: activeTab === "ship" ? "Surabaya" : "Tugu", withSwap: field.withSwap },
+            { label: field.label, value: activeTab === "ship" ? "Tanjung Priok" : "Solo", sublabel: activeTab === "ship" ? "Jakarta" : "Balapan", withSwap: field.withSwap },
+            { label: field.label, value: activeTab === "ship" ? "Bakauheni" : "Malang", sublabel: activeTab === "ship" ? "Lampung" : "Kota Baru", withSwap: field.withSwap },
           ]
   } else if (label.includes("ke") || label.includes("tujuan")) {
     choices =
@@ -328,12 +339,23 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
             { label: field.label, value: "ICN   Seoul", sublabel: "Incheon" },
             { label: field.label, value: "HKG   Hong Kong", sublabel: "Hong Kong International" },
             { label: field.label, value: "MEL   Melbourne", sublabel: "Tullamarine" },
+            { label: field.label, value: "KUL   Kuala Lumpur", sublabel: "Kuala Lumpur International" },
+            { label: field.label, value: "CAN   Guangzhou", sublabel: "Baiyun" },
+            { label: field.label, value: "PVG   Shanghai", sublabel: "Pudong International" },
+            { label: field.label, value: "PEK   Beijing", sublabel: "Capital International" },
+            { label: field.label, value: "TPE   Taipei", sublabel: "Taoyuan" },
+            { label: field.label, value: "SYD   Sydney", sublabel: "Kingsford Smith" },
+            { label: field.label, value: "DOH   Doha", sublabel: "Hamad International" },
+            { label: field.label, value: "DXB   Dubai", sublabel: "Dubai International" },
           ]
         : [
             ...current,
             { label: field.label, value: activeTab === "ship" ? "Lembar" : "Solo", sublabel: activeTab === "ship" ? "Lombok" : "Balapan" },
             { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Malang", sublabel: activeTab === "ship" ? "Bali" : "Kota Baru" },
             { label: field.label, value: activeTab === "ship" ? "Gili Trawangan" : "Yogyakarta", sublabel: activeTab === "ship" ? "Lombok Utara" : "Tugu" },
+            { label: field.label, value: activeTab === "ship" ? "Nusa Penida" : "Semarang", sublabel: activeTab === "ship" ? "Banjar Nyuh" : "Tawang" },
+            { label: field.label, value: activeTab === "ship" ? "Labuan Bajo" : "Surabaya", sublabel: activeTab === "ship" ? "Marina" : "Gubeng" },
+            { label: field.label, value: activeTab === "ship" ? "Batam Center" : "Bandung", sublabel: activeTab === "ship" ? "Kepulauan Riau" : "Hall", },
           ]
   } else if (label.includes("destinasi") || label.includes("trip") || label.includes("event") || label.includes("area")) {
     if (activeTab === "hotel") {
@@ -346,6 +368,13 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
         { label: field.label, value: "Bali", sublabel: "Indonesia" },
         { label: field.label, value: "Singapura", sublabel: "Singapura" },
         { label: field.label, value: "Hong Kong", sublabel: "Hong Kong SAR" },
+        { label: field.label, value: "Bandung", sublabel: "Jawa Barat, Indonesia" },
+        { label: field.label, value: "Semarang", sublabel: "Jawa Tengah, Indonesia" },
+        { label: field.label, value: "Bangkok", sublabel: "Thailand" },
+        { label: field.label, value: "Osaka", sublabel: "Kansai, Jepang" },
+        { label: field.label, value: "Shanghai", sublabel: "China" },
+        { label: field.label, value: "Seoul", sublabel: "Korea Selatan" },
+        { label: field.label, value: "Dubai", sublabel: "Uni Emirat Arab" },
       ]
     } else if (activeTab === "activity") {
       choices = [
@@ -354,6 +383,12 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
         { label: field.label, value: "Shanghai Disneyland", sublabel: "Shanghai, China" },
         { label: field.label, value: "The Bund Night Cruise", sublabel: "Shanghai, China" },
         { label: field.label, value: "Great Wall Day Tour", sublabel: "Beijing, China" },
+        { label: field.label, value: "Zhujiajiao Water Town Tour", sublabel: "Shanghai, China" },
+        { label: field.label, value: "Chimelong Safari Park", sublabel: "Guangzhou, China" },
+        { label: field.label, value: "Terracotta Warriors Tour", sublabel: "Xi'an, China" },
+        { label: field.label, value: "Victoria Peak Experience", sublabel: "Hong Kong" },
+        { label: field.label, value: "Tokyo Disneyland", sublabel: "Tokyo, Jepang" },
+        { label: field.label, value: "Lotte World Adventure", sublabel: "Seoul, Korea Selatan" },
       ]
     } else if (activeTab === "package") {
       choices = [
@@ -362,6 +397,11 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
         { label: field.label, value: "Shanghai 4H3M", sublabel: "Hotel + City Tour" },
         { label: field.label, value: "Beijing 5H4M", sublabel: "Hotel + Tour" },
         { label: field.label, value: "Chongqing Explorer", sublabel: "4 Hari 3 Malam" },
+        { label: field.label, value: "Tokyo Sakura Escape", sublabel: "5 Hari 4 Malam" },
+        { label: field.label, value: "Hong Kong Family Fun", sublabel: "Disney + Hotel" },
+        { label: field.label, value: "Labuan Bajo Premium", sublabel: "Liveaboard + Hotel" },
+        { label: field.label, value: "Bangkok Shopping Trip", sublabel: "4 Hari 3 Malam" },
+        { label: field.label, value: "Seoul K-Culture Journey", sublabel: "5 Hari 4 Malam" },
       ]
     } else {
       choices = [
@@ -369,6 +409,9 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
         { label: field.label, value: "Bandung", sublabel: "Indonesia" },
         { label: field.label, value: "Yogyakarta", sublabel: "Indonesia" },
         { label: field.label, value: "Jakarta", sublabel: "Indonesia" },
+        { label: field.label, value: "Surabaya", sublabel: "Indonesia" },
+        { label: field.label, value: "Semarang", sublabel: "Indonesia" },
+        { label: field.label, value: "Malang", sublabel: "Indonesia" },
       ]
     }
   } else if (label.includes("transit")) {
@@ -376,36 +419,61 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
       ...current,
       { label: field.label, value: "Kuala Lumpur", sublabel: "KUL" },
       { label: field.label, value: "Hong Kong", sublabel: "HKG" },
+      { label: field.label, value: "Singapore", sublabel: "SIN" },
+      { label: field.label, value: "Bangkok", sublabel: "BKK" },
+      { label: field.label, value: "Taipei", sublabel: "TPE" },
+      { label: field.label, value: "Doha", sublabel: "DOH" },
     ]
   } else if (label.includes("berangkat") || label.includes("pergi") || label.includes("check-in") || label.includes("kunjungan") || label.includes("tanggal") || label.includes("keberangkatan")) {
     choices = [
       ...current,
       { label: field.label, value: compactDateShift(field.value, 3), sublabel: "Pilihan berikutnya" },
       { label: field.label, value: compactDateShift(field.value, 7), sublabel: "Minggu depan" },
+      { label: field.label, value: compactDateShift(field.value, 10), sublabel: "Akhir pekan depan" },
+      { label: field.label, value: compactDateShift(field.value, 14), sublabel: "2 minggu lagi" },
+      { label: field.label, value: compactDateShift(field.value, 21), sublabel: "Bulan ini" },
     ]
   } else if (label.includes("pulang") || label.includes("check-out")) {
     choices = [
       ...current,
       { label: field.label, value: compactDateShift(field.value, 4), sublabel: "Durasi fleksibel" },
       { label: field.label, value: compactDateShift(field.value, 8), sublabel: "Durasi lebih lama" },
+      { label: field.label, value: compactDateShift(field.value, 12), sublabel: "Liburan panjang" },
+      { label: field.label, value: compactDateShift(field.value, 16), sublabel: "Pulang akhir pekan" },
     ]
   } else if (label.includes("jam")) {
     choices = [
       ...current,
       { label: field.label, value: "08:30", sublabel: "Pagi" },
       { label: field.label, value: "21:15", sublabel: "Malam" },
+      { label: field.label, value: "06:00", sublabel: "Subuh" },
+      { label: field.label, value: "12:45", sublabel: "Siang" },
+      { label: field.label, value: "15:30", sublabel: "Sore" },
+      { label: field.label, value: "23:00", sublabel: "Larut malam" },
     ]
   } else if (label.includes("penumpang") || label.includes("tamu") || label.includes("peserta") || label.includes("tiket")) {
     choices = [
       ...current,
       { label: field.label, value: "2 Dewasa", sublabel: "Pilihan populer", withChevron: field.withChevron },
       { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family option", withChevron: field.withChevron },
+      { label: field.label, value: "1 Dewasa", sublabel: "Solo traveler", withChevron: field.withChevron },
+      { label: field.label, value: "2 Dewasa, 2 Anak", sublabel: "Family saver", withChevron: field.withChevron },
+      { label: field.label, value: "3 Dewasa", sublabel: "Group light", withChevron: field.withChevron },
+      { label: field.label, value: "4 Dewasa", sublabel: "Small group", withChevron: field.withChevron },
+      { label: field.label, value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+      { label: field.label, value: "1 Dewasa, Premium Economy", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+      { label: field.label, value: "1 Dewasa, Business", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+      { label: field.label, value: "1 Dewasa, First Class", sublabel: "Kelas Kabin", withChevron: field.withChevron },
     ]
   } else if (label.includes("kategori") || label.includes("jenis") || label.includes("durasi")) {
     choices = [
       ...current,
       { label: field.label, value: activeTab === "activity" ? "Family friendly" : "4 Hari 3 Malam", sublabel: activeTab === "activity" ? "Rekomendasi" : "Paket favorit", withChevron: field.withChevron },
       { label: field.label, value: activeTab === "activity" ? "VIP access" : "5 Hari 4 Malam", sublabel: activeTab === "activity" ? "Premium" : "Lebih lengkap", withChevron: field.withChevron },
+      { label: field.label, value: activeTab === "activity" ? "Theme park" : "2 Hari 1 Malam", sublabel: activeTab === "activity" ? "Paling populer" : "Trip singkat", withChevron: field.withChevron },
+      { label: field.label, value: activeTab === "activity" ? "Day tour" : "3 Hari 2 Malam", sublabel: activeTab === "activity" ? "Half / full day" : "Pilihan utama", withChevron: field.withChevron },
+      { label: field.label, value: activeTab === "activity" ? "Adventure" : "6 Hari 5 Malam", sublabel: activeTab === "activity" ? "Outdoor" : "Long stay", withChevron: field.withChevron },
+      { label: field.label, value: activeTab === "activity" ? "Cultural experience" : "7 Hari 6 Malam", sublabel: activeTab === "activity" ? "Local highlight" : "Eksplor lengkap", withChevron: field.withChevron },
     ]
   }
 

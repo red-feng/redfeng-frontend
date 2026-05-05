@@ -125,7 +125,7 @@ export default function HeroSearchField({
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{getDropdownTitle(label, inputType)}</p>
           </div>
-          <div className="max-h-[292px] overflow-y-auto py-2">
+          <div className="max-h-[380px] overflow-y-auto py-2">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const isActive = option.value === value
