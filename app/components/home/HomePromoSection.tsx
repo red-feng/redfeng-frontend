@@ -1,14 +1,56 @@
-import { HeartIcon, promoCards } from "@/app/components/home/homeContent"
+"use client"
+
+import { useRef } from "react"
+
+import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/homeContent"
 
 export default function HomePromoSection() {
+  const trackRef = useRef<HTMLDivElement>(null)
+
+  const scrollByCard = (direction: "prev" | "next") => {
+    const track = trackRef.current
+
+    if (!track) return
+
+    const firstCard = track.querySelector<HTMLElement>("[data-promo-card]")
+    const gap = 18
+    const cardWidth = firstCard?.offsetWidth ?? Math.max(track.clientWidth * 0.82, 280)
+    const delta = direction === "next" ? cardWidth + gap : -(cardWidth + gap)
+
+    track.scrollBy({ left: delta, behavior: "smooth" })
+  }
+
   return (
     <section className="home-promo-section mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-7 lg:pb-12">
-      <div className="home-promo-grid grid gap-4 md:grid-cols-2 lg:gap-[18px] xl:grid-cols-4">
+      <div className="mb-4 flex items-center justify-end gap-2 sm:mb-5">
+        <button
+          type="button"
+          onClick={() => scrollByCard("prev")}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d7deea] bg-white text-slate-700 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.32)] transition-colors hover:border-[#bcc7d9] hover:bg-slate-50"
+          aria-label="Promo sebelumnya"
+        >
+          <ArrowRightIcon className="h-4 w-4 rotate-180" />
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollByCard("next")}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-[#d7deea] bg-white text-slate-700 shadow-[0_12px_28px_-20px_rgba(15,23,42,0.32)] transition-colors hover:border-[#bcc7d9] hover:bg-slate-50"
+          aria-label="Promo berikutnya"
+        >
+          <ArrowRightIcon className="h-4 w-4" />
+        </button>
+      </div>
+      <div
+        ref={trackRef}
+        className="home-promo-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-[18px]"
+      >
         {promoCards.map((card, index) => (
           <article
             key={card.title}
-            className={`home-promo-card group relative flex min-h-[286px] flex-col overflow-hidden rounded-[26px] bg-gradient-to-br ${card.gradient} px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:px-6 sm:py-6 lg:min-h-[332px]`}
+            data-promo-card
+            className="home-promo-card group relative flex min-h-[286px] w-[302px] min-w-[302px] snap-start flex-col overflow-hidden rounded-[26px] bg-slate-900 px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:w-[356px] sm:min-w-[356px] sm:px-6 sm:py-6 lg:min-h-[332px] lg:w-[390px] lg:min-w-[390px] xl:w-[408px] xl:min-w-[408px] xl:px-7 xl:py-7"
           >
+            <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`} />
             <div className={`absolute inset-0 scale-[1.01] bg-no-repeat transition-transform duration-500 group-hover:scale-[1.05] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
             <div className={`absolute inset-0 ${card.overlayClass}`} />
             <div className={`absolute inset-0 ${card.glowClass}`} />
@@ -24,7 +66,7 @@ export default function HomePromoSection() {
                   {card.badge}
                 </span>
               ) : null}
-              <h3 className={`whitespace-pre-line font-bold leading-[1.1] tracking-[-0.035em] ${index === 0 ? "mt-7 text-[19px] sm:text-[24px]" : "mt-7 text-[19px] sm:text-[24px]"}`}>
+              <h3 className="mt-7 whitespace-pre-line text-[19px] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[24px]">
                 {card.title}
               </h3>
               <div className="mt-auto pt-8">
