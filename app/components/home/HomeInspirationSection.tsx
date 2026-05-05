@@ -9,7 +9,7 @@ export default function HomeInspirationSection() {
           <ArticleIcon className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="text-[24px] font-black tracking-[-0.04em] text-slate-900 lg:text-[30px]">Baca dan bangkitkan semangat liburanmu</h2>
+          <h2 className="text-[24px] font-black tracking-[-0.04em] text-slate-900 lg:text-[30px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
           <p className="mt-1 text-[14px] text-slate-500">Cerita, panduan, dan inspirasi perjalanan pilihan untuk membantu rencana liburan berikutnya.</p>
         </div>
       </div>
