@@ -24,12 +24,12 @@ export default function HomePromoSection() {
                   {card.badge}
                 </span>
               ) : null}
-              <h3 className={`whitespace-pre-line font-black leading-[1.08] tracking-[-0.07em] ${index === 0 ? "mt-7 text-[24px] sm:text-[31px]" : "mt-7 text-[24px] sm:text-[29px]"}`}>
+              <h3 className={`whitespace-pre-line font-black leading-[1.08] tracking-[-0.06em] ${index === 0 ? "mt-7 text-[22px] sm:text-[28px]" : "mt-7 text-[22px] sm:text-[27px]"}`}>
                 {card.title}
               </h3>
               <div className="mt-auto pt-8">
                 <p className="text-[14px] font-medium leading-none text-white/92">{card.eyebrow}</p>
-                <p className={`mt-2 font-black leading-none tracking-[-0.05em] ${index === 0 ? "text-[19px] sm:text-[22px]" : "text-[19px] sm:text-[21px]"}`}>{card.price}</p>
+                <p className={`mt-2 font-black leading-none tracking-[-0.05em] ${index === 0 ? "text-[18px] sm:text-[20px]" : "text-[18px] sm:text-[20px]"}`}>{card.price}</p>
               </div>
               <button className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-bold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]">
                 {card.cta}

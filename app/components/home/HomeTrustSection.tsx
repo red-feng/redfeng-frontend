@@ -17,7 +17,7 @@ export default function HomeTrustSection() {
                   <StarIcon key={index} className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
                 ))}
               </div>
-              <p className="mt-4 text-[13px] font-black text-slate-900 lg:mt-3 lg:text-[26px]">
+              <p className="mt-4 text-[13px] font-black text-slate-900 lg:mt-3 lg:text-[22px]">
                 4.9/5 <span className="mt-1 block text-[10px] font-medium text-slate-500 lg:inline lg:text-[12px]">dari 20.000+ ulasan</span>
               </p>
             </div>
@@ -40,7 +40,7 @@ export default function HomeTrustSection() {
               ) : (
                 <span
                   key={logo.label}
-                  className={`text-[12px] italic tracking-[-0.04em] lg:text-[22px] ${
+                  className={`text-[12px] italic tracking-[-0.04em] lg:text-[20px] ${
                     index === 1 || index === 4
                       ? "font-black text-[#ef3b2d]"
                       : index === 2
