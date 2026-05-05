@@ -4,10 +4,11 @@ export type HeroSearchFieldData = {
   label: string
   value: string
   sublabel?: string
+  group?: string
   withChevron?: boolean
   withSwap?: boolean
   inputType?: "text" | "date" | "select" | "autocomplete"
-  options?: { label: string; value: string; sublabel?: string }[]
+  options?: { label: string; value: string; sublabel?: string; group?: string }[]
 }
 
 export type HeroSearchOption = {

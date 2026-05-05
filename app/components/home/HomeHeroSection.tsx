@@ -181,19 +181,20 @@ function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, s
     const choices = getFieldChoices(activeTab, field)
     const inputType = getFieldInputType(field, choices)
 
-    return {
-      ...stateField,
-      inputType,
-      options:
-        inputType === "date"
-          ? undefined
-          : choices.map((choice) => ({
-              value: choice.value,
-              label: choice.value,
-              sublabel: choice.sublabel,
-            })),
-      value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
-    }
+      return {
+        ...stateField,
+        inputType,
+        options:
+          inputType === "date"
+            ? undefined
+            : choices.map((choice) => ({
+                value: choice.value,
+                label: choice.value,
+                sublabel: choice.sublabel,
+                group: inferOptionGroup(activeTab, field, choice),
+              })),
+        value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
+      }
   })
 }
 
@@ -478,6 +479,41 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
   }
 
   return dedupeFieldChoices(choices, field)
+}
+
+function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
+  const normalized = field.label.toLowerCase()
+  const value = choice.value.toLowerCase()
+
+  if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
+    if (activeTab === "flight") {
+      if (value.includes("cgk") || value.includes("dps") || value.includes("sub") || value.includes("kno")) return "Bandara Populer"
+      if (value.includes("sin") || value.includes("bkk") || value.includes("hnd") || value.includes("icn") || value.includes("hkg") || value.includes("pvg") || value.includes("pek") || value.includes("dxb") || value.includes("doh")) return "Rute Internasional"
+      return "Bandara Lainnya"
+    }
+
+    return activeTab === "ship" ? "Pelabuhan Populer" : "Kota & Stasiun Populer"
+  }
+
+  if (normalized.includes("destinasi") || normalized.includes("trip") || normalized.includes("event") || normalized.includes("area")) {
+    if (activeTab === "hotel") {
+      if (value.includes("bali") || value.includes("jakarta") || value.includes("bandung") || value.includes("yogyakarta")) return "Domestik Populer"
+      return "Internasional Favorit"
+    }
+    if (activeTab === "activity") return "Atraksi & Tur Terpopuler"
+    if (activeTab === "package") return "Paket Favorit"
+    return "Destinasi Populer"
+  }
+
+  if (normalized.includes("transit")) return "Transit Rekomendasi"
+  if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("check-in") || normalized.includes("tanggal") || normalized.includes("kunjungan") || normalized.includes("keberangkatan")) return "Tanggal Rekomendasi"
+  if (normalized.includes("pulang") || normalized.includes("check-out")) return "Tanggal Pulang"
+  if (normalized.includes("jam")) return "Pilihan Jam"
+  if (normalized.includes("penumpang") || normalized.includes("tamu") || normalized.includes("peserta") || normalized.includes("tiket")) return "Kombinasi Populer"
+  if (normalized.includes("kategori") || normalized.includes("jenis")) return "Kategori Favorit"
+  if (normalized.includes("durasi")) return "Durasi Favorit"
+
+  return "Pilihan Lainnya"
 }
 
 function dedupeFieldChoices(choices: HeroSearchFieldData[], baseField: HeroSearchFieldData) {

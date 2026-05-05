@@ -7,6 +7,7 @@ type HeroSearchFieldOption = {
   label: string
   value: string
   sublabel?: string
+  group?: string
 }
 
 type HeroSearchFieldProps = {
@@ -51,6 +52,18 @@ export default function HeroSearchField({
       `${option.label} ${option.value} ${option.sublabel ?? ""}`.toLowerCase().includes(keyword),
     )
   }, [draftValue, hasDropdown, inputType, options, value])
+  const groupedOptions = useMemo(() => {
+    const groups = new Map<string, HeroSearchFieldOption[]>()
+
+    filteredOptions.forEach((option) => {
+      const groupLabel = option.group ?? "Pilihan"
+      const currentGroup = groups.get(groupLabel) ?? []
+      currentGroup.push(option)
+      groups.set(groupLabel, currentGroup)
+    })
+
+    return Array.from(groups.entries())
+  }, [filteredOptions])
 
   useEffect(() => {
     setDraftValue(value)
@@ -127,30 +140,37 @@ export default function HeroSearchField({
           </div>
           <div className="max-h-[380px] overflow-y-auto py-2">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => {
-                const isActive = option.value === value
+              groupedOptions.map(([groupLabel, groupItems]) => (
+                <div key={`${label}-${groupLabel}`}>
+                  <div className="px-4 pb-2 pt-3 first:pt-1">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300">{groupLabel}</p>
+                  </div>
+                  {groupItems.map((option) => {
+                    const isActive = option.value === value
 
-                return (
-                  <button
-                    key={`${label}-${option.value}-${option.sublabel ?? ""}`}
-                    type="button"
-                    onClick={() => {
-                      setDraftValue(option.value)
-                      onValueChange?.(option.value)
-                      setIsOpen(false)
-                    }}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${isActive ? "bg-[#fff4f1]" : "hover:bg-slate-50"}`}
-                  >
-                    <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-[#ffe4de] text-[#ff5a43]" : "bg-slate-100 text-slate-500"}`}>
-                      <DropdownItemIcon className="h-4 w-4" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-semibold text-slate-900">{option.label}</span>
-                      {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{option.sublabel}</span> : null}
-                    </span>
-                  </button>
-                )
-              })
+                    return (
+                      <button
+                        key={`${label}-${option.value}-${option.sublabel ?? ""}`}
+                        type="button"
+                        onClick={() => {
+                          setDraftValue(option.value)
+                          onValueChange?.(option.value)
+                          setIsOpen(false)
+                        }}
+                        className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${isActive ? "bg-[#fff4f1]" : "hover:bg-slate-50"}`}
+                      >
+                        <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${isActive ? "bg-[#ffe4de] text-[#ff5a43]" : "bg-slate-100 text-slate-500"}`}>
+                          <DropdownItemIcon className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[14px] font-semibold text-slate-900">{option.label}</span>
+                          {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{option.sublabel}</span> : null}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))
             ) : (
               <div className="px-4 py-6 text-center text-[13px] text-slate-500">Belum ada hasil yang cocok untuk pencarian ini.</div>
             )}
