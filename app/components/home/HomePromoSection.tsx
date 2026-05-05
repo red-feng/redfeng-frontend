@@ -47,10 +47,10 @@ export default function HomePromoSection() {
             <article
               key={card.title}
               data-promo-card
-              className="home-promo-card group relative flex min-h-[286px] w-[302px] min-w-[302px] snap-start flex-col overflow-hidden rounded-[26px] bg-slate-900 px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-transform duration-300 hover:-translate-y-1 sm:min-h-[320px] sm:w-[356px] sm:min-w-[356px] sm:px-6 sm:py-6 lg:min-h-[332px] lg:w-[390px] lg:min-w-[390px] xl:w-[408px] xl:min-w-[408px] xl:px-7 xl:py-7"
+            className="home-promo-card group relative flex min-h-[286px] w-[302px] min-w-[302px] snap-start flex-col overflow-hidden rounded-[26px] bg-slate-900 px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_34px_74px_-42px_rgba(15,23,42,0.46)] sm:min-h-[320px] sm:w-[356px] sm:min-w-[356px] sm:px-6 sm:py-6 lg:min-h-[332px] lg:w-[390px] lg:min-w-[390px] xl:w-[408px] xl:min-w-[408px] xl:px-7 xl:py-7"
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`} />
-              <div className={`absolute inset-0 scale-[1.01] bg-no-repeat transition-transform duration-500 group-hover:scale-[1.05] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
+              <div className={`absolute inset-0 scale-[1.005] bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.028] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
               <div className={`absolute inset-0 ${card.overlayClass}`} />
               <div className={`absolute inset-0 ${card.glowClass}`} />
               <div className="absolute inset-x-0 bottom-0 h-[58%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.14)_46%,rgba(15,23,42,0.28)_100%)]" />
