@@ -1,11 +1,18 @@
+"use client"
+
 import Image from "next/image"
+import { useState } from "react"
 import HeroBenefits from "@/app/components/home/HeroBenefits"
 import HeroHeader from "@/app/components/home/HeroHeader"
 import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
 import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
 import HeroTabs from "@/app/components/home/HeroTabs"
+import { heroSearchConfigs } from "@/app/components/home/heroSearchContent"
+import type { HeroTabKey } from "@/app/components/home/homeContent"
 
 export default function HomeHeroSection() {
+  const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
+
   return (
     <section className="home-hero">
       <div className="home-hero-surface overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_18px_36px_-34px_rgba(15,23,42,0.08)]">
@@ -22,8 +29,8 @@ export default function HomeHeroSection() {
 
         <div className="home-hero-search-wrap relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-56 lg:pb-14 lg:px-8">
           <div className="home-hero-search-card overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
-            <HeroTabs />
-            <HeroSearchPanel />
+            <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
+            <HeroSearchPanel activeTab={activeTab} />
           </div>
         </div>
       </div>
@@ -63,26 +70,22 @@ function HeroIntro() {
   )
 }
 
-function HeroSearchPanel() {
+function HeroSearchPanel({ activeTab }: { activeTab: HeroTabKey }) {
+  const config = heroSearchConfigs[activeTab]
+
   return (
     <div className="px-4 py-5 lg:px-6 lg:py-7">
       <div className="hidden flex-wrap gap-6 text-[13px] text-slate-600 lg:flex">
-        <label className="inline-flex items-center gap-2 font-medium text-slate-800">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5a43]" />
-          Sekali Jalan
-        </label>
-        <label className="inline-flex items-center gap-2 font-medium">
-          <span className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
-          Pulang - Pergi
-        </label>
-        <label className="inline-flex items-center gap-2 font-medium">
-          <span className="h-2.5 w-2.5 rounded-full border border-slate-300 bg-white" />
-          Multi Kota
-        </label>
+        {config.options.map((option) => (
+          <label key={option.label} className={`inline-flex items-center gap-2 font-medium ${option.active ? "text-slate-800" : ""}`}>
+            <span className={`h-2.5 w-2.5 rounded-full ${option.active ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
+            {option.label}
+          </label>
+        ))}
       </div>
 
-      <HeroSearchMobile />
-      <HeroSearchDesktop />
+      <HeroSearchMobile config={config} />
+      <HeroSearchDesktop config={config} />
       <HeroBenefits />
     </div>
   )

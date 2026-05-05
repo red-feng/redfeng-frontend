@@ -1,6 +1,7 @@
 import { ChevronDownIcon, SwapIcon } from "@/app/components/home/homeContent"
 
 type HeroSearchFieldProps = {
+  className?: string
   label: string
   value: string
   sublabel: string
@@ -10,6 +11,7 @@ type HeroSearchFieldProps = {
 }
 
 export default function HeroSearchField({
+  className = "",
   label,
   value,
   sublabel,
@@ -18,7 +20,7 @@ export default function HeroSearchField({
   compact = false,
 }: HeroSearchFieldProps) {
   return (
-    <div className={`relative bg-[#fdfefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5"}`}>
+    <div className={`relative bg-[#fdfefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5"} ${className}`}>
       <p className="text-[11px] font-medium text-slate-400">{label}</p>
       <p className="mt-2 pr-8 text-[15px] font-bold text-slate-900">{value}</p>
       {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}

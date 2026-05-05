@@ -1,33 +1,28 @@
+import type { HeroTabKey } from "@/app/components/home/homeContent"
 import { heroTabs } from "@/app/components/home/homeContent"
 
-export default function HeroTabs() {
-  const mobileTabs = [
-    { label: "Pesawat", icon: heroTabs[0].icon },
-    { label: "Hotel", icon: heroTabs[1].icon },
-    { label: "Kereta", icon: heroTabs[2].icon },
-    { label: "Lainnya", icon: heroTabs[5].icon },
-  ]
+type HeroTabsProps = {
+  activeTab: HeroTabKey
+  onChange: (tab: HeroTabKey) => void
+}
 
+export default function HeroTabs({ activeTab, onChange }: HeroTabsProps) {
   return (
-    <div className="grid grid-cols-4 border-b border-slate-200/80 px-3 py-4 text-sm font-semibold text-slate-700 lg:flex lg:gap-2 lg:overflow-x-auto lg:px-5">
-      {mobileTabs.map((tab, index) => {
+    <div className="flex gap-1.5 overflow-x-auto border-b border-slate-200/80 px-3 py-3 text-sm font-semibold text-slate-700 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-2 lg:px-5 lg:py-4">
+      {heroTabs.map((tab) => {
         const Icon = tab.icon
+        const isActive = tab.key === activeTab
+
         return (
           <button
-            key={tab.label}
-            className={`flex shrink-0 flex-col items-center gap-2 border-b-2 px-3 py-2 text-[13px] lg:hidden ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-500"}`}
-          >
-            <Icon className="h-4 w-4" />
-            {tab.label}
-          </button>
-        )
-      })}
-      {heroTabs.map((tab, index) => {
-        const Icon = tab.icon
-        return (
-          <button
-            key={`${tab.label}-desktop`}
-            className={`hidden shrink-0 items-center gap-2 border-b-2 px-3 py-2 text-sm lg:flex ${index === 0 ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-500"}`}
+            key={tab.key}
+            type="button"
+            onClick={() => onChange(tab.key)}
+            className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-[13px] transition lg:border-b-2 lg:rounded-none lg:border-x-0 lg:border-t-0 lg:px-3 lg:py-2 lg:text-sm ${
+              isActive
+                ? "border-[#ef3b2d] bg-[#fff4f1] text-[#ef3b2d] lg:bg-transparent"
+                : "border-transparent bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
           >
             <Icon className="h-4 w-4" />
             {tab.label}

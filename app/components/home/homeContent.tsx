@@ -5,6 +5,7 @@ export type IconProps = {
 }
 
 export type CardIcon = ComponentType<IconProps>
+export type HeroTabKey = "flight" | "hotel" | "train" | "bus" | "ship" | "activity" | "package"
 
 export type PaymentLogo = {
   label: string
@@ -20,13 +21,13 @@ export type PaymentLogo = {
 }
 
 export const heroTabs = [
-  { label: "Pesawat", badge: false, icon: PlaneIcon },
-  { label: "Hotel", badge: false, icon: BuildingIcon },
-  { label: "Kereta", badge: false, icon: TrainIcon },
-  { label: "Bus", badge: false, icon: BusIcon },
-  { label: "Kapal", badge: false, icon: ShipIcon },
-  { label: "Aktivitas", badge: false, icon: SparklesIcon },
-  { label: "Paket Wisata", badge: true, icon: PalmIcon },
+  { key: "flight" as const, label: "Pesawat", badge: false, icon: PlaneIcon },
+  { key: "hotel" as const, label: "Hotel", badge: false, icon: BuildingIcon },
+  { key: "train" as const, label: "Kereta", badge: false, icon: TrainIcon },
+  { key: "bus" as const, label: "Bus", badge: false, icon: BusIcon },
+  { key: "ship" as const, label: "Kapal", badge: false, icon: ShipIcon },
+  { key: "activity" as const, label: "Aktivitas", badge: false, icon: SparklesIcon },
+  { key: "package" as const, label: "Paket Wisata", badge: true, icon: PalmIcon },
 ]
 
 export const serviceCards: { label: string; desc: string; icon: CardIcon; tone: string }[] = [
