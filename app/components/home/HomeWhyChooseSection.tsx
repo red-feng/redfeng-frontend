@@ -2,9 +2,9 @@ import { whyChoose } from "@/app/components/home/homeContent"
 
 export default function HomeWhyChooseSection() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-6 sm:px-6 lg:px-8">
-      <h2 className="text-[22px] font-black tracking-[-0.04em] text-slate-900 lg:text-[28px]">Mengapa memilih RedFeng?</h2>
-      <div className="mt-6 grid grid-cols-2 gap-x-4 gap-y-6 xl:grid-cols-4">
+    <section className="mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8 lg:pb-10">
+      <h2 className="text-[22px] font-bold tracking-[-0.03em] text-slate-900 lg:text-[26px]">Mengapa memilih RedFeng?</h2>
+      <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 xl:grid-cols-4">
         {whyChoose.map((item) => {
           const Icon = item.icon
           return (
@@ -13,8 +13,8 @@ export default function HomeWhyChooseSection() {
                 <Icon className="h-5 w-5 lg:h-6 lg:w-6" />
               </div>
               <div>
-                <h3 className="text-[14px] font-bold lg:text-[15px]">{item.title}</h3>
-                <p className="mt-2 text-[12px] leading-6 text-slate-500 lg:text-[13px]">{item.body}</p>
+                <h3 className="text-[14px] font-semibold lg:text-[15px]">{item.title}</h3>
+                <p className="mt-2 text-[12px] leading-7 text-slate-500 lg:text-[13px]">{item.body}</p>
               </div>
             </article>
           )
