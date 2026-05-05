@@ -9,7 +9,7 @@ export default function HomeInspirationSection() {
           <ArticleIcon className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="text-[18px] font-bold leading-[1.3] tracking-[-0.02em] text-slate-900 lg:text-[19px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
+          <h2 className="text-[17px] font-semibold leading-[1.3] tracking-[-0.01em] text-slate-900 lg:text-[18px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
           <p className="mt-1 text-[12px] leading-5 text-slate-500 lg:text-[13px]">Cerita, panduan, dan inspirasi perjalanan pilihan untuk membantu rencana liburan berikutnya.</p>
         </div>
       </div>
@@ -30,7 +30,7 @@ export default function HomeInspirationSection() {
               <span className="inline-flex rounded-full bg-[#fff3ef] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ef3b2d]">
                 {article.category}
               </span>
-              <h3 className="line-clamp-3 text-[15px] font-semibold leading-[1.3] tracking-[-0.01em] text-slate-900 lg:text-[16px]">
+              <h3 className="line-clamp-3 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">
                 {article.title}
               </h3>
               <div className="flex items-center justify-between gap-3 pt-2 text-[12px] text-slate-500">

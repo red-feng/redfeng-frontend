@@ -15,8 +15,8 @@ export default function HomeDestinationsSection() {
                 <HeartIcon className="h-3.5 w-3.5" />
               </button>
               <div className="home-destinations-body absolute inset-x-4 bottom-4 text-white">
-                <h3 className="home-destinations-title text-[13px] font-semibold leading-none tracking-[-0.02em] sm:text-[20px]">{destination.name}</h3>
-                <p className="home-destinations-copy mt-1 text-[10px] font-medium text-white/95 sm:text-[11px]">{destination.country}</p>
+                <h3 className="home-destinations-title text-[12px] font-semibold leading-none tracking-normal sm:text-[18px]">{destination.name}</h3>
+                <p className="home-destinations-copy mt-1 text-[10px] font-medium text-white/95 sm:text-[10px]">{destination.country}</p>
                 <p className="home-destinations-copy mt-1 hidden text-[11px] text-white/80 sm:block">{destination.teaser}</p>
               </div>
             </article>
