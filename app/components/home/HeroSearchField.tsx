@@ -48,9 +48,7 @@ export default function HeroSearchField({
     const keyword = (inputType === "autocomplete" ? draftValue : value).trim().toLowerCase()
     if (!keyword) return options
 
-    return options.filter((option) =>
-      `${option.label} ${option.value} ${option.sublabel ?? ""}`.toLowerCase().includes(keyword),
-    )
+    return options.filter((option) => `${option.group ?? ""} ${option.label} ${option.value} ${option.sublabel ?? ""}`.toLowerCase().includes(keyword))
   }, [draftValue, hasDropdown, inputType, options, value])
   const groupedOptions = useMemo(() => {
     const groups = new Map<string, HeroSearchFieldOption[]>()
@@ -164,10 +162,10 @@ export default function HeroSearchField({
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-[14px] font-semibold text-slate-900">{option.label}</span>
-                          {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{option.sublabel}</span> : null}
-                        </span>
-                      </button>
-                    )
+                      {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                    </span>
+                  </button>
+                )
                   })}
                 </div>
               ))
@@ -233,4 +231,11 @@ function SearchMiniIcon({ className = "" }: { className?: string }) {
       <path strokeLinecap="round" d="M16 16l4 4" />
     </svg>
   )
+}
+
+function formatOptionSublabel(option: HeroSearchFieldOption) {
+  if (!option.group || !option.sublabel) return option.sublabel ?? ""
+
+  const normalizedLabel = option.label.trim()
+  return option.sublabel.replace(new RegExp(`^${normalizedLabel}\\s+[^A-Za-z0-9]+\\s*`), "").trim()
 }

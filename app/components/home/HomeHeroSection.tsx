@@ -492,6 +492,8 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
 
   if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
     if (activeTab === "flight") {
+      const city = extractFlightCity(choice.value)
+      if (city) return city
       if (value.includes("cgk") || value.includes("hlp") || value.includes("dps") || value.includes("sub") || value.includes("kno") || value.includes("yia") || value.includes("jog")) return "Kota Populer Indonesia"
       if (value.includes("sin") || value.includes("bkk") || value.includes("hnd") || value.includes("icn") || value.includes("hkg") || value.includes("pvg") || value.includes("pek") || value.includes("dxb") || value.includes("doh")) return "Rute Internasional"
       return "Bandara Lainnya"
@@ -525,6 +527,8 @@ function formatOptionPrimaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldD
   const normalized = field.label.toLowerCase()
 
   if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+    const code = extractFlightCode(choice.value)
+    if (code) return code
     return extractFlightCity(choice.value)
   }
 
