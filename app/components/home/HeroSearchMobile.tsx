@@ -2,14 +2,19 @@ import Link from "next/link"
 import HeroSearchField from "@/app/components/home/HeroSearchField"
 import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
 
+type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
+  inputType: "text" | "date" | "select"
+  options?: { label: string; value: string }[]
+}
+
 type HeroSearchMobileProps = {
   config: HeroSearchConfig
-  fields?: HeroSearchConfig["mobileFields"]
-  onFieldClick?: (index: number) => void
+  fields?: HeroRenderedField[]
+  onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
 }
 
-export default function HeroSearchMobile({ config, fields, onFieldClick, onSwap }: HeroSearchMobileProps) {
+export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap }: HeroSearchMobileProps) {
   const mobileFields = fields ?? config.mobileFields
   const primaryFields = mobileFields.slice(0, config.mobilePrimaryCount)
   const compactFields = mobileFields.slice(config.mobilePrimaryCount)
@@ -25,8 +30,10 @@ export default function HeroSearchMobile({ config, fields, onFieldClick, onSwap 
           sublabel={field.sublabel ?? ""}
           withChevron={field.withChevron}
           withSwap={field.withSwap}
-          interactive
-          onClick={field.withSwap ? onSwap : () => onFieldClick?.(index)}
+          inputType={field.inputType}
+          options={field.options}
+          onValueChange={(value) => onFieldChange?.(index, value)}
+          onSwap={field.withSwap ? onSwap : undefined}
         />
       ))}
 
@@ -40,8 +47,9 @@ export default function HeroSearchMobile({ config, fields, onFieldClick, onSwap 
               sublabel={field.sublabel ?? ""}
               withChevron={field.withChevron}
               compact
-              interactive
-              onClick={() => onFieldClick?.(index + config.mobilePrimaryCount)}
+              inputType={field.inputType}
+              options={field.options}
+              onValueChange={(value) => onFieldChange?.(index + config.mobilePrimaryCount, value)}
             />
           ))}
         </div>

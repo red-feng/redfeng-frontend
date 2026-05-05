@@ -3,14 +3,19 @@ import HeroSearchField from "@/app/components/home/HeroSearchField"
 import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
 import { SwapIcon } from "@/app/components/home/homeContent"
 
+type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
+  inputType: "text" | "date" | "select"
+  options?: { label: string; value: string }[]
+}
+
 type HeroSearchDesktopProps = {
   config: HeroSearchConfig
-  fields?: HeroSearchConfig["desktopFields"]
-  onFieldClick?: (index: number) => void
+  fields?: HeroRenderedField[]
+  onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
 }
 
-export default function HeroSearchDesktop({ config, fields, onFieldClick, onSwap }: HeroSearchDesktopProps) {
+export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = fields ?? config.desktopFields
 
@@ -18,11 +23,25 @@ export default function HeroSearchDesktop({ config, fields, onFieldClick, onSwap
     <div className={desktopGridClass}>
       {showDesktopSwap ? (
         <>
-          <HeroSearchField label={desktopFields[0].label} value={desktopFields[0].value} sublabel={desktopFields[0].sublabel ?? ""} interactive onClick={() => onFieldClick?.(0)} />
+          <HeroSearchField
+            label={desktopFields[0].label}
+            value={desktopFields[0].value}
+            sublabel={desktopFields[0].sublabel ?? ""}
+            inputType={desktopFields[0].inputType}
+            options={desktopFields[0].options}
+            onValueChange={(value) => onFieldChange?.(0, value)}
+          />
           <button type="button" onClick={onSwap} className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
             <SwapIcon className="h-4 w-4" />
           </button>
-          <HeroSearchField label={desktopFields[1].label} value={desktopFields[1].value} sublabel={desktopFields[1].sublabel ?? ""} interactive onClick={() => onFieldClick?.(1)} />
+          <HeroSearchField
+            label={desktopFields[1].label}
+            value={desktopFields[1].value}
+            sublabel={desktopFields[1].sublabel ?? ""}
+            inputType={desktopFields[1].inputType}
+            options={desktopFields[1].options}
+            onValueChange={(value) => onFieldChange?.(1, value)}
+          />
           {desktopFields.slice(2).map((field, index) => (
             <HeroSearchField
               key={field.label}
@@ -30,8 +49,9 @@ export default function HeroSearchDesktop({ config, fields, onFieldClick, onSwap
               value={field.value}
               sublabel={field.sublabel ?? ""}
               withChevron={field.withChevron}
-              interactive
-              onClick={() => onFieldClick?.(index + 2)}
+              inputType={field.inputType}
+              options={field.options}
+              onValueChange={(value) => onFieldChange?.(index + 2, value)}
             />
           ))}
         </>
@@ -43,8 +63,9 @@ export default function HeroSearchDesktop({ config, fields, onFieldClick, onSwap
             value={field.value}
             sublabel={field.sublabel ?? ""}
             withChevron={field.withChevron}
-            interactive
-            onClick={() => onFieldClick?.(index)}
+            inputType={field.inputType}
+            options={field.options}
+            onValueChange={(value) => onFieldChange?.(index, value)}
           />
         ))
       )}

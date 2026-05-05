@@ -8,7 +8,7 @@ import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
 import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
 import HeroTabs from "@/app/components/home/HeroTabs"
 import { getHeroSearchConfig, heroSearchConfigs } from "@/app/components/home/heroSearchContent"
-import type { HeroSearchConfig, HeroSearchFieldData } from "@/app/components/home/heroSearchContent"
+import type { HeroSearchFieldData } from "@/app/components/home/heroSearchContent"
 import type { HeroTabKey } from "@/app/components/home/homeContent"
 
 export default function HomeHeroSection() {
@@ -37,7 +37,7 @@ export default function HomeHeroSection() {
           </div>
         </div>
 
-        <div className="home-hero-search-wrap relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-56 lg:pb-14 lg:px-8">
+        <div className="home-hero-search-wrap relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-64 lg:pb-14 lg:px-8">
           <div className="home-hero-search-card overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
             <HeroSearchPanel
@@ -97,11 +97,16 @@ function HeroSearchPanel({
   activeOption: string
   onOptionChange: (optionKey: string) => void
 }) {
-  const [fieldSelectionIndexes, setFieldSelectionIndexes] = useState<Record<string, number>>({})
-  const [swappedStates, setSwappedStates] = useState<Record<string, boolean>>({})
   const baseConfig = getHeroSearchConfig(activeTab, activeOption)
   const stateKey = `${activeTab}:${activeOption}`
-  const config = buildInteractiveHeroConfig(baseConfig, activeTab, activeOption, fieldSelectionIndexes, swappedStates[stateKey] ?? false)
+  const [fieldStates, setFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
+  const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates)
+  const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates)
+  const config = {
+    ...baseConfig,
+    desktopFields,
+    mobileFields,
+  }
 
   return (
     <div className="px-4 py-5 lg:px-6 lg:py-7">
@@ -121,32 +126,48 @@ function HeroSearchPanel({
 
       <HeroSearchMobile
         config={config}
-        fields={config.mobileFields}
-        onSwap={() => setSwappedStates((current) => ({ ...current, [stateKey]: !(current[stateKey] ?? false) }))}
-        onFieldClick={(index) =>
-          setFieldSelectionIndexes((current) => ({
+        fields={mobileFields}
+        onSwap={() => {
+          const firstField = baseConfig.mobileFields[0]
+          const secondField = baseConfig.mobileFields[1]
+          if (!firstField || !secondField) return
+
+          const firstKey = getFieldStateKey(stateKey, firstField.label)
+          const secondKey = getFieldStateKey(stateKey, secondField.label)
+          const firstCurrent = fieldStates[firstKey] ?? firstField
+          const secondCurrent = fieldStates[secondKey] ?? secondField
+
+          setFieldStates((current) => ({
             ...current,
-            [getFieldSelectionKey(activeTab, activeOption, "mobile", index)]: getNextFieldSelectionIndex(
-              activeTab,
-              config.mobileFields[index],
-              current[getFieldSelectionKey(activeTab, activeOption, "mobile", index)] ?? 0,
-            ),
+            [firstKey]: { ...firstCurrent, label: firstField.label, value: secondCurrent.value, sublabel: secondCurrent.sublabel },
+            [secondKey]: { ...secondCurrent, label: secondField.label, value: firstCurrent.value, sublabel: firstCurrent.sublabel },
           }))
+        }}
+        onFieldChange={(index, value) =>
+          setFieldStates((current) => updateFieldState(current, stateKey, activeTab, mobileFields[index], value))
         }
       />
       <HeroSearchDesktop
         config={config}
-        fields={config.desktopFields}
-        onSwap={() => setSwappedStates((current) => ({ ...current, [stateKey]: !(current[stateKey] ?? false) }))}
-        onFieldClick={(index) =>
-          setFieldSelectionIndexes((current) => ({
+        fields={desktopFields}
+        onSwap={() => {
+          const firstField = baseConfig.desktopFields[0]
+          const secondField = baseConfig.desktopFields[1]
+          if (!firstField || !secondField) return
+
+          const firstKey = getFieldStateKey(stateKey, firstField.label)
+          const secondKey = getFieldStateKey(stateKey, secondField.label)
+          const firstCurrent = fieldStates[firstKey] ?? firstField
+          const secondCurrent = fieldStates[secondKey] ?? secondField
+
+          setFieldStates((current) => ({
             ...current,
-            [getFieldSelectionKey(activeTab, activeOption, "desktop", index)]: getNextFieldSelectionIndex(
-              activeTab,
-              config.desktopFields[index],
-              current[getFieldSelectionKey(activeTab, activeOption, "desktop", index)] ?? 0,
-            ),
+            [firstKey]: { ...firstCurrent, label: firstField.label, value: secondCurrent.value, sublabel: secondCurrent.sublabel },
+            [secondKey]: { ...secondCurrent, label: secondField.label, value: firstCurrent.value, sublabel: firstCurrent.sublabel },
           }))
+        }}
+        onFieldChange={(index, value) =>
+          setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopFields[index], value))
         }
       />
       <HeroBenefits activeTab={activeTab} />
@@ -154,57 +175,105 @@ function HeroSearchPanel({
   )
 }
 
-function buildInteractiveHeroConfig(
-  baseConfig: HeroSearchConfig,
-  activeTab: HeroTabKey,
-  activeOption: string,
-  fieldSelectionIndexes: Record<string, number>,
-  isSwapped: boolean,
-): HeroSearchConfig {
-  const desktopFields = resolveInteractiveFields(baseConfig.desktopFields, activeTab, activeOption, "desktop", fieldSelectionIndexes)
-  const mobileFields = resolveInteractiveFields(baseConfig.mobileFields, activeTab, activeOption, "mobile", fieldSelectionIndexes)
-
-  return {
-    ...baseConfig,
-    desktopFields: isSwapped ? swapEndpointFieldValues(desktopFields) : desktopFields,
-    mobileFields: isSwapped ? swapEndpointFieldValues(mobileFields) : mobileFields,
-  }
-}
-
-function resolveInteractiveFields(
-  fields: HeroSearchFieldData[],
-  activeTab: HeroTabKey,
-  activeOption: string,
-  layout: "desktop" | "mobile",
-  fieldSelectionIndexes: Record<string, number>,
-) {
-  return fields.map((field, index) => {
+function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, stateKey: string, fieldStates: Record<string, HeroSearchFieldData>) {
+  return fields.map((field) => {
+    const stateField = fieldStates[getFieldStateKey(stateKey, field.label)] ?? field
     const choices = getFieldChoices(activeTab, field)
-    const selectionIndex = fieldSelectionIndexes[getFieldSelectionKey(activeTab, activeOption, layout, index)] ?? 0
-    return choices[selectionIndex % choices.length]
+    const inputType = getFieldInputType(field, choices)
+
+    return {
+      ...stateField,
+      inputType,
+      options: inputType === "select" ? choices.map((choice) => ({ value: choice.value, label: choice.sublabel ? `${choice.value} - ${choice.sublabel}` : choice.value })) : undefined,
+      value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
+    }
   })
 }
 
-function swapEndpointFieldValues(fields: HeroSearchFieldData[]) {
-  if (fields.length < 2) return fields
+function updateFieldState(
+  current: Record<string, HeroSearchFieldData>,
+  stateKey: string,
+  activeTab: HeroTabKey,
+  field: HeroSearchFieldData & { inputType?: "text" | "date" | "select" },
+  nextValue: string,
+) {
+  const fieldKey = getFieldStateKey(stateKey, field.label)
 
-  const first = fields[0]
-  const second = fields[1]
+  if (field.inputType === "date") {
+    return {
+      ...current,
+      [fieldKey]: {
+        ...field,
+        value: formatIsoDateToDisplay(nextValue),
+        sublabel: formatIsoDateToWeekday(nextValue),
+      },
+    }
+  }
 
-  return [
-    { ...first, value: second.value, sublabel: second.sublabel },
-    { ...second, value: first.value, sublabel: first.sublabel },
-    ...fields.slice(2),
-  ]
+  if (field.inputType === "select") {
+    const matchedChoice = getFieldChoices(activeTab, field).find((choice) => choice.value === nextValue)
+
+    return {
+      ...current,
+      [fieldKey]: matchedChoice
+        ? { ...field, value: matchedChoice.value, sublabel: matchedChoice.sublabel ?? field.sublabel }
+        : { ...field, value: nextValue },
+    }
+  }
+
+  return {
+    ...current,
+    [fieldKey]: {
+      ...field,
+      value: nextValue,
+    },
+  }
 }
 
-function getFieldSelectionKey(activeTab: HeroTabKey, activeOption: string, layout: "desktop" | "mobile", index: number) {
-  return `${activeTab}:${activeOption}:${layout}:${index}`
+function getFieldStateKey(stateKey: string, label: string) {
+  return `${stateKey}:${getFieldSemanticKey(label)}`
 }
 
-function getNextFieldSelectionIndex(activeTab: HeroTabKey, field: HeroSearchFieldData, currentIndex: number) {
-  const choices = getFieldChoices(activeTab, field)
-  return (currentIndex + 1) % choices.length
+function getFieldSemanticKey(label: string) {
+  const normalized = label.toLowerCase()
+
+  if (normalized.includes("dari") || normalized.includes("asal")) return "origin"
+  if (normalized.includes("ke") || normalized.includes("tujuan")) return "destination"
+  if (normalized.includes("transit")) return "transit"
+  if (normalized.includes("check-in")) return "checkin"
+  if (normalized.includes("check-out")) return "checkout"
+  if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("keberangkatan")) return "departure"
+  if (normalized.includes("pulang")) return "return"
+  if (normalized.includes("tanggal") || normalized.includes("kunjungan")) return "date"
+  if (normalized.includes("jam")) return "time"
+  if (normalized.includes("destinasi") || normalized.includes("trip") || normalized.includes("event") || normalized.includes("area")) return "destination_query"
+  if (normalized.includes("durasi")) return "duration"
+  if (normalized.includes("kategori") || normalized.includes("jenis")) return "category"
+  if (normalized.includes("tamu") || normalized.includes("penumpang") || normalized.includes("peserta") || normalized.includes("tiket")) return "passenger"
+
+  return normalized.replace(/\s+/g, "_")
+}
+
+function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldData[]) {
+  const normalized = field.label.toLowerCase()
+  if (
+    normalized.includes("berangkat") ||
+    normalized.includes("pulang") ||
+    normalized.includes("check-in") ||
+    normalized.includes("check-out") ||
+    normalized.includes("tanggal") ||
+    normalized.includes("kunjungan") ||
+    normalized.includes("keberangkatan") ||
+    normalized.includes("pergi")
+  ) {
+    return "date" as const
+  }
+
+  if (field.withChevron || choices.length > 1) {
+    return "select" as const
+  }
+
+  return "text" as const
 }
 
 function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): HeroSearchFieldData[] {
@@ -311,6 +380,49 @@ function compactDateShift(input: string, dayOffset: number) {
   if (monthIndex === undefined) return input
   const date = new Date(Number(yearRaw), monthIndex, Number(dayRaw))
   date.setDate(date.getDate() + dayOffset)
-  const monthLabels = Object.keys(monthMap)
+  return formatDateObjectToDisplay(date)
+}
+
+function formatDisplayDateToIso(input: string) {
+  const match = input.match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/)
+  if (!match) return ""
+  const [, dayRaw, monthLabel, yearRaw] = match
+  const monthMap: Record<string, number> = {
+    Januari: 0,
+    Februari: 1,
+    Maret: 2,
+    April: 3,
+    Mei: 4,
+    Juni: 5,
+    Juli: 6,
+    Agustus: 7,
+    September: 8,
+    Oktober: 9,
+    November: 10,
+    Desember: 11,
+  }
+  const monthIndex = monthMap[monthLabel]
+  if (monthIndex === undefined) return ""
+
+  return `${yearRaw}-${String(monthIndex + 1).padStart(2, "0")}-${String(Number(dayRaw)).padStart(2, "0")}`
+}
+
+function formatIsoDateToDisplay(input: string) {
+  if (!input) return ""
+  const [year, month, day] = input.split("-").map(Number)
+  if (!year || !month || !day) return ""
+  return formatDateObjectToDisplay(new Date(year, month - 1, day))
+}
+
+function formatIsoDateToWeekday(input: string) {
+  if (!input) return ""
+  const [year, month, day] = input.split("-").map(Number)
+  if (!year || !month || !day) return ""
+  const weekdays = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+  return weekdays[new Date(year, month - 1, day).getDay()]
+}
+
+function formatDateObjectToDisplay(date: Date) {
+  const monthLabels = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
   return `${date.getDate()} ${monthLabels[date.getMonth()]} ${date.getFullYear()}`
 }
