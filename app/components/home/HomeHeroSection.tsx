@@ -7,11 +7,20 @@ import HeroHeader from "@/app/components/home/HeroHeader"
 import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
 import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
 import HeroTabs from "@/app/components/home/HeroTabs"
-import { heroSearchConfigs } from "@/app/components/home/heroSearchContent"
+import { getHeroSearchConfig, heroSearchConfigs } from "@/app/components/home/heroSearchContent"
 import type { HeroTabKey } from "@/app/components/home/homeContent"
 
 export default function HomeHeroSection() {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
+  const [activeOptions, setActiveOptions] = useState<Record<HeroTabKey, string>>({
+    flight: heroSearchConfigs.flight.defaultOption,
+    hotel: heroSearchConfigs.hotel.defaultOption,
+    train: heroSearchConfigs.train.defaultOption,
+    bus: heroSearchConfigs.bus.defaultOption,
+    ship: heroSearchConfigs.ship.defaultOption,
+    activity: heroSearchConfigs.activity.defaultOption,
+    package: heroSearchConfigs.package.defaultOption,
+  })
 
   return (
     <section className="home-hero">
@@ -30,7 +39,16 @@ export default function HomeHeroSection() {
         <div className="home-hero-search-wrap relative z-20 mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-56 lg:pb-14 lg:px-8">
           <div className="home-hero-search-card overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
-            <HeroSearchPanel activeTab={activeTab} />
+            <HeroSearchPanel
+              activeTab={activeTab}
+              activeOption={activeOptions[activeTab]}
+              onOptionChange={(optionKey) =>
+                setActiveOptions((current) => ({
+                  ...current,
+                  [activeTab]: optionKey,
+                }))
+              }
+            />
           </div>
         </div>
       </div>
@@ -69,17 +87,30 @@ function HeroIntro() {
   )
 }
 
-function HeroSearchPanel({ activeTab }: { activeTab: HeroTabKey }) {
-  const config = heroSearchConfigs[activeTab]
+function HeroSearchPanel({
+  activeTab,
+  activeOption,
+  onOptionChange,
+}: {
+  activeTab: HeroTabKey
+  activeOption: string
+  onOptionChange: (optionKey: string) => void
+}) {
+  const config = getHeroSearchConfig(activeTab, activeOption)
 
   return (
     <div className="px-4 py-5 lg:px-6 lg:py-7">
       <div className="hidden flex-wrap gap-6 text-[13px] text-slate-600 lg:flex">
         {config.options.map((option) => (
-          <label key={option.label} className={`inline-flex items-center gap-2 font-medium ${option.active ? "text-slate-800" : ""}`}>
-            <span className={`h-2.5 w-2.5 rounded-full ${option.active ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
+          <button
+            key={option.key}
+            type="button"
+            onClick={() => onOptionChange(option.key)}
+            className={`inline-flex items-center gap-2 font-medium transition ${config.activeOption === option.key ? "text-slate-800" : "text-slate-600 hover:text-slate-800"}`}
+          >
+            <span className={`h-2.5 w-2.5 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
             {option.label}
-          </label>
+          </button>
         ))}
       </div>
 
