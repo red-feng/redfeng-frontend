@@ -9,8 +9,8 @@ export default function HomeInspirationSection() {
           <ArticleIcon className="h-5 w-5" />
         </span>
         <div>
-          <h2 className="text-[24px] font-black tracking-[-0.04em] text-slate-900 lg:text-[30px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
-          <p className="mt-1 text-[14px] text-slate-500">Cerita, panduan, dan inspirasi perjalanan pilihan untuk membantu rencana liburan berikutnya.</p>
+          <h2 className="text-[22px] font-black tracking-[-0.04em] text-slate-900 lg:text-[28px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
+          <p className="mt-1 text-[13px] leading-6 text-slate-500">Cerita, panduan, dan inspirasi perjalanan pilihan untuk membantu rencana liburan berikutnya.</p>
         </div>
       </div>
 
@@ -30,10 +30,10 @@ export default function HomeInspirationSection() {
               <span className="inline-flex rounded-full bg-[#fff3ef] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#ef3b2d]">
                 {article.category}
               </span>
-              <h3 className="line-clamp-3 text-[24px] font-black leading-[1.12] tracking-[-0.04em] text-slate-900">
+              <h3 className="line-clamp-3 text-[17px] font-black leading-[1.2] tracking-[-0.03em] text-slate-900 lg:text-[19px]">
                 {article.title}
               </h3>
-              <div className="flex items-center justify-between gap-3 pt-2 text-[13px] text-slate-500">
+              <div className="flex items-center justify-between gap-3 pt-2 text-[12px] text-slate-500 lg:text-[13px]">
                 <span>{article.readTime}</span>
                 <Link href={article.href} className="inline-flex items-center gap-2 font-semibold text-[#2f80ed]">
                   Baca
@@ -48,7 +48,7 @@ export default function HomeInspirationSection() {
       <div className="mt-8 flex justify-center">
         <Link
           href="/packages"
-          className="inline-flex items-center gap-2 rounded-full border border-[#cfe3ff] bg-[#f5f9ff] px-6 py-3 text-[15px] font-semibold text-[#2f80ed] transition hover:border-[#9dc7ff] hover:bg-[#edf5ff]"
+          className="inline-flex items-center gap-2 rounded-full border border-[#cfe3ff] bg-[#f5f9ff] px-6 py-3 text-[14px] font-semibold text-[#2f80ed] transition hover:border-[#9dc7ff] hover:bg-[#edf5ff]"
         >
           Baca Artikel Inspirasi
           <ArrowRightIcon className="h-4 w-4" />
