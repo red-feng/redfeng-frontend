@@ -17,11 +17,12 @@ export default function HomePopularSection() {
               </div>
               <div className="home-popular-body flex flex-1 flex-col p-4 md:px-4 md:pt-4 md:pb-[18px]">
                 <span className={`inline-flex rounded-[7px] px-3 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>
-                <h3 className="home-popular-title mt-3 min-h-[48px] text-[14px] font-semibold leading-[1.32] tracking-[-0.015em] text-slate-900 md:min-h-[44px] md:text-[17px] md:leading-[1.3]">{item.title}</h3>
-                <p className="home-popular-copy mt-1.5 min-h-[28px] text-[12px] leading-[1.35] text-slate-500">{item.subtitle}</p>
-                <div className="mt-auto pt-3.5">
-                  <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
-                  <div className="mt-1.5 flex min-h-[36px] items-end justify-between gap-2">
+                <div className="mt-3 flex flex-1 flex-col">
+                  <h3 className="home-popular-title text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px] md:leading-[1.2]">{item.title}</h3>
+                  <p className="home-popular-copy text-[12px] leading-[1.2] text-slate-500">{item.subtitle}</p>
+                  <div className="mt-auto">
+                    <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
+                    <div className="flex items-end justify-between gap-2">
                     <p className="text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">
                       {item.price}
                       {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{item.suffix}</span> : null}
@@ -29,6 +30,7 @@ export default function HomePopularSection() {
                     <div className="flex items-center gap-1 text-[12px] font-medium leading-none text-slate-700">
                       <StarIcon className="h-3 w-3 text-[#f5a623]" />
                       {item.rating}
+                    </div>
                     </div>
                   </div>
                 </div>
