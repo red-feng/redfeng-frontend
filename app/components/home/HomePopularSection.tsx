@@ -20,12 +20,12 @@ export default function HomePopularSection() {
                 <div className="mt-3 flex flex-1 flex-col">
                   <h3 className="home-popular-title text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px] md:leading-[1.2]">{item.title}</h3>
                   <p className="home-popular-copy text-[12px] leading-[1.2] text-slate-500">{item.subtitle}</p>
-                  {item.category === "Pesawat" ? (
+                  <div className="py-1.5">
                     <div className="flex items-center gap-1 text-[12px] font-medium leading-none text-slate-700">
                       <StarIcon className="h-3 w-3 text-[#f5a623]" />
                       {item.rating}
                     </div>
-                  ) : null}
+                  </div>
                   <div className="mt-auto">
                     <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
                     <div className="flex items-end justify-between gap-2">
@@ -33,12 +33,6 @@ export default function HomePopularSection() {
                         {item.price}
                         {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{item.suffix}</span> : null}
                       </p>
-                      {item.category !== "Pesawat" ? (
-                        <div className="flex items-center gap-1 text-[12px] font-medium leading-none text-slate-700">
-                          <StarIcon className="h-3 w-3 text-[#f5a623]" />
-                          {item.rating}
-                        </div>
-                      ) : null}
                     </div>
                   </div>
                 </div>
