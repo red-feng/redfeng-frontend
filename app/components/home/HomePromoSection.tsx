@@ -26,7 +26,7 @@ export default function HomePromoSection() {
         <button
           type="button"
           onClick={() => scrollByCard("prev")}
-          className="absolute left-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#cf145c] text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-colors hover:bg-[#b81152] lg:flex"
+          className="absolute left-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors hover:bg-white/18 lg:flex"
           aria-label="Promo sebelumnya"
         >
           <ArrowRightIcon className="h-5 w-5 rotate-180" />
@@ -34,7 +34,7 @@ export default function HomePromoSection() {
         <button
           type="button"
           onClick={() => scrollByCard("next")}
-          className="absolute right-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#cf145c] text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-colors hover:bg-[#b81152] lg:flex"
+          className="absolute right-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors hover:bg-white/18 lg:flex"
           aria-label="Promo berikutnya"
         >
           <ArrowRightIcon className="h-5 w-5" />
