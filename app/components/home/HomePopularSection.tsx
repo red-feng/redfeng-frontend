@@ -28,7 +28,7 @@ export default function HomePopularSection() {
                   </div>
                   <div className="mt-auto pt-1">
                     <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
-                    <div className="mt-1 flex min-h-[32px] items-end justify-between gap-2">
+                    <div className="mt-0.5 flex min-h-[32px] items-end justify-between gap-2">
                       <p className="text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">
                         {item.price}
                         {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{item.suffix}</span> : null}
