@@ -278,7 +278,7 @@ function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldD
 
 function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): HeroSearchFieldData[] {
   const label = field.label.toLowerCase()
-  const current = [{ value: field.value, sublabel: field.sublabel, withChevron: field.withChevron, withSwap: field.withSwap }]
+  const current = [{ label: field.label, value: field.value, sublabel: field.sublabel, withChevron: field.withChevron, withSwap: field.withSwap }]
   let choices: HeroSearchFieldData[] = current
 
   if (label.includes("dari") || label.includes("asal")) {
