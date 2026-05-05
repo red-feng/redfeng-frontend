@@ -16,19 +16,19 @@ export default function HomePopularSection() {
                 </button>
               </div>
               <div className="home-popular-body flex flex-1 flex-col p-4 md:px-4 md:pt-4 md:pb-[18px]">
-                <span className={`inline-flex rounded-[7px] px-3 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>
+                <span className={`inline-flex rounded-[6px] px-2.5 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>
                 <div className="mt-3 flex flex-1 flex-col">
                   <h3 className="home-popular-title text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px] md:leading-[1.2]">{item.title}</h3>
                   <p className="home-popular-copy text-[12px] leading-[1.2] text-slate-500">{item.subtitle}</p>
-                  <div className="py-1.5">
+                  <div className="pt-1 pb-2">
                     <div className="flex items-center gap-1 text-[12px] font-medium leading-none text-slate-700">
                       <StarIcon className="h-3 w-3 text-[#f5a623]" />
                       {item.rating}
                     </div>
                   </div>
-                  <div className="mt-auto">
+                  <div className="mt-auto pt-1">
                     <p className="home-popular-copy text-[11px] leading-none text-slate-400">Mulai dari</p>
-                    <div className="flex items-end justify-between gap-2">
+                    <div className="mt-1 flex min-h-[32px] items-end justify-between gap-2">
                       <p className="text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">
                         {item.price}
                         {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{item.suffix}</span> : null}
