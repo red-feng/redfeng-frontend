@@ -37,7 +37,7 @@ export default function HomeHeroSection() {
           </div>
         </div>
 
-        <div className="home-hero-search-wrap relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-64 lg:pb-14 lg:px-8">
+        <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-36 max-w-[1240px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-64 lg:pb-14 lg:px-8">
           <div className="home-hero-search-card overflow-visible rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
             <HeroSearchPanel
@@ -188,11 +188,11 @@ function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, s
           inputType === "date"
             ? undefined
             : choices.map((choice) => ({
-                value: choice.value,
-                label: choice.value,
-                sublabel: choice.sublabel,
-                group: inferOptionGroup(activeTab, field, choice),
-              })),
+              value: choice.value,
+              label: formatOptionPrimaryLabel(activeTab, field, choice),
+              sublabel: formatOptionSecondaryLabel(activeTab, field, choice),
+              group: inferOptionGroup(activeTab, field, choice),
+            })),
         value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
       }
   })
@@ -307,12 +307,14 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
       activeTab === "flight"
         ? [
             ...current,
-            { label: field.label, value: "CGK   Jakarta", sublabel: "Soekarno Hatta International" },
-            { label: field.label, value: "SUB   Surabaya", sublabel: "Juanda" },
-            { label: field.label, value: "KNO   Medan", sublabel: "Kualanamu" },
-            { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
-            { label: field.label, value: "YIA   Yogyakarta", sublabel: "Yogyakarta International" },
-            { label: field.label, value: "UPG   Makassar", sublabel: "Sultan Hasanuddin" },
+             { label: field.label, value: "CGK   Jakarta", sublabel: "Soekarno Hatta International" },
+             { label: field.label, value: "HLP   Jakarta", sublabel: "Halim Perdanakusuma" },
+             { label: field.label, value: "SUB   Surabaya", sublabel: "Juanda" },
+             { label: field.label, value: "KNO   Medan", sublabel: "Kualanamu" },
+             { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
+             { label: field.label, value: "YIA   Yogyakarta", sublabel: "Yogyakarta International" },
+             { label: field.label, value: "JOG   Yogyakarta", sublabel: "Adisutjipto" },
+             { label: field.label, value: "UPG   Makassar", sublabel: "Sultan Hasanuddin" },
             { label: field.label, value: "BPN   Balikpapan", sublabel: "Sultan Aji Muhammad Sulaiman" },
             { label: field.label, value: "PLM   Palembang", sublabel: "Sultan Mahmud Badaruddin II" },
             { label: field.label, value: "PNK   Pontianak", sublabel: "Supadio" },
@@ -334,17 +336,20 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
       activeTab === "flight"
         ? [
             ...current,
-            { label: field.label, value: "SIN   Singapore", sublabel: "Changi" },
-            { label: field.label, value: "BKK   Bangkok", sublabel: "Suvarnabhumi" },
-            { label: field.label, value: "HND   Tokyo", sublabel: "Haneda" },
-            { label: field.label, value: "ICN   Seoul", sublabel: "Incheon" },
-            { label: field.label, value: "HKG   Hong Kong", sublabel: "Hong Kong International" },
-            { label: field.label, value: "MEL   Melbourne", sublabel: "Tullamarine" },
-            { label: field.label, value: "KUL   Kuala Lumpur", sublabel: "Kuala Lumpur International" },
-            { label: field.label, value: "CAN   Guangzhou", sublabel: "Baiyun" },
-            { label: field.label, value: "PVG   Shanghai", sublabel: "Pudong International" },
-            { label: field.label, value: "PEK   Beijing", sublabel: "Capital International" },
-            { label: field.label, value: "TPE   Taipei", sublabel: "Taoyuan" },
+             { label: field.label, value: "SIN   Singapore", sublabel: "Changi" },
+             { label: field.label, value: "BKK   Bangkok", sublabel: "Suvarnabhumi" },
+             { label: field.label, value: "HND   Tokyo", sublabel: "Haneda" },
+             { label: field.label, value: "NRT   Tokyo", sublabel: "Narita International" },
+             { label: field.label, value: "ICN   Seoul", sublabel: "Incheon" },
+             { label: field.label, value: "HKG   Hong Kong", sublabel: "Hong Kong International" },
+             { label: field.label, value: "MEL   Melbourne", sublabel: "Tullamarine" },
+             { label: field.label, value: "KUL   Kuala Lumpur", sublabel: "Kuala Lumpur International" },
+             { label: field.label, value: "CAN   Guangzhou", sublabel: "Baiyun" },
+             { label: field.label, value: "PVG   Shanghai", sublabel: "Pudong International" },
+             { label: field.label, value: "SHA   Shanghai", sublabel: "Hongqiao International" },
+             { label: field.label, value: "PEK   Beijing", sublabel: "Capital International" },
+             { label: field.label, value: "PKX   Beijing", sublabel: "Daxing International" },
+             { label: field.label, value: "TPE   Taipei", sublabel: "Taoyuan" },
             { label: field.label, value: "SYD   Sydney", sublabel: "Kingsford Smith" },
             { label: field.label, value: "DOH   Doha", sublabel: "Hamad International" },
             { label: field.label, value: "DXB   Dubai", sublabel: "Dubai International" },
@@ -487,7 +492,7 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
 
   if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
     if (activeTab === "flight") {
-      if (value.includes("cgk") || value.includes("dps") || value.includes("sub") || value.includes("kno")) return "Bandara Populer"
+      if (value.includes("cgk") || value.includes("hlp") || value.includes("dps") || value.includes("sub") || value.includes("kno") || value.includes("yia") || value.includes("jog")) return "Kota Populer Indonesia"
       if (value.includes("sin") || value.includes("bkk") || value.includes("hnd") || value.includes("icn") || value.includes("hkg") || value.includes("pvg") || value.includes("pek") || value.includes("dxb") || value.includes("doh")) return "Rute Internasional"
       return "Bandara Lainnya"
     }
@@ -514,6 +519,37 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
   if (normalized.includes("durasi")) return "Durasi Favorit"
 
   return "Pilihan Lainnya"
+}
+
+function formatOptionPrimaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
+  const normalized = field.label.toLowerCase()
+
+  if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+    return extractFlightCity(choice.value)
+  }
+
+  return choice.value
+}
+
+function formatOptionSecondaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
+  const normalized = field.label.toLowerCase()
+
+  if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+    const code = extractFlightCode(choice.value)
+    return code ? `${code} • ${choice.sublabel ?? ""}` : choice.sublabel
+  }
+
+  return choice.sublabel
+}
+
+function extractFlightCode(input: string) {
+  const match = input.match(/^([A-Z]{3})\s+/)
+  return match?.[1] ?? ""
+}
+
+function extractFlightCity(input: string) {
+  const match = input.match(/^[A-Z]{3}\s+(.*)$/)
+  return match?.[1] ?? input
 }
 
 function dedupeFieldChoices(choices: HeroSearchFieldData[], baseField: HeroSearchFieldData) {
