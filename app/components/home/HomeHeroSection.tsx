@@ -38,7 +38,7 @@ export default function HomeHeroSection() {
         </div>
 
         <div className="home-hero-search-wrap relative z-20 mx-auto -mt-36 max-w-[1240px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-64 lg:pb-14 lg:px-8">
-          <div className="home-hero-search-card overflow-hidden rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
+          <div className="home-hero-search-card overflow-visible rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
             <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
             <HeroSearchPanel
               activeTab={activeTab}
@@ -184,7 +184,14 @@ function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, s
     return {
       ...stateField,
       inputType,
-      options: inputType === "select" ? choices.map((choice) => ({ value: choice.value, label: choice.sublabel ? `${choice.value} - ${choice.sublabel}` : choice.value })) : undefined,
+      options:
+        inputType === "date"
+          ? undefined
+          : choices.map((choice) => ({
+              value: choice.value,
+              label: choice.value,
+              sublabel: choice.sublabel,
+            })),
       value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
     }
   })
@@ -194,7 +201,7 @@ function updateFieldState(
   current: Record<string, HeroSearchFieldData>,
   stateKey: string,
   activeTab: HeroTabKey,
-  field: HeroSearchFieldData & { inputType?: "text" | "date" | "select" },
+  field: HeroSearchFieldData & { inputType?: "text" | "date" | "select" | "autocomplete" },
   nextValue: string,
 ) {
   const fieldKey = getFieldStateKey(stateKey, field.label)
@@ -210,14 +217,14 @@ function updateFieldState(
     }
   }
 
-  if (field.inputType === "select") {
-    const matchedChoice = getFieldChoices(activeTab, field).find((choice) => choice.value === nextValue)
+  if (field.inputType === "select" || field.inputType === "autocomplete") {
+    const matchedChoice = getFieldChoices(activeTab, field).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
 
     return {
       ...current,
       [fieldKey]: matchedChoice
         ? { ...field, value: matchedChoice.value, sublabel: matchedChoice.sublabel ?? field.sublabel }
-        : { ...field, value: nextValue },
+        : { ...field, value: nextValue, sublabel: field.inputType === "autocomplete" ? "" : field.sublabel },
     }
   }
 
@@ -269,6 +276,19 @@ function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldD
     return "date" as const
   }
 
+  if (
+    normalized.includes("dari") ||
+    normalized.includes("asal") ||
+    normalized.includes("ke") ||
+    normalized.includes("tujuan") ||
+    normalized.includes("destinasi") ||
+    normalized.includes("trip") ||
+    normalized.includes("event") ||
+    normalized.includes("area")
+  ) {
+    return "autocomplete" as const
+  }
+
   if (field.withChevron || choices.length > 1) {
     return "select" as const
   }
@@ -282,23 +302,75 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
   let choices: HeroSearchFieldData[] = current
 
   if (label.includes("dari") || label.includes("asal")) {
-    choices = [
-      ...current,
-      { label: field.label, value: activeTab === "flight" ? "SUB   Surabaya" : activeTab === "ship" ? "Ketapang" : "Surabaya", sublabel: activeTab === "flight" ? "Jawa Timur" : activeTab === "ship" ? "Banyuwangi" : "Pasar Turi", withSwap: field.withSwap },
-      { label: field.label, value: activeTab === "flight" ? "KNO   Medan" : activeTab === "ship" ? "Gilimanuk" : "Semarang", sublabel: activeTab === "flight" ? "Sumatera Utara" : activeTab === "ship" ? "Bali" : "Tawang", withSwap: field.withSwap },
-    ]
+    choices =
+      activeTab === "flight"
+        ? [
+            ...current,
+            { label: field.label, value: "CGK   Jakarta", sublabel: "Soekarno Hatta International" },
+            { label: field.label, value: "SUB   Surabaya", sublabel: "Juanda" },
+            { label: field.label, value: "KNO   Medan", sublabel: "Kualanamu" },
+            { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
+          ]
+        : [
+            ...current,
+            { label: field.label, value: activeTab === "ship" ? "Ketapang" : "Surabaya", sublabel: activeTab === "ship" ? "Banyuwangi" : "Pasar Turi", withSwap: field.withSwap },
+            { label: field.label, value: activeTab === "ship" ? "Gilimanuk" : "Semarang", sublabel: activeTab === "ship" ? "Bali" : "Tawang", withSwap: field.withSwap },
+            { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Bandung", sublabel: activeTab === "ship" ? "Karangasem" : "Hall", withSwap: field.withSwap },
+          ]
   } else if (label.includes("ke") || label.includes("tujuan")) {
-    choices = [
-      ...current,
-      { label: field.label, value: activeTab === "flight" ? "SIN   Singapore" : activeTab === "ship" ? "Lembar" : "Solo", sublabel: activeTab === "flight" ? "Changi" : activeTab === "ship" ? "Lombok" : "Balapan" },
-      { label: field.label, value: activeTab === "flight" ? "HND   Tokyo" : activeTab === "ship" ? "Padang Bai" : "Malang", sublabel: activeTab === "flight" ? "Haneda" : activeTab === "ship" ? "Bali" : "Kota Baru" },
-    ]
+    choices =
+      activeTab === "flight"
+        ? [
+            ...current,
+            { label: field.label, value: "SIN   Singapore", sublabel: "Changi" },
+            { label: field.label, value: "BKK   Bangkok", sublabel: "Suvarnabhumi" },
+            { label: field.label, value: "HND   Tokyo", sublabel: "Haneda" },
+            { label: field.label, value: "ICN   Seoul", sublabel: "Incheon" },
+            { label: field.label, value: "HKG   Hong Kong", sublabel: "Hong Kong International" },
+            { label: field.label, value: "MEL   Melbourne", sublabel: "Tullamarine" },
+          ]
+        : [
+            ...current,
+            { label: field.label, value: activeTab === "ship" ? "Lembar" : "Solo", sublabel: activeTab === "ship" ? "Lombok" : "Balapan" },
+            { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Malang", sublabel: activeTab === "ship" ? "Bali" : "Kota Baru" },
+            { label: field.label, value: activeTab === "ship" ? "Gili Trawangan" : "Yogyakarta", sublabel: activeTab === "ship" ? "Lombok Utara" : "Tugu" },
+          ]
   } else if (label.includes("destinasi") || label.includes("trip") || label.includes("event") || label.includes("area")) {
-    choices = [
-      ...current,
-      { label: field.label, value: activeTab === "hotel" ? "Jakarta" : activeTab === "activity" ? "Universal Beijing Resort" : activeTab === "package" ? "Beijing 5H4M" : "Bandung", sublabel: activeTab === "hotel" ? "Indonesia" : activeTab === "activity" ? "Beijing, China" : activeTab === "package" ? "Hotel + Tour" : "Indonesia" },
-      { label: field.label, value: activeTab === "hotel" ? "Shanghai" : activeTab === "activity" ? "The Bund Night Cruise" : activeTab === "package" ? "Chongqing Explorer" : "Yogyakarta", sublabel: activeTab === "hotel" ? "China" : activeTab === "activity" ? "Shanghai, China" : activeTab === "package" ? "4 Hari 3 Malam" : "Indonesia" },
-    ]
+    if (activeTab === "hotel") {
+      choices = [
+        ...current,
+        { label: field.label, value: "Yogyakarta", sublabel: "Daerah Istimewa Yogyakarta, Indonesia" },
+        { label: field.label, value: "Kuala Lumpur", sublabel: "Malaysia" },
+        { label: field.label, value: "Tokyo", sublabel: "Kanto, Jepang" },
+        { label: field.label, value: "Jakarta", sublabel: "Indonesia" },
+        { label: field.label, value: "Bali", sublabel: "Indonesia" },
+        { label: field.label, value: "Singapura", sublabel: "Singapura" },
+        { label: field.label, value: "Hong Kong", sublabel: "Hong Kong SAR" },
+      ]
+    } else if (activeTab === "activity") {
+      choices = [
+        ...current,
+        { label: field.label, value: "Universal Beijing Resort", sublabel: "Beijing, China" },
+        { label: field.label, value: "Shanghai Disneyland", sublabel: "Shanghai, China" },
+        { label: field.label, value: "The Bund Night Cruise", sublabel: "Shanghai, China" },
+        { label: field.label, value: "Great Wall Day Tour", sublabel: "Beijing, China" },
+      ]
+    } else if (activeTab === "package") {
+      choices = [
+        ...current,
+        { label: field.label, value: "Bali 3H2M", sublabel: "Hotel + Tour" },
+        { label: field.label, value: "Shanghai 4H3M", sublabel: "Hotel + City Tour" },
+        { label: field.label, value: "Beijing 5H4M", sublabel: "Hotel + Tour" },
+        { label: field.label, value: "Chongqing Explorer", sublabel: "4 Hari 3 Malam" },
+      ]
+    } else {
+      choices = [
+        ...current,
+        { label: field.label, value: "Bandung", sublabel: "Indonesia" },
+        { label: field.label, value: "Yogyakarta", sublabel: "Indonesia" },
+        { label: field.label, value: "Jakarta", sublabel: "Indonesia" },
+      ]
+    }
   } else if (label.includes("transit")) {
     choices = [
       ...current,

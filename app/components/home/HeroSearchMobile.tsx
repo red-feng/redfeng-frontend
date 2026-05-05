@@ -3,8 +3,8 @@ import HeroSearchField from "@/app/components/home/HeroSearchField"
 import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
 
 type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
-  inputType: "text" | "date" | "select"
-  options?: { label: string; value: string }[]
+  inputType: "text" | "date" | "select" | "autocomplete"
+  options?: { label: string; value: string; sublabel?: string }[]
 }
 
 type HeroSearchMobileProps = {

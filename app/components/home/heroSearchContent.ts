@@ -6,8 +6,8 @@ export type HeroSearchFieldData = {
   sublabel?: string
   withChevron?: boolean
   withSwap?: boolean
-  inputType?: "text" | "date" | "select"
-  options?: { label: string; value: string }[]
+  inputType?: "text" | "date" | "select" | "autocomplete"
+  options?: { label: string; value: string; sublabel?: string }[]
 }
 
 export type HeroSearchOption = {

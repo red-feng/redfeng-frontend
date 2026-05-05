@@ -4,8 +4,8 @@ import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
 import { SwapIcon } from "@/app/components/home/homeContent"
 
 type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
-  inputType: "text" | "date" | "select"
-  options?: { label: string; value: string }[]
+  inputType: "text" | "date" | "select" | "autocomplete"
+  options?: { label: string; value: string; sublabel?: string }[]
 }
 
 type HeroSearchDesktopProps = {
