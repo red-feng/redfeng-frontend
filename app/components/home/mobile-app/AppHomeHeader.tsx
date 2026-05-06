@@ -2,7 +2,11 @@ import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
-    <div className="px-3.5 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+    <div className="relative overflow-hidden rounded-b-[52px] bg-[linear-gradient(180deg,#33b4f8_0%,#1ea0ec_52%,#138cde_100%)] px-3.5 pb-[6.45rem] pt-[calc(env(safe-area-inset-top)+0.75rem)] shadow-[0_26px_44px_-30px_rgba(13,136,221,0.56)]">
+      <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_42%)]" />
+      <div className="absolute -left-14 top-24 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
+      <div className="absolute right-[-2.5rem] top-28 h-40 w-40 rounded-full bg-[#5fd2ff]/20 blur-3xl" />
+
       <div className="relative z-10 flex items-center gap-2.5">
         <button
           type="button"
@@ -28,12 +32,8 @@ export default function AppHomeHeader() {
         </button>
       </div>
 
-      <div className="relative -mt-5 overflow-hidden rounded-b-[52px] bg-[linear-gradient(180deg,#33b4f8_0%,#1ea0ec_52%,#138cde_100%)] px-0 pb-[6.6rem] pt-[4.15rem] shadow-[0_26px_44px_-30px_rgba(13,136,221,0.56)]">
-        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_42%)]" />
-        <div className="absolute -left-14 top-24 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute right-[-2.5rem] top-28 h-40 w-40 rounded-full bg-[#5fd2ff]/20 blur-3xl" />
-
-        <div className="relative flex gap-2.5 overflow-x-auto px-3.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative z-10 pt-4">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {appHomeConfig.quickChips.map((chip, index) => (
             <button
               key={chip}
