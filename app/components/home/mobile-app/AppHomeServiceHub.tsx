@@ -4,14 +4,14 @@ import { appHomeConfig, serviceCards } from "@/app/components/home/shared/homeCo
 
 export default function AppHomeServiceHub() {
   return (
-    <div className="mx-4 -mt-12 rounded-[32px] bg-white px-4 pb-6 pt-5 shadow-[0_26px_52px_-34px_rgba(15,23,42,0.26)]">
+    <div className="mx-4 -mt-8 rounded-[28px] bg-white px-4 pb-5 pt-5 shadow-[0_22px_46px_-32px_rgba(15,23,42,0.22)]">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Layanan utama</p>
-          <h2 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Pilih kebutuhan perjalananmu</h2>
+          <h2 className="mt-1 text-[17px] font-bold tracking-[-0.03em] text-slate-950">Pilih kebutuhan perjalananmu</h2>
         </div>
         <Link href="/" className="rounded-full bg-[#eef7ff] px-3 py-2 text-[11px] font-semibold text-[#169ef1]">
-          Lihat semua
+          Semua
         </Link>
       </div>
 
@@ -23,14 +23,14 @@ export default function AppHomeServiceHub() {
             <button
               key={service.label}
               type="button"
-              className={`flex flex-col items-center rounded-[24px] px-1.5 py-1 text-center ${isWide ? "col-span-2 items-start text-left" : ""}`}
+              className={`flex flex-col items-center rounded-[22px] px-1.5 py-1 text-center ${isWide ? "col-span-2 items-start text-left" : ""}`}
             >
               <span
-                className={`flex h-[3.8rem] w-[3.8rem] items-center justify-center rounded-[20px] text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeConfig.serviceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
+                className={`flex h-[3.65rem] w-[3.65rem] items-center justify-center rounded-[18px] text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeConfig.serviceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
               >
                 <service.icon className="h-7 w-7" />
               </span>
-              <span className={`mt-3 text-[12px] font-semibold leading-4 text-slate-900 ${isWide ? "max-w-[90px]" : ""}`}>{service.label}</span>
+              <span className={`mt-3 text-[12px] font-semibold leading-4 text-slate-900 ${isWide ? "max-w-[92px]" : ""}`}>{service.label}</span>
             </button>
           )
         })}
