@@ -7,7 +7,6 @@ import HomeNewsletterSection from "@/app/components/home/HomeNewsletterSection"
 import HomePopularSection from "@/app/components/home/HomePopularSection"
 import HomePromoSection from "@/app/components/home/HomePromoSection"
 import HomeServicesSection from "@/app/components/home/HomeServicesSection"
-import HomeStandaloneMobileFeed from "@/app/components/home/HomeStandaloneMobileFeed"
 import HomeTrustSection from "@/app/components/home/HomeTrustSection"
 import HomeWhyChooseSection from "@/app/components/home/HomeWhyChooseSection"
 import { getCurrentLocale } from "@/lib/locale"
@@ -20,7 +19,6 @@ export default async function HomePage() {
       <main className="pb-28 md:pb-0">
         <HomeHeroSection />
         <HomeServicesSection />
-        <HomeStandaloneMobileFeed />
         <HomePromoSection />
         <HomePopularSection />
         <HomeDestinationsSection />
