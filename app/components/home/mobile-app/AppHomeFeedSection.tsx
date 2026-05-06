@@ -3,7 +3,7 @@ import AppHomeRecentActivitySection from "@/app/components/home/mobile-app/AppHo
 
 export default function AppHomeFeedSection() {
   return (
-    <section className="standalone-home-feed hidden px-4 pb-4 md:hidden">
+    <section className="standalone-home-feed hidden px-4 pb-4 pt-3 md:hidden">
       <AppHomePromoSection />
       <AppHomeRecentActivitySection />
     </section>

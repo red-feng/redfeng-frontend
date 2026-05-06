@@ -28,18 +28,18 @@ export default function AppHomeHeader() {
         </button>
       </div>
 
-      <div className="relative -mt-6 overflow-hidden rounded-b-[42px] bg-[linear-gradient(180deg,#30b2f8_0%,#1a9ceb_50%,#0f88dd_100%)] px-0 pb-16 pt-14 shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
-        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_42%)]" />
-        <div className="absolute -left-12 top-24 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute right-[-2.5rem] top-32 h-36 w-36 rounded-full bg-[#5fd2ff]/18 blur-3xl" />
+      <div className="relative -mt-7 overflow-hidden rounded-b-[52px] bg-[linear-gradient(180deg,#33b4f8_0%,#1ea0ec_52%,#138cde_100%)] px-0 pb-24 pt-[4.5rem] shadow-[0_26px_44px_-30px_rgba(13,136,221,0.56)]">
+        <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_42%)]" />
+        <div className="absolute -left-14 top-24 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute right-[-2.5rem] top-28 h-40 w-40 rounded-full bg-[#5fd2ff]/20 blur-3xl" />
 
-        <div className="relative flex gap-2 overflow-x-auto px-3.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="relative flex gap-2.5 overflow-x-auto px-3.5 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {appHomeConfig.quickChips.map((chip, index) => (
             <button
               key={chip}
               type="button"
-              className={`shrink-0 rounded-full px-5 py-2.5 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)] ${
-                index === 0 ? "bg-[#0a79cb] text-white" : "bg-[#1496ea] text-white/92"
+              className={`shrink-0 rounded-full px-6 py-2.5 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)] ${
+                index === 0 ? "bg-[#1178cf] text-white" : "bg-[#1896e7] text-white/92"
               }`}
             >
               {chip}
