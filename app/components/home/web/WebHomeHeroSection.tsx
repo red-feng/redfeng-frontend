@@ -23,6 +23,7 @@ export default function WebHomeHeroSection() {
     train: heroSearchConfigs.train.defaultOption,
     bus: heroSearchConfigs.bus.defaultOption,
     ship: heroSearchConfigs.ship.defaultOption,
+    cruise: heroSearchConfigs.cruise.defaultOption,
     activity: heroSearchConfigs.activity.defaultOption,
     package: heroSearchConfigs.package.defaultOption,
   })
