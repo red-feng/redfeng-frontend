@@ -4,7 +4,7 @@ import { useRef } from "react"
 
 import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/homeContent"
 
-export default function HomePromoSection() {
+export default function WebHomePromoSection() {
   const trackRef = useRef<HTMLDivElement>(null)
 
   const scrollByCard = (direction: "prev" | "next") => {

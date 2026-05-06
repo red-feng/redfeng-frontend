@@ -1,7 +1,7 @@
 import HomeSectionHeader from "@/app/components/home/HomeSectionHeader"
 import { HeartIcon, popularBookings, StarIcon } from "@/app/components/home/homeContent"
 
-export default function HomePopularSection() {
+export default function WebHomePopularSection() {
   return (
     <>
       <HomeSectionHeader title="Paling Banyak Dipesan" showTabs />
