@@ -1,8 +1,7 @@
 import Link from "next/link"
 
 import {
-  appHomeQuickChips,
-  appHomeServiceAccentByLabel,
+  appHomeConfig,
   MenuIcon,
   serviceCards,
 } from "@/app/components/home/homeContent"
@@ -29,7 +28,7 @@ export default function HomeStandaloneMobileHero() {
         </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {appHomeQuickChips.map((chip, index) => (
+          {appHomeConfig.quickChips.map((chip, index) => (
             <button
               key={chip}
               type="button"
@@ -61,7 +60,7 @@ export default function HomeStandaloneMobileHero() {
           {serviceCards.map((service) => (
             <button key={service.label} type="button" className="flex flex-col items-center text-center">
               <span
-                className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeServiceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
+                className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeConfig.serviceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
               >
                 <service.icon className="h-7 w-7" />
               </span>
