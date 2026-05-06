@@ -7,7 +7,7 @@ import HeroHeader from "@/app/components/home/HeroHeader"
 import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
 import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
 import HeroTabs from "@/app/components/home/HeroTabs"
-import HomeStandaloneMobileHero from "@/app/components/home/HomeStandaloneMobileHero"
+import AppHomeTopSection from "@/app/components/home/mobile-app/AppHomeTopSection"
 import { getHeroSearchConfig, heroSearchConfigs } from "@/app/components/home/heroSearchContent"
 import type { HeroSearchFieldData } from "@/app/components/home/heroSearchContent"
 import type { HeroTabKey } from "@/app/components/home/homeContent"
@@ -27,7 +27,7 @@ export default function HomeHeroSection() {
   return (
     <section className="home-hero">
       <div className="home-hero-surface overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_18px_36px_-34px_rgba(15,23,42,0.08)]">
-        <HomeStandaloneMobileHero />
+        <AppHomeTopSection />
         <div className="home-hero-standard">
           <div className="relative overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
