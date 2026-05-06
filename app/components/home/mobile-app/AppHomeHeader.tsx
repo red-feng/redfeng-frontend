@@ -4,8 +4,12 @@ import { appHomeConfig, MenuIcon } from "@/app/components/home/shared/homeConten
 
 export default function AppHomeHeader() {
   return (
-    <div className="rounded-b-[38px] bg-[linear-gradient(180deg,#1aa6f4_0%,#1197eb_58%,#0b8ce2_100%)] px-4 pb-20 pt-[calc(env(safe-area-inset-top)+0.85rem)] shadow-[0_18px_40px_-28px_rgba(17,151,235,0.72)]">
-      <div className="flex items-center gap-3">
+    <div className="relative overflow-hidden rounded-b-[40px] bg-[linear-gradient(180deg,#23aef8_0%,#1497ec_52%,#0b87dc_100%)] px-4 pb-24 pt-[calc(env(safe-area-inset-top)+0.85rem)] shadow-[0_20px_42px_-26px_rgba(17,151,235,0.72)]">
+      <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_42%)]" />
+      <div className="absolute -right-10 top-24 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+      <div className="absolute left-8 top-20 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+
+      <div className="relative flex items-center gap-3">
         <button
           type="button"
           className="flex h-14 flex-1 items-center gap-3 rounded-full bg-white px-5 text-left shadow-[0_14px_28px_-22px_rgba(15,23,42,0.3)]"
@@ -13,22 +17,30 @@ export default function AppHomeHeader() {
           <SearchIcon className="h-6 w-6 shrink-0 text-slate-300" />
           <span className="truncate text-[15px] font-medium text-slate-500">Cari hotel, tiket, atau destinasi</span>
         </button>
-        <button type="button" className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-white" aria-label="Promo">
+        <button
+          type="button"
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/18 bg-white/8 text-white backdrop-blur-sm"
+          aria-label="Promo"
+        >
           <PercentCircleIcon className="h-8 w-8" />
           <span className="absolute right-[2px] top-[2px] h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
         </button>
-        <button type="button" className="inline-flex h-11 w-11 items-center justify-center rounded-full text-white" aria-label="Chat">
+        <button
+          type="button"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/18 bg-white/8 text-white backdrop-blur-sm"
+          aria-label="Chat"
+        >
           <ChatBubbleIcon className="h-7 w-7" />
         </button>
       </div>
 
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="relative mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {appHomeConfig.quickChips.map((chip, index) => (
           <button
             key={chip}
             type="button"
             className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.28)] ${
-              index === 0 ? "bg-[#0f7dcc] text-white" : "bg-[#119ef0] text-white/95"
+              index === 0 ? "bg-[#0b78ca] text-white" : "bg-[#1092e7] text-white/95"
             }`}
           >
             {chip}
@@ -36,17 +48,37 @@ export default function AppHomeHeader() {
         ))}
       </div>
 
-      <div className="mt-4 flex items-center justify-between px-1">
-        <Link href="/" className="text-[12px] font-semibold tracking-[0.22em] text-white/88">
-          REDFENG TRAVEL APP
-        </Link>
-        <button
-          type="button"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-white/18 bg-white/10 text-white/90 backdrop-blur-sm"
-          aria-label="Menu tambahan"
-        >
-          <MenuIcon className="h-4 w-4" />
-        </button>
+      <div className="relative mt-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span className="inline-flex rounded-full border border-white/22 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/88 backdrop-blur-sm">
+              RedFeng Travel App
+            </span>
+            <h1 className="mt-4 max-w-[220px] text-[26px] font-bold leading-[1.08] tracking-[-0.04em] text-white">
+              Semua perjalananmu dalam satu aplikasi
+            </h1>
+            <p className="mt-2 max-w-[250px] text-[13px] leading-5 text-white/78">
+              Cari layanan favorit, nikmati promo aktif, lalu lanjutkan pemesanan tanpa ribet.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/28 bg-white/10 text-white shadow-[0_12px_24px_-20px_rgba(15,23,42,0.4)] backdrop-blur-sm"
+            aria-label="Menu tambahan"
+          >
+            <MenuIcon className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 flex items-center justify-between rounded-[22px] border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/72">Akun & benefit</p>
+            <p className="mt-1 text-[13px] font-semibold text-white">Promo baru setiap hari dari menu RedFeng</p>
+          </div>
+          <Link href="/" className="shrink-0 text-[11px] font-semibold tracking-[0.22em] text-white/90">
+            REDFENG
+          </Link>
+        </div>
       </div>
     </div>
   )

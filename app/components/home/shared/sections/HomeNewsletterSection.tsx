@@ -1,6 +1,6 @@
 export default function HomeNewsletterSection() {
   return (
-    <section className="mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
+    <section className="home-newsletter-section mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
       <div
         className="relative overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-6 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-7"
         style={{

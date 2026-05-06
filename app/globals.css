@@ -211,9 +211,10 @@ html[data-display-mode="standalone"] .public-mobile-nav {
 }
 
 html[data-display-mode="standalone"] .public-mobile-nav-shell {
-  border-radius: 1.5rem;
-  padding: 0.5rem 0.625rem;
-  box-shadow: 0 -14px 38px -28px rgba(15, 23, 42, 0.3);
+  border-radius: 1.65rem;
+  padding: 0.55rem 0.7rem;
+  border-color: #edf1f7;
+  box-shadow: 0 -18px 42px -30px rgba(15, 23, 42, 0.32);
 }
 
 html[data-display-mode="standalone"] .public-mobile-nav-grid {
@@ -281,8 +282,8 @@ html[data-display-mode="standalone"] .home-trust-partners {
 }
 
 html[data-display-mode="standalone"] .home-section-header {
-  padding-top: 1.25rem;
-  padding-bottom: 0.875rem;
+  padding-top: 1.4rem;
+  padding-bottom: 0.75rem;
 }
 
 html[data-display-mode="standalone"] .home-section-header-shell {
@@ -294,8 +295,8 @@ html[data-display-mode="standalone"] .home-section-header-group {
 }
 
 html[data-display-mode="standalone"] .home-section-header-title {
-  font-size: 1.9rem;
-  line-height: 1;
+  font-size: 1.45rem;
+  line-height: 1.02;
 }
 
 html[data-display-mode="standalone"] .home-section-header-tabs {
@@ -304,8 +305,8 @@ html[data-display-mode="standalone"] .home-section-header-tabs {
 }
 
 html[data-display-mode="standalone"] .home-section-header-tab {
-  padding: 0.5rem 0.9rem;
-  font-size: 0.75rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.78rem;
 }
 
 html[data-display-mode="standalone"] .home-services-section {
@@ -340,7 +341,7 @@ html[data-display-mode="standalone"] .home-services-copy {
 }
 
 html[data-display-mode="standalone"] .home-popular-section {
-  padding-bottom: 0.75rem;
+  padding-bottom: 1rem;
 }
 
 html[data-display-mode="standalone"] .home-popular-grid {
@@ -350,18 +351,18 @@ html[data-display-mode="standalone"] .home-popular-grid {
 }
 
 html[data-display-mode="standalone"] .home-popular-card {
-  width: 9.5rem;
-  min-width: 9.5rem;
-  border-radius: 1.1rem;
+  width: 10.5rem;
+  min-width: 10.5rem;
+  border-radius: 1.2rem;
   box-shadow: 0 18px 34px -30px rgba(15, 23, 42, 0.2);
 }
 
 html[data-display-mode="standalone"] .home-popular-media {
-  height: 7.75rem;
+  height: 8.25rem;
 }
 
 html[data-display-mode="standalone"] .home-popular-body {
-  padding: 0.8rem;
+  padding: 0.9rem;
 }
 
 html[data-display-mode="standalone"] .home-popular-title {
@@ -375,7 +376,7 @@ html[data-display-mode="standalone"] .home-popular-copy {
 }
 
 html[data-display-mode="standalone"] .home-destinations-section {
-  padding-bottom: 1rem;
+  padding-bottom: 1.2rem;
 }
 
 html[data-display-mode="standalone"] .home-destinations-grid {
@@ -385,10 +386,10 @@ html[data-display-mode="standalone"] .home-destinations-grid {
 }
 
 html[data-display-mode="standalone"] .home-destinations-card {
-  height: 8.7rem;
-  width: 7rem;
-  min-width: 7rem;
-  border-radius: 1.1rem;
+  height: 9.6rem;
+  width: 8rem;
+  min-width: 8rem;
+  border-radius: 1.25rem;
 }
 
 html[data-display-mode="standalone"] .home-destinations-body {
@@ -397,9 +398,35 @@ html[data-display-mode="standalone"] .home-destinations-body {
 }
 
 html[data-display-mode="standalone"] .home-destinations-title {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
 }
 
 html[data-display-mode="standalone"] .home-destinations-copy {
-  font-size: 0.68rem;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 1023px) {
+  html[data-display-mode="standalone"] body {
+    background: #f6f9fd;
+  }
+
+  html[data-display-mode="standalone"] .standalone-home-feed {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 7.5rem);
+  }
+
+  html[data-display-mode="standalone"] .home-inspiration-section {
+    padding-top: 1rem;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 7.5rem);
+  }
+
+  html[data-display-mode="standalone"] .home-inspiration-section > div:first-child {
+    margin-bottom: 1rem;
+  }
+
+  html[data-display-mode="standalone"] .home-trust-section,
+  html[data-display-mode="standalone"] .home-why-choose-section,
+  html[data-display-mode="standalone"] .home-newsletter-section,
+  html[data-display-mode="standalone"] .home-footer {
+    display: none;
+  }
 }
