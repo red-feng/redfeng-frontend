@@ -7,7 +7,6 @@ import HeroHeader from "@/app/components/home/HeroHeader"
 import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
 import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
 import HeroTabs from "@/app/components/home/HeroTabs"
-import HomeStandaloneMobileHero from "@/app/components/home/HomeStandaloneMobileHero"
 import { getHeroSearchConfig, heroSearchConfigs } from "@/app/components/home/heroSearchContent"
 import type { HeroSearchFieldData } from "@/app/components/home/heroSearchContent"
 import type { HeroTabKey } from "@/app/components/home/homeContent"
@@ -27,33 +26,30 @@ export default function HomeHeroSection() {
   return (
     <section className="home-hero">
       <div className="home-hero-surface overflow-hidden bg-[linear-gradient(115deg,#fffaf7_0%,#fffefc_36%,#f9fbfe_100%)] shadow-[0_18px_36px_-34px_rgba(15,23,42,0.08)]">
-        <HomeStandaloneMobileHero />
-        <div className="home-hero-standard">
-          <div className="relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
-            <DesktopHeroBackdrop />
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,194,155,0.14),transparent_24%),radial-gradient(circle_at_top_right,rgba(148,197,255,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.2)_0%,rgba(255,255,255,0.05)_100%)]" />
+          <DesktopHeroBackdrop />
 
-            <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-12 pt-5 sm:px-6 lg:px-8">
-              <HeroHeader />
-              <MobileHeroBackdrop />
-              <HeroIntro />
-            </div>
+          <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-12 pt-5 sm:px-6 lg:px-8">
+            <HeroHeader />
+            <MobileHeroBackdrop />
+            <HeroIntro />
           </div>
+        </div>
 
-          <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-44 max-w-[1240px] px-4 pb-10 sm:-mt-56 sm:px-6 lg:-mt-80 lg:pb-14 lg:px-8">
-            <div className="home-hero-search-card overflow-visible rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
-              <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
-              <HeroSearchPanel
-                activeTab={activeTab}
-                activeOption={activeOptions[activeTab]}
-                onOptionChange={(optionKey) =>
-                  setActiveOptions((current) => ({
-                    ...current,
-                    [activeTab]: optionKey,
-                  }))
-                }
-              />
-            </div>
+        <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-44 max-w-[1240px] px-4 pb-10 sm:-mt-56 sm:px-6 lg:-mt-80 lg:pb-14 lg:px-8">
+          <div className="home-hero-search-card overflow-visible rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
+            <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
+            <HeroSearchPanel
+              activeTab={activeTab}
+              activeOption={activeOptions[activeTab]}
+              onOptionChange={(optionKey) =>
+                setActiveOptions((current) => ({
+                  ...current,
+                  [activeTab]: optionKey,
+                }))
+              }
+            />
           </div>
         </div>
       </div>
