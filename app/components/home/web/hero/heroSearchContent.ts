@@ -379,6 +379,70 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
     },
   },
+  cruise: {
+    defaultOption: "regular_cruise",
+    options: [
+      { key: "regular_cruise", label: "Regular Cruise" },
+      { key: "luxury_cruise", label: "Luxury Cruise" },
+      { key: "family_cruise", label: "Family Cruise" },
+    ],
+    variants: {
+      regular_cruise: {
+        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaLabel: "Cari Cruise",
+        desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.4fr_1fr_0.92fr_1fr_auto] lg:items-center",
+        desktopFields: [
+          { label: "Rute Cruise", value: "Singapore - Penang - Phuket", sublabel: "3 malam" },
+          { label: "Cabin", value: "Ocean View", sublabel: "2 Dewasa", withChevron: true },
+          { label: "Keberangkatan", value: "18 Juni 2026", sublabel: "Kamis" },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Cabin twin", withChevron: true },
+        ],
+        mobilePrimaryCount: 1,
+        mobileFields: [
+          { label: "Rute Cruise", value: "Singapore - Penang - Phuket", sublabel: "3 malam" },
+          { label: "Cabin", value: "Ocean View", sublabel: "2 Dewasa", withChevron: true },
+          { label: "Berangkat", value: "18 Juni", sublabel: "Kamis" },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Cabin twin", withChevron: true },
+        ],
+      },
+      luxury_cruise: {
+        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaLabel: "Cari Luxury Cruise",
+        desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_auto] lg:items-center",
+        desktopFields: [
+          { label: "Rute Cruise", value: "Shanghai - Jeju - Fukuoka", sublabel: "5 malam" },
+          { label: "Cabin", value: "Balcony Suite", sublabel: "Luxury deck", withChevron: true },
+          { label: "Keberangkatan", value: "2 Juli 2026", sublabel: "Kamis" },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Suite cabin", withChevron: true },
+        ],
+        mobilePrimaryCount: 1,
+        mobileFields: [
+          { label: "Rute Cruise", value: "Shanghai - Jeju - Fukuoka", sublabel: "5 malam" },
+          { label: "Cabin", value: "Balcony Suite", sublabel: "Luxury deck", withChevron: true },
+          { label: "Berangkat", value: "2 Juli", sublabel: "Kamis" },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Suite cabin", withChevron: true },
+        ],
+      },
+      family_cruise: {
+        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaLabel: "Cari Family Cruise",
+        desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_auto] lg:items-center",
+        desktopFields: [
+          { label: "Rute Cruise", value: "Singapore - Port Klang", sublabel: "Weekend cruise" },
+          { label: "Cabin", value: "Family Cabin", sublabel: "2 Dewasa, 2 Anak", withChevron: true },
+          { label: "Keberangkatan", value: "10 Juli 2026", sublabel: "Jumat" },
+          { label: "Penumpang", value: "4 Penumpang", sublabel: "Family package", withChevron: true },
+        ],
+        mobilePrimaryCount: 1,
+        mobileFields: [
+          { label: "Rute Cruise", value: "Singapore - Port Klang", sublabel: "Weekend cruise" },
+          { label: "Cabin", value: "Family Cabin", sublabel: "2A 2C", withChevron: true },
+          { label: "Berangkat", value: "10 Juli", sublabel: "Jumat" },
+          { label: "Penumpang", value: "4 Penumpang", sublabel: "Family package", withChevron: true },
+        ],
+      },
+    },
+  },
   activity: {
     defaultOption: "attraction",
     options: [

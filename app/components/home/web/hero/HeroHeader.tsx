@@ -25,6 +25,7 @@ export default function HeroHeader() {
           <a href="https://redfeng.co/kereta_api/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</a>
           <a href="https://redfeng.co/bus-travel/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</a>
           <a href="https://redfeng.co/kapal_laut/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</a>
+          <a href="https://redfeng.co/kapal_pesiar/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal Pesiar</a>
           <a href="https://redfeng.co/aktivitas/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</a>
           <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
           <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</a>

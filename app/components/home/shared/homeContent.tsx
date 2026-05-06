@@ -5,7 +5,7 @@ export type IconProps = {
 }
 
 export type CardIcon = ComponentType<IconProps>
-export type HeroTabKey = "flight" | "hotel" | "train" | "bus" | "ship" | "activity" | "package"
+export type HeroTabKey = "flight" | "hotel" | "train" | "bus" | "ship" | "cruise" | "activity" | "package"
 export type HeroBenefitItem = {
   title: string
   icon: CardIcon
@@ -38,6 +38,7 @@ export const heroTabs = [
   { key: "train" as const, label: "Kereta", badge: false, icon: TrainIcon },
   { key: "bus" as const, label: "Bus", badge: false, icon: BusIcon },
   { key: "ship" as const, label: "Kapal", badge: false, icon: ShipIcon },
+  { key: "cruise" as const, label: "Kapal Pesiar", badge: true, icon: CruiseIcon },
   { key: "activity" as const, label: "Aktivitas", badge: false, icon: SparklesIcon },
   { key: "package" as const, label: "Paket Wisata", badge: true, icon: PalmIcon },
 ]
@@ -48,6 +49,7 @@ export const serviceCards: { label: string; desc: string; icon: CardIcon; tone: 
   { label: "Kereta", desc: "Kereta cepat & reguler", icon: TrainIcon, tone: "text-[#8b6bff]" },
   { label: "Bus", desc: "Bus antar kota terlengkap", icon: BusIcon, tone: "text-[#67c674]" },
   { label: "Kapal", desc: "Tiket kapal laut resmi", icon: ShipIcon, tone: "text-[#2f80ed]" },
+  { label: "Kapal Pesiar", desc: "Pelayaran cruise & itinerary", icon: CruiseIcon, tone: "text-[#f05d8f]" },
   { label: "Aktivitas", desc: "Tiket atraksi & wisata", icon: TicketIcon, tone: "text-[#f5a623]" },
   { label: "Paket Wisata", desc: "Paket liburan terbaik", icon: PalmIcon, tone: "text-[#f38aac]" },
 ]
@@ -249,6 +251,11 @@ export const heroBenefitsByTab: Record<HeroTabKey, HeroBenefitItem[]> = {
     { title: "Pelayaran aman", icon: ShieldIcon },
     { title: "Tarif fleksibel", icon: PriceTagIcon },
   ],
+  cruise: [
+    { title: "Itinerary premium", icon: CruiseIcon },
+    { title: "Cabin terpercaya", icon: ShieldIcon },
+    { title: "Promo cruise aktif", icon: PriceTagIcon },
+  ],
   activity: [
     { title: "Atraksi favorit", icon: SparklesIcon },
     { title: "Voucher instan", icon: ShieldIcon },
@@ -285,6 +292,7 @@ export const appHomeConfig = {
     Kereta: "bg-[#ffb100]",
     Bus: "bg-[#2dc84f]",
     Kapal: "bg-[#2f80ed]",
+    "Kapal Pesiar": "bg-[#f05d8f]",
     Aktivitas: "bg-[#ff6b74]",
     "Paket Wisata": "bg-[#a11f44]",
   } as Record<string, string>,
@@ -304,6 +312,9 @@ export function BusIcon({ className }: IconProps) {
 }
 export function ShipIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M4 16h16l-2 3H6l-2-3Zm5-8h6l1 8H8l1-8Zm1-3h4v3h-4V5Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+}
+export function CruiseIcon({ className }: IconProps) {
+  return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M4 16h16l-1.8 2.7H5.8L4 16Zm4.5-7.5h7L17 16H7l1.5-7.5Zm1.2-2.8h4.6v2.8H9.7V5.7Zm-3.7 14.6c.8.9 1.8 1.4 3 1.4 1 0 1.8-.3 2.6-.9.8.6 1.7.9 2.6.9 1.2 0 2.2-.5 3-1.4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
 }
 export function TicketIcon({ className }: IconProps) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M5 8.5A2.5 2.5 0 0 1 7.5 6h9A2.5 2.5 0 0 1 19 8.5v2a2 2 0 0 0 0 4v1A2.5 2.5 0 0 1 16.5 18h-9A2.5 2.5 0 0 1 5 15.5v-1a2 2 0 1 0 0-4v-2Z" stroke="currentColor" strokeWidth="1.8" /><path d="M12 8v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeDasharray="1.6 2.6" /></svg>
