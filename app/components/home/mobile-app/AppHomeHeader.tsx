@@ -2,33 +2,33 @@ import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
-    <div className="px-3.5 pt-[calc(env(safe-area-inset-top)+0.8rem)]">
-      <div className="relative z-10 flex items-center gap-3">
+    <div className="px-3.5 pt-[calc(env(safe-area-inset-top)+0.75rem)]">
+      <div className="relative z-10 flex items-center gap-2.5">
         <button
           type="button"
-          className="flex h-14 flex-1 items-center gap-3 rounded-full bg-transparent px-5 text-left ring-1 ring-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+          className="flex h-[3.9rem] flex-1 items-center gap-3 rounded-full bg-white/[0.06] px-5 text-left text-[#6a879d] ring-1 ring-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-[1.5px]"
         >
-          <SearchIcon className="h-6 w-6 shrink-0 text-white/80" />
-          <span className="truncate text-[15px] font-medium text-white/80">Cari hotel, tiket, atau destinasi</span>
+          <SearchIcon className="h-5.5 w-5.5 shrink-0 text-white/75" />
+          <span className="truncate text-[15px] font-medium text-[#6f8898]">Cari hotel, tiket, atau destinasi</span>
         </button>
         <button
           type="button"
-          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/42 bg-transparent text-white"
+          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/[0.06] text-white backdrop-blur-[1.5px]"
           aria-label="Promo"
         >
           <PercentCircleIcon className="h-8 w-8" />
-          <span className="absolute right-[2px] top-[2px] h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
+          <span className="absolute right-[4px] top-[4px] h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
         </button>
         <button
           type="button"
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/42 bg-transparent text-white"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/[0.06] text-white backdrop-blur-[1.5px]"
           aria-label="Chat"
         >
           <ChatBubbleIcon className="h-7 w-7" />
         </button>
       </div>
 
-      <div className="relative -mt-7 overflow-hidden rounded-b-[52px] bg-[linear-gradient(180deg,#33b4f8_0%,#1ea0ec_52%,#138cde_100%)] px-0 pb-24 pt-[4.5rem] shadow-[0_26px_44px_-30px_rgba(13,136,221,0.56)]">
+      <div className="relative -mt-5 overflow-hidden rounded-b-[52px] bg-[linear-gradient(180deg,#33b4f8_0%,#1ea0ec_52%,#138cde_100%)] px-0 pb-[6.6rem] pt-[4.15rem] shadow-[0_26px_44px_-30px_rgba(13,136,221,0.56)]">
         <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_42%)]" />
         <div className="absolute -left-14 top-24 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute right-[-2.5rem] top-28 h-40 w-40 rounded-full bg-[#5fd2ff]/20 blur-3xl" />
@@ -38,7 +38,7 @@ export default function AppHomeHeader() {
             <button
               key={chip}
               type="button"
-              className={`shrink-0 rounded-full px-6 py-2.5 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)] ${
+              className={`shrink-0 rounded-full px-6 py-[0.7rem] text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)] ${
                 index === 0 ? "bg-[#1178cf] text-white" : "bg-[#1896e7] text-white/92"
               }`}
             >
