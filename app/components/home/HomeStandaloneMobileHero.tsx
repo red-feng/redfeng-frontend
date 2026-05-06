@@ -1,33 +1,21 @@
 import Link from "next/link"
 
 import {
-  BusIcon,
-  BuildingIcon,
   MenuIcon,
-  PlaneIcon,
-  SparklesIcon,
-  TrainIcon,
+  promoCards,
+  serviceCards,
 } from "@/app/components/home/homeContent"
 
-const quickChips = [
-  "Aktivasi TPayLater",
-  "Promo China",
-  "Hotel Jakarta",
-  "Tour Grup",
-]
-
-const services = [
-  { label: "Hotel", tone: "bg-[#225ea8]", Icon: BuildingIcon },
-  { label: "Pesawat", tone: "bg-[#39c6f4]", Icon: PlaneIcon },
-  { label: "Aktivitas", tone: "bg-[#ff6b74]", Icon: SparklesIcon },
-  { label: "Kereta", tone: "bg-[#ffb100]", Icon: TrainIcon },
-  { label: "Bus", tone: "bg-[#2dc84f]", Icon: BusIcon },
-  { label: "Kapal", tone: "bg-[#ff8b8b]", Icon: ShipMiniIcon },
-  { label: "Flight + Hotel", tone: "bg-[#8f2bc2]", Icon: FlightHotelIcon },
-  { label: "Transfer", tone: "bg-[#1ab7b0]", Icon: TransferIcon },
-  { label: "Paket", tone: "bg-[#a11f44]", Icon: PackageMiniIcon },
-  { label: "TPayLater", tone: "bg-[#164b88]", Icon: WalletMiniIcon },
-]
+const quickChips = promoCards.map((card) => card.title.replace(/\n/g, " ")).slice(0, 4)
+const serviceToneByLabel: Record<string, string> = {
+  Pesawat: "bg-[#39c6f4]",
+  Hotel: "bg-[#225ea8]",
+  Kereta: "bg-[#ffb100]",
+  Bus: "bg-[#2dc84f]",
+  Kapal: "bg-[#2f80ed]",
+  Aktivitas: "bg-[#ff6b74]",
+  "Paket Wisata": "bg-[#a11f44]",
+}
 
 export default function HomeStandaloneMobileHero() {
   return (
@@ -80,12 +68,14 @@ export default function HomeStandaloneMobileHero() {
 
       <div className="mx-4 -mt-10 rounded-[30px] bg-white px-4 pb-5 pt-6 shadow-[0_20px_44px_-28px_rgba(15,23,42,0.24)]">
         <div className="grid grid-cols-5 gap-x-2 gap-y-7">
-          {services.map(({ label, tone, Icon }) => (
-            <button key={label} type="button" className="flex flex-col items-center text-center">
-              <span className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${tone}`}>
-                <Icon className="h-7 w-7" />
+          {serviceCards.map((service) => (
+            <button key={service.label} type="button" className="flex flex-col items-center text-center">
+              <span
+                className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${serviceToneByLabel[service.label] ?? "bg-[#164b88]"}`}
+              >
+                <service.icon className="h-7 w-7" />
               </span>
-              <span className="mt-3 text-[11px] font-medium leading-4 text-slate-900">{label}</span>
+              <span className="mt-3 text-[11px] font-medium leading-4 text-slate-900">{service.label}</span>
             </button>
           ))}
         </div>
@@ -124,53 +114,6 @@ function ChatBubbleIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
       <path d="M7 17.5 7.5 15A6.8 6.8 0 1 1 12 18.8H7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function ShipMiniIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M5 15.5h14l-1.7 2.6H6.7L5 15.5Zm4-6h6l1 6H8l1-6Zm1.2-2.5h3.6v2.5h-3.6V7Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function FlightHotelIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M5.5 18V8.5A1.5 1.5 0 0 1 7 7h6.5V18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M8 10h2M8 13h2M15 8l5-1.2-4 5.2 3.2 2.1-1.2 1.2-3.8-1.3V18h-1.5V12.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function TransferIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M6 14.5 7.8 10a1.8 1.8 0 0 1 1.7-1.1h5a1.8 1.8 0 0 1 1.7 1.1l1.8 4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M5 15h14v3a1.5 1.5 0 0 1-1.5 1.5H16V18H8v1.5H6.5A1.5 1.5 0 0 1 5 18V15Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="8" cy="15" r="1" fill="currentColor" />
-      <circle cx="16" cy="15" r="1" fill="currentColor" />
-    </svg>
-  )
-}
-
-function PackageMiniIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M5.5 8 12 4.5 18.5 8 12 11.5 5.5 8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M5.5 8v8L12 19.5 18.5 16V8" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-      <path d="M12 11.5V19" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function WalletMiniIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M5 8.5A2.5 2.5 0 0 1 7.5 6H17a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H7.5A2.5 2.5 0 0 1 5 15.5v-7Z" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M5.5 9.5H17M14.5 13h2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   )
 }
