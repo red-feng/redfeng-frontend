@@ -1,0 +1,6 @@
+export { default as HomeDestinationsSection } from "./HomeDestinationsSection"
+export { default as HomeFooter } from "./HomeFooter"
+export { default as HomeInspirationSection } from "./HomeInspirationSection"
+export { default as HomeNewsletterSection } from "./HomeNewsletterSection"
+export { default as HomeTrustSection } from "./HomeTrustSection"
+export { default as HomeWhyChooseSection } from "./HomeWhyChooseSection"

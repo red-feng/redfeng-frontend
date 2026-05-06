@@ -1,12 +1,14 @@
 import PublicMobileNav from "@/app/components/PublicMobileNav"
-import HomeDestinationsSection from "@/app/components/home/HomeDestinationsSection"
-import HomeFooter from "@/app/components/home/HomeFooter"
-import HomeInspirationSection from "@/app/components/home/HomeInspirationSection"
-import HomeNewsletterSection from "@/app/components/home/HomeNewsletterSection"
 import HomeHeroSection from "@/app/components/home/HomeHeroSection"
 import { AppHomeFeedSection } from "@/app/components/home/mobile-app"
-import HomeTrustSection from "@/app/components/home/HomeTrustSection"
-import HomeWhyChooseSection from "@/app/components/home/HomeWhyChooseSection"
+import {
+  HomeDestinationsSection,
+  HomeFooter,
+  HomeInspirationSection,
+  HomeNewsletterSection,
+  HomeTrustSection,
+  HomeWhyChooseSection,
+} from "@/app/components/home/shared/sections"
 import { WebHomePopularSection, WebHomePromoSection, WebHomeServicesSection } from "@/app/components/home/web"
 import { getCurrentLocale } from "@/lib/locale"
 
