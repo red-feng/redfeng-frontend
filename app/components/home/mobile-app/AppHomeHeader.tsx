@@ -4,13 +4,15 @@ import { appHomeConfig, MenuIcon } from "@/app/components/home/shared/homeConten
 
 export default function AppHomeHeader() {
   return (
-    <div className="relative overflow-hidden rounded-b-[34px] bg-[linear-gradient(180deg,#24adf8_0%,#1598ec_58%,#0d88dd_100%)] px-4 pb-16 pt-[calc(env(safe-area-inset-top)+0.8rem)] shadow-[0_18px_36px_-28px_rgba(13,136,221,0.6)]">
-      <div className="absolute inset-x-0 top-0 h-20 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_42%)]" />
+    <div className="relative overflow-hidden rounded-b-[36px] bg-[linear-gradient(180deg,#2aaef7_0%,#179be9_48%,#0f87dc_100%)] px-4 pb-14 pt-[calc(env(safe-area-inset-top)+0.8rem)] shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
+      <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_42%)]" />
+      <div className="absolute -left-12 top-24 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
+      <div className="absolute right-[-2.5rem] top-32 h-36 w-36 rounded-full bg-[#5fd2ff]/18 blur-3xl" />
 
       <div className="relative flex items-center gap-3">
         <button
           type="button"
-          className="flex h-14 flex-1 items-center gap-3 rounded-full bg-white px-5 text-left shadow-[0_14px_28px_-22px_rgba(15,23,42,0.3)]"
+          className="flex h-14 flex-1 items-center gap-3 rounded-full bg-white/98 px-5 text-left shadow-[0_18px_30px_-22px_rgba(15,23,42,0.24)] ring-1 ring-white/70"
         >
           <SearchIcon className="h-6 w-6 shrink-0 text-slate-300" />
           <span className="truncate text-[15px] font-medium text-slate-500">Cari hotel, tiket, atau destinasi</span>
@@ -37,8 +39,8 @@ export default function AppHomeHeader() {
           <button
             key={chip}
             type="button"
-            className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.28)] ${
-              index === 0 ? "bg-[#0a78ca] text-white" : "bg-[#1092e7] text-white/95"
+            className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.24)] ring-1 ${
+              index === 0 ? "bg-[#0a78ca] text-white ring-white/12" : "bg-white/12 text-white/95 ring-white/14 backdrop-blur-sm"
             }`}
           >
             {chip}
@@ -48,12 +50,11 @@ export default function AppHomeHeader() {
 
       <div className="relative mt-5 flex items-center justify-between gap-4">
         <div>
-          <span className="inline-flex rounded-full border border-white/24 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/88 backdrop-blur-sm">
+          <span className="inline-flex rounded-full border border-white/22 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/88 backdrop-blur-sm">
             RedFeng Travel App
           </span>
-          <p className="mt-3 max-w-[220px] text-[14px] font-medium leading-5 text-white/88">
-            Cari, bandingkan, dan pesan layanan perjalanan favoritmu lebih cepat.
-          </p>
+          <h1 className="mt-3 max-w-[230px] text-[1.65rem] font-bold leading-[1.02] tracking-[-0.045em] text-white">Semua kebutuhan travel dalam satu tempat</h1>
+          <p className="mt-2 max-w-[240px] text-[13px] font-medium leading-5 text-white/84">Cari, bandingkan, dan pesan layanan perjalanan favoritmu lebih cepat.</p>
         </div>
         <button
           type="button"
@@ -64,7 +65,7 @@ export default function AppHomeHeader() {
         </button>
       </div>
 
-      <div className="relative mt-4 flex items-center justify-between rounded-[20px] border border-white/16 bg-white/10 px-4 py-3 backdrop-blur-sm">
+      <div className="relative mt-4 flex items-center justify-between rounded-[22px] border border-white/18 bg-[linear-gradient(135deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] px-4 py-3.5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.26)] backdrop-blur-sm">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/72">Promo hari ini</p>
           <p className="mt-1 text-[13px] font-semibold text-white">Diskon baru dan penawaran aktif dari RedFeng</p>

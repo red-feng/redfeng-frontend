@@ -133,8 +133,8 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
 
   return (
     <nav className="public-mobile-nav fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
-      <div className="public-mobile-nav-shell mx-auto max-w-xl rounded-[28px] border border-[#eceff5] bg-white px-2.5 py-2 shadow-[0_-18px_48px_-28px_rgba(15,23,42,0.24)]">
-        <div className="public-mobile-nav-grid grid grid-cols-4 gap-1.5">
+      <div className="public-mobile-nav-shell mx-auto max-w-[23.5rem] rounded-[26px] border border-[#eef2f7] bg-white/96 px-2 py-1.5 shadow-[0_-20px_42px_-30px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+        <div className="public-mobile-nav-grid grid grid-cols-4 gap-1">
         {items.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -143,23 +143,23 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
             <Link
               key={item.href}
               href={item.href}
-              className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[22px] px-2 py-2 text-[11px] font-semibold transition ${
-                isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+              className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[20px] px-2 py-1.5 text-[11px] font-semibold transition ${
+                isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-800"
               }`}
             >
               <span
-                className={`public-mobile-nav-icon flex h-10 w-10 items-center justify-center rounded-full transition ${
+                className={`public-mobile-nav-icon flex h-9 w-9 items-center justify-center rounded-full transition ${
                   isActive
                     ? item.href === "/"
-                      ? "bg-[linear-gradient(180deg,#ffede8_0%,#fff6f3_100%)] text-[#ef5b2a] shadow-[0_16px_30px_-18px_rgba(239,91,42,0.36)]"
-                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_16px_30px_-18px_rgba(100,116,139,0.2)]`
-                    : "bg-white text-slate-500"
+                      ? "bg-[linear-gradient(180deg,#fff1eb_0%,#fffaf7_100%)] text-[#ef5b2a] shadow-[0_14px_24px_-18px_rgba(239,91,42,0.28)] ring-1 ring-[#ffe3d8]"
+                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_14px_24px_-18px_rgba(100,116,139,0.18)]`
+                    : "bg-transparent text-slate-500"
                 }`}
               >
                 {item.icon}
               </span>
-              <span className={`public-mobile-nav-label mt-1.5 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
-              {isActive ? <span className="public-mobile-nav-indicator mt-1 h-1 w-5 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-1 w-5 rounded-full bg-transparent" />}
+              <span className={`public-mobile-nav-label mt-1 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
+              {isActive ? <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-transparent" />}
             </Link>
           )
         })}

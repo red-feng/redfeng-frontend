@@ -2,7 +2,7 @@ import { appHomeConfig, ArrowRightIcon, HeartIcon } from "@/app/components/home/
 
 export default function AppHomePromoSection() {
   return (
-    <div>
+    <div className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Promo aktif</p>
@@ -13,7 +13,7 @@ export default function AppHomePromoSection() {
         </button>
       </div>
 
-      <article className="mt-4 overflow-hidden rounded-[28px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.18)]">
+      <article className="mt-4 overflow-hidden rounded-[28px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.14)]">
         <div className="bg-[linear-gradient(180deg,#fbffd8_0%,#fffef3_100%)] px-5 pb-5 pt-5">
           <div className="flex items-start gap-4">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[#17a0f3] text-white shadow-[0_16px_28px_-20px_rgba(23,160,243,0.45)]">

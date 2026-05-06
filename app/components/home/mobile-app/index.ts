@@ -1,4 +1,5 @@
 export { default as AppHomeFeedSection } from "./AppHomeFeedSection"
+export { default as AppHomeFooterSection } from "./AppHomeFooterSection"
 export { default as AppHomeHeader } from "./AppHomeHeader"
 export { default as AppHomePromoSection } from "./AppHomePromoSection"
 export { default as AppHomeRecentActivitySection } from "./AppHomeRecentActivitySection"

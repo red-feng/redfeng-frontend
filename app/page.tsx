@@ -1,6 +1,6 @@
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import HomeHeroSection from "@/app/components/home/HomeHeroSection"
-import { AppHomeFeedSection } from "@/app/components/home/mobile-app"
+import { AppHomeFeedSection, AppHomeFooterSection } from "@/app/components/home/mobile-app"
 import {
   HomeDestinationsSection,
   HomeFooter,
@@ -25,6 +25,7 @@ export default async function HomePage() {
         <WebHomePopularSection />
         <HomeDestinationsSection />
         <HomeInspirationSection />
+        <AppHomeFooterSection />
         <HomeTrustSection />
         <HomeWhyChooseSection />
         <HomeNewsletterSection />

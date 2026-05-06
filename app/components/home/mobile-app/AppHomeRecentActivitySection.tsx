@@ -4,7 +4,7 @@ import { appHomeConfig, ArrowRightIcon } from "@/app/components/home/shared/home
 
 export default function AppHomeRecentActivitySection() {
   return (
-    <div className="mt-8">
+    <div className="mt-4 rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Lanjutkan</p>
@@ -26,7 +26,7 @@ export default function AppHomeRecentActivitySection() {
         ))}
       </div>
 
-      <article className="mt-4 overflow-hidden rounded-[26px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.18)]">
+      <article className="mt-4 overflow-hidden rounded-[26px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.14)]">
         <div className="flex">
           <div className="relative w-[38%] overflow-hidden bg-[linear-gradient(135deg,#6257ff_0%,#15b8ff_100%)]">
             <Image src={appHomeConfig.featuredActivity.image} alt={appHomeConfig.featuredActivity.title} fill className="object-cover" />
