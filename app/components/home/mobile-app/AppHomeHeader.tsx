@@ -1,10 +1,8 @@
-import Link from "next/link"
-
 import { appHomeConfig, MenuIcon } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
-    <div className="relative overflow-hidden rounded-b-[36px] bg-[linear-gradient(180deg,#2aaef7_0%,#179be9_48%,#0f87dc_100%)] px-4 pb-14 pt-[calc(env(safe-area-inset-top)+0.8rem)] shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
+    <div className="relative overflow-hidden rounded-b-[36px] bg-[linear-gradient(180deg,#2aaef7_0%,#179be9_48%,#0f87dc_100%)] px-4 pb-10 pt-[calc(env(safe-area-inset-top)+0.8rem)] shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
       <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_42%)]" />
       <div className="absolute -left-12 top-24 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
       <div className="absolute right-[-2.5rem] top-32 h-36 w-36 rounded-full bg-[#5fd2ff]/18 blur-3xl" />
@@ -48,32 +46,16 @@ export default function AppHomeHeader() {
         ))}
       </div>
 
-      <div className="relative mt-5 flex items-center justify-between gap-4">
-        <div>
-          <span className="inline-flex rounded-full border border-white/22 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/88 backdrop-blur-sm">
-            RedFeng Travel App
-          </span>
-          <h1 className="mt-3 max-w-[230px] text-[1.65rem] font-bold leading-[1.02] tracking-[-0.045em] text-white">Semua kebutuhan travel dalam satu tempat</h1>
-          <p className="mt-2 max-w-[240px] text-[13px] font-medium leading-5 text-white/84">Cari, bandingkan, dan pesan layanan perjalanan favoritmu lebih cepat.</p>
-        </div>
+      <div className="relative mt-4 flex justify-end">
         <button
           type="button"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/24 bg-white/10 text-white shadow-[0_12px_24px_-20px_rgba(15,23,42,0.35)] backdrop-blur-sm"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/24 bg-white/10 text-white shadow-[0_12px_24px_-20px_rgba(15,23,42,0.28)] backdrop-blur-sm"
           aria-label="Menu tambahan"
         >
           <MenuIcon className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="relative mt-4 flex items-center justify-between rounded-[22px] border border-white/18 bg-[linear-gradient(135deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.08)_100%)] px-4 py-3.5 shadow-[0_16px_28px_-24px_rgba(15,23,42,0.26)] backdrop-blur-sm">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/72">Promo hari ini</p>
-          <p className="mt-1 text-[13px] font-semibold text-white">Diskon baru dan penawaran aktif dari RedFeng</p>
-        </div>
-        <Link href="/" className="shrink-0 text-[11px] font-semibold tracking-[0.2em] text-white/90">
-          REDFENG
-        </Link>
-      </div>
     </div>
   )
 }
