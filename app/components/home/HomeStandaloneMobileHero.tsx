@@ -1,21 +1,11 @@
 import Link from "next/link"
 
 import {
+  appHomeQuickChips,
+  appHomeServiceAccentByLabel,
   MenuIcon,
-  promoCards,
   serviceCards,
 } from "@/app/components/home/homeContent"
-
-const quickChips = promoCards.map((card) => card.title.replace(/\n/g, " ")).slice(0, 4)
-const serviceToneByLabel: Record<string, string> = {
-  Pesawat: "bg-[#39c6f4]",
-  Hotel: "bg-[#225ea8]",
-  Kereta: "bg-[#ffb100]",
-  Bus: "bg-[#2dc84f]",
-  Kapal: "bg-[#2f80ed]",
-  Aktivitas: "bg-[#ff6b74]",
-  "Paket Wisata": "bg-[#a11f44]",
-}
 
 export default function HomeStandaloneMobileHero() {
   return (
@@ -39,7 +29,7 @@ export default function HomeStandaloneMobileHero() {
         </div>
 
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {quickChips.map((chip, index) => (
+          {appHomeQuickChips.map((chip, index) => (
             <button
               key={chip}
               type="button"
@@ -71,7 +61,7 @@ export default function HomeStandaloneMobileHero() {
           {serviceCards.map((service) => (
             <button key={service.label} type="button" className="flex flex-col items-center text-center">
               <span
-                className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${serviceToneByLabel[service.label] ?? "bg-[#164b88]"}`}
+                className={`flex h-[3.9rem] w-[3.9rem] items-center justify-center rounded-full text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeServiceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
               >
                 <service.icon className="h-7 w-7" />
               </span>

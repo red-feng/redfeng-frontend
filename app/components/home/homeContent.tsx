@@ -52,6 +52,16 @@ export const serviceCards: { label: string; desc: string; icon: CardIcon; tone: 
   { label: "Paket Wisata", desc: "Paket liburan terbaik", icon: PalmIcon, tone: "text-[#f38aac]" },
 ]
 
+export const appHomeServiceAccentByLabel: Record<string, string> = {
+  Pesawat: "bg-[#39c6f4]",
+  Hotel: "bg-[#225ea8]",
+  Kereta: "bg-[#ffb100]",
+  Bus: "bg-[#2dc84f]",
+  Kapal: "bg-[#2f80ed]",
+  Aktivitas: "bg-[#ff6b74]",
+  "Paket Wisata": "bg-[#a11f44]",
+}
+
 export const promoCards = [
   {
     title: "Terbang Hemat\nke Banyak Destinasi",
@@ -99,6 +109,9 @@ export const promoCards = [
     glowClass: "bg-[radial-gradient(circle_at_24%_18%,rgba(214,220,255,0.18)_0%,rgba(214,220,255,0.09)_18%,rgba(214,220,255,0)_40%)]",
   },
 ]
+
+export const appHomeQuickChips = promoCards.map((card) => card.title.replace(/\n/g, " ")).slice(0, 4)
+export const appHomeFeaturedPromo = promoCards[0]
 
 export const bookingTabs = ["Semua", "Pesawat", "Hotel", "Paket Wisata", "Kereta"]
 
@@ -151,6 +164,9 @@ export const popularBookings = [
     tone: "bg-[#f3efff] text-[#9f7aea]",
   },
 ]
+
+export const appHomeRecentFilters = Array.from(new Set(popularBookings.map((item) => item.category))).slice(0, 2)
+export const appHomeFeaturedActivity = popularBookings[0]
 
 export const destinations = [
   { name: "Bali", country: "Indonesia", teaser: "Mulai dari Rp 1,2 Jt", image: "/home-assets/dest-bali.png" },

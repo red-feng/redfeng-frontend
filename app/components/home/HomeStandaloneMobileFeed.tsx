@@ -1,15 +1,12 @@
 import Image from "next/image"
 
 import {
+  appHomeFeaturedActivity,
+  appHomeFeaturedPromo,
+  appHomeRecentFilters,
   ArrowRightIcon,
   HeartIcon,
-  popularBookings,
-  promoCards,
 } from "@/app/components/home/homeContent"
-
-const featuredPromo = promoCards[0]
-const recentFilters = Array.from(new Set(popularBookings.map((item) => item.category))).slice(0, 2)
-const featuredActivity = popularBookings[0]
 
 export default function HomeStandaloneMobileFeed() {
   return (
@@ -30,8 +27,8 @@ export default function HomeStandaloneMobileFeed() {
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-[1.1rem] font-bold tracking-[-0.03em] text-slate-950">{featuredPromo.price}</h3>
-                  <p className="mt-1 text-[14px] leading-5 text-slate-500">{featuredPromo.title.replace(/\n/g, " ")}</p>
+                  <h3 className="text-[1.1rem] font-bold tracking-[-0.03em] text-slate-950">{appHomeFeaturedPromo.price}</h3>
+                  <p className="mt-1 text-[14px] leading-5 text-slate-500">{appHomeFeaturedPromo.title.replace(/\n/g, " ")}</p>
                 </div>
                 <button type="button" className="text-slate-400">
                   <InfoIcon className="h-5 w-5" />
@@ -39,11 +36,11 @@ export default function HomeStandaloneMobileFeed() {
               </div>
 
               <div className="mt-5 flex items-center gap-2 text-[12px] font-medium text-slate-500">
-                <span>{featuredPromo.eyebrow}</span>
+                <span>{appHomeFeaturedPromo.eyebrow}</span>
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ef5b2a] text-white">
                   <HeartIcon className="h-4 w-4" />
                 </span>
-                {featuredPromo.badge ? <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-500">{featuredPromo.badge}</span> : null}
+                {appHomeFeaturedPromo.badge ? <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] text-slate-500">{appHomeFeaturedPromo.badge}</span> : null}
               </div>
             </div>
           </div>
@@ -61,7 +58,7 @@ export default function HomeStandaloneMobileFeed() {
               type="button"
               className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#169ef1] px-5 py-3 text-[13px] font-bold text-white shadow-[0_16px_26px_-20px_rgba(22,158,241,0.52)]"
             >
-              {featuredPromo.cta}
+              {appHomeFeaturedPromo.cta}
               <ClockIcon className="h-4 w-4" />
             </button>
           </div>
@@ -71,7 +68,7 @@ export default function HomeStandaloneMobileFeed() {
       <div className="mt-8">
         <h2 className="text-[1.05rem] font-bold tracking-[-0.03em] text-slate-950">Aktivitas terakhirmu</h2>
         <div className="mt-4 flex gap-3">
-          {recentFilters.map((label, index) => (
+          {appHomeRecentFilters.map((label, index) => (
             <button
               key={label}
               type="button"
@@ -87,17 +84,17 @@ export default function HomeStandaloneMobileFeed() {
         <article className="mt-4 overflow-hidden rounded-[24px] border border-[#edf1f7] bg-white shadow-[0_16px_34px_-28px_rgba(15,23,42,0.18)]">
           <div className="flex">
             <div className="relative w-[34%] overflow-hidden bg-[linear-gradient(135deg,#6257ff_0%,#15b8ff_100%)]">
-              <Image src={featuredActivity.image} alt={featuredActivity.title} fill className="object-cover" />
+              <Image src={appHomeFeaturedActivity.image} alt={appHomeFeaturedActivity.title} fill className="object-cover" />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.38)_100%)]" />
               <div className="absolute left-3 top-3 rounded-full bg-white/18 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-                {featuredActivity.category}
+                {appHomeFeaturedActivity.category}
               </div>
             </div>
             <div className="flex-1 px-4 py-4">
-              <p className="text-[15px] font-bold leading-5 text-slate-900">{featuredActivity.title}</p>
+              <p className="text-[15px] font-bold leading-5 text-slate-900">{appHomeFeaturedActivity.title}</p>
               <p className="mt-1 text-[13px] text-slate-500">
-                {featuredActivity.subtitle}
-                {featuredActivity.suffix ? ` ${featuredActivity.suffix}` : ""}
+                {appHomeFeaturedActivity.subtitle}
+                {appHomeFeaturedActivity.suffix ? ` ${appHomeFeaturedActivity.suffix}` : ""}
               </p>
               <button
                 type="button"
