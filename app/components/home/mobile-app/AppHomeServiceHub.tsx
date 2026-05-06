@@ -16,24 +16,16 @@ export default function AppHomeServiceHub() {
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-x-2 gap-y-5">
-        {serviceCards.map((service) => {
-          const isWide = service.label === "Paket Wisata"
-
-          return (
-            <button
-              key={service.label}
-              type="button"
-              className={`flex flex-col items-center rounded-[22px] px-1.5 py-1 text-center ${isWide ? "col-span-2 items-start text-left" : ""}`}
+        {serviceCards.map((service) => (
+          <button key={service.label} type="button" className="flex flex-col items-center rounded-[22px] px-1.5 py-1 text-center">
+            <span
+              className={`flex h-[3.65rem] w-[3.65rem] items-center justify-center rounded-[18px] text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeConfig.serviceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
             >
-              <span
-                className={`flex h-[3.65rem] w-[3.65rem] items-center justify-center rounded-[18px] text-white shadow-[0_18px_28px_-24px_rgba(15,23,42,0.35)] ${appHomeConfig.serviceAccentByLabel[service.label] ?? "bg-[#164b88]"}`}
-              >
-                <service.icon className="h-7 w-7" />
-              </span>
-              <span className={`mt-3 text-[12px] font-semibold leading-4 text-slate-900 ${isWide ? "max-w-[92px]" : ""}`}>{service.label}</span>
-            </button>
-          )
-        })}
+              <service.icon className="h-7 w-7" />
+            </span>
+            <span className="mt-3 max-w-[74px] text-[12px] font-semibold leading-4 text-slate-900">{service.label}</span>
+          </button>
+        ))}
       </div>
 
       <div className="mt-4 flex items-center justify-center gap-2">
