@@ -1,5 +1,5 @@
-import type { HeroTabKey } from "@/app/components/home/homeContent"
-import { heroTabs } from "@/app/components/home/homeContent"
+import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
+import { heroTabs } from "@/app/components/home/shared/homeContent"
 
 type HeroTabsProps = {
   activeTab: HeroTabKey

@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronDownIcon, payments } from "@/app/components/home/homeContent"
+import { ChevronDownIcon, payments } from "@/app/components/home/shared/homeContent"
 
 export default function HomeFooter() {
   return (

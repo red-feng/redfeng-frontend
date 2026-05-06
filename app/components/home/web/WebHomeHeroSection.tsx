@@ -3,14 +3,17 @@
 import Image from "next/image"
 import { useState } from "react"
 
-import HeroBenefits from "@/app/components/home/HeroBenefits"
-import HeroHeader from "@/app/components/home/HeroHeader"
-import HeroSearchDesktop from "@/app/components/home/HeroSearchDesktop"
-import HeroSearchMobile from "@/app/components/home/HeroSearchMobile"
-import HeroTabs from "@/app/components/home/HeroTabs"
-import { getHeroSearchConfig, heroSearchConfigs } from "@/app/components/home/heroSearchContent"
-import type { HeroSearchFieldData } from "@/app/components/home/heroSearchContent"
-import type { HeroTabKey } from "@/app/components/home/homeContent"
+import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
+import {
+  getHeroSearchConfig,
+  heroSearchConfigs,
+  HeroBenefits,
+  HeroHeader,
+  HeroSearchDesktop,
+  HeroSearchMobile,
+  HeroTabs,
+} from "@/app/components/home/web/hero"
+import type { HeroSearchFieldData } from "@/app/components/home/web/hero"
 
 export default function WebHomeHeroSection() {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")

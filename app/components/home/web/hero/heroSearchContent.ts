@@ -1,4 +1,4 @@
-import type { HeroTabKey } from "@/app/components/home/homeContent"
+import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 
 export type HeroSearchFieldData = {
   label: string

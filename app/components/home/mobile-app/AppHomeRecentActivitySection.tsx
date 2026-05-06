@@ -1,6 +1,6 @@
 import Image from "next/image"
 
-import { appHomeConfig, ArrowRightIcon } from "@/app/components/home/homeContent"
+import { appHomeConfig, ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeRecentActivitySection() {
   return (

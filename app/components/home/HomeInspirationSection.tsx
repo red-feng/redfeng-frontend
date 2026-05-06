@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRightIcon, ArticleIcon, inspirationArticles } from "@/app/components/home/homeContent"
+import { ArrowRightIcon, ArticleIcon, inspirationArticles } from "@/app/components/home/shared/homeContent"
 
 export default function HomeInspirationSection() {
   return (

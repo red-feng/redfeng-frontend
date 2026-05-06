@@ -1,6 +1,6 @@
 import Link from "next/link"
-import HeroSearchField from "@/app/components/home/HeroSearchField"
-import type { HeroSearchConfig } from "@/app/components/home/heroSearchContent"
+import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
+import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearchContent"
 
 type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
   inputType: "text" | "date" | "select" | "autocomplete"

@@ -1,4 +1,4 @@
-import { appHomeConfig, serviceCards } from "@/app/components/home/homeContent"
+import { appHomeConfig, serviceCards } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeServiceHub() {
   return (

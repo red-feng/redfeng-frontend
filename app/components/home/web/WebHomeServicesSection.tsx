@@ -1,4 +1,4 @@
-import { serviceCards } from "@/app/components/home/homeContent"
+import { serviceCards } from "@/app/components/home/shared/homeContent"
 
 export default function WebHomeServicesSection() {
   return (

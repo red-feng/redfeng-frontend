@@ -1,5 +1,5 @@
-import AppHomeTopSection from "@/app/components/home/mobile-app/AppHomeTopSection"
-import WebHomeHeroSection from "@/app/components/home/web/WebHomeHeroSection"
+import { AppHomeTopSection } from "@/app/components/home/mobile-app"
+import { WebHomeHeroSection } from "@/app/components/home/web"
 
 export default function HomeHeroSection() {
   return (

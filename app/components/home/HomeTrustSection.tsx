@@ -1,5 +1,5 @@
 import Image from "next/image"
-import { CardIconBadge, partnerLogos, payments, ShieldCheckIcon, StarIcon } from "@/app/components/home/homeContent"
+import { CardIconBadge, partnerLogos, payments, ShieldCheckIcon, StarIcon } from "@/app/components/home/shared/homeContent"
 
 export default function HomeTrustSection() {
   return (

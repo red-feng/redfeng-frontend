@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { ChevronDownIcon, SwapIcon } from "@/app/components/home/homeContent"
+import { ChevronDownIcon, SwapIcon } from "@/app/components/home/shared/homeContent"
 
 type HeroSearchFieldOption = {
   label: string

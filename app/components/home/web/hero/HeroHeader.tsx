@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/homeContent"
+import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/shared/homeContent"
 
 export default function HeroHeader() {
   return (

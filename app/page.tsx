@@ -1,15 +1,13 @@
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import HomeDestinationsSection from "@/app/components/home/HomeDestinationsSection"
 import HomeFooter from "@/app/components/home/HomeFooter"
-import HomeHeroSection from "@/app/components/home/HomeHeroSection"
 import HomeInspirationSection from "@/app/components/home/HomeInspirationSection"
 import HomeNewsletterSection from "@/app/components/home/HomeNewsletterSection"
-import AppHomeFeedSection from "@/app/components/home/mobile-app/AppHomeFeedSection"
+import HomeHeroSection from "@/app/components/home/HomeHeroSection"
+import { AppHomeFeedSection } from "@/app/components/home/mobile-app"
 import HomeTrustSection from "@/app/components/home/HomeTrustSection"
 import HomeWhyChooseSection from "@/app/components/home/HomeWhyChooseSection"
-import WebHomePopularSection from "@/app/components/home/web/WebHomePopularSection"
-import WebHomePromoSection from "@/app/components/home/web/WebHomePromoSection"
-import WebHomeServicesSection from "@/app/components/home/web/WebHomeServicesSection"
+import { WebHomePopularSection, WebHomePromoSection, WebHomeServicesSection } from "@/app/components/home/web"
 import { getCurrentLocale } from "@/lib/locale"
 
 export default async function HomePage() {

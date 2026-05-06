@@ -1,4 +1,4 @@
-import { whyChoose } from "@/app/components/home/homeContent"
+import { whyChoose } from "@/app/components/home/shared/homeContent"
 
 export default function HomeWhyChooseSection() {
   return (

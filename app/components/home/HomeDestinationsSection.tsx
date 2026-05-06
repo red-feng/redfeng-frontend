@@ -1,5 +1,5 @@
-import HomeSectionHeader from "@/app/components/home/HomeSectionHeader"
-import { destinations, HeartIcon } from "@/app/components/home/homeContent"
+import HomeSectionHeader from "@/app/components/home/shared/HomeSectionHeader"
+import { destinations, HeartIcon } from "@/app/components/home/shared/homeContent"
 
 export default function HomeDestinationsSection() {
   return (

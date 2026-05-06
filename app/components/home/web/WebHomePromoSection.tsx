@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 
-import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/homeContent"
+import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/shared/homeContent"
 
 export default function WebHomePromoSection() {
   const trackRef = useRef<HTMLDivElement>(null)

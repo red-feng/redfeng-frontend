@@ -1,4 +1,4 @@
-import { appHomeConfig, ArrowRightIcon, HeartIcon } from "@/app/components/home/homeContent"
+import { appHomeConfig, ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomePromoSection() {
   return (

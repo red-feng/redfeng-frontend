@@ -1,5 +1,5 @@
-import { CardIcon, heroBenefitsByTab } from "@/app/components/home/homeContent"
-import type { HeroTabKey } from "@/app/components/home/homeContent"
+import { CardIcon, heroBenefitsByTab } from "@/app/components/home/shared/homeContent"
+import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 
 type HeroBenefitsProps = {
   activeTab: HeroTabKey

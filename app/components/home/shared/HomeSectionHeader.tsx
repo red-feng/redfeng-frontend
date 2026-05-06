@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowRightIcon, bookingTabs } from "@/app/components/home/homeContent"
+import { ArrowRightIcon, bookingTabs } from "@/app/components/home/shared/homeContent"
 
 type HomeSectionHeaderProps = {
   title: string

@@ -1,6 +1,6 @@
 import Link from "next/link"
 
-import { appHomeConfig, MenuIcon } from "@/app/components/home/homeContent"
+import { appHomeConfig, MenuIcon } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
