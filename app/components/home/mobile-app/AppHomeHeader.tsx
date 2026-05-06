@@ -3,13 +3,13 @@ import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 export default function AppHomeHeader() {
   return (
     <div className="px-3.5 pt-[calc(env(safe-area-inset-top)+0.8rem)]">
-      <div className="relative z-20 flex items-center gap-3">
+      <div className="relative z-10 flex items-center gap-3">
         <button
           type="button"
-          className="flex h-14 flex-1 items-center gap-3 rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] px-5 text-left shadow-[0_20px_34px_-24px_rgba(15,23,42,0.26)] ring-1 ring-white/80"
+          className="flex h-14 flex-1 items-center gap-3 rounded-full bg-transparent px-5 text-left ring-1 ring-white/55 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
         >
-          <SearchIcon className="h-6 w-6 shrink-0 text-slate-300" />
-          <span className="truncate text-[15px] font-medium text-slate-500">Cari hotel, tiket, atau destinasi</span>
+          <SearchIcon className="h-6 w-6 shrink-0 text-white/80" />
+          <span className="truncate text-[15px] font-medium text-white/80">Cari hotel, tiket, atau destinasi</span>
         </button>
         <button
           type="button"
@@ -28,7 +28,7 @@ export default function AppHomeHeader() {
         </button>
       </div>
 
-      <div className="relative -mt-5 overflow-hidden rounded-b-[42px] bg-[linear-gradient(180deg,#30b2f8_0%,#1a9ceb_50%,#0f88dd_100%)] px-0 pb-16 pt-16 shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
+      <div className="relative -mt-6 overflow-hidden rounded-b-[42px] bg-[linear-gradient(180deg,#30b2f8_0%,#1a9ceb_50%,#0f88dd_100%)] px-0 pb-16 pt-14 shadow-[0_24px_42px_-30px_rgba(13,136,221,0.52)]">
         <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.2),transparent_42%)]" />
         <div className="absolute -left-12 top-24 h-40 w-40 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute right-[-2.5rem] top-32 h-36 w-36 rounded-full bg-[#5fd2ff]/18 blur-3xl" />
