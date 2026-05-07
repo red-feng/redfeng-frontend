@@ -35,7 +35,7 @@ export default function AppHomeFooterSection() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#ef5b2a]">Mengapa RedFeng</p>
-              <h2 className="mt-1 text-[20px] font-bold tracking-[-0.03em] text-slate-950">Nyaman dipakai, aman dipesan</h2>
+              <h2 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Nyaman dipakai, aman dipesan</h2>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export default function AppHomeFooterSection() {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Butuh bantuan?</p>
-              <h3 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Tim RedFeng siap membantu 24/7</h3>
+              <h3 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Tim RedFeng siap membantu 24/7</h3>
               <p className="mt-2 text-[12px] leading-5 text-slate-500">Buka pusat bantuan, cek metode pembayaran, atau hubungi kami kapan saja.</p>
             </div>
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(180deg,#eef8ff_0%,#f9fcff_100%)] text-sky-500 ring-1 ring-[#d8ecff]">

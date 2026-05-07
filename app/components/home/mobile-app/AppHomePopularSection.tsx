@@ -8,7 +8,7 @@ export default function AppHomePopularSection() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Paling laris</p>
-          <h2 className="mt-1 text-[1.2rem] font-bold tracking-[-0.035em] text-slate-950">Paling Banyak Dipesan</h2>
+          <h2 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Paling Banyak Dipesan</h2>
         </div>
         <Link
           href="/packages"

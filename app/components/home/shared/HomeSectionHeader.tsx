@@ -11,7 +11,7 @@ export default function HomeSectionHeader({ title, showTabs = false }: HomeSecti
     <section className="home-section-header mx-auto max-w-[1240px] px-4 pb-5 pt-7 sm:px-6 lg:px-8">
       <div className={`home-section-header-shell flex flex-col ${showTabs ? "gap-3" : "gap-0"}`}>
         <div className="home-section-header-row flex items-center justify-between gap-4">
-          <h2 className="home-section-header-title text-[18px] font-bold tracking-[-0.03em] text-slate-900 sm:text-[20px] lg:text-[26px]">{title}</h2>
+          <h2 className="home-section-header-title text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">{title}</h2>
           <Link href="/packages" className="home-section-header-mobile-link inline-flex items-center gap-2 text-[13px] font-semibold text-slate-900 lg:hidden">
             Lihat semua
             <ArrowRightIcon className="h-4 w-4" />

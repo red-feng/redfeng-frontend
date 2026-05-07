@@ -11,7 +11,7 @@ export default function HomeNewsletterSection() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,251,248,0.62)_0%,rgba(255,248,244,0.42)_38%,rgba(255,244,239,0.22)_62%,rgba(255,246,241,0.38)_100%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
           <div className="relative z-10">
-            <h2 className="max-w-[260px] text-[20px] font-bold leading-[1.25] tracking-[-0.03em] text-slate-900 lg:max-w-[360px] lg:text-[26px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
+            <h2 className="max-w-[260px] text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:max-w-[360px] lg:text-[15px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
             <p className="mt-3 max-w-[260px] text-[13px] leading-6 text-slate-600 lg:max-w-sm lg:text-[14px]">
               Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.
             </p>

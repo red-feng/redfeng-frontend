@@ -6,7 +6,7 @@ export default function HomeInspirationSection() {
     <section className="home-inspiration-section mx-auto max-w-[1240px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
       <div className="home-inspiration-intro mb-5 flex items-center gap-3">
         <div className="home-inspiration-copy">
-          <h2 className="home-inspiration-title text-[18px] font-bold tracking-[-0.03em] text-slate-900 sm:text-[20px] lg:text-[26px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
+          <h2 className="home-inspiration-title text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
         </div>
       </div>
 

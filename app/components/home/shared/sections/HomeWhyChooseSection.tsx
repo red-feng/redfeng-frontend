@@ -3,7 +3,7 @@ import { whyChoose } from "@/app/components/home/shared/homeContent"
 export default function HomeWhyChooseSection() {
   return (
     <section className="home-why-choose-section mx-auto max-w-[1240px] px-4 pb-8 sm:px-6 lg:px-8 lg:pb-10">
-      <h2 className="text-[22px] font-bold tracking-[-0.03em] text-slate-900 lg:text-[26px]">Mengapa memilih RedFeng?</h2>
+      <h2 className="text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">Mengapa memilih RedFeng?</h2>
       <div className="mt-7 grid grid-cols-2 gap-x-5 gap-y-7 xl:grid-cols-4">
         {whyChoose.map((item) => {
           const Icon = item.icon
