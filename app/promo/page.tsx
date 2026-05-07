@@ -3,7 +3,7 @@ import Link from "next/link"
 
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
-import { promoCards } from "@/app/components/home/shared/homeContent"
+import { promoCatalog } from "@/app/components/promo/promoCatalog"
 import { getCurrentLocale } from "@/lib/locale"
 
 export const metadata: Metadata = {
@@ -12,11 +12,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/promo",
   },
-}
-
-function getPromoHref(title: string) {
-  if (title.toLowerCase().includes("paket")) return "/packages"
-  return "/packages"
 }
 
 export default async function PromoPage() {
@@ -39,7 +34,7 @@ export default async function PromoPage() {
           </section>
 
           <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {promoCards.map((card) => (
+            {promoCatalog.map((card) => (
               <article
                 key={card.title}
                 className="group relative flex min-h-[320px] flex-col overflow-hidden rounded-[28px] px-5 py-5 text-white shadow-[0_24px_52px_-30px_rgba(15,23,42,0.34)]"
@@ -69,15 +64,23 @@ export default async function PromoPage() {
                   <div className="mt-auto">
                     <p className="text-[12px] font-medium leading-none text-white/88">{card.eyebrow}</p>
                     <p className="mt-2 text-[24px] font-bold leading-none tracking-[-0.04em]">{card.price}</p>
-                    <Link
-                      href={getPromoHref(card.title)}
-                      className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
-                    >
-                      {card.cta}
-                      <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-                        <path d="M5 12h14M13 6l6 6-6 6" />
-                      </svg>
-                    </Link>
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      <Link
+                        href={card.detailHref}
+                        className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
+                      >
+                        Lihat detail
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                          <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                      </Link>
+                      <Link
+                        href={card.targetHref}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-3 text-[13px] font-semibold text-white backdrop-blur-sm"
+                      >
+                        {card.cta}
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </article>

@@ -1,8 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useRef } from "react"
 
-import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
+import { promoCatalog } from "@/app/components/promo/promoCatalog"
 
 export default function WebHomePromoSection() {
   const trackRef = useRef<HTMLDivElement>(null)
@@ -43,7 +45,7 @@ export default function WebHomePromoSection() {
           ref={trackRef}
           className="home-promo-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-[18px]"
         >
-          {promoCards.map((card, index) => (
+          {promoCatalog.map((card, index) => (
             <article
               key={card.title}
               data-promo-card
@@ -72,9 +74,12 @@ export default function WebHomePromoSection() {
                   <p className="text-[13px] font-medium leading-none text-white/88">{card.eyebrow}</p>
                   <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{card.price}</p>
                 </div>
-                <button className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]">
+                <Link
+                  href={card.detailHref}
+                  className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]"
+                >
                   {card.cta}
-                </button>
+                </Link>
               </div>
             </article>
           ))}

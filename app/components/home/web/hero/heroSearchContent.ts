@@ -1,5 +1,15 @@
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 
+const serviceHref = {
+  flight: "/pesawat",
+  hotel: "/hotel",
+  train: "/kereta",
+  bus: "/bus",
+  ship: "/kapal",
+  cruise: "/kapal-pesiar",
+  activity: "/aktivitas",
+} as const
+
 export type HeroSearchFieldData = {
   label: string
   value: string
@@ -48,7 +58,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       one_way: {
-        ctaHref: "https://redfeng.co/pesawat/",
+        ctaHref: serviceHref.flight,
         ctaLabel: "Cari Tiket",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.3fr_44px_1.3fr_1fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -67,7 +77,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       round_trip: {
-        ctaHref: "https://redfeng.co/pesawat/",
+        ctaHref: serviceHref.flight,
         ctaLabel: "Cari Tiket",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.22fr_44px_1.22fr_0.86fr_0.86fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -88,7 +98,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       multi_city: {
-        ctaHref: "https://redfeng.co/pesawat/",
+        ctaHref: serviceHref.flight,
         ctaLabel: "Cari Rute",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.08fr_1.08fr_1.08fr_0.9fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -116,7 +126,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       hotel: {
-        ctaHref: "https://redfeng.co/hotel/",
+        ctaHref: serviceHref.hotel,
         ctaLabel: "Cari Hotel",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_0.92fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -134,7 +144,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       villa: {
-        ctaHref: "https://redfeng.co/hotel/",
+        ctaHref: serviceHref.hotel,
         ctaLabel: "Cari Villa",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.45fr_0.9fr_0.9fr_1.08fr_auto] lg:items-center",
         desktopFields: [
@@ -152,7 +162,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       resort: {
-        ctaHref: "https://redfeng.co/hotel/",
+        ctaHref: serviceHref.hotel,
         ctaLabel: "Cari Resort",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.5fr_0.95fr_0.95fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -180,7 +190,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       one_way: {
-        ctaHref: "https://redfeng.co/kereta_api/",
+        ctaHref: serviceHref.train,
         ctaLabel: "Cari Kereta",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.28fr_44px_1.28fr_1fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -199,7 +209,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       round_trip: {
-        ctaHref: "https://redfeng.co/kereta_api/",
+        ctaHref: serviceHref.train,
         ctaLabel: "Cari Kereta",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.9fr_0.9fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -220,7 +230,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       fast_train: {
-        ctaHref: "https://redfeng.co/kereta_api/",
+        ctaHref: serviceHref.train,
         ctaLabel: "Cari Whoosh",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.95fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -249,7 +259,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       one_way: {
-        ctaHref: "https://redfeng.co/bus-travel/",
+        ctaHref: serviceHref.bus,
         ctaLabel: "Cari Bus",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.22fr_1.22fr_0.92fr_0.9fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -269,7 +279,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       round_trip: {
-        ctaHref: "https://redfeng.co/bus-travel/",
+        ctaHref: serviceHref.bus,
         ctaLabel: "Cari Bus",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.14fr_1.14fr_0.88fr_0.88fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -289,7 +299,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       sleeper: {
-        ctaHref: "https://redfeng.co/bus-travel/",
+        ctaHref: serviceHref.bus,
         ctaLabel: "Cari Sleeper",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.2fr_1.2fr_0.9fr_0.95fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -319,7 +329,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       one_way: {
-        ctaHref: "https://redfeng.co/kapal_laut/",
+        ctaHref: serviceHref.ship,
         ctaLabel: "Cari Kapal",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.28fr_44px_1.28fr_1fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -338,7 +348,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       round_trip: {
-        ctaHref: "https://redfeng.co/kapal_laut/",
+        ctaHref: serviceHref.ship,
         ctaLabel: "Cari Kapal",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.9fr_0.9fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -359,7 +369,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       fast_ferry: {
-        ctaHref: "https://redfeng.co/kapal_laut/",
+        ctaHref: serviceHref.ship,
         ctaLabel: "Cari Ferry",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.2fr_44px_1.2fr_0.9fr_1fr_auto] lg:items-center",
         showDesktopSwap: true,
@@ -388,7 +398,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       regular_cruise: {
-        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaHref: serviceHref.cruise,
         ctaLabel: "Cari Cruise",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.4fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -406,7 +416,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       luxury_cruise: {
-        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaHref: serviceHref.cruise,
         ctaLabel: "Cari Luxury Cruise",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -424,7 +434,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       family_cruise: {
-        ctaHref: "https://redfeng.co/kapal_pesiar/",
+        ctaHref: serviceHref.cruise,
         ctaLabel: "Cari Family Cruise",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -452,7 +462,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       attraction: {
-        ctaHref: "https://redfeng.co/aktivitas/",
+        ctaHref: serviceHref.activity,
         ctaLabel: "Cari Aktivitas",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -470,7 +480,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       tour: {
-        ctaHref: "https://redfeng.co/aktivitas/",
+        ctaHref: serviceHref.activity,
         ctaLabel: "Cari Tur",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.52fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [
@@ -488,7 +498,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       event: {
-        ctaHref: "https://redfeng.co/aktivitas/",
+        ctaHref: serviceHref.activity,
         ctaLabel: "Cari Event",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_1fr_0.92fr_1fr_auto] lg:items-center",
         desktopFields: [

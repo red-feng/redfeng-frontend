@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/shared/homeContent"
+import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 
 export default function HeroHeader() {
   return (
@@ -20,13 +21,13 @@ export default function HeroHeader() {
 
       <div className="hidden items-center gap-5 rounded-[24px] border border-white/45 bg-white/34 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.28)] backdrop-blur-[10px] lg:flex">
         <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-medium text-slate-800">
-          <a href="https://redfeng.co/pesawat/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</a>
-          <a href="https://redfeng.co/hotel/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</a>
-          <a href="https://redfeng.co/kereta_api/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</a>
-          <a href="https://redfeng.co/bus-travel/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</a>
-          <a href="https://redfeng.co/kapal_laut/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</a>
-          <a href="https://redfeng.co/kapal_pesiar/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal Pesiar</a>
-          <a href="https://redfeng.co/aktivitas/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</a>
+          <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</Link>
+          <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</Link>
+          <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</Link>
+          <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</Link>
+          <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</Link>
+          <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal Pesiar</Link>
+          <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</Link>
           <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
           <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</Link>
         </nav>

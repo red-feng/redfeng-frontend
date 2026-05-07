@@ -1,6 +1,7 @@
 import Link from "next/link"
 
-import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
+import { promoCatalog } from "@/app/components/promo/promoCatalog"
 
 export default function AppHomePromoSection() {
   return (
@@ -16,7 +17,7 @@ export default function AppHomePromoSection() {
       </div>
 
       <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {promoCards.map((card, index) => (
+        {promoCatalog.map((card, index) => (
           <article
             key={card.title}
             className="relative flex min-h-[232px] w-[286px] min-w-[286px] snap-start flex-col overflow-hidden rounded-[28px] px-5 py-5 text-white shadow-[0_22px_42px_-28px_rgba(15,23,42,0.26)]"
@@ -57,7 +58,7 @@ export default function AppHomePromoSection() {
                 <p className="text-[12px] font-medium leading-none text-white/88">{card.eyebrow}</p>
                 <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.04em]">{card.price}</p>
                 <Link
-                  href="/promo"
+                  href={card.detailHref}
                   className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
                 >
                   {card.cta}
