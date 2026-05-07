@@ -72,7 +72,7 @@ export default async function PackagesPage({
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.94)_0%,rgba(255,248,241,0.84)_34%,rgba(255,244,235,0.46)_62%,rgba(255,243,236,0.18)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/28 to-transparent" />
 
-            <div className="relative flex h-full flex-col justify-between">
+            <div className="relative flex h-full flex-col">
               <div className="max-w-[680px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ef4423]">{pageCopy.eyebrow}</p>
                 <h1 className="mt-4 text-[34px] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-[42px] lg:text-[58px]">
@@ -82,19 +82,19 @@ export default async function PackagesPage({
                   {pageCopy.body}
                 </p>
               </div>
-
-              <div className="mt-8 lg:mt-10">
-                <div id="package-search" className="max-w-[1020px]">
-                  <SearchBar
-                    key={`search:${locale}:${searchParamsKey}`}
-                    locale={locale}
-                    countries={searchBarCountries}
-                    variant="catalog"
-                  />
-                </div>
-              </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="-mt-8 px-4 pb-1 sm:px-6 md:px-8 lg:-mt-12">
+        <div id="package-search" className="mx-auto max-w-[1360px]">
+          <SearchBar
+            key={`search:${locale}:${searchParamsKey}`}
+            locale={locale}
+            countries={searchBarCountries}
+            variant="catalog"
+          />
         </div>
       </section>
 
