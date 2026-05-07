@@ -2,15 +2,15 @@ import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
-    <div className="relative overflow-hidden rounded-b-[48px] bg-[linear-gradient(180deg,#fff8f4_0%,#fffdfb_42%,#f6fbff_100%)] px-3.5 pb-[5.75rem] pt-[calc(env(safe-area-inset-top)+1.05rem)] shadow-[0_24px_40px_-30px_rgba(15,23,42,0.16)] ring-1 ring-[#eef2f7]">
-      <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_right,rgba(94,185,255,0.18),transparent_44%)]" />
-      <div className="absolute -left-14 top-20 h-44 w-44 rounded-full bg-[#ffe6d8]/70 blur-3xl" />
-      <div className="absolute right-[-2.5rem] top-24 h-40 w-40 rounded-full bg-[#dff2ff]/85 blur-3xl" />
+    <div className="relative overflow-hidden rounded-b-[48px] bg-[url('/home-assets/hero-header-background.png')] bg-cover bg-center px-3.5 pb-[5.75rem] pt-[calc(env(safe-area-inset-top)+1.05rem)] shadow-[0_24px_40px_-30px_rgba(15,23,42,0.22)]">
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,248,244,0.18)_0%,rgba(255,253,251,0.12)_34%,rgba(246,251,255,0.18)_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_top_right,rgba(94,185,255,0.16),transparent_44%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.18)_100%)]" />
 
       <div className="relative z-10 flex items-center gap-2.5">
         <button
           type="button"
-          className="flex h-[3.6rem] min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-full bg-[linear-gradient(180deg,#ffffff_0%,#fffaf7_100%)] px-5 text-left text-[#6a879d] ring-1 ring-[#dbe9f6] shadow-[0_14px_24px_-20px_rgba(15,23,42,0.12)]"
+          className="flex h-[3.6rem] min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-full bg-white/78 px-5 text-left text-[#6a879d] ring-1 ring-white/70 shadow-[0_14px_24px_-20px_rgba(15,23,42,0.16)] backdrop-blur-md"
         >
           <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden text-sky-500">
             <SearchIcon className="h-[22px] w-[22px]" />
@@ -19,7 +19,7 @@ export default function AppHomeHeader() {
         </button>
         <button
           type="button"
-          className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#d8ecff] bg-[linear-gradient(180deg,#eef8ff_0%,#f9fcff_100%)] text-sky-500 shadow-[0_14px_24px_-20px_rgba(16,152,236,0.24)]"
+          className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/72 text-sky-500 shadow-[0_14px_24px_-20px_rgba(15,23,42,0.16)] backdrop-blur-md"
           aria-label="Promo"
         >
           <PercentCircleIcon className="h-8 w-8" />
@@ -27,7 +27,7 @@ export default function AppHomeHeader() {
         </button>
         <button
           type="button"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#d8ecff] bg-[linear-gradient(180deg,#eef8ff_0%,#f9fcff_100%)] text-sky-500 shadow-[0_14px_24px_-20px_rgba(16,152,236,0.24)]"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/70 bg-white/72 text-sky-500 shadow-[0_14px_24px_-20px_rgba(15,23,42,0.16)] backdrop-blur-md"
           aria-label="Chat"
         >
           <ChatBubbleIcon className="h-7 w-7" />
@@ -43,7 +43,7 @@ export default function AppHomeHeader() {
               className={`shrink-0 rounded-full px-6 py-[0.7rem] text-[12px] font-semibold shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)] ${
                 index === 0
                   ? "bg-[linear-gradient(180deg,#ff6a45_0%,#ef5b2a_100%)] text-white shadow-[0_16px_26px_-20px_rgba(239,91,42,0.48)]"
-                  : "border border-[#d8ecff] bg-[linear-gradient(180deg,#eef8ff_0%,#f9fcff_100%)] text-[#3b82f6] shadow-[0_12px_24px_-22px_rgba(16,152,236,0.24)]"
+                  : "border border-white/70 bg-white/72 text-[#2f80ed] shadow-[0_12px_24px_-22px_rgba(15,23,42,0.14)] backdrop-blur-md"
               }`}
             >
               {chip}
