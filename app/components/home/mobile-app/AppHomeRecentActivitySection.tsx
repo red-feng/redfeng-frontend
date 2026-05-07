@@ -8,8 +8,11 @@ export default function AppHomeRecentActivitySection() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Lanjutkan</p>
-          <h2 className="mt-1 text-[1.2rem] font-bold tracking-[-0.035em] text-slate-950">Aktivitas terakhirmu</h2>
+          <h2 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Aktivitas terakhirmu</h2>
         </div>
+        <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
+          <ArrowRightIcon className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="mt-4 flex gap-3">
@@ -17,8 +20,10 @@ export default function AppHomeRecentActivitySection() {
           <button
             key={label}
             type="button"
-            className={`rounded-full px-5 py-3 text-[13px] font-bold ${
-              index === 0 ? "bg-[#169ef1] text-white shadow-[0_16px_26px_-18px_rgba(22,158,241,0.45)]" : "bg-[#eef7ff] text-[#169ef1]"
+            className={`rounded-full border px-5 py-3 text-[13px] font-semibold transition ${
+              index === 0
+                ? "border-[#ff5b4d] bg-white text-[#ef3b2d] shadow-[0_12px_22px_-18px_rgba(239,91,42,0.32)]"
+                : "border-[#dfe8f3] bg-[#f8fbff] text-[#607187]"
             }`}
           >
             {label}
@@ -44,7 +49,7 @@ export default function AppHomeRecentActivitySection() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#169ef1] px-4 py-3 text-[13px] font-bold text-white shadow-[0_16px_26px_-18px_rgba(22,158,241,0.42)]"
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#cfe3ff] bg-[#f5f9ff] px-4 py-3 text-[13px] font-semibold text-[#2f80ed] shadow-[0_14px_24px_-22px_rgba(47,128,237,0.24)]"
             >
               Selengkapnya
               <ArrowRightIcon className="h-4 w-4" />
