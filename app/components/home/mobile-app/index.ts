@@ -1,6 +1,7 @@
 export { default as AppHomeFeedSection } from "./AppHomeFeedSection"
 export { default as AppHomeFooterSection } from "./AppHomeFooterSection"
 export { default as AppHomeHeader } from "./AppHomeHeader"
+export { default as AppHomePopularSection } from "./AppHomePopularSection"
 export { default as AppHomePromoSection } from "./AppHomePromoSection"
 export { default as AppHomeRecentActivitySection } from "./AppHomeRecentActivitySection"
 export { default as AppHomeServiceHub } from "./AppHomeServiceHub"
