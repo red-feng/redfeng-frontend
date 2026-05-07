@@ -23,6 +23,7 @@ export const promoCatalog = promoCards.map((card) => ({
   slug: slugifyPromoTitle(card.title),
   detailHref: `/promo/${slugifyPromoTitle(card.title)}`,
   targetHref: resolvePromoTarget(card.title),
+  favoriteKey: `promo:${slugifyPromoTitle(card.title)}`,
 }))
 
 export function getPromoBySlug(slug: string) {

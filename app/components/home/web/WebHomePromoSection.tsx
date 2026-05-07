@@ -3,7 +3,8 @@
 import Link from "next/link"
 import { useRef } from "react"
 
-import { ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
+import FavoriteButton from "@/app/components/favorites/FavoriteButton"
+import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
 
 export default function WebHomePromoSection() {
@@ -57,9 +58,17 @@ export default function WebHomePromoSection() {
               <div className={`absolute inset-0 ${card.glowClass}`} />
               <div className="absolute inset-x-0 bottom-0 h-[58%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.14)_46%,rgba(15,23,42,0.28)_100%)]" />
               {index > 0 ? (
-                <Link href="/wishlist" className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
-                  <HeartIcon className="h-4 w-4" />
-                </Link>
+                <FavoriteButton
+                  item={{
+                    key: card.favoriteKey,
+                    title: card.title.replace(/\n/g, " "),
+                    subtitle: card.price,
+                    href: card.detailHref,
+                    meta: "Promo",
+                  }}
+                  className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16"
+                  iconClassName="h-4 w-4"
+                />
               ) : null}
               <div className={`relative z-10 flex h-full flex-col ${index === 0 ? "max-w-[220px] sm:max-w-[232px]" : "max-w-[232px] sm:max-w-[242px]"}`}>
                 {card.badge ? (

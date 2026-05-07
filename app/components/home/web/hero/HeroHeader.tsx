@@ -1,6 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
-import { BellIcon, ChevronDownIcon, MenuIcon } from "@/app/components/home/shared/homeContent"
+import { ChevronDownIcon, MenuIcon } from "@/app/components/home/shared/homeContent"
+import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
+import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 
 export default function HeroHeader() {
@@ -38,9 +40,12 @@ export default function HeroHeader() {
             IDR
             <ChevronDownIcon className="h-4 w-4" />
           </button>
-          <Link href="/notifications" className="text-slate-700">
-            <BellIcon className="h-5 w-5" />
-          </Link>
+          <NotificationBellLink
+            items={defaultNotificationItems}
+            className="text-slate-700"
+            iconClassName="h-5 w-5"
+            badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+          />
           <Link href="/login" className="whitespace-nowrap rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(239,90,67,0.6)]">
             Login / Daftar
           </Link>
@@ -48,9 +53,12 @@ export default function HeroHeader() {
       </div>
 
       <div className="home-hero-mobile-actions flex items-center gap-2 lg:hidden">
-        <Link href="/notifications" className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
-          <BellIcon className="h-5 w-5" />
-        </Link>
+        <NotificationBellLink
+          items={defaultNotificationItems}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm"
+          iconClassName="h-5 w-5"
+          badgeClassName="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+        />
         <button className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm">
           <MenuIcon className="h-5 w-5" />
         </button>

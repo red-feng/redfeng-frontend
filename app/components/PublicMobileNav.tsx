@@ -3,6 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
+import CustomerPreferencesSyncBootstrap from "@/app/components/customer-preferences/CustomerPreferencesSyncBootstrap"
+import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
+import { type NotificationEntry } from "@/app/components/notifications/notificationsStore"
 import { type Locale } from "@/lib/i18n"
 import { createClient } from "@/lib/supabase/client"
 import {
@@ -13,9 +16,10 @@ import {
 
 type PublicMobileNavProps = {
   locale: Locale
+  notificationDefaults?: NotificationEntry[]
 }
 
-export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
+export default function PublicMobileNav({ locale, notificationDefaults = defaultNotificationItems }: PublicMobileNavProps) {
   const pathname = usePathname()
   const [supabase] = useState(() => createClient("customer"))
   const [accountRole, setAccountRole] = useState<PublicAccountRole>("guest")
@@ -132,39 +136,42 @@ export default function PublicMobileNav({ locale }: PublicMobileNavProps) {
   ]
 
   return (
-    <nav className="public-mobile-nav fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
-      <div className="public-mobile-nav-shell mx-auto max-w-[23.5rem] rounded-[26px] border border-[#eef2f7] bg-white/96 px-2 py-1.5 shadow-[0_-20px_42px_-30px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-        <div className="public-mobile-nav-grid grid grid-cols-4 gap-1">
-        {items.map((item) => {
-          const isActive =
-            item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
+    <>
+      <CustomerPreferencesSyncBootstrap notificationDefaults={notificationDefaults} />
+      <nav className="public-mobile-nav fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
+        <div className="public-mobile-nav-shell mx-auto max-w-[23.5rem] rounded-[26px] border border-[#eef2f7] bg-white/96 px-2 py-1.5 shadow-[0_-20px_42px_-30px_rgba(15,23,42,0.2)] backdrop-blur-xl">
+          <div className="public-mobile-nav-grid grid grid-cols-4 gap-1">
+          {items.map((item) => {
+            const isActive =
+              item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[20px] px-2 py-1.5 text-[11px] font-semibold transition ${
-                isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-800"
-              }`}
-            >
-              <span
-                className={`public-mobile-nav-icon flex h-9 w-9 items-center justify-center rounded-full transition ${
-                  isActive
-                    ? item.href === "/"
-                      ? "bg-[linear-gradient(180deg,#fff1eb_0%,#fffaf7_100%)] text-[#ef5b2a] shadow-[0_14px_24px_-18px_rgba(239,91,42,0.28)] ring-1 ring-[#ffe3d8]"
-                      : `bg-gradient-to-br ${item.accent} text-white shadow-[0_14px_24px_-18px_rgba(100,116,139,0.18)]`
-                    : "bg-transparent text-slate-500"
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[20px] px-2 py-1.5 text-[11px] font-semibold transition ${
+                  isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-800"
                 }`}
               >
-                {item.icon}
-              </span>
-              <span className={`public-mobile-nav-label mt-1 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
-              {isActive ? <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-transparent" />}
-            </Link>
-          )
-        })}
+                <span
+                  className={`public-mobile-nav-icon flex h-9 w-9 items-center justify-center rounded-full transition ${
+                    isActive
+                      ? item.href === "/"
+                        ? "bg-[linear-gradient(180deg,#fff1eb_0%,#fffaf7_100%)] text-[#ef5b2a] shadow-[0_14px_24px_-18px_rgba(239,91,42,0.28)] ring-1 ring-[#ffe3d8]"
+                        : `bg-gradient-to-br ${item.accent} text-white shadow-[0_14px_24px_-18px_rgba(100,116,139,0.18)]`
+                      : "bg-transparent text-slate-500"
+                  }`}
+                >
+                  {item.icon}
+                </span>
+                <span className={`public-mobile-nav-label mt-1 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
+                {isActive ? <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-transparent" />}
+              </Link>
+            )
+          })}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   )
 }

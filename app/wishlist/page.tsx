@@ -1,7 +1,7 @@
-import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { destinationCatalog, popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
+import WishlistPageClient from "@/app/components/favorites/WishlistPageClient"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
 import { getCurrentLocale } from "@/lib/locale"
 
@@ -9,6 +9,29 @@ export const dynamic = "force-dynamic"
 
 export default async function WishlistPage() {
   const locale = await getCurrentLocale()
+  const suggestedItems = [
+    ...promoCatalog.slice(0, 3).map((item) => ({
+      key: item.favoriteKey,
+      title: item.title.replace(/\n/g, " "),
+      subtitle: item.price,
+      href: item.detailHref,
+      meta: "Promo",
+    })),
+    ...popularBookingCatalog.slice(0, 2).map((item) => ({
+      key: item.favoriteKey,
+      title: item.title,
+      subtitle: item.subtitle,
+      href: item.detailHref,
+      meta: item.category,
+    })),
+    ...destinationCatalog.slice(0, 2).map((item) => ({
+      key: item.favoriteKey,
+      title: item.name,
+      subtitle: item.country,
+      href: item.detailHref,
+      meta: item.teaser,
+    })),
+  ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
@@ -26,46 +49,7 @@ export default async function WishlistPage() {
             </p>
           </section>
 
-          <section className="grid gap-5 lg:grid-cols-3">
-            <article className="rounded-[28px] border border-[#f0ddc7] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Promo favorit</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Simpan promo yang ingin Anda pantau lebih dulu sebelum melanjutkan ke detail atau layanan terkait.</p>
-              <div className="mt-5 space-y-3">
-                {promoCatalog.slice(0, 3).map((item) => (
-                  <Link key={item.slug} href={item.detailHref} className="block rounded-[20px] border border-[#eceff4] bg-[#fafcfe] px-4 py-4 transition hover:border-orange-200 hover:bg-orange-50/40">
-                    <p className="text-sm font-semibold text-slate-900">{item.title.replace(/\n/g, " ")}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.price}</p>
-                  </Link>
-                ))}
-              </div>
-            </article>
-
-            <article className="rounded-[28px] border border-[#f0ddc7] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Popular booking</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Bookmark pilihan yang paling relevan supaya Anda bisa membandingkan rute, hotel, atau paket lebih cepat.</p>
-              <div className="mt-5 space-y-3">
-                {popularBookingCatalog.slice(0, 3).map((item) => (
-                  <Link key={item.slug} href={item.detailHref} className="block rounded-[20px] border border-[#eceff4] bg-[#fafcfe] px-4 py-4 transition hover:border-orange-200 hover:bg-orange-50/40">
-                    <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.category} • {item.price}{item.suffix || ""}</p>
-                  </Link>
-                ))}
-              </div>
-            </article>
-
-            <article className="rounded-[28px] border border-[#f0ddc7] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Destinasi favorit</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">Simpan destinasi yang ingin Anda buka lagi nanti saat sudah siap mencari promo atau itinerary yang lebih spesifik.</p>
-              <div className="mt-5 space-y-3">
-                {destinationCatalog.slice(0, 3).map((item) => (
-                  <Link key={item.slug} href={item.detailHref} className="block rounded-[20px] border border-[#eceff4] bg-[#fafcfe] px-4 py-4 transition hover:border-orange-200 hover:bg-orange-50/40">
-                    <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                    <p className="mt-1 text-xs text-slate-500">{item.country} • {item.teaser}</p>
-                  </Link>
-                ))}
-              </div>
-            </article>
-          </section>
+          <WishlistPageClient suggestedItems={suggestedItems} />
 
           <section className="rounded-[28px] border border-[#f0ddc7] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-6">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Tahap berikutnya</p>

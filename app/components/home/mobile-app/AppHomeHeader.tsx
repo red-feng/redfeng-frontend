@@ -37,7 +37,7 @@ export default function AppHomeHeader() {
           <span className="absolute right-[4px] top-[4px] h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
         </Link>
         <Link
-          href="/contact"
+          href="/chat"
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white/74 text-sky-500 shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
           aria-label="Chat"
         >

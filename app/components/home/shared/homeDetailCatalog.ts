@@ -29,6 +29,7 @@ export const popularBookingCatalog = popularBookings.map((item) => ({
   ...item,
   slug: slugify(`${item.category}-${item.title}`),
   detailHref: `/popular-booking/${slugify(`${item.category}-${item.title}`)}`,
+  favoriteKey: `popular:${slugify(`${item.category}-${item.title}`)}`,
   serviceHref: resolveServiceHref(item.category),
   overview:
     item.category === "Pesawat"
@@ -96,6 +97,7 @@ export const destinationCatalog = destinations.map((destination) => ({
   ...destination,
   slug: slugify(`${destination.name}-${destination.country}`),
   detailHref: `/destinasi/${slugify(`${destination.name}-${destination.country}`)}`,
+  favoriteKey: `destination:${slugify(`${destination.name}-${destination.country}`)}`,
   serviceHref: "/search",
   overview:
     destination.country === "Indonesia"

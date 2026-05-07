@@ -1,6 +1,7 @@
 import Link from "next/link"
 
-import { ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
+import FavoriteButton from "@/app/components/favorites/FavoriteButton"
+import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
 
 export default function AppHomePromoSection() {
@@ -42,9 +43,17 @@ export default function AppHomePromoSection() {
                 )}
 
                 {index > 0 ? (
-                  <Link href="/wishlist" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
-                    <HeartIcon className="h-4 w-4" />
-                  </Link>
+                  <FavoriteButton
+                    item={{
+                      key: card.favoriteKey,
+                      title: card.title.replace(/\n/g, " "),
+                      subtitle: card.price,
+                      href: card.detailHref,
+                      meta: "Promo",
+                    }}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16"
+                    iconClassName="h-4 w-4"
+                  />
                 ) : null}
               </div>
 

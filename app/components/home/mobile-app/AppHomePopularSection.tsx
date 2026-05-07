@@ -1,6 +1,7 @@
 import Link from "next/link"
 
-import { ArrowRightIcon, bookingTabs, HeartIcon, StarIcon } from "@/app/components/home/shared/homeContent"
+import FavoriteButton from "@/app/components/favorites/FavoriteButton"
+import { ArrowRightIcon, bookingTabs, StarIcon } from "@/app/components/home/shared/homeContent"
 import { popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 
 export default function AppHomePopularSection() {
@@ -37,19 +38,29 @@ export default function AppHomePopularSection() {
 
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {popularBookingCatalog.map((item) => (
-          <Link
+          <article
             key={item.title}
-            href={item.detailHref}
             className="flex w-[15.25rem] min-w-[15.25rem] flex-col overflow-hidden rounded-[24px] border border-[#ebedf3] bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.2)]"
           >
             <div className="relative h-[11.25rem] overflow-hidden">
-              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
-              <Link href="/wishlist" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
-                <HeartIcon className="h-4 w-4" />
+              <Link href={item.detailHref} className="absolute inset-0">
+                <span className="sr-only">{item.title}</span>
               </Link>
+              <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
+              <FavoriteButton
+                item={{
+                  key: item.favoriteKey,
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  href: item.detailHref,
+                  meta: `${item.category} • ${item.price}${item.suffix || ""}`,
+                }}
+                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm"
+                iconClassName="h-4 w-4"
+              />
             </div>
 
-            <div className="flex flex-1 flex-col p-4">
+            <Link href={item.detailHref} className="flex flex-1 flex-col p-4">
               <span className={`inline-flex w-fit rounded-[8px] px-2.5 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>
 
               <div className="mt-3 flex flex-1 flex-col">
@@ -71,8 +82,8 @@ export default function AppHomePopularSection() {
                   </p>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          </article>
         ))}
       </div>
     </section>
