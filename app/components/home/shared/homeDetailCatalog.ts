@@ -1,5 +1,6 @@
 import {
   appHomeConfig,
+  destinations,
   inspirationArticles,
   popularBookings,
 } from "@/app/components/home/shared/homeContent"
@@ -89,4 +90,24 @@ export const recentActivityDetail = {
 
 export function getRecentActivityBySlug(slug: string) {
   return recentActivityDetail.slug === slug ? recentActivityDetail : null
+}
+
+export const destinationCatalog = destinations.map((destination) => ({
+  ...destination,
+  slug: slugify(`${destination.name}-${destination.country}`),
+  detailHref: `/destinasi/${slugify(`${destination.name}-${destination.country}`)}`,
+  serviceHref: "/search",
+  overview:
+    destination.country === "Indonesia"
+      ? `${destination.name} menjadi salah satu destinasi favorit untuk perjalanan domestik karena aksesnya mudah dan pilihan aktivitasnya beragam.`
+      : `${destination.name} termasuk destinasi favorit yang sering masuk wishlist traveler RedFeng karena daya tarik visual dan itinerary-nya kuat.`,
+  highlights: [
+    `Negara tujuan: ${destination.country}`,
+    `Teaser harga saat ini: ${destination.teaser}`,
+    `Cocok dipakai sebagai titik mulai pencarian berikutnya`,
+  ],
+}))
+
+export function getDestinationBySlug(slug: string) {
+  return destinationCatalog.find((item) => item.slug === slug) || null
 }
