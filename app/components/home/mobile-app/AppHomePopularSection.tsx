@@ -1,6 +1,7 @@
 import Link from "next/link"
 
-import { ArrowRightIcon, bookingTabs, HeartIcon, popularBookings, StarIcon } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon, bookingTabs, HeartIcon, StarIcon } from "@/app/components/home/shared/homeContent"
+import { popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 
 export default function AppHomePopularSection() {
   return (
@@ -35,19 +36,17 @@ export default function AppHomePopularSection() {
       </div>
 
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {popularBookings.map((item) => (
-          <article
+        {popularBookingCatalog.map((item) => (
+          <Link
             key={item.title}
+            href={item.detailHref}
             className="flex w-[15.25rem] min-w-[15.25rem] flex-col overflow-hidden rounded-[24px] border border-[#ebedf3] bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.2)]"
           >
             <div className="relative h-[11.25rem] overflow-hidden">
               <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
-              <button
-                type="button"
-                className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm"
-              >
+              <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
                 <HeartIcon className="h-4 w-4" />
-              </button>
+              </span>
             </div>
 
             <div className="flex flex-1 flex-col p-4">
@@ -73,7 +72,7 @@ export default function AppHomePopularSection() {
                 </div>
               </div>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
     </section>

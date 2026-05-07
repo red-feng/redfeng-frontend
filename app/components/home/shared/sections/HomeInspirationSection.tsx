@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { ArrowRightIcon, inspirationArticles } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
+import { inspirationArticleCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 
 export default function HomeInspirationSection() {
   return (
@@ -11,7 +12,7 @@ export default function HomeInspirationSection() {
       </div>
 
       <div className="home-inspiration-grid grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {inspirationArticles.map((article) => (
+        {inspirationArticleCatalog.map((article) => (
           <article
             key={article.title}
             className="home-inspiration-card group overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.28)] transition hover:-translate-y-1 hover:shadow-[0_28px_52px_-30px_rgba(15,23,42,0.32)]"
@@ -31,7 +32,7 @@ export default function HomeInspirationSection() {
               </h3>
               <div className="home-inspiration-card-footer flex items-center justify-between gap-3 pt-2 text-[12px] text-slate-500">
                 <span className="home-inspiration-readtime">{article.readTime}</span>
-                <Link href={article.href} className="home-inspiration-link inline-flex items-center gap-2 font-semibold text-slate-900">
+                <Link href={article.detailHref} className="home-inspiration-link inline-flex items-center gap-2 font-semibold text-slate-900">
                   Baca
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>

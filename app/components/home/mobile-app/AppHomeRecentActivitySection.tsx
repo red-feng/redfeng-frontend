@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { appHomeConfig, ArrowRightIcon } from "@/app/components/home/shared/homeContent"
+import { recentActivityDetail } from "@/app/components/home/shared/homeDetailCatalog"
 
 export default function AppHomeRecentActivitySection() {
   return (
@@ -11,7 +12,7 @@ export default function AppHomeRecentActivitySection() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Lanjutkan</p>
           <h2 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Aktivitas terakhirmu</h2>
         </div>
-        <Link href="/customer/bookings" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
+        <Link href={recentActivityDetail.detailHref} className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
           <ArrowRightIcon className="h-5 w-5" />
         </Link>
       </div>
@@ -35,21 +36,21 @@ export default function AppHomeRecentActivitySection() {
       <article className="mt-4 overflow-hidden rounded-[26px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.14)]">
         <div className="flex">
           <div className="relative w-[38%] overflow-hidden bg-[linear-gradient(135deg,#6257ff_0%,#15b8ff_100%)]">
-            <Image src={appHomeConfig.featuredActivity.image} alt={appHomeConfig.featuredActivity.title} fill className="object-cover" />
+            <Image src={recentActivityDetail.image} alt={recentActivityDetail.title} fill className="object-cover" />
             <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.38)_100%)]" />
             <div className="absolute left-3 top-3 rounded-full bg-white/18 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
-              {appHomeConfig.featuredActivity.category}
+              {recentActivityDetail.category}
             </div>
           </div>
           <div className="flex-1 px-4 py-4">
             <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-400">Baru dibuka</p>
-            <p className="mt-2 text-[15px] font-bold leading-5 text-slate-900">{appHomeConfig.featuredActivity.title}</p>
+            <p className="mt-2 text-[15px] font-bold leading-5 text-slate-900">{recentActivityDetail.title}</p>
             <p className="mt-2 text-[13px] leading-5 text-slate-500">
-              {appHomeConfig.featuredActivity.subtitle}
-              {appHomeConfig.featuredActivity.suffix ? ` ${appHomeConfig.featuredActivity.suffix}` : ""}
+              {recentActivityDetail.subtitle}
+              {recentActivityDetail.suffix ? ` ${recentActivityDetail.suffix}` : ""}
             </p>
             <Link
-              href="/customer/bookings"
+              href={recentActivityDetail.detailHref}
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#d8dee8] bg-[#f8fafc] px-4 py-3 text-[13px] font-semibold text-slate-900 shadow-[0_14px_24px_-22px_rgba(15,23,42,0.14)]"
             >
               Selengkapnya
