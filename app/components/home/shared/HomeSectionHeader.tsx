@@ -8,8 +8,8 @@ type HomeSectionHeaderProps = {
 
 export default function HomeSectionHeader({ title, showTabs = false }: HomeSectionHeaderProps) {
   return (
-    <section className={`home-section-header mx-auto max-w-[1240px] px-4 pb-5 ${showTabs ? "pt-3" : "pt-7"} sm:px-6 lg:px-8`}>
-      <div className="home-section-header-shell flex flex-col gap-3">
+    <section className="home-section-header mx-auto max-w-[1240px] px-4 pb-5 pt-7 sm:px-6 lg:px-8">
+      <div className={`home-section-header-shell flex flex-col ${showTabs ? "gap-3" : "gap-0"}`}>
         <div className="home-section-header-row flex items-center justify-between gap-4">
           <h2 className="home-section-header-title text-[18px] font-bold tracking-[-0.03em] text-slate-900 sm:text-[20px] lg:text-[26px]">{title}</h2>
           <Link href="/packages" className="home-section-header-mobile-link inline-flex items-center gap-2 text-[13px] font-semibold text-[#3b82f6] lg:hidden">
