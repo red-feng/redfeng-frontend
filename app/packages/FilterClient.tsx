@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
-import { dictionaries, type Locale } from "@/lib/i18n"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
+import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap } from "@/lib/package-pricing"
 
 type Facility = {
@@ -51,9 +51,7 @@ export default function FilterClient({
 
   const groupedEntries = useMemo(() => {
     const grouped = facilities.reduce<Record<string, Facility[]>>((acc, facility) => {
-      if (!acc[facility.category]) {
-        acc[facility.category] = []
-      }
+      if (!acc[facility.category]) acc[facility.category] = []
       acc[facility.category].push(facility)
       return acc
     }, {})
@@ -137,6 +135,19 @@ export default function FilterClient({
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    if (!isMobilePanelOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isMobilePanelOpen])
+
   const resetFilters = () => {
     setMinPrice(sliderMin)
     setMaxPrice(sliderMax)
@@ -151,50 +162,52 @@ export default function FilterClient({
   const hasActiveFilters =
     effectiveMinPrice > sliderMin || effectiveMaxPrice < sliderMax || selectedFacilities.length > 0
 
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    if (isMobilePanelOpen) {
-      const previousOverflow = document.body.style.overflow
-      document.body.style.overflow = "hidden"
-
-      return () => {
-        document.body.style.overflow = previousOverflow
-      }
-    }
-
-    return
-  }, [isMobilePanelOpen])
-
   const mobileFilterTitle =
-    locale === "en" ? "Filter packages" : locale === "zh" ? "筛选套餐" : "Filter paket"
+    locale === "en" ? "Filter packages" : locale === "zh" ? "ç­›é€‰å¥—é¤" : "Filter paket"
   const mobileFilterSubtitle =
     locale === "en"
       ? "Refine the packages that match your plan."
       : locale === "zh"
-        ? "调整符合你计划的套票。"
+        ? "è°ƒæ•´ç¬¦åˆä½ è®¡åˆ’çš„å¥—ç¥¨ã€‚"
         : "Atur paket yang paling cocok dengan rencanamu."
   const mobileOpenLabel =
-    locale === "en" ? "Open filters" : locale === "zh" ? "打开筛选" : "Buka filter"
+    locale === "en" ? "Open filters" : locale === "zh" ? "æ‰“å¼€ç­›é€‰" : "Buka filter"
   const mobileCloseLabel =
-    locale === "en" ? "Close" : locale === "zh" ? "关闭" : "Tutup"
+    locale === "en" ? "Close" : locale === "zh" ? "å…³é—­" : "Tutup"
+  const trustTitle =
+    locale === "en"
+      ? "Safe and trusted booking"
+      : locale === "zh"
+        ? "å®‰å…¨å¯é çš„é¢„è®¢"
+        : "Pemesanan aman dan terpercaya"
+  const trustBody =
+    locale === "en"
+      ? "Secure transactions, protected customer data, and support when you need it."
+      : locale === "zh"
+        ? "å®‰å…¨äº¤æ˜“ã€�å®¢æˆ·æ•°æ®å—ä¿æŠ¤ï¼Œå¹¶åœ¨éœ€è¦æ—¶æä¾›æ”¯æŒã€‚"
+        : "Transaksi lebih aman, data customer terlindungi, dan dukungan saat Anda membutuhkannya."
 
   const filterBody = (
-    <div className="space-y-4 lg:space-y-6">
-      <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)] p-4 shadow-[0_18px_40px_-30px_rgba(249,115,22,0.35)] sm:rounded-[24px]">
+    <div className="space-y-4 lg:space-y-5">
+      <div className="rounded-[24px] border border-[#f3dfd3] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.16)]">
         <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter Paket</p>
             <p className="mt-1 text-sm font-semibold text-slate-900">
-              {locale === "en" ? "Adjust your package preference" : locale === "zh" ? "调整你的套票偏好" : "Atur preferensi paketmu"}
+              {locale === "en"
+                ? "Adjust your package preference"
+                : locale === "zh"
+                  ? "è°ƒæ•´ä½ çš„å¥—ç¥¨åå¥½"
+                  : "Atur preferensi paketmu"}
             </p>
           </div>
-          {selectedFacilities.length > 0 && (
+          {selectedFacilities.length > 0 ? (
             <span className="rounded-full border border-orange-100 bg-white px-3 py-1 text-[11px] font-semibold text-orange-600 shadow-sm">
               {selectedFacilities.length}
             </span>
-          )}
+          ) : null}
         </div>
+
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[15px] font-semibold text-slate-950">{t.priceRange}</p>
@@ -204,16 +217,16 @@ export default function FilterClient({
             type="button"
             onClick={resetFilters}
             disabled={!hasActiveFilters}
-            className="text-sm font-semibold text-sky-600 transition hover:text-sky-700 disabled:cursor-not-allowed disabled:text-slate-300"
+            className="text-sm font-semibold text-orange-600 transition hover:text-orange-700 disabled:cursor-not-allowed disabled:text-slate-300"
           >
             {t.reset}
           </button>
         </div>
 
         <div className="relative mt-6 px-2">
-          <div className="h-1 rounded-full bg-slate-200" />
+          <div className="h-1 rounded-full bg-[#f3ddd0]" />
           <div
-            className="pointer-events-none absolute top-0 h-1 rounded-full bg-sky-500"
+            className="pointer-events-none absolute top-0 h-1 rounded-full bg-[#ff6131]"
             style={{
               left: `${minPercent}%`,
               width: `${Math.max(maxPercent - minPercent, 0)}%`,
@@ -264,28 +277,33 @@ export default function FilterClient({
           const selectedCount = items.filter((facility) => selectedFacilities.includes(facility.id)).length
 
           return (
-            <div key={category} className="overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_16px_36px_-28px_rgba(15,23,42,0.28)] sm:rounded-[22px]">
+            <div
+              key={category}
+              className="overflow-hidden rounded-[20px] border border-[#efe3d9] bg-white shadow-[0_16px_36px_-30px_rgba(15,23,42,0.18)] sm:rounded-[22px]"
+            >
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left sm:py-4"
               >
                 <div className="min-w-0">
-                  <span className="block text-sm font-semibold text-slate-900">{getFacilityCategoryLabel(category, locale)}</span>
-                  {selectedCount > 0 && (
+                  <span className="block text-sm font-semibold text-slate-900">
+                    {getFacilityCategoryLabel(category, locale)}
+                  </span>
+                  {selectedCount > 0 ? (
                     <span className="mt-1 block text-[11px] font-medium text-orange-500">
                       {locale === "en"
                         ? `${selectedCount} selected`
                         : locale === "zh"
-                          ? `已选 ${selectedCount}`
+                          ? `å·²é€‰ ${selectedCount}`
                           : `${selectedCount} dipilih`}
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                <span className={`text-sm text-slate-400 transition ${isOpen ? "rotate-180" : ""}`}>v</span>
+                <span className={`text-sm text-slate-400 transition ${isOpen ? "rotate-180" : ""}`}>⌄</span>
               </button>
 
-              {isOpen && (
+              {isOpen ? (
                 <div className="border-t border-slate-100 px-4 pb-4 pt-2">
                   <div className="space-y-2">
                     {items.map((facility) => (
@@ -300,7 +318,6 @@ export default function FilterClient({
                               : selectedFacilities.filter((id) => id !== facility.id)
 
                             setSelectedFacilities(nextSelectedFacilities)
-
                             emitChange({ nextSelectedFacilities })
                           }}
                           className="mt-1 rounded border-slate-300"
@@ -310,10 +327,25 @@ export default function FilterClient({
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
           )
         })}
+      </div>
+
+      <div className="rounded-[24px] border border-[#f3dfd3] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.16)]">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff1ea] text-orange-500">
+            <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+              <path d="M12 3.8 5.5 6.5v5c0 4.2 2.5 7.5 6.5 8.7 4-1.2 6.5-4.5 6.5-8.7v-5L12 3.8Z" />
+              <path d="m9.5 12 1.6 1.6 3.4-3.7" />
+            </svg>
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-slate-950">{trustTitle}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{trustBody}</p>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -331,11 +363,11 @@ export default function FilterClient({
             <p className="mt-1 text-sm font-semibold text-slate-900">{mobileFilterSubtitle}</p>
           </div>
           <div className="flex items-center gap-2">
-            {hasActiveFilters && (
+            {hasActiveFilters ? (
               <span className="rounded-full border border-orange-100 bg-white px-3 py-1 text-[11px] font-semibold text-orange-600 shadow-sm">
                 {selectedFacilities.length > 0 ? selectedFacilities.length : 1}
               </span>
-            )}
+            ) : null}
             <span className="rounded-full bg-orange-500 px-3.5 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-18px_rgba(249,115,22,0.85)]">
               {mobileOpenLabel}
             </span>
@@ -343,9 +375,9 @@ export default function FilterClient({
         </button>
       </div>
 
-      <div className="hidden lg:block lg:sticky lg:top-6">{filterBody}</div>
+      <div className="hidden lg:sticky lg:top-6 lg:block">{filterBody}</div>
 
-      {isMobilePanelOpen && (
+      {isMobilePanelOpen ? (
         <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/45 backdrop-blur-[2px] lg:hidden">
           <button
             type="button"
@@ -367,12 +399,10 @@ export default function FilterClient({
                 {mobileCloseLabel}
               </button>
             </div>
-            <div className="max-h-[calc(88vh-84px)] overflow-y-auto px-4 py-4">
-              {filterBody}
-            </div>
+            <div className="max-h-[calc(88vh-84px)] overflow-y-auto px-4 py-4">{filterBody}</div>
           </div>
         </div>
-      )}
+      ) : null}
     </>
   )
 }

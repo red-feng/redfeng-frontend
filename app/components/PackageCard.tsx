@@ -69,6 +69,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const dayLabel = locale === "zh" ? "\u5929" : locale === "en" ? "days" : "hari"
   const availableLabel = locale === "zh" ? "\u53ef\u9884\u8ba2" : locale === "en" ? "Available now" : "Tersedia sekarang"
   const viewDetailLabel = locale === "zh" ? "\u67e5\u770b\u8be6\u60c5" : locale === "en" ? "View details" : "Lihat detail"
+  const fromLabel = locale === "zh" ? "\u8d77\u4ef7" : locale === "en" ? "Starting from" : "Mulai dari"
 
   const infoChips = [
     pkg.travel_style
@@ -100,7 +101,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   ].filter(Boolean) as Array<{ key: string; className: string; label: string }>
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_55px_-28px_rgba(15,23,42,0.4)] md:flex-row md:rounded-[28px]">
+    <div className="flex flex-col overflow-hidden rounded-[28px] border border-[#efe3d8] bg-white shadow-[0_22px_46px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-36px_rgba(15,23,42,0.24)] md:flex-row">
       <div className="relative h-[168px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
         <Image
           src={imageSrc}
@@ -109,7 +110,7 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
           sizes="(max-width: 767px) 100vw, 280px"
           className="object-cover"
         />
-        <div className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
+        <div className="absolute left-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
           {availableLabel}
         </div>
         <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/45 via-slate-950/10 to-transparent md:hidden" />
@@ -145,11 +146,11 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
       </div>
 
       <div className="flex-1 p-4 sm:p-5 md:p-6">
-        <h2 className="mb-2 line-clamp-2 text-[17px] font-semibold leading-tight text-slate-950 sm:text-[20px] md:text-[28px]">{displayTitle}</h2>
+        <h2 className="mb-2 line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.03em] text-slate-950 md:text-[28px]">{displayTitle}</h2>
 
-        {locationText && <p className="mb-3 text-[11px] text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
+        {locationText && <p className="mb-3 text-[12px] text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
 
-        <div className="mb-3 flex flex-wrap gap-2 text-[10px] sm:mb-4 sm:text-xs">
+        <div className="mb-4 flex flex-wrap gap-2 text-[10px] sm:text-xs">
           {infoChips.slice(0, 3).map((chip) => (
             <span key={chip.key} className={`rounded-full px-2.5 py-1.5 font-medium sm:px-3 ${chip.className}`}>
               {chip.label}
@@ -157,11 +158,16 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
           ))}
         </div>
 
-        {hasDescription && <p className="line-clamp-2 text-[12px] leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">{translation?.description}</p>}
+        {hasDescription ? (
+          <p className="line-clamp-2 text-[12px] leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">
+            {translation?.description}
+          </p>
+        ) : null}
       </div>
 
-      <div className="hidden flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 sm:p-5 md:flex md:w-[260px] md:border-l md:border-t-0 md:p-6">
+      <div className="hidden flex-col justify-between border-t border-[#efe3d8] bg-[linear-gradient(180deg,#fffdfb_0%,#fff8f2_100%)] p-4 sm:p-5 md:flex md:w-[268px] md:border-l md:border-t-0 md:p-6">
         <div className="text-left md:text-right">
+          <p className="text-sm text-slate-500">{fromLabel}</p>
           <PriceLiveClient
             packageId={pkg.id}
             locale={locale}
@@ -177,12 +183,20 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
           />
         </div>
 
-        <Link
-          href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="mt-4 w-full rounded-2xl bg-orange-500 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600 md:mt-6 md:text-base"
-        >
-          {t.choosePackage}
-        </Link>
+        <div className="mt-4 space-y-3 md:mt-6">
+          <Link
+            href={`/packages/${encodeURIComponent(pkg.slug)}`}
+            className="block w-full rounded-2xl bg-orange-500 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600 md:text-base"
+          >
+            {t.choosePackage}
+          </Link>
+          <Link
+            href={`/packages/${encodeURIComponent(pkg.slug)}`}
+            className="block text-center text-sm font-semibold text-slate-700 transition hover:text-orange-600"
+          >
+            {viewDetailLabel} →
+          </Link>
+        </div>
       </div>
     </div>
   )
