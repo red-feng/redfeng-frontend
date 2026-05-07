@@ -185,6 +185,10 @@ html[data-display-mode="standalone"] .home-hero-search-card {
   html[data-display-mode="standalone"] .home-popular-section {
     display: none;
   }
+
+  html[data-display-mode="standalone"] .home-popular-block {
+    display: none;
+  }
 }
 
 html[data-display-mode="standalone"] .home-footer-shell {

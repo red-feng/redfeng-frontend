@@ -3,7 +3,7 @@ import { HeartIcon, popularBookings, StarIcon } from "@/app/components/home/shar
 
 export default function WebHomePopularSection() {
   return (
-    <>
+    <div className="home-popular-block">
       <HomeSectionHeader title="Paling Banyak Dipesan" showTabs />
       <section className="home-popular-section mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
         <div className="home-popular-grid flex gap-3 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-2 md:overflow-visible xl:grid-cols-5">
@@ -41,6 +41,6 @@ export default function WebHomePopularSection() {
           ))}
         </div>
       </section>
-    </>
+    </div>
   )
 }
