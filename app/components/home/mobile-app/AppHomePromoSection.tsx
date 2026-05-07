@@ -42,9 +42,9 @@ export default function AppHomePromoSection() {
                 )}
 
                 {index > 0 ? (
-                  <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
+                  <Link href="/wishlist" className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
                     <HeartIcon className="h-4 w-4" />
-                  </button>
+                  </Link>
                 ) : null}
               </div>
 

@@ -13,9 +13,9 @@ export default function WebHomePopularSection() {
             <Link key={item.title} href={item.detailHref} className="home-popular-card flex h-full w-[138px] min-w-[138px] flex-col overflow-hidden rounded-[18px] border border-[#ebedf3] bg-white shadow-[0_20px_42px_-34px_rgba(15,23,42,0.2)] md:w-auto md:min-w-0">
               <div className="home-popular-media relative h-[112px] overflow-hidden md:h-[152px]">
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
-                <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
+                <Link href="/wishlist" className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
                   <HeartIcon className="h-3.5 w-3.5" />
-                </span>
+                </Link>
               </div>
               <div className="home-popular-body flex flex-1 flex-col p-4 md:px-4 md:pt-4 md:pb-[18px]">
                 <span className={`inline-flex rounded-[6px] px-2.5 py-1 text-[10px] font-medium leading-none ${item.tone}`}>{item.category}</span>

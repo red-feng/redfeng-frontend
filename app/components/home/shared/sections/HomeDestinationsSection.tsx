@@ -13,9 +13,9 @@ export default function HomeDestinationsSection() {
             <Link key={destination.name} href={destination.detailHref} className="home-destinations-card group relative h-[150px] w-[106px] min-w-[106px] overflow-hidden rounded-[18px] shadow-[0_18px_34px_-28px_rgba(15,23,42,0.3)] sm:h-[160px] sm:w-auto sm:min-w-0">
               <div className="absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105" style={{ backgroundImage: `url('${destination.image}')` }} />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.06)_0%,rgba(15,23,42,0.82)_100%)]" />
-              <span className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur sm:hidden">
+              <Link href="/wishlist" className="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur sm:hidden">
                 <HeartIcon className="h-3.5 w-3.5" />
-              </span>
+              </Link>
               <div className="home-destinations-body absolute inset-x-4 bottom-4 text-white">
                 <h3 className="home-destinations-title text-[12px] font-semibold leading-none tracking-normal sm:text-[18px]">{destination.name}</h3>
                 <p className="home-destinations-copy mt-1 text-[10px] font-medium text-white/95 sm:text-[10px]">{destination.country}</p>

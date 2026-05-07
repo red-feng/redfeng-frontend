@@ -44,9 +44,9 @@ export default function AppHomePopularSection() {
           >
             <div className="relative h-[11.25rem] overflow-hidden">
               <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
-              <span className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
+              <Link href="/wishlist" className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm">
                 <HeartIcon className="h-4 w-4" />
-              </span>
+              </Link>
             </div>
 
             <div className="flex flex-1 flex-col p-4">
