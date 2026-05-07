@@ -233,7 +233,7 @@ export async function notifyAdminAboutMerchantSupportMessage(input: {
     to: "admin@redfeng.co",
     subject: `Merchant Support Baru - ${input.merchantLabel} (${input.merchantCode})`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+      <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;">
         <h2 style="margin:0 0 10px;">Pesan bantuan merchant baru</h2>
         <p style="margin:0 0 8px;"><strong>Merchant:</strong> ${input.merchantLabel}</p>
         <p style="margin:0 0 8px;"><strong>Kode merchant:</strong> ${input.merchantCode}</p>

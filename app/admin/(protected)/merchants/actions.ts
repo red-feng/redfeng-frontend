@@ -182,7 +182,7 @@ async function sendAdminDeletionReviewEmail({
     to: email,
     subject: "RedFeng Internal: Pengajuan hapus merchant ditolak operations manager",
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+      <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
         <h2 style="margin:0 0 12px;">Halo Admin,</h2>
         <p style="margin:0 0 14px;">Pengajuan hapus merchant untuk <strong>${merchantName}</strong> tidak disetujui oleh operations manager.</p>
         <p style="margin:0 0 8px;"><strong>Alasan operations manager</strong></p>
@@ -224,7 +224,7 @@ async function sendAdminMerchantReviewRejectionEmail({
     to: email,
     subject: "RedFeng Internal: Merchant ditolak operations manager",
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+      <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
         <h2 style="margin:0 0 12px;">Halo Admin,</h2>
         <p style="margin:0 0 14px;">Merchant <strong>${merchantName}</strong> ditolak oleh operations manager pada review final.</p>
         <p style="margin:0 0 8px;"><strong>Alasan operations manager</strong></p>
@@ -433,7 +433,7 @@ async function sendMerchantDecisionEmail({
       to: email,
       subject: copy.approvedSubject,
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+        <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
           <h2 style="margin:0 0 12px;">${copy.greeting} ${merchantName},</h2>
           <p style="margin:0 0 14px;">${copy.approvedIntro}</p>
           <p style="margin:0 0 8px;"><strong>${copy.accountSummary}</strong></p>
@@ -457,7 +457,7 @@ async function sendMerchantDecisionEmail({
       to: email,
       subject: copy.inactiveSubject,
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+        <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
           <h2 style="margin:0 0 12px;">${copy.greeting} ${merchantName},</h2>
           <p style="margin:0 0 14px;">${copy.inactiveIntro}</p>
           <p style="margin:0 0 8px;"><strong>${copy.accountSummary}</strong></p>
@@ -483,7 +483,7 @@ async function sendMerchantDecisionEmail({
       to: email,
       subject: copy.deletedSubject,
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+        <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
           <h2 style="margin:0 0 12px;">${copy.greeting} ${merchantName},</h2>
           <p style="margin:0 0 14px;">${copy.deletedIntro}</p>
           <p style="margin:0 0 8px;"><strong>${copy.accountSummary}</strong></p>
@@ -506,7 +506,7 @@ async function sendMerchantDecisionEmail({
     to: email,
     subject: copy.rejectedSubject,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
+      <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;max-width:640px;">
         <h2 style="margin:0 0 12px;">${copy.greeting} ${merchantName},</h2>
         <p style="margin:0 0 14px;">${copy.rejectedIntro}</p>
         <p style="margin:0 0 8px;"><strong>${copy.accountSummary}</strong></p>

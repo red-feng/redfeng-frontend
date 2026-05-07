@@ -200,7 +200,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
     to: payload.customerEmail,
     subject: `${copy.subjectPrefix}: ${localizedPaymentStatusLabel} - ${payload.bookingCode}`,
     html: `
-      <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a">
+      <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a">
         <h2 style="margin-bottom:8px">${copy.greeting} ${payload.customerName || copy.customerFallback},</h2>
         <p style="margin:0 0 14px;">${copy.updatedStatus} <strong>${localizedPaymentStatusLabel}</strong>.</p>
         <p style="margin:0 0 18px;">${copy.transactionSummary}</p>

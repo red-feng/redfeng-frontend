@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       to: email,
       subject: 'RedFeng Merchant: Pengajuan Sedang Diverifikasi',
       html: `
-        <div style="font-family:Arial,sans-serif;line-height:1.7;color:#0f172a;">
+        <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;">
           <h2 style="margin-bottom:8px;">Halo ${brandName},</h2>
           <p style="margin:0 0 14px;">Pengajuan akun merchant Anda sudah kami terima dan saat ini sedang diverifikasi oleh tim RedFeng.</p>
           <p style="margin:0 0 14px;">Pada tahap ini, admin akan meninjau profil bisnis, data legal, rekening payout, serta dokumen pendukung yang Anda unggah.</p>

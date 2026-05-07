@@ -402,7 +402,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
   const styles = `
     @page { size: A4; margin: 0; }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #ffffff; }
+    body { margin: 0; font-family: 'Segoe UI', sans-serif; color: #111827; background: #ffffff; }
     body.locale-zh { font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', 'Hiragino Sans GB', 'Source Han Sans SC', Arial, sans-serif; }
     .page { width: 794px; min-height: 1123px; padding: 18px 8px 18px 8px; position: relative; }
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
