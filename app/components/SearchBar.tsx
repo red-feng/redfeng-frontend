@@ -60,15 +60,6 @@ function DurationIcon() {
   )
 }
 
-function SearchButtonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[2]">
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="m16 16 4 4" />
-    </svg>
-  )
-}
-
 function ChevronMark() {
   return <span className="text-lg leading-none text-slate-400">⌄</span>
 }
@@ -127,6 +118,7 @@ export default function SearchBar({
   }
 
   const loadingLabel = locale === "en" ? "Loading..." : locale === "zh" ? "åŠ è½½ä¸­..." : "Memuat..."
+
   if (isCatalogVariant) {
     return (
       <div className={`relative transition-opacity duration-200 ${isPending ? "opacity-75" : "opacity-100"}`}>
@@ -138,48 +130,7 @@ export default function SearchBar({
         ) : null}
 
         <div className="rounded-[28px] border border-white/70 bg-white/24 p-3 shadow-[0_26px_50px_-34px_rgba(15,23,42,0.32)] backdrop-blur-md sm:rounded-[30px] sm:p-4">
-          <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto]">
-            <label className="group flex min-w-0 items-center gap-3 rounded-[24px] border border-white/80 bg-white px-5 py-4 shadow-[0_18px_32px_-24px_rgba(15,23,42,0.28)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100 sm:px-6 sm:py-[18px]">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ec] text-orange-500 sm:h-12 sm:w-12">
-                <CountryIcon />
-              </span>
-              <span className="min-w-0 flex-1">
-                <select
-                  value={country}
-                  onChange={(event) => setCountry(event.target.value)}
-                  disabled={isPending}
-                  className="w-full appearance-none bg-transparent text-[15px] font-medium text-slate-500 outline-none sm:text-[17px]"
-                >
-                  <option value="">
-                    {locale === "en"
-                      ? "Search destination or package coverage area..."
-                      : locale === "zh"
-                        ? "æœç´¢ç›®çš„åœ°æˆ–å¥—é¤è¦†ç›–åŒºåŸŸ..."
-                        : "Cari destinasi atau area cakupan paket..."}
-                  </option>
-                  {countryOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {formatCountryLabel(option, locale)}
-                    </option>
-                  ))}
-                </select>
-              </span>
-              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
-                <ChevronMark />
-              </span>
-            </label>
-
-            <button
-              onClick={applyFilter}
-              disabled={isPending}
-              className="flex h-[74px] items-center justify-center gap-2 rounded-[24px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-7 text-[15px] font-semibold text-white shadow-[0_24px_38px_-24px_rgba(239,68,35,0.9)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 xl:min-w-[164px]"
-            >
-              <SearchButtonIcon />
-              <span>{isPending ? loadingLabel : locale === "en" ? "Search" : locale === "zh" ? "æœç´¢" : "Cari"}</span>
-            </button>
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
             <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <CountryIcon />
@@ -265,7 +216,9 @@ export default function SearchBar({
               disabled={isPending}
               className="rounded-[22px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_22px_34px_-24px_rgba(239,68,35,0.9)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter")}
+              {isPending
+                ? loadingLabel
+                : submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter")}
             </button>
           </div>
         </div>
