@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import {
-  persistNotificationsToAccount,
+  persistNotificationsToAccountNow,
   readNotifications,
   writeNotifications,
   type NotificationEntry,
@@ -23,7 +23,7 @@ export default function NotificationsPageClient({ items }: NotificationsPageClie
   const syncAndStore = (next: NotificationEntry[]) => {
     setNotifications(next)
     writeNotifications(next)
-    void persistNotificationsToAccount(next)
+    void persistNotificationsToAccountNow(next)
   }
 
   return (

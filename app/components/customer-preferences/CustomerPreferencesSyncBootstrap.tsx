@@ -4,12 +4,12 @@ import { useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 import {
   mergeFavoritesFromAccount,
-  persistFavoritesToAccount,
+  persistFavoritesToAccountNow,
   readFavorites,
 } from "@/app/components/favorites/favoritesStore"
 import {
   mergeNotificationsFromAccount,
-  persistNotificationsToAccount,
+  persistNotificationsToAccountNow,
   type NotificationEntry,
 } from "@/app/components/notifications/notificationsStore"
 
@@ -45,8 +45,8 @@ export default function CustomerPreferencesSyncBootstrap({
       const mergedFavorites = mergeFavoritesFromAccount(data.favorites || [])
       const mergedNotifications = mergeNotificationsFromAccount(data.notifications || [], notificationDefaults)
 
-      await persistFavoritesToAccount(mergedFavorites)
-      await persistNotificationsToAccount(mergedNotifications)
+      await persistFavoritesToAccountNow(mergedFavorites)
+      await persistNotificationsToAccountNow(mergedNotifications)
     }
 
     void sync()

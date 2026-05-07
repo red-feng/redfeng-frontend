@@ -45,18 +45,11 @@ export default async function WishlistPage() {
               Simpan pilihan favorit Anda dalam satu halaman.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Versi awal ini menjadi tujuan resmi untuk semua ikon heart di aplikasi dan website. Tahap berikutnya bisa kita sambungkan ke akun login agar favorit benar-benar tersimpan per user.
+              Semua ikon heart di aplikasi dan website sekarang bermuara ke halaman ini, sehingga promo, destinasi, dan pilihan perjalanan favorit Anda terkumpul dalam satu tempat.
             </p>
           </section>
 
           <WishlistPageClient suggestedItems={suggestedItems} />
-
-          <section className="rounded-[28px] border border-[#f0ddc7] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Tahap berikutnya</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              Saat kita masuk tahap persistensi akun, halaman ini bisa berubah dari daftar contoh menjadi daftar favorit personal per user lengkap dengan add/remove, sinkronisasi login, dan badge jumlah simpanan.
-            </p>
-          </section>
         </div>
       </main>
 

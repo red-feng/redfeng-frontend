@@ -45,15 +45,19 @@ export function mergeFavoritesFromAccount(accountItems: FavoriteEntry[]) {
 }
 
 export async function persistFavoritesToAccount(items: FavoriteEntry[]) {
+  return persistFavoritesToAccountNow(items)
+}
+
+export async function persistFavoritesToAccountNow(items: FavoriteEntry[]) {
   const supabase = createClient("customer")
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return
+  if (!user) return { ok: false as const, storageMode: "guest" as const }
 
   try {
-    await fetch("/api/customer/preferences", {
+    const response = await fetch("/api/customer/preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -61,7 +65,18 @@ export async function persistFavoritesToAccount(items: FavoriteEntry[]) {
         notifications: undefined,
       }),
     })
+
+    if (!response.ok) return { ok: false as const, storageMode: "error" as const }
+
+    const data = (await response.json()) as { storageMode?: "account" | "local_only" }
+
+    return {
+      ok: true as const,
+      storageMode: data.storageMode || "local_only",
+    }
   } catch {}
+
+  return { ok: false as const, storageMode: "error" as const }
 }
 
 export function toggleFavorite(item: FavoriteEntry) {
@@ -69,7 +84,7 @@ export function toggleFavorite(item: FavoriteEntry) {
   const exists = current.some((entry) => entry.key === item.key)
   const next = exists ? current.filter((entry) => entry.key !== item.key) : [item, ...current]
   writeFavorites(next)
-  void persistFavoritesToAccount(next)
+  void persistFavoritesToAccountNow(next)
   return !exists
 }
 

@@ -62,15 +62,19 @@ export function mergeNotificationsFromAccount(
 }
 
 export async function persistNotificationsToAccount(items: NotificationEntry[]) {
+  return persistNotificationsToAccountNow(items)
+}
+
+export async function persistNotificationsToAccountNow(items: NotificationEntry[]) {
   const supabase = createClient("customer")
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return
+  if (!user) return { ok: false as const, storageMode: "guest" as const }
 
   try {
-    await fetch("/api/customer/preferences", {
+    const response = await fetch("/api/customer/preferences", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,7 +82,18 @@ export async function persistNotificationsToAccount(items: NotificationEntry[]) 
         notifications: items,
       }),
     })
+
+    if (!response.ok) return { ok: false as const, storageMode: "error" as const }
+
+    const data = (await response.json()) as { storageMode?: "account" | "local_only" }
+
+    return {
+      ok: true as const,
+      storageMode: data.storageMode || "local_only",
+    }
   } catch {}
+
+  return { ok: false as const, storageMode: "error" as const }
 }
 
 export function unreadNotificationCount(defaultItems: NotificationEntry[]) {

@@ -21,18 +21,11 @@ export default async function NotificationsPage() {
               Semua update penting RedFeng dalam satu halaman.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Versi awal ini menjadi tujuan resmi untuk ikon lonceng di website. Tahap berikutnya bisa disambungkan ke notifikasi akun, status booking real-time, dan promo personal per user.
+              Ikon lonceng di website sekarang mengarah ke halaman ini, jadi promo, pembaruan layanan, dan informasi penting RedFeng bisa dibaca dalam satu alur yang lebih rapi.
             </p>
           </section>
 
           <NotificationsPageClient items={defaultNotificationItems} />
-
-          <section className="rounded-[28px] border border-[#f0ddc7] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">Tahap berikutnya</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
-              Jika kita lanjutkan, halaman ini bisa berkembang menjadi notifikasi sungguhan: unread state, filter kategori, sinkron login, dan feed yang diambil dari event booking, promo, maupun bantuan.
-            </p>
-          </section>
         </div>
       </main>
 
