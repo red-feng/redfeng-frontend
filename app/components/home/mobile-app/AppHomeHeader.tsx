@@ -20,7 +20,7 @@ export default function AppHomeHeader() {
 
       <div className="relative z-10 flex items-center gap-2.5">
         <Link
-          href="/packages"
+          href="/search"
           className="flex h-[3.75rem] min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-full border border-white/75 bg-white/76 px-5 text-left text-[#6a879d] shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
         >
           <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden text-sky-500">
