@@ -37,7 +37,10 @@ export default function CustomerPreferencesSyncBootstrap({
       const data = (await response.json()) as {
         favorites?: ReturnType<typeof readFavorites>
         notifications?: NotificationEntry[]
+        storageMode?: "account" | "local_only"
       }
+
+      if (data.storageMode === "local_only") return
 
       const mergedFavorites = mergeFavoritesFromAccount(data.favorites || [])
       const mergedNotifications = mergeNotificationsFromAccount(data.notifications || [], notificationDefaults)

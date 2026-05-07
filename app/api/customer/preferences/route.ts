@@ -6,6 +6,12 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
+function isMissingPreferencesTableError(error: { code?: string | null; message?: string | null } | null) {
+  const code = String(error?.code || "").trim()
+  const message = String(error?.message || "").toLowerCase()
+  return code === "42P01" || message.includes("customer_experience_preferences")
+}
+
 export async function GET() {
   const supabase = await createClient("customer")
   const {
@@ -23,6 +29,14 @@ export async function GET() {
     .eq("profile_id", user.id)
     .maybeSingle()
 
+  if (isMissingPreferencesTableError(error)) {
+    return NextResponse.json({
+      favorites: [],
+      notifications: [],
+      storageMode: "local_only" as const,
+    })
+  }
+
   if (error) {
     return NextResponse.json({ error: error.message || "Gagal memuat preferensi customer" }, { status: 500 })
   }
@@ -30,6 +44,7 @@ export async function GET() {
   return NextResponse.json({
     favorites: normalizeFavoriteItems(data?.favorite_items),
     notifications: normalizeNotificationItems(data?.notification_items),
+    storageMode: "account" as const,
   })
 }
 
@@ -52,11 +67,31 @@ export async function PUT(request: Request) {
 
   const payload = typeof body === "object" && body ? (body as Record<string, unknown>) : {}
   const adminSupabase = createAdminClient()
-  const { data: existing } = await adminSupabase
+  const { data: existing, error: existingError } = await adminSupabase
     .from("customer_experience_preferences")
     .select("favorite_items, notification_items")
     .eq("profile_id", user.id)
     .maybeSingle()
+
+  if (isMissingPreferencesTableError(existingError)) {
+    const favoriteItems = "favorites" in payload ? normalizeFavoriteItems(payload.favorites) : []
+    const notificationItems =
+      "notifications" in payload ? normalizeNotificationItems(payload.notifications) : []
+
+    return NextResponse.json({
+      ok: true,
+      favorites: favoriteItems,
+      notifications: notificationItems,
+      storageMode: "local_only" as const,
+    })
+  }
+
+  if (existingError) {
+    return NextResponse.json(
+      { error: existingError.message || "Gagal membaca preferensi customer" },
+      { status: 500 },
+    )
+  }
 
   const favoriteItems =
     "favorites" in payload
@@ -78,6 +113,15 @@ export async function PUT(request: Request) {
       { onConflict: "profile_id" },
     )
 
+  if (isMissingPreferencesTableError(error)) {
+    return NextResponse.json({
+      ok: true,
+      favorites: favoriteItems,
+      notifications: notificationItems,
+      storageMode: "local_only" as const,
+    })
+  }
+
   if (error) {
     return NextResponse.json({ error: error.message || "Gagal menyimpan preferensi customer" }, { status: 500 })
   }
@@ -86,5 +130,6 @@ export async function PUT(request: Request) {
     ok: true,
     favorites: favoriteItems,
     notifications: notificationItems,
+    storageMode: "account" as const,
   })
 }
