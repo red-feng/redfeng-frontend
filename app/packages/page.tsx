@@ -62,7 +62,7 @@ export default async function PackagesPage({
         <div className="mx-auto max-w-[1360px] overflow-hidden rounded-[34px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]">
           <div className="relative min-h-[470px] px-5 pb-5 pt-8 sm:min-h-[520px] sm:px-7 sm:pb-6 sm:pt-10 lg:min-h-[610px] lg:px-10 lg:pb-8 lg:pt-12">
             <Image
-              src="/home-assets/hero-reference.png"
+              src="/home-assets/background-hero-tour-package.png"
               alt="RedFeng package catalog hero"
               fill
               priority
