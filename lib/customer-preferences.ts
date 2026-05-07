@@ -18,48 +18,52 @@ export type NotificationPreferenceItem = {
 export function normalizeFavoriteItems(input: unknown): FavoritePreferenceItem[] {
   if (!Array.isArray(input)) return []
 
-  return input
-    .map((item) => {
-      if (!item || typeof item !== "object") return null
-      const record = item as Record<string, unknown>
-      const key = String(record.key || "").trim()
-      const title = String(record.title || "").trim()
-      const href = String(record.href || "").trim()
-      if (!key || !title || !href) return null
+  return input.reduce<FavoritePreferenceItem[]>((items, item) => {
+    if (!item || typeof item !== "object") return items
 
-      return {
-        key,
-        title,
-        subtitle: String(record.subtitle || "").trim() || undefined,
-        href,
-        meta: String(record.meta || "").trim() || undefined,
-      }
+    const record = item as Record<string, unknown>
+    const key = String(record.key || "").trim()
+    const title = String(record.title || "").trim()
+    const href = String(record.href || "").trim()
+
+    if (!key || !title || !href) return items
+
+    items.push({
+      key,
+      title,
+      subtitle: String(record.subtitle || "").trim() || undefined,
+      href,
+      meta: String(record.meta || "").trim() || undefined,
     })
-    .filter((item): item is FavoritePreferenceItem => Boolean(item))
+
+    return items
+  }, [])
 }
 
 export function normalizeNotificationItems(input: unknown): NotificationPreferenceItem[] {
   if (!Array.isArray(input)) return []
 
-  return input
-    .map((item) => {
-      if (!item || typeof item !== "object") return null
-      const record = item as Record<string, unknown>
-      const id = String(record.id || "").trim()
-      const title = String(record.title || "").trim()
-      const body = String(record.body || "").trim()
-      const href = String(record.href || "").trim()
-      const tag = String(record.tag || "").trim()
-      if (!id || !title || !body || !href || !tag) return null
+  return input.reduce<NotificationPreferenceItem[]>((items, item) => {
+    if (!item || typeof item !== "object") return items
 
-      return {
-        id,
-        title,
-        body,
-        href,
-        tag,
-        read: Boolean(record.read),
-      }
+    const record = item as Record<string, unknown>
+    const id = String(record.id || "").trim()
+    const title = String(record.title || "").trim()
+    const body = String(record.body || "").trim()
+    const href = String(record.href || "").trim()
+    const tag = String(record.tag || "").trim()
+
+    if (!id || !title || !body || !href || !tag) return items
+
+    items.push({
+      id,
+      title,
+      body,
+      href,
+      tag,
+      read: Boolean(record.read),
     })
-    .filter((item): item is NotificationPreferenceItem => Boolean(item))
+
+    return items
+  }, [])
 }
