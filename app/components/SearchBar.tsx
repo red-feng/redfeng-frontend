@@ -127,24 +127,7 @@ export default function SearchBar({
   }
 
   const loadingLabel = locale === "en" ? "Loading..." : locale === "zh" ? "åŠ è½½ä¸­..." : "Memuat..."
-  const countryLabelText = country ? formatCountryLabel(country, locale) : t.allCountries
-  const styleLabelText = style ? formatTravelStyleLabel(style, locale) : t.allStyles
-  const durationLabelText =
-    duration === "1-3"
-      ? `1-3 ${t.day}`
-      : duration === "4-7"
-        ? `4-7 ${t.day}`
-        : duration === "8+"
-          ? `8+ ${t.day}`
-          : t.allDurations
-
   if (isCatalogVariant) {
-    const activeSummary =
-      [countryLabelText, styleLabelText, durationLabelText]
-        .filter((value) => value && value !== t.allCountries && value !== t.allStyles && value !== t.allDurations)
-        .join(" • ") ||
-      (locale === "en" ? "All package options" : locale === "zh" ? "å…¨éƒ¨å¥—é¤é€‰é¡¹" : "Semua pilihan paket")
-
     return (
       <div className={`relative transition-opacity duration-200 ${isPending ? "opacity-75" : "opacity-100"}`}>
         {isPending ? (
@@ -196,7 +179,34 @@ export default function SearchBar({
             </button>
           </div>
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
+                <CountryIcon />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
+                  {t.countryLabel}
+                </span>
+                <select
+                  value={country}
+                  onChange={(event) => setCountry(event.target.value)}
+                  disabled={isPending}
+                  className="mt-1 w-full appearance-none bg-transparent text-[14px] font-semibold text-slate-900 outline-none sm:text-[15px]"
+                >
+                  <option value="">{t.allCountries}</option>
+                  {countryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {formatCountryLabel(option, locale)}
+                    </option>
+                  ))}
+                </select>
+              </span>
+              <span className="shrink-0 text-slate-400 transition group-focus-within:text-orange-500">
+                <ChevronMark />
+              </span>
+            </label>
+
             <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <StyleIcon />
@@ -253,22 +263,10 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              className="hidden rounded-[22px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_22px_34px_-24px_rgba(239,68,35,0.9)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70 xl:block"
+              className="rounded-[22px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_22px_34px_-24px_rgba(239,68,35,0.9)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {submitLabel || t.apply}
+              {submitLabel || (locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter")}
             </button>
-            <div className="hidden rounded-[22px] border border-white/80 bg-white/86 px-5 py-4 text-right shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] md:block xl:hidden">
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                {locale === "en" ? "Current focus" : locale === "zh" ? "å½“å‰ç­›é€‰" : "Fokus saat ini"}
-              </span>
-              <span className="mt-1 block text-[14px] font-semibold text-slate-900">{activeSummary}</span>
-            </div>
-            <div className="hidden rounded-[22px] border border-white/80 bg-white/86 px-5 py-4 text-right shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] xl:block">
-              <span className="block text-[10px] font-semibold uppercase tracking-[0.26em] text-slate-400">
-                {locale === "en" ? "Current focus" : locale === "zh" ? "å½“å‰ç­›é€‰" : "Fokus saat ini"}
-              </span>
-              <span className="mt-1 block text-[14px] font-semibold text-slate-900">{activeSummary}</span>
-            </div>
           </div>
         </div>
 
