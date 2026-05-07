@@ -1,16 +1,12 @@
 import Link from "next/link"
-import { ArrowRightIcon, ArticleIcon, inspirationArticles } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon, inspirationArticles } from "@/app/components/home/shared/homeContent"
 
 export default function HomeInspirationSection() {
   return (
     <section className="home-inspiration-section mx-auto max-w-[1240px] px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
       <div className="home-inspiration-intro mb-5 flex items-center gap-3">
-        <span className="home-inspiration-badge flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef6ff] text-[#2f80ed]">
-          <ArticleIcon className="h-5 w-5" />
-        </span>
         <div className="home-inspiration-copy">
-          <h2 className="home-inspiration-title text-[17px] font-semibold leading-[1.3] tracking-[-0.01em] text-slate-900 lg:text-[18px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
-          <p className="home-inspiration-subtitle mt-1 text-[12px] leading-5 text-slate-500 lg:text-[13px]">Cerita, panduan, dan inspirasi perjalanan pilihan untuk membantu rencana liburan berikutnya.</p>
+          <h2 className="home-inspiration-title text-[15px] font-semibold leading-[1.28] tracking-[-0.01em] text-slate-900 sm:text-[16px] lg:text-[18px]">Temukan ide perjalanan untuk petualangan berikutnya</h2>
         </div>
       </div>
 
