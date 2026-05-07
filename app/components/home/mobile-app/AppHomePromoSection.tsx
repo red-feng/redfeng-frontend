@@ -1,4 +1,4 @@
-import { appHomeConfig, ArrowRightIcon, HeartIcon } from "@/app/components/home/shared/homeContent"
+import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomePromoSection() {
   return (
@@ -6,88 +6,66 @@ export default function AppHomePromoSection() {
       <div className="flex items-end justify-between gap-4">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Promo aktif</p>
-          <h2 className="mt-1 text-[1.2rem] font-bold tracking-[-0.035em] text-slate-950">Promo pilihan untukmu</h2>
+          <h2 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Promo pilihan untukmu</h2>
         </div>
         <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
           <ArrowRightIcon className="h-5 w-5" />
         </button>
       </div>
 
-      <article className="mt-4 overflow-hidden rounded-[28px] border border-[#edf1f7] bg-white shadow-[0_20px_40px_-30px_rgba(15,23,42,0.14)]">
-        <div className="bg-[linear-gradient(180deg,#fbffd8_0%,#fffef3_100%)] px-5 pb-5 pt-5">
-          <div className="flex items-start gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[#17a0f3] text-white shadow-[0_16px_28px_-20px_rgba(23,160,243,0.45)]">
-              <DiscountBirdIcon className="h-9 w-9" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-[1.7rem] font-bold tracking-[-0.05em] text-slate-950">{appHomeConfig.featuredPromo.price}</h3>
-                  <p className="mt-1 text-[15px] leading-5 text-slate-600">{appHomeConfig.featuredPromo.title.replace(/\n/g, " ")}</p>
-                </div>
-                <button type="button" className="text-slate-400">
-                  <InfoIcon className="h-5 w-5" />
-                </button>
-              </div>
+      <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {promoCards.map((card, index) => (
+          <article
+            key={card.title}
+            className="relative flex min-h-[232px] w-[286px] min-w-[286px] snap-start flex-col overflow-hidden rounded-[28px] px-5 py-5 text-white shadow-[0_22px_42px_-28px_rgba(15,23,42,0.26)]"
+          >
+            <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`} />
+            <div
+              className={`absolute inset-0 bg-no-repeat ${card.imageClass}`}
+              style={{ backgroundImage: `url('${card.image}')` }}
+            />
+            <div className={`absolute inset-0 ${card.overlayClass}`} />
+            <div className={`absolute inset-0 ${card.glowClass}`} />
+            <div className="absolute inset-x-0 bottom-0 h-[52%] bg-[linear-gradient(180deg,rgba(15,23,42,0)_0%,rgba(15,23,42,0.14)_46%,rgba(15,23,42,0.32)_100%)]" />
 
-              <div className="mt-5 flex flex-wrap items-center gap-2 text-[12px] font-medium text-slate-500">
-                <span>{appHomeConfig.featuredPromo.eyebrow}</span>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ef5b2a] text-white">
-                  <HeartIcon className="h-4 w-4" />
-                </span>
-                {appHomeConfig.featuredPromo.badge ? (
-                  <span className="rounded-full bg-[#eef2ff] px-3 py-2 text-[11px] font-semibold text-slate-500">{appHomeConfig.featuredPromo.badge}</span>
+            <div className="relative z-10 flex h-full flex-col">
+              <div className="flex items-start justify-between gap-3">
+                {card.badge ? (
+                  <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
+                    {card.badge}
+                  </span>
+                ) : (
+                  <span />
+                )}
+
+                {index > 0 ? (
+                  <button className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16">
+                    <HeartIcon className="h-4 w-4" />
+                  </button>
                 ) : null}
               </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="border-t border-dashed border-[#eef2f7] px-5 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-semibold text-[#10a23c]">Ambil sebelum kehabisan</p>
-              <div className="mt-3 h-3 rounded-full bg-slate-100">
-                <div className="h-3 w-[62%] rounded-full bg-[#10b43f]" />
+              <div className="mt-6 max-w-[195px]">
+                <h3 className="whitespace-pre-line text-[22px] font-bold leading-[1.08] tracking-[-0.04em]">
+                  {card.title}
+                </h3>
+              </div>
+
+              <div className="mt-auto">
+                <p className="text-[12px] font-medium leading-none text-white/88">{card.eyebrow}</p>
+                <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.04em]">{card.price}</p>
+                <button
+                  type="button"
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
+                >
+                  {card.cta}
+                  <ArrowRightIcon className="h-4 w-4" />
+                </button>
               </div>
             </div>
-            <button
-              type="button"
-              className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#169ef1] px-5 py-3.5 text-[14px] font-bold text-white shadow-[0_16px_26px_-20px_rgba(22,158,241,0.52)]"
-            >
-              {appHomeConfig.featuredPromo.cta}
-              <ClockIcon className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </article>
+          </article>
+        ))}
+      </div>
     </div>
-  )
-}
-
-function DiscountBirdIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M5.7 14.8c3.3-1.1 5.9-3.8 7.9-8.1 2.1 1 3.8 2.6 4.8 4.6-3.4 1.4-6.2 3.8-8.2 7.2-1.9-.7-3.4-1.8-4.5-3.7Z" />
-      <path d="M4.4 16.1c3.5.8 6.5.4 9-1.1-1.5 2.7-3.7 4.7-6.7 5.9-.9-1.2-1.7-2.7-2.3-4.8Z" />
-    </svg>
-  )
-}
-
-function InfoIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 11v4M12 8.2h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
-
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M12 7.5v5l3 1.8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   )
 }
