@@ -58,7 +58,7 @@ export default function AppHomeFooterSection() {
         <div className="mt-5 overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,#fff5ef_0%,#fffdfb_58%,#f6fbff_100%)] px-4 py-4 shadow-[0_22px_38px_-32px_rgba(15,23,42,0.16)] ring-1 ring-[#eef2f7]">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Butuh bantuan?</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Butuh bantuan?</p>
               <h3 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Tim RedFeng siap membantu 24/7</h3>
               <p className="mt-2 text-[12px] leading-5 text-slate-500">Buka pusat bantuan, cek metode pembayaran, atau hubungi kami kapan saja.</p>
             </div>

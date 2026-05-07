@@ -7,7 +7,7 @@ export default function AppHomeRecentActivitySection() {
     <div className="mt-4 rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Lanjutkan</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Lanjutkan</p>
           <h2 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Aktivitas terakhirmu</h2>
         </div>
         <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
@@ -23,7 +23,7 @@ export default function AppHomeRecentActivitySection() {
             className={`rounded-full border px-5 py-3 text-[13px] font-semibold transition ${
               index === 0
                 ? "border-[#ff5b4d] bg-white text-[#ef3b2d] shadow-[0_12px_22px_-18px_rgba(239,91,42,0.32)]"
-                : "border-[#dfe8f3] bg-[#f8fbff] text-[#607187]"
+                : "border-[#dfe8f3] bg-[#f8fbff] text-slate-900"
             }`}
           >
             {label}
@@ -49,7 +49,7 @@ export default function AppHomeRecentActivitySection() {
             </p>
             <button
               type="button"
-              className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#cfe3ff] bg-[#f5f9ff] px-4 py-3 text-[13px] font-semibold text-[#2f80ed] shadow-[0_14px_24px_-22px_rgba(47,128,237,0.24)]"
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#d8dee8] bg-[#f8fafc] px-4 py-3 text-[13px] font-semibold text-slate-900 shadow-[0_14px_24px_-22px_rgba(15,23,42,0.14)]"
             >
               Selengkapnya
               <ArrowRightIcon className="h-4 w-4" />

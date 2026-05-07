@@ -5,7 +5,7 @@ export default function AppHomePromoSection() {
     <div className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Promo aktif</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Promo aktif</p>
           <h2 className="mt-1 text-[18px] font-bold tracking-[-0.03em] text-slate-950">Promo pilihan untukmu</h2>
         </div>
         <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">

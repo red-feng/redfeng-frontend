@@ -31,7 +31,7 @@ export default function HomeInspirationSection() {
               </h3>
               <div className="home-inspiration-card-footer flex items-center justify-between gap-3 pt-2 text-[12px] text-slate-500">
                 <span className="home-inspiration-readtime">{article.readTime}</span>
-                <Link href={article.href} className="home-inspiration-link inline-flex items-center gap-2 font-semibold text-[#2f80ed]">
+                <Link href={article.href} className="home-inspiration-link inline-flex items-center gap-2 font-semibold text-slate-900">
                   Baca
                   <ArrowRightIcon className="h-4 w-4" />
                 </Link>
@@ -44,7 +44,7 @@ export default function HomeInspirationSection() {
       <div className="home-inspiration-cta mt-8 flex justify-center">
         <Link
           href="/packages"
-          className="inline-flex items-center gap-2 rounded-full border border-[#cfe3ff] bg-[#f5f9ff] px-6 py-3 text-[13px] font-semibold text-[#2f80ed] transition hover:border-[#9dc7ff] hover:bg-[#edf5ff]"
+          className="inline-flex items-center gap-2 rounded-full border border-[#d8dee8] bg-[#f8fafc] px-6 py-3 text-[13px] font-semibold text-slate-900 transition hover:border-[#c9d2df] hover:bg-[#f1f5f9]"
         >
           Baca Artikel Inspirasi
           <ArrowRightIcon className="h-4 w-4" />

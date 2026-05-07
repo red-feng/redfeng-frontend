@@ -12,7 +12,7 @@ export default function HomeSectionHeader({ title, showTabs = false }: HomeSecti
       <div className={`home-section-header-shell flex flex-col ${showTabs ? "gap-3" : "gap-0"}`}>
         <div className="home-section-header-row flex items-center justify-between gap-4">
           <h2 className="home-section-header-title text-[18px] font-bold tracking-[-0.03em] text-slate-900 sm:text-[20px] lg:text-[26px]">{title}</h2>
-          <Link href="/packages" className="home-section-header-mobile-link inline-flex items-center gap-2 text-[13px] font-semibold text-[#3b82f6] lg:hidden">
+          <Link href="/packages" className="home-section-header-mobile-link inline-flex items-center gap-2 text-[13px] font-semibold text-slate-900 lg:hidden">
             Lihat semua
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
@@ -31,13 +31,13 @@ export default function HomeSectionHeader({ title, showTabs = false }: HomeSecti
                 </button>
               ))}
             </div>
-            <Link href="/packages" className="home-section-header-desktop-link hidden items-center gap-2 text-[14px] font-semibold text-[#3b82f6] lg:inline-flex">
+            <Link href="/packages" className="home-section-header-desktop-link hidden items-center gap-2 text-[14px] font-semibold text-slate-900 lg:inline-flex">
               Lihat semua
               <ArrowRightIcon className="h-4 w-4" />
             </Link>
           </div>
         ) : (
-          <Link href="/packages" className="home-section-header-desktop-link hidden items-center gap-2 text-[14px] font-semibold text-[#3b82f6] lg:inline-flex">
+          <Link href="/packages" className="home-section-header-desktop-link hidden items-center gap-2 text-[14px] font-semibold text-slate-900 lg:inline-flex">
             Lihat semua
             <ArrowRightIcon className="h-4 w-4" />
           </Link>

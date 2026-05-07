@@ -7,7 +7,7 @@ export default function AppHomePopularSection() {
     <section className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-500">Paling laris</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Paling laris</p>
           <h2 className="mt-1 text-[1.2rem] font-bold tracking-[-0.035em] text-slate-950">Paling Banyak Dipesan</h2>
         </div>
         <Link
