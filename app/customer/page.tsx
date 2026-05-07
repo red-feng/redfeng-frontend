@@ -99,7 +99,7 @@ export default async function CustomerAccountHubPage() {
     {
       title: copy.dashboardTitle,
       body: copy.dashboardBody,
-      href: "/customer/dashboard",
+      href: "/customer/bookings",
       action: copy.dashboard,
       tone: "bg-[linear-gradient(135deg,#fff4ec_0%,#fffaf6_100%)]",
       iconTone: "bg-[#fff0e7] text-[#ef5b2a]",
@@ -158,7 +158,7 @@ export default async function CustomerAccountHubPage() {
     {
       title: copy.supportTitle,
       body: copy.supportBody,
-      href: "https://redfeng.co/",
+      href: "/contact",
       action: copy.supportAction,
       tone: "bg-[linear-gradient(135deg,#f3fff4_0%,#fafff7_100%)]",
       iconTone: "bg-[#eefdf1] text-[#16a34a]",

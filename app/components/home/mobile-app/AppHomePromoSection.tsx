@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 import { ArrowRightIcon, HeartIcon, promoCards } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomePromoSection() {
@@ -8,9 +10,9 @@ export default function AppHomePromoSection() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Promo aktif</p>
           <h2 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Promo pilihan untukmu</h2>
         </div>
-        <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
+        <Link href="/promo" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
           <ArrowRightIcon className="h-5 w-5" />
-        </button>
+        </Link>
       </div>
 
       <div className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -54,13 +56,13 @@ export default function AppHomePromoSection() {
               <div className="mt-auto">
                 <p className="text-[12px] font-medium leading-none text-white/88">{card.eyebrow}</p>
                 <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.04em]">{card.price}</p>
-                <button
-                  type="button"
+                <Link
+                  href="/promo"
                   className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
                 >
                   {card.cta}
                   <ArrowRightIcon className="h-4 w-4" />
-                </button>
+                </Link>
               </div>
             </div>
           </article>

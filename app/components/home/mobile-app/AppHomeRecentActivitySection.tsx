@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 
 import { appHomeConfig, ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 
@@ -10,9 +11,9 @@ export default function AppHomeRecentActivitySection() {
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-900">Lanjutkan</p>
           <h2 className="mt-1 text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-950 lg:text-[15px]">Aktivitas terakhirmu</h2>
         </div>
-        <button type="button" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
+        <Link href="/customer/bookings" className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eef7ff] text-[#1098ec] shadow-[0_14px_24px_-20px_rgba(16,152,236,0.4)]">
           <ArrowRightIcon className="h-5 w-5" />
-        </button>
+        </Link>
       </div>
 
       <div className="mt-4 flex gap-3">
@@ -47,13 +48,13 @@ export default function AppHomeRecentActivitySection() {
               {appHomeConfig.featuredActivity.subtitle}
               {appHomeConfig.featuredActivity.suffix ? ` ${appHomeConfig.featuredActivity.suffix}` : ""}
             </p>
-            <button
-              type="button"
+            <Link
+              href="/customer/bookings"
               className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#d8dee8] bg-[#f8fafc] px-4 py-3 text-[13px] font-semibold text-slate-900 shadow-[0_14px_24px_-22px_rgba(15,23,42,0.14)]"
             >
               Selengkapnya
               <ArrowRightIcon className="h-4 w-4" />
-            </button>
+            </Link>
           </div>
         </div>
       </article>

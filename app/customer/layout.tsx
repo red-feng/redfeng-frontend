@@ -103,7 +103,7 @@ export default async function CustomerLayout({
 
   const navItems = [
     { href: "/customer", label: accountLabel },
-    { href: "/customer/dashboard", label: bookingsLabel },
+    { href: "/customer/bookings", label: bookingsLabel },
     { href: "/chat", label: locale === "en" ? "Chat" : locale === "zh" ? "聊天" : "Chat", badgeCount: await getCommerceChatUnreadBadgeCount(adminSupabase, user.id) },
     { href: "/customer/settings", label: settingsLabel },
   ]

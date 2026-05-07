@@ -68,18 +68,18 @@ export default function AppHomeFooterSection() {
           </div>
 
           <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <a
+            <Link
               href="/contact"
               className="inline-flex items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,#ff6a45_0%,#ef5b2a_100%)] px-3.5 py-3 text-[12px] font-semibold text-white shadow-[0_18px_30px_-22px_rgba(239,91,42,0.52)]"
             >
               Hubungi Kami
-            </a>
-            <a
+            </Link>
+            <Link
               href="/privacy"
               className="inline-flex items-center justify-center rounded-[16px] bg-white px-3.5 py-3 text-[12px] font-semibold text-slate-700 ring-1 ring-[#e7edf4]"
             >
               Kebijakan
-            </a>
+            </Link>
           </div>
         </div>
 

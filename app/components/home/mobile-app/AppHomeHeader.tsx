@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 
 import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 
@@ -18,38 +19,38 @@ export default function AppHomeHeader() {
       <div className="absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.14)_100%)]" />
 
       <div className="relative z-10 flex items-center gap-2.5">
-        <button
-          type="button"
+        <Link
+          href="/packages"
           className="flex h-[3.75rem] min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-full border border-white/75 bg-white/76 px-5 text-left text-[#6a879d] shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
         >
           <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden text-sky-500">
             <SearchIcon className="h-[22px] w-[22px]" />
           </span>
           <span className="truncate text-[15px] font-medium text-slate-500">Cari hotel, tiket, atau destinasi</span>
-        </button>
-        <button
-          type="button"
+        </Link>
+        <Link
+          href="/promo"
           className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white/74 text-sky-500 shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
           aria-label="Promo"
         >
           <PercentCircleIcon className="h-8 w-8" />
           <span className="absolute right-[4px] top-[4px] h-2.5 w-2.5 rounded-full bg-[#ff6a00]" />
-        </button>
-        <button
-          type="button"
+        </Link>
+        <Link
+          href="/contact"
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white/74 text-sky-500 shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
           aria-label="Chat"
         >
           <ChatBubbleIcon className="h-7 w-7" />
-        </button>
+        </Link>
       </div>
 
       <div className="relative z-10 pt-[0.7rem]">
         <div className="flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {appHomeConfig.quickChips.map((chip, index) => (
-            <button
+            <Link
               key={chip}
-              type="button"
+              href="/promo"
               className={`shrink-0 rounded-full px-6 py-[0.72rem] text-[12px] font-semibold shadow-[0_14px_24px_-20px_rgba(15,23,42,0.18)] ${
                 index === 0
                   ? "bg-[linear-gradient(180deg,#ff6a45_0%,#ef5b2a_100%)] text-white shadow-[0_16px_26px_-20px_rgba(239,91,42,0.48)]"
@@ -57,7 +58,7 @@ export default function AppHomeHeader() {
               }`}
             >
               {chip}
-            </button>
+            </Link>
           ))}
         </div>
       </div>

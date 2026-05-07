@@ -28,11 +28,11 @@ export default function HeroHeader() {
           <a href="https://redfeng.co/kapal_pesiar/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal Pesiar</a>
           <a href="https://redfeng.co/aktivitas/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</a>
           <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
-          <a href="https://redfeng.co/promo/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</a>
+          <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</Link>
         </nav>
 
         <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/45 pl-4">
-          <a href="https://redfeng.co/bantuan/" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</a>
+          <Link href="/contact" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</Link>
           <button className="flex items-center gap-1 text-sm text-slate-700">
             IDR
             <ChevronDownIcon className="h-4 w-4" />
