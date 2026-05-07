@@ -15,12 +15,6 @@ export default function AppHomeServiceHub() {
           </button>
         ))}
       </div>
-
-      <div className="mt-6 flex items-center justify-center gap-2">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#ef5b2a]" />
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
-        <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
-      </div>
     </div>
   )
 }
