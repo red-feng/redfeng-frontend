@@ -22,17 +22,17 @@ export default function HeroHeader() {
       </Link>
 
       <div className="hidden flex-col items-center lg:flex">
-        <div className="flex w-full items-center justify-end gap-8 pr-1 pt-2 text-[14px] font-medium text-white">
-          <nav className="ml-[12rem] flex items-center gap-2">
-            <Link href="/promo" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Promo</Link>
-            <Link href="/customer/bookings" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesanan</Link>
-            <Link href="https://redfeng.co/kemitraan_tour/" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kemitraan Tour</Link>
-            <Link href="/verifikasi-invoice" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Verifikasi Invoice Tour</Link>
+        <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-white">
+          <nav className="ml-[12rem] flex items-center gap-1">
+            <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Promo</Link>
+            <Link href="/customer/bookings" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesanan</Link>
+            <Link href="https://redfeng.co/kemitraan_tour/" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kemitraan Tour</Link>
+            <Link href="/verifikasi-invoice" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Verifikasi Invoice Tour</Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <Link href="/contact" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bantuan</Link>
-            <button className="flex items-center gap-1 rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
+          <div className="flex items-center gap-3">
+            <Link href="/contact" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bantuan</Link>
+            <button className="flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
               IDR
               <ChevronDownIcon className="h-4 w-4" />
             </button>
@@ -48,16 +48,16 @@ export default function HeroHeader() {
           </div>
         </div>
 
-        <div className="mt-1 flex w-[76.5%] items-center justify-center px-10 py-3">
-          <nav className="home-hero-primary-nav flex items-center gap-2 text-[15px] font-semibold text-white">
-            <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesawat</Link>
-            <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Hotel</Link>
-            <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kereta</Link>
-            <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bus</Link>
-            <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal</Link>
-            <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
-            <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Aktivitas</Link>
-            <Link href="/packages" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Paket Wisata</Link>
+        <div className="mt-1 flex w-[76.5%] items-center justify-center px-8 py-3">
+          <nav className="home-hero-primary-nav flex items-center gap-1 text-[15px] font-semibold text-white">
+            <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesawat</Link>
+            <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Hotel</Link>
+            <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kereta</Link>
+            <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bus</Link>
+            <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal</Link>
+            <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
+            <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Aktivitas</Link>
+            <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Paket Wisata</Link>
           </nav>
         </div>
       </div>
