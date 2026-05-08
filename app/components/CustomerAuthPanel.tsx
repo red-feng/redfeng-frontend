@@ -410,9 +410,9 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   <Image
                     src="/logo-redfeng.png"
                     alt="RedFeng"
-                    width={102}
-                    height={102}
-                    className="h-[4.8rem] w-[4.8rem] object-contain object-left"
+                    width={174}
+                    height={174}
+                    className="h-[8.2rem] w-[8.2rem] object-contain object-left"
                   />
                 </div>
 
@@ -462,7 +462,9 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       </option>
                     ))}
                   </select>
-                  <ChevronDownIcon />
+                  <span className="pointer-events-none">
+                    <ChevronDownIcon />
+                  </span>
                 </div>
               </div>
 
