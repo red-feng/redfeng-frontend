@@ -305,67 +305,47 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
   if (label.includes("dari") || label.includes("asal")) {
     choices =
       activeTab === "flight"
-        ? [
-            { label: field.label, value: "CGK   Jakarta", sublabel: "Soekarno Hatta International" },
-            { label: field.label, value: "HLP   Jakarta", sublabel: "Halim Perdanakusuma" },
-            { label: field.label, value: "YIA   Yogyakarta", sublabel: "Yogyakarta International" },
-            { label: field.label, value: "JOG   Yogyakarta", sublabel: "Adisutjipto" },
-            { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
-            { label: field.label, value: "SUB   Surabaya", sublabel: "Juanda" },
-            { label: field.label, value: "KNO   Medan", sublabel: "Kualanamu" },
-            { label: field.label, value: "UPG   Makassar", sublabel: "Sultan Hasanuddin" },
-            { label: field.label, value: "BPN   Balikpapan", sublabel: "Sultan Aji Muhammad Sulaiman" },
-            { label: field.label, value: "PLM   Palembang", sublabel: "Sultan Mahmud Badaruddin II" },
-            { label: field.label, value: "PNK   Pontianak", sublabel: "Supadio" },
-            { label: field.label, value: "BDO   Bandung", sublabel: "Husein Sastranegara" },
-            { label: field.label, value: "SOC   Solo", sublabel: "Adi Soemarmo" },
-            { label: field.label, value: "SRG   Semarang", sublabel: "Jenderal Ahmad Yani" },
-            ...current,
-          ]
+        ? [...buildFlightAirportChoices(field.label), ...current]
+        : activeTab === "train"
+          ? [...buildTrainStationChoices(field.label), ...current]
+          : activeTab === "ship"
+            ? [...buildShipPortChoices(field.label), ...current]
         : [
             ...current,
-            { label: field.label, value: activeTab === "ship" ? "Ketapang" : "Surabaya", sublabel: activeTab === "ship" ? "Banyuwangi" : "Pasar Turi", withSwap: field.withSwap },
-            { label: field.label, value: activeTab === "ship" ? "Gilimanuk" : "Semarang", sublabel: activeTab === "ship" ? "Bali" : "Tawang", withSwap: field.withSwap },
-            { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Bandung", sublabel: activeTab === "ship" ? "Karangasem" : "Hall", withSwap: field.withSwap },
-            { label: field.label, value: activeTab === "ship" ? "Tanjung Perak" : "Yogyakarta", sublabel: activeTab === "ship" ? "Surabaya" : "Tugu", withSwap: field.withSwap },
-            { label: field.label, value: activeTab === "ship" ? "Tanjung Priok" : "Solo", sublabel: activeTab === "ship" ? "Jakarta" : "Balapan", withSwap: field.withSwap },
-            { label: field.label, value: activeTab === "ship" ? "Bakauheni" : "Malang", sublabel: activeTab === "ship" ? "Lampung" : "Kota Baru", withSwap: field.withSwap },
+            { label: field.label, value: "Surabaya", sublabel: "Pasar Turi", withSwap: field.withSwap },
+            { label: field.label, value: "Semarang", sublabel: "Tawang", withSwap: field.withSwap },
+            { label: field.label, value: "Bandung", sublabel: "Hall", withSwap: field.withSwap },
+            { label: field.label, value: "Yogyakarta", sublabel: "Tugu", withSwap: field.withSwap },
+            { label: field.label, value: "Solo", sublabel: "Balapan", withSwap: field.withSwap },
+            { label: field.label, value: "Malang", sublabel: "Kota Baru", withSwap: field.withSwap },
           ]
   } else if (label.includes("ke") || label.includes("tujuan")) {
     choices =
       activeTab === "flight"
-        ? [
-            { label: field.label, value: "DPS   Denpasar", sublabel: "Ngurah Rai" },
-            { label: field.label, value: "YIA   Yogyakarta", sublabel: "Yogyakarta International" },
-            { label: field.label, value: "JOG   Yogyakarta", sublabel: "Adisutjipto" },
-            { label: field.label, value: "SIN   Singapore", sublabel: "Changi" },
-            { label: field.label, value: "BKK   Bangkok", sublabel: "Suvarnabhumi" },
-            { label: field.label, value: "HND   Tokyo", sublabel: "Haneda" },
-            { label: field.label, value: "NRT   Tokyo", sublabel: "Narita International" },
-            { label: field.label, value: "ICN   Seoul", sublabel: "Incheon" },
-            { label: field.label, value: "HKG   Hong Kong", sublabel: "Hong Kong International" },
-            { label: field.label, value: "MEL   Melbourne", sublabel: "Tullamarine" },
-            { label: field.label, value: "KUL   Kuala Lumpur", sublabel: "Kuala Lumpur International" },
-            { label: field.label, value: "CAN   Guangzhou", sublabel: "Baiyun" },
-            { label: field.label, value: "PVG   Shanghai", sublabel: "Pudong International" },
-            { label: field.label, value: "SHA   Shanghai", sublabel: "Hongqiao International" },
-            { label: field.label, value: "PEK   Beijing", sublabel: "Capital International" },
-            { label: field.label, value: "PKX   Beijing", sublabel: "Daxing International" },
-            { label: field.label, value: "TPE   Taipei", sublabel: "Taoyuan" },
-            { label: field.label, value: "SYD   Sydney", sublabel: "Kingsford Smith" },
-            { label: field.label, value: "DOH   Doha", sublabel: "Hamad International" },
-            { label: field.label, value: "DXB   Dubai", sublabel: "Dubai International" },
-            ...current,
-          ]
+        ? [...buildFlightAirportChoices(field.label), ...current]
+        : activeTab === "train"
+          ? [...buildTrainStationChoices(field.label), ...current]
+          : activeTab === "ship"
+            ? [...buildShipPortChoices(field.label), ...current]
         : [
             ...current,
-            { label: field.label, value: activeTab === "ship" ? "Lembar" : "Solo", sublabel: activeTab === "ship" ? "Lombok" : "Balapan" },
-            { label: field.label, value: activeTab === "ship" ? "Padang Bai" : "Malang", sublabel: activeTab === "ship" ? "Bali" : "Kota Baru" },
-            { label: field.label, value: activeTab === "ship" ? "Gili Trawangan" : "Yogyakarta", sublabel: activeTab === "ship" ? "Lombok Utara" : "Tugu" },
-            { label: field.label, value: activeTab === "ship" ? "Nusa Penida" : "Semarang", sublabel: activeTab === "ship" ? "Banjar Nyuh" : "Tawang" },
-            { label: field.label, value: activeTab === "ship" ? "Labuan Bajo" : "Surabaya", sublabel: activeTab === "ship" ? "Marina" : "Gubeng" },
-            { label: field.label, value: activeTab === "ship" ? "Batam Center" : "Bandung", sublabel: activeTab === "ship" ? "Kepulauan Riau" : "Hall" },
+            { label: field.label, value: "Solo", sublabel: "Balapan" },
+            { label: field.label, value: "Malang", sublabel: "Kota Baru" },
+            { label: field.label, value: "Yogyakarta", sublabel: "Tugu" },
+            { label: field.label, value: "Semarang", sublabel: "Tawang" },
+            { label: field.label, value: "Surabaya", sublabel: "Gubeng" },
+            { label: field.label, value: "Bandung", sublabel: "Hall" },
           ]
+  } else if (label.includes("rute cruise")) {
+    choices = [
+      ...current,
+      { label: field.label, value: "Singapore - Penang - Phuket", sublabel: "Royal Caribbean • 3 malam" },
+      { label: field.label, value: "Singapore - Port Klang - Penang", sublabel: "Royal Caribbean • 4 malam" },
+      { label: field.label, value: "Singapore - Phuket - Penang", sublabel: "Royal Caribbean • 5 malam" },
+      { label: field.label, value: "Shanghai - Jeju - Fukuoka", sublabel: "Royal Caribbean • 5 malam" },
+      { label: field.label, value: "Hong Kong - Okinawa - Taipei", sublabel: "Royal Caribbean • 5 malam" },
+      { label: field.label, value: "Singapore - Benoa - Lombok", sublabel: "Royal Caribbean • 6 malam" },
+    ]
   } else if (label.includes("destinasi") || label.includes("trip") || label.includes("event") || label.includes("area")) {
     if (activeTab === "hotel") {
       choices = [
@@ -388,29 +368,43 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
     } else if (activeTab === "activity") {
       choices = [
         ...current,
+        { label: field.label, value: "Universal Studios Singapore", sublabel: "Singapore" },
+        { label: field.label, value: "Gardens by the Bay", sublabel: "Singapore" },
         { label: field.label, value: "Universal Beijing Resort", sublabel: "Beijing, China" },
         { label: field.label, value: "Shanghai Disneyland", sublabel: "Shanghai, China" },
+        { label: field.label, value: "Hong Kong Disneyland", sublabel: "Hong Kong" },
+        { label: field.label, value: "Ocean Park Hong Kong", sublabel: "Hong Kong" },
+        { label: field.label, value: "Tokyo Disneyland", sublabel: "Tokyo, Jepang" },
+        { label: field.label, value: "Tokyo DisneySea", sublabel: "Tokyo, Jepang" },
+        { label: field.label, value: "Universal Studios Japan", sublabel: "Osaka, Jepang" },
+        { label: field.label, value: "teamLab Planets TOKYO", sublabel: "Tokyo, Jepang" },
+        { label: field.label, value: "Lotte World Adventure", sublabel: "Seoul, Korea Selatan" },
+        { label: field.label, value: "Everland", sublabel: "Yongin, Korea Selatan" },
+        { label: field.label, value: "LEGOLAND Malaysia", sublabel: "Johor Bahru, Malaysia" },
+        { label: field.label, value: "Sunway Lagoon", sublabel: "Kuala Lumpur, Malaysia" },
+        { label: field.label, value: "Siam Amazing Park", sublabel: "Bangkok, Thailand" },
+        { label: field.label, value: "Safari World Bangkok", sublabel: "Bangkok, Thailand" },
+        { label: field.label, value: "VinWonders Phu Quoc", sublabel: "Phu Quoc, Vietnam" },
+        { label: field.label, value: "Ba Na Hills", sublabel: "Da Nang, Vietnam" },
         { label: field.label, value: "The Bund Night Cruise", sublabel: "Shanghai, China" },
         { label: field.label, value: "Great Wall Day Tour", sublabel: "Beijing, China" },
         { label: field.label, value: "Zhujiajiao Water Town Tour", sublabel: "Shanghai, China" },
         { label: field.label, value: "Chimelong Safari Park", sublabel: "Guangzhou, China" },
         { label: field.label, value: "Terracotta Warriors Tour", sublabel: "Xi'an, China" },
         { label: field.label, value: "Victoria Peak Experience", sublabel: "Hong Kong" },
-        { label: field.label, value: "Tokyo Disneyland", sublabel: "Tokyo, Jepang" },
-        { label: field.label, value: "Lotte World Adventure", sublabel: "Seoul, Korea Selatan" },
       ]
     } else if (activeTab === "package") {
       choices = [
         ...current,
-        { label: field.label, value: "Bali 3H2M", sublabel: "Hotel + Tour" },
-        { label: field.label, value: "Shanghai 4H3M", sublabel: "Hotel + City Tour" },
-        { label: field.label, value: "Beijing 5H4M", sublabel: "Hotel + Tour" },
-        { label: field.label, value: "Chongqing Explorer", sublabel: "4 Hari 3 Malam" },
-        { label: field.label, value: "Tokyo Sakura Escape", sublabel: "5 Hari 4 Malam" },
-        { label: field.label, value: "Hong Kong Family Fun", sublabel: "Disney + Hotel" },
-        { label: field.label, value: "Labuan Bajo Premium", sublabel: "Liveaboard + Hotel" },
-        { label: field.label, value: "Bangkok Shopping Trip", sublabel: "4 Hari 3 Malam" },
-        { label: field.label, value: "Seoul K-Culture Journey", sublabel: "5 Hari 4 Malam" },
+        { label: field.label, value: "Indonesia", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "China", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Jepang", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Singapura", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Thailand", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Malaysia", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Vietnam", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Korea Selatan", sublabel: "Katalog negara tujuan" },
+        { label: field.label, value: "Arab Saudi", sublabel: "Katalog negara tujuan" },
       ]
     } else {
       choices = [
@@ -460,30 +454,133 @@ function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): Her
       { label: field.label, value: "15:30", sublabel: "Sore" },
       { label: field.label, value: "23:00", sublabel: "Larut malam" },
     ]
-  } else if (label.includes("penumpang") || label.includes("tamu") || label.includes("peserta") || label.includes("tiket")) {
+  } else if (label.includes("cabin")) {
     choices = [
       ...current,
-      { label: field.label, value: "2 Dewasa", sublabel: "Pilihan populer", withChevron: field.withChevron },
-      { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family option", withChevron: field.withChevron },
-      { label: field.label, value: "1 Dewasa", sublabel: "Solo traveler", withChevron: field.withChevron },
-      { label: field.label, value: "2 Dewasa, 2 Anak", sublabel: "Family saver", withChevron: field.withChevron },
-      { label: field.label, value: "3 Dewasa", sublabel: "Group light", withChevron: field.withChevron },
-      { label: field.label, value: "4 Dewasa", sublabel: "Small group", withChevron: field.withChevron },
-      { label: field.label, value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-      { label: field.label, value: "1 Dewasa, Premium Economy", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-      { label: field.label, value: "1 Dewasa, Business", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-      { label: field.label, value: "1 Dewasa, First Class", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+      { label: field.label, value: "Interior Cabin", sublabel: "Royal Caribbean • Best value", withChevron: field.withChevron },
+      { label: field.label, value: "Ocean View", sublabel: "Royal Caribbean • Jendela laut", withChevron: field.withChevron },
+      { label: field.label, value: "Balcony Cabin", sublabel: "Royal Caribbean • Private balcony", withChevron: field.withChevron },
+      { label: field.label, value: "Junior Suite", sublabel: "Royal Caribbean • Suite entry", withChevron: field.withChevron },
+      { label: field.label, value: "Grand Suite", sublabel: "Royal Caribbean • Luxury deck", withChevron: field.withChevron },
+      { label: field.label, value: "Family Cabin", sublabel: "Royal Caribbean • 2 Dewasa, 2 Anak", withChevron: field.withChevron },
     ]
-  } else if (label.includes("kategori") || label.includes("jenis") || label.includes("durasi")) {
+  } else if (label.includes("tamu")) {
     choices = [
       ...current,
-      { label: field.label, value: activeTab === "activity" ? "Family friendly" : "4 Hari 3 Malam", sublabel: activeTab === "activity" ? "Rekomendasi" : "Paket favorit", withChevron: field.withChevron },
-      { label: field.label, value: activeTab === "activity" ? "VIP access" : "5 Hari 4 Malam", sublabel: activeTab === "activity" ? "Premium" : "Lebih lengkap", withChevron: field.withChevron },
-      { label: field.label, value: activeTab === "activity" ? "Theme park" : "2 Hari 1 Malam", sublabel: activeTab === "activity" ? "Paling populer" : "Trip singkat", withChevron: field.withChevron },
-      { label: field.label, value: activeTab === "activity" ? "Day tour" : "3 Hari 2 Malam", sublabel: activeTab === "activity" ? "Half / full day" : "Pilihan utama", withChevron: field.withChevron },
-      { label: field.label, value: activeTab === "activity" ? "Adventure" : "6 Hari 5 Malam", sublabel: activeTab === "activity" ? "Outdoor" : "Long stay", withChevron: field.withChevron },
-      { label: field.label, value: activeTab === "activity" ? "Cultural experience" : "7 Hari 6 Malam", sublabel: activeTab === "activity" ? "Local highlight" : "Eksplor lengkap", withChevron: field.withChevron },
+      { label: field.label, value: "2 Tamu, 1 Kamar", sublabel: "Standar menginap", withChevron: field.withChevron },
+      { label: field.label, value: "2 Tamu, 2 Kamar", sublabel: "Twin room", withChevron: field.withChevron },
+      { label: field.label, value: "3 Tamu, 1 Kamar", sublabel: "Extra bed", withChevron: field.withChevron },
+      { label: field.label, value: "4 Tamu, 2 Kamar", sublabel: "Family stay", withChevron: field.withChevron },
+      { label: field.label, value: "6 Tamu, 3 Kamar", sublabel: "Group stay", withChevron: field.withChevron },
     ]
+  } else if (label.includes("tiket")) {
+    choices =
+      activeTab === "activity"
+        ? [
+            ...current,
+            { label: field.label, value: "1 Dewasa", sublabel: "Reguler", withChevron: field.withChevron },
+            { label: field.label, value: "2 Dewasa", sublabel: "Reguler", withChevron: field.withChevron },
+            { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family package", withChevron: field.withChevron },
+            { label: field.label, value: "2 Dewasa", sublabel: "VIP access", withChevron: field.withChevron },
+            { label: field.label, value: "4 Dewasa", sublabel: "Group pass", withChevron: field.withChevron },
+          ]
+        : current
+  } else if (label.includes("peserta")) {
+    choices =
+      activeTab === "activity" || activeTab === "package"
+        ? [
+            ...current,
+            { label: field.label, value: "1 Orang", sublabel: "Solo option", withChevron: field.withChevron },
+            { label: field.label, value: "2 Orang", sublabel: "Couple option", withChevron: field.withChevron },
+            { label: field.label, value: "4 Orang", sublabel: "Small group", withChevron: field.withChevron },
+            { label: field.label, value: "6 Orang", sublabel: "Family group", withChevron: field.withChevron },
+            { label: field.label, value: "10 Orang", sublabel: "Rombongan", withChevron: field.withChevron },
+          ]
+        : current
+  } else if (label.includes("travel style") || label.includes("gaya")) {
+    choices = [
+      ...current,
+      { label: field.label, value: "Explore", sublabel: "Eksplorasi kota & budaya", withChevron: field.withChevron },
+      { label: field.label, value: "Adventure", sublabel: "Aktif & outdoor", withChevron: field.withChevron },
+      { label: field.label, value: "Family", sublabel: "Liburan keluarga", withChevron: field.withChevron },
+      { label: field.label, value: "Luxury", sublabel: "Premium experience", withChevron: field.withChevron },
+      { label: field.label, value: "Honeymoon", sublabel: "Romantic getaway", withChevron: field.withChevron },
+      { label: field.label, value: "Open Trip", sublabel: "Join trip schedule", withChevron: field.withChevron },
+      { label: field.label, value: "Umroh", sublabel: "Religious journey", withChevron: field.withChevron },
+    ]
+  } else if (label.includes("penumpang")) {
+    choices =
+      activeTab === "flight"
+        ? [
+            ...current,
+            { label: field.label, value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+            { label: field.label, value: "1 Dewasa, Premium Economy", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+            { label: field.label, value: "1 Dewasa, Business", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+            { label: field.label, value: "1 Dewasa, First Class", sublabel: "Kelas Kabin", withChevron: field.withChevron },
+            { label: field.label, value: "2 Dewasa, Ekonomi", sublabel: "Paling populer", withChevron: field.withChevron },
+            { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family saver", withChevron: field.withChevron },
+          ]
+        : activeTab === "cruise"
+          ? [
+              ...current,
+              { label: field.label, value: "2 Dewasa", sublabel: "Cabin twin", withChevron: field.withChevron },
+              { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family cabin", withChevron: field.withChevron },
+              { label: field.label, value: "2 Dewasa, 2 Anak", sublabel: "Family cruise", withChevron: field.withChevron },
+              { label: field.label, value: "3 Dewasa", sublabel: "Triple occupancy", withChevron: field.withChevron },
+              { label: field.label, value: "4 Penumpang", sublabel: "Quad cabin", withChevron: field.withChevron },
+            ]
+          : [
+              ...current,
+              { label: field.label, value: "1 Dewasa", sublabel: "Solo traveler", withChevron: field.withChevron },
+              { label: field.label, value: "2 Dewasa", sublabel: "Pilihan populer", withChevron: field.withChevron },
+              { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family option", withChevron: field.withChevron },
+              { label: field.label, value: "2 Dewasa, 2 Anak", sublabel: "Family saver", withChevron: field.withChevron },
+              { label: field.label, value: "3 Dewasa", sublabel: "Group light", withChevron: field.withChevron },
+              { label: field.label, value: "4 Dewasa", sublabel: "Small group", withChevron: field.withChevron },
+            ]
+  } else if (label.includes("kategori")) {
+    choices =
+      activeTab === "activity"
+        ? [
+            ...current,
+            { label: field.label, value: "Taman Hiburan", sublabel: "Paling populer", withChevron: field.withChevron },
+            { label: field.label, value: "Atraksi Keluarga", sublabel: "Family friendly", withChevron: field.withChevron },
+            { label: field.label, value: "Live entertainment", sublabel: "Limited seats", withChevron: field.withChevron },
+            { label: field.label, value: "Museum & budaya", sublabel: "Cultural experience", withChevron: field.withChevron },
+            { label: field.label, value: "Outdoor adventure", sublabel: "Aktivitas luar ruang", withChevron: field.withChevron },
+            { label: field.label, value: "VIP access", sublabel: "Premium entry", withChevron: field.withChevron },
+          ]
+        : current
+  } else if (label.includes("jenis")) {
+    choices =
+      activeTab === "activity"
+        ? [
+            ...current,
+            { label: field.label, value: "Private tour", sublabel: "Guide included", withChevron: field.withChevron },
+            { label: field.label, value: "Open trip", sublabel: "Join grup harian", withChevron: field.withChevron },
+            { label: field.label, value: "Day tour", sublabel: "Half / full day", withChevron: field.withChevron },
+            { label: field.label, value: "Night tour", sublabel: "Evening experience", withChevron: field.withChevron },
+            { label: field.label, value: "Adventure tour", sublabel: "Outdoor route", withChevron: field.withChevron },
+          ]
+        : current
+  } else if (label.includes("durasi")) {
+    choices =
+      activeTab === "package"
+        ? [
+            ...current,
+            { label: field.label, value: "1-3 Hari", sublabel: "Durasi singkat", withChevron: field.withChevron },
+            { label: field.label, value: "4-7 Hari", sublabel: "Durasi menengah", withChevron: field.withChevron },
+            { label: field.label, value: "8+ Hari", sublabel: "Perjalanan panjang", withChevron: field.withChevron },
+          ]
+        : [
+            ...current,
+            { label: field.label, value: "2 Hari 1 Malam", sublabel: "Trip singkat", withChevron: field.withChevron },
+            { label: field.label, value: "3 Hari 2 Malam", sublabel: "Pilihan utama", withChevron: field.withChevron },
+            { label: field.label, value: "4 Hari 3 Malam", sublabel: "Paket favorit", withChevron: field.withChevron },
+            { label: field.label, value: "5 Hari 4 Malam", sublabel: "Lebih lengkap", withChevron: field.withChevron },
+            { label: field.label, value: "6 Hari 5 Malam", sublabel: "Long stay", withChevron: field.withChevron },
+            { label: field.label, value: "7 Hari 6 Malam", sublabel: "Eksplor lengkap", withChevron: field.withChevron },
+          ]
   }
 
   return dedupeFieldChoices(choices, field)
@@ -514,10 +611,14 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
   }
 
   if (normalized.includes("transit")) return "Transit Rekomendasi"
+  if (normalized.includes("cabin")) return "Pilihan Cabin"
   if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("check-in") || normalized.includes("tanggal") || normalized.includes("kunjungan") || normalized.includes("keberangkatan")) return "Tanggal Rekomendasi"
   if (normalized.includes("pulang") || normalized.includes("check-out")) return "Tanggal Pulang"
   if (normalized.includes("jam")) return "Pilihan Jam"
-  if (normalized.includes("penumpang") || normalized.includes("tamu") || normalized.includes("peserta") || normalized.includes("tiket")) return "Kombinasi Populer"
+  if (normalized.includes("tamu")) return "Kombinasi Tamu"
+  if (normalized.includes("tiket")) return "Pilihan Tiket"
+  if (normalized.includes("peserta")) return "Jumlah Peserta"
+  if (normalized.includes("penumpang")) return "Kombinasi Penumpang"
   if (normalized.includes("kategori") || normalized.includes("jenis")) return "Kategori Favorit"
   if (normalized.includes("durasi")) return "Durasi Favorit"
 
@@ -649,3 +750,143 @@ function formatDateObjectToDisplay(date: Date) {
   const monthLabels = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
   return `${date.getDate()} ${monthLabels[date.getMonth()]} ${date.getFullYear()}`
 }
+
+function buildFlightAirportChoices(label: string): HeroSearchFieldData[] {
+  return flightAirportMaster.map((airport) => ({
+    label,
+    value: `${airport.code}   ${airport.city}`,
+    sublabel: airport.name,
+  }))
+}
+
+function buildTrainStationChoices(label: string): HeroSearchFieldData[] {
+  return trainStationMaster.map((station) => ({
+    label,
+    value: station.name,
+    sublabel: `${station.city}${station.detail ? ` • ${station.detail}` : ""}`,
+  }))
+}
+
+function buildShipPortChoices(label: string): HeroSearchFieldData[] {
+  return shipPortMaster.map((port) => ({
+    label,
+    value: port.name,
+    sublabel: `${port.city}${port.detail ? ` • ${port.detail}` : ""}`,
+  }))
+}
+
+const flightAirportMaster: Array<{ code: string; city: string; name: string }> = [
+  { code: "CGK", city: "Jakarta", name: "Soekarno Hatta International" },
+  { code: "HLP", city: "Jakarta", name: "Halim Perdanakusuma" },
+  { code: "DPS", city: "Denpasar", name: "Ngurah Rai International" },
+  { code: "SUB", city: "Surabaya", name: "Juanda International" },
+  { code: "YIA", city: "Yogyakarta", name: "Yogyakarta International" },
+  { code: "KNO", city: "Medan", name: "Kualanamu International" },
+  { code: "UPG", city: "Makassar", name: "Sultan Hasanuddin International" },
+  { code: "BPN", city: "Balikpapan", name: "Sultan Aji Muhammad Sulaiman" },
+  { code: "SIN", city: "Singapore", name: "Changi Airport" },
+  { code: "KUL", city: "Kuala Lumpur", name: "Kuala Lumpur International" },
+  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi Airport" },
+  { code: "DMK", city: "Bangkok", name: "Don Mueang International" },
+  { code: "HKT", city: "Phuket", name: "Phuket International" },
+  { code: "CNX", city: "Chiang Mai", name: "Chiang Mai International" },
+  { code: "SGN", city: "Ho Chi Minh City", name: "Tan Son Nhat International" },
+  { code: "HAN", city: "Hanoi", name: "Noi Bai International" },
+  { code: "DAD", city: "Da Nang", name: "Da Nang International" },
+  { code: "MNL", city: "Manila", name: "Ninoy Aquino International" },
+  { code: "CEB", city: "Cebu", name: "Mactan Cebu International" },
+  { code: "HKG", city: "Hong Kong", name: "Hong Kong International" },
+  { code: "TPE", city: "Taipei", name: "Taoyuan International" },
+  { code: "KHH", city: "Kaohsiung", name: "Kaohsiung International" },
+  { code: "PVG", city: "Shanghai", name: "Pudong International" },
+  { code: "SHA", city: "Shanghai", name: "Hongqiao International" },
+  { code: "PEK", city: "Beijing", name: "Capital International" },
+  { code: "PKX", city: "Beijing", name: "Daxing International" },
+  { code: "CAN", city: "Guangzhou", name: "Baiyun International" },
+  { code: "SZX", city: "Shenzhen", name: "Bao'an International" },
+  { code: "CTU", city: "Chengdu", name: "Tianfu International" },
+  { code: "XIY", city: "Xi'an", name: "Xianyang International" },
+  { code: "HND", city: "Tokyo", name: "Haneda Airport" },
+  { code: "NRT", city: "Tokyo", name: "Narita International" },
+  { code: "KIX", city: "Osaka", name: "Kansai International" },
+  { code: "ITM", city: "Osaka", name: "Itami Airport" },
+  { code: "NGO", city: "Nagoya", name: "Chubu Centrair International" },
+  { code: "FUK", city: "Fukuoka", name: "Fukuoka Airport" },
+  { code: "CTS", city: "Sapporo", name: "New Chitose Airport" },
+  { code: "ICN", city: "Seoul", name: "Incheon International" },
+  { code: "GMP", city: "Seoul", name: "Gimpo International" },
+  { code: "PUS", city: "Busan", name: "Gimhae International" },
+  { code: "CJU", city: "Jeju", name: "Jeju International" },
+  { code: "DEL", city: "New Delhi", name: "Indira Gandhi International" },
+  { code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Maharaj International" },
+  { code: "BLR", city: "Bengaluru", name: "Kempegowda International" },
+  { code: "MAA", city: "Chennai", name: "Chennai International" },
+  { code: "DOH", city: "Doha", name: "Hamad International" },
+  { code: "DXB", city: "Dubai", name: "Dubai International" },
+  { code: "AUH", city: "Abu Dhabi", name: "Zayed International" },
+  { code: "JED", city: "Jeddah", name: "King Abdulaziz International" },
+  { code: "RUH", city: "Riyadh", name: "King Khalid International" },
+  { code: "MEL", city: "Melbourne", name: "Tullamarine Airport" },
+  { code: "SYD", city: "Sydney", name: "Kingsford Smith Airport" },
+  { code: "BNE", city: "Brisbane", name: "Brisbane Airport" },
+  { code: "PER", city: "Perth", name: "Perth Airport" },
+  { code: "AKL", city: "Auckland", name: "Auckland Airport" },
+  { code: "LHR", city: "London", name: "Heathrow Airport" },
+  { code: "CDG", city: "Paris", name: "Charles de Gaulle Airport" },
+  { code: "FRA", city: "Frankfurt", name: "Frankfurt Airport" },
+  { code: "AMS", city: "Amsterdam", name: "Schiphol Airport" },
+  { code: "IST", city: "Istanbul", name: "Istanbul Airport" },
+  { code: "JFK", city: "New York", name: "John F. Kennedy International" },
+  { code: "LAX", city: "Los Angeles", name: "Los Angeles International" },
+  { code: "SFO", city: "San Francisco", name: "San Francisco International" },
+]
+
+const trainStationMaster: Array<{ name: string; city: string; detail?: string }> = [
+  { name: "Gambir", city: "Jakarta", detail: "Stasiun pusat" },
+  { name: "Pasar Senen", city: "Jakarta", detail: "Keberangkatan antarkota" },
+  { name: "Bekasi", city: "Bekasi", detail: "Jawa Barat" },
+  { name: "Bandung", city: "Bandung", detail: "Hall Station" },
+  { name: "Kiaracondong", city: "Bandung", detail: "Jawa Barat" },
+  { name: "Tegal", city: "Tegal", detail: "Jawa Tengah" },
+  { name: "Cirebon", city: "Cirebon", detail: "Kejaksan" },
+  { name: "Purwokerto", city: "Banyumas", detail: "Jawa Tengah" },
+  { name: "Yogyakarta", city: "Yogyakarta", detail: "Tugu Station" },
+  { name: "Lempuyangan", city: "Yogyakarta", detail: "Jawa Tengah & DIY" },
+  { name: "Solo Balapan", city: "Solo", detail: "Jawa Tengah" },
+  { name: "Semarang Tawang", city: "Semarang", detail: "Jawa Tengah" },
+  { name: "Semarang Poncol", city: "Semarang", detail: "Jawa Tengah" },
+  { name: "Madiun", city: "Madiun", detail: "Jawa Timur" },
+  { name: "Surabaya Gubeng", city: "Surabaya", detail: "Jawa Timur" },
+  { name: "Surabaya Pasar Turi", city: "Surabaya", detail: "Jawa Timur" },
+  { name: "Malang", city: "Malang", detail: "Kota Baru" },
+  { name: "Jember", city: "Jember", detail: "Jawa Timur" },
+  { name: "Banyuwangi Kota", city: "Banyuwangi", detail: "Jawa Timur" },
+  { name: "Ketapang", city: "Banyuwangi", detail: "Akses pelabuhan" },
+  { name: "Halim", city: "Jakarta", detail: "Whoosh" },
+  { name: "Karawang", city: "Karawang", detail: "Whoosh" },
+  { name: "Padalarang", city: "Bandung", detail: "Whoosh" },
+  { name: "Tegalluar", city: "Bandung", detail: "Whoosh" },
+]
+
+const shipPortMaster: Array<{ name: string; city: string; detail?: string }> = [
+  { name: "Merak", city: "Banten", detail: "Rute Lampung" },
+  { name: "Bakauheni", city: "Lampung", detail: "Rute Banten" },
+  { name: "Ketapang", city: "Banyuwangi", detail: "Rute Bali" },
+  { name: "Gilimanuk", city: "Bali", detail: "Rute Jawa" },
+  { name: "Padang Bai", city: "Karangasem", detail: "Bali" },
+  { name: "Lembar", city: "Lombok Barat", detail: "Nusa Tenggara Barat" },
+  { name: "Sanur", city: "Denpasar", detail: "Bali" },
+  { name: "Banjar Nyuh", city: "Nusa Penida", detail: "Bali" },
+  { name: "Gili Trawangan", city: "Lombok Utara", detail: "NTB" },
+  { name: "Senggigi", city: "Lombok Barat", detail: "NTB" },
+  { name: "Tanjung Perak", city: "Surabaya", detail: "Jawa Timur" },
+  { name: "Tanjung Priok", city: "Jakarta", detail: "DKI Jakarta" },
+  { name: "Batam Center", city: "Batam", detail: "Kepulauan Riau" },
+  { name: "Sekupang", city: "Batam", detail: "Kepulauan Riau" },
+  { name: "HarbourFront", city: "Singapore", detail: "Rute Batam/Bintan" },
+  { name: "Telaga Punggur", city: "Batam", detail: "Kepulauan Riau" },
+  { name: "Tanjung Pinang", city: "Bintan", detail: "Kepulauan Riau" },
+  { name: "Marina Labuan Bajo", city: "Labuan Bajo", detail: "Nusa Tenggara Timur" },
+  { name: "Sape", city: "Bima", detail: "Nusa Tenggara Barat" },
+  { name: "Kayangan", city: "Lombok Timur", detail: "Nusa Tenggara Barat" },
+]
