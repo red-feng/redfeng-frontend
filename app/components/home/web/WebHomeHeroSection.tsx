@@ -30,17 +30,17 @@ export default function WebHomeHeroSection() {
 
   return (
     <div className="home-hero-standard">
-      <div className="relative min-h-[720px] overflow-hidden bg-[#081f42]">
+      <div className="relative min-h-[580px] overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-36 pt-6 sm:px-6 lg:px-8">
+        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-24 pt-6 sm:px-6 lg:px-8">
           <HeroHeader />
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-52 max-w-[1280px] px-4 pb-10 sm:-mt-56 sm:px-6 lg:-mt-[17.25rem] lg:px-8 lg:pb-14">
+      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-40 max-w-[1280px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-[13.5rem] lg:px-8 lg:pb-14">
         <div className="home-hero-search-card overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
@@ -77,9 +77,9 @@ function MobileHeroBackdrop() {
 
 function HeroIntro() {
   return (
-    <div className="home-hero-intro relative z-10 flex justify-center pt-10 text-center lg:pt-8">
-      <div className="home-hero-intro-shell max-w-[860px] pb-56 lg:min-h-[390px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.06] tracking-[-0.045em] text-[#071631] sm:max-w-[660px] sm:text-[16px] lg:max-w-[860px] lg:text-[32px]">
+    <div className="home-hero-intro relative z-10 flex justify-center pt-8 text-center lg:pt-6">
+      <div className="home-hero-intro-shell max-w-[860px] pb-40 lg:min-h-[300px] lg:pb-0">
+        <h1 className="home-hero-title mx-auto max-w-[320px] text-[16px] font-bold leading-[1.06] tracking-[-0.045em] text-[#071631] sm:max-w-[660px] sm:text-[16px] lg:max-w-[860px] lg:text-[32px]">
           Ekosistem perjalanan
           <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
         </h1>
