@@ -24,7 +24,7 @@ export default function WebHomePromoSection() {
   }
 
   return (
-    <section className="home-promo-section relative mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-7 lg:pb-12">
+    <section className="home-promo-section relative z-0 isolate mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-7 lg:pb-12">
       <div className="relative">
         <button
           type="button"
