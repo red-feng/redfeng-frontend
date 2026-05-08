@@ -60,12 +60,12 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       one_way: {
         ctaHref: serviceHref.flight,
         ctaLabel: "Cari Tiket",
-        desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.3fr_44px_1.3fr_1fr_1fr_auto] lg:items-center",
+        desktopGridClass: "hidden gap-4 lg:mt-6 lg:grid lg:grid-cols-[1.16fr_52px_1.16fr_1.02fr_1.06fr_auto] lg:items-start",
         showDesktopSwap: true,
         desktopFields: [
           { label: "Dari", value: "CGK   Jakarta", sublabel: "Semua Bandara" },
           { label: "Ke", value: "DPS   Denpasar", sublabel: "Bali" },
-          { label: "Berangkat", value: "25 Mei 2026", sublabel: "Minggu" },
+          { label: "Tanggal Pergi", value: "25 Mei 2026", sublabel: "Minggu" },
           { label: "Penumpang", value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: true },
         ],
         mobilePrimaryCount: 2,

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import Link from "next/link"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import { SwapIcon } from "@/app/components/home/shared/homeContent"
@@ -18,65 +19,95 @@ type HeroSearchDesktopProps = {
 export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = fields ?? config.desktopFields
+  const fourthLabel = config.activeOption === "one_way" ? "Tanggal Pulang" : desktopFields[3]?.label
 
   return (
     <div className={`${desktopGridClass} relative overflow-visible`}>
       {showDesktopSwap ? (
         <>
-          <HeroSearchField
-            label={desktopFields[0].label}
-            value={desktopFields[0].value}
-            sublabel={desktopFields[0].sublabel ?? ""}
-            inputType={desktopFields[0].inputType}
-            options={desktopFields[0].options}
-            onValueChange={(value) => onFieldChange?.(0, value)}
-            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
-          />
-          <button type="button" onClick={onSwap} className="mx-auto hidden h-12 w-12 items-center justify-center rounded-full border border-[#edf1f5] bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.2)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
-            <SwapIcon className="h-4 w-4" />
-          </button>
-          <HeroSearchField
-            label={desktopFields[1].label}
-            value={desktopFields[1].value}
-            sublabel={desktopFields[1].sublabel ?? ""}
-            inputType={desktopFields[1].inputType}
-            options={desktopFields[1].options}
-            onValueChange={(value) => onFieldChange?.(1, value)}
-            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
-          />
-          {desktopFields.slice(2).map((field, index) => (
+          <DesktopFieldShell label={desktopFields[0].label}>
             <HeroSearchField
-              key={field.label}
-              label={field.label}
-              value={field.value}
-              sublabel={field.sublabel ?? ""}
-              withChevron={field.withChevron}
-              inputType={field.inputType}
-              options={field.options}
-              onValueChange={(value) => onFieldChange?.(index + 2, value)}
-              className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
+              label={desktopFields[0].label}
+              value={desktopFields[0].value}
+              sublabel={desktopFields[0].sublabel ?? ""}
+              hideLabel
+              hideSublabel
+              variant="searchbox-desktop"
+              inputType={desktopFields[0].inputType}
+              options={desktopFields[0].options}
+              onValueChange={(value) => onFieldChange?.(0, value)}
+              className="rounded-[999px] px-6 py-3"
             />
+          </DesktopFieldShell>
+          <button type="button" onClick={onSwap} className="relative mx-auto hidden h-[68px] w-[52px] items-center justify-center text-[#ff5a43] lg:flex">
+            <span className="absolute left-0 top-1/2 h-6 w-px -translate-y-1/2 bg-[#e2e8f0]" />
+            <SwapIcon className="h-[15px] w-[15px]" />
+            <span className="absolute right-0 top-1/2 h-6 w-px -translate-y-1/2 bg-[#e2e8f0]" />
+          </button>
+          <DesktopFieldShell label={desktopFields[1].label}>
+            <HeroSearchField
+              label={desktopFields[1].label}
+              value={desktopFields[1].value}
+              sublabel={desktopFields[1].sublabel ?? ""}
+              hideLabel
+              hideSublabel
+              variant="searchbox-desktop"
+              inputType={desktopFields[1].inputType}
+              options={desktopFields[1].options}
+              onValueChange={(value) => onFieldChange?.(1, value)}
+              className="rounded-[999px] px-6 py-3"
+            />
+          </DesktopFieldShell>
+          {desktopFields.slice(2).map((field, index) => (
+            <DesktopFieldShell key={field.label} label={index === 1 && fourthLabel ? fourthLabel : field.label}>
+              <HeroSearchField
+                label={field.label}
+                value={field.value}
+                sublabel={field.sublabel ?? ""}
+                hideLabel
+                hideSublabel
+                withChevron={field.withChevron}
+                variant="searchbox-desktop"
+                inputType={field.inputType}
+                options={field.options}
+                onValueChange={(value) => onFieldChange?.(index + 2, value)}
+                className="rounded-[999px] px-6 py-3"
+              />
+            </DesktopFieldShell>
           ))}
         </>
       ) : (
         desktopFields.map((field, index) => (
-          <HeroSearchField
-            key={field.label}
-            label={field.label}
-            value={field.value}
-            sublabel={field.sublabel ?? ""}
-            withChevron={field.withChevron}
-            inputType={field.inputType}
-            options={field.options}
-            onValueChange={(value) => onFieldChange?.(index, value)}
-            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
-          />
+          <DesktopFieldShell key={field.label} label={field.label}>
+            <HeroSearchField
+              label={field.label}
+              value={field.value}
+              sublabel={field.sublabel ?? ""}
+              hideLabel
+              hideSublabel
+              withChevron={field.withChevron}
+              variant="searchbox-desktop"
+              inputType={field.inputType}
+              options={field.options}
+              onValueChange={(value) => onFieldChange?.(index, value)}
+              className="rounded-[999px] px-6 py-3"
+            />
+          </DesktopFieldShell>
         ))
       )}
 
-      <Link href={ctaHref} className="inline-flex min-h-[68px] items-center justify-center whitespace-nowrap rounded-[22px] bg-[#ff5a43] px-12 text-[18px] font-semibold text-white shadow-[0_20px_34px_-20px_rgba(255,90,67,0.85)]">
+      <Link href={ctaHref} className="mt-[30px] inline-flex min-h-[66px] items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-16 text-[18px] font-semibold text-white shadow-[0_18px_30px_-20px_rgba(255,90,67,0.82)]">
         {ctaLabel}
       </Link>
+    </div>
+  )
+}
+
+function DesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="pl-3 text-[15px] font-semibold text-[#42526b]">{label}</p>
+      {children}
     </div>
   )
 }
