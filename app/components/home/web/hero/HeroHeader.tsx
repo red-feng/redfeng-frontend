@@ -7,7 +7,7 @@ import { servicePageConfigByLabel } from "@/app/components/services/serviceCatal
 
 export default function HeroHeader() {
   return (
-    <header className="home-hero-header relative z-10 min-h-[190px]">
+    <header className="home-hero-header relative z-10 min-h-[158px]">
       <Link href="/" className="home-hero-logo-link absolute left-0 top-5 flex items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
@@ -48,7 +48,7 @@ export default function HeroHeader() {
           </div>
         </div>
 
-        <div className="mt-5 flex w-[76.5%] items-center justify-center px-10 py-5">
+        <div className="mt-1 flex w-[76.5%] items-center justify-center px-10 py-3">
           <nav className="home-hero-primary-nav flex items-center gap-2 text-[15px] font-semibold text-white">
             <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesawat</Link>
             <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Hotel</Link>
