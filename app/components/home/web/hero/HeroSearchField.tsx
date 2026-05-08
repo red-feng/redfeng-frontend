@@ -41,7 +41,7 @@ export default function HeroSearchField({
   const [draftValue, setDraftValue] = useState(value)
   const fieldRef = useRef<HTMLDivElement | null>(null)
   const hasDropdown = inputType !== "date" && options.length > 0
-  const fieldShellClass = `relative w-full bg-[#fefefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5"} ${className}`
+  const fieldShellClass = `relative w-full overflow-visible bg-[#fefefe] ${isOpen ? "z-[170]" : "z-0"} ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5"} ${className}`
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
 

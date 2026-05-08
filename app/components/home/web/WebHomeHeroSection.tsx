@@ -40,8 +40,8 @@ export default function WebHomeHeroSection() {
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-32 max-w-[1280px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-[11.5rem] lg:px-8 lg:pb-14">
-        <div className="home-hero-search-card overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
+      <div className="home-hero-search-wrap relative z-[160] mx-auto -mt-32 max-w-[1280px] px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-[11.5rem] lg:px-8 lg:pb-14">
+        <div className="home-hero-search-card relative z-[160] overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -109,7 +109,7 @@ function HeroSearchPanel({
   }
 
   return (
-    <div className="px-5 py-6 lg:px-7 lg:py-8">
+    <div className="relative overflow-visible px-5 py-6 lg:px-7 lg:py-8">
       <div className="hidden flex-wrap gap-9 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button

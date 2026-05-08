@@ -20,7 +20,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
   const desktopFields = fields ?? config.desktopFields
 
   return (
-    <div className={desktopGridClass}>
+    <div className={`${desktopGridClass} relative overflow-visible`}>
       {showDesktopSwap ? (
         <>
           <HeroSearchField
