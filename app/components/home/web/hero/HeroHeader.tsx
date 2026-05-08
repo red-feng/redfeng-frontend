@@ -48,7 +48,7 @@ export default function HeroHeader() {
           </div>
         </div>
 
-        <div className="mt-5 flex w-[76.5%] items-center justify-center rounded-[30px] border border-white/18 bg-[linear-gradient(180deg,rgba(15,48,91,0.62)_0%,rgba(9,41,82,0.52)_100%)] px-10 py-5 shadow-[0_18px_34px_-26px_rgba(0,0,0,0.65)] backdrop-blur-[13px]">
+        <div className="mt-5 flex w-[76.5%] items-center justify-center px-10 py-5">
           <nav className="home-hero-primary-nav flex items-center gap-2 text-[15px] font-semibold text-white">
             <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesawat</Link>
             <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Hotel</Link>
@@ -58,7 +58,6 @@ export default function HeroHeader() {
             <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
             <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Aktivitas</Link>
             <Link href="/packages" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Paket Wisata</Link>
-            <Link href="/promo" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Promo</Link>
           </nav>
         </div>
       </div>
