@@ -41,7 +41,7 @@ export default function WebHomeHeroSection() {
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-40 max-w-[1280px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-[11.5rem] lg:px-8 lg:pb-14">
+      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-52 max-w-[1280px] px-4 pb-10 sm:-mt-56 sm:px-6 lg:-mt-[17.25rem] lg:px-8 lg:pb-14">
         <div className="home-hero-search-card overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
