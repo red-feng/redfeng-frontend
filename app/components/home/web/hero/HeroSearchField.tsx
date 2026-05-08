@@ -1,5 +1,6 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronDownIcon, SwapIcon } from "@/app/components/home/shared/homeContent"
 
@@ -15,6 +16,7 @@ type HeroSearchFieldProps = {
   label: string
   value: string
   sublabel: string
+  renderValue?: ReactNode
   hideLabel?: boolean
   hideSublabel?: boolean
   withSwap?: boolean
@@ -32,6 +34,7 @@ export default function HeroSearchField({
   label,
   value,
   sublabel,
+  renderValue,
   hideLabel = false,
   hideSublabel = false,
   withSwap = false,
@@ -120,7 +123,19 @@ export default function HeroSearchField({
         ) : null}
         <div className="min-w-0 flex-1">
           {hideLabel ? null : <p className={labelClassName}>{label}</p>}
-      {inputType === "date" ? (
+      {renderValue ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (hasDropdown || withChevron) {
+              setIsOpen((current) => !current)
+            }
+          }}
+          className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent text-left outline-none`}
+        >
+          {renderValue}
+        </button>
+      ) : inputType === "date" ? (
         isSearchboxDesktop ? (
           <input
             type="text"
