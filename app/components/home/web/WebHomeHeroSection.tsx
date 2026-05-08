@@ -41,7 +41,7 @@ export default function WebHomeHeroSection() {
       </div>
 
       <div className="home-hero-search-wrap relative z-[220] mx-auto -mt-32 max-w-[1280px] overflow-visible px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-[12.5rem] lg:px-8 lg:pb-14">
-        <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[34px] border border-[#edf1f5] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.3)]">
+        <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[32px] border border-[#edf1f5] bg-white shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -109,16 +109,16 @@ function HeroSearchPanel({
   }
 
   return (
-    <div className="relative overflow-visible px-5 py-6 lg:px-8 lg:py-8">
-      <div className="hidden flex-wrap gap-10 text-[13px] font-semibold text-slate-700 lg:flex">
+    <div className="relative overflow-visible px-5 py-6 lg:px-8 lg:py-[2.15rem]">
+      <div className="hidden flex-wrap gap-11 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
             key={option.key}
             type="button"
             onClick={() => onOptionChange(option.key)}
-            className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-slate-500 hover:text-slate-800"}`}
+            className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
           >
-            <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
+            <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
             {option.label}
           </button>
         ))}

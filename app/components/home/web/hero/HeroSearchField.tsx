@@ -50,7 +50,7 @@ export default function HeroSearchField({
   const isSearchboxDesktop = variant === "searchbox-desktop"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shellBaseClass = isSearchboxDesktop
-    ? "min-h-[68px] border border-[#d9e2ec] bg-white"
+    ? "min-h-[66px] border border-[#d9e2ec] bg-white"
     : isDesktopPill
     ? "min-h-[68px] border bg-white"
     : compact
@@ -59,7 +59,7 @@ export default function HeroSearchField({
   const fieldShellClass = `relative w-full overflow-visible ${isOpen ? "z-[260]" : "z-0"} ${shellBaseClass} ${className}`
   const iconClassName = isDesktopPill ? "h-[18px] w-[18px]" : "h-4 w-4"
   const labelClassName = isSearchboxDesktop ? "text-[14px] font-semibold text-[#42526b]" : isDesktopPill ? "text-[13px] font-medium text-[#4a5f7b]" : "text-[12px] font-medium text-slate-400"
-  const valueClassName = isSearchboxDesktop ? "text-[16px] font-semibold text-[#17263c]" : isDesktopPill ? "text-[15px] font-semibold text-[#12243d]" : "text-[15px] font-semibold text-slate-900"
+  const valueClassName = isSearchboxDesktop ? "text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[15px] font-semibold text-[#12243d]" : "text-[15px] font-semibold text-slate-900"
   const sublabelClassName = isDesktopPill ? "text-[11px] text-slate-400" : "text-[12px] text-slate-400"
   const fieldIcon = getFieldIcon(label, inputType)
   const filteredOptions = useMemo(() => {
@@ -222,7 +222,7 @@ export default function HeroSearchField({
           <SearchMiniIcon className="h-4 w-4" />
         </span>
       ) : inputType === "autocomplete" && isSearchboxDesktop ? (
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8ea0b8]">
+        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#90a2b9]">
           <SearchMiniIcon className="h-[19px] w-[19px]" />
         </span>
       ) : inputType === "date" && isDesktopPill ? (
