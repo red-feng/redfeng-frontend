@@ -23,16 +23,16 @@ export default function HeroHeader() {
 
       <div className="hidden flex-col items-center lg:flex">
         <div className="flex w-full items-center justify-end gap-8 pr-1 pt-2 text-[14px] font-medium text-white">
-          <nav className="ml-[12rem] flex items-center gap-8">
-            <Link href="/promo" className="transition hover:text-[#ffd2c4]">Promo</Link>
-            <Link href="/customer/bookings" className="transition hover:text-[#ffd2c4]">Pesanan</Link>
-            <Link href="https://redfeng.co/kemitraan_tour/" className="transition hover:text-[#ffd2c4]">Kemitraan Tour</Link>
-            <Link href="/verifikasi-invoice" className="transition hover:text-[#ffd2c4]">Verifikasi Invoice Tour</Link>
+          <nav className="ml-[12rem] flex items-center gap-2">
+            <Link href="/promo" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Promo</Link>
+            <Link href="/customer/bookings" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesanan</Link>
+            <Link href="https://redfeng.co/kemitraan_tour/" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kemitraan Tour</Link>
+            <Link href="/verifikasi-invoice" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Verifikasi Invoice Tour</Link>
           </nav>
 
           <div className="flex items-center gap-4">
-            <Link href="/contact" className="transition hover:text-[#ffd2c4]">Bantuan</Link>
-            <button className="flex items-center gap-1 transition hover:text-[#ffd2c4]">
+            <Link href="/contact" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bantuan</Link>
+            <button className="flex items-center gap-1 rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
               IDR
               <ChevronDownIcon className="h-4 w-4" />
             </button>
