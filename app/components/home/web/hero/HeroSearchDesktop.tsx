@@ -165,7 +165,7 @@ function PatternedDesktopSearch({
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className={`mt-6 grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns }}>
+      <div className={`mt-6 grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns.replace(/56px$/, "60px") }}>
         {showDesktopSwap && leadingFields[0] ? (
           <>
             <DesktopFieldShell label={leadingFields[0].label}>
@@ -179,10 +179,10 @@ function PatternedDesktopSearch({
                 inputType={leadingFields[0].inputType}
                 options={leadingFields[0].options}
                 onValueChange={(value) => onFieldChange?.(0, value)}
-                className="rounded-[999px] px-6 py-4"
+                className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
-            <button type="button" onClick={onSwap} className={`relative mb-[7px] flex h-[56px] ${layout.swapWidth} items-center justify-center text-[#ff5a43]`}>
+            <button type="button" onClick={onSwap} className={`relative mb-[6px] flex h-[56px] ${layout.swapWidth} items-center justify-center text-[#ff5a43]`}>
               <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
               <SwapIcon className="h-[16px] w-[16px]" />
               <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
@@ -198,7 +198,7 @@ function PatternedDesktopSearch({
                 inputType={leadingFields[1].inputType}
                 options={leadingFields[1].options}
                 onValueChange={(value) => onFieldChange?.(1, value)}
-                className="rounded-[999px] px-6 py-4"
+                className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
           </>
@@ -219,7 +219,7 @@ function PatternedDesktopSearch({
                 inputType={field.inputType}
                 options={field.options}
                 onValueChange={(value) => onFieldChange?.(actualIndex, value)}
-                className="rounded-[999px] px-6 py-4"
+                className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
           )
@@ -228,7 +228,7 @@ function PatternedDesktopSearch({
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[7px] inline-flex h-[56px] w-[56px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[6px] inline-flex h-[60px] w-[60px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
@@ -253,7 +253,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_236px_56px] items-end gap-x-3">
+      <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_228px_60px] items-end gap-x-[11px]">
         <DesktopFieldShell label="Dari">
           <HeroSearchField
             label={originField.label}
@@ -265,7 +265,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={originField.inputType}
             options={originField.options}
             onValueChange={(value) => onFieldChange?.(0, value)}
-            className="rounded-[999px] px-6 py-4"
+            className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <AirportValue
                 code={originDisplay.code}
@@ -276,7 +276,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <button type="button" onClick={onSwap} className="relative mb-[7px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
+        <button type="button" onClick={onSwap} className="relative mb-[6px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
           <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
           <SwapIcon className="h-[16px] w-[16px]" />
           <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
@@ -293,7 +293,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={destinationField.inputType}
             options={destinationField.options}
             onValueChange={(value) => onFieldChange?.(1, value)}
-            className="rounded-[999px] px-6 py-4"
+            className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <AirportValue
                 code={destinationDisplay.code}
@@ -315,7 +315,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={departureField.inputType}
             options={departureField.options}
             onValueChange={(value) => onFieldChange?.(2, value)}
-            className="rounded-[999px] px-6 py-4"
+            className="rounded-[999px] px-6 py-[15px]"
             renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
           />
         </DesktopFieldShell>
@@ -332,7 +332,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={passengerField.inputType}
             options={passengerField.options}
             onValueChange={(value) => onFieldChange?.(3, value)}
-            className="rounded-[999px] px-6 py-4"
+            className="rounded-[999px] px-6 py-[15px]"
             renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[18px] w-[18px]" />} iconTone="text-[#7385a0]" />}
           />
         </DesktopFieldShell>
@@ -340,7 +340,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[7px] inline-flex h-[56px] w-[56px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[6px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
@@ -352,7 +352,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
 function DesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-[7px]">
       <p className="pl-4 text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
