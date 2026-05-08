@@ -135,7 +135,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-6 grid grid-cols-[286px_56px_286px_258px_282px_84px] items-end gap-x-5">
+      <div className="mt-[26px] grid grid-cols-[292px_52px_292px_262px_286px_86px] items-end gap-x-4">
         <DesktopFieldShell label="Dari">
           <HeroSearchField
             label={originField.label}
@@ -152,16 +152,16 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
               <AirportValue
                 code={originDisplay.code}
                 city={originDisplay.city}
-                icon={<SearchMiniIcon className="h-5 w-5" />}
+                icon={<SearchMiniIcon className="h-[19px] w-[19px]" />}
               />
             }
           />
         </DesktopFieldShell>
 
-        <button type="button" onClick={onSwap} className="relative mb-[11px] flex h-[54px] w-[56px] items-center justify-center text-[#ff5a43]">
-          <span className="absolute left-0 top-1/2 h-9 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+        <button type="button" onClick={onSwap} className="relative mb-[10px] flex h-[56px] w-[52px] items-center justify-center text-[#ff5a43]">
+          <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
           <SwapIcon className="h-[16px] w-[16px]" />
-          <span className="absolute right-0 top-1/2 h-9 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+          <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
         </button>
 
         <DesktopFieldShell label="Ke">
@@ -180,7 +180,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
               <AirportValue
                 code={destinationDisplay.code}
                 city={destinationDisplay.city}
-                icon={<SearchMiniIcon className="h-5 w-5" />}
+                icon={<SearchMiniIcon className="h-[19px] w-[19px]" />}
               />
             }
           />
@@ -198,7 +198,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={departureField.options}
             onValueChange={(value) => onFieldChange?.(2, value)}
             className="rounded-[999px] px-7 py-[17px]"
-            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-5 w-5" />} />}
+            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[19px] w-[19px]" />} />}
           />
         </DesktopFieldShell>
 
@@ -215,14 +215,14 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={passengerField.options}
             onValueChange={(value) => onFieldChange?.(3, value)}
             className="rounded-[999px] px-7 py-[17px]"
-            renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-5 w-5" />} iconTone="text-[#7385a0]" />}
+            renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[19px] w-[19px]" />} iconTone="text-[#7385a0]" />}
           />
         </DesktopFieldShell>
 
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[10px] inline-flex h-[66px] w-[66px] items-center justify-center rounded-[22px] bg-[#ff6624] text-white shadow-[0_12px_0_0_rgba(100,114,135,0.6)] transition hover:translate-y-[1px] hover:shadow-[0_10px_0_0_rgba(100,114,135,0.56)]"
+          className="mb-[8px] inline-flex h-[68px] w-[68px] items-center justify-center rounded-[22px] bg-[#ff6624] text-white shadow-[0_11px_0_0_rgba(135,145,160,0.8),0_20px_28px_-22px_rgba(15,23,42,0.5)] transition hover:translate-y-[1px] hover:shadow-[0_9px_0_0_rgba(135,145,160,0.75),0_18px_24px_-22px_rgba(15,23,42,0.46)]"
         >
           <SearchActionIcon className="h-6 w-6" />
           <span className="sr-only">{ctaLabel}</span>
@@ -235,7 +235,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 function DesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-[10px]">
-      <p className="pl-3 text-[15px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
+      <p className="pl-4 text-[15px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
   )
@@ -271,8 +271,8 @@ function CalendarMiniIcon({ className = "" }: { className?: string }) {
 function AirportValue({ code, city, icon }: { code: string; city: string; icon: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[16px] font-semibold tracking-[-0.01em] text-[#17263c]">
-        <span className="mr-5 inline-block min-w-[40px]">{code}</span>
+      <span className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]">
+        <span className="mr-[18px] inline-block min-w-[34px]">{code}</span>
         <span>{city}</span>
       </span>
       <span className="shrink-0 text-[#90a2b9]">{icon}</span>
@@ -291,7 +291,7 @@ function SingleLineValue({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[16px] font-semibold tracking-[-0.01em] text-[#17263c]">{value}</span>
+      <span className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]">{value}</span>
       <span className={`shrink-0 ${iconTone}`}>{icon}</span>
     </div>
   )

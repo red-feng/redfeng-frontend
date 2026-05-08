@@ -53,7 +53,7 @@ export default function HeroSearchField({
   const isSearchboxDesktop = variant === "searchbox-desktop"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shellBaseClass = isSearchboxDesktop
-    ? "min-h-[66px] border border-[#d9e2ec] bg-white"
+    ? "min-h-[66px] border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
     : isDesktopPill
     ? "min-h-[68px] border bg-white"
     : compact
