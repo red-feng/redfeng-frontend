@@ -381,8 +381,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
       <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1650px] overflow-hidden rounded-[34px] bg-[#112740] shadow-[0_40px_120px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2.5rem)]">
         <div className="absolute inset-0">
           <Image
-            src="/home-assets/dest-bali.png"
-            alt="Bali landscape"
+            src="/home-assets/background-login-customer.png"
+            alt="Customer login background"
             fill
             priority
             className="object-cover object-center"
