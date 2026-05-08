@@ -88,8 +88,8 @@ function MobileHeroBackdrop() {
 
 function HeroIntro() {
   return (
-    <div className="home-hero-intro relative z-10 flex justify-center pt-12 text-center lg:pt-[4.25rem]">
-      <div className="home-hero-intro-shell max-w-[860px] pb-56 lg:min-h-[420px] lg:pb-0">
+    <div className="home-hero-intro relative z-10 flex justify-center pt-10 text-center lg:pt-8">
+      <div className="home-hero-intro-shell max-w-[860px] pb-56 lg:min-h-[390px] lg:pb-0">
         <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.06] tracking-[-0.045em] text-[#071631] sm:max-w-[660px] sm:text-[42px] lg:max-w-[860px] lg:text-[64px]">
           Ekosistem perjalanan
           <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
