@@ -62,9 +62,9 @@ export default function HeroSearchField({
       : "border-t border-slate-200 bg-[#fefefe] first:rounded-t-[20px] last:border-b lg:rounded-[24px] lg:border"
   const fieldShellClass = `relative w-full overflow-visible ${isOpen ? "z-[260]" : "z-0"} ${shellBaseClass} ${className}`
   const iconClassName = isDesktopPill ? "h-[18px] w-[18px]" : "h-4 w-4"
-  const labelClassName = isSearchboxDesktop ? "text-[14px] font-semibold text-[#42526b]" : isDesktopPill ? "text-[13px] font-medium text-[#4a5f7b]" : "text-[12px] font-medium text-slate-400"
-  const valueClassName = isSearchboxDesktop ? "text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[15px] font-semibold text-[#12243d]" : "text-[15px] font-semibold text-slate-900"
-  const sublabelClassName = isDesktopPill ? "text-[11px] text-slate-400" : "text-[12px] text-slate-400"
+  const labelClassName = isSearchboxDesktop ? "text-[13px] font-semibold text-[#42526b]" : isDesktopPill ? "text-[13px] font-medium text-[#4a5f7b]" : "text-[13px] font-medium text-slate-400"
+  const valueClassName = isSearchboxDesktop ? "text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[13px] font-semibold text-[#12243d]" : "text-[13px] font-semibold text-slate-900"
+  const sublabelClassName = "text-[13px] text-slate-400"
   const fieldIcon = getFieldIcon(label, inputType)
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
@@ -195,7 +195,7 @@ export default function HeroSearchField({
               groupedOptions.map(([groupLabel, groupItems]) => (
                 <div key={`${label}-${groupLabel}`} className="border-t border-slate-100/80 first:border-t-0">
                   <div className="px-4 pb-1 pt-4 first:pt-2">
-                    <p className="text-[14px] font-semibold text-slate-700">{groupLabel}</p>
+                    <p className="text-[13px] font-semibold text-slate-700">{groupLabel}</p>
                   </div>
                   {groupItems.map((option) => {
                     const isActive = option.value === value
@@ -215,8 +215,8 @@ export default function HeroSearchField({
                           <DropdownItemIcon className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-semibold text-slate-900">{option.label}</span>
-                          {option.sublabel ? <span className="mt-0.5 block truncate text-[12px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                          <span className="block truncate text-[13px] font-semibold text-slate-900">{option.label}</span>
+                          {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
                         </span>
                       </button>
                     )

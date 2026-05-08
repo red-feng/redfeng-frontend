@@ -20,6 +20,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
   const isDedicatedFlightOneWay = config.ctaHref === "/pesawat" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
+  const layout = getDesktopPatternLayout(showDesktopSwap, desktopFields.length)
 
   if (isDedicatedFlightOneWay) {
     return (
@@ -27,6 +28,20 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         ctaHref={ctaHref}
         ctaLabel={ctaLabel}
         fields={desktopFields}
+        onFieldChange={onFieldChange}
+        onSwap={onSwap}
+      />
+    )
+  }
+
+  if (layout) {
+    return (
+      <PatternedDesktopSearch
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        fields={desktopFields}
+        showDesktopSwap={showDesktopSwap}
+        layout={layout}
         onFieldChange={onFieldChange}
         onSwap={onSwap}
       />
@@ -116,6 +131,109 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         <SearchActionIcon className="h-5 w-5" />
         <span className="sr-only">{ctaLabel}</span>
       </Link>
+    </div>
+  )
+}
+
+type DesktopPatternLayout = {
+  columns: string
+  gapClass: string
+  swapWidth: string
+}
+
+type PatternedDesktopSearchProps = {
+  ctaHref: string
+  ctaLabel: string
+  fields: HeroRenderedField[]
+  showDesktopSwap: boolean
+  layout: DesktopPatternLayout
+  onFieldChange?: (index: number, value: string) => void
+  onSwap?: () => void
+}
+
+function PatternedDesktopSearch({
+  ctaHref,
+  ctaLabel,
+  fields,
+  showDesktopSwap,
+  layout,
+  onFieldChange,
+  onSwap,
+}: PatternedDesktopSearchProps) {
+  const leadingFields = showDesktopSwap ? fields.slice(0, 2) : []
+  const remainingFields = showDesktopSwap ? fields.slice(2) : fields
+
+  return (
+    <div className="relative hidden overflow-visible lg:block">
+      <div className={`mt-[26px] grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns }}>
+        {showDesktopSwap && leadingFields[0] ? (
+          <>
+            <DesktopFieldShell label={leadingFields[0].label}>
+              <HeroSearchField
+                label={leadingFields[0].label}
+                value={leadingFields[0].value}
+                sublabel={leadingFields[0].sublabel ?? ""}
+                hideLabel
+                hideSublabel
+                variant="searchbox-desktop"
+                inputType={leadingFields[0].inputType}
+                options={leadingFields[0].options}
+                onValueChange={(value) => onFieldChange?.(0, value)}
+                className="rounded-[999px] px-6 py-[17px]"
+              />
+            </DesktopFieldShell>
+            <button type="button" onClick={onSwap} className={`relative mb-[10px] flex h-[56px] ${layout.swapWidth} items-center justify-center text-[#ff5a43]`}>
+              <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+              <SwapIcon className="h-[16px] w-[16px]" />
+              <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+            </button>
+            <DesktopFieldShell label={leadingFields[1].label}>
+              <HeroSearchField
+                label={leadingFields[1].label}
+                value={leadingFields[1].value}
+                sublabel={leadingFields[1].sublabel ?? ""}
+                hideLabel
+                hideSublabel
+                variant="searchbox-desktop"
+                inputType={leadingFields[1].inputType}
+                options={leadingFields[1].options}
+                onValueChange={(value) => onFieldChange?.(1, value)}
+                className="rounded-[999px] px-6 py-[17px]"
+              />
+            </DesktopFieldShell>
+          </>
+        ) : null}
+
+        {remainingFields.map((field, index) => {
+          const actualIndex = showDesktopSwap ? index + 2 : index
+          return (
+            <DesktopFieldShell key={`${field.label}-${actualIndex}`} label={field.label}>
+              <HeroSearchField
+                label={field.label}
+                value={field.value}
+                sublabel={field.sublabel ?? ""}
+                hideLabel
+                hideSublabel
+                withChevron={field.withChevron}
+                variant="searchbox-desktop"
+                inputType={field.inputType}
+                options={field.options}
+                onValueChange={(value) => onFieldChange?.(actualIndex, value)}
+                className="rounded-[999px] px-6 py-[17px]"
+              />
+            </DesktopFieldShell>
+          )
+        })}
+
+        <Link
+          href={ctaHref}
+          aria-label={ctaLabel}
+          className="mb-[8px] inline-flex h-[56px] w-[56px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+        >
+          <SearchActionIcon className="h-5 w-5" />
+          <span className="sr-only">{ctaLabel}</span>
+        </Link>
+      </div>
     </div>
   )
 }
@@ -235,7 +353,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 function DesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-[10px]">
-      <p className="pl-4 text-[15px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
+      <p className="pl-4 text-[13px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
   )
@@ -271,7 +389,7 @@ function CalendarMiniIcon({ className = "" }: { className?: string }) {
 function AirportValue({ code, city, icon }: { code: string; city: string; icon: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]">
+      <span className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]">
         <span className="mr-[18px] inline-block min-w-[34px]">{code}</span>
         <span>{city}</span>
       </span>
@@ -291,10 +409,46 @@ function SingleLineValue({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[15px] font-semibold tracking-[-0.01em] text-[#17263c]">{value}</span>
+      <span className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]">{value}</span>
       <span className={`shrink-0 ${iconTone}`}>{icon}</span>
     </div>
   )
+}
+
+function getDesktopPatternLayout(showDesktopSwap: boolean, fieldCount: number): DesktopPatternLayout | null {
+  if (showDesktopSwap && fieldCount === 4) {
+    return {
+      columns: "minmax(0,1.28fr) 36px minmax(0,1.28fr) minmax(0,0.92fr) minmax(0,1.02fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-[36px]",
+    }
+  }
+
+  if (showDesktopSwap && fieldCount === 5) {
+    return {
+      columns: "minmax(0,1.1fr) 36px minmax(0,1.1fr) minmax(0,0.78fr) minmax(0,0.78fr) minmax(0,0.98fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-[36px]",
+    }
+  }
+
+  if (!showDesktopSwap && fieldCount === 4) {
+    return {
+      columns: "minmax(0,1.4fr) minmax(0,0.96fr) minmax(0,0.88fr) minmax(0,1fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-0",
+    }
+  }
+
+  if (!showDesktopSwap && fieldCount === 5) {
+    return {
+      columns: "minmax(0,1.08fr) minmax(0,1.08fr) minmax(0,0.82fr) minmax(0,0.82fr) minmax(0,0.98fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-0",
+    }
+  }
+
+  return null
 }
 
 function splitAirportValue(input: string) {
