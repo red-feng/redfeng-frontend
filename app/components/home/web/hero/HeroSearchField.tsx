@@ -52,6 +52,7 @@ export default function HeroSearchField({
   const hasDropdown = inputType !== "date" && options.length > 0
   const isSearchboxDesktop = variant === "searchbox-desktop"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
+  const shouldShowDefaultAdornment = !renderValue
   const shellBaseClass = isSearchboxDesktop
     ? "min-h-[66px] border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
     : isDesktopPill
@@ -237,19 +238,19 @@ export default function HeroSearchField({
           <SwapIcon className="h-4 w-4" />
         </button>
       ) : null}
-      {withChevron ? (
+      {shouldShowDefaultAdornment && withChevron ? (
         <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#72839b]" : isDesktopPill ? "text-[#7b8aa1]" : "text-slate-500"}`}>
           <ChevronDownIcon className="h-4 w-4" />
         </span>
-      ) : inputType === "autocomplete" && !isDesktopPill ? (
+      ) : shouldShowDefaultAdornment && inputType === "autocomplete" && !isDesktopPill ? (
         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
           <SearchMiniIcon className="h-4 w-4" />
         </span>
-      ) : inputType === "autocomplete" && isSearchboxDesktop ? (
+      ) : shouldShowDefaultAdornment && inputType === "autocomplete" && isSearchboxDesktop ? (
         <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#90a2b9]">
           <SearchMiniIcon className="h-[19px] w-[19px]" />
         </span>
-      ) : inputType === "date" && isDesktopPill ? (
+      ) : shouldShowDefaultAdornment && inputType === "date" && isDesktopPill ? (
         <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#111111]" : "text-[#7b8aa1]"}`}>
           <CalendarMiniIcon className="h-[18px] w-[18px]" />
         </span>
