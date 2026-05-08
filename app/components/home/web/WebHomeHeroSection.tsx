@@ -32,7 +32,6 @@ export default function WebHomeHeroSection() {
     <div className="home-hero-standard">
       <div className="relative min-h-[720px] overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
-        <HeroBackdropOverlay />
 
         <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-36 pt-6 sm:px-6 lg:px-8">
           <HeroHeader />
@@ -65,16 +64,6 @@ function DesktopHeroBackdrop() {
     <div className="absolute inset-0 hidden lg:block">
       <Image src="/home-assets/hero-bg.png" alt="Hero RedFeng" fill priority className="object-cover object-center" />
     </div>
-  )
-}
-
-function HeroBackdropOverlay() {
-  return (
-    <>
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,18,47,0.42)_0%,rgba(4,20,54,0.18)_24%,rgba(4,23,56,0.1)_42%,rgba(4,20,54,0)_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(156,214,255,0.2)_0%,rgba(156,214,255,0.08)_14%,rgba(156,214,255,0)_34%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,rgba(6,20,47,0)_0%,rgba(7,22,48,0.08)_44%,rgba(255,255,255,0.96)_100%)]" />
-    </>
   )
 }
 
