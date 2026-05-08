@@ -135,7 +135,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-[26px] grid grid-cols-[270px_44px_270px_220px_250px_68px] items-end gap-x-4">
+      <div className="mt-[26px] grid grid-cols-[258px_36px_258px_208px_236px_56px] items-end gap-x-3">
         <DesktopFieldShell label="Dari">
           <HeroSearchField
             label={originField.label}
@@ -158,7 +158,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <button type="button" onClick={onSwap} className="relative mb-[10px] flex h-[56px] w-[44px] items-center justify-center text-[#ff5a43]">
+        <button type="button" onClick={onSwap} className="relative mb-[10px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
           <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
           <SwapIcon className="h-[16px] w-[16px]" />
           <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
@@ -222,9 +222,9 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[8px] inline-flex h-[68px] w-[68px] items-center justify-center rounded-[22px] bg-[#ff6624] text-white shadow-[0_11px_0_0_rgba(135,145,160,0.8),0_20px_28px_-22px_rgba(15,23,42,0.5)] transition hover:translate-y-[1px] hover:shadow-[0_9px_0_0_rgba(135,145,160,0.75),0_18px_24px_-22px_rgba(15,23,42,0.46)]"
+          className="mb-[8px] inline-flex h-[56px] w-[56px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
-          <SearchActionIcon className="h-6 w-6" />
+          <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
         </Link>
       </div>
