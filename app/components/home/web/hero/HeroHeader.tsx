@@ -7,8 +7,8 @@ import { servicePageConfigByLabel } from "@/app/components/services/serviceCatal
 
 export default function HeroHeader() {
   return (
-    <header className="home-hero-header relative z-10 flex items-center justify-between gap-4">
-      <Link href="/" className="home-hero-logo-link flex items-center gap-2">
+    <header className="home-hero-header relative z-10 min-h-[170px]">
+      <Link href="/" className="home-hero-logo-link absolute left-0 top-3 flex items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"
@@ -17,42 +17,53 @@ export default function HeroHeader() {
           quality={100}
           unoptimized
           priority
-          className="home-hero-logo h-[3.1rem] w-[9.8rem] object-contain object-left sm:h-[3.5rem] sm:w-[11rem]"
+          className="home-hero-logo h-[5rem] w-[13rem] object-contain object-left"
         />
       </Link>
 
-      <div className="hidden items-center gap-5 rounded-[24px] border border-white/30 bg-[#0e2b4f]/58 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.42)] backdrop-blur-[12px] lg:flex">
-        <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-medium text-white">
-          <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Pesawat</Link>
-          <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Hotel</Link>
-          <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kereta</Link>
-          <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Bus</Link>
-          <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kapal</Link>
-          <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
-          <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Aktivitas</Link>
-          <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Paket Wisata</Link>
-          <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Promo</Link>
-        </nav>
+      <div className="hidden flex-col items-center lg:flex">
+        <div className="flex w-full items-center justify-end gap-6 pr-1 text-[14px] font-medium text-white">
+          <nav className="flex items-center gap-8">
+            <Link href="/promo" className="transition hover:text-[#ffd2c4]">Promo</Link>
+            <Link href="/customer/bookings" className="transition hover:text-[#ffd2c4]">Pesanan</Link>
+            <Link href="https://redfeng.co/kemitraan_tour/" className="transition hover:text-[#ffd2c4]">Kemitraan Tour</Link>
+            <Link href="/verifikasi-invoice" className="transition hover:text-[#ffd2c4]">Verifikasi Invoice Tour</Link>
+          </nav>
 
-        <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/25 pl-4">
-          <Link href="/contact" className="text-sm text-white transition hover:text-[#ffd2c4]">Bantuan</Link>
-          <button className="flex items-center gap-1 text-sm text-white transition hover:text-[#ffd2c4]">
-            IDR
-            <ChevronDownIcon className="h-4 w-4" />
-          </button>
-          <NotificationBellLink
-            items={defaultNotificationItems}
-            className="text-white transition hover:text-[#ffd2c4]"
-            iconClassName="h-5 w-5"
-            badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
-          />
-          <Link href="/login" className="whitespace-nowrap rounded-xl bg-[#ff5a43] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_24px_-18px_rgba(239,90,67,0.6)]">
-            Login / Daftar
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/contact" className="transition hover:text-[#ffd2c4]">Bantuan</Link>
+            <button className="flex items-center gap-1 transition hover:text-[#ffd2c4]">
+              IDR
+              <ChevronDownIcon className="h-4 w-4" />
+            </button>
+            <NotificationBellLink
+              items={defaultNotificationItems}
+              className="text-white transition hover:text-[#ffd2c4]"
+              iconClassName="h-5 w-5"
+              badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+            />
+            <Link href="/login" className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-7 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)]">
+              Login / Daftar
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-4 flex w-[74%] items-center justify-center rounded-[28px] border border-white/20 bg-[#0c2f5a]/48 px-8 py-4 shadow-[0_20px_40px_-30px_rgba(0,0,0,0.6)] backdrop-blur-[12px]">
+          <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-semibold text-white">
+            <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Pesawat</Link>
+            <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Hotel</Link>
+            <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kereta</Link>
+            <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bus</Link>
+            <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal</Link>
+            <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
+            <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Aktivitas</Link>
+            <Link href="/packages" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Paket Wisata</Link>
+            <Link href="/promo" className="whitespace-nowrap rounded-full px-4 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Promo</Link>
+          </nav>
         </div>
       </div>
 
-      <div className="home-hero-mobile-actions flex items-center gap-2 lg:hidden">
+      <div className="home-hero-mobile-actions flex items-center justify-end gap-2 lg:hidden">
         <NotificationBellLink
           items={defaultNotificationItems}
           className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/70 bg-white/85 text-slate-700 shadow-sm"

@@ -41,7 +41,7 @@ export default function HeroSearchField({
   const [draftValue, setDraftValue] = useState(value)
   const fieldRef = useRef<HTMLDivElement | null>(null)
   const hasDropdown = inputType !== "date" && options.length > 0
-  const fieldShellClass = `relative w-full bg-[#fdfefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[20px] lg:border lg:px-4 lg:py-3.5"} ${className}`
+  const fieldShellClass = `relative w-full bg-[#fefefe] ${compact ? "min-h-[108px] border-r border-t border-slate-200 px-4 py-4 first:rounded-bl-[20px] lg:min-h-0 lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5" : "border-t border-slate-200 px-4 py-4 first:rounded-t-[20px] last:border-b lg:rounded-[24px] lg:border lg:px-5 lg:py-4.5"} ${className}`
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
 
@@ -92,13 +92,13 @@ export default function HeroSearchField({
 
   return (
     <div ref={fieldRef} className={fieldShellClass}>
-      <p className="text-[11px] font-medium text-slate-400">{label}</p>
+      <p className="text-[12px] font-medium text-slate-400">{label}</p>
       {inputType === "date" ? (
         <input
           type="date"
           value={value}
           onChange={(event) => onValueChange?.(event.target.value)}
-          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none"
+          className="mt-3 w-full bg-transparent pr-8 text-[15px] font-semibold text-slate-900 outline-none"
         />
       ) : inputType === "autocomplete" ? (
         <input
@@ -112,13 +112,13 @@ export default function HeroSearchField({
             onValueChange?.(nextValue)
           }}
           placeholder={label.includes("Destinasi") ? "Cari destinasi atau nama paket" : "Cari kota, bandara, atau tujuan"}
-          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+          className="mt-3 w-full bg-transparent pr-8 text-[15px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
         />
       ) : hasDropdown ? (
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className="mt-2 flex w-full items-center justify-between gap-3 bg-transparent pr-8 text-left text-[14px] font-semibold text-slate-900 outline-none"
+          className="mt-3 flex w-full items-center justify-between gap-3 bg-transparent pr-8 text-left text-[15px] font-semibold text-slate-900 outline-none"
         >
           <span className="truncate">{value}</span>
         </button>
@@ -127,10 +127,10 @@ export default function HeroSearchField({
           type="text"
           value={value}
           onChange={(event) => onValueChange?.(event.target.value)}
-          className="mt-2 w-full bg-transparent pr-8 text-[14px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
+          className="mt-3 w-full bg-transparent pr-8 text-[15px] font-semibold text-slate-900 outline-none placeholder:text-slate-300"
         />
       )}
-      {sublabel ? <p className="mt-1 text-[11px] text-slate-400">{sublabel}</p> : <p className="mt-1 text-[11px] text-transparent">.</p>}
+      {sublabel ? <p className="mt-2 text-[12px] text-slate-400">{sublabel}</p> : <p className="mt-2 text-[12px] text-transparent">.</p>}
       {hasDropdown && isOpen ? (
         <div className="absolute left-0 top-[calc(100%+10px)] z-[140] w-full min-w-[260px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.38)]">
           <div className="border-b border-slate-100 px-4 py-3">

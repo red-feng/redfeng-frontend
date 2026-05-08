@@ -18,7 +18,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <main className="pb-28 md:pb-0">
-        <HomeHeroSection locale={locale} />
+        <HomeHeroSection />
         <WebHomeServicesSection />
         <AppHomeFeedSection />
         <WebHomePromoSection />

@@ -8,6 +8,7 @@ import {
   getHeroSearchConfig,
   heroSearchConfigs,
   HeroBenefits,
+  HeroHeader,
   HeroSearchDesktop,
   HeroSearchMobile,
   HeroTabs,
@@ -29,17 +30,19 @@ export default function WebHomeHeroSection() {
 
   return (
     <div className="home-hero-standard">
-      <div className="relative overflow-hidden">
+      <div className="relative overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
+        <HeroBackdropOverlay />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-12 pt-8 sm:px-6 lg:px-8">
+        <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-28 pt-6 sm:px-6 lg:px-8">
+          <HeroHeader />
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-44 max-w-[1240px] px-4 pb-10 sm:-mt-56 sm:px-6 lg:-mt-80 lg:pb-14 lg:px-8">
-        <div className="home-hero-search-card overflow-visible rounded-[30px] border border-white/90 bg-white shadow-[0_22px_44px_-30px_rgba(15,23,42,0.14)]">
+      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-32 sm:px-6 lg:-mt-36 lg:px-8 lg:pb-14">
+        <div className="home-hero-search-card overflow-visible rounded-[34px] border border-[#f2f2f2] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -65,6 +68,16 @@ function DesktopHeroBackdrop() {
   )
 }
 
+function HeroBackdropOverlay() {
+  return (
+    <>
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,18,47,0.42)_0%,rgba(4,20,54,0.18)_24%,rgba(4,23,56,0.1)_42%,rgba(4,20,54,0)_60%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(156,214,255,0.18)_0%,rgba(156,214,255,0.08)_16%,rgba(156,214,255,0)_38%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,rgba(6,20,47,0)_0%,rgba(7,22,48,0.1)_48%,rgba(255,255,255,0.92)_100%)]" />
+    </>
+  )
+}
+
 function MobileHeroBackdrop() {
   return (
     <div className="absolute inset-0 lg:hidden">
@@ -75,11 +88,11 @@ function MobileHeroBackdrop() {
 
 function HeroIntro() {
   return (
-    <div className="home-hero-intro relative z-10 flex justify-center pt-8 text-center lg:pt-12">
-      <div className="home-hero-intro-shell max-w-[760px] pb-40 lg:min-h-[430px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.12] tracking-[-0.03em] text-slate-950 sm:max-w-[620px] sm:text-[42px] lg:max-w-[760px] lg:text-[46px] lg:leading-[1.08]">
+    <div className="home-hero-intro relative z-10 flex justify-center pt-12 text-center lg:pt-24">
+      <div className="home-hero-intro-shell max-w-[760px] pb-52 lg:min-h-[440px] lg:pb-0">
+        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.08] tracking-[-0.04em] text-[#09162d] sm:max-w-[620px] sm:text-[42px] lg:max-w-[760px] lg:text-[58px]">
           Ekosistem perjalanan
-          <span className="mt-1 block text-[#ff5a43]">dalam satu genggaman</span>
+          <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
         </h1>
       </div>
     </div>
@@ -107,14 +120,14 @@ function HeroSearchPanel({
   }
 
   return (
-    <div className="px-4 py-5 lg:px-6 lg:py-7">
-      <div className="hidden flex-wrap gap-6 text-[13px] text-slate-600 lg:flex">
+    <div className="px-5 py-6 lg:px-6 lg:py-7">
+      <div className="hidden flex-wrap gap-8 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
             key={option.key}
             type="button"
             onClick={() => onOptionChange(option.key)}
-            className={`inline-flex items-center gap-2 font-medium transition ${config.activeOption === option.key ? "text-slate-800" : "text-slate-600 hover:text-slate-800"}`}
+            className={`inline-flex items-center gap-2 transition ${config.activeOption === option.key ? "text-[#1f3657]" : "text-slate-500 hover:text-slate-800"}`}
           >
             <span className={`h-2.5 w-2.5 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
             {option.label}

@@ -70,7 +70,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         ))
       )}
 
-      <Link href={ctaHref} className="inline-flex min-h-[76px] items-center justify-center whitespace-nowrap rounded-2xl bg-[#ff5a43] px-10 text-[16px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
+      <Link href={ctaHref} className="inline-flex min-h-[96px] items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-12 text-[18px] font-semibold text-white shadow-[0_24px_42px_-24px_rgba(255,90,67,0.9)]">
         {ctaLabel}
       </Link>
     </div>
