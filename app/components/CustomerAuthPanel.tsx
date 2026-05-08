@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { dictionaries, type Locale } from "@/lib/i18n";
+import { type Locale } from "@/lib/i18n";
 import {
   ACTIVE_PORTAL_COOKIE,
   ACTIVE_PORTAL_MAX_AGE,
@@ -34,10 +34,6 @@ const localeOptions: Array<{ value: Locale; label: string }> = [
   { value: "en", label: "EN" },
   { value: "zh", label: "ZH" },
 ];
-
-function getLoginDictionary(locale: Locale) {
-  return dictionaries[locale].login;
-}
 
 function getSafeNextFromLocation() {
   if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
@@ -161,11 +157,6 @@ function getProviderIcon(provider: AuthProvider | "apple") {
   return <AppleIcon />;
 }
 
-function getProviderLabel(provider: AuthProvider, t: ReturnType<typeof getLoginDictionary>) {
-  if (provider === "google") return t.continueWithGoogle;
-  return t.continueWithFacebook;
-}
-
 function getLocaleCopy(locale: Locale) {
   if (locale === "en") {
     return {
@@ -182,6 +173,13 @@ function getLocaleCopy(locale: Locale) {
       divider: "or continue with",
       chooseProvider: "Choose one of the sign-in methods below.",
       disabledProvider: "Coming soon",
+      continueWithGoogle: "Continue with Google",
+      continueWithApple: "Continue with Apple",
+      continueWithFacebook: "Continue with Facebook",
+      processing: "Processing...",
+      termsLead: "By continuing, you agree to our",
+      terms: "Terms & Conditions",
+      privacy: "Privacy Policy",
       noAccount: "Don't have an account yet?",
       registerNow: "Register now",
       haveAccount: "Already have an account?",
@@ -205,35 +203,42 @@ function getLocaleCopy(locale: Locale) {
 
   if (locale === "zh") {
     return {
-      heroTagline: "Find the best travel packages for unforgettable trips.",
-      welcome: "Welcome Back!",
-      subtitle: "Sign in to continue your journey with RedFeng",
-      loginTab: "Sign In",
-      registerTab: "Register",
-      emailPlaceholder: "Email or mobile number",
-      passwordPlaceholder: "Password",
-      forgotPassword: "Forgot password?",
-      primaryLogin: "Sign In",
-      primaryRegister: "Register",
-      divider: "or continue with",
-      chooseProvider: "Choose one of the sign-in methods below.",
-      disabledProvider: "Coming soon",
-      noAccount: "Don't have an account yet?",
-      registerNow: "Register now",
-      haveAccount: "Already have an account?",
-      loginNow: "Sign in now",
+      heroTagline: "发现最优质的旅游套餐，开启难忘旅程。",
+      welcome: "欢迎回来！",
+      subtitle: "登录以继续您与 RedFeng 的旅程",
+      loginTab: "登录",
+      registerTab: "注册",
+      emailPlaceholder: "邮箱或手机号",
+      passwordPlaceholder: "密码",
+      forgotPassword: "忘记密码？",
+      primaryLogin: "登录",
+      primaryRegister: "注册",
+      divider: "或使用以下方式登录",
+      chooseProvider: "请选择下方可用的登录方式。",
+      disabledProvider: "即将推出",
+      continueWithGoogle: "使用 Google 继续",
+      continueWithApple: "使用 Apple 继续",
+      continueWithFacebook: "使用 Facebook 继续",
+      processing: "处理中...",
+      termsLead: "继续即表示您同意我们的",
+      terms: "条款与条件",
+      privacy: "隐私政策",
+      noAccount: "还没有账户？",
+      registerNow: "立即注册",
+      haveAccount: "已经有账户？",
+      loginNow: "立即登录",
       leftFeatures: [
         {
-          title: "Best travel packages",
-          description: "Thousands of domestic and international travel options.",
+          title: "优选旅游套餐",
+          description: "海量国内与国际旅游套餐任您挑选",
         },
         {
-          title: "Safe and trusted",
-          description: "Secure transactions and 24/7 customer support.",
+          title: "安全且值得信赖",
+          description: "安全交易体验与 24/7 客户支持",
         },
         {
-          title: "Easy and practical",
-          description: "Book anytime and anywhere with a smoother flow.",
+          title: "简单又便捷",
+          description: "随时随地轻松预订，流程更顺畅",
         },
       ],
     };
@@ -253,6 +258,13 @@ function getLocaleCopy(locale: Locale) {
     divider: "atau masuk dengan",
     chooseProvider: "Pilih metode masuk yang tersedia di bawah.",
     disabledProvider: "Segera hadir",
+    continueWithGoogle: "Lanjutkan dengan Google",
+    continueWithApple: "Lanjutkan dengan Apple",
+    continueWithFacebook: "Lanjutkan dengan Facebook",
+    processing: "Memproses...",
+    termsLead: "Dengan melanjutkan, Anda menyetujui",
+    terms: "Syarat & Ketentuan",
+    privacy: "Kebijakan Privasi",
     noAccount: "Belum punya akun?",
     registerNow: "Daftar sekarang",
     haveAccount: "Sudah punya akun?",
@@ -296,7 +308,6 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const [passwordVisual, setPasswordVisual] = useState("");
   const enabledProviders = providerConfig.filter((item) => item.enabled);
 
-  const t = getLoginDictionary(locale);
   const copy = getLocaleCopy(locale);
   const authError = errorMsg || searchError;
   const footerHref =
@@ -327,17 +338,17 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   }> = [
     {
       key: "google",
-      label: getProviderLabel("google", t),
+      label: copy.continueWithGoogle,
       enabled: Boolean(providerConfig.find((item) => item.provider === "google")?.enabled),
     },
     {
       key: "apple",
-      label: locale === "id" ? "Lanjutkan dengan Apple" : "Continue with Apple",
+      label: copy.continueWithApple,
       enabled: false,
     },
     {
       key: "facebook",
-      label: getProviderLabel("facebook", t),
+      label: copy.continueWithFacebook,
       enabled: Boolean(providerConfig.find((item) => item.provider === "facebook")?.enabled),
     },
   ];
@@ -520,7 +531,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   disabled={loadingProvider !== null}
                   className="mt-12 inline-flex h-[82px] w-full items-center justify-center rounded-[18px] bg-[linear-gradient(180deg,#ff2f24_0%,#f31508_100%)] px-6 text-[28px] font-semibold text-white shadow-[0_22px_45px_rgba(255,47,36,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loadingProvider ? t.processing : mode === "login" ? copy.primaryLogin : copy.primaryRegister}
+                  {loadingProvider ? copy.processing : mode === "login" ? copy.primaryLogin : copy.primaryRegister}
                 </button>
 
                 <div className="mt-12 flex items-center gap-5 text-center text-[18px] text-slate-400">
@@ -573,13 +584,13 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                 </p>
 
                 <p className="mt-5 text-center text-sm leading-7 text-slate-500 sm:text-base">
-                  {t.termsLead}{" "}
+                  {copy.termsLead}{" "}
                   <Link href="/terms" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
-                    {t.terms}
+                    {copy.terms}
                   </Link>{" "}
-                  {locale === "id" ? "dan" : "and"}{" "}
+                  {locale === "id" ? "dan" : locale === "zh" ? "和" : "and"}{" "}
                   <Link href="/privacy" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
-                    {t.privacy}
+                    {copy.privacy}
                   </Link>
                   .
                 </p>

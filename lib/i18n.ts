@@ -530,7 +530,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       aboutTour: "关于行程",
       meetingPoint: "集合地点",
       highlights: "亮点",
-      map: "Meeting Point 地图",
+      map: "集合地点地图",
       noFacilities: "暂无设施。",
       service: "服务",
       include: "包含",
@@ -575,10 +575,10 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     login: {
       title: "登录或注册",
-      subtitle: "使用您日常使用的账户更快继续。",
+      subtitle: "使用您平时常用的账户，更快继续操作。",
       continueWithGoogle: "使用 Google 继续",
-      continueWithApple: "Apple",
-      continueWithFacebook: "Facebook",
+      continueWithApple: "使用 Apple 继续",
+      continueWithFacebook: "使用 Facebook 继续",
       processing: "处理中...",
       otherOptions: "其他选项",
       autoCreateHint: "如果您还没有账户，继续时将自动创建客户账户。",
@@ -587,7 +587,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       privacy: "隐私政策",
       registerCta: "还没有账户？",
       registerLink: "创建账户",
-      loginCta: "已有账户？",
+      loginCta: "已经有账户？",
       loginLink: "登录",
     },
     resetPassword: {
@@ -608,4 +608,3 @@ export function normalizeLocale(input: string | null | undefined): Locale {
   if (input === "zh") return "zh"
   return "id"
 }
-
