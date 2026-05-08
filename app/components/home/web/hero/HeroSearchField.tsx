@@ -121,12 +121,21 @@ export default function HeroSearchField({
         <div className="min-w-0 flex-1">
           {hideLabel ? null : <p className={labelClassName}>{label}</p>}
       {inputType === "date" ? (
-        <input
-          type="date"
-          value={value}
-          onChange={(event) => onValueChange?.(event.target.value)}
-          className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent ${isSearchboxDesktop ? "pr-12" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none`}
-        />
+        isSearchboxDesktop ? (
+          <input
+            type="text"
+            value={formatIsoToSlashDate(value)}
+            readOnly
+            className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent pr-12 ${valueClassName} outline-none`}
+          />
+        ) : (
+          <input
+            type="date"
+            value={value}
+            onChange={(event) => onValueChange?.(event.target.value)}
+            className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent ${isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none`}
+          />
+        )
       ) : inputType === "autocomplete" ? (
         <input
           type="text"
@@ -339,6 +348,12 @@ function getFieldIcon(label: string, inputType: HeroSearchFieldProps["inputType"
   }
 
   return "location" as const
+}
+
+function formatIsoToSlashDate(input: string) {
+  const [year, month, day] = input.split("-")
+  if (!year || !month || !day) return input
+  return `${day}/${month}/${year}`
 }
 
 function formatOptionSublabel(option: HeroSearchFieldOption) {

@@ -60,7 +60,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       one_way: {
         ctaHref: serviceHref.flight,
         ctaLabel: "Cari Tiket",
-        desktopGridClass: "hidden gap-4 lg:mt-6 lg:grid lg:grid-cols-[1.16fr_52px_1.16fr_1.02fr_1.06fr_auto] lg:items-start",
+        desktopGridClass: "hidden gap-5 lg:mt-6 lg:grid lg:grid-cols-[1.34fr_64px_1.34fr_1.18fr_1.28fr_280px] lg:items-start",
         showDesktopSwap: true,
         desktopFields: [
           { label: "Dari", value: "CGK   Jakarta", sublabel: "Semua Bandara" },

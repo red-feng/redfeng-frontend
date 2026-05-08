@@ -39,10 +39,10 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               className="rounded-[999px] px-6 py-3"
             />
           </DesktopFieldShell>
-          <button type="button" onClick={onSwap} className="relative mx-auto hidden h-[66px] w-[52px] items-center justify-center text-[#ff5a43] lg:flex">
-            <span className="absolute left-0 top-1/2 h-6 w-px -translate-y-1/2 bg-[#e5ebf2]" />
+          <button type="button" onClick={onSwap} className="relative mx-auto hidden h-[66px] w-[64px] items-center justify-center text-[#ff5a43] lg:flex">
+            <span className="absolute left-[10px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#e5ebf2]" />
             <SwapIcon className="h-[15px] w-[15px]" />
-            <span className="absolute right-0 top-1/2 h-6 w-px -translate-y-1/2 bg-[#e5ebf2]" />
+            <span className="absolute right-[10px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#e5ebf2]" />
           </button>
           <DesktopFieldShell label={desktopFields[1].label}>
             <HeroSearchField
@@ -96,7 +96,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         ))
       )}
 
-      <Link href={ctaHref} className="mt-[30px] inline-flex min-h-[66px] min-w-[236px] items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-16 text-[18px] font-semibold text-white shadow-[0_16px_28px_-18px_rgba(255,90,67,0.78)]">
+      <Link href={ctaHref} className="mt-[30px] inline-flex min-h-[66px] w-full items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-16 text-[18px] font-semibold text-white shadow-[0_16px_28px_-18px_rgba(255,90,67,0.78)]">
         {ctaLabel}
       </Link>
     </div>
