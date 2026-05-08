@@ -53,7 +53,7 @@ export type HeroSearchConfig = HeroSearchVariant & {
 
 export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
   flight: {
-    dataProvider: "partner_darmawisata",
+    dataProvider: "internal",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -122,7 +122,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   hotel: {
-    dataProvider: "partner_darmawisata",
+    dataProvider: "internal",
     defaultOption: "hotel",
     options: [
       { key: "hotel", label: "Hotel" },
@@ -187,7 +187,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   train: {
-    dataProvider: "partner_darmawisata",
+    dataProvider: "internal",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -257,7 +257,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   bus: {
-    dataProvider: "partner_darmawisata",
+    dataProvider: "internal",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -328,7 +328,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   ship: {
-    dataProvider: "partner_darmawisata",
+    dataProvider: "internal",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
