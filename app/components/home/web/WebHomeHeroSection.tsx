@@ -30,19 +30,19 @@ export default function WebHomeHeroSection() {
 
   return (
     <div className="home-hero-standard">
-      <div className="relative overflow-hidden bg-[#081f42]">
+      <div className="relative min-h-[720px] overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
         <HeroBackdropOverlay />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-28 pt-6 sm:px-6 lg:px-8">
+        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-36 pt-6 sm:px-6 lg:px-8">
           <HeroHeader />
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-28 max-w-[1240px] px-4 pb-10 sm:-mt-32 sm:px-6 lg:-mt-36 lg:px-8 lg:pb-14">
-        <div className="home-hero-search-card overflow-visible rounded-[34px] border border-[#f2f2f2] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
+      <div className="home-hero-search-wrap relative z-[80] mx-auto -mt-40 max-w-[1280px] px-4 pb-10 sm:-mt-44 sm:px-6 lg:-mt-[11.5rem] lg:px-8 lg:pb-14">
+        <div className="home-hero-search-card overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -72,8 +72,8 @@ function HeroBackdropOverlay() {
   return (
     <>
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(3,18,47,0.42)_0%,rgba(4,20,54,0.18)_24%,rgba(4,23,56,0.1)_42%,rgba(4,20,54,0)_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(156,214,255,0.18)_0%,rgba(156,214,255,0.08)_16%,rgba(156,214,255,0)_38%)]" />
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,rgba(6,20,47,0)_0%,rgba(7,22,48,0.1)_48%,rgba(255,255,255,0.92)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_14%,rgba(156,214,255,0.2)_0%,rgba(156,214,255,0.08)_14%,rgba(156,214,255,0)_34%)]" />
+      <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,rgba(6,20,47,0)_0%,rgba(7,22,48,0.08)_44%,rgba(255,255,255,0.96)_100%)]" />
     </>
   )
 }
@@ -88,9 +88,9 @@ function MobileHeroBackdrop() {
 
 function HeroIntro() {
   return (
-    <div className="home-hero-intro relative z-10 flex justify-center pt-12 text-center lg:pt-24">
-      <div className="home-hero-intro-shell max-w-[760px] pb-52 lg:min-h-[440px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.08] tracking-[-0.04em] text-[#09162d] sm:max-w-[620px] sm:text-[42px] lg:max-w-[760px] lg:text-[58px]">
+    <div className="home-hero-intro relative z-10 flex justify-center pt-12 text-center lg:pt-[4.25rem]">
+      <div className="home-hero-intro-shell max-w-[860px] pb-56 lg:min-h-[420px] lg:pb-0">
+        <h1 className="home-hero-title mx-auto max-w-[320px] text-[26px] font-bold leading-[1.06] tracking-[-0.045em] text-[#071631] sm:max-w-[660px] sm:text-[42px] lg:max-w-[860px] lg:text-[64px]">
           Ekosistem perjalanan
           <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
         </h1>
@@ -120,8 +120,8 @@ function HeroSearchPanel({
   }
 
   return (
-    <div className="px-5 py-6 lg:px-6 lg:py-7">
-      <div className="hidden flex-wrap gap-8 text-[13px] font-semibold text-slate-700 lg:flex">
+    <div className="px-5 py-6 lg:px-7 lg:py-8">
+      <div className="hidden flex-wrap gap-9 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
             key={option.key}

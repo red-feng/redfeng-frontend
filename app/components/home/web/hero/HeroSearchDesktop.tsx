@@ -31,7 +31,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             options={desktopFields[0].options}
             onValueChange={(value) => onFieldChange?.(0, value)}
           />
-          <button type="button" onClick={onSwap} className="mx-auto hidden h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.24)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
+          <button type="button" onClick={onSwap} className="mx-auto hidden h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_14px_26px_-18px_rgba(15,23,42,0.24)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
             <SwapIcon className="h-4 w-4" />
           </button>
           <HeroSearchField
@@ -70,7 +70,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         ))
       )}
 
-      <Link href={ctaHref} className="inline-flex min-h-[96px] items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-12 text-[18px] font-semibold text-white shadow-[0_24px_42px_-24px_rgba(255,90,67,0.9)]">
+      <Link href={ctaHref} className="inline-flex min-h-[98px] items-center justify-center whitespace-nowrap rounded-[18px] bg-[#ff5a43] px-14 text-[18px] font-semibold text-white shadow-[0_26px_44px_-24px_rgba(255,90,67,0.9)]">
         {ctaLabel}
       </Link>
     </div>
