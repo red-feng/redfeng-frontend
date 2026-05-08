@@ -111,9 +111,9 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
       <Link
         href={ctaHref}
         aria-label={ctaLabel}
-        className="mt-[30px] inline-flex h-[66px] w-[66px] items-center justify-center justify-self-center rounded-[22px] bg-[#ff6624] text-white shadow-[0_10px_0_0_rgba(11,31,62,0.4)] transition hover:translate-y-[1px] hover:shadow-[0_8px_0_0_rgba(11,31,62,0.38)]"
+        className="mt-[30px] inline-flex h-[56px] w-[56px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
       >
-        <SearchActionIcon className="h-6 w-6" />
+        <SearchActionIcon className="h-5 w-5" />
         <span className="sr-only">{ctaLabel}</span>
       </Link>
     </div>
