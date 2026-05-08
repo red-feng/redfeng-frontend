@@ -18,7 +18,7 @@ type HeroSearchDesktopProps = {
 
 export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
-  const desktopFields = fields ?? config.desktopFields
+  const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
   const isDedicatedFlightOneWay = config.ctaHref === "/pesawat" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
 
   if (isDedicatedFlightOneWay) {
