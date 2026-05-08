@@ -17,32 +17,32 @@ export default function HeroHeader() {
           quality={100}
           unoptimized
           priority
-          className="home-hero-logo h-[5.2rem] w-auto sm:h-[6.6rem]"
+          className="home-hero-logo h-[3.1rem] w-[9.8rem] object-contain object-left sm:h-[3.5rem] sm:w-[11rem]"
         />
       </Link>
 
-      <div className="hidden items-center gap-5 rounded-[24px] border border-white/45 bg-white/34 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.28)] backdrop-blur-[10px] lg:flex">
-        <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-medium text-slate-800">
-          <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Pesawat</Link>
-          <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Hotel</Link>
-          <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kereta</Link>
-          <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Bus</Link>
-          <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal</Link>
-          <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Kapal Pesiar</Link>
-          <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Aktivitas</Link>
-          <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Paket Wisata</Link>
-          <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/50 hover:text-[#ef3b2d]">Promo</Link>
+      <div className="hidden items-center gap-5 rounded-[24px] border border-white/30 bg-[#0e2b4f]/58 px-5 py-2.5 shadow-[0_18px_34px_-28px_rgba(15,23,42,0.42)] backdrop-blur-[12px] lg:flex">
+        <nav className="home-hero-primary-nav flex items-center gap-1.5 text-[15px] font-medium text-white">
+          <Link href={servicePageConfigByLabel["Pesawat"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Pesawat</Link>
+          <Link href={servicePageConfigByLabel["Hotel"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Hotel</Link>
+          <Link href={servicePageConfigByLabel["Kereta"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kereta</Link>
+          <Link href={servicePageConfigByLabel["Bus"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Bus</Link>
+          <Link href={servicePageConfigByLabel["Kapal"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kapal</Link>
+          <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Kapal Pesiar</Link>
+          <Link href={servicePageConfigByLabel["Aktivitas"].href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Aktivitas</Link>
+          <Link href="/packages" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Paket Wisata</Link>
+          <Link href="/promo" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/14 hover:text-[#ffd2c4]">Promo</Link>
         </nav>
 
-        <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/45 pl-4">
-          <Link href="/contact" className="text-sm text-slate-700 hover:text-[#ef3b2d]">Bantuan</Link>
-          <button className="flex items-center gap-1 text-sm text-slate-700">
+        <div className="home-hero-secondary-actions flex items-center gap-4 border-l border-white/25 pl-4">
+          <Link href="/contact" className="text-sm text-white transition hover:text-[#ffd2c4]">Bantuan</Link>
+          <button className="flex items-center gap-1 text-sm text-white transition hover:text-[#ffd2c4]">
             IDR
             <ChevronDownIcon className="h-4 w-4" />
           </button>
           <NotificationBellLink
             items={defaultNotificationItems}
-            className="text-slate-700"
+            className="text-white transition hover:text-[#ffd2c4]"
             iconClassName="h-5 w-5"
             badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
           />
