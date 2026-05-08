@@ -63,7 +63,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               inputType={desktopFields[0].inputType}
               options={desktopFields[0].options}
               onValueChange={(value) => onFieldChange?.(0, value)}
-              className="rounded-[999px] px-6 py-3"
+              className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
           <button type="button" onClick={onSwap} className="relative mx-auto hidden h-[66px] w-[56px] items-center justify-center text-[#ff5a43] lg:flex">
@@ -82,7 +82,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               inputType={desktopFields[1].inputType}
               options={desktopFields[1].options}
               onValueChange={(value) => onFieldChange?.(1, value)}
-              className="rounded-[999px] px-6 py-3"
+              className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
           {desktopFields.slice(2).map((field, index) => (
@@ -98,7 +98,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
                 inputType={field.inputType}
                 options={field.options}
                 onValueChange={(value) => onFieldChange?.(index + 2, value)}
-                className="rounded-[999px] px-6 py-3"
+                className="rounded-[999px] px-6 py-[17px]"
               />
             </DesktopFieldShell>
           ))}
@@ -117,7 +117,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               inputType={field.inputType}
               options={field.options}
               onValueChange={(value) => onFieldChange?.(index, value)}
-              className="rounded-[999px] px-6 py-3"
+              className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
         ))
@@ -165,7 +165,7 @@ function PatternedDesktopSearch({
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className={`mt-[26px] grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns }}>
+      <div className={`mt-6 grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns }}>
         {showDesktopSwap && leadingFields[0] ? (
           <>
             <DesktopFieldShell label={leadingFields[0].label}>
@@ -179,10 +179,10 @@ function PatternedDesktopSearch({
                 inputType={leadingFields[0].inputType}
                 options={leadingFields[0].options}
                 onValueChange={(value) => onFieldChange?.(0, value)}
-                className="rounded-[999px] px-6 py-[17px]"
+                className="rounded-[999px] px-6 py-4"
               />
             </DesktopFieldShell>
-            <button type="button" onClick={onSwap} className={`relative mb-[10px] flex h-[56px] ${layout.swapWidth} items-center justify-center text-[#ff5a43]`}>
+            <button type="button" onClick={onSwap} className={`relative mb-[7px] flex h-[56px] ${layout.swapWidth} items-center justify-center text-[#ff5a43]`}>
               <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
               <SwapIcon className="h-[16px] w-[16px]" />
               <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
@@ -198,7 +198,7 @@ function PatternedDesktopSearch({
                 inputType={leadingFields[1].inputType}
                 options={leadingFields[1].options}
                 onValueChange={(value) => onFieldChange?.(1, value)}
-                className="rounded-[999px] px-6 py-[17px]"
+                className="rounded-[999px] px-6 py-4"
               />
             </DesktopFieldShell>
           </>
@@ -219,7 +219,7 @@ function PatternedDesktopSearch({
                 inputType={field.inputType}
                 options={field.options}
                 onValueChange={(value) => onFieldChange?.(actualIndex, value)}
-                className="rounded-[999px] px-6 py-[17px]"
+                className="rounded-[999px] px-6 py-4"
               />
             </DesktopFieldShell>
           )
@@ -228,7 +228,7 @@ function PatternedDesktopSearch({
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[8px] inline-flex h-[56px] w-[56px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[7px] inline-flex h-[56px] w-[56px] items-center justify-center justify-self-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
@@ -253,7 +253,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-[26px] grid grid-cols-[258px_36px_258px_208px_236px_56px] items-end gap-x-3">
+      <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_236px_56px] items-end gap-x-3">
         <DesktopFieldShell label="Dari">
           <HeroSearchField
             label={originField.label}
@@ -265,18 +265,18 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={originField.inputType}
             options={originField.options}
             onValueChange={(value) => onFieldChange?.(0, value)}
-            className="rounded-[999px] px-6 py-[17px]"
+            className="rounded-[999px] px-6 py-4"
             renderValue={
               <AirportValue
                 code={originDisplay.code}
                 city={originDisplay.city}
-                icon={<SearchMiniIcon className="h-[19px] w-[19px]" />}
+                icon={<SearchMiniIcon className="h-[18px] w-[18px]" />}
               />
             }
           />
         </DesktopFieldShell>
 
-        <button type="button" onClick={onSwap} className="relative mb-[10px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
+        <button type="button" onClick={onSwap} className="relative mb-[7px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
           <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
           <SwapIcon className="h-[16px] w-[16px]" />
           <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
@@ -293,12 +293,12 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={destinationField.inputType}
             options={destinationField.options}
             onValueChange={(value) => onFieldChange?.(1, value)}
-            className="rounded-[999px] px-6 py-[17px]"
+            className="rounded-[999px] px-6 py-4"
             renderValue={
               <AirportValue
                 code={destinationDisplay.code}
                 city={destinationDisplay.city}
-                icon={<SearchMiniIcon className="h-[19px] w-[19px]" />}
+                icon={<SearchMiniIcon className="h-[18px] w-[18px]" />}
               />
             }
           />
@@ -315,8 +315,8 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={departureField.inputType}
             options={departureField.options}
             onValueChange={(value) => onFieldChange?.(2, value)}
-            className="rounded-[999px] px-6 py-[17px]"
-            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[19px] w-[19px]" />} />}
+            className="rounded-[999px] px-6 py-4"
+            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
           />
         </DesktopFieldShell>
 
@@ -332,15 +332,15 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={passengerField.inputType}
             options={passengerField.options}
             onValueChange={(value) => onFieldChange?.(3, value)}
-            className="rounded-[999px] px-6 py-[17px]"
-            renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[19px] w-[19px]" />} iconTone="text-[#7385a0]" />}
+            className="rounded-[999px] px-6 py-4"
+            renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[18px] w-[18px]" />} iconTone="text-[#7385a0]" />}
           />
         </DesktopFieldShell>
 
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[8px] inline-flex h-[56px] w-[56px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[7px] inline-flex h-[56px] w-[56px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
@@ -352,8 +352,8 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
 function DesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-[10px]">
-      <p className="pl-4 text-[13px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
+    <div className="flex flex-col gap-2">
+      <p className="pl-4 text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
   )
@@ -389,7 +389,7 @@ function CalendarMiniIcon({ className = "" }: { className?: string }) {
 function AirportValue({ code, city, icon }: { code: string; city: string; icon: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]">
+      <span className="min-w-0 truncate text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#17263c]">
         <span className="mr-[18px] inline-block min-w-[34px]">{code}</span>
         <span>{city}</span>
       </span>
@@ -409,7 +409,7 @@ function SingleLineValue({
 }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="min-w-0 truncate text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]">{value}</span>
+      <span className="min-w-0 truncate text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#17263c]">{value}</span>
       <span className={`shrink-0 ${iconTone}`}>{icon}</span>
     </div>
   )

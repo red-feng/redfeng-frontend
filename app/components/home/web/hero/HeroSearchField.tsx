@@ -54,7 +54,7 @@ export default function HeroSearchField({
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shouldShowDefaultAdornment = !renderValue
   const shellBaseClass = isSearchboxDesktop
-    ? "min-h-[66px] border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+    ? "min-h-[64px] border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
     : isDesktopPill
     ? "min-h-[68px] border bg-white"
     : compact
@@ -62,9 +62,9 @@ export default function HeroSearchField({
       : "border-t border-slate-200 bg-[#fefefe] first:rounded-t-[20px] last:border-b lg:rounded-[24px] lg:border"
   const fieldShellClass = `relative w-full overflow-visible ${isOpen ? "z-[260]" : "z-0"} ${shellBaseClass} ${className}`
   const iconClassName = isDesktopPill ? "h-[18px] w-[18px]" : "h-4 w-4"
-  const labelClassName = isSearchboxDesktop ? "text-[13px] font-semibold text-[#42526b]" : isDesktopPill ? "text-[13px] font-medium text-[#4a5f7b]" : "text-[13px] font-medium text-slate-400"
-  const valueClassName = isSearchboxDesktop ? "text-[13px] font-semibold tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[13px] font-semibold text-[#12243d]" : "text-[13px] font-semibold text-slate-900"
-  const sublabelClassName = "text-[13px] text-slate-400"
+  const labelClassName = isSearchboxDesktop ? "text-[13px] font-semibold leading-[1.2] text-[#42526b]" : isDesktopPill ? "text-[13px] font-medium leading-[1.2] text-[#4a5f7b]" : "text-[13px] font-medium leading-[1.2] text-slate-400"
+  const valueClassName = isSearchboxDesktop ? "text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[13px] font-semibold leading-[1.2] text-[#12243d]" : "text-[13px] font-semibold leading-[1.2] text-slate-900"
+  const sublabelClassName = "text-[13px] leading-[1.2] text-slate-400"
   const fieldIcon = getFieldIcon(label, inputType)
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
@@ -132,7 +132,7 @@ export default function HeroSearchField({
               setIsOpen((current) => !current)
             }
           }}
-          className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent text-left outline-none`}
+          className={`${hideLabel ? "" : "mt-[7px]"} w-full bg-transparent text-left outline-none`}
         >
           {renderValue}
         </button>
@@ -142,14 +142,14 @@ export default function HeroSearchField({
             type="text"
             value={formatIsoToSlashDate(value)}
             readOnly
-            className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent pr-12 ${valueClassName} outline-none`}
+            className={`${hideLabel ? "" : "mt-[7px]"} w-full bg-transparent pr-[42px] ${valueClassName} outline-none`}
           />
         ) : (
           <input
             type="date"
             value={value}
             onChange={(event) => onValueChange?.(event.target.value)}
-            className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent ${isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none`}
+            className={`${hideLabel ? "" : "mt-[7px]"} w-full bg-transparent ${isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none`}
           />
         )
       ) : inputType === "autocomplete" ? (
@@ -164,13 +164,13 @@ export default function HeroSearchField({
             onValueChange?.(nextValue)
           }}
           placeholder={label.includes("Destinasi") ? "Cari destinasi atau nama paket" : "Cari kota, bandara, atau tujuan"}
-          className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent ${isSearchboxDesktop ? "pr-12" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
+          className={`${hideLabel ? "" : "mt-[7px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[42px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
       ) : hasDropdown ? (
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-2"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-12" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[7px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-[42px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="truncate">{value}</span>
         </button>
@@ -179,10 +179,10 @@ export default function HeroSearchField({
           type="text"
           value={value}
           onChange={(event) => onValueChange?.(event.target.value)}
-          className={`${hideLabel ? "" : "mt-2"} w-full bg-transparent ${isSearchboxDesktop ? "pr-12" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
+          className={`${hideLabel ? "" : "mt-[7px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[42px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
       )}
-          {hideSublabel ? null : sublabel ? <p className={`mt-1.5 ${sublabelClassName}`}>{sublabel}</p> : <p className={`mt-1.5 ${sublabelClassName} text-transparent`}>.</p>}
+          {hideSublabel ? null : sublabel ? <p className={`mt-1 ${sublabelClassName}`}>{sublabel}</p> : <p className={`mt-1 ${sublabelClassName} text-transparent`}>.</p>}
         </div>
       </div>
       {hasDropdown && isOpen ? (
@@ -239,7 +239,7 @@ export default function HeroSearchField({
         </button>
       ) : null}
       {shouldShowDefaultAdornment && withChevron ? (
-        <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#72839b]" : isDesktopPill ? "text-[#7b8aa1]" : "text-slate-500"}`}>
+        <span className={`absolute right-5 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#72839b]" : isDesktopPill ? "text-[#7b8aa1]" : "text-slate-500"}`}>
           <ChevronDownIcon className="h-4 w-4" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "autocomplete" && !isDesktopPill ? (
@@ -247,11 +247,11 @@ export default function HeroSearchField({
           <SearchMiniIcon className="h-4 w-4" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "autocomplete" && isSearchboxDesktop ? (
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#90a2b9]">
-          <SearchMiniIcon className="h-[19px] w-[19px]" />
+        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[#90a2b9]">
+          <SearchMiniIcon className="h-[18px] w-[18px]" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "date" && isDesktopPill ? (
-        <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#111111]" : "text-[#7b8aa1]"}`}>
+        <span className={`absolute right-5 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#111111]" : "text-[#7b8aa1]"}`}>
           <CalendarMiniIcon className="h-[18px] w-[18px]" />
         </span>
       ) : null}
