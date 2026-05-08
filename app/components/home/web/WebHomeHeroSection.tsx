@@ -6,6 +6,7 @@ import { useState } from "react"
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import {
   getHeroSearchConfig,
+  getHeroSearchProviderAdapter,
   heroSearchConfigs,
   HeroBenefits,
   HeroHeader,
@@ -13,7 +14,7 @@ import {
   HeroSearchMobile,
   HeroTabs,
 } from "@/app/components/home/web/hero"
-import type { HeroSearchFieldData } from "@/app/components/home/web/hero"
+import type { HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 
 export default function WebHomeHeroSection() {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
@@ -176,9 +177,11 @@ function HeroSearchPanel({
 }
 
 function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, stateKey: string, fieldStates: Record<string, HeroSearchFieldData>) {
+  const providerKey = heroSearchConfigs[activeTab].dataProvider
+
   return fields.map((field) => {
     const stateField = fieldStates[getFieldStateKey(stateKey, field.label)] ?? field
-    const choices = getFieldChoices(activeTab, field)
+    const choices = getFieldChoicesForProvider(activeTab, field, providerKey)
     const inputType = getFieldInputType(field, choices)
 
     return {
@@ -219,7 +222,8 @@ function updateFieldState(
   }
 
   if (field.inputType === "select" || field.inputType === "autocomplete") {
-    const matchedChoice = getFieldChoices(activeTab, field).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
+    const providerKey = heroSearchConfigs[activeTab].dataProvider
+    const matchedChoice = getFieldChoicesForProvider(activeTab, field, providerKey).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
 
     return {
       ...current,
@@ -297,7 +301,20 @@ function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldD
   return "text" as const
 }
 
-function getFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): HeroSearchFieldData[] {
+function getFieldChoicesForProvider(activeTab: HeroTabKey, field: HeroSearchFieldData, providerKey: HeroSearchProviderKey) {
+  const providerChoices = getHeroSearchProviderAdapter(providerKey).getFieldChoices?.({
+    activeTab,
+    field,
+  })
+
+  if (providerChoices && providerChoices.length > 0) {
+    return dedupeFieldChoices(providerChoices, field)
+  }
+
+  return getFallbackFieldChoices(activeTab, field)
+}
+
+function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldData): HeroSearchFieldData[] {
   const label = field.label.toLowerCase()
   const current = [{ label: field.label, value: field.value, sublabel: field.sublabel, withChevron: field.withChevron, withSwap: field.withSwap }]
   let choices: HeroSearchFieldData[] = current
@@ -592,8 +609,8 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
   if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
     if (activeTab === "flight") {
       const city = extractFlightCity(choice.value)
-      if (city) return city
-      return "Bandara Lainnya"
+      if (city) return getFlightRegionLabel(city)
+      return "Bandara Internasional"
     }
 
     return activeTab === "ship" ? "Pelabuhan Populer" : "Kota & Stasiun Populer"
@@ -655,6 +672,77 @@ function extractFlightCode(input: string) {
 function extractFlightCity(input: string) {
   const match = input.match(/^[A-Z]{3}\s+(.*)$/)
   return match?.[1] ?? input
+}
+
+function getFlightRegionLabel(city: string) {
+  const normalized = city.trim().toLowerCase()
+
+  if (["jakarta", "denpasar", "surabaya", "yogyakarta", "medan", "makassar", "balikpapan"].includes(normalized)) {
+    return "Indonesia"
+  }
+
+  if (
+    [
+      "singapore",
+      "kuala lumpur",
+      "bangkok",
+      "phuket",
+      "chiang mai",
+      "ho chi minh city",
+      "hanoi",
+      "da nang",
+      "manila",
+      "cebu",
+    ].includes(normalized)
+  ) {
+    return "Asia Tenggara"
+  }
+
+  if (
+    [
+      "hong kong",
+      "taipei",
+      "kaohsiung",
+      "shanghai",
+      "beijing",
+      "guangzhou",
+      "shenzhen",
+      "chengdu",
+      "xi'an",
+      "tokyo",
+      "osaka",
+      "nagoya",
+      "fukuoka",
+      "sapporo",
+      "seoul",
+      "busan",
+      "jeju",
+    ].includes(normalized)
+  ) {
+    return "Asia Timur"
+  }
+
+  if (["new delhi", "mumbai", "bengaluru", "chennai"].includes(normalized)) {
+    return "Asia Selatan"
+  }
+
+  if (["doha", "dubai", "abu dhabi", "jeddah", "riyadh"].includes(normalized)) {
+    return "Timur Tengah"
+  }
+
+  if (["sydney", "melbourne", "brisbane", "perth", "auckland"].includes(normalized)) {
+    return "Australia & Selandia Baru"
+  }
+
+  if (["london", "paris", "frankfurt", "amsterdam", "istanbul"].includes(normalized)) {
+    return "Eropa"
+  }
+
+  if (["new york", "los angeles", "san francisco"].includes(normalized)) {
+    return "Amerika"
+  }
+
+  return "Bandara Internasional"
 }
 
 function dedupeFieldChoices(choices: HeroSearchFieldData[], baseField: HeroSearchFieldData) {
@@ -779,15 +867,46 @@ const flightAirportMaster: Array<{ code: string; city: string; name: string }> =
   { code: "CGK", city: "Jakarta", name: "Soekarno Hatta International" },
   { code: "HLP", city: "Jakarta", name: "Halim Perdanakusuma" },
   { code: "DPS", city: "Denpasar", name: "Ngurah Rai International" },
+  { code: "SIN", city: "Singapore", name: "Changi Airport" },
+  { code: "KUL", city: "Kuala Lumpur", name: "Kuala Lumpur International" },
+  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi Airport" },
+  { code: "DMK", city: "Bangkok", name: "Don Mueang International" },
+  { code: "HKG", city: "Hong Kong", name: "Hong Kong International" },
+  { code: "HND", city: "Tokyo", name: "Haneda Airport" },
+  { code: "NRT", city: "Tokyo", name: "Narita International" },
+  { code: "ICN", city: "Seoul", name: "Incheon International" },
+  { code: "PVG", city: "Shanghai", name: "Pudong International" },
+  { code: "SHA", city: "Shanghai", name: "Hongqiao International" },
+  { code: "PEK", city: "Beijing", name: "Capital International" },
+  { code: "PKX", city: "Beijing", name: "Daxing International" },
+  { code: "DXB", city: "Dubai", name: "Dubai International" },
+  { code: "DOH", city: "Doha", name: "Hamad International" },
+  { code: "SYD", city: "Sydney", name: "Kingsford Smith Airport" },
+  { code: "MEL", city: "Melbourne", name: "Tullamarine Airport" },
+  { code: "LHR", city: "London", name: "Heathrow Airport" },
+  { code: "CDG", city: "Paris", name: "Charles de Gaulle Airport" },
+  { code: "JFK", city: "New York", name: "John F. Kennedy International" },
+  { code: "LAX", city: "Los Angeles", name: "Los Angeles International" },
+  { code: "SFO", city: "San Francisco", name: "San Francisco International" },
   { code: "SUB", city: "Surabaya", name: "Juanda International" },
   { code: "YIA", city: "Yogyakarta", name: "Yogyakarta International" },
   { code: "KNO", city: "Medan", name: "Kualanamu International" },
   { code: "UPG", city: "Makassar", name: "Sultan Hasanuddin International" },
   { code: "BPN", city: "Balikpapan", name: "Sultan Aji Muhammad Sulaiman" },
-  { code: "SIN", city: "Singapore", name: "Changi Airport" },
-  { code: "KUL", city: "Kuala Lumpur", name: "Kuala Lumpur International" },
-  { code: "BKK", city: "Bangkok", name: "Suvarnabhumi Airport" },
-  { code: "DMK", city: "Bangkok", name: "Don Mueang International" },
+  { code: "TPE", city: "Taipei", name: "Taoyuan International" },
+  { code: "KHH", city: "Kaohsiung", name: "Kaohsiung International" },
+  { code: "CAN", city: "Guangzhou", name: "Baiyun International" },
+  { code: "SZX", city: "Shenzhen", name: "Bao'an International" },
+  { code: "CTU", city: "Chengdu", name: "Tianfu International" },
+  { code: "XIY", city: "Xi'an", name: "Xianyang International" },
+  { code: "KIX", city: "Osaka", name: "Kansai International" },
+  { code: "ITM", city: "Osaka", name: "Itami Airport" },
+  { code: "NGO", city: "Nagoya", name: "Chubu Centrair International" },
+  { code: "FUK", city: "Fukuoka", name: "Fukuoka Airport" },
+  { code: "CTS", city: "Sapporo", name: "New Chitose Airport" },
+  { code: "GMP", city: "Seoul", name: "Gimpo International" },
+  { code: "PUS", city: "Busan", name: "Gimhae International" },
+  { code: "CJU", city: "Jeju", name: "Jeju International" },
   { code: "HKT", city: "Phuket", name: "Phuket International" },
   { code: "CNX", city: "Chiang Mai", name: "Chiang Mai International" },
   { code: "SGN", city: "Ho Chi Minh City", name: "Tan Son Nhat International" },
@@ -795,50 +914,19 @@ const flightAirportMaster: Array<{ code: string; city: string; name: string }> =
   { code: "DAD", city: "Da Nang", name: "Da Nang International" },
   { code: "MNL", city: "Manila", name: "Ninoy Aquino International" },
   { code: "CEB", city: "Cebu", name: "Mactan Cebu International" },
-  { code: "HKG", city: "Hong Kong", name: "Hong Kong International" },
-  { code: "TPE", city: "Taipei", name: "Taoyuan International" },
-  { code: "KHH", city: "Kaohsiung", name: "Kaohsiung International" },
-  { code: "PVG", city: "Shanghai", name: "Pudong International" },
-  { code: "SHA", city: "Shanghai", name: "Hongqiao International" },
-  { code: "PEK", city: "Beijing", name: "Capital International" },
-  { code: "PKX", city: "Beijing", name: "Daxing International" },
-  { code: "CAN", city: "Guangzhou", name: "Baiyun International" },
-  { code: "SZX", city: "Shenzhen", name: "Bao'an International" },
-  { code: "CTU", city: "Chengdu", name: "Tianfu International" },
-  { code: "XIY", city: "Xi'an", name: "Xianyang International" },
-  { code: "HND", city: "Tokyo", name: "Haneda Airport" },
-  { code: "NRT", city: "Tokyo", name: "Narita International" },
-  { code: "KIX", city: "Osaka", name: "Kansai International" },
-  { code: "ITM", city: "Osaka", name: "Itami Airport" },
-  { code: "NGO", city: "Nagoya", name: "Chubu Centrair International" },
-  { code: "FUK", city: "Fukuoka", name: "Fukuoka Airport" },
-  { code: "CTS", city: "Sapporo", name: "New Chitose Airport" },
-  { code: "ICN", city: "Seoul", name: "Incheon International" },
-  { code: "GMP", city: "Seoul", name: "Gimpo International" },
-  { code: "PUS", city: "Busan", name: "Gimhae International" },
-  { code: "CJU", city: "Jeju", name: "Jeju International" },
   { code: "DEL", city: "New Delhi", name: "Indira Gandhi International" },
   { code: "BOM", city: "Mumbai", name: "Chhatrapati Shivaji Maharaj International" },
   { code: "BLR", city: "Bengaluru", name: "Kempegowda International" },
   { code: "MAA", city: "Chennai", name: "Chennai International" },
-  { code: "DOH", city: "Doha", name: "Hamad International" },
-  { code: "DXB", city: "Dubai", name: "Dubai International" },
   { code: "AUH", city: "Abu Dhabi", name: "Zayed International" },
   { code: "JED", city: "Jeddah", name: "King Abdulaziz International" },
   { code: "RUH", city: "Riyadh", name: "King Khalid International" },
-  { code: "MEL", city: "Melbourne", name: "Tullamarine Airport" },
-  { code: "SYD", city: "Sydney", name: "Kingsford Smith Airport" },
   { code: "BNE", city: "Brisbane", name: "Brisbane Airport" },
   { code: "PER", city: "Perth", name: "Perth Airport" },
   { code: "AKL", city: "Auckland", name: "Auckland Airport" },
-  { code: "LHR", city: "London", name: "Heathrow Airport" },
-  { code: "CDG", city: "Paris", name: "Charles de Gaulle Airport" },
   { code: "FRA", city: "Frankfurt", name: "Frankfurt Airport" },
   { code: "AMS", city: "Amsterdam", name: "Schiphol Airport" },
   { code: "IST", city: "Istanbul", name: "Istanbul Airport" },
-  { code: "JFK", city: "New York", name: "John F. Kennedy International" },
-  { code: "LAX", city: "Los Angeles", name: "Los Angeles International" },
-  { code: "SFO", city: "San Francisco", name: "San Francisco International" },
 ]
 
 const trainStationMaster: Array<{ name: string; city: string; detail?: string }> = [

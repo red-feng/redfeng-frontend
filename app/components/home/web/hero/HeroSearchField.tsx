@@ -194,9 +194,29 @@ export default function HeroSearchField({
             {filteredOptions.length > 0 ? (
               groupedOptions.map(([groupLabel, groupItems]) => (
                 <div key={`${label}-${groupLabel}`} className="border-t border-slate-100/80 first:border-t-0">
+                  {(() => {
+                    const airportGroupMeta = getAirportGroupMeta(groupLabel, groupItems)
+
+                    return (
                   <div className="px-4 pb-1 pt-4 first:pt-2">
-                    <p className="text-[13px] font-semibold text-slate-700">{groupLabel}</p>
+                    {airportGroupMeta ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#fff1ec] text-[#ff5a43]">
+                            <LocationMiniIcon className="h-3.5 w-3.5" />
+                          </span>
+                          <p className="truncate text-[13px] font-semibold text-slate-800">{airportGroupMeta.city}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
+                          {airportGroupMeta.count} bandara
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] font-semibold text-slate-700">{groupLabel}</p>
+                    )}
                   </div>
+                    )
+                  })()}
                   {groupItems.map((option) => {
                     const isActive = option.value === value
                     const airportOptionMeta = getAirportOptionMeta(option)
@@ -397,6 +417,18 @@ function getAirportOptionMeta(option: HeroSearchFieldOption) {
   return {
     code: normalizedLabel,
     city: match[1],
+  }
+}
+
+function getAirportGroupMeta(groupLabel: string, items: HeroSearchFieldOption[]) {
+  if (!groupLabel.trim()) return null
+  if (items.length === 0) return null
+  const allAirportOptions = items.every((item) => Boolean(getAirportOptionMeta(item)))
+  if (!allAirportOptions) return null
+
+  return {
+    city: groupLabel,
+    count: items.length,
   }
 }
 

@@ -5,6 +5,8 @@ export { default as HeroSearchField } from "./HeroSearchField"
 export { default as HeroSearchMobile } from "./HeroSearchMobile"
 export { default as HeroTabs } from "./HeroTabs"
 export { getHeroSearchConfig, heroSearchConfigs } from "./heroSearchContent"
+export { getHeroSearchProviderAdapter } from "./heroSearchProviders"
+export type { HeroSearchProviderKey } from "./heroSearchProviders"
 export type {
   HeroSearchConfig,
   HeroSearchFieldData,

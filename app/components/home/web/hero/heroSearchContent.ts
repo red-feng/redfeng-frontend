@@ -1,4 +1,5 @@
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
+import type { HeroSearchProviderKey } from "@/app/components/home/web/hero/heroSearchProviders"
 
 const serviceHref = {
   flight: "/pesawat",
@@ -37,12 +38,14 @@ export type HeroSearchVariant = {
 }
 
 export type HeroSearchTabConfig = {
+  dataProvider: HeroSearchProviderKey
   defaultOption: string
   options: HeroSearchOption[]
   variants: Record<string, HeroSearchVariant>
 }
 
 export type HeroSearchConfig = HeroSearchVariant & {
+  dataProvider: HeroSearchProviderKey
   defaultOption: string
   activeOption: string
   options: HeroSearchOption[]
@@ -50,6 +53,7 @@ export type HeroSearchConfig = HeroSearchVariant & {
 
 export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
   flight: {
+    dataProvider: "partner_darmawisata",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -118,6 +122,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   hotel: {
+    dataProvider: "partner_darmawisata",
     defaultOption: "hotel",
     options: [
       { key: "hotel", label: "Hotel" },
@@ -182,6 +187,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   train: {
+    dataProvider: "partner_darmawisata",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -251,6 +257,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   bus: {
+    dataProvider: "partner_darmawisata",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -321,6 +328,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   ship: {
+    dataProvider: "partner_darmawisata",
     defaultOption: "one_way",
     options: [
       { key: "one_way", label: "Sekali Jalan" },
@@ -390,6 +398,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   cruise: {
+    dataProvider: "internal",
     defaultOption: "regular_cruise",
     options: [
       { key: "regular_cruise", label: "Regular Cruise" },
@@ -454,6 +463,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   activity: {
+    dataProvider: "internal",
     defaultOption: "attraction",
     options: [
       { key: "attraction", label: "Atraksi" },
@@ -518,6 +528,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     },
   },
   package: {
+    dataProvider: "internal",
     defaultOption: "domestic",
     options: [
       { key: "domestic", label: "Domestik" },
@@ -588,6 +599,7 @@ export function getHeroSearchConfig(tab: HeroTabKey, optionKey?: string): HeroSe
   const activeOption = optionKey && tabConfig.variants[optionKey] ? optionKey : tabConfig.defaultOption
 
   return {
+    dataProvider: tabConfig.dataProvider,
     defaultOption: tabConfig.defaultOption,
     activeOption,
     options: tabConfig.options,
