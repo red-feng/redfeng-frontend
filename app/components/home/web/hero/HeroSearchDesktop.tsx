@@ -96,8 +96,13 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         ))
       )}
 
-      <Link href={ctaHref} className="mt-[30px] inline-flex min-h-[66px] w-full items-center justify-center whitespace-nowrap rounded-[20px] bg-[#ff5a43] px-16 text-[18px] font-semibold text-white shadow-[0_16px_28px_-18px_rgba(255,90,67,0.78)]">
-        {ctaLabel}
+      <Link
+        href={ctaHref}
+        aria-label={ctaLabel}
+        className="mt-[30px] inline-flex h-[66px] w-[66px] items-center justify-center justify-self-start rounded-[22px] bg-[#ff6624] text-white shadow-[0_10px_0_0_rgba(11,31,62,0.4)] transition hover:translate-y-[1px] hover:shadow-[0_8px_0_0_rgba(11,31,62,0.38)]"
+      >
+        <SearchActionIcon className="h-6 w-6" />
+        <span className="sr-only">{ctaLabel}</span>
       </Link>
     </div>
   )
@@ -109,5 +114,14 @@ function DesktopFieldShell({ label, children }: { label: string; children: React
       <p className="pl-3 text-[15px] font-semibold tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
+  )
+}
+
+function SearchActionIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" />
+      <path strokeLinecap="round" d="M16 16l4 4" />
+    </svg>
   )
 }
