@@ -8,7 +8,7 @@ import { servicePageConfigByLabel } from "@/app/components/services/serviceCatal
 export default function HeroHeader() {
   return (
     <header className="home-hero-header relative z-10 min-h-[158px]">
-      <Link href="/" className="home-hero-logo-link absolute left-0 top-5 flex items-center gap-2">
+      <Link href="/" className="home-hero-logo-link absolute left-0 top-2 flex items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"
