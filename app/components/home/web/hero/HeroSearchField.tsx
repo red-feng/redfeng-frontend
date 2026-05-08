@@ -199,6 +199,7 @@ export default function HeroSearchField({
                   </div>
                   {groupItems.map((option) => {
                     const isActive = option.value === value
+                    const airportOptionMeta = getAirportOptionMeta(option)
 
                     return (
                       <button
@@ -215,8 +216,22 @@ export default function HeroSearchField({
                           <DropdownItemIcon className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-semibold text-slate-900">{option.label}</span>
-                          {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                          {airportOptionMeta ? (
+                            <>
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold tracking-[0.08em] text-slate-700">
+                                  {airportOptionMeta.code}
+                                </span>
+                                <span className="truncate text-[13px] font-semibold text-slate-900">{airportOptionMeta.city}</span>
+                              </span>
+                              {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                            </>
+                          ) : (
+                            <>
+                              <span className="block truncate text-[13px] font-semibold text-slate-900">{option.label}</span>
+                              {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
+                            </>
+                          )}
                         </span>
                       </button>
                     )
@@ -370,6 +385,19 @@ function formatIsoToSlashDate(input: string) {
   const [year, month, day] = input.split("-")
   if (!year || !month || !day) return input
   return `${day}/${month}/${year}`
+}
+
+function getAirportOptionMeta(option: HeroSearchFieldOption) {
+  const normalizedLabel = option.label.trim()
+  if (!/^[A-Z]{3}$/.test(normalizedLabel)) return null
+
+  const match = option.value.match(/^[A-Z]{3}\s+(.*)$/)
+  if (!match) return null
+
+  return {
+    code: normalizedLabel,
+    city: match[1],
+  }
 }
 
 function formatOptionSublabel(option: HeroSearchFieldOption) {
