@@ -405,18 +405,23 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
         <div className="relative grid min-h-[calc(100vh-1.5rem)] lg:grid-cols-[0.88fr_1.12fr]">
           <section className="flex items-stretch">
             <div className="flex w-full flex-col justify-between px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-14 lg:py-14">
-              <div className="max-w-[420px]">
-                <div className="flex items-center gap-4">
-                  <Image src="/logo-redfeng.png" alt="RedFeng" width={64} height={64} className="h-12 w-12 object-contain" />
-                  <div className="text-[28px] font-semibold tracking-tight text-slate-950">RedFeng</div>
+              <div className="max-w-[380px] pt-2">
+                <div className="flex items-center">
+                  <Image
+                    src="/logo-redfeng.png"
+                    alt="RedFeng"
+                    width={102}
+                    height={102}
+                    className="h-[4.8rem] w-[4.8rem] object-contain object-left"
+                  />
                 </div>
 
-                <p className="mt-10 max-w-[300px] text-[22px] leading-[1.55] text-slate-800 sm:text-[26px]">
+                <p className="mt-8 max-w-[330px] text-[22px] leading-[1.55] text-slate-800 sm:text-[26px]">
                   {copy.heroTagline}
                 </p>
               </div>
 
-              <div className="mt-10 max-w-[420px]">
+              <div className="mt-10 max-w-[430px]">
                 <div className="space-y-6">
                   {copy.leftFeatures.map((feature, index) => (
                     <div key={feature.title} className="flex items-start gap-4">
@@ -449,7 +454,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                     aria-label="Select language"
                     defaultValue={locale}
                     onChange={(event) => void updateLocale(event.target.value as Locale)}
-                    className="bg-transparent pr-5 text-base font-medium text-slate-800 outline-none"
+                    className="appearance-none bg-transparent pr-1 text-base font-medium text-slate-800 outline-none"
                   >
                     {localeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
