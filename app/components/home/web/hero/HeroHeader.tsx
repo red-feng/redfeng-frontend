@@ -17,7 +17,7 @@ export default function HeroHeader() {
           quality={100}
           unoptimized
           priority
-          className="home-hero-logo h-[5.6rem] w-[14.5rem] object-contain object-left"
+          className="home-hero-logo h-[9.5rem] w-[24.75rem] object-contain object-left"
         />
       </Link>
 
