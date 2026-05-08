@@ -23,7 +23,7 @@ export default function HeroHeader() {
 
       <div className="hidden flex-col items-center lg:flex">
         <div className="flex w-full items-center justify-end gap-8 pr-1 pt-2 text-[14px] font-medium text-white">
-          <nav className="flex items-center gap-8">
+          <nav className="ml-[12rem] flex items-center gap-8">
             <Link href="/promo" className="transition hover:text-[#ffd2c4]">Promo</Link>
             <Link href="/customer/bookings" className="transition hover:text-[#ffd2c4]">Pesanan</Link>
             <Link href="https://redfeng.co/kemitraan_tour/" className="transition hover:text-[#ffd2c4]">Kemitraan Tour</Link>
