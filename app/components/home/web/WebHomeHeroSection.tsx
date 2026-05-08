@@ -8,7 +8,6 @@ import {
   getHeroSearchConfig,
   heroSearchConfigs,
   HeroBenefits,
-  HeroHeader,
   HeroSearchDesktop,
   HeroSearchMobile,
   HeroTabs,
@@ -33,8 +32,7 @@ export default function WebHomeHeroSection() {
       <div className="relative overflow-hidden">
         <DesktopHeroBackdrop />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-12 pt-5 sm:px-6 lg:px-8">
-          <HeroHeader />
+        <div className="home-hero-shell relative mx-auto max-w-[1240px] px-5 pb-12 pt-8 sm:px-6 lg:px-8">
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
