@@ -8,7 +8,7 @@ type HeroTabsProps = {
 
 export default function HeroTabs({ activeTab, onChange }: HeroTabsProps) {
   return (
-    <div className="flex gap-1.5 overflow-x-auto border-b border-slate-200/80 px-5 py-4 text-sm font-medium text-slate-700 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-6 lg:px-6 lg:py-6">
+    <div className="flex gap-2 overflow-x-auto border-b border-[#edf1f5] px-5 py-4 text-sm font-medium text-slate-700 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-8 lg:px-8 lg:py-6">
       {heroTabs.map((tab) => {
         const Icon = tab.icon
         const isActive = tab.key === activeTab
@@ -24,9 +24,9 @@ export default function HeroTabs({ activeTab, onChange }: HeroTabsProps) {
                 : "border-transparent bg-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-800"
             }`}
           >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-4 w-4 lg:h-[15px] lg:w-[15px]" />
             {tab.label}
-            {tab.badge ? <span className="rounded-full bg-[#ff3b30] px-1.5 py-0.5 text-[10px] text-white">Baru</span> : null}
+            {tab.badge ? <span className="rounded-full bg-[#ff3b30] px-1.5 py-0.5 text-[10px] text-white lg:hidden">Baru</span> : null}
           </button>
         )
       })}

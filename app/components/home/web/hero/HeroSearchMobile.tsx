@@ -34,11 +34,12 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
           options={field.options}
           onValueChange={(value) => onFieldChange?.(index, value)}
           onSwap={field.withSwap ? onSwap : undefined}
+          className="rounded-[22px] border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
         />
       ))}
 
       {compactFields.length > 0 ? (
-        <div className={`grid ${compactGridClass}`}>
+        <div className={`mt-3 grid gap-3 ${compactGridClass}`}>
           {compactFields.map((field, index) => (
             <HeroSearchField
               key={field.label}
@@ -50,12 +51,13 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
               inputType={field.inputType}
               options={field.options}
               onValueChange={(value) => onFieldChange?.(index + config.mobilePrimaryCount, value)}
+              className="rounded-[20px] border border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
             />
           ))}
         </div>
       ) : null}
 
-      <Link href={config.ctaHref} className="mt-5 inline-flex min-h-[54px] w-full items-center justify-center rounded-[14px] bg-[#ff3a31] px-10 text-[15px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
+      <Link href={config.ctaHref} className="mt-5 inline-flex min-h-[56px] w-full items-center justify-center rounded-[18px] bg-[#ff5a43] px-10 text-[15px] font-semibold text-white shadow-[0_18px_38px_-24px_rgba(255,90,67,0.85)]">
         {config.ctaLabel}
       </Link>
     </div>

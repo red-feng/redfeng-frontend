@@ -33,15 +33,15 @@ export default function WebHomeHeroSection() {
       <div className="relative min-h-[500px] overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-[4.5rem] pt-6 sm:px-6 lg:px-8">
+        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-[5.25rem] pt-6 sm:px-6 lg:px-8">
           <HeroHeader />
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[220] mx-auto -mt-32 max-w-[1280px] overflow-visible px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-[11.5rem] lg:px-8 lg:pb-14">
-        <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[30px] border border-[#ececec] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.28)]">
+      <div className="home-hero-search-wrap relative z-[220] mx-auto -mt-32 max-w-[1280px] overflow-visible px-4 pb-10 sm:-mt-36 sm:px-6 lg:-mt-[12.5rem] lg:px-8 lg:pb-14">
+        <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[34px] border border-[#edf1f5] bg-white shadow-[0_34px_70px_-38px_rgba(15,23,42,0.3)]">
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -77,9 +77,9 @@ function MobileHeroBackdrop() {
 
 function HeroIntro() {
   return (
-    <div className="home-hero-intro relative z-10 flex justify-center pt-6 text-center lg:pt-4">
-      <div className="home-hero-intro-shell max-w-[860px] pb-32 lg:min-h-[240px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[860px] lg:text-[37px]">
+    <div className="home-hero-intro relative z-10 flex justify-center pt-6 text-center lg:pt-1">
+      <div className="home-hero-intro-shell max-w-[860px] pb-32 lg:min-h-[260px] lg:pb-0">
+        <h1 className="home-hero-title mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]">
           Ekosistem perjalanan
           <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
         </h1>
@@ -109,16 +109,16 @@ function HeroSearchPanel({
   }
 
   return (
-    <div className="relative overflow-visible px-5 py-6 lg:px-7 lg:py-8">
-      <div className="hidden flex-wrap gap-9 text-[13px] font-semibold text-slate-700 lg:flex">
+    <div className="relative overflow-visible px-5 py-6 lg:px-8 lg:py-8">
+      <div className="hidden flex-wrap gap-10 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
             key={option.key}
             type="button"
             onClick={() => onOptionChange(option.key)}
-            className={`inline-flex items-center gap-2 transition ${config.activeOption === option.key ? "text-[#1f3657]" : "text-slate-500 hover:text-slate-800"}`}
+            className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-slate-500 hover:text-slate-800"}`}
           >
-            <span className={`h-2.5 w-2.5 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
+            <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-slate-300 bg-white"}`} />
             {option.label}
           </button>
         ))}

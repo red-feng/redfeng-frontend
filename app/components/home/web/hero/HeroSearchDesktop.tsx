@@ -30,8 +30,9 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             inputType={desktopFields[0].inputType}
             options={desktopFields[0].options}
             onValueChange={(value) => onFieldChange?.(0, value)}
+            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
           />
-          <button type="button" onClick={onSwap} className="mx-auto hidden h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-[#ff5a43] shadow-[0_14px_26px_-18px_rgba(15,23,42,0.24)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
+          <button type="button" onClick={onSwap} className="mx-auto hidden h-12 w-12 items-center justify-center rounded-full border border-[#edf1f5] bg-white text-[#ff5a43] shadow-[0_12px_24px_-18px_rgba(15,23,42,0.2)] transition hover:border-[#ffd4cb] hover:bg-[#fff4f1] lg:flex">
             <SwapIcon className="h-4 w-4" />
           </button>
           <HeroSearchField
@@ -41,6 +42,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             inputType={desktopFields[1].inputType}
             options={desktopFields[1].options}
             onValueChange={(value) => onFieldChange?.(1, value)}
+            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
           />
           {desktopFields.slice(2).map((field, index) => (
             <HeroSearchField
@@ -52,6 +54,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               inputType={field.inputType}
               options={field.options}
               onValueChange={(value) => onFieldChange?.(index + 2, value)}
+              className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
             />
           ))}
         </>
@@ -66,11 +69,12 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             inputType={field.inputType}
             options={field.options}
             onValueChange={(value) => onFieldChange?.(index, value)}
+            className="rounded-[28px] border-[#dce5f0] px-5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]"
           />
         ))
       )}
 
-      <Link href={ctaHref} className="inline-flex min-h-[98px] items-center justify-center whitespace-nowrap rounded-[18px] bg-[#ff5a43] px-14 text-[18px] font-semibold text-white shadow-[0_26px_44px_-24px_rgba(255,90,67,0.9)]">
+      <Link href={ctaHref} className="inline-flex min-h-[68px] items-center justify-center whitespace-nowrap rounded-[22px] bg-[#ff5a43] px-12 text-[18px] font-semibold text-white shadow-[0_20px_34px_-20px_rgba(255,90,67,0.85)]">
         {ctaLabel}
       </Link>
     </div>
