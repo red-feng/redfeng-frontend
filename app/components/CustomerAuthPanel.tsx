@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import AuthLocaleDropdown from "@/app/components/AuthLocaleDropdown";
+import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { dictionaries, type Locale } from "@/lib/i18n";
-import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context";
+import {
+  ACTIVE_PORTAL_COOKIE,
+  ACTIVE_PORTAL_MAX_AGE,
+  CUSTOMER_PORTAL_DEFAULT_REDIRECT,
+} from "@/lib/portal-context";
 import { readLocaleFromCookie } from "@/lib/locale-client";
 
 type AuthProvider = "google" | "facebook";
@@ -14,25 +18,101 @@ type Mode = "login" | "register";
 const providerConfig: Array<{
   provider: AuthProvider;
   enabled: boolean;
-  className: string;
 }> = [
   {
     provider: "google",
     enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_GOOGLE !== "false",
-    className:
-      "flex w-full items-center justify-center gap-3 rounded-[20px] border border-[#ecd9c2] bg-white px-5 py-4 text-base font-semibold text-slate-900 shadow-[0_16px_36px_rgba(148,64,14,0.08)] transition hover:-translate-y-0.5 hover:border-orange-200 hover:bg-[#fffaf4] hover:shadow-[0_20px_44px_rgba(148,64,14,0.14)] disabled:cursor-not-allowed disabled:opacity-70",
   },
   {
     provider: "facebook",
     enabled: process.env.NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK === "true",
-    className:
-      "flex w-full items-center justify-center gap-3 rounded-2xl border border-[#1877F2] bg-[#1877F2] px-5 py-4 text-base font-semibold text-white shadow-[0_10px_30px_rgba(24,119,242,0.24)] transition hover:-translate-y-0.5 hover:bg-[#166fe5] hover:shadow-[0_18px_40px_rgba(24,119,242,0.3)] disabled:cursor-not-allowed disabled:opacity-70",
   },
 ];
 
-function GoogleIcon() {
+const localeOptions: Array<{ value: Locale; label: string }> = [
+  { value: "id", label: "ID" },
+  { value: "en", label: "EN" },
+  { value: "zh", label: "ZH" },
+];
+
+function getLoginDictionary(locale: Locale) {
+  return dictionaries[locale].login;
+}
+
+function getSafeNextFromLocation() {
+  if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
+  const requestedNext = new URLSearchParams(window.location.search).get("next");
+  return requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT;
+}
+
+function getSafeErrorFromLocation() {
+  if (typeof window === "undefined") return "";
+  return new URLSearchParams(window.location.search).get("error") || "";
+}
+
+function rememberActivePortal(portal: "customer" | "merchant") {
+  if (typeof document === "undefined") return;
+  document.cookie = `${ACTIVE_PORTAL_COOKIE}=${portal}; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`;
+}
+
+function GlobeIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path
+        d="M12 2.75a9.25 9.25 0 1 0 0 18.5a9.25 9.25 0 0 0 0-18.5Zm6.92 8.5h-3.06a15.43 15.43 0 0 0-1.38-5.03a7.78 7.78 0 0 1 4.44 5.03Zm-6.17-5.86c.84 1.08 1.48 3.08 1.67 5.86h-4.84c.19-2.78.83-4.78 1.67-5.86A2.3 2.3 0 0 1 12 4.7c.29 0 .55.15.75.69Zm-4.23.83a15.42 15.42 0 0 0-1.38 5.03H4.08a7.78 7.78 0 0 1 4.44-5.03Zm-4.44 6.53h3.06c.09 1.79.52 3.56 1.38 5.03a7.78 7.78 0 0 1-4.44-5.03Zm5.42 0h4.99c-.19 2.79-.83 4.78-1.67 5.86c-.2.54-.46.69-.75.69s-.55-.15-.75-.69c-.84-1.08-1.48-3.07-1.67-5.86Zm0-1.5c.19-2.79.83-4.78 1.67-5.86c.2-.54.46-.69.75-.69s.55.15.75.69c.84 1.08 1.48 3.07 1.67 5.86H9.5Zm4.98 6.53c.86-1.47 1.29-3.24 1.38-5.03h3.06a7.78 7.78 0 0 1-4.44 5.03Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4">
+      <path
+        d="M5.47 7.97a.75.75 0 0 1 1.06 0L10 11.44l3.47-3.47a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 0-1.06Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path
+        d="M12 12.75a4.5 4.5 0 1 0-4.5-4.5a4.5 4.5 0 0 0 4.5 4.5Zm0 1.5c-3.6 0-6.75 1.84-6.75 4.25c0 .41.34.75.75.75h12c.41 0 .75-.34.75-.75c0-2.41-3.15-4.25-6.75-4.25Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path
+        d="M7.75 10V8.75a4.25 4.25 0 1 1 8.5 0V10h.5A2.25 2.25 0 0 1 19 12.25v6.5A2.25 2.25 0 0 1 16.75 21h-9.5A2.25 2.25 0 0 1 5 18.75v-6.5A2.25 2.25 0 0 1 7.25 10h.5Zm1.5 0h5.5V8.75a2.75 2.75 0 1 0-5.5 0V10Zm2.75 2.25a1.75 1.75 0 0 0-.75 3.33v1.17a.75.75 0 0 0 1.5 0v-1.17A1.75 1.75 0 0 0 12 12.25Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function EyeIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path
+        d="M12 5.5c5.07 0 8.5 4.64 9.43 6.06a.8.8 0 0 1 0 .88C20.5 13.86 17.07 18.5 12 18.5S3.5 13.86 2.57 12.44a.8.8 0 0 1 0-.88C3.5 10.14 6.93 5.5 12 5.5Zm0 1.5c-3.86 0-6.7 3.39-7.88 5c1.18 1.61 4.02 5 7.88 5s6.7-3.39 7.88-5c-1.18-1.61-4.02-5-7.88-5Zm0 2a3 3 0 1 1 0 6a3 3 0 0 1 0-6Zm0 1.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 0 0 0-3Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
       <path
         fill="#EA4335"
         d="M12 10.2v3.9h5.4c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.4-.2-2H12z"
@@ -53,272 +133,156 @@ function GoogleIcon() {
   );
 }
 
-function FacebookIcon() {
+function AppleIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-      <path d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1c0 6 4.4 11 10.1 11.9v-8.4H7.1v-3.5h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 1-2 2v2.2h3.4l-.5 3.5h-2.9V24C19.6 23.1 24 18.1 24 12.1Z" />
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
+      <path
+        d="M15.15 3c0 1.22-.47 2.18-1.07 2.89c-.64.76-1.7 1.34-2.76 1.25c-.13-1.13.34-2.17.94-2.87C12.9 3.5 14 3.01 15.15 3Zm4.05 14.08c-.47 1.08-.7 1.56-1.3 2.53c-.84 1.36-2.02 3.06-3.48 3.07c-1.29.01-1.62-.85-3.36-.84c-1.74.01-2.1.86-3.39.85c-1.46-.02-2.58-1.55-3.42-2.91C1.88 17.7 1 14.83 1.88 12.24c.62-1.86 2.18-3.03 3.64-3.03c1.49 0 2.43.86 3.66.86c1.2 0 1.94-.86 3.65-.86c1.3 0 2.69.71 3.59 1.95c-3.21 1.76-2.69 6.33 2.78 5.92Z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
 
-function getProviderIcon(provider: AuthProvider) {
-  switch (provider) {
-    case "google":
-      return <GoogleIcon />;
-    case "facebook":
-      return <FacebookIcon />;
-  }
+function FacebookIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
+      <path
+        d="M24 12.1C24 5.4 18.6 0 12 0S0 5.4 0 12.1c0 6 4.4 11 10.1 11.9v-8.4H7.1v-3.5h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 1-2 2v2.2h3.4l-.5 3.5h-2.9V24C19.6 23.1 24 18.1 24 12.1Z"
+        fill="#1877F2"
+      />
+    </svg>
+  );
 }
 
-function getLoginDictionary(locale: Locale) {
-  return dictionaries[locale].login;
+function getProviderIcon(provider: AuthProvider | "apple") {
+  if (provider === "google") return <GoogleIcon />;
+  if (provider === "facebook") return <FacebookIcon />;
+  return <AppleIcon />;
 }
 
 function getProviderLabel(provider: AuthProvider, t: ReturnType<typeof getLoginDictionary>) {
-  switch (provider) {
-    case "google":
-      return t.continueWithGoogle;
-    case "facebook":
-      return t.continueWithFacebook;
-  }
+  if (provider === "google") return t.continueWithGoogle;
+  return t.continueWithFacebook;
 }
 
-function getSafeNextFromLocation() {
-  if (typeof window === "undefined") return CUSTOMER_PORTAL_DEFAULT_REDIRECT;
-  const requestedNext = new URLSearchParams(window.location.search).get("next");
-  return requestedNext && requestedNext.startsWith("/") ? requestedNext : CUSTOMER_PORTAL_DEFAULT_REDIRECT;
-}
-
-function getSafeErrorFromLocation() {
-  if (typeof window === "undefined") return "";
-  return new URLSearchParams(window.location.search).get("error") || "";
-}
-
-function rememberActivePortal(portal: "customer" | "merchant") {
-  if (typeof document === "undefined") return;
-  document.cookie = `${ACTIVE_PORTAL_COOKIE}=${portal}; Path=/; Max-Age=${ACTIVE_PORTAL_MAX_AGE}; SameSite=Lax`;
-}
-
-function getCustomerModeCopy(locale: Locale, mode: Mode) {
+function getLocaleCopy(locale: Locale) {
   if (locale === "en") {
-    return mode === "login"
-      ? {
-          switchLabel: "Sign in",
-          heroTitle: "Sign in to continue your trip planning.",
-          heroCopy: "Access bookings, faster checkout, and your travel details from one customer account.",
-          cardEyebrow: "Customer Sign In",
-          cardTitle: "Welcome back",
-          cardSubtitle: "Continue with Google or Facebook to open your Red Feng customer account.",
-          helperTitle: "Customer account benefits",
-          helperItems: [
-            "Track your bookings in one dashboard",
-            "Continue checkout without re-entering the same details",
-            "Keep your trip history connected to one account",
-          ],
-          trustTitle: "The customer experience stays focused and separate from internal portals.",
-          metrics: [
-            {
-              label: "Booking flow",
-              value: "1x",
-              description: "One customer account for checkout, dashboard, and travel history.",
-            },
-            {
-              label: "Support",
-              value: "24/7",
-              description: "Customer history stays connected so the team can respond faster.",
-            },
-            {
-              label: "Trust layer",
-              value: "OTA",
-              description: "The customer portal is separated from admin, finance, and merchant access.",
-            },
-          ],
-          registerHint: "If a customer account does not exist yet, Red Feng will create a new account when you continue this registration flow.",
-          forgotPassword: "Forgot password?",
-          andLabel: "and",
-        }
-      : {
-          switchLabel: "Register",
-          heroTitle: "Create your customer account before checkout.",
-          heroCopy: "Register once to make future bookings faster and keep all your travel activity in one place.",
-          cardEyebrow: "Customer Register",
-          cardTitle: "Create your account",
-          cardSubtitle: "Use Google or Facebook to register a Red Feng customer account in a few seconds.",
-          helperTitle: "Why register first",
-          helperItems: [
-            "Save your traveler identity for the next booking",
-            "Keep payment and booking progress in one account",
-            "Use one account across Red Feng customer pages",
-          ],
-          trustTitle: "The customer experience stays focused and separate from internal portals.",
-          metrics: [
-            {
-              label: "Booking flow",
-              value: "1x",
-              description: "One customer account for checkout, dashboard, and travel history.",
-            },
-            {
-              label: "Support",
-              value: "24/7",
-              description: "Customer history stays connected so the team can respond faster.",
-            },
-            {
-              label: "Trust layer",
-              value: "OTA",
-              description: "The customer portal is separated from admin, finance, and merchant access.",
-            },
-          ],
-          registerHint: "If a customer account does not exist yet, Red Feng will create a new account when you continue this registration flow.",
-          forgotPassword: "Forgot password?",
-          andLabel: "and",
-        };
+    return {
+      heroTagline: "Find the best travel packages for unforgettable trips.",
+      welcome: "Welcome Back!",
+      subtitle: "Sign in to continue your journey with RedFeng",
+      loginTab: "Sign In",
+      registerTab: "Register",
+      emailPlaceholder: "Email or mobile number",
+      passwordPlaceholder: "Password",
+      forgotPassword: "Forgot password?",
+      primaryLogin: "Sign In",
+      primaryRegister: "Register",
+      divider: "or continue with",
+      chooseProvider: "Choose one of the sign-in methods below.",
+      disabledProvider: "Coming soon",
+      noAccount: "Don't have an account yet?",
+      registerNow: "Register now",
+      haveAccount: "Already have an account?",
+      loginNow: "Sign in now",
+      leftFeatures: [
+        {
+          title: "Best travel packages",
+          description: "Thousands of domestic and international travel options.",
+        },
+        {
+          title: "Safe and trusted",
+          description: "Secure transactions and 24/7 customer support.",
+        },
+        {
+          title: "Easy and practical",
+          description: "Book anytime and anywhere with a smoother flow.",
+        },
+      ],
+    };
   }
 
   if (locale === "zh") {
-    return mode === "login"
-      ? {
-          switchLabel: "登录",
-          heroTitle: "登录后继续规划您的旅程。",
-          heroCopy: "使用一个客户账号查看订单、更快结账，并统一管理您的出行资料。",
-          cardEyebrow: "客户登录",
-          cardTitle: "欢迎回来",
-          cardSubtitle: "使用 Google 或 Facebook 继续登录您的 Red Feng 客户账号。",
-          helperTitle: "客户账号权益",
-          helperItems: [
-            "在一个面板中查看所有订单",
-            "结账时无需重复填写相同信息",
-            "将您的出行记录保存在同一个账号中",
-          ],
-          trustTitle: "客户体验将保持专注，不会与内部门户混在一起。",
-          metrics: [
-            {
-              label: "预订流程",
-              value: "1x",
-              description: "一个客户账号即可用于结账、后台和行程历史。",
-            },
-            {
-              label: "支持",
-              value: "24/7",
-              description: "客户历史会持续保留，方便团队更快响应需求。",
-            },
-            {
-              label: "信任层",
-              value: "OTA",
-              description: "客户门户与管理员、财务和商家入口分离。",
-            },
-          ],
-          registerHint: "如果客户账号尚不存在，您继续此注册流程时 Red Feng 会自动创建新账号。",
-          forgotPassword: "忘记密码？",
-          andLabel: "和",
-        }
-      : {
-          switchLabel: "注册",
-          heroTitle: "请在结账前先创建您的客户账号。",
-          heroCopy: "注册一次，即可让下一次预订更快，并将所有出行活动保存在同一个地方。",
-          cardEyebrow: "客户注册",
-          cardTitle: "创建账号",
-          cardSubtitle: "使用 Google 或 Facebook，几秒钟内注册 Red Feng 客户账号。",
-          helperTitle: "为什么先注册",
-          helperItems: [
-            "保存旅客资料，方便下次预订",
-            "把付款和订单进度集中在一个账号中",
-            "在 Red Feng 客户页面使用同一个账号",
-          ],
-          trustTitle: "客户体验将保持专注，不会与内部门户混在一起。",
-          metrics: [
-            {
-              label: "预订流程",
-              value: "1x",
-              description: "一个客户账号即可用于结账、后台和行程历史。",
-            },
-            {
-              label: "支持",
-              value: "24/7",
-              description: "客户历史会持续保留，方便团队更快响应需求。",
-            },
-            {
-              label: "信任层",
-              value: "OTA",
-              description: "客户门户与管理员、财务和商家入口分离。",
-            },
-          ],
-          registerHint: "如果客户账号尚不存在，您继续此注册流程时 Red Feng 会自动创建新账号。",
-          forgotPassword: "忘记密码？",
-          andLabel: "和",
-        };
+    return {
+      heroTagline: "Find the best travel packages for unforgettable trips.",
+      welcome: "Welcome Back!",
+      subtitle: "Sign in to continue your journey with RedFeng",
+      loginTab: "Sign In",
+      registerTab: "Register",
+      emailPlaceholder: "Email or mobile number",
+      passwordPlaceholder: "Password",
+      forgotPassword: "Forgot password?",
+      primaryLogin: "Sign In",
+      primaryRegister: "Register",
+      divider: "or continue with",
+      chooseProvider: "Choose one of the sign-in methods below.",
+      disabledProvider: "Coming soon",
+      noAccount: "Don't have an account yet?",
+      registerNow: "Register now",
+      haveAccount: "Already have an account?",
+      loginNow: "Sign in now",
+      leftFeatures: [
+        {
+          title: "Best travel packages",
+          description: "Thousands of domestic and international travel options.",
+        },
+        {
+          title: "Safe and trusted",
+          description: "Secure transactions and 24/7 customer support.",
+        },
+        {
+          title: "Easy and practical",
+          description: "Book anytime and anywhere with a smoother flow.",
+        },
+      ],
+    };
   }
 
-  return mode === "login"
-    ? {
-        switchLabel: "Masuk",
-        heroTitle: "Masuk untuk melanjutkan rencana perjalanan Anda.",
-        heroCopy: "Akses booking, checkout lebih cepat, dan detail perjalanan dari satu akun customer.",
-        cardEyebrow: "Customer Login",
-        cardTitle: "Selamat datang kembali",
-        cardSubtitle: "Lanjutkan dengan Google atau Facebook untuk membuka akun customer Red Feng Anda.",
-        helperTitle: "Keuntungan akun customer",
-        helperItems: [
-          "Pantau semua booking dalam satu dashboard",
-          "Checkout lebih cepat tanpa isi data berulang",
-          "Riwayat perjalanan tetap tersimpan di satu akun",
-        ],
-        trustTitle: "Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.",
-        metrics: [
-          {
-            label: "Booking flow",
-            value: "1x",
-            description: "Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.",
-          },
-          {
-            label: "Support",
-            value: "24/7",
-            description: "Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.",
-          },
-          {
-            label: "Trust layer",
-            value: "OTA",
-            description: "Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.",
-          },
-        ],
-        registerHint: "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini.",
-        forgotPassword: "Lupa password?",
-        andLabel: "dan",
-      }
-    : {
-        switchLabel: "Daftar",
-        heroTitle: "Buat akun customer sebelum checkout.",
-        heroCopy: "Daftar sekali untuk mempercepat booking berikutnya dan menyimpan seluruh aktivitas perjalanan Anda di satu tempat.",
-        cardEyebrow: "Customer Register",
-        cardTitle: "Buat akun Anda",
-        cardSubtitle: "Gunakan Google atau Facebook untuk mendaftarkan akun customer Red Feng dalam beberapa detik.",
-        helperTitle: "Kenapa daftar dulu",
-        helperItems: [
-          "Simpan identitas traveler untuk booking berikutnya",
-          "Satukan progress pembayaran dan booking dalam satu akun",
-          "Pakai satu akun customer di seluruh halaman Red Feng",
-        ],
-        trustTitle: "Pengalaman customer dibuat lebih fokus dan tidak bercampur dengan portal internal.",
-        metrics: [
-          {
-            label: "Booking flow",
-            value: "1x",
-            description: "Satu akun customer untuk checkout, dashboard, dan riwayat perjalanan.",
-          },
-          {
-            label: "Support",
-            value: "24/7",
-            description: "Riwayat customer tersimpan agar tim dapat menangani permintaan lebih cepat.",
-          },
-          {
-            label: "Trust layer",
-            value: "OTA",
-            description: "Portal customer dipisahkan dari admin, finance, dan merchant agar alurnya tetap bersih.",
-          },
-        ],
-        registerHint: "Jika akun customer belum ada, Red Feng akan membuat akun baru saat Anda melanjutkan proses daftar ini.",
-        forgotPassword: "Lupa password?",
-        andLabel: "dan",
-      };
+  return {
+    heroTagline: "Temukan paket wisata terbaik untuk perjalanan tak terlupakan.",
+    welcome: "Selamat Datang!",
+    subtitle: "Masuk untuk melanjutkan perjalananmu bersama RedFeng",
+    loginTab: "Masuk",
+    registerTab: "Daftar",
+    emailPlaceholder: "Email atau Nomor Handphone",
+    passwordPlaceholder: "Kata Sandi",
+    forgotPassword: "Lupa Kata Sandi?",
+    primaryLogin: "Masuk",
+    primaryRegister: "Daftar",
+    divider: "atau masuk dengan",
+    chooseProvider: "Pilih metode masuk yang tersedia di bawah.",
+    disabledProvider: "Segera hadir",
+    noAccount: "Belum punya akun?",
+    registerNow: "Daftar sekarang",
+    haveAccount: "Sudah punya akun?",
+    loginNow: "Masuk sekarang",
+    leftFeatures: [
+      {
+        title: "Paket Wisata Terbaik",
+        description: "Ribuan pilihan paket wisata domestik dan internasional",
+      },
+      {
+        title: "Aman & Terpercaya",
+        description: "Transaksi aman dan dukungan customer 24/7",
+      },
+      {
+        title: "Mudah & Praktis",
+        description: "Pesan kapan saja, di mana saja dengan mudah",
+      },
+    ],
+  };
+}
+
+async function updateLocale(nextLocale: Locale) {
+  const response = await fetch("/api/locale", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ locale: nextLocale }),
+  });
+
+  if (!response.ok) return;
+  window.location.reload();
 }
 
 export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode; initialLocale: Locale }) {
@@ -328,33 +292,55 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const [searchError] = useState(getSafeErrorFromLocation);
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [emailVisual, setEmailVisual] = useState("");
+  const [passwordVisual, setPasswordVisual] = useState("");
   const enabledProviders = providerConfig.filter((item) => item.enabled);
 
   const t = getLoginDictionary(locale);
-  const modeCopy = getCustomerModeCopy(locale, mode);
-  const footerHref = mode === "login" ? "/register" : "/login";
-  const footerLead = mode === "login" ? t.registerCta : t.loginCta;
-  const footerLabel = mode === "login" ? t.registerLink : t.loginLink;
+  const copy = getLocaleCopy(locale);
   const authError = errorMsg || searchError;
+  const footerHref =
+    mode === "login"
+      ? `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`
+      : `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`;
+
   const modeTabs = useMemo(
     () => [
       {
         href: `/login${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
-        label:
-          modeCopy.switchLabel === "Masuk" || modeCopy.switchLabel === "Sign in" || modeCopy.switchLabel === "登录"
-            ? modeCopy.switchLabel
-            : t.loginLink,
+        label: copy.loginTab,
         active: mode === "login",
       },
       {
         href: `/register${safeNext !== CUSTOMER_PORTAL_DEFAULT_REDIRECT ? `?next=${encodeURIComponent(safeNext)}` : ""}`,
-        label: mode === "register" ? modeCopy.switchLabel : t.registerLink,
+        label: copy.registerTab,
         active: mode === "register",
       },
     ],
-    [mode, modeCopy.switchLabel, safeNext, t.loginLink, t.registerLink],
+    [copy.loginTab, copy.registerTab, mode, safeNext],
   );
-  const trustItems = modeCopy.helperItems;
+
+  const socialButtons: Array<{
+    key: AuthProvider | "apple";
+    label: string;
+    enabled: boolean;
+  }> = [
+    {
+      key: "google",
+      label: getProviderLabel("google", t),
+      enabled: Boolean(providerConfig.find((item) => item.provider === "google")?.enabled),
+    },
+    {
+      key: "apple",
+      label: locale === "id" ? "Lanjutkan dengan Apple" : "Continue with Apple",
+      enabled: false,
+    },
+    {
+      key: "facebook",
+      label: getProviderLabel("facebook", t),
+      enabled: Boolean(providerConfig.find((item) => item.provider === "facebook")?.enabled),
+    },
+  ];
 
   const handleProviderAuth = async (provider: AuthProvider) => {
     setLoadingProvider(provider);
@@ -379,171 +365,228 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
     }
   };
 
+  const handlePrimaryAction = async () => {
+    setErrorMsg("");
+
+    if (enabledProviders.length === 1) {
+      await handleProviderAuth(enabledProviders[0].provider);
+      return;
+    }
+
+    setErrorMsg(copy.chooseProvider);
+  };
+
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f6f0e8_100%)] px-4 py-10 text-slate-950 sm:px-6 lg:px-8">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.24),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(124,45,18,0.1),transparent_24%)]" />
+    <main className="min-h-screen overflow-hidden bg-[#102238] px-3 py-3 text-slate-950 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+      <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1650px] overflow-hidden rounded-[34px] bg-[#112740] shadow-[0_40px_120px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2.5rem)]">
+        <div className="absolute inset-0">
+          <Image
+            src="/home-assets/dest-bali.png"
+            alt="Bali landscape"
+            fill
+            priority
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,240,227,0.72)_0%,rgba(255,247,240,0.28)_28%,rgba(16,34,56,0.1)_48%,rgba(8,18,35,0.68)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.36),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(18,31,46,0.6),transparent_34%),radial-gradient(circle_at_top_right,rgba(28,75,133,0.38),transparent_30%)]" />
+        </div>
 
-      <div className="relative mx-auto grid min-h-[calc(100vh-5rem)] max-w-6xl overflow-hidden rounded-[36px] border border-orange-200/60 bg-white shadow-[0_32px_110px_rgba(146,64,14,0.16)] lg:grid-cols-[1.05fr_0.95fr]">
-        <section className="relative overflow-hidden bg-[linear-gradient(145deg,#7c2d12_0%,#c2410c_36%,#f97316_72%,#fdba74_100%)] px-8 py-10 text-white sm:px-10 lg:px-12 lg:py-14">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.12),transparent_30%)]" />
-          <div className="relative flex h-full flex-col">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">
-                  Red Feng Customer
+        <div className="relative grid min-h-[calc(100vh-1.5rem)] lg:grid-cols-[0.88fr_1.12fr]">
+          <section className="flex items-stretch">
+            <div className="flex w-full flex-col justify-between px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-14 lg:py-14">
+              <div className="max-w-[420px]">
+                <div className="flex items-center gap-4">
+                  <Image src="/logo-redfeng.png" alt="RedFeng" width={64} height={64} className="h-12 w-12 object-contain" />
+                  <div className="text-[28px] font-semibold tracking-tight text-slate-950">RedFeng</div>
+                </div>
+
+                <p className="mt-10 max-w-[300px] text-[22px] leading-[1.55] text-slate-800 sm:text-[26px]">
+                  {copy.heroTagline}
                 </p>
-                <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight md:text-5xl">
-                  {modeCopy.heroTitle}
-                </h2>
               </div>
-              <div className="hidden rounded-[24px] border border-white/20 bg-white/10 px-5 py-4 backdrop-blur md:block">
-                <div className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Customer Portal</div>
-                <div className="mt-2 text-2xl font-semibold">{modeCopy.switchLabel}</div>
-              </div>
-            </div>
 
-            <p className="mt-8 max-w-2xl text-base leading-8 text-orange-50/92 sm:text-lg">
-              {modeCopy.heroCopy}
-            </p>
-
-            <div className="relative mt-10 grid gap-4 xl:grid-cols-3">
-              {modeCopy.metrics.map((metric) => (
-                <div key={metric.label} className="rounded-[28px] border border-white/20 bg-white/10 p-5 backdrop-blur">
-                  <p className="text-xs uppercase tracking-[0.22em] text-orange-50/70">{metric.label}</p>
-                  <p className="mt-3 text-3xl font-semibold">{metric.value}</p>
-                  <p className="mt-2 text-sm text-orange-50/85">{metric.description}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="relative mt-auto pt-10">
-              <div className="rounded-[30px] border border-white/18 bg-slate-950/16 p-6 backdrop-blur">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.34em] text-orange-100/80">
-                      {modeCopy.helperTitle}
-                    </p>
-                    <p className="mt-2 text-xl font-semibold">{modeCopy.trustTitle}</p>
-                  </div>
-                  <div className="grid h-20 w-20 place-items-center rounded-[26px] border border-white/20 bg-white/12 text-center text-sm font-semibold leading-tight text-white">
-                    Red
-                    <br />
-                    Feng
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-3">
-                  {trustItems.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-3 rounded-2xl border border-white/12 bg-white/10 px-4 py-3 text-sm text-orange-50/90"
-                    >
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-xs font-bold text-orange-700">
-                        *
-                      </span>
-                      <span>{item}</span>
+              <div className="mt-10 max-w-[420px]">
+                <div className="space-y-6">
+                  {copy.leftFeatures.map((feature, index) => (
+                    <div key={feature.title} className="flex items-start gap-4">
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[rgba(124,21,15,0.72)] shadow-[0_12px_28px_rgba(71,10,7,0.3)] ring-1 ring-white/12">
+                        <span className="text-lg font-semibold text-white">{index + 1}</span>
+                      </div>
+                      <div className="pt-1">
+                        <div className="text-[27px] font-semibold leading-tight text-white sm:text-[30px]">{feature.title}</div>
+                        <p className="mt-2 max-w-[280px] text-lg leading-8 text-white/88">{feature.description}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                <div className="mt-10 flex items-center gap-4">
+                  <span className="h-4 w-4 rounded-full bg-[#ff2f24]" />
+                  <span className="h-4 w-4 rounded-full bg-white/75" />
+                  <span className="h-4 w-4 rounded-full bg-white/75" />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="flex items-center bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f1_100%)] px-6 py-10 sm:px-10 lg:px-12">
-          <div className="mx-auto w-full max-w-xl">
-            <div className="rounded-[32px] border border-orange-100 bg-white p-8 shadow-[0_24px_70px_rgba(148,64,14,0.08)] sm:p-10">
-              <div className="mb-4 flex justify-end">
-                <AuthLocaleDropdown locale={locale} />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 rounded-[22px] border border-orange-100 bg-[#fff8f1] p-2">
-                {modeTabs.map((tab) => (
-                  <Link
-                    key={tab.href}
-                    href={tab.href}
-                    className={`inline-flex flex-1 items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
-                      tab.active
-                        ? "bg-white text-orange-700 shadow-[0_10px_24px_rgba(148,64,14,0.08)]"
-                        : "text-slate-600 hover:bg-white hover:text-orange-700"
-                    }`}
+          <section className="flex items-center justify-center px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
+            <div className="w-full max-w-[860px] rounded-[34px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-7 py-7 shadow-[0_28px_90px_rgba(9,19,35,0.22)] backdrop-blur sm:px-10 sm:py-10 lg:min-h-[88vh] lg:px-14 lg:py-12">
+              <div className="flex justify-end">
+                <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+                  <GlobeIcon />
+                  <select
+                    aria-label="Select language"
+                    defaultValue={locale}
+                    onChange={(event) => void updateLocale(event.target.value as Locale)}
+                    className="bg-transparent pr-5 text-base font-medium text-slate-800 outline-none"
                   >
-                    {tab.label}
-                  </Link>
-                ))}
+                    {localeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDownIcon />
+                </div>
               </div>
 
-              <div className="mt-6 inline-flex rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700">
-                {modeCopy.cardEyebrow}
+              <div className="mt-12 max-w-[430px]">
+                <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-[#0f172a] sm:text-[54px]">
+                  {copy.welcome}
+                </h1>
+                <p className="mt-4 max-w-[360px] text-[21px] leading-[1.7] text-slate-500 sm:text-[24px]">
+                  {copy.subtitle}
+                </p>
               </div>
-              <h1 className="mt-5 text-3xl font-semibold leading-tight text-slate-950">{modeCopy.cardTitle}</h1>
-              <p className="mt-3 text-sm leading-7 text-slate-600">{modeCopy.cardSubtitle}</p>
 
-              <div className="mt-8 space-y-3">
-                {enabledProviders.map((item) => (
-                  <button
-                    key={item.provider}
-                    type="button"
-                    onClick={() => handleProviderAuth(item.provider)}
-                    disabled={loadingProvider !== null}
-                    className={item.className}
-                  >
-                    {getProviderIcon(item.provider)}
-                    <span>
-                      {loadingProvider === item.provider ? t.processing : getProviderLabel(item.provider, t)}
+              <div className="mt-14">
+                <div className="flex border-b border-slate-200">
+                  {modeTabs.map((tab) => (
+                    <Link
+                      key={tab.href}
+                      href={tab.href}
+                      className={`relative flex-1 pb-5 text-center text-[24px] font-semibold transition sm:text-[27px] ${
+                        tab.active ? "text-[#ff2a1c]" : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {tab.label}
+                      {tab.active ? <span className="absolute inset-x-0 bottom-[-1px] h-[4px] rounded-full bg-[#ff2a1c]" /> : null}
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="mt-12 space-y-7">
+                  <label className="flex h-[78px] items-center gap-4 rounded-[18px] border border-slate-200 bg-white px-6 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                    <span className="text-slate-500">
+                      <UserIcon />
                     </span>
-                  </button>
-                ))}
-              </div>
+                    <input
+                      type="text"
+                      value={emailVisual}
+                      onChange={(event) => setEmailVisual(event.target.value)}
+                      placeholder={copy.emailPlaceholder}
+                      className="w-full bg-transparent text-[20px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[22px]"
+                    />
+                  </label>
 
-              <div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                <div className="h-px flex-1 bg-slate-200" />
-                <span>{t.otherOptions}</span>
-                <div className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              <div className="rounded-[24px] border border-orange-100 bg-[linear-gradient(180deg,#fff9f2_0%,#fffdf9_100%)] px-5 py-4 text-sm leading-7 text-slate-600">
-                {mode === "login" ? t.autoCreateHint : modeCopy.registerHint}
-              </div>
-
-              {authError ? (
-                <div className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {authError}
+                  <label className="flex h-[78px] items-center gap-4 rounded-[18px] border border-slate-200 bg-white px-6 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                    <span className="text-slate-500">
+                      <LockIcon />
+                    </span>
+                    <input
+                      type="password"
+                      value={passwordVisual}
+                      onChange={(event) => setPasswordVisual(event.target.value)}
+                      placeholder={copy.passwordPlaceholder}
+                      className="w-full bg-transparent text-[20px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[22px]"
+                    />
+                    <span className="text-slate-400">
+                      <EyeIcon />
+                    </span>
+                  </label>
                 </div>
-              ) : null}
 
-              {mode === "login" ? (
-                <div className="mt-5">
-                  <Link
-                    href="/forgot-password?next=/login"
-                    className="text-sm font-medium text-orange-700 hover:text-orange-800"
-                  >
-                    {modeCopy.forgotPassword}
+                {mode === "login" ? (
+                  <div className="mt-5 flex justify-end">
+                    <Link href={`/forgot-password?next=/login`} className="text-[18px] font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
+                      {copy.forgotPassword}
+                    </Link>
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => void handlePrimaryAction()}
+                  disabled={loadingProvider !== null}
+                  className="mt-12 inline-flex h-[82px] w-full items-center justify-center rounded-[18px] bg-[linear-gradient(180deg,#ff2f24_0%,#f31508_100%)] px-6 text-[28px] font-semibold text-white shadow-[0_22px_45px_rgba(255,47,36,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loadingProvider ? t.processing : mode === "login" ? copy.primaryLogin : copy.primaryRegister}
+                </button>
+
+                <div className="mt-12 flex items-center gap-5 text-center text-[18px] text-slate-400">
+                  <div className="h-px flex-1 bg-slate-200" />
+                  <span>{copy.divider}</span>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <div className="mt-10 space-y-5">
+                  {socialButtons.map((button) => {
+                    const active = button.enabled && button.key !== "apple";
+
+                    return (
+                      <button
+                        key={button.key}
+                        type="button"
+                        disabled={!active || loadingProvider !== null}
+                        onClick={() => {
+                          if (button.key === "google" || button.key === "facebook") {
+                            void handleProviderAuth(button.key);
+                          }
+                        }}
+                        className={`flex h-[78px] w-full items-center justify-between rounded-[18px] border px-6 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition ${
+                          active
+                            ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#ffddd7]"
+                            : "cursor-not-allowed border-slate-200 bg-white/75 opacity-70"
+                        }`}
+                      >
+                        <span className="flex items-center gap-5">
+                          <span className="grid h-10 w-10 place-items-center">{getProviderIcon(button.key)}</span>
+                          <span className="text-[20px] font-medium text-slate-800 sm:text-[22px]">{button.label}</span>
+                        </span>
+                        {!active ? <span className="text-sm font-medium text-slate-400">{copy.disabledProvider}</span> : null}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {authError ? (
+                  <div className="mt-6 rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-4 text-base text-rose-700">
+                    {authError}
+                  </div>
+                ) : null}
+
+                <p className="mt-12 text-center text-[20px] text-slate-700 sm:text-[22px]">
+                  {mode === "login" ? copy.noAccount : copy.haveAccount}{" "}
+                  <Link href={footerHref} className="font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
+                    {mode === "login" ? copy.registerNow : copy.loginNow}
                   </Link>
-                </div>
-              ) : null}
+                </p>
 
-              <p className="mt-6 text-xs leading-6 text-slate-500">
-                {t.termsLead}{" "}
-                <Link href="/terms" className="font-semibold text-orange-700 hover:text-orange-800">
-                  {t.terms}
-                </Link>{" "}
-                {modeCopy.andLabel}{" "}
-                <Link href="/privacy" className="font-semibold text-orange-700 hover:text-orange-800">
-                  {t.privacy}
-                </Link>
-                .
-              </p>
-
-              <p className="mt-6 text-sm text-slate-600">
-                {footerLead}{" "}
-                <Link href={footerHref} className="font-semibold text-orange-600 hover:text-orange-700">
-                  {footerLabel}
-                </Link>
-              </p>
+                <p className="mt-5 text-center text-sm leading-7 text-slate-500 sm:text-base">
+                  {t.termsLead}{" "}
+                  <Link href="/terms" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
+                    {t.terms}
+                  </Link>{" "}
+                  {locale === "id" ? "dan" : "and"}{" "}
+                  <Link href="/privacy" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
+                    {t.privacy}
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </main>
   );
