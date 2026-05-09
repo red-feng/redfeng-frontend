@@ -8,7 +8,7 @@ import { getCurrentLocale } from "@/lib/locale"
 
 export const metadata: Metadata = {
   title: "Promo | Red Feng",
-  description: "Promo aktif Red Feng untuk tiket, hotel, kereta, dan paket wisata.",
+  description: "Promo aktif Red Feng untuk tiket, hotel, kereta, dan paket wisata, termasuk akses ke landing paket dan katalog penuh.",
   alternates: {
     canonical: "/promo",
   },
@@ -29,7 +29,8 @@ export default async function PromoPage() {
               Semua promo RedFeng dalam satu halaman.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
-              Lihat promo tiket, hotel, paket wisata, dan penawaran terbatas yang sedang ditampilkan di website maupun aplikasi.
+              Lihat promo tiket, hotel, paket wisata, dan penawaran terbatas yang sedang ditampilkan di website maupun aplikasi. Untuk
+              paket wisata, alurnya sekarang bisa masuk ke landing paket lebih dulu lalu lanjut ke katalog penuh sesuai konteks promo.
             </p>
           </section>
 

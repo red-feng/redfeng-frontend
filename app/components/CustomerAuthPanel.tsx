@@ -14,6 +14,7 @@ import { readLocaleFromCookie } from "@/lib/locale-client";
 
 type AuthProvider = "google" | "facebook";
 type Mode = "login" | "register";
+type LocaleMenuPlacement = "mobile" | "desktop";
 
 const providerConfig: Array<{
   provider: AuthProvider;
@@ -120,22 +121,10 @@ function EyeIcon() {
 function GoogleIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
-      <path
-        fill="#EA4335"
-        d="M12 10.2v3.9h5.4c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.4-.2-2H12z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.7-1.7-5.5-4H3.3v2.5C4.9 19.8 8.2 22 12 22z"
-      />
-      <path
-        fill="#4A90E2"
-        d="M6.5 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.5H3.3C2.5 9 2 10.4 2 12s.5 3 1.3 4.5L6.5 14z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M12 6c1.4 0 2.7.5 3.7 1.4l2.8-2.8C16.8 3 14.6 2 12 2 8.2 2 4.9 4.2 3.3 7.5L6.5 10c.8-2.3 3-4 5.5-4z"
-      />
+      <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-7 0-.7-.1-1.4-.2-2H12z" />
+      <path fill="#34A853" d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.7-1.7-5.5-4H3.3v2.5C4.9 19.8 8.2 22 12 22z" />
+      <path fill="#4A90E2" d="M6.5 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.5H3.3C2.5 9 2 10.4 2 12s.5 3 1.3 4.5L6.5 14z" />
+      <path fill="#FBBC05" d="M12 6c1.4 0 2.7.5 3.7 1.4l2.8-2.8C16.8 3 14.6 2 12 2 8.2 2 4.9 4.2 3.3 7.5L6.5 10c.8-2.3 3-4 5.5-4z" />
     </svg>
   );
 }
@@ -151,6 +140,12 @@ function AppleIcon() {
   );
 }
 
+function getProviderIcon(provider: AuthProvider | "apple") {
+  if (provider === "google") return <GoogleIcon />;
+  if (provider === "facebook") return <FacebookIcon />;
+  return <AppleIcon />;
+}
+
 function FacebookIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-6 w-6">
@@ -160,12 +155,6 @@ function FacebookIcon() {
       />
     </svg>
   );
-}
-
-function getProviderIcon(provider: AuthProvider | "apple") {
-  if (provider === "google") return <GoogleIcon />;
-  if (provider === "facebook") return <FacebookIcon />;
-  return <AppleIcon />;
 }
 
 function getLocaleCopy(locale: Locale) {
@@ -214,9 +203,9 @@ function getLocaleCopy(locale: Locale) {
 
   if (locale === "zh") {
     return {
-      heroTagline: "发现最优质的旅游套餐，开启难忘旅程。",
+      heroTagline: "发现高品质旅游套餐，开启难忘旅程。",
       welcome: "欢迎回来！",
-      subtitle: "登录以继续您与 RedFeng 的旅程",
+      subtitle: "登录后继续您与 RedFeng 的旅行",
       loginTab: "登录",
       registerTab: "注册",
       emailPlaceholder: "邮箱或手机号",
@@ -317,9 +306,10 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const [errorMsg, setErrorMsg] = useState("");
   const [emailVisual, setEmailVisual] = useState("");
   const [passwordVisual, setPasswordVisual] = useState("");
-  const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
+  const [openLocaleMenu, setOpenLocaleMenu] = useState<LocaleMenuPlacement | null>(null);
   const enabledProviders = providerConfig.filter((item) => item.enabled);
-  const localeMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileLocaleMenuRef = useRef<HTMLDivElement | null>(null);
+  const desktopLocaleMenuRef = useRef<HTMLDivElement | null>(null);
 
   const copy = getLocaleCopy(locale);
   const authError = errorMsg || searchError;
@@ -401,16 +391,18 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   };
 
   useEffect(() => {
-    if (!isLocaleMenuOpen) return;
+    if (!openLocaleMenu) return;
+
+    const activeRef = openLocaleMenu === "mobile" ? mobileLocaleMenuRef : desktopLocaleMenuRef;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!localeMenuRef.current?.contains(event.target as Node)) {
-        setIsLocaleMenuOpen(false);
+      if (!activeRef.current?.contains(event.target as Node)) {
+        setOpenLocaleMenu(null);
       }
     };
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsLocaleMenuOpen(false);
+      if (event.key === "Escape") setOpenLocaleMenu(null);
     };
 
     window.addEventListener("mousedown", handlePointerDown);
@@ -420,24 +412,244 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isLocaleMenuOpen]);
+  }, [openLocaleMenu]);
+
+  const localeLabel = localeOptions.find((option) => option.value === locale)?.label || "ID";
+
+  const renderLocaleMenu = (placement: LocaleMenuPlacement) => {
+    const isOpen = openLocaleMenu === placement;
+    const isMobile = placement === "mobile";
+
+    return (
+      <div ref={isMobile ? mobileLocaleMenuRef : desktopLocaleMenuRef} className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenLocaleMenu((current) => (current === placement ? null : placement))}
+          className={
+            isMobile
+              ? `flex items-center gap-2.5 rounded-full border border-white/40 bg-white/18 px-3.5 py-2 text-sm font-medium text-white shadow-[0_10px_30px_rgba(15,23,42,0.12)] backdrop-blur-md transition duration-200 ${
+                  isOpen ? "border-white/70 bg-white/24" : "hover:border-white/60 hover:bg-white/22"
+                }`
+              : `flex items-center gap-3 rounded-full border bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition duration-200 ${
+                  isOpen ? "border-slate-300 shadow-[0_14px_36px_rgba(15,23,42,0.1)]" : "border-slate-200 hover:border-slate-300"
+                }`
+          }
+          aria-haspopup="menu"
+          aria-expanded={isOpen}
+          aria-label="Select language"
+        >
+          <GlobeIcon />
+          <span className={`min-w-[1.8rem] text-left ${isMobile ? "text-base font-medium" : "text-base font-medium text-slate-800"}`}>{localeLabel}</span>
+          <span className={`transition duration-200 ${isOpen ? "rotate-180" : ""}`}>
+            <ChevronDownIcon />
+          </span>
+        </button>
+
+        {isOpen ? (
+          <div
+            role="menu"
+            className={
+              isMobile
+                ? "absolute right-0 z-20 mt-3 min-w-[9rem] overflow-hidden rounded-[20px] border border-white/70 bg-white/96 p-2 text-slate-900 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
+                : "absolute right-0 z-20 mt-3 min-w-[10rem] overflow-hidden rounded-[20px] border border-slate-200/90 bg-white/98 p-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
+            }
+          >
+            {localeOptions.map((option) => {
+              const active = option.value === locale;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={active}
+                  onClick={() => {
+                    setOpenLocaleMenu(null);
+                    if (option.value !== locale) {
+                      void updateLocale(option.value);
+                    }
+                  }}
+                  className={`flex w-full items-center justify-between rounded-[16px] px-4 py-3 text-left text-sm font-medium transition duration-150 ${
+                    active
+                      ? "bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-900 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                  }`}
+                >
+                  <span className="pl-1">{option.label}</span>
+                  <span className={active ? "text-slate-500" : "text-transparent"}>
+                    <CheckIcon />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#102238] px-3 py-3 text-slate-950 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
-      <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1560px] overflow-hidden rounded-[30px] bg-[#112740] shadow-[0_36px_108px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2rem)]">
+    <main className="min-h-screen overflow-hidden bg-[#102238] px-0 text-slate-950 lg:px-5 lg:py-5">
+      <div className="relative mx-auto min-h-screen overflow-hidden bg-[#112740] lg:min-h-[calc(100vh-2rem)] lg:max-w-[1560px] lg:rounded-[30px] lg:shadow-[0_36px_108px_rgba(5,15,35,0.45)]">
         <div className="absolute inset-0">
           <Image
             src="/home-assets/background-login-customer.png"
             alt="Customer login background"
             fill
             priority
-            className="object-cover object-center"
+            className="object-cover object-[72%_center] lg:object-center"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,240,227,0.72)_0%,rgba(255,247,240,0.28)_28%,rgba(16,34,56,0.1)_48%,rgba(8,18,35,0.68)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.36),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(18,31,46,0.6),transparent_34%),radial-gradient(circle_at_top_right,rgba(28,75,133,0.38),transparent_30%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(244,247,252,0.2)_0%,rgba(255,245,233,0.14)_20%,rgba(255,248,240,0.04)_40%,rgba(255,255,255,0.12)_58%,rgba(255,255,255,0.94)_82%,rgba(255,255,255,1)_100%)] lg:bg-[linear-gradient(90deg,rgba(255,240,227,0.72)_0%,rgba(255,247,240,0.28)_28%,rgba(16,34,56,0.1)_48%,rgba(8,18,35,0.68)_100%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.45),transparent_34%),radial-gradient(circle_at_center,rgba(255,208,150,0.2),transparent_46%),radial-gradient(circle_at_bottom_center,rgba(255,255,255,0.86),transparent_32%)] lg:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.36),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(18,31,46,0.6),transparent_34%),radial-gradient(circle_at_top_right,rgba(28,75,133,0.38),transparent_30%)]" />
         </div>
 
-        <div className="relative grid min-h-[calc(100vh-1.5rem)] lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="relative flex min-h-screen flex-col lg:hidden">
+          <div className="flex items-start justify-between px-6 pb-5 pt-10">
+            <Image
+              src="/logo-redfeng.png"
+              alt="RedFeng"
+              width={188}
+              height={188}
+              className="h-[4.7rem] w-[4.7rem] object-contain object-left"
+            />
+            {renderLocaleMenu("mobile")}
+          </div>
+
+          <div className="px-6 pb-10 pt-1">
+            <div className="max-w-[19rem]">
+              <h1 className="text-[2.65rem] font-semibold leading-[1.02] tracking-[-0.04em] text-[#0f172a]">{copy.welcome}</h1>
+              <p className="mt-3 max-w-[18rem] text-[1.18rem] leading-[1.65] text-slate-600">{copy.subtitle}</p>
+            </div>
+          </div>
+
+          <section className="mt-auto rounded-t-[36px] bg-[linear-gradient(180deg,rgba(255,255,255,0.97)_0%,rgba(255,252,248,0.995)_100%)] px-5 pb-8 pt-5 shadow-[0_-28px_70px_rgba(15,23,42,0.14)] backdrop-blur-xl">
+            <div className="mx-auto max-w-[31rem]">
+              <div className="flex border-b border-slate-200">
+                {modeTabs.map((tab) => (
+                  <Link
+                    key={tab.href}
+                    href={tab.href}
+                    className={`relative flex-1 pb-4 text-center text-[1.05rem] font-semibold transition ${
+                      tab.active ? "text-[#ff2a1c]" : "text-slate-500 hover:text-slate-700"
+                    }`}
+                  >
+                    {tab.label}
+                    {tab.active ? <span className="absolute inset-x-0 bottom-[-1px] h-[3px] rounded-full bg-[#ff2a1c]" /> : null}
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <label className="flex h-[4.45rem] items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-4 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                  <span className="text-slate-500">
+                    <UserIcon />
+                  </span>
+                  <input
+                    type="text"
+                    value={emailVisual}
+                    onChange={(event) => setEmailVisual(event.target.value)}
+                    placeholder={copy.emailPlaceholder}
+                    className="w-full bg-transparent text-[1rem] text-slate-700 outline-none placeholder:text-slate-400"
+                  />
+                </label>
+
+                <label className="flex h-[4.45rem] items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-4 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                  <span className="text-slate-500">
+                    <LockIcon />
+                  </span>
+                  <input
+                    type="password"
+                    value={passwordVisual}
+                    onChange={(event) => setPasswordVisual(event.target.value)}
+                    placeholder={copy.passwordPlaceholder}
+                    className="w-full bg-transparent text-[1rem] text-slate-700 outline-none placeholder:text-slate-400"
+                  />
+                  <span className="text-slate-400">
+                    <EyeIcon />
+                  </span>
+                </label>
+              </div>
+
+              {mode === "login" ? (
+                <div className="mt-4 flex justify-end">
+                  <Link href={`/forgot-password?next=/login`} className="text-[0.95rem] font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
+                    {copy.forgotPassword}
+                  </Link>
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => void handlePrimaryAction()}
+                disabled={loadingProvider !== null}
+                className="mt-6 inline-flex h-[4.7rem] w-full items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,#ff2f24_0%,#f31508_100%)] px-6 text-[1.6rem] font-semibold text-white shadow-[0_18px_38px_rgba(255,47,36,0.26)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loadingProvider ? copy.processing : mode === "login" ? copy.primaryLogin : copy.primaryRegister}
+              </button>
+
+              <div className="mt-7 flex items-center gap-4 text-center text-[0.95rem] text-slate-400">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span>{copy.divider}</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <div className="mt-6 space-y-3.5">
+                {socialButtons.map((button) => {
+                  const active = button.enabled && button.key !== "apple";
+
+                  return (
+                    <button
+                      key={button.key}
+                      type="button"
+                      disabled={!active || loadingProvider !== null}
+                      onClick={() => {
+                        if (button.key === "google" || button.key === "facebook") {
+                          void handleProviderAuth(button.key);
+                        }
+                      }}
+                      className={`flex h-[4.25rem] w-full items-center justify-between rounded-[16px] border px-4 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition ${
+                        active ? "border-slate-200 bg-white hover:border-[#ffddd7]" : "cursor-not-allowed border-slate-200 bg-white/75 opacity-70"
+                      }`}
+                    >
+                      <span className="flex items-center gap-4">
+                        <span className="grid h-8 w-8 place-items-center">{getProviderIcon(button.key)}</span>
+                        <span className="text-[1rem] font-medium text-slate-800">{button.label}</span>
+                      </span>
+                      {!active ? <span className="text-xs font-medium text-slate-400">{copy.disabledProvider}</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {authError ? (
+                <div className="mt-5 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {authError}
+                </div>
+              ) : null}
+
+              <p className="mt-7 text-center text-[1rem] text-slate-700">
+                {mode === "login" ? copy.noAccount : copy.haveAccount}{" "}
+                <Link href={footerHref} className="font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
+                  {mode === "login" ? copy.registerNow : copy.loginNow}
+                </Link>
+              </p>
+
+              <p className="mt-4 text-center text-[0.78rem] leading-5 text-slate-500">
+                {copy.termsLead}{" "}
+                <Link href="/terms" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
+                  {copy.terms}
+                </Link>{" "}
+                {locale === "id" ? "dan" : locale === "zh" ? "和" : "and"}{" "}
+                <Link href="/privacy" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
+                  {copy.privacy}
+                </Link>
+                .
+              </p>
+            </div>
+          </section>
+        </div>
+
+        <div className="relative hidden min-h-[calc(100vh-1.5rem)] lg:grid lg:grid-cols-[0.9fr_1.1fr]">
           <section className="flex items-stretch">
             <div className="flex w-full flex-col justify-between px-5 py-7 text-white sm:px-9 sm:py-9 lg:px-12 lg:py-12">
               <div className="max-w-[340px] pt-1">
@@ -451,9 +663,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   />
                 </div>
 
-                <p className="mt-6 max-w-[300px] text-[20px] leading-[1.5] text-slate-800 sm:text-[23px]">
-                  {copy.heroTagline}
-                </p>
+                <p className="mt-6 max-w-[300px] text-[20px] leading-[1.5] text-slate-800 sm:text-[23px]">{copy.heroTagline}</p>
               </div>
 
               <div className="mt-8 max-w-[390px]">
@@ -482,73 +692,11 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
 
           <section className="flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
             <div className="w-full max-w-[780px] rounded-[30px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-6 py-6 shadow-[0_24px_76px_rgba(9,19,35,0.2)] backdrop-blur sm:px-8 sm:py-8 lg:min-h-[80vh] lg:px-12 lg:py-10">
-              <div className="flex justify-end">
-                <div ref={localeMenuRef} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setIsLocaleMenuOpen((current) => !current)}
-                    className={`flex items-center gap-3 rounded-full border bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition duration-200 ${
-                      isLocaleMenuOpen ? "border-slate-300 shadow-[0_14px_36px_rgba(15,23,42,0.1)]" : "border-slate-200 hover:border-slate-300"
-                    }`}
-                    aria-haspopup="menu"
-                    aria-expanded={isLocaleMenuOpen}
-                    aria-label="Select language"
-                  >
-                    <GlobeIcon />
-                    <span className="min-w-[1.8rem] text-left text-base font-medium text-slate-800">
-                      {localeOptions.find((option) => option.value === locale)?.label || "ID"}
-                    </span>
-                    <span className={`transition duration-200 ${isLocaleMenuOpen ? "rotate-180" : ""}`}>
-                      <ChevronDownIcon />
-                    </span>
-                  </button>
-
-                  {isLocaleMenuOpen ? (
-                    <div
-                      role="menu"
-                      className="absolute right-0 z-20 mt-3 min-w-[10rem] overflow-hidden rounded-[20px] border border-slate-200/90 bg-white/98 p-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
-                    >
-                      {localeOptions.map((option) => {
-                        const active = option.value === locale;
-
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            role="menuitemradio"
-                            aria-checked={active}
-                            onClick={() => {
-                              setIsLocaleMenuOpen(false);
-                              if (option.value !== locale) {
-                                void updateLocale(option.value);
-                              }
-                            }}
-                            className={`flex w-full items-center justify-between rounded-[16px] px-4 py-3 text-left text-sm font-medium transition duration-150 ${
-                              active
-                                ? "bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-900 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]"
-                                : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
-                            }`}
-                          >
-                            <span className="pl-1">{option.label}</span>
-                            <span className={`flex items-center gap-2 ${active ? "text-slate-500" : "text-transparent"}`}>
-                              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Active</span>
-                              <CheckIcon />
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              <div className="flex justify-end">{renderLocaleMenu("desktop")}</div>
 
               <div className="mt-10 max-w-[390px]">
-                <h1 className="text-[38px] font-semibold tracking-[-0.03em] text-[#0f172a] sm:text-[46px]">
-                  {copy.welcome}
-                </h1>
-                <p className="mt-3 max-w-[320px] text-[19px] leading-[1.65] text-slate-500 sm:text-[21px]">
-                  {copy.subtitle}
-                </p>
+                <h1 className="text-[38px] font-semibold tracking-[-0.03em] text-[#0f172a] sm:text-[46px]">{copy.welcome}</h1>
+                <p className="mt-3 max-w-[320px] text-[19px] leading-[1.65] text-slate-500 sm:text-[21px]">{copy.subtitle}</p>
               </div>
 
               <div className="mt-11">
@@ -577,8 +725,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       value={emailVisual}
                       onChange={(event) => setEmailVisual(event.target.value)}
                       placeholder={copy.emailPlaceholder}
-                        className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
-                      />
+                      className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
+                    />
                   </label>
 
                   <label className="flex h-[68px] items-center gap-4 rounded-[16px] border border-slate-200 bg-white px-5 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
@@ -590,8 +738,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       value={passwordVisual}
                       onChange={(event) => setPasswordVisual(event.target.value)}
                       placeholder={copy.passwordPlaceholder}
-                        className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
-                      />
+                      className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
+                    />
                     <span className="text-slate-400">
                       <EyeIcon />
                     </span>

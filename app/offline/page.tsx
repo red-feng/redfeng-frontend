@@ -60,7 +60,7 @@ export default async function OfflinePage() {
               {copy.primary}
             </Link>
             <Link
-              href="/packages"
+              href="/packages/catalog"
               className="inline-flex items-center justify-center rounded-2xl border border-orange-200 bg-white px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
             >
               {copy.secondary}
