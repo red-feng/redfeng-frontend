@@ -193,7 +193,7 @@ function HeroSearchPanel({
           setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopFields[index], value))
         }
       />
-      <HeroBenefits activeTab={activeTab} />
+      <HeroBenefits activeTab={activeTab} locale={locale} />
     </div>
   )
 }
