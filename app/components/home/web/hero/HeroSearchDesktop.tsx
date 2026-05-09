@@ -56,7 +56,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
     <div className={`${desktopGridClass} relative overflow-visible`}>
       {showDesktopSwap ? (
         <>
-          <DesktopFieldShell label={desktopFields[0].label}>
+            <DesktopFieldShell label={desktopFields[0].displayLabel || desktopFields[0].label}>
             <HeroSearchField
               label={desktopFields[0].label}
               displayLabel={desktopFields[0].displayLabel}
@@ -79,7 +79,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             <SwapIcon className="h-[15px] w-[15px]" />
             <span className="absolute right-[8px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#e5ebf2]" />
           </button>
-          <DesktopFieldShell label={desktopFields[1].label}>
+            <DesktopFieldShell label={desktopFields[1].displayLabel || desktopFields[1].label}>
             <HeroSearchField
               label={desktopFields[1].label}
               displayLabel={desktopFields[1].displayLabel}
@@ -98,7 +98,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             />
           </DesktopFieldShell>
           {desktopFields.slice(2).map((field, index) => (
-            <DesktopFieldShell key={field.label} label={field.label}>
+            <DesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
               <HeroSearchField
                 label={field.label}
                 displayLabel={field.displayLabel}
@@ -121,7 +121,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         </>
       ) : (
         desktopFields.map((field, index) => (
-          <DesktopFieldShell key={field.label} label={field.label}>
+            <DesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
             <HeroSearchField
               label={field.label}
               displayLabel={field.displayLabel}
@@ -190,7 +190,7 @@ function PatternedDesktopSearch({
       <div className={`mt-6 grid items-end ${layout.gapClass}`} style={{ gridTemplateColumns: layout.columns.replace(/56px$/, "60px") }}>
         {showDesktopSwap && leadingFields[0] ? (
           <>
-            <DesktopFieldShell label={leadingFields[0].label}>
+            <DesktopFieldShell label={leadingFields[0].displayLabel || leadingFields[0].label}>
               <HeroSearchField
                 label={leadingFields[0].label}
                 displayLabel={leadingFields[0].displayLabel}
@@ -213,7 +213,7 @@ function PatternedDesktopSearch({
               <SwapIcon className="h-[16px] w-[16px]" />
               <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
             </button>
-            <DesktopFieldShell label={leadingFields[1].label}>
+            <DesktopFieldShell label={leadingFields[1].displayLabel || leadingFields[1].label}>
               <HeroSearchField
                 label={leadingFields[1].label}
                 displayLabel={leadingFields[1].displayLabel}
@@ -237,7 +237,7 @@ function PatternedDesktopSearch({
         {remainingFields.map((field, index) => {
           const actualIndex = showDesktopSwap ? index + 2 : index
           return (
-            <DesktopFieldShell key={`${field.label}-${actualIndex}`} label={field.label}>
+            <DesktopFieldShell key={`${field.label}-${actualIndex}`} label={field.displayLabel || field.label}>
               <HeroSearchField
                 label={field.label}
                 displayLabel={field.displayLabel}
@@ -289,7 +289,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
   return (
     <div className="relative hidden overflow-visible lg:block">
       <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_228px_60px] items-end gap-x-[11px]">
-        <DesktopFieldShell label={originField.label}>
+        <DesktopFieldShell label={originField.displayLabel || originField.label}>
           <HeroSearchField
             label={originField.label}
             displayLabel={originField.displayLabel}
@@ -321,7 +321,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
         </button>
 
-        <DesktopFieldShell label={destinationField.label}>
+        <DesktopFieldShell label={destinationField.displayLabel || destinationField.label}>
           <HeroSearchField
             label={destinationField.label}
             displayLabel={destinationField.displayLabel}
@@ -347,7 +347,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <DesktopFieldShell label={departureField.label}>
+        <DesktopFieldShell label={departureField.displayLabel || departureField.label}>
           <HeroSearchField
             label={departureField.label}
             displayLabel={departureField.displayLabel}
@@ -367,7 +367,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <DesktopFieldShell label={passengerField.label}>
+        <DesktopFieldShell label={passengerField.displayLabel || passengerField.label}>
           <HeroSearchField
             label={passengerField.label}
             displayLabel={passengerField.displayLabel}
@@ -384,7 +384,13 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
-            renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[18px] w-[18px]" />} iconTone="text-[#7385a0]" />}
+            renderValue={
+              <SingleLineValue
+                value={passengerField.displayValue || passengerField.value}
+                icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
+                iconTone="text-[#7385a0]"
+              />
+            }
           />
         </DesktopFieldShell>
 

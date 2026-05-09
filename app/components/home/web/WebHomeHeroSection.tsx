@@ -140,7 +140,7 @@ function HeroSearchPanel({
             className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
           >
             <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
-            {localizedOptionLabels[option.key] ?? option.label}
+            {localizedOptionLabels[option.key] ?? localizeHeroText(option.label, locale)}
           </button>
         ))}
       </div>
@@ -204,6 +204,8 @@ function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
       one_way: "Sekali Jalan",
       round_trip: "Pulang - Pergi",
       multi_city: "Multi Kota",
+      fast_train: "Kereta Cepat",
+      fast_ferry: "Ferry Cepat",
       domestic: "Domestik",
       international: "Internasional",
       by_city: "Per Kota",
@@ -214,6 +216,9 @@ function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
       fast_boat: "Fast Boat",
       resort: "Resort",
       theme_park: "Taman Hiburan",
+      attraction: "Atraksi",
+      tour: "Tur",
+      event: "Event",
       open_trip: "Open Trip",
       private_trip: "Private Trip",
     },
@@ -221,6 +226,8 @@ function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
       one_way: "One Way",
       round_trip: "Round Trip",
       multi_city: "Multi City",
+      fast_train: "High-Speed Rail",
+      fast_ferry: "Fast Ferry",
       domestic: "Domestic",
       international: "International",
       by_city: "By City",
@@ -231,6 +238,9 @@ function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
       fast_boat: "Fast Boat",
       resort: "Resort",
       theme_park: "Theme Park",
+      attraction: "Attractions",
+      tour: "Tours",
+      event: "Events",
       open_trip: "Open Trip",
       private_trip: "Private Trip",
     },
@@ -1038,6 +1048,14 @@ function getHeroExactTextMap(locale: Locale): Record<string, string> {
       "Jenis Cabin": "Cabin Type",
       "Kategori Aktivitas": "Activity Category",
       "Jenis Aktivitas": "Activity Type",
+      Kategori: "Category",
+      Kunjungan: "Visit Date",
+      Tiket: "Tickets",
+      Tur: "Tour",
+      Atraksi: "Attractions",
+      Event: "Event",
+      "Kereta Cepat": "High-Speed Rail",
+      "Ferry Cepat": "Fast Ferry",
       "Jumlah Tiket": "Tickets",
       "Tujuan / Destinasi": "Destination",
       Durasi: "Duration",
@@ -1330,6 +1348,14 @@ function getHeroReplacementMap(locale: Locale): Record<string, string> {
       Singkat: "Short",
       Menengah: "Medium",
       Panjang: "Long",
+      "Kereta Cepat": "High-Speed Rail",
+      "Ferry Cepat": "Fast Ferry",
+      Tur: "Tours",
+      Atraksi: "Attractions",
+      Event: "Event",
+      Kategori: "Category",
+      Kunjungan: "Visit Date",
+      Tiket: "Tickets",
     }
   }
 
