@@ -445,9 +445,9 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   <Image
                     src="/logo-redfeng.png"
                     alt="RedFeng"
-                    width={174}
-                    height={174}
-                    className="h-[7.4rem] w-[7.4rem] object-contain object-left"
+                    width={261}
+                    height={261}
+                    className="h-[11.1rem] w-[11.1rem] object-contain object-left"
                   />
                 </div>
 
