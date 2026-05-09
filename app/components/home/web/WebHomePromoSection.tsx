@@ -7,6 +7,7 @@ import type { Locale } from "@/lib/i18n"
 import FavoriteButton from "@/app/components/favorites/FavoriteButton"
 import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
+import { formatHomePriceFromIdr } from "@/lib/home-pricing"
 
 export default function WebHomePromoSection({ locale }: { locale: Locale }) {
   const trackRef = useRef<HTMLDivElement>(null)
@@ -35,6 +36,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
       { title: "火车优惠\n热门城际路线", badge: undefined, eyebrow: "起价", cta: "预订火车" },
     ],
   }[locale]
+  const localizedPromoPrices = [500000, null, 1900000, 150000]
 
   const scrollByCard = (direction: "prev" | "next") => {
     const track = trackRef.current
@@ -74,6 +76,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
         >
           {promoCatalog.map((card, index) => {
             const localized = localizedPromoContent[index]
+            const localizedPrice = localizedPromoPrices[index] ? formatHomePriceFromIdr(localizedPromoPrices[index] || 0, locale) : card.price
             return (
             <article
               key={card.title}
@@ -90,7 +93,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
                   item={{
                     key: card.favoriteKey,
                     title: card.title.replace(/\n/g, " "),
-                    subtitle: card.price,
+                    subtitle: localizedPrice,
                     href: card.detailHref,
                     meta: copy.promoMeta,
                   }}
@@ -109,7 +112,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
                 </h3>
                 <div className="mt-auto pt-8">
                   <p className="text-[13px] font-medium leading-none text-white/88">{localized?.eyebrow || card.eyebrow}</p>
-                  <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{card.price}</p>
+                  <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{localizedPrice}</p>
                 </div>
                 <Link
                   href={card.detailHref}

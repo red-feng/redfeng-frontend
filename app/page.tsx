@@ -26,10 +26,10 @@ export default async function HomePage() {
         <HomeDestinationsSection locale={locale} />
         <HomeInspirationSection locale={locale} />
         <AppHomeFooterSection />
-        <HomeTrustSection />
-        <HomeWhyChooseSection />
+        <HomeTrustSection locale={locale} />
+        <HomeWhyChooseSection locale={locale} />
         <HomeNewsletterSection locale={locale} />
-        <HomeFooter />
+        <HomeFooter locale={locale} />
       </main>
 
       <PublicMobileNav locale={locale} />

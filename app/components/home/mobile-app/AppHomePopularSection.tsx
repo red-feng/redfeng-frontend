@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/i18n"
 import FavoriteButton from "@/app/components/favorites/FavoriteButton"
 import { ArrowRightIcon, StarIcon } from "@/app/components/home/shared/homeContent"
 import { popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
+import { formatHomePriceFromIdr } from "@/lib/home-pricing"
 
 export default function AppHomePopularSection({ locale }: { locale: Locale }) {
   const copy = {
@@ -56,6 +57,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
       { category: "酒店", title: "AYANA Resort Bali", subtitle: "金巴兰，巴厘岛" },
     ],
   }[locale]
+  const localizedPrices = [690000, 850000, 1990000, 150000, 2350000]
 
   return (
     <section className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
@@ -91,6 +93,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
       <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {popularBookingCatalog.map((item, index) => {
           const localized = localizedItems[index]
+          const localizedPrice = formatHomePriceFromIdr(localizedPrices[index] || 0, locale)
 
           return (
             <article
@@ -108,7 +111,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
                     title: localized?.title || item.title,
                     subtitle: localized?.subtitle || item.subtitle,
                     href: item.detailHref,
-                    meta: `${localized?.category || item.category} ${copy.favoriteSeparator} ${item.price}${item.suffix ? locale === "id" ? item.suffix : copy.perNight : ""}`,
+                    meta: `${localized?.category || item.category} ${copy.favoriteSeparator} ${localizedPrice}${item.suffix ? locale === "id" ? item.suffix : copy.perNight : ""}`,
                   }}
                   className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/92 text-slate-700 shadow-sm"
                   iconClassName="h-4 w-4"
@@ -134,7 +137,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
                   <div className="mt-auto pt-4">
                     <p className="text-[11px] leading-none text-slate-400">{copy.from}</p>
                     <p className="mt-1 text-[15px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900">
-                      {item.price}
+                      {localizedPrice}
                       {item.suffix ? <span className="ml-1 text-[11px] font-medium leading-none text-slate-500">{locale === "id" ? item.suffix : copy.perNight}</span> : null}
                     </p>
                   </div>

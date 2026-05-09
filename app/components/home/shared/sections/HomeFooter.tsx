@@ -1,8 +1,48 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronDownIcon, payments } from "@/app/components/home/shared/homeContent"
+import type { Locale } from "@/lib/i18n"
 
-export default function HomeFooter() {
+export default function HomeFooter({ locale }: { locale: Locale }) {
+  const copy = {
+    id: {
+      company: "Perusahaan",
+      help: "Bantuan",
+      partner: "Partner",
+      paymentMethods: "Metode Pembayaran",
+      companyItems: ["Tentang Kami", "Karir", "Blog", "Kontak Kami"],
+      helpItems: ["Pusat Bantuan", "Cara Pemesanan", "Pembayaran", "Kebijakan & Privasi"],
+      partnerItems: ["Jadi Partner", "Affiliate", "Kerja Sama Korporat"],
+      rights: "© 2026 RedFeng. All rights reserved.",
+      terms: "Syarat & Ketentuan",
+      privacy: "Kebijakan Privasi",
+    },
+    en: {
+      company: "Company",
+      help: "Help",
+      partner: "Partner",
+      paymentMethods: "Payment Methods",
+      companyItems: ["About Us", "Careers", "Blog", "Contact Us"],
+      helpItems: ["Help Center", "How to Book", "Payments", "Privacy Policy"],
+      partnerItems: ["Become a Partner", "Affiliate", "Corporate Partnership"],
+      rights: "© 2026 RedFeng. All rights reserved.",
+      terms: "Terms & Conditions",
+      privacy: "Privacy Policy",
+    },
+    zh: {
+      company: "公司",
+      help: "帮助",
+      partner: "合作伙伴",
+      paymentMethods: "支付方式",
+      companyItems: ["关于我们", "招聘", "博客", "联系我们"],
+      helpItems: ["帮助中心", "预订方式", "支付", "隐私政策"],
+      partnerItems: ["加入合作", "联盟合作", "企业合作"],
+      rights: "© 2026 RedFeng. 版权所有。",
+      terms: "条款与条件",
+      privacy: "隐私政策",
+    },
+  }[locale]
+
   return (
     <footer className="home-footer border-t border-slate-200 bg-white">
       <div className="home-footer-shell mx-auto max-w-[1240px] px-4 pb-8 pt-8 sm:px-6 lg:px-8">
@@ -28,13 +68,13 @@ export default function HomeFooter() {
           </div>
 
           <div className="home-footer-link-columns hidden xl:contents">
-            <FooterColumn title="Perusahaan" items={["Tentang Kami", "Karir", "Blog", "Kontak Kami"]} />
-            <FooterColumn title="Bantuan" items={["Pusat Bantuan", "Cara Pemesanan", "Pembayaran", "Kebijakan & Privasi"]} />
-            <FooterColumn title="Partner" items={["Jadi Partner", "Affiliate", "Kerja Sama Korporat"]} />
+            <FooterColumn title={copy.company} items={copy.companyItems} />
+            <FooterColumn title={copy.help} items={copy.helpItems} />
+            <FooterColumn title={copy.partner} items={copy.partnerItems} />
           </div>
 
           <div className="home-footer-payments hidden xl:block">
-            <h3 className="text-[15px] font-bold">Metode Pembayaran</h3>
+            <h3 className="text-[15px] font-bold">{copy.paymentMethods}</h3>
             <div className="mt-4 grid grid-cols-3 gap-2.5">
               {payments.map((payment) => (
                 <PaymentBadge
@@ -54,17 +94,17 @@ export default function HomeFooter() {
         </div>
 
         <div className="home-footer-mobile-accordion mt-8 border-t border-slate-200 xl:hidden">
-          <FooterAccordionRow title="Perusahaan" />
-          <FooterAccordionRow title="Bantuan" />
-          <FooterAccordionRow title="Partner" />
-          <FooterAccordionRow title="Metode Pembayaran" />
+          <FooterAccordionRow title={copy.company} />
+          <FooterAccordionRow title={copy.help} />
+          <FooterAccordionRow title={copy.partner} />
+          <FooterAccordionRow title={copy.paymentMethods} />
         </div>
 
         <div className="home-footer-legal mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 text-center text-[12px] text-slate-400 md:flex-row md:items-center md:justify-between md:text-left">
-          <p>&copy; 2026 RedFeng. All rights reserved.</p>
+          <p>{copy.rights}</p>
           <div className="hidden gap-5 md:flex">
-            <a href="/terms" className="hover:text-slate-700">Syarat & Ketentuan</a>
-            <a href="/privacy" className="hover:text-slate-700">Kebijakan Privasi</a>
+            <a href="/terms" className="hover:text-slate-700">{copy.terms}</a>
+            <a href="/privacy" className="hover:text-slate-700">{copy.privacy}</a>
           </div>
         </div>
       </div>

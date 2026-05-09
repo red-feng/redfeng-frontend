@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/i18n"
 import FavoriteButton from "@/app/components/favorites/FavoriteButton"
 import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
+import { formatHomePriceFromIdr } from "@/lib/home-pricing"
 
 export default function AppHomePromoSection({ locale }: { locale: Locale }) {
   const copy = {
@@ -43,6 +44,7 @@ export default function AppHomePromoSection({ locale }: { locale: Locale }) {
       { title: "火车优惠\n热门城际路线", badge: undefined, eyebrow: "起价", cta: "预订火车" },
     ],
   }[locale]
+  const localizedPromoPrices = [500000, null, 1900000, 150000]
 
   return (
     <div className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">
@@ -60,6 +62,7 @@ export default function AppHomePromoSection({ locale }: { locale: Locale }) {
         {promoCatalog.map((card, index) => (
           (() => {
             const localized = localizedPromoContent[index]
+            const localizedPrice = localizedPromoPrices[index] ? formatHomePriceFromIdr(localizedPromoPrices[index] || 0, locale) : card.price
 
             return (
           <article
@@ -90,7 +93,7 @@ export default function AppHomePromoSection({ locale }: { locale: Locale }) {
                     item={{
                       key: card.favoriteKey,
                       title: card.title.replace(/\n/g, " "),
-                      subtitle: card.price,
+                      subtitle: localizedPrice,
                       href: card.detailHref,
                       meta: copy.promoMeta,
                     }}
@@ -108,7 +111,7 @@ export default function AppHomePromoSection({ locale }: { locale: Locale }) {
 
               <div className="mt-auto">
                 <p className="text-[12px] font-medium leading-none text-white/88">{localized?.eyebrow || card.eyebrow}</p>
-                <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.04em]">{card.price}</p>
+                <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.04em]">{localizedPrice}</p>
                 <Link
                   href={card.detailHref}
                   className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
