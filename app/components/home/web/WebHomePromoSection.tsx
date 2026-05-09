@@ -2,13 +2,39 @@
 
 import Link from "next/link"
 import { useRef } from "react"
+import type { Locale } from "@/lib/i18n"
 
 import FavoriteButton from "@/app/components/favorites/FavoriteButton"
 import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
 
-export default function WebHomePromoSection() {
+export default function WebHomePromoSection({ locale }: { locale: Locale }) {
   const trackRef = useRef<HTMLDivElement>(null)
+  const copy = {
+    id: { prev: "Promo sebelumnya", next: "Promo berikutnya", promoMeta: "Promo" },
+    en: { prev: "Previous promo", next: "Next promo", promoMeta: "Promo" },
+    zh: { prev: "上一个优惠", next: "下一个优惠", promoMeta: "优惠" },
+  }[locale]
+  const localizedPromoContent = {
+    id: [
+      { title: "Terbang Hemat\nke Banyak Destinasi", badge: "Promo Terbatas", eyebrow: "Diskon hingga", cta: "Pesan Sekarang" },
+      { title: "Hotel Pilihan\nHarga Terbaik", badge: undefined, eyebrow: "Diskon hingga", cta: "Booking Sekarang" },
+      { title: "Paket Wisata\nDomestik & Internasional", badge: undefined, eyebrow: "Mulai dari", cta: "Lihat Paket" },
+      { title: "Promo Kereta\nAntarkota Favorit", badge: undefined, eyebrow: "Mulai dari", cta: "Pesan Kereta" },
+    ],
+    en: [
+      { title: "Save More on Flights\nto Many Destinations", badge: "Limited Promo", eyebrow: "Discount up to", cta: "Book Now" },
+      { title: "Selected Hotels\nBest Rates", badge: undefined, eyebrow: "Discount up to", cta: "Book Now" },
+      { title: "Tour Packages\nDomestic & International", badge: undefined, eyebrow: "Starting from", cta: "View Packages" },
+      { title: "Train Promo\nFavorite Intercity Routes", badge: undefined, eyebrow: "Starting from", cta: "Book Train" },
+    ],
+    zh: [
+      { title: "超值机票优惠\n飞往更多目的地", badge: "限时优惠", eyebrow: "最高优惠", cta: "立即预订" },
+      { title: "精选酒店\n超值好价", badge: undefined, eyebrow: "最高优惠", cta: "立即预订" },
+      { title: "旅游套餐\n国内与国际精选", badge: undefined, eyebrow: "起价", cta: "查看套餐" },
+      { title: "火车优惠\n热门城际路线", badge: undefined, eyebrow: "起价", cta: "预订火车" },
+    ],
+  }[locale]
 
   const scrollByCard = (direction: "prev" | "next") => {
     const track = trackRef.current
@@ -30,7 +56,7 @@ export default function WebHomePromoSection() {
           type="button"
           onClick={() => scrollByCard("prev")}
           className="absolute left-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors hover:bg-white/18 lg:flex"
-          aria-label="Promo sebelumnya"
+          aria-label={copy.prev}
         >
           <ArrowRightIcon className="h-5 w-5 rotate-180" />
         </button>
@@ -38,7 +64,7 @@ export default function WebHomePromoSection() {
           type="button"
           onClick={() => scrollByCard("next")}
           className="absolute right-3 top-1/2 z-20 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] backdrop-blur-sm transition-colors hover:bg-white/18 lg:flex"
-          aria-label="Promo berikutnya"
+          aria-label={copy.next}
         >
           <ArrowRightIcon className="h-5 w-5" />
         </button>
@@ -46,7 +72,9 @@ export default function WebHomePromoSection() {
           ref={trackRef}
           className="home-promo-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-[18px]"
         >
-          {promoCatalog.map((card, index) => (
+          {promoCatalog.map((card, index) => {
+            const localized = localizedPromoContent[index]
+            return (
             <article
               key={card.title}
               data-promo-card
@@ -64,7 +92,7 @@ export default function WebHomePromoSection() {
                     title: card.title.replace(/\n/g, " "),
                     subtitle: card.price,
                     href: card.detailHref,
-                    meta: "Promo",
+                    meta: copy.promoMeta,
                   }}
                   className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white/20 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/16"
                   iconClassName="h-4 w-4"
@@ -73,25 +101,25 @@ export default function WebHomePromoSection() {
               <div className={`relative z-10 flex h-full flex-col ${index === 0 ? "max-w-[220px] sm:max-w-[232px]" : "max-w-[232px] sm:max-w-[242px]"}`}>
                 {card.badge ? (
                   <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
-                    {card.badge}
+                    {localized?.badge || card.badge}
                   </span>
                 ) : null}
                 <h3 className="mt-7 whitespace-pre-line text-[19px] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[24px]">
-                  {card.title}
+                  {localized?.title || card.title}
                 </h3>
                 <div className="mt-auto pt-8">
-                  <p className="text-[13px] font-medium leading-none text-white/88">{card.eyebrow}</p>
+                  <p className="text-[13px] font-medium leading-none text-white/88">{localized?.eyebrow || card.eyebrow}</p>
                   <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{card.price}</p>
                 </div>
                 <Link
                   href={card.detailHref}
                   className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]"
                 >
-                  {card.cta}
+                  {localized?.cta || card.cta}
                 </Link>
               </div>
             </article>
-          ))}
+          )})}
         </div>
       </div>
     </section>

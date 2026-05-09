@@ -3,6 +3,7 @@ import Link from "next/link"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import { ChevronDownIcon, SwapIcon } from "@/app/components/home/shared/homeContent"
 import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearchContent"
+import type { Locale } from "@/lib/i18n"
 
 type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
   inputType: "text" | "date" | "select" | "autocomplete"
@@ -14,9 +15,10 @@ type HeroSearchDesktopProps = {
   fields?: HeroRenderedField[]
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
+  locale: Locale
 }
 
-export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap }: HeroSearchDesktopProps) {
+export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap, locale }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
   const isDedicatedFlightOneWay = config.ctaHref === "/pesawat" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
@@ -30,6 +32,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         fields={desktopFields}
         onFieldChange={onFieldChange}
         onSwap={onSwap}
+        locale={locale}
       />
     )
   }
@@ -44,6 +47,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         layout={layout}
         onFieldChange={onFieldChange}
         onSwap={onSwap}
+        locale={locale}
       />
     )
   }
@@ -55,14 +59,18 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
           <DesktopFieldShell label={desktopFields[0].label}>
             <HeroSearchField
               label={desktopFields[0].label}
+              displayLabel={desktopFields[0].displayLabel}
               value={desktopFields[0].value}
+              displayValue={desktopFields[0].displayValue}
               sublabel={desktopFields[0].sublabel ?? ""}
+              displaySublabel={desktopFields[0].displaySublabel}
               hideLabel
               hideSublabel
               variant="searchbox-desktop"
               inputType={desktopFields[0].inputType}
               options={desktopFields[0].options}
               onValueChange={(value) => onFieldChange?.(0, value)}
+              locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
@@ -74,14 +82,18 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
           <DesktopFieldShell label={desktopFields[1].label}>
             <HeroSearchField
               label={desktopFields[1].label}
+              displayLabel={desktopFields[1].displayLabel}
               value={desktopFields[1].value}
+              displayValue={desktopFields[1].displayValue}
               sublabel={desktopFields[1].sublabel ?? ""}
+              displaySublabel={desktopFields[1].displaySublabel}
               hideLabel
               hideSublabel
               variant="searchbox-desktop"
               inputType={desktopFields[1].inputType}
               options={desktopFields[1].options}
               onValueChange={(value) => onFieldChange?.(1, value)}
+              locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
@@ -89,8 +101,11 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
             <DesktopFieldShell key={field.label} label={field.label}>
               <HeroSearchField
                 label={field.label}
+                displayLabel={field.displayLabel}
                 value={field.value}
+                displayValue={field.displayValue}
                 sublabel={field.sublabel ?? ""}
+                displaySublabel={field.displaySublabel}
                 hideLabel
                 hideSublabel
                 withChevron={field.withChevron}
@@ -98,6 +113,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
                 inputType={field.inputType}
                 options={field.options}
                 onValueChange={(value) => onFieldChange?.(index + 2, value)}
+                locale={locale}
                 className="rounded-[999px] px-6 py-[17px]"
               />
             </DesktopFieldShell>
@@ -108,8 +124,11 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
           <DesktopFieldShell key={field.label} label={field.label}>
             <HeroSearchField
               label={field.label}
+              displayLabel={field.displayLabel}
               value={field.value}
+              displayValue={field.displayValue}
               sublabel={field.sublabel ?? ""}
+              displaySublabel={field.displaySublabel}
               hideLabel
               hideSublabel
               withChevron={field.withChevron}
@@ -117,6 +136,7 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               inputType={field.inputType}
               options={field.options}
               onValueChange={(value) => onFieldChange?.(index, value)}
+              locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
             />
           </DesktopFieldShell>
@@ -149,6 +169,7 @@ type PatternedDesktopSearchProps = {
   layout: DesktopPatternLayout
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
+  locale: Locale
 }
 
 function PatternedDesktopSearch({
@@ -159,6 +180,7 @@ function PatternedDesktopSearch({
   layout,
   onFieldChange,
   onSwap,
+  locale,
 }: PatternedDesktopSearchProps) {
   const leadingFields = showDesktopSwap ? fields.slice(0, 2) : []
   const remainingFields = showDesktopSwap ? fields.slice(2) : fields
@@ -171,14 +193,18 @@ function PatternedDesktopSearch({
             <DesktopFieldShell label={leadingFields[0].label}>
               <HeroSearchField
                 label={leadingFields[0].label}
+                displayLabel={leadingFields[0].displayLabel}
                 value={leadingFields[0].value}
+                displayValue={leadingFields[0].displayValue}
                 sublabel={leadingFields[0].sublabel ?? ""}
+                displaySublabel={leadingFields[0].displaySublabel}
                 hideLabel
                 hideSublabel
                 variant="searchbox-desktop"
                 inputType={leadingFields[0].inputType}
                 options={leadingFields[0].options}
                 onValueChange={(value) => onFieldChange?.(0, value)}
+                locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
@@ -190,14 +216,18 @@ function PatternedDesktopSearch({
             <DesktopFieldShell label={leadingFields[1].label}>
               <HeroSearchField
                 label={leadingFields[1].label}
+                displayLabel={leadingFields[1].displayLabel}
                 value={leadingFields[1].value}
+                displayValue={leadingFields[1].displayValue}
                 sublabel={leadingFields[1].sublabel ?? ""}
+                displaySublabel={leadingFields[1].displaySublabel}
                 hideLabel
                 hideSublabel
                 variant="searchbox-desktop"
                 inputType={leadingFields[1].inputType}
                 options={leadingFields[1].options}
                 onValueChange={(value) => onFieldChange?.(1, value)}
+                locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
@@ -210,8 +240,11 @@ function PatternedDesktopSearch({
             <DesktopFieldShell key={`${field.label}-${actualIndex}`} label={field.label}>
               <HeroSearchField
                 label={field.label}
+                displayLabel={field.displayLabel}
                 value={field.value}
+                displayValue={field.displayValue}
                 sublabel={field.sublabel ?? ""}
+                displaySublabel={field.displaySublabel}
                 hideLabel
                 hideSublabel
                 withChevron={field.withChevron}
@@ -219,6 +252,7 @@ function PatternedDesktopSearch({
                 inputType={field.inputType}
                 options={field.options}
                 onValueChange={(value) => onFieldChange?.(actualIndex, value)}
+                locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
               />
             </DesktopFieldShell>
@@ -244,9 +278,10 @@ type FlightOneWayDesktopSearchProps = {
   fields: HeroRenderedField[]
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
+  locale: Locale
 }
 
-function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, onSwap }: FlightOneWayDesktopSearchProps) {
+function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, onSwap, locale }: FlightOneWayDesktopSearchProps) {
   const [originField, destinationField, departureField, passengerField] = fields
   const originDisplay = splitAirportValue(originField.value)
   const destinationDisplay = splitAirportValue(destinationField.value)
@@ -254,17 +289,21 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
   return (
     <div className="relative hidden overflow-visible lg:block">
       <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_228px_60px] items-end gap-x-[11px]">
-        <DesktopFieldShell label="Dari">
+        <DesktopFieldShell label={originField.label}>
           <HeroSearchField
             label={originField.label}
+            displayLabel={originField.displayLabel}
             value={originField.value}
+            displayValue={originField.displayValue}
             sublabel={originField.sublabel ?? ""}
+            displaySublabel={originField.displaySublabel}
             hideLabel
             hideSublabel
             variant="searchbox-desktop"
             inputType={originField.inputType}
             options={originField.options}
             onValueChange={(value) => onFieldChange?.(0, value)}
+            locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <AirportValue
@@ -282,17 +321,21 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
         </button>
 
-        <DesktopFieldShell label="Ke">
+        <DesktopFieldShell label={destinationField.label}>
           <HeroSearchField
             label={destinationField.label}
+            displayLabel={destinationField.displayLabel}
             value={destinationField.value}
+            displayValue={destinationField.displayValue}
             sublabel={destinationField.sublabel ?? ""}
+            displaySublabel={destinationField.displaySublabel}
             hideLabel
             hideSublabel
             variant="searchbox-desktop"
             inputType={destinationField.inputType}
             options={destinationField.options}
             onValueChange={(value) => onFieldChange?.(1, value)}
+            locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <AirportValue
@@ -304,27 +347,34 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <DesktopFieldShell label="Tanggal Pergi">
+        <DesktopFieldShell label={departureField.label}>
           <HeroSearchField
             label={departureField.label}
+            displayLabel={departureField.displayLabel}
             value={departureField.value}
+            displayValue={departureField.displayValue}
             sublabel={departureField.sublabel ?? ""}
+            displaySublabel={departureField.displaySublabel}
             hideLabel
             hideSublabel
             variant="searchbox-desktop"
             inputType={departureField.inputType}
             options={departureField.options}
             onValueChange={(value) => onFieldChange?.(2, value)}
+            locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
           />
         </DesktopFieldShell>
 
-        <DesktopFieldShell label="Tanggal Pulang">
+        <DesktopFieldShell label={passengerField.label}>
           <HeroSearchField
             label={passengerField.label}
+            displayLabel={passengerField.displayLabel}
             value={passengerField.value}
+            displayValue={passengerField.displayValue}
             sublabel={passengerField.sublabel ?? ""}
+            displaySublabel={passengerField.displaySublabel}
             hideLabel
             hideSublabel
             withChevron={passengerField.withChevron}
@@ -332,6 +382,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             inputType={passengerField.inputType}
             options={passengerField.options}
             onValueChange={(value) => onFieldChange?.(3, value)}
+            locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={<SingleLineValue value={passengerField.value} icon={<ChevronDownIcon className="h-[18px] w-[18px]" />} iconTone="text-[#7385a0]" />}
           />

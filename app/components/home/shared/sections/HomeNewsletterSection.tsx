@@ -1,4 +1,27 @@
-export default function HomeNewsletterSection() {
+import type { Locale } from "@/lib/i18n"
+
+export default function HomeNewsletterSection({ locale }: { locale: Locale }) {
+  const copy = {
+    id: {
+      title: "Dapatkan promo & info terbaru dari RedFeng!",
+      body: "Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.",
+      placeholder: "Masukkan email Anda",
+      cta: "Langganan",
+    },
+    en: {
+      title: "Get the latest promotions and updates from RedFeng!",
+      body: "Subscribe to our newsletter and receive fresh travel offers every week.",
+      placeholder: "Enter your email",
+      cta: "Subscribe",
+    },
+    zh: {
+      title: "获取 RedFeng 最新优惠与资讯！",
+      body: "订阅我们的 newsletter，每周获取新的旅行优惠信息。",
+      placeholder: "输入你的邮箱",
+      cta: "订阅",
+    },
+  }[locale]
+
   return (
     <section className="home-newsletter-section mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
       <div
@@ -11,18 +34,18 @@ export default function HomeNewsletterSection() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,251,248,0.62)_0%,rgba(255,248,244,0.42)_38%,rgba(255,244,239,0.22)_62%,rgba(255,246,241,0.38)_100%)]" />
         <div className="relative grid gap-5 lg:grid-cols-[0.78fr_1.22fr] lg:items-center">
           <div className="relative z-10">
-            <h2 className="max-w-[260px] text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:max-w-[360px] lg:text-[15px]">Dapatkan promo & info terbaru dari RedFeng!</h2>
+            <h2 className="max-w-[260px] text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:max-w-[360px] lg:text-[15px]">{copy.title}</h2>
             <p className="mt-3 max-w-[260px] text-[13px] leading-6 text-slate-600 lg:max-w-sm lg:text-[14px]">
-              Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.
+              {copy.body}
             </p>
           </div>
           <div className="relative z-10 grid grid-cols-[1fr_auto] gap-3">
             <input
               type="email"
-              placeholder="Masukkan email Anda"
+              placeholder={copy.placeholder}
               className="h-12 rounded-xl border border-white bg-white px-5 text-[14px] text-slate-900 outline-none placeholder:text-slate-400 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.25)]"
             />
-            <button className="h-12 min-w-[124px] rounded-xl bg-[#ef3b2d] px-6 text-[14px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">Langganan</button>
+            <button className="h-12 min-w-[124px] rounded-xl bg-[#ef3b2d] px-6 text-[14px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">{copy.cta}</button>
           </div>
         </div>
       </div>

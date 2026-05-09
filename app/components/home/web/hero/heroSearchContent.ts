@@ -13,13 +13,16 @@ const serviceHref = {
 
 export type HeroSearchFieldData = {
   label: string
+  displayLabel?: string
   value: string
+  displayValue?: string
   sublabel?: string
+  displaySublabel?: string
   group?: string
   withChevron?: boolean
   withSwap?: boolean
   inputType?: "text" | "date" | "select" | "autocomplete"
-  options?: { label: string; value: string; sublabel?: string; group?: string }[]
+  options?: { label: string; value: string; sublabel?: string; group?: string; displayValue?: string; displaySublabel?: string; displayGroup?: string }[]
 }
 
 export type HeroSearchOption = {

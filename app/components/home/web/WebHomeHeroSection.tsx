@@ -38,16 +38,17 @@ export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
         <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-[5.25rem] pt-6 sm:px-6 lg:px-8">
           <HeroHeader locale={locale} />
           <MobileHeroBackdrop />
-          <HeroIntro />
+          <HeroIntro locale={locale} />
         </div>
       </div>
 
       <div className="home-hero-search-wrap relative z-[220] mx-auto -mt-32 max-w-[1280px] overflow-visible px-4 pb-8 sm:-mt-36 sm:px-6 lg:-mt-[12.5rem] lg:px-8 lg:pb-10">
         <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[32px] border border-[#edf1f5] bg-white shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)]">
-          <HeroTabs activeTab={activeTab} onChange={setActiveTab} />
+          <HeroTabs activeTab={activeTab} onChange={setActiveTab} locale={locale} />
           <HeroSearchPanel
             activeTab={activeTab}
             activeOption={activeOptions[activeTab]}
+            locale={locale}
             onOptionChange={(optionKey) =>
               setActiveOptions((current) => ({
                 ...current,
@@ -77,13 +78,28 @@ function MobileHeroBackdrop() {
   )
 }
 
-function HeroIntro() {
+function HeroIntro({ locale }: { locale: Locale }) {
+  const copy = {
+    id: {
+      titleA: "Ekosistem perjalanan",
+      titleB: "dalam satu genggaman",
+    },
+    en: {
+      titleA: "Your travel ecosystem",
+      titleB: "in one seamless place",
+    },
+    zh: {
+      titleA: "一站式旅行生态",
+      titleB: "尽在一个平台中",
+    },
+  }[locale]
+
   return (
     <div className="home-hero-intro relative z-10 flex justify-center pt-6 text-center lg:pt-1">
       <div className="home-hero-intro-shell max-w-[860px] pb-32 lg:min-h-[260px] lg:pb-0">
         <h1 className="home-hero-title mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]">
-          Ekosistem perjalanan
-          <span className="mt-2 block text-[#ff5a43]">dalam satu genggaman</span>
+          {copy.titleA}
+          <span className="mt-2 block text-[#ff5a43]">{copy.titleB}</span>
         </h1>
       </div>
     </div>
@@ -93,22 +109,25 @@ function HeroIntro() {
 function HeroSearchPanel({
   activeTab,
   activeOption,
+  locale,
   onOptionChange,
 }: {
   activeTab: HeroTabKey
   activeOption: string
+  locale: Locale
   onOptionChange: (optionKey: string) => void
 }) {
   const baseConfig = getHeroSearchConfig(activeTab, activeOption)
   const stateKey = `${activeTab}:${activeOption}`
   const [fieldStates, setFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
-  const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates)
-  const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates)
+  const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates, locale)
+  const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates, locale)
   const config = {
     ...baseConfig,
     desktopFields,
     mobileFields,
   }
+  const localizedOptionLabels = getLocalizedOptionLabels(locale)
 
   return (
     <div className="relative overflow-visible px-5 py-5 lg:px-8 lg:py-[1.65rem]">
@@ -121,13 +140,14 @@ function HeroSearchPanel({
             className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
           >
             <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
-            {option.label}
+            {localizedOptionLabels[option.key] ?? option.label}
           </button>
         ))}
       </div>
 
       <HeroSearchMobile
         config={config}
+        locale={locale}
         fields={mobileFields}
         onSwap={() => {
           const firstField = baseConfig.mobileFields[0]
@@ -151,6 +171,7 @@ function HeroSearchPanel({
       />
       <HeroSearchDesktop
         config={config}
+        locale={locale}
         fields={desktopFields}
         onSwap={() => {
           const firstField = baseConfig.desktopFields[0]
@@ -177,7 +198,69 @@ function HeroSearchPanel({
   )
 }
 
-function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, stateKey: string, fieldStates: Record<string, HeroSearchFieldData>) {
+function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
+  return {
+    id: {
+      one_way: "Sekali Jalan",
+      round_trip: "Pulang - Pergi",
+      multi_city: "Multi Kota",
+      domestic: "Domestik",
+      international: "Internasional",
+      by_city: "Per Kota",
+      by_property: "Per Properti",
+      economy: "Ekonomi",
+      business: "Bisnis",
+      ferry: "Feri",
+      fast_boat: "Fast Boat",
+      resort: "Resort",
+      theme_park: "Taman Hiburan",
+      open_trip: "Open Trip",
+      private_trip: "Private Trip",
+    },
+    en: {
+      one_way: "One Way",
+      round_trip: "Round Trip",
+      multi_city: "Multi City",
+      domestic: "Domestic",
+      international: "International",
+      by_city: "By City",
+      by_property: "By Property",
+      economy: "Economy",
+      business: "Business",
+      ferry: "Ferry",
+      fast_boat: "Fast Boat",
+      resort: "Resort",
+      theme_park: "Theme Park",
+      open_trip: "Open Trip",
+      private_trip: "Private Trip",
+    },
+    zh: {
+      one_way: "单程",
+      round_trip: "往返",
+      multi_city: "多城市",
+      domestic: "国内",
+      international: "国际",
+      by_city: "按城市",
+      by_property: "按住宿",
+      economy: "经济舱",
+      business: "商务舱",
+      ferry: "渡轮",
+      fast_boat: "快艇",
+      resort: "度假村",
+      theme_park: "主题乐园",
+      open_trip: "拼团行程",
+      private_trip: "私人行程",
+    },
+  }[locale]
+}
+
+function buildFormFields(
+  fields: HeroSearchFieldData[],
+  activeTab: HeroTabKey,
+  stateKey: string,
+  fieldStates: Record<string, HeroSearchFieldData>,
+  locale: Locale,
+) {
   const providerKey = heroSearchConfigs[activeTab].dataProvider
 
   return fields.map((field) => {
@@ -187,6 +270,7 @@ function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, s
 
     return {
       ...stateField,
+      displayLabel: localizeHeroText(field.label, locale),
       inputType,
       options:
         inputType === "date"
@@ -196,8 +280,13 @@ function buildFormFields(fields: HeroSearchFieldData[], activeTab: HeroTabKey, s
               label: formatOptionPrimaryLabel(activeTab, field, choice),
               sublabel: formatOptionSecondaryLabel(activeTab, field, choice),
               group: inferOptionGroup(activeTab, field, choice),
+              displayValue: localizeHeroText(formatOptionPrimaryLabel(activeTab, field, choice), locale),
+              displaySublabel: localizeHeroText(formatOptionSecondaryLabel(activeTab, field, choice), locale),
+              displayGroup: localizeHeroText(inferOptionGroup(activeTab, field, choice), locale),
             })),
       value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
+      displayValue: localizeHeroFieldValue(inputType === "date" ? stateField.value : stateField.value, locale),
+      displaySublabel: localizeHeroFieldValue(stateField.sublabel ?? "", locale),
     }
   })
 }
@@ -838,6 +927,333 @@ function formatIsoDateToWeekday(input: string) {
 function formatDateObjectToDisplay(date: Date) {
   const monthLabels = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
   return `${date.getDate()} ${monthLabels[date.getMonth()]} ${date.getFullYear()}`
+}
+
+function localizeHeroFieldValue(value: string, locale: Locale) {
+  if (!value) return value
+
+  const localizedDate = localizeDateLabel(value, locale)
+  return translateHeroText(localizedDate, locale)
+}
+
+function localizeHeroText(value: string, locale: Locale) {
+  if (!value) return value
+  return translateHeroText(localizeDateLabel(value, locale), locale)
+}
+
+function localizeDateLabel(value: string, locale: Locale) {
+  if (locale === "id" || !value) return value
+
+  const dateMatch = value.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/)
+  if (dateMatch) {
+    const [, dayRaw, monthLabel, yearRaw] = dateMatch
+    const monthIndex = monthNameToIndex(monthLabel)
+    if (monthIndex !== null) {
+      const date = new Date(Number(yearRaw), monthIndex, Number(dayRaw))
+      return formatDateForLocale(date, locale)
+    }
+  }
+
+  return translateHeroText(value, locale)
+}
+
+function monthNameToIndex(monthLabel: string) {
+  const monthMap: Record<string, number> = {
+    Januari: 0,
+    Februari: 1,
+    Maret: 2,
+    April: 3,
+    Mei: 4,
+    Juni: 5,
+    Juli: 6,
+    Agustus: 7,
+    September: 8,
+    Oktober: 9,
+    November: 10,
+    Desember: 11,
+  }
+
+  return monthMap[monthLabel] ?? null
+}
+
+function formatDateForLocale(date: Date, locale: Locale) {
+  const monthLabels = {
+    en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    zh: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
+  }
+  const weekdayLabels = {
+    en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+    zh: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
+  }
+
+  if (locale === "en") {
+    return `${date.getDate()} ${monthLabels.en[date.getMonth()]} ${date.getFullYear()}`
+  }
+
+  return `${date.getFullYear()}年${monthLabels.zh[date.getMonth()]}${date.getDate()}日`
+}
+
+function translateHeroText(value: string, locale: Locale) {
+  if (locale === "id" || !value) return value
+
+  const exactMap = getHeroExactTextMap(locale)
+  if (exactMap[value]) return exactMap[value]
+
+  let nextValue = value
+
+  Object.entries(getHeroReplacementMap(locale)).forEach(([source, target]) => {
+    nextValue = nextValue.replaceAll(source, target)
+  })
+
+  return nextValue
+}
+
+function getHeroExactTextMap(locale: Locale): Record<string, string> {
+  if (locale === "en") {
+    return {
+      Dari: "From",
+      Ke: "To",
+      Asal: "Origin",
+      Tujuan: "Destination",
+      Berangkat: "Departure",
+      Pulang: "Return",
+      "Tanggal Pergi": "Departure Date",
+      Penumpang: "Passengers",
+      "Kota Asal": "Origin City",
+      Transit: "Transit",
+      "Kota Tujuan": "Destination City",
+      Rute: "Route",
+      Destinasi: "Destination",
+      "Check-in": "Check-in",
+      "Check-out": "Check-out",
+      "Tamu & Kamar": "Guests & Rooms",
+      Tamu: "Guests",
+      "Area Villa": "Villa Area",
+      "Destinasi Resort": "Resort Destination",
+      "Stasiun Asal": "Origin Station",
+      "Stasiun Tujuan": "Destination Station",
+      "Pelabuhan Asal": "Origin Port",
+      "Pelabuhan Tujuan": "Destination Port",
+      "Rute Cruise": "Cruise Route",
+      "Jenis Cabin": "Cabin Type",
+      "Kategori Aktivitas": "Activity Category",
+      "Jenis Aktivitas": "Activity Type",
+      "Jumlah Tiket": "Tickets",
+      "Tujuan / Destinasi": "Destination",
+      Durasi: "Duration",
+      "Tipe Paket": "Package Type",
+      "Pilihan bandara populer": "Popular airport picks",
+      "Destinasi populer": "Popular destinations",
+      "Pilihan populer": "Popular picks",
+      "Pilihan penumpang": "Passenger options",
+      "Pilihan durasi": "Duration options",
+      "Pilihan tersedia": "Available options",
+      "Bandara Internasional": "International Airports",
+      Indonesia: "Indonesia",
+      "Asia Tenggara": "Southeast Asia",
+      "Asia Timur": "East Asia",
+      "Asia Selatan": "South Asia",
+      "Timur Tengah": "Middle East",
+      "Australia & Selandia Baru": "Australia & New Zealand",
+      Eropa: "Europe",
+      Amerika: "Americas",
+      "Kota & Stasiun Populer": "Popular Cities & Stations",
+      "Pelabuhan Populer": "Popular Ports",
+      "Atraksi & Tur Terpopuler": "Popular Attractions & Tours",
+      "Paket Favorit": "Favorite Packages",
+      "Destinasi Populer": "Popular Destinations",
+      "Transit Rekomendasi": "Recommended Transit",
+      "Pilihan Cabin": "Cabin Choices",
+      "Tanggal Rekomendasi": "Recommended Dates",
+      "Tanggal Pulang": "Return Dates",
+      "Pilihan Jam": "Time Options",
+      "Kombinasi Tamu": "Guest Combinations",
+      "Pilihan Tiket": "Ticket Choices",
+      "Jumlah Peserta": "Participant Count",
+      "Kombinasi Penumpang": "Passenger Combinations",
+      "Kategori Favorit": "Favorite Categories",
+      "Durasi Favorit": "Favorite Durations",
+      "Pilihan Lainnya": "Other Options",
+      "Semua Bandara": "All Airports",
+      Bali: "Bali",
+      Jakarta: "Jakarta",
+      "Jawa Barat": "West Java",
+      "Jawa Tengah": "Central Java",
+      "Jawa Timur": "East Java",
+      "Nusa Tenggara Timur": "East Nusa Tenggara",
+      "Kelas Kabin": "Cabin Class",
+      Ekonomi: "Economy",
+      "Premium Economy": "Premium Economy",
+      Premium: "Premium",
+      "1 Dewasa, Ekonomi": "1 Adult, Economy",
+      "1 Dewasa": "1 Adult",
+      "2 Dewasa": "2 Adults",
+      "2 Tamu": "2 Guests",
+      "1 Kamar": "1 Room",
+      "2 Tamu, 1 Kamar": "2 Guests, 1 Room",
+      "4 Tamu": "4 Guests",
+      "4 Tamu, 2 Kamar": "4 Guests, 2 Rooms",
+      "2 Kamar": "2 Rooms",
+      "Private pool": "Private pool",
+      "Ocean view": "Ocean view",
+      "Soekarno Hatta": "Soekarno Hatta",
+      "Ngurah Rai": "Ngurah Rai",
+    }
+  }
+
+  return {
+    Dari: "出发地",
+    Ke: "目的地",
+    Asal: "出发",
+    Tujuan: "到达",
+    Berangkat: "出发日期",
+    Pulang: "返回日期",
+    "Tanggal Pergi": "出发日期",
+    Penumpang: "乘客",
+    "Kota Asal": "出发城市",
+    Transit: "中转",
+    "Kota Tujuan": "到达城市",
+    Rute: "路线",
+    Destinasi: "目的地",
+    "Check-in": "入住",
+    "Check-out": "退房",
+    "Tamu & Kamar": "住客与房间",
+    Tamu: "住客",
+    "Area Villa": "别墅区域",
+    "Destinasi Resort": "度假村目的地",
+    "Stasiun Asal": "出发车站",
+    "Stasiun Tujuan": "到达车站",
+    "Pelabuhan Asal": "出发港口",
+    "Pelabuhan Tujuan": "到达港口",
+    "Rute Cruise": "邮轮航线",
+    "Jenis Cabin": "舱房类型",
+    "Kategori Aktivitas": "活动分类",
+    "Jenis Aktivitas": "活动类型",
+    "Jumlah Tiket": "门票数量",
+    "Tujuan / Destinasi": "目的地",
+    Durasi: "时长",
+    "Tipe Paket": "套餐类型",
+    "Pilihan bandara populer": "热门机场选择",
+    "Destinasi populer": "热门目的地",
+    "Pilihan populer": "热门选择",
+    "Pilihan penumpang": "乘客选项",
+    "Pilihan durasi": "时长选项",
+    "Pilihan tersedia": "可用选项",
+    "Bandara Internasional": "国际机场",
+    Indonesia: "印度尼西亚",
+    "Asia Tenggara": "东南亚",
+    "Asia Timur": "东亚",
+    "Asia Selatan": "南亚",
+    "Timur Tengah": "中东",
+    "Australia & Selandia Baru": "澳大利亚与新西兰",
+    Eropa: "欧洲",
+    Amerika: "美洲",
+    "Kota & Stasiun Populer": "热门城市与车站",
+    "Pelabuhan Populer": "热门港口",
+    "Atraksi & Tur Terpopuler": "热门景点与行程",
+    "Paket Favorit": "精选套餐",
+    "Destinasi Populer": "热门目的地",
+    "Transit Rekomendasi": "推荐中转",
+    "Pilihan Cabin": "舱房选择",
+    "Tanggal Rekomendasi": "推荐日期",
+    "Tanggal Pulang": "返回日期",
+    "Pilihan Jam": "时间选项",
+    "Kombinasi Tamu": "住客组合",
+    "Pilihan Tiket": "门票选择",
+    "Jumlah Peserta": "参与人数",
+    "Kombinasi Penumpang": "乘客组合",
+    "Kategori Favorit": "热门分类",
+    "Durasi Favorit": "热门时长",
+    "Pilihan Lainnya": "其他选项",
+    "Semua Bandara": "全部机场",
+    Bali: "巴厘岛",
+    Jakarta: "雅加达",
+    "Jawa Barat": "西爪哇",
+    "Jawa Tengah": "中爪哇",
+    "Jawa Timur": "东爪哇",
+    "Nusa Tenggara Timur": "东努沙登加拉",
+    "Kelas Kabin": "舱位等级",
+    Ekonomi: "经济舱",
+    "Premium Economy": "超级经济舱",
+    Premium: "高级",
+    "1 Dewasa, Ekonomi": "1位成人，经济舱",
+    "1 Dewasa": "1位成人",
+    "2 Dewasa": "2位成人",
+    "2 Tamu": "2位住客",
+    "1 Kamar": "1间房",
+    "2 Tamu, 1 Kamar": "2位住客，1间房",
+    "4 Tamu": "4位住客",
+    "4 Tamu, 2 Kamar": "4位住客，2间房",
+    "2 Kamar": "2间房",
+    "Private pool": "私人泳池",
+    "Ocean view": "海景",
+    "Soekarno Hatta": "苏加诺哈达",
+    "Ngurah Rai": "伍拉赖",
+  }
+}
+
+function getHeroReplacementMap(locale: Locale): Record<string, string> {
+  if (locale === "en") {
+    return {
+      Minggu: "Sunday",
+      Senin: "Monday",
+      Selasa: "Tuesday",
+      Rabu: "Wednesday",
+      Kamis: "Thursday",
+      Jumat: "Friday",
+      Sabtu: "Saturday",
+      Januari: "January",
+      Februari: "February",
+      Maret: "March",
+      April: "April",
+      Mei: "May",
+      Juni: "June",
+      Juli: "July",
+      Agustus: "August",
+      September: "September",
+      Oktober: "October",
+      November: "November",
+      Desember: "December",
+      Dewasa: "Adults",
+      Tamu: "Guests",
+      Kamar: "Rooms",
+      Hari: "Days",
+      Malam: "Nights",
+      Singkat: "Short",
+      Menengah: "Medium",
+      Panjang: "Long",
+    }
+  }
+
+  return {
+    Minggu: "周日",
+    Senin: "周一",
+    Selasa: "周二",
+    Rabu: "周三",
+    Kamis: "周四",
+    Jumat: "周五",
+    Sabtu: "周六",
+    Januari: "1月",
+    Februari: "2月",
+    Maret: "3月",
+    April: "4月",
+    Mei: "5月",
+    Juni: "6月",
+    Juli: "7月",
+    Agustus: "8月",
+    September: "9月",
+    Oktober: "10月",
+    November: "11月",
+    Desember: "12月",
+    Dewasa: "成人",
+    Tamu: "住客",
+    Kamar: "房间",
+    Hari: "天",
+    Malam: "晚",
+    Singkat: "短途",
+    Menengah: "中程",
+    Panjang: "长途",
+  }
 }
 
 function buildFlightAirportChoices(label: string): HeroSearchFieldData[] {

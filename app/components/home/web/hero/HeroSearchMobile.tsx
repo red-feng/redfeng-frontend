@@ -1,6 +1,7 @@
 import Link from "next/link"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearchContent"
+import type { Locale } from "@/lib/i18n"
 
 type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
   inputType: "text" | "date" | "select" | "autocomplete"
@@ -12,9 +13,10 @@ type HeroSearchMobileProps = {
   fields?: HeroRenderedField[]
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
+  locale: Locale
 }
 
-export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap }: HeroSearchMobileProps) {
+export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap, locale }: HeroSearchMobileProps) {
   const mobileFields = fields ?? config.mobileFields
   const primaryFields = mobileFields.slice(0, config.mobilePrimaryCount)
   const compactFields = mobileFields.slice(config.mobilePrimaryCount)
@@ -26,14 +28,18 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
         <HeroSearchField
           key={field.label}
           label={field.label}
+          displayLabel={field.displayLabel}
           value={field.value}
+          displayValue={field.displayValue}
           sublabel={field.sublabel ?? ""}
+          displaySublabel={field.displaySublabel}
           withChevron={field.withChevron}
           withSwap={field.withSwap}
           inputType={field.inputType}
           options={field.options}
           onValueChange={(value) => onFieldChange?.(index, value)}
           onSwap={field.withSwap ? onSwap : undefined}
+          locale={locale}
           className="rounded-[22px] border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
         />
       ))}
@@ -44,13 +50,17 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
             <HeroSearchField
               key={field.label}
               label={field.label}
+              displayLabel={field.displayLabel}
               value={field.value}
+              displayValue={field.displayValue}
               sublabel={field.sublabel ?? ""}
+              displaySublabel={field.displaySublabel}
               withChevron={field.withChevron}
               compact
               inputType={field.inputType}
               options={field.options}
               onValueChange={(value) => onFieldChange?.(index + config.mobilePrimaryCount, value)}
+              locale={locale}
               className="rounded-[20px] border border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
             />
           ))}

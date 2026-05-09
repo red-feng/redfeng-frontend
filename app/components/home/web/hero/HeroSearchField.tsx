@@ -9,13 +9,19 @@ type HeroSearchFieldOption = {
   value: string
   sublabel?: string
   group?: string
+  displayValue?: string
+  displaySublabel?: string
+  displayGroup?: string
 }
 
 type HeroSearchFieldProps = {
   className?: string
   label: string
+  displayLabel?: string
   value: string
+  displayValue?: string
   sublabel: string
+  displaySublabel?: string
   renderValue?: ReactNode
   hideLabel?: boolean
   hideSublabel?: boolean
@@ -27,13 +33,17 @@ type HeroSearchFieldProps = {
   options?: HeroSearchFieldOption[]
   onValueChange?: (value: string) => void
   onSwap?: () => void
+  locale?: "id" | "en" | "zh"
 }
 
 export default function HeroSearchField({
   className = "",
   label,
+  displayLabel,
   value,
+  displayValue,
   sublabel,
+  displaySublabel,
   renderValue,
   hideLabel = false,
   hideSublabel = false,
@@ -45,6 +55,7 @@ export default function HeroSearchField({
   options = [],
   onValueChange,
   onSwap,
+  locale = "id",
 }: HeroSearchFieldProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [draftValue, setDraftValue] = useState(value)
@@ -66,13 +77,20 @@ export default function HeroSearchField({
   const valueClassName = isSearchboxDesktop ? "text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#17263c]" : isDesktopPill ? "text-[13px] font-semibold leading-[1.2] text-[#12243d]" : "text-[13px] font-semibold leading-[1.2] text-slate-900"
   const sublabelClassName = "text-[13px] leading-[1.2] text-slate-400"
   const fieldIcon = getFieldIcon(label, inputType)
+  const visibleLabel = displayLabel ?? label
+  const visibleValue = displayValue ?? value
+  const visibleSublabel = displaySublabel ?? sublabel
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
 
     const keyword = (inputType === "autocomplete" ? draftValue : value).trim().toLowerCase()
     if (!keyword) return options
 
-    return options.filter((option) => `${option.group ?? ""} ${option.label} ${option.value} ${option.sublabel ?? ""}`.toLowerCase().includes(keyword))
+    return options.filter((option) =>
+      `${option.group ?? ""} ${option.displayGroup ?? ""} ${option.label} ${option.value} ${option.displayValue ?? ""} ${option.sublabel ?? ""} ${option.displaySublabel ?? ""}`
+        .toLowerCase()
+        .includes(keyword),
+    )
   }, [draftValue, hasDropdown, inputType, options, value])
   const groupedOptions = useMemo(() => {
     const groups = new Map<string, HeroSearchFieldOption[]>()
@@ -123,7 +141,7 @@ export default function HeroSearchField({
           </span>
         ) : null}
         <div className="min-w-0 flex-1">
-          {hideLabel ? null : <p className={labelClassName}>{label}</p>}
+          {hideLabel ? null : <p className={labelClassName}>{visibleLabel}</p>}
       {renderValue ? (
         <button
           type="button"
@@ -140,7 +158,7 @@ export default function HeroSearchField({
         isSearchboxDesktop ? (
           <input
             type="text"
-            value={formatIsoToSlashDate(value)}
+          value={formatIsoToSlashDate(value)}
             readOnly
             className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent pr-[40px] ${valueClassName} outline-none`}
           />
@@ -163,7 +181,19 @@ export default function HeroSearchField({
             setIsOpen(true)
             onValueChange?.(nextValue)
           }}
-          placeholder={label.includes("Destinasi") ? "Cari destinasi atau nama paket" : "Cari kota, bandara, atau tujuan"}
+          placeholder={
+            label.includes("Destinasi")
+              ? locale === "en"
+                ? "Search destinations or package names"
+                : locale === "zh"
+                  ? "搜索目的地或套餐名称"
+                  : "Cari destinasi atau nama paket"
+              : locale === "en"
+                ? "Search cities, airports, or destinations"
+                : locale === "zh"
+                  ? "搜索城市、机场或目的地"
+                  : "Cari kota, bandara, atau tujuan"
+          }
           className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
       ) : hasDropdown ? (
@@ -172,7 +202,7 @@ export default function HeroSearchField({
           onClick={() => setIsOpen((current) => !current)}
           className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
-          <span className="truncate">{value}</span>
+          <span className="truncate">{visibleValue}</span>
         </button>
       ) : (
         <input
@@ -182,13 +212,13 @@ export default function HeroSearchField({
           className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
       )}
-          {hideSublabel ? null : sublabel ? <p className={`mt-1 ${sublabelClassName}`}>{sublabel}</p> : <p className={`mt-1 ${sublabelClassName} text-transparent`}>.</p>}
+          {hideSublabel ? null : visibleSublabel ? <p className={`mt-1 ${sublabelClassName}`}>{visibleSublabel}</p> : <p className={`mt-1 ${sublabelClassName} text-transparent`}>.</p>}
         </div>
       </div>
       {hasDropdown && isOpen ? (
         <div className="absolute left-0 top-[calc(100%+10px)] z-[280] w-full min-w-[260px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.38)]">
           <div className="border-b border-slate-100 px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{getDropdownTitle(label, inputType)}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{getDropdownTitle(label, inputType, locale)}</p>
           </div>
           <div className="max-h-[380px] overflow-y-auto py-2">
             {filteredOptions.length > 0 ? (
@@ -208,11 +238,11 @@ export default function HeroSearchField({
                           <p className="truncate text-[13px] font-semibold text-slate-800">{airportGroupMeta.city}</p>
                         </div>
                         <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-                          {airportGroupMeta.count} bandara
+                          {airportGroupMeta.count} {locale === "en" ? "airports" : locale === "zh" ? "机场" : "bandara"}
                         </span>
                       </div>
                     ) : (
-                      <p className="text-[13px] font-semibold text-slate-700">{groupLabel}</p>
+                      <p className="text-[13px] font-semibold text-slate-700">{groupItems[0]?.displayGroup || groupLabel}</p>
                     )}
                   </div>
                     )
@@ -242,13 +272,13 @@ export default function HeroSearchField({
                                 <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold tracking-[0.08em] text-slate-700">
                                   {airportOptionMeta.code}
                                 </span>
-                                <span className="truncate text-[13px] font-semibold text-slate-900">{airportOptionMeta.city}</span>
+                                <span className="truncate text-[13px] font-semibold text-slate-900">{option.displayValue || airportOptionMeta.city}</span>
                               </span>
                               {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
                             </>
                           ) : (
                             <>
-                              <span className="block truncate text-[13px] font-semibold text-slate-900">{option.label}</span>
+                              <span className="block truncate text-[13px] font-semibold text-slate-900">{option.displayValue || option.label}</span>
                               {option.sublabel ? <span className="mt-0.5 block truncate text-[13px] text-slate-500">{formatOptionSublabel(option)}</span> : null}
                             </>
                           )}
@@ -259,7 +289,13 @@ export default function HeroSearchField({
                 </div>
               ))
             ) : (
-              <div className="px-4 py-6 text-center text-[13px] text-slate-500">Belum ada hasil yang cocok untuk pencarian ini.</div>
+              <div className="px-4 py-6 text-center text-[13px] text-slate-500">
+                {locale === "en"
+                  ? "No matching results for this search yet."
+                  : locale === "zh"
+                    ? "暂时没有匹配的搜索结果。"
+                    : "Belum ada hasil yang cocok untuk pencarian ini."}
+              </div>
             )}
           </div>
         </div>
@@ -301,22 +337,24 @@ function FieldIcon({ icon, className = "" }: { icon: "location" | "calendar" | "
   return <LocationMiniIcon className={className} />
 }
 
-function getDropdownTitle(label: string, inputType: HeroSearchFieldProps["inputType"]) {
+function getDropdownTitle(label: string, inputType: HeroSearchFieldProps["inputType"], locale: "id" | "en" | "zh") {
   const normalized = label.toLowerCase()
 
   if (inputType === "autocomplete") {
     if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
-      return "Pilihan bandara populer"
+      return locale === "en" ? "Popular airport picks" : locale === "zh" ? "热门机场选择" : "Pilihan bandara populer"
     }
     if (normalized.includes("destinasi")) {
-      return "Destinasi populer"
+      return locale === "en" ? "Popular destinations" : locale === "zh" ? "热门目的地" : "Destinasi populer"
     }
-    return "Pilihan populer"
+    return locale === "en" ? "Popular picks" : locale === "zh" ? "热门选择" : "Pilihan populer"
   }
 
-  if (normalized.includes("penumpang") || normalized.includes("tamu") || normalized.includes("peserta")) return "Pilihan penumpang"
-  if (normalized.includes("durasi")) return "Pilihan durasi"
-  return "Pilihan tersedia"
+  if (normalized.includes("penumpang") || normalized.includes("tamu") || normalized.includes("peserta")) {
+    return locale === "en" ? "Passenger options" : locale === "zh" ? "乘客选项" : "Pilihan penumpang"
+  }
+  if (normalized.includes("durasi")) return locale === "en" ? "Duration options" : locale === "zh" ? "时长选项" : "Pilihan durasi"
+  return locale === "en" ? "Available options" : locale === "zh" ? "可用选项" : "Pilihan tersedia"
 }
 
 function DropdownItemIcon({ className = "" }: { className?: string }) {
@@ -433,7 +471,8 @@ function getAirportGroupMeta(groupLabel: string, items: HeroSearchFieldOption[])
 }
 
 function formatOptionSublabel(option: HeroSearchFieldOption) {
-  if (!option.group || !option.sublabel) return option.sublabel ?? ""
+  const visibleSublabel = option.displaySublabel ?? option.sublabel ?? ""
+  if (!option.group || !option.sublabel) return visibleSublabel
 
   const normalizedLabel = option.label.trim()
   return option.sublabel.replace(new RegExp(`^${normalizedLabel}\\s+[•\\-]\\s*`), "").trim()

@@ -19,16 +19,16 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white text-slate-900">
       <main className="pb-28 md:pb-0">
         <HomeHeroSection locale={locale} />
-        <WebHomeServicesSection />
-        <AppHomeFeedSection />
-        <WebHomePromoSection />
-        <WebHomePopularSection />
-        <HomeDestinationsSection />
-        <HomeInspirationSection />
+        <WebHomeServicesSection locale={locale} />
+        <AppHomeFeedSection locale={locale} />
+        <WebHomePromoSection locale={locale} />
+        <WebHomePopularSection locale={locale} />
+        <HomeDestinationsSection locale={locale} />
+        <HomeInspirationSection locale={locale} />
         <AppHomeFooterSection />
         <HomeTrustSection />
         <HomeWhyChooseSection />
-        <HomeNewsletterSection />
+        <HomeNewsletterSection locale={locale} />
         <HomeFooter />
       </main>
 
