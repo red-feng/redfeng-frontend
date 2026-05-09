@@ -45,26 +45,34 @@ export default async function PackagesCatalogPage({
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicInstallPrompt locale={locale} />
-      <PublicHeader locale={locale} />
+      <PublicHeader locale={locale} variant="overlay" />
 
-      <section className="px-4 pb-5 pt-5 sm:px-6 md:px-8 md:pb-6 md:pt-7">
+      <section className="px-4 pb-5 pt-4 sm:px-5 md:px-8 md:pb-6 md:pt-6">
         <div className="mx-auto max-w-[1360px] overflow-hidden rounded-[34px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]">
-          <div className="relative min-h-[360px] px-5 pb-3 pt-8 sm:min-h-[410px] sm:px-7 sm:pb-4 sm:pt-9 lg:min-h-[470px] lg:px-10 lg:pb-5 lg:pt-10">
+          <div className="relative min-h-[420px] px-5 pb-3 pt-[118px] sm:min-h-[470px] sm:px-7 sm:pb-4 sm:pt-[132px] lg:min-h-[520px] lg:px-10 lg:pb-5 lg:pt-[146px]">
             <Image
-              src="/home-assets/background-hero-tour-package.png"
+              src="/home-assets/background-package-mobile.png"
+              alt="RedFeng package catalog hero"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center sm:hidden"
+            />
+            <Image
+              src="/home-assets/background-package-web.png"
               alt="RedFeng package catalog hero"
               fill
               priority
               sizes="(max-width: 1440px) 100vw, 1360px"
-              className="object-cover object-center"
+              className="hidden object-cover object-center sm:block"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.94)_0%,rgba(255,248,241,0.84)_34%,rgba(255,244,235,0.46)_62%,rgba(255,243,236,0.18)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/28 to-transparent" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.97)_0%,rgba(255,248,241,0.88)_30%,rgba(255,244,235,0.54)_58%,rgba(255,243,236,0.14)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/20 to-transparent" />
 
             <div className="relative flex h-full flex-col">
               <div className="max-w-[680px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ef4423]">{pageCopy.eyebrow}</p>
-                <h1 className="mt-4 text-[34px] font-semibold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:text-[42px] lg:text-[58px]">
+                <h1 className="mt-4 text-[34px] font-semibold leading-[1.02] tracking-[-0.05em] text-slate-950 sm:text-[46px] lg:text-[58px]">
                   {pageCopy.title}
                 </h1>
                 <p className="mt-4 max-w-[580px] text-[15px] leading-8 text-slate-700 sm:text-base">
