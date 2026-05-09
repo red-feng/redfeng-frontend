@@ -4,8 +4,8 @@ import { MenuIcon } from "@/app/components/home/shared/homeContent"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
 import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
+import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
 import type { Locale } from "@/lib/i18n"
-import HeroHeaderCurrencySelect from "@/app/components/home/web/hero/HeroHeaderCurrencySelect"
 
 export default function HeroHeader({ locale }: { locale: Locale }) {
   return (
@@ -34,7 +34,17 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
 
           <div className="flex items-center gap-3">
             <Link href="/contact" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bantuan</Link>
-            <HeroHeaderCurrencySelect locale={locale} />
+            <PublicHeaderLocaleSelect
+              locale={locale}
+              availableLocales={["id", "en", "zh"]}
+              mode="currency"
+              labels={{
+                language: "Currency",
+                langId: "Indonesia",
+                langEn: "English",
+                langZh: "China",
+              }}
+            />
             <NotificationBellLink
               items={defaultNotificationItems}
               className="text-white transition hover:text-[#ffd2c4]"
