@@ -17,10 +17,12 @@ export default function PublicHeaderAccountControls({
   locale,
   redirectSuperadminFromHome = false,
   initialRole = "guest",
+  variant = "default",
 }: {
   locale: Locale
   redirectSuperadminFromHome?: boolean
   initialRole?: PublicAccountRole
+  variant?: "default" | "overlay"
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -34,6 +36,7 @@ export default function PublicHeaderAccountControls({
 
   const accountHref = accountRole === "guest" ? "/login" : getPublicAccountHomePath(accountRole)
   const accountLabel = isAuthenticated ? t.account : guestLoginLabel
+  const isOverlay = variant === "overlay"
 
   useEffect(() => {
     let isMounted = true
@@ -89,7 +92,7 @@ export default function PublicHeaderAccountControls({
       {!isAuthenticated && (
         <Link
           href="/register"
-          className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"
+          className={isOverlay ? "rounded-2xl border border-white/80 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#ef4423] shadow-sm transition hover:bg-white" : "rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"}
         >
           {registerLabel}
         </Link>
@@ -103,7 +106,7 @@ export default function PublicHeaderAccountControls({
       {isAuthenticated && (
         <SignOutButton
           label={signOutLabel}
-          className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600"
+          className={isOverlay ? "rounded-2xl border border-white/80 bg-white/80 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:text-rose-600" : "rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-rose-300 hover:text-rose-600"}
         />
       )}
     </div>
