@@ -1,11 +1,13 @@
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronDownIcon, MenuIcon } from "@/app/components/home/shared/homeContent"
+import { MenuIcon } from "@/app/components/home/shared/homeContent"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
 import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
+import type { Locale } from "@/lib/i18n"
+import HeroHeaderCurrencySelect from "@/app/components/home/web/hero/HeroHeaderCurrencySelect"
 
-export default function HeroHeader() {
+export default function HeroHeader({ locale }: { locale: Locale }) {
   return (
     <header className="home-hero-header relative z-10 min-h-[158px]">
       <Link href="/" className="home-hero-logo-link absolute left-0 top-2 flex items-center gap-2">
@@ -32,10 +34,7 @@ export default function HeroHeader() {
 
           <div className="flex items-center gap-3">
             <Link href="/contact" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">Bantuan</Link>
-            <button className="flex items-center gap-1 rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
-              IDR
-              <ChevronDownIcon className="h-4 w-4" />
-            </button>
+            <HeroHeaderCurrencySelect locale={locale} />
             <NotificationBellLink
               items={defaultNotificationItems}
               className="text-white transition hover:text-[#ffd2c4]"

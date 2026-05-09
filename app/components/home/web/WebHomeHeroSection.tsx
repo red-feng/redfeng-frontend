@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useState } from "react"
+import type { Locale } from "@/lib/i18n"
 
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/app/components/home/web/hero"
 import type { HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 
-export default function WebHomeHeroSection() {
+export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
   const [activeOptions, setActiveOptions] = useState<Record<HeroTabKey, string>>({
     flight: heroSearchConfigs.flight.defaultOption,
@@ -35,7 +36,7 @@ export default function WebHomeHeroSection() {
         <DesktopHeroBackdrop />
 
         <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-[5.25rem] pt-6 sm:px-6 lg:px-8">
-          <HeroHeader />
+          <HeroHeader locale={locale} />
           <MobileHeroBackdrop />
           <HeroIntro />
         </div>
