@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { type Locale } from "@/lib/i18n";
 import {
@@ -67,6 +67,17 @@ function ChevronDownIcon() {
     <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4">
       <path
         d="M5.47 7.97a.75.75 0 0 1 1.06 0L10 11.44l3.47-3.47a.75.75 0 1 1 1.06 1.06l-4 4a.75.75 0 0 1-1.06 0l-4-4a.75.75 0 0 1 0-1.06Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4">
+      <path
+        d="M16.16 5.47a.75.75 0 0 1 0 1.06l-7 7a.75.75 0 0 1-1.06 0l-3.25-3.25a.75.75 0 0 1 1.06-1.06l2.72 2.72l6.47-6.47a.75.75 0 0 1 1.06 0Z"
         fill="currentColor"
       />
     </svg>
@@ -306,7 +317,9 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   const [errorMsg, setErrorMsg] = useState("");
   const [emailVisual, setEmailVisual] = useState("");
   const [passwordVisual, setPasswordVisual] = useState("");
+  const [isLocaleMenuOpen, setIsLocaleMenuOpen] = useState(false);
   const enabledProviders = providerConfig.filter((item) => item.enabled);
+  const localeMenuRef = useRef<HTMLDivElement | null>(null);
 
   const copy = getLocaleCopy(locale);
   const authError = errorMsg || searchError;
@@ -387,6 +400,28 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
     setErrorMsg(copy.chooseProvider);
   };
 
+  useEffect(() => {
+    if (!isLocaleMenuOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!localeMenuRef.current?.contains(event.target as Node)) {
+        setIsLocaleMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsLocaleMenuOpen(false);
+    };
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isLocaleMenuOpen]);
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#102238] px-3 py-3 text-slate-950 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
       <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1650px] overflow-hidden rounded-[34px] bg-[#112740] shadow-[0_40px_120px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2.5rem)]">
@@ -448,26 +483,62 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
           <section className="flex items-center justify-center px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
             <div className="w-full max-w-[860px] rounded-[34px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-7 py-7 shadow-[0_28px_90px_rgba(9,19,35,0.22)] backdrop-blur sm:px-10 sm:py-10 lg:min-h-[88vh] lg:px-14 lg:py-12">
               <div className="flex justify-end">
-                <div className="relative flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-                  <select
+                <div ref={localeMenuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsLocaleMenuOpen((current) => !current)}
+                    className={`flex items-center gap-3 rounded-full border bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition duration-200 ${
+                      isLocaleMenuOpen ? "border-slate-300 shadow-[0_14px_36px_rgba(15,23,42,0.1)]" : "border-slate-200 hover:border-slate-300"
+                    }`}
+                    aria-haspopup="menu"
+                    aria-expanded={isLocaleMenuOpen}
                     aria-label="Select language"
-                    defaultValue={locale}
-                    onChange={(event) => void updateLocale(event.target.value as Locale)}
-                    className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-full opacity-0"
                   >
-                    {localeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none">
                     <GlobeIcon />
-                  </span>
-                  <span className="pointer-events-none text-base font-medium text-slate-800">{localeOptions.find((option) => option.value === locale)?.label || "ID"}</span>
-                  <span className="pointer-events-none">
-                    <ChevronDownIcon />
-                  </span>
+                    <span className="min-w-[1.8rem] text-left text-base font-medium text-slate-800">
+                      {localeOptions.find((option) => option.value === locale)?.label || "ID"}
+                    </span>
+                    <span className={`transition duration-200 ${isLocaleMenuOpen ? "rotate-180" : ""}`}>
+                      <ChevronDownIcon />
+                    </span>
+                  </button>
+
+                  {isLocaleMenuOpen ? (
+                    <div
+                      role="menu"
+                      className="absolute right-0 z-20 mt-3 min-w-[10.5rem] overflow-hidden rounded-[22px] border border-slate-200/90 bg-white/98 p-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
+                    >
+                      {localeOptions.map((option) => {
+                        const active = option.value === locale;
+
+                        return (
+                          <button
+                            key={option.value}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={active}
+                            onClick={() => {
+                              setIsLocaleMenuOpen(false);
+                              if (option.value !== locale) {
+                                void updateLocale(option.value);
+                              }
+                            }}
+                            className={`flex w-full items-center justify-between rounded-[16px] px-4 py-3.5 text-left text-sm font-medium transition duration-150 ${
+                              active
+                                ? "bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-900 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]"
+                                : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+                            }`}
+                          >
+                            <span className="pl-1">{option.label}</span>
+                            <span className={`flex items-center gap-2 ${active ? "text-slate-500" : "text-transparent"}`}>
+                              <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">Active</span>
+                              <CheckIcon />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
