@@ -472,8 +472,9 @@ function getAirportGroupMeta(groupLabel: string, items: HeroSearchFieldOption[])
 
 function formatOptionSublabel(option: HeroSearchFieldOption) {
   const visibleSublabel = option.displaySublabel ?? option.sublabel ?? ""
-  if (!option.group || !option.sublabel) return visibleSublabel
+  if (!option.group || !visibleSublabel) return visibleSublabel
 
   const normalizedLabel = option.label.trim()
-  return option.sublabel.replace(new RegExp(`^${normalizedLabel}\\s+[•\\-]\\s*`), "").trim()
+  return visibleSublabel.replace(new RegExp(`^${normalizedLabel}\\s+[•\\-]\\s*`), "").trim()
 }
+
