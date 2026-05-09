@@ -84,9 +84,9 @@ export default function PackagesHeroFilterBar({
   }
 
   return (
-    <div className={`grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_220px] ${isPending ? "opacity-80" : "opacity-100"}`}>
-      <label className="flex min-w-0 items-center gap-3 rounded-[22px] px-4 py-4">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
+    <div className={`grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_220px] ${isPending ? "opacity-80" : "opacity-100"}`}>
+      <label className="flex min-w-0 items-center gap-3 rounded-[24px] px-4 py-4 md:px-5">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <GlobeIcon />
         </span>
         <span className="min-w-0 flex-1">
@@ -111,8 +111,8 @@ export default function PackagesHeroFilterBar({
         </span>
       </label>
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 xl:border-l xl:border-t-0">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
+      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 md:px-5 xl:border-l xl:border-t-0">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <CalendarIcon />
         </span>
         <span className="min-w-0 flex-1">
@@ -135,8 +135,8 @@ export default function PackagesHeroFilterBar({
         </span>
       </label>
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 xl:border-l xl:border-t-0">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
+      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 md:px-5 xl:border-l xl:border-t-0">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <UsersIcon />
         </span>
         <span className="min-w-0 flex-1">
@@ -165,7 +165,7 @@ export default function PackagesHeroFilterBar({
         type="button"
         onClick={applyFilter}
         disabled={isPending}
-        className="inline-flex items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+        className="inline-flex items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-full"
       >
         {buttonLabel}
       </button>

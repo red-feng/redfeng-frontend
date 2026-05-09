@@ -50,7 +50,7 @@ export default async function PublicHeader({
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className="public-header-shell mx-auto max-w-7xl px-4 py-3 pt-5 md:px-6 md:py-5 md:pt-6">
-          <div className="rounded-[30px] border border-white/65 bg-white/58 px-4 py-3 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.2)] backdrop-blur-xl md:px-6">
+          <div className="rounded-[30px] border border-white/40 bg-white/40 px-4 py-3 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.16)] backdrop-blur-2xl md:px-6">
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between gap-4">
                 <a href="https://redfeng.co/" className="public-header-logo-link flex items-center gap-3">

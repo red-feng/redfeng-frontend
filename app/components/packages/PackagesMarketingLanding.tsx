@@ -57,6 +57,50 @@ function getLowestPrice(packages: PackageItem[], locale: Locale) {
   return formatPackageMoney(availablePrices[0].price, availablePrices[0].currency, locale)
 }
 
+function MapPinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <path d="M12 21s-6-5.1-6-10.4A6 6 0 1 1 18 10.6C18 15.9 12 21 12 21Z" />
+      <circle cx="12" cy="10.5" r="2.2" />
+    </svg>
+  )
+}
+
+function BedIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <path d="M4 11.5h16V19" />
+      <path d="M4 19v-9a2.5 2.5 0 0 1 2.5-2.5h4A2.5 2.5 0 0 1 13 10v1.5" />
+      <path d="M13 9h4a3 3 0 0 1 3 3v7" />
+    </svg>
+  )
+}
+
+function UtensilsIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <path d="M7 4v7" />
+      <path d="M10 4v7" />
+      <path d="M7 7H5.5A1.5 1.5 0 0 1 4 5.5V4" />
+      <path d="M10 7h1.5A1.5 1.5 0 0 0 13 5.5V4" />
+      <path d="M8.5 11v9" />
+      <path d="M18 4v16" />
+      <path d="M18 4c-2 0-3 1.8-3 4v3h3" />
+    </svg>
+  )
+}
+
+function BusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+      <rect x="5" y="4.5" width="14" height="12" rx="3" />
+      <path d="M8 16.5v3M16 16.5v3M5 10.5h14" />
+      <circle cx="8.5" cy="13.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="13.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 function PackageRecoCard({
   pkg,
   locale,
@@ -80,13 +124,20 @@ function PackageRecoCard({
 
   return (
     <article className="overflow-hidden rounded-[30px] border border-[#e9e3db] bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_-34px_rgba(15,23,42,0.22)]">
-      <div className="relative h-[210px] w-full overflow-hidden">
+      <div className="relative h-[220px] w-full overflow-hidden">
         {pkg.cover_image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={pkg.cover_image} alt={title} className="h-full w-full object-cover" />
         ) : (
-          <Image src="/home-assets/card-package.png" alt={title} fill sizes="(max-width: 1024px) 100vw, 420px" className="object-cover" />
+          <Image
+            src="/home-assets/card-package.png"
+            alt={title}
+            fill
+            sizes="(max-width: 1024px) 100vw, 420px"
+            className="object-cover"
+          />
         )}
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.04)_0%,rgba(15,23,42,0.08)_48%,rgba(15,23,42,0.22)_100%)]" />
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-4 py-4">
           <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-700 shadow-sm">
             {availableLabel}
@@ -100,10 +151,18 @@ function PackageRecoCard({
       </div>
 
       <div className="p-5">
-        <Link href={`/packages/${encodeURIComponent(pkg.slug)}`} className="line-clamp-2 text-[24px] font-semibold leading-tight tracking-[-0.035em] text-slate-950 transition hover:text-[#ef4423]">
+        <Link
+          href={`/packages/${encodeURIComponent(pkg.slug)}`}
+          className="line-clamp-2 text-[22px] font-semibold leading-tight tracking-[-0.035em] text-slate-950 transition hover:text-[#ef4423] xl:text-[24px]"
+        >
           {title}
         </Link>
-        <p className="mt-2 text-sm text-slate-500">{[pkg.city, pkg.country].filter(Boolean).join(", ") || "-"}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+          <span className="text-[#ef4423]">
+            <MapPinIcon />
+          </span>
+          {[pkg.city, pkg.country].filter(Boolean).join(", ") || "-"}
+        </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {pkg.travel_style ? (
@@ -123,23 +182,32 @@ function PackageRecoCard({
 
         <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[11px] text-slate-500">
           <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="font-semibold text-slate-700">Hotel</p>
+            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <BedIcon />
+              Hotel
+            </p>
             <p className="mt-1">3x</p>
           </div>
           <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="font-semibold text-slate-700">Makan</p>
+            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <UtensilsIcon />
+              Makan
+            </p>
             <p className="mt-1">4x</p>
           </div>
           <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="font-semibold text-slate-700">Transport</p>
+            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
+              <BusIcon />
+              Transport
+            </p>
             <p className="mt-1">Termasuk</p>
           </div>
         </div>
 
         <div className="mt-5 flex items-end justify-between gap-4">
-          <div>
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{fromLabel}</p>
-            <p className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#ef4423]">
+            <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[#ef4423] xl:text-[30px]">
               {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
             </p>
             <p className="mt-1 text-xs text-slate-400">/ orang</p>
@@ -220,6 +288,7 @@ export default async function PackagesMarketingLanding() {
       allDurations: "Semua Durasi",
       typeLabel: "Tipe Paket",
       allTypes: "Semua Tipe",
+      offerLine: "untuk berbagai destinasi pilihan",
     },
     en: {
       eyebrow: "BEST TOUR PACKAGES",
@@ -253,6 +322,7 @@ export default async function PackagesMarketingLanding() {
       allDurations: "All Durations",
       typeLabel: "Package Type",
       allTypes: "All Types",
+      offerLine: "for selected destination highlights",
     },
     zh: {
       eyebrow: "精选旅游套餐",
@@ -286,6 +356,7 @@ export default async function PackagesMarketingLanding() {
       allDurations: "全部时长",
       typeLabel: "套餐类型",
       allTypes: "全部类型",
+      offerLine: "适用于精选目的地",
     },
   }[locale]
 
@@ -294,36 +365,45 @@ export default async function PackagesMarketingLanding() {
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <main className="px-4 pb-14 pt-5 sm:px-6 md:px-8 md:pt-7">
-        <section className="mx-auto max-w-[1360px] overflow-hidden rounded-[40px] border border-[#f3d7c6] bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.4)]">
-          <div className="relative min-h-[760px] px-5 pb-8 pt-[124px] sm:px-7 sm:pb-10 md:pt-[150px] lg:min-h-[900px] lg:px-10">
+      <main className="px-3 pb-14 pt-4 sm:px-5 md:px-8 md:pt-6">
+        <section className="mx-auto max-w-[1360px] overflow-hidden rounded-[32px] bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)] sm:rounded-[40px]">
+          <div className="relative min-h-[860px] px-4 pb-8 pt-[120px] sm:px-7 sm:pb-10 md:pt-[142px] lg:min-h-[900px] lg:px-10 xl:min-h-[940px]">
             <Image
-              src="/home-assets/background-hero-tour-package.png"
+              src="/home-assets/background-package-mobile.png"
+              alt="Travel package hero"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-center sm:hidden"
+            />
+            <Image
+              src="/home-assets/background-package-web.png"
               alt="Travel package hero"
               fill
               priority
               sizes="(max-width: 1440px) 100vw, 1360px"
-              className="object-cover object-center"
+              className="hidden object-cover object-center sm:block"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,241,0.96)_0%,rgba(255,248,241,0.82)_28%,rgba(255,246,242,0.48)_54%,rgba(255,247,243,0.12)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.65),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.14),transparent_30%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,241,0.98)_0%,rgba(255,248,241,0.9)_24%,rgba(255,240,231,0.58)_50%,rgba(255,247,243,0.12)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
+            <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[640px] pt-6">
+            <div className="relative z-10 max-w-[640px] pt-3 sm:pt-6 lg:pt-10">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
-              <h1 className="mt-4 text-[42px] font-semibold leading-[0.98] tracking-[-0.06em] text-slate-950 sm:text-[56px] lg:text-[76px]">
+              <h1 className="mt-4 max-w-[620px] text-[36px] font-semibold leading-[0.98] tracking-[-0.06em] text-slate-950 sm:text-[56px] lg:text-[72px] xl:text-[76px]">
                 {copy.title}
               </h1>
-              <p className="mt-5 max-w-[560px] text-[15px] leading-8 text-slate-700 sm:text-lg">
+              <p className="mt-4 max-w-[560px] text-[15px] leading-7 text-slate-700 sm:mt-5 sm:text-lg sm:leading-8">
                 {copy.body}
               </p>
 
-              <div className="mt-8 max-w-[620px]">
+              <div className="mt-7 max-w-[640px] sm:mt-8">
                 <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
               </div>
             </div>
 
-            <div className="relative z-10 mt-[280px] lg:mt-[410px]">
-              <div className="mx-auto max-w-[1180px] rounded-[32px] border border-white/80 bg-white/94 p-3 shadow-[0_30px_60px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4">
+            <div className="relative z-10 mt-[350px] sm:mt-[380px] lg:mt-[430px]">
+              <div className="mx-auto max-w-[1180px] rounded-[32px] border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4">
                 <PackagesHeroFilterBar
                   locale={locale}
                   countries={searchBarCountries}
@@ -339,9 +419,9 @@ export default async function PackagesMarketingLanding() {
                 />
               </div>
 
-              <div className="mt-8 grid gap-4 lg:grid-cols-4">
+              <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-4">
                 {copy.benefitTitle.map((title, index) => (
-                  <article key={title} className="rounded-[26px] border border-white/85 bg-white/80 p-5 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur">
+                  <article key={title} className="rounded-[24px] border border-white/85 bg-white/78 p-4 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur sm:rounded-[26px] sm:p-5">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
                       {index === 0 ? (
                         <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[1.8]">
@@ -375,12 +455,15 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-8 max-w-[1360px] rounded-[32px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-5 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6">
-          <div className="grid gap-5 xl:grid-cols-[280px_repeat(4,minmax(0,1fr))]">
+        <section className="mx-auto mt-8 max-w-[1360px] rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:rounded-[32px] sm:p-6">
+          <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
               <h2 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{copy.promoTitle}</h2>
               <p className="mt-4 text-sm text-slate-500">{copy.promoBody}</p>
-              <p className="mt-3 text-[48px] font-semibold tracking-[-0.05em] text-[#ef4423]">30% <span className="text-[24px]">OFF</span></p>
+              <p className="mt-3 text-[48px] font-semibold tracking-[-0.05em] text-[#ef4423]">
+                30% <span className="text-[24px]">OFF</span>
+              </p>
+              <p className="mt-1 max-w-[220px] text-sm leading-6 text-slate-500">{copy.offerLine}</p>
               <Link
                 href="/promo"
                 className="mt-6 inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105"
@@ -395,7 +478,7 @@ export default async function PackagesMarketingLanding() {
                 href={`/packages/catalog?country=${encodeURIComponent(entry.country)}`}
                 className="overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.22)]"
               >
-                <div className="relative h-[180px]">
+                <div className="relative h-[185px]">
                   <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
                   <span className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#ef4423] shadow-sm">
                     Diskon {entry.discount}%
@@ -419,23 +502,23 @@ export default async function PackagesMarketingLanding() {
             </Link>
           </div>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="mt-5 grid grid-cols-2 gap-4 xl:grid-cols-6">
             {popularDestinations.map((entry) => (
               <Link
                 key={entry.country}
                 href={`/packages/catalog?country=${encodeURIComponent(entry.country)}`}
                 className="overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.15)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.2)]"
               >
-                <div className="relative h-[220px]">
+                <div className="relative h-[190px] sm:h-[235px]">
                   <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.18)_54%,rgba(15,23,42,0.54)_100%)]" />
                   <div className="absolute inset-x-0 bottom-0 p-4">
-                    <h3 className="text-[26px] font-semibold tracking-[-0.04em] text-white">{entry.country}</h3>
+                    <h3 className="text-[20px] font-semibold tracking-[-0.04em] text-white sm:text-[24px]">{entry.country}</h3>
                   </div>
                 </div>
-                <div className="p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-2 text-[24px] font-semibold tracking-[-0.04em] text-slate-950">{entry.price || "-"}</p>
+                <div className="p-3 sm:p-4">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.fromLabel}</p>
+                  <p className="mt-2 text-[18px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[22px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
@@ -443,7 +526,27 @@ export default async function PackagesMarketingLanding() {
         </section>
 
         <section className="mx-auto mt-10 max-w-[1360px]">
-          <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.recommendationTitle}</h2>
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.recommendationTitle}</h2>
+            <div className="hidden items-center gap-2 md:flex">
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:text-[#ef4423]"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                  <path d="m14.5 6.5-5 5 5 5" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:text-[#ef4423]"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                  <path d="m9.5 6.5 5 5-5 5" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <div className="mt-5 grid gap-5 xl:grid-cols-3">
             {topPackages.map((pkg) => (
               <PackageRecoCard
@@ -458,10 +561,10 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-10 max-w-[1360px] overflow-hidden rounded-[30px] border border-[#f0ddd2] bg-[linear-gradient(90deg,#fff0eb_0%,#fff6f2_40%,#fff9f5_100%)] shadow-[0_26px_70px_-44px_rgba(15,23,42,0.16)]">
-          <div className="grid gap-6 px-5 py-6 lg:grid-cols-[1fr_1.2fr_260px] lg:items-center lg:px-8">
+        <section className="mx-auto mt-10 max-w-[1360px] overflow-hidden rounded-[28px] border border-[#f0ddd2] bg-[linear-gradient(90deg,#fff0eb_0%,#fff6f2_40%,#fff9f5_100%)] shadow-[0_26px_70px_-44px_rgba(15,23,42,0.16)] sm:rounded-[30px]">
+          <div className="grid gap-6 px-4 py-6 sm:px-5 lg:grid-cols-[1fr_1.2fr_260px] lg:items-center lg:px-8">
             <div>
-              <h2 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{copy.newsletterTitle}</h2>
+              <h2 className="text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">{copy.newsletterTitle}</h2>
               <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">{copy.newsletterBody}</p>
             </div>
             <form className="flex flex-col gap-3 sm:flex-row">
