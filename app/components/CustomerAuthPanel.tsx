@@ -423,8 +423,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
   }, [isLocaleMenuOpen]);
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#102238] px-3 py-3 text-slate-950 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
-      <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1650px] overflow-hidden rounded-[34px] bg-[#112740] shadow-[0_40px_120px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2.5rem)]">
+    <main className="min-h-screen overflow-hidden bg-[#102238] px-3 py-3 text-slate-950 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+      <div className="relative mx-auto min-h-[calc(100vh-1.5rem)] max-w-[1560px] overflow-hidden rounded-[30px] bg-[#112740] shadow-[0_36px_108px_rgba(5,15,35,0.45)] sm:min-h-[calc(100vh-2rem)]">
         <div className="absolute inset-0">
           <Image
             src="/home-assets/background-login-customer.png"
@@ -437,57 +437,57 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.36),transparent_32%),radial-gradient(circle_at_bottom_left,rgba(18,31,46,0.6),transparent_34%),radial-gradient(circle_at_top_right,rgba(28,75,133,0.38),transparent_30%)]" />
         </div>
 
-        <div className="relative grid min-h-[calc(100vh-1.5rem)] lg:grid-cols-[0.88fr_1.12fr]">
+        <div className="relative grid min-h-[calc(100vh-1.5rem)] lg:grid-cols-[0.9fr_1.1fr]">
           <section className="flex items-stretch">
-            <div className="flex w-full flex-col justify-between px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-14 lg:py-14">
-              <div className="max-w-[380px] pt-2">
+            <div className="flex w-full flex-col justify-between px-5 py-7 text-white sm:px-9 sm:py-9 lg:px-12 lg:py-12">
+              <div className="max-w-[340px] pt-1">
                 <div className="flex items-center">
                   <Image
                     src="/logo-redfeng.png"
                     alt="RedFeng"
                     width={174}
                     height={174}
-                    className="h-[8.2rem] w-[8.2rem] object-contain object-left"
+                    className="h-[7.4rem] w-[7.4rem] object-contain object-left"
                   />
                 </div>
 
-                <p className="mt-8 max-w-[330px] text-[22px] leading-[1.55] text-slate-800 sm:text-[26px]">
+                <p className="mt-6 max-w-[300px] text-[20px] leading-[1.5] text-slate-800 sm:text-[23px]">
                   {copy.heroTagline}
                 </p>
               </div>
 
-              <div className="mt-10 max-w-[430px]">
-                <div className="space-y-6">
+              <div className="mt-8 max-w-[390px]">
+                <div className="space-y-5">
                   {copy.leftFeatures.map((feature, index) => (
-                    <div key={feature.title} className="flex items-start gap-4">
-                      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[rgba(124,21,15,0.72)] shadow-[0_12px_28px_rgba(71,10,7,0.3)] ring-1 ring-white/12">
-                        <span className="text-lg font-semibold text-white">{index + 1}</span>
+                    <div key={feature.title} className="flex items-start gap-3.5">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[rgba(124,21,15,0.72)] shadow-[0_10px_24px_rgba(71,10,7,0.3)] ring-1 ring-white/12">
+                        <span className="text-base font-semibold text-white">{index + 1}</span>
                       </div>
                       <div className="pt-1">
-                        <div className="text-[27px] font-semibold leading-tight text-white sm:text-[30px]">{feature.title}</div>
-                        <p className="mt-2 max-w-[280px] text-lg leading-8 text-white/88">{feature.description}</p>
+                        <div className="text-[23px] font-semibold leading-tight text-white sm:text-[25px]">{feature.title}</div>
+                        <p className="mt-1.5 max-w-[260px] text-base leading-7 text-white/88">{feature.description}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-10 flex items-center gap-4">
-                  <span className="h-4 w-4 rounded-full bg-[#ff2f24]" />
-                  <span className="h-4 w-4 rounded-full bg-white/75" />
-                  <span className="h-4 w-4 rounded-full bg-white/75" />
+                <div className="mt-8 flex items-center gap-3">
+                  <span className="h-3.5 w-3.5 rounded-full bg-[#ff2f24]" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-white/75" />
+                  <span className="h-3.5 w-3.5 rounded-full bg-white/75" />
                 </div>
               </div>
             </div>
           </section>
 
-          <section className="flex items-center justify-center px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
-            <div className="w-full max-w-[860px] rounded-[34px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-7 py-7 shadow-[0_28px_90px_rgba(9,19,35,0.22)] backdrop-blur sm:px-10 sm:py-10 lg:min-h-[88vh] lg:px-14 lg:py-12">
+          <section className="flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5">
+            <div className="w-full max-w-[780px] rounded-[30px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-6 py-6 shadow-[0_24px_76px_rgba(9,19,35,0.2)] backdrop-blur sm:px-8 sm:py-8 lg:min-h-[80vh] lg:px-12 lg:py-10">
               <div className="flex justify-end">
                 <div ref={localeMenuRef} className="relative">
                   <button
                     type="button"
                     onClick={() => setIsLocaleMenuOpen((current) => !current)}
-                    className={`flex items-center gap-3 rounded-full border bg-white px-5 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition duration-200 ${
+                    className={`flex items-center gap-3 rounded-full border bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition duration-200 ${
                       isLocaleMenuOpen ? "border-slate-300 shadow-[0_14px_36px_rgba(15,23,42,0.1)]" : "border-slate-200 hover:border-slate-300"
                     }`}
                     aria-haspopup="menu"
@@ -506,7 +506,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   {isLocaleMenuOpen ? (
                     <div
                       role="menu"
-                      className="absolute right-0 z-20 mt-3 min-w-[10.5rem] overflow-hidden rounded-[22px] border border-slate-200/90 bg-white/98 p-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
+                      className="absolute right-0 z-20 mt-3 min-w-[10rem] overflow-hidden rounded-[20px] border border-slate-200/90 bg-white/98 p-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur animate-[fadeIn_.16s_ease-out]"
                     >
                       {localeOptions.map((option) => {
                         const active = option.value === locale;
@@ -523,7 +523,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                                 void updateLocale(option.value);
                               }
                             }}
-                            className={`flex w-full items-center justify-between rounded-[16px] px-4 py-3.5 text-left text-sm font-medium transition duration-150 ${
+                            className={`flex w-full items-center justify-between rounded-[16px] px-4 py-3 text-left text-sm font-medium transition duration-150 ${
                               active
                                 ? "bg-[linear-gradient(180deg,#f8fafc_0%,#eef2f7_100%)] text-slate-900 shadow-[inset_0_0_0_1px_rgba(148,163,184,0.16)]"
                                 : "text-slate-700 hover:bg-slate-50 hover:text-slate-900"
@@ -542,22 +542,22 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                 </div>
               </div>
 
-              <div className="mt-12 max-w-[430px]">
-                <h1 className="text-[42px] font-semibold tracking-[-0.03em] text-[#0f172a] sm:text-[54px]">
+              <div className="mt-10 max-w-[390px]">
+                <h1 className="text-[38px] font-semibold tracking-[-0.03em] text-[#0f172a] sm:text-[46px]">
                   {copy.welcome}
                 </h1>
-                <p className="mt-4 max-w-[360px] text-[21px] leading-[1.7] text-slate-500 sm:text-[24px]">
+                <p className="mt-3 max-w-[320px] text-[19px] leading-[1.65] text-slate-500 sm:text-[21px]">
                   {copy.subtitle}
                 </p>
               </div>
 
-              <div className="mt-14">
+              <div className="mt-11">
                 <div className="flex border-b border-slate-200">
                   {modeTabs.map((tab) => (
                     <Link
                       key={tab.href}
                       href={tab.href}
-                      className={`relative flex-1 pb-5 text-center text-[24px] font-semibold transition sm:text-[27px] ${
+                      className={`relative flex-1 pb-4 text-center text-[22px] font-semibold transition sm:text-[24px] ${
                         tab.active ? "text-[#ff2a1c]" : "text-slate-500 hover:text-slate-700"
                       }`}
                     >
@@ -567,8 +567,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   ))}
                 </div>
 
-                <div className="mt-12 space-y-7">
-                  <label className="flex h-[78px] items-center gap-4 rounded-[18px] border border-slate-200 bg-white px-6 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="mt-10 space-y-5">
+                  <label className="flex h-[68px] items-center gap-4 rounded-[16px] border border-slate-200 bg-white px-5 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                     <span className="text-slate-500">
                       <UserIcon />
                     </span>
@@ -577,11 +577,11 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       value={emailVisual}
                       onChange={(event) => setEmailVisual(event.target.value)}
                       placeholder={copy.emailPlaceholder}
-                      className="w-full bg-transparent text-[20px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[22px]"
-                    />
+                        className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
+                      />
                   </label>
 
-                  <label className="flex h-[78px] items-center gap-4 rounded-[18px] border border-slate-200 bg-white px-6 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                  <label className="flex h-[68px] items-center gap-4 rounded-[16px] border border-slate-200 bg-white px-5 text-slate-400 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
                     <span className="text-slate-500">
                       <LockIcon />
                     </span>
@@ -590,8 +590,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       value={passwordVisual}
                       onChange={(event) => setPasswordVisual(event.target.value)}
                       placeholder={copy.passwordPlaceholder}
-                      className="w-full bg-transparent text-[20px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[22px]"
-                    />
+                        className="w-full bg-transparent text-[18px] text-slate-700 outline-none placeholder:text-slate-400 sm:text-[20px]"
+                      />
                     <span className="text-slate-400">
                       <EyeIcon />
                     </span>
@@ -599,8 +599,8 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                 </div>
 
                 {mode === "login" ? (
-                  <div className="mt-5 flex justify-end">
-                    <Link href={`/forgot-password?next=/login`} className="text-[18px] font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
+                  <div className="mt-4 flex justify-end">
+                    <Link href={`/forgot-password?next=/login`} className="text-[16px] font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
                       {copy.forgotPassword}
                     </Link>
                   </div>
@@ -610,18 +610,18 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                   type="button"
                   onClick={() => void handlePrimaryAction()}
                   disabled={loadingProvider !== null}
-                  className="mt-12 inline-flex h-[82px] w-full items-center justify-center rounded-[18px] bg-[linear-gradient(180deg,#ff2f24_0%,#f31508_100%)] px-6 text-[28px] font-semibold text-white shadow-[0_22px_45px_rgba(255,47,36,0.28)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="mt-10 inline-flex h-[70px] w-full items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,#ff2f24_0%,#f31508_100%)] px-6 text-[24px] font-semibold text-white shadow-[0_18px_38px_rgba(255,47,36,0.26)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loadingProvider ? copy.processing : mode === "login" ? copy.primaryLogin : copy.primaryRegister}
                 </button>
 
-                <div className="mt-12 flex items-center gap-5 text-center text-[18px] text-slate-400">
+                <div className="mt-10 flex items-center gap-4 text-center text-[16px] text-slate-400">
                   <div className="h-px flex-1 bg-slate-200" />
                   <span>{copy.divider}</span>
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
 
-                <div className="mt-10 space-y-5">
+                <div className="mt-8 space-y-4">
                   {socialButtons.map((button) => {
                     const active = button.enabled && button.key !== "apple";
 
@@ -635,15 +635,15 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                             void handleProviderAuth(button.key);
                           }
                         }}
-                        className={`flex h-[78px] w-full items-center justify-between rounded-[18px] border px-6 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition ${
+                        className={`flex h-[68px] w-full items-center justify-between rounded-[16px] border px-5 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition ${
                           active
                             ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-[#ffddd7]"
                             : "cursor-not-allowed border-slate-200 bg-white/75 opacity-70"
                         }`}
                       >
                         <span className="flex items-center gap-5">
-                          <span className="grid h-10 w-10 place-items-center">{getProviderIcon(button.key)}</span>
-                          <span className="text-[20px] font-medium text-slate-800 sm:text-[22px]">{button.label}</span>
+                          <span className="grid h-9 w-9 place-items-center">{getProviderIcon(button.key)}</span>
+                          <span className="text-[18px] font-medium text-slate-800 sm:text-[20px]">{button.label}</span>
                         </span>
                         {!active ? <span className="text-sm font-medium text-slate-400">{copy.disabledProvider}</span> : null}
                       </button>
@@ -652,19 +652,19 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                 </div>
 
                 {authError ? (
-                  <div className="mt-6 rounded-[18px] border border-rose-200 bg-rose-50 px-5 py-4 text-base text-rose-700">
+                  <div className="mt-5 rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                     {authError}
                   </div>
                 ) : null}
 
-                <p className="mt-12 text-center text-[20px] text-slate-700 sm:text-[22px]">
+                <p className="mt-10 text-center text-[18px] text-slate-700 sm:text-[20px]">
                   {mode === "login" ? copy.noAccount : copy.haveAccount}{" "}
                   <Link href={footerHref} className="font-medium text-[#ff2a1c] hover:text-[#ef1c0d]">
                     {mode === "login" ? copy.registerNow : copy.loginNow}
                   </Link>
                 </p>
 
-                <p className="mt-5 text-center text-sm leading-7 text-slate-500 sm:text-base">
+                <p className="mt-4 text-center text-sm leading-6 text-slate-500">
                   {copy.termsLead}{" "}
                   <Link href="/terms" className="font-semibold text-slate-700 hover:text-[#ff2a1c]">
                     {copy.terms}
