@@ -448,13 +448,12 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
           <section className="flex items-center justify-center px-3 py-3 sm:px-5 sm:py-5 lg:px-6 lg:py-6">
             <div className="w-full max-w-[860px] rounded-[34px] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,252,248,0.98)_100%)] px-7 py-7 shadow-[0_28px_90px_rgba(9,19,35,0.22)] backdrop-blur sm:px-10 sm:py-10 lg:min-h-[88vh] lg:px-14 lg:py-12">
               <div className="flex justify-end">
-                <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-                  <GlobeIcon />
+                <div className="relative flex items-center gap-3 rounded-full border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
                   <select
                     aria-label="Select language"
                     defaultValue={locale}
                     onChange={(event) => void updateLocale(event.target.value as Locale)}
-                    className="appearance-none bg-transparent pr-1 text-base font-medium text-slate-800 outline-none"
+                    className="absolute inset-0 z-10 cursor-pointer appearance-none rounded-full opacity-0"
                   >
                     {localeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -462,6 +461,10 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
                       </option>
                     ))}
                   </select>
+                  <span className="pointer-events-none">
+                    <GlobeIcon />
+                  </span>
+                  <span className="pointer-events-none text-base font-medium text-slate-800">{localeOptions.find((option) => option.value === locale)?.label || "ID"}</span>
                   <span className="pointer-events-none">
                     <ChevronDownIcon />
                   </span>
