@@ -965,6 +965,21 @@ function formatDateObjectToDisplay(date: Date) {
 function localizeHeroFieldValue(value: string, locale: Locale) {
   if (!value) return value
 
+  if (value === "1 Dewasa") {
+    if (locale === "en") return "1 Adult"
+    if (locale === "zh") return "1位成人"
+  }
+
+  if (value === "2 Dewasa") {
+    if (locale === "en") return "2 Adults"
+    if (locale === "zh") return "2位成人"
+  }
+
+  if (value === "4 Penumpang") {
+    if (locale === "en") return "4 Passengers"
+    if (locale === "zh") return "4位乘客"
+  }
+
   const localizedDate = localizeDateLabel(value, locale)
   return translateHeroText(localizedDate, locale)
 }
