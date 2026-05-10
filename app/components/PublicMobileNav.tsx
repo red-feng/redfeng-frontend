@@ -70,21 +70,21 @@ export default function PublicMobileNav({ locale, notificationDefaults = default
   const copy = {
     id: {
       home: "Beranda",
-      packages: "Pesanan",
-      verify: "Promo",
+      promo: "Promo",
+      orders: "Pesanan",
       account: "Akun Saya",
     },
     en: {
       home: "Home",
-      packages: "Orders",
-      verify: "Promo",
+      promo: "Promo",
+      orders: "Orders",
       account: "My Account",
     },
     zh: {
-      home: "首页",
-      packages: "套餐",
-      verify: "发票",
-      account: "账户",
+      home: "\u9996\u9875",
+      promo: "\u4f18\u60e0",
+      orders: "\u8ba2\u5355",
+      account: "\u8d26\u6237",
     },
   }[locale]
 
@@ -101,24 +101,24 @@ export default function PublicMobileNav({ locale, notificationDefaults = default
       ),
     },
     {
-      href: "/customer/bookings",
-      label: copy.packages,
-      accent: "from-[#94a3b8] to-[#64748b]",
-      icon: (
-        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
-          <path d="M7 5.5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19.5H7A1.5 1.5 0 0 1 5.5 18V7A1.5 1.5 0 0 1 7 5.5Z" />
-          <path d="M9 4v3M15 4v3M8.5 10h7M8.5 14H12" />
-        </svg>
-      ),
-    },
-    {
       href: "/promo",
-      label: copy.verify,
+      label: copy.promo,
       accent: "from-[#94a3b8] to-[#64748b]",
       icon: (
         <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
           <path d="m12 4 6 6-6 6-6-6 6-6Z" />
           <path d="M12 8.2v3.6M10.2 10h3.6" />
+        </svg>
+      ),
+    },
+    {
+      href: "/customer/bookings",
+      label: copy.orders,
+      accent: "from-[#94a3b8] to-[#64748b]",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+          <path d="M7 5.5h10a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 17 19.5H7A1.5 1.5 0 0 1 5.5 18V7A1.5 1.5 0 0 1 7 5.5Z" />
+          <path d="M9 4v3M15 4v3M8.5 10h7M8.5 14H12" />
         </svg>
       ),
     },
@@ -141,34 +141,38 @@ export default function PublicMobileNav({ locale, notificationDefaults = default
       <nav className="public-mobile-nav fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-2 md:hidden">
         <div className="public-mobile-nav-shell mx-auto max-w-[23.5rem] rounded-[26px] border border-[#eef2f7] bg-white/96 px-2 py-1.5 shadow-[0_-20px_42px_-30px_rgba(15,23,42,0.2)] backdrop-blur-xl">
           <div className="public-mobile-nav-grid grid grid-cols-4 gap-1">
-          {items.map((item) => {
-            const isActive =
-              item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
+            {items.map((item) => {
+              const isActive =
+                item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`)
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[20px] px-2 py-1.5 text-[11px] font-semibold transition ${
-                  isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-800"
-                }`}
-              >
-                <span
-                  className={`public-mobile-nav-icon flex h-9 w-9 items-center justify-center rounded-full transition ${
-                    isActive
-                      ? item.href === "/"
-                        ? "bg-[linear-gradient(180deg,#fff1eb_0%,#fffaf7_100%)] text-[#ef5b2a] shadow-[0_14px_24px_-18px_rgba(239,91,42,0.28)] ring-1 ring-[#ffe3d8]"
-                        : `bg-gradient-to-br ${item.accent} text-white shadow-[0_14px_24px_-18px_rgba(100,116,139,0.18)]`
-                      : "bg-transparent text-slate-500"
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`public-mobile-nav-item flex flex-col items-center justify-center rounded-[20px] px-2 py-1.5 text-[11px] font-semibold transition ${
+                    isActive ? "text-slate-950" : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-800"
                   }`}
                 >
-                  {item.icon}
-                </span>
-                <span className={`public-mobile-nav-label mt-1 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
-                {isActive ? <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-[#ef5b2a]" /> : <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-transparent" />}
-              </Link>
-            )
-          })}
+                  <span
+                    className={`public-mobile-nav-icon flex h-9 w-9 items-center justify-center rounded-full transition ${
+                      isActive
+                        ? item.href === "/"
+                          ? "bg-[linear-gradient(180deg,#fff1eb_0%,#fffaf7_100%)] text-[#ef5b2a] shadow-[0_14px_24px_-18px_rgba(239,91,42,0.28)] ring-1 ring-[#ffe3d8]"
+                          : `bg-gradient-to-br ${item.accent} text-white shadow-[0_14px_24px_-18px_rgba(100,116,139,0.18)]`
+                        : "bg-transparent text-slate-500"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <span className={`public-mobile-nav-label mt-1 ${isActive ? "font-bold text-[#ef5b2a]" : "font-semibold"}`}>{item.label}</span>
+                  {isActive ? (
+                    <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-[#ef5b2a]" />
+                  ) : (
+                    <span className="public-mobile-nav-indicator mt-1 h-[3px] w-4 rounded-full bg-transparent" />
+                  )}
+                </Link>
+              )
+            })}
           </div>
         </div>
       </nav>

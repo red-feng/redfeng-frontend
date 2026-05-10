@@ -65,27 +65,18 @@ export default async function PublicHeader({
                 </a>
 
                 <div className="hidden xl:flex xl:flex-1 xl:justify-center">
-                  <nav className="flex items-center gap-6">
+                  <nav className="flex items-center gap-5 text-[14px] font-medium text-slate-700">
                     <Link href="/promo" className={navLinkClass}>
                       {t.promo}
                     </Link>
-                    <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
-                      {t.flight}
+                    <Link href="/customer/bookings" className={navLinkClass}>
+                      {t.orders}
                     </Link>
-                    <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
-                      {t.hotel}
-                    </Link>
-                    <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
-                      {t.train}
-                    </Link>
-                    <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
-                      {t.busTravel}
-                    </Link>
-                    <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
-                      {t.seaShip}
-                    </Link>
-                    <Link href="/packages" className={activePackageLinkClass}>
-                      {t.packageTour}
+                    <a href="https://redfeng.co/kemitraan_tour/" className={navLinkClass}>
+                      {t.partnerTour}
+                    </a>
+                    <Link href="/verifikasi-invoice" className={navLinkClass}>
+                      {t.verifyInvoice}
                     </Link>
                     <Link href="/contact" className={navLinkClass}>
                       {t.help}
@@ -115,11 +106,8 @@ export default async function PublicHeader({
                 </div>
               </div>
 
-              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
-                <nav className="flex min-w-max items-center gap-5">
-                  <Link href="/promo" className={navLinkClass}>
-                    {t.promo}
-                  </Link>
+              <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
+                <nav className="flex min-w-max items-center gap-5 text-sm font-medium text-slate-700 sm:text-[15px]">
                   <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
                     {t.flight}
                   </Link>
@@ -135,11 +123,58 @@ export default async function PublicHeader({
                   <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
                     {t.seaShip}
                   </Link>
+                  <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
+                    {t.cruise}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
+                    {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
+                  </Link>
                   <Link href="/packages" className={activePackageLinkClass}>
                     {t.packageTour}
                   </Link>
+                </nav>
+              </div>
+
+              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
+                <nav className="flex min-w-max items-center gap-5">
+                  <Link href="/promo" className={navLinkClass}>
+                    {t.promo}
+                  </Link>
+                  <Link href="/customer/bookings" className={navLinkClass}>
+                    {t.orders}
+                  </Link>
+                  <a href="https://redfeng.co/kemitraan_tour/" className={navLinkClass}>
+                    {t.partnerTour}
+                  </a>
+                  <Link href="/verifikasi-invoice" className={navLinkClass}>
+                    {t.verifyInvoice}
+                  </Link>
                   <Link href="/contact" className={navLinkClass}>
                     {t.help}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
+                    {t.flight}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
+                    {t.hotel}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
+                    {t.train}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
+                    {t.seaShip}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
+                    {t.cruise}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
+                    {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
+                  </Link>
+                  <Link href="/packages" className={activePackageLinkClass}>
+                    {t.packageTour}
+                  </Link>
+                  <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
+                    {t.busTravel}
                   </Link>
                 </nav>
               </div>
@@ -206,26 +241,29 @@ export default async function PublicHeader({
 
           <div className="public-header-productnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
             <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
-              <Link href="/packages" className={activePackageLinkClass}>
-                {t.packageTour}
-              </Link>
               <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
                 {t.flight}
               </Link>
               <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
                 {t.hotel}
               </Link>
-              <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
-                {t.busTravel}
-              </Link>
               <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
                 {t.train}
+              </Link>
+              <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
+                {t.busTravel}
               </Link>
               <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
                 {t.seaShip}
               </Link>
               <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
                 {t.cruise}
+              </Link>
+              <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
+                {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
+              </Link>
+              <Link href="/packages" className={activePackageLinkClass}>
+                {t.packageTour}
               </Link>
             </nav>
           </div>
