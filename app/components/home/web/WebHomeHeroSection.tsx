@@ -369,11 +369,23 @@ function getFieldStateKey(stateKey: string, label: string) {
   return `${stateKey}:${getFieldSemanticKey(label)}`
 }
 
+function hasStandaloneWord(input: string, word: string) {
+  return new RegExp(`(^|\\s)${word}(\\s|$)`).test(input)
+}
+
+function isOriginLabel(normalized: string) {
+  return hasStandaloneWord(normalized, "dari") || normalized.includes("asal")
+}
+
+function isDestinationLabel(normalized: string) {
+  return hasStandaloneWord(normalized, "ke") || normalized.includes("tujuan")
+}
+
 function getFieldSemanticKey(label: string) {
   const normalized = label.toLowerCase()
 
-  if (normalized.includes("dari") || normalized.includes("asal")) return "origin"
-  if (normalized.includes("ke") || normalized.includes("tujuan")) return "destination"
+  if (isOriginLabel(normalized)) return "origin"
+  if (isDestinationLabel(normalized)) return "destination"
   if (normalized.includes("transit")) return "transit"
   if (normalized.includes("check-in")) return "checkin"
   if (normalized.includes("check-out")) return "checkout"
@@ -405,10 +417,8 @@ function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldD
   }
 
   if (
-    normalized.includes("dari") ||
-    normalized.includes("asal") ||
-    normalized.includes("ke") ||
-    normalized.includes("tujuan") ||
+    isOriginLabel(normalized) ||
+    isDestinationLabel(normalized) ||
     normalized.includes("destinasi") ||
     normalized.includes("trip") ||
     normalized.includes("event") ||
@@ -442,7 +452,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
   const current = [{ label: field.label, value: field.value, sublabel: field.sublabel, withChevron: field.withChevron, withSwap: field.withSwap }]
   let choices: HeroSearchFieldData[] = current
 
-  if (label.includes("dari") || label.includes("asal")) {
+  if (isOriginLabel(label)) {
     choices =
       activeTab === "flight"
         ? [...buildFlightAirportChoices(field.label), ...current]
@@ -459,7 +469,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
             { label: field.label, value: "Solo", sublabel: "Balapan", withSwap: field.withSwap },
             { label: field.label, value: "Malang", sublabel: "Kota Baru", withSwap: field.withSwap },
           ]
-  } else if (label.includes("ke") || label.includes("tujuan")) {
+  } else if (isDestinationLabel(label)) {
     choices =
       activeTab === "flight"
         ? [...buildFlightAirportChoices(field.label), ...current]
@@ -729,7 +739,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
 function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
   const normalized = field.label.toLowerCase()
 
-  if (normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) {
+  if (isOriginLabel(normalized) || isDestinationLabel(normalized)) {
     if (activeTab === "flight") {
       const city = extractFlightCity(choice.value)
       if (city) return getFlightRegionLabel(city)
@@ -768,7 +778,7 @@ function inferOptionGroup(activeTab: HeroTabKey, field: HeroSearchFieldData, cho
 function formatOptionPrimaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
   const normalized = field.label.toLowerCase()
 
-  if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+  if ((isOriginLabel(normalized) || isDestinationLabel(normalized)) && activeTab === "flight") {
     const code = extractFlightCode(choice.value)
     if (code) return code
     return extractFlightCity(choice.value)
@@ -780,7 +790,7 @@ function formatOptionPrimaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldD
 function formatOptionSecondaryLabel(activeTab: HeroTabKey, field: HeroSearchFieldData, choice: HeroSearchFieldData) {
   const normalized = field.label.toLowerCase()
 
-  if ((normalized.includes("dari") || normalized.includes("ke") || normalized.includes("asal") || normalized.includes("tujuan")) && activeTab === "flight") {
+  if ((isOriginLabel(normalized) || isDestinationLabel(normalized)) && activeTab === "flight") {
     return choice.sublabel ?? ""
   }
 
@@ -871,10 +881,8 @@ function getFlightRegionLabel(city: string) {
 function dedupeFieldChoices(choices: HeroSearchFieldData[], baseField: HeroSearchFieldData) {
   const normalizedLabel = baseField.label.toLowerCase()
   const isFlightAirportField =
-    normalizedLabel.includes("dari") ||
-    normalizedLabel.includes("ke") ||
-    normalizedLabel.includes("asal") ||
-    normalizedLabel.includes("tujuan")
+    isOriginLabel(normalizedLabel) ||
+    isDestinationLabel(normalizedLabel)
 
   const seen = new Set<string>()
   return choices
