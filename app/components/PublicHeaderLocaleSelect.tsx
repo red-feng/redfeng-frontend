@@ -56,22 +56,22 @@ export default function PublicHeaderLocaleSelect({
           }
         }}
         className={[baseClassName, className].filter(Boolean).join(" ")}
-      >
-        {availableLocales.includes("id") && (
-          <option value={mode === "currency" ? "IDR" : "id"} className={mode === "currency" ? "text-slate-900" : undefined}>
-            {mode === "currency" ? "IDR" : labels.langId}
-          </option>
-        )}
-        {availableLocales.includes("en") && (
-          <option value={mode === "currency" ? "USD" : "en"} className={mode === "currency" ? "text-slate-900" : undefined}>
-            {mode === "currency" ? "USD" : labels.langEn}
-          </option>
-        )}
-        {availableLocales.includes("zh") && (
-          <option value={mode === "currency" ? "CNY" : "zh"} className={mode === "currency" ? "text-slate-900" : undefined}>
-            {mode === "currency" ? "CNY" : labels.langZh}
-          </option>
-        )}
+        >
+          {availableLocales.includes("id") && (
+            <option value={mode === "currency" ? "IDR" : "id"} className={mode === "currency" ? "text-slate-900" : undefined}>
+              {mode === "currency" ? "IDR/ID" : labels.langId}
+            </option>
+          )}
+          {availableLocales.includes("en") && (
+            <option value={mode === "currency" ? "USD" : "en"} className={mode === "currency" ? "text-slate-900" : undefined}>
+              {mode === "currency" ? "USD/EN" : labels.langEn}
+            </option>
+          )}
+          {availableLocales.includes("zh") && (
+            <option value={mode === "currency" ? "CNY" : "zh"} className={mode === "currency" ? "text-slate-900" : undefined}>
+              {mode === "currency" ? "CNY/ZH" : labels.langZh}
+            </option>
+          )}
       </select>
       <span className={["pointer-events-none absolute inset-y-0 right-2 flex items-center", arrowClassName, iconClassName].filter(Boolean).join(" ")}>
         <svg viewBox="0 0 20 20" className="h-4 w-4 fill-current">

@@ -271,9 +271,9 @@ export default async function MerchantLayout({
                   locale={locale}
                   label={t.languageLabel}
                   options={[
-                    { value: "id", label: t.langId },
-                    { value: "en", label: t.langEn },
-                    { value: "zh", label: t.langZh },
+                    { value: "id", label: "IDR/ID" },
+                    { value: "en", label: "USD/EN" },
+                    { value: "zh", label: "CNY/ZH" },
                   ]}
                 />
                 <Link

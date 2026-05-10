@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from "react"
 import { type Locale } from "@/lib/i18n"
 
 const localeOptions: Array<{ value: Locale; label: string; badge: string }> = [
-  { value: "id", label: "Bahasa Indonesia", badge: "ID" },
-  { value: "en", label: "English", badge: "EN" },
-  { value: "zh", label: "中文", badge: "中文" },
+  { value: "id", label: "IDR/ID", badge: "IDR/ID" },
+  { value: "en", label: "USD/EN", badge: "USD/EN" },
+  { value: "zh", label: "CNY/ZH", badge: "CNY/ZH" },
 ]
 
 function FlagIcon({ locale }: { locale: Locale }) {
@@ -42,7 +42,7 @@ function FlagIcon({ locale }: { locale: Locale }) {
 
 function getLanguageLabel(locale: Locale) {
   if (locale === "en") return "Change language"
-  if (locale === "zh") return "切换语言"
+  if (locale === "zh") return "Switch language"
   return "Ganti bahasa"
 }
 

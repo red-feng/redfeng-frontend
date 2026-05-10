@@ -31,9 +31,9 @@ const providerConfig: Array<{
 ];
 
 const localeOptions: Array<{ value: Locale; label: string }> = [
-  { value: "id", label: "ID" },
-  { value: "en", label: "EN" },
-  { value: "zh", label: "ZH" },
+  { value: "id", label: "IDR/ID" },
+  { value: "en", label: "USD/EN" },
+  { value: "zh", label: "CNY/ZH" },
 ];
 
 function getSafeNextFromLocation() {
@@ -414,7 +414,7 @@ export default function CustomerAuthPanel({ mode, initialLocale }: { mode: Mode;
     };
   }, [openLocaleMenu]);
 
-  const localeLabel = localeOptions.find((option) => option.value === locale)?.label || "ID";
+  const localeLabel = localeOptions.find((option) => option.value === locale)?.label || "IDR/ID";
 
   const renderLocaleMenu = (placement: LocaleMenuPlacement) => {
     const isOpen = openLocaleMenu === placement;
