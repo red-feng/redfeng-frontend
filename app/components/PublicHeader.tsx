@@ -3,6 +3,8 @@ import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
+import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
+import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
 import {
   getPublicHeaderActivityLabel,
   publicHeaderProductNavItems,
@@ -115,14 +117,14 @@ export default async function PublicHeader({
                 {publicHeaderTopNavItems
                   .filter((item) => item.key !== "help")
                   .map((item) => (
-                  <div key={item.key}>
-                    {renderPublicHeaderLink({
-                      href: item.href,
-                      className: navLinkClass,
-                      label: t[item.key as keyof typeof t],
-                      external: item.external,
-                    })}
-                  </div>
+                    <div key={item.key}>
+                      {renderPublicHeaderLink({
+                        href: item.href,
+                        className: navLinkClass,
+                        label: t[item.key as keyof typeof t],
+                        external: item.external,
+                      })}
+                    </div>
                   ))}
               </nav>
 
@@ -145,6 +147,12 @@ export default async function PublicHeader({
                     }}
                   />
                 </div>
+                <NotificationBellLink
+                  items={defaultNotificationItems}
+                  className="text-white transition hover:text-[#ffd2c4]"
+                  iconClassName="h-5 w-5"
+                  badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+                />
                 <PublicHeaderAccountControls
                   locale={locale}
                   redirectSuperadminFromHome={redirectSuperadminFromHome}
