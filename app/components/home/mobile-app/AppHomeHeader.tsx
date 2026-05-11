@@ -14,10 +14,10 @@ export default function AppHomeHeader() {
         priority
         className="object-cover object-center"
       />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,252,248,0.12)_0%,rgba(255,255,255,0.04)_28%,rgba(255,255,255,0)_60%,rgba(255,255,255,0.14)_100%)]" />
-      <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_right,rgba(64,170,255,0.18),transparent_46%)]" />
-      <div className="absolute left-[-16%] top-[18%] h-40 w-40 rounded-full bg-white/24 blur-3xl" />
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.18)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,252,248,0.12)_0%,rgba(255,255,255,0.02)_32%,rgba(255,255,255,0)_64%,rgba(255,255,255,0.08)_100%)]" />
+      <div className="absolute inset-x-0 top-0 h-32 bg-[radial-gradient(circle_at_top_right,rgba(64,170,255,0.24),transparent_46%)]" />
+      <div className="absolute left-[-16%] top-[18%] h-44 w-44 rounded-full bg-white/30 blur-3xl" />
+      <div className="absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.14)_100%)]" />
 
       <div className={appHeaderLock.actionRowClass}>
         <Link
@@ -46,25 +46,13 @@ export default function AppHomeHeader() {
         </Link>
       </div>
 
-      <div className="relative z-10 pt-5">
-        <div className="rounded-[1.9rem] border border-white/65 bg-white/18 px-4 py-4 text-white shadow-[0_18px_30px_-26px_rgba(15,23,42,0.24)] backdrop-blur-[6px]">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80">RedFeng App</p>
-          <h1 className="mt-2 max-w-[16rem] text-[1.7rem] font-semibold leading-[1.02] tracking-[-0.045em]">
-            Semua kebutuhan perjalanan dalam satu layar
-          </h1>
-          <p className="mt-2 max-w-[18rem] text-[12px] leading-5 text-white/82">
-            Buka tiket, hotel, aktivitas, dan paket wisata lebih cepat lewat menu utama yang langsung siap dipakai.
-          </p>
-        </div>
-      </div>
-
-      <div className="relative z-10 pt-3">
+      <div className="relative z-10 pt-[0.7rem]">
         <div className={appHeaderLock.chipsWrapClass}>
           {appHomeConfig.quickChips.map((chip, index) => (
             <Link
               key={chip}
               href="/promo"
-              className={`shrink-0 rounded-full px-4.5 py-[0.62rem] text-[11px] font-semibold shadow-[0_14px_24px_-20px_rgba(15,23,42,0.18)] ${
+              className={`shrink-0 rounded-full px-6 py-[0.72rem] text-[12px] font-semibold shadow-[0_14px_24px_-20px_rgba(15,23,42,0.18)] ${
                 index === 0
                   ? "bg-[linear-gradient(180deg,#ff6a45_0%,#ef5b2a_100%)] text-white shadow-[0_16px_26px_-20px_rgba(239,91,42,0.48)]"
                   : "border border-white/75 bg-white/74 text-slate-900 shadow-[0_14px_24px_-22px_rgba(15,23,42,0.16)] backdrop-blur-md"
