@@ -63,10 +63,10 @@ export default async function PublicHeader({
   const isOverlay = variant === "overlay"
   const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-700 transition hover:bg-white/12 hover:text-[#ef5b2a]"
+    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-white transition hover:bg-white/12 hover:text-[#ffd2c4]"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none"
   const activePackageLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full border-b-2 border-[#ef4423] px-3 py-2 text-[14px] font-semibold text-[#ef4423] transition hover:bg-white/12 hover:text-orange-600"
+    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-white transition hover:bg-white/12 hover:text-[#ffd2c4]"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none"
 
   const topNav = (
@@ -97,71 +97,78 @@ export default async function PublicHeader({
   if (isOverlay) {
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
-        <div className="public-header-shell mx-auto max-w-7xl px-4 py-3 pt-5 md:px-6 md:py-5 md:pt-6">
-          <div className="rounded-[30px] border border-white/40 bg-white/40 px-5 py-4 shadow-[0_24px_60px_-34px_rgba(15,23,42,0.16)] backdrop-blur-2xl md:px-7 md:py-5">
-            <div className="flex flex-col gap-5">
-              <div className="flex items-center justify-between gap-5">
-                <a href="https://redfeng.co/" className="public-header-logo-link flex min-w-[12.75rem] items-center gap-3">
-                  <Image
-                    src="/home-assets/logo-redfeng-header.png"
-                    alt="Red Feng"
-                    width={1536}
-                    height={1024}
-                    priority
-                    className="public-header-logo h-[4.6rem] w-[12.75rem] object-contain object-left sm:h-[5rem] sm:w-[13.5rem] md:h-[5.25rem] md:w-[14.25rem]"
-                  />
-                </a>
+        <div className="public-header-shell mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
+          <div className="hidden flex-col items-center lg:flex">
+            <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-white">
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-4 top-2 flex items-center gap-2 md:left-6">
+                <Image
+                  src="/home-assets/logo-redfeng-header.png"
+                  alt="Red Feng"
+                  width={1536}
+                  height={1024}
+                  priority
+                  className="public-header-logo h-[9.5rem] w-[24.75rem] object-contain object-left"
+                />
+              </a>
 
-                <div className="hidden xl:flex xl:flex-1 xl:justify-center xl:pr-1">{topNav}</div>
-
-                <div className="flex items-center gap-3">
-                  <div className="hidden lg:block">
-                    <PublicHeaderLocaleSelect
-                      locale={locale}
-                      availableLocales={availableLocales}
-                      mode="currency"
-                      labels={{
-                        language: t.language,
-                        langId: t.langId,
-                        langEn: t.langEn,
-                        langZh: t.langZh,
-                      }}
-                    />
+              <nav className="ml-[12rem] flex items-center gap-1">
+                {publicHeaderTopNavItems.map((item) => (
+                  <div key={item.key}>
+                    {renderPublicHeaderLink({
+                      href: item.href,
+                      className: navLinkClass,
+                      label: t[item.key as keyof typeof t],
+                      external: item.external,
+                    })}
                   </div>
-                  <PublicHeaderAccountControls
+                ))}
+              </nav>
+
+              <div className="flex items-center gap-3">
+                <div className="hidden lg:block">
+                  <PublicHeaderLocaleSelect
                     locale={locale}
-                    redirectSuperadminFromHome={redirectSuperadminFromHome}
-                    initialRole={initialRole}
-                    variant={variant}
+                    availableLocales={availableLocales}
+                    mode="currency"
+                    labels={{
+                      language: t.language,
+                      langId: t.langId,
+                      langEn: t.langEn,
+                      langZh: t.langZh,
+                    }}
                   />
                 </div>
+                <PublicHeaderAccountControls
+                  locale={locale}
+                  redirectSuperadminFromHome={redirectSuperadminFromHome}
+                  initialRole={initialRole}
+                  variant={variant}
+                />
               </div>
+            </div>
 
-              <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
-                <div className="mt-1 flex w-[76.5%] items-center justify-center px-8 py-3">
-                  {productNav}
-                </div>
-              </div>
+            <div className="mt-1 flex w-[76.5%] items-center justify-center px-8 py-3">
+              {productNav}
+            </div>
+          </div>
 
-              <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
-                <div className="flex min-w-max items-center gap-5">
-                  {publicHeaderTopNavItems.map((item) => (
-                    <div key={item.key}>
-                      {renderPublicHeaderLink({
-                        href: item.href,
-                        className: navLinkClass,
-                        label: t[item.key as keyof typeof t],
-                        external: item.external,
-                      })}
-                    </div>
-                  ))}
-                  {publicHeaderProductNavItems.map((item) => (
-                    <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
-                      {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
-                    </Link>
-                  ))}
+          <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
+            <div className="flex min-w-max items-center gap-5 rounded-[24px] border border-white/35 bg-white/18 px-4 py-3 backdrop-blur-xl">
+              {publicHeaderTopNavItems.map((item) => (
+                <div key={item.key}>
+                  {renderPublicHeaderLink({
+                    href: item.href,
+                    className: navLinkClass,
+                    label: t[item.key as keyof typeof t],
+                    external: item.external,
+                  })}
                 </div>
-              </div>
+              ))}
+              {publicHeaderProductNavItems.map((item) => (
+                <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
+                  {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
