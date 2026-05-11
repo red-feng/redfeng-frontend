@@ -196,7 +196,76 @@ export default async function PublicHeader({
     <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
       <div className="public-header-shell mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
         <div className="flex flex-col gap-4 lg:gap-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="hidden flex-col items-center lg:flex">
+            <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-4 top-2 flex items-center gap-2 md:left-6">
+                <Image
+                  src="/home-assets/logo-redfeng-header.png"
+                  alt="Red Feng"
+                  width={1536}
+                  height={1024}
+                  priority
+                  className={`public-header-logo ${homeHeaderLock.desktopLogoClass}`}
+                />
+              </a>
+
+              <nav className={homeHeaderLock.desktopTopNavClass}>
+                {publicHeaderTopNavItems
+                  .filter((item) => item.key !== "help")
+                  .map((item) => (
+                    <div key={item.key}>
+                      {renderPublicHeaderLink({
+                        href: item.href,
+                        className: navLinkClass,
+                        label: t[item.key as keyof typeof t],
+                        external: item.external,
+                      })}
+                    </div>
+                  ))}
+              </nav>
+
+              <div className="flex items-center gap-3">
+                {renderPublicHeaderLink({
+                  href: "/contact",
+                  className: navLinkClass,
+                  label: t.help,
+                })}
+                <div className="hidden lg:block">
+                  <PublicHeaderLocaleSelect
+                    locale={locale}
+                    availableLocales={availableLocales}
+                    mode="currency"
+                    className="border-slate-200 bg-white/88 text-slate-900 shadow-sm hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
+                    iconClassName="text-slate-500"
+                    labels={{
+                      language: t.language,
+                      langId: t.langId,
+                      langEn: t.langEn,
+                      langZh: t.langZh,
+                    }}
+                  />
+                </div>
+                <NotificationBellLink
+                  items={defaultNotificationItems}
+                  className="text-slate-900 transition hover:text-[#ef4423]"
+                  iconClassName="h-5 w-5"
+                  badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+                />
+                <PublicHeaderAccountControls
+                  locale={locale}
+                  redirectSuperadminFromHome={redirectSuperadminFromHome}
+                  initialRole={initialRole}
+                  variant={variant}
+                />
+              </div>
+            </div>
+
+            <div className={homeHeaderLock.desktopProductRowClass}>
+              {productNav}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 lg:hidden">
             <a href="https://redfeng.co/" className="public-header-logo-link flex items-center gap-3">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
@@ -204,18 +273,18 @@ export default async function PublicHeader({
                 width={1536}
                 height={1024}
                 priority
-                className="public-header-logo h-9 w-auto sm:h-14 md:h-16 lg:h-20"
+                className="public-header-logo h-9 w-auto sm:h-14"
               />
             </a>
 
-            <div className="hidden xl:flex xl:flex-1 xl:justify-center">{topNav}</div>
-
             <div className="flex items-center gap-3">
-              <div className="hidden lg:block">
+              <div className="hidden sm:block">
                 <PublicHeaderLocaleSelect
                   locale={locale}
                   availableLocales={availableLocales}
                   mode="currency"
+                  className="border-slate-200 bg-white/88 text-slate-900 shadow-sm hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
+                  iconClassName="text-slate-500"
                   labels={{
                     language: t.language,
                     langId: t.langId,
@@ -233,11 +302,11 @@ export default async function PublicHeader({
             </div>
           </div>
 
-          <div className="public-header-topnav overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
+          <div className="public-header-topnav overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
             {topNav}
           </div>
 
-          <div className="public-header-productnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
+          <div className="public-header-productnav overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden">
             {productNav}
           </div>
         </div>
