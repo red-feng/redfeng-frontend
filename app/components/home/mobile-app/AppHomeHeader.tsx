@@ -1,11 +1,12 @@
 import Image from "next/image"
 import Link from "next/link"
 
+import { appHeaderLock } from "@/app/components/home/shared/appHeaderLock"
 import { appHomeConfig } from "@/app/components/home/shared/homeContent"
 
 export default function AppHomeHeader() {
   return (
-    <div className="relative overflow-hidden rounded-b-[56px] px-3.5 pb-[11.5rem] pt-[calc(env(safe-area-inset-top)+1.05rem)] shadow-[0_28px_48px_-32px_rgba(15,23,42,0.26)]">
+    <div className={appHeaderLock.containerClass}>
       <Image
         src="/home-assets/hero-header-background.png"
         alt="Pemandangan pegunungan untuk hero RedFeng"
@@ -18,10 +19,10 @@ export default function AppHomeHeader() {
       <div className="absolute left-[-16%] top-[18%] h-44 w-44 rounded-full bg-white/30 blur-3xl" />
       <div className="absolute inset-x-0 bottom-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.14)_100%)]" />
 
-      <div className="relative z-10 flex items-center gap-2.5">
+      <div className={appHeaderLock.actionRowClass}>
         <Link
           href="/search"
-          className="flex h-[3.75rem] min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-full border border-white/75 bg-white/76 px-5 text-left text-[#6a879d] shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
+          className={appHeaderLock.searchTriggerClass}
         >
           <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden text-sky-500">
             <SearchIcon className="h-[22px] w-[22px]" />
@@ -30,7 +31,7 @@ export default function AppHomeHeader() {
         </Link>
         <Link
           href="/promo"
-          className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white/74 text-sky-500 shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
+          className={`relative ${appHeaderLock.utilityButtonClass}`}
           aria-label="Promo"
         >
           <PercentCircleIcon className="h-8 w-8" />
@@ -38,7 +39,7 @@ export default function AppHomeHeader() {
         </Link>
         <Link
           href="/chat"
-          className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/75 bg-white/74 text-sky-500 shadow-[0_18px_28px_-22px_rgba(15,23,42,0.2)] backdrop-blur-md"
+          className={appHeaderLock.utilityButtonClass}
           aria-label="Chat"
         >
           <ChatBubbleIcon className="h-7 w-7" />
@@ -46,7 +47,7 @@ export default function AppHomeHeader() {
       </div>
 
       <div className="relative z-10 pt-[0.7rem]">
-        <div className="flex gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className={appHeaderLock.chipsWrapClass}>
           {appHomeConfig.quickChips.map((chip, index) => (
             <Link
               key={chip}

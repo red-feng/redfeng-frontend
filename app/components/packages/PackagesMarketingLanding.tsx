@@ -1,12 +1,12 @@
 import Image from "next/image"
 import Link from "next/link"
+import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PackagesHeroSearch from "@/app/components/packages/PackagesHeroSearch"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
-import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 import { dictionaries, type Locale } from "@/lib/i18n"
@@ -364,11 +364,11 @@ export default async function PackagesMarketingLanding() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff8ef_0%,#fffdf9_36%,#f8fafc_72%,#eff5fb_100%)] pb-36 md:pb-0">
       <PublicInstallPrompt locale={locale} />
-      <SimplePublicLogoHeader />
+      <PublicHeader locale={locale} variant="overlay" />
 
-      <main className={`${homeLayoutLock.pageXClass} pb-14 pt-3 md:pt-4`}>
+      <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
         <section className={`${homeLayoutLock.contentWidthClass} overflow-hidden ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
-          <div className="relative min-h-[860px] px-4 pb-8 pt-10 sm:px-6 sm:pb-10 sm:pt-12 lg:min-h-[900px] lg:px-8 lg:pt-14 xl:min-h-[940px]">
+          <div className="relative min-h-[860px] px-4 pb-8 pt-[108px] sm:px-6 sm:pb-10 md:pt-[126px] lg:min-h-[900px] lg:px-8 xl:min-h-[940px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"

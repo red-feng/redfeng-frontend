@@ -1,11 +1,11 @@
 import Image from "next/image"
 import HomeResultsClient from "@/app/HomeResultsClient"
+import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
-import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 
@@ -46,11 +46,11 @@ export default async function PackagesCatalogPage({
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicInstallPrompt locale={locale} />
-      <SimplePublicLogoHeader />
+      <PublicHeader locale={locale} variant="overlay" />
 
-      <section className={`${homeLayoutLock.pageXClass} pb-5 pt-3 md:pb-6 md:pt-4`}>
+      <section className={`${homeLayoutLock.pageXClass} pb-5 pt-2 md:pb-6 md:pt-3`}>
         <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
-          <div className="relative min-h-[420px] px-5 pb-3 pt-10 sm:min-h-[470px] sm:px-6 sm:pb-4 sm:pt-12 lg:min-h-[520px] lg:px-8 lg:pb-5 lg:pt-14">
+          <div className="relative min-h-[420px] px-5 pb-3 pt-[104px] sm:min-h-[470px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[520px] lg:px-8 lg:pb-5 lg:pt-[130px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="RedFeng package catalog hero"

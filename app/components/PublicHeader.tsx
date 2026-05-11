@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { homeHeaderLock } from "@/app/components/home/shared/homeHeaderLock"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
@@ -101,7 +102,7 @@ export default async function PublicHeader({
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className="public-header-shell mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
           <div className="hidden flex-col items-center lg:flex">
-            <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-slate-900">
+            <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a href="https://redfeng.co/" className="public-header-logo-link absolute left-4 top-2 flex items-center gap-2 md:left-6">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
@@ -109,11 +110,11 @@ export default async function PublicHeader({
                   width={1536}
                   height={1024}
                   priority
-                  className="public-header-logo h-[9.5rem] w-[24.75rem] object-contain object-left"
+                  className={`public-header-logo ${homeHeaderLock.desktopLogoClass}`}
                 />
               </a>
 
-              <nav className="ml-[12rem] flex items-center gap-1">
+              <nav className={homeHeaderLock.desktopTopNavClass}>
                 {publicHeaderTopNavItems
                   .filter((item) => item.key !== "help")
                   .map((item) => (
@@ -162,7 +163,7 @@ export default async function PublicHeader({
               </div>
             </div>
 
-            <div className="mt-1 flex w-[76.5%] items-center justify-center px-8 py-3">
+            <div className={homeHeaderLock.desktopProductRowClass}>
               {productNav}
             </div>
           </div>

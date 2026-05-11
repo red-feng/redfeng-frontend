@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { MenuIcon } from "@/app/components/home/shared/homeContent"
+import { homeHeaderLock } from "@/app/components/home/shared/homeHeaderLock"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
 import NotificationBellLink from "@/app/components/notifications/NotificationBellLink"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
@@ -37,13 +38,13 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
           quality={100}
           unoptimized
           priority
-          className="home-hero-logo h-[9.5rem] w-[24.75rem] object-contain object-left"
+          className={`home-hero-logo ${homeHeaderLock.desktopLogoClass}`}
         />
       </Link>
 
       <div className="hidden flex-col items-center lg:flex">
-        <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-white">
-          <nav className="ml-[12rem] flex items-center gap-1">
+        <div className={`${homeHeaderLock.desktopTopRowClass} text-white`}>
+          <nav className={homeHeaderLock.desktopTopNavClass}>
             {publicHeaderTopNavItems
               .filter((item) => item.key !== "help")
               .map((item) =>
@@ -86,8 +87,8 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
           </div>
         </div>
 
-        <div className="mt-1 flex w-[76.5%] items-center justify-center px-8 py-3">
-          <nav className="home-hero-primary-nav flex items-center gap-1 text-[15px] font-semibold text-white">
+        <div className={homeHeaderLock.desktopProductRowClass}>
+          <nav className={`home-hero-primary-nav ${homeHeaderLock.desktopProductNavClass} font-semibold text-white`}>
             {publicHeaderProductNavItems.map((item) => (
               <Link key={item.key} href={item.href} className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
                 {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
