@@ -40,12 +40,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const midtransClientKey = getOptionalEnv("NEXT_PUBLIC_MIDTRANS_CLIENT_KEY");
+  const displayModeBootstrap = `
+    (() => {
+      try {
+        const isStandalone =
+          window.matchMedia("(display-mode: standalone)").matches ||
+          window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+          ("standalone" in window.navigator && Boolean(window.navigator.standalone));
+
+        document.documentElement.dataset.displayMode = isStandalone ? "standalone" : "browser";
+      } catch (_error) {
+        document.documentElement.dataset.displayMode = "browser";
+      }
+    })();
+  `;
 
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body
         className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_26%,#f5f7fb_100%)] antialiased"
       >
+        <Script id="display-mode-bootstrap" strategy="beforeInteractive">
+          {displayModeBootstrap}
+        </Script>
         <PublicPerformanceTracker />
         <ServiceWorkerRegistrar />
         <AppDisplayModeBridge />
