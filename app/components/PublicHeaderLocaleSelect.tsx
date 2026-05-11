@@ -37,13 +37,21 @@ export default function PublicHeaderLocaleSelect({
   }
 
   const selectValue = mode === "currency" ? localeCurrencyMap[locale] : locale
+  const wrapperClassName =
+    mode === "currency"
+      ? tone === "dark"
+        ? "rounded-full border border-slate-200 bg-white/88 shadow-sm transition hover:border-orange-200 hover:bg-white"
+        : tone === "glass-dark"
+          ? "rounded-full border border-white/40 bg-white/18 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl transition hover:border-white/60 hover:bg-white/26"
+          : "rounded-full border border-white/15 bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition hover:border-white/25 hover:bg-white/[0.08]"
+      : ""
   const baseClassName =
     mode === "currency"
       ? tone === "dark"
-        ? "min-h-[42px] appearance-none rounded-full border border-slate-200 bg-white/88 py-2 pl-3.5 pr-9 text-sm font-semibold text-slate-900 shadow-sm outline-none transition hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
+        ? "min-h-[42px] w-full appearance-none rounded-full bg-transparent py-2 pl-3.5 pr-9 text-sm font-semibold text-slate-900 outline-none transition hover:text-[#ef4423] focus:text-slate-900"
         : tone === "glass-dark"
-          ? "min-h-[42px] appearance-none rounded-full border border-white/40 bg-white/18 py-2 pl-3.5 pr-9 text-sm font-semibold text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] backdrop-blur-xl outline-none transition hover:border-white/60 hover:bg-white/26 hover:text-[#ef4423] focus:border-white/60"
-          : "min-h-[42px] appearance-none rounded-full border border-white/15 bg-white/[0.04] py-2 pl-3.5 pr-9 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] outline-none transition hover:border-white/25 hover:bg-white/[0.08] hover:text-[#ffd2c4] focus:border-white/35"
+          ? "min-h-[42px] w-full appearance-none rounded-full bg-transparent py-2 pl-3.5 pr-9 text-sm font-semibold text-slate-900 outline-none transition hover:text-[#ef4423] focus:text-slate-900"
+          : "min-h-[42px] w-full appearance-none rounded-full bg-transparent py-2 pl-3.5 pr-9 text-sm font-semibold text-white outline-none transition hover:text-[#ffd2c4] focus:text-white"
       : "min-h-[40px] appearance-none rounded-full border border-orange-100 bg-white/90 py-2 pl-3 pr-8 text-sm font-medium text-slate-700 shadow-sm outline-none transition hover:text-orange-600 focus:border-orange-200 focus:text-orange-600 sm:border-transparent sm:bg-transparent sm:py-1 sm:pl-1 sm:shadow-none"
   const arrowClassName =
     mode === "currency"
@@ -53,7 +61,7 @@ export default function PublicHeaderLocaleSelect({
       : "text-slate-400"
 
   return (
-    <label className="relative block shrink-0">
+    <label className={["relative block shrink-0", wrapperClassName].filter(Boolean).join(" ")}>
       <span className="sr-only">{labels.language}</span>
       <select
         value={selectValue}
