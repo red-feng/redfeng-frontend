@@ -5,6 +5,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 
@@ -47,9 +48,9 @@ export default async function PackagesCatalogPage({
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <section className="px-4 pb-5 pt-2 sm:px-5 md:px-8 md:pb-6 md:pt-3">
-        <div className="mx-auto max-w-[1360px] overflow-hidden rounded-[34px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]">
-          <div className="relative min-h-[420px] px-5 pb-3 pt-[104px] sm:min-h-[470px] sm:px-7 sm:pb-4 sm:pt-[118px] lg:min-h-[520px] lg:px-10 lg:pb-5 lg:pt-[130px]">
+      <section className={`${homeLayoutLock.pageXClass} pb-5 pt-2 md:pb-6 md:pt-3`}>
+        <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
+          <div className="relative min-h-[420px] px-5 pb-3 pt-[104px] sm:min-h-[470px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[520px] lg:px-8 lg:pb-5 lg:pt-[130px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="RedFeng package catalog hero"
@@ -63,7 +64,7 @@ export default async function PackagesCatalogPage({
               alt="RedFeng package catalog hero"
               fill
               priority
-              sizes="(max-width: 1440px) 100vw, 1360px"
+              sizes="(max-width: 1440px) 100vw, 1280px"
               className="hidden object-cover object-center sm:block"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.97)_0%,rgba(255,248,241,0.88)_30%,rgba(255,244,235,0.54)_58%,rgba(255,243,236,0.14)_100%)]" />
@@ -84,8 +85,8 @@ export default async function PackagesCatalogPage({
         </div>
       </section>
 
-      <section className="-mt-8 px-4 pb-1 sm:px-6 md:px-8 lg:-mt-12">
-        <div id="package-search" className="mx-auto max-w-[1360px]">
+      <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-1 lg:-mt-12`}>
+        <div id="package-search" className={homeLayoutLock.contentWidthClass}>
           <SearchBar
             key={`search:${locale}:${searchParamsKey}`}
             locale={locale}

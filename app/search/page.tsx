@@ -5,6 +5,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 
@@ -58,15 +59,15 @@ export default async function SearchResultsPage({
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} />
 
-      <section className="px-4 pb-5 pt-5 sm:px-6 md:px-8 md:pb-6 md:pt-7">
-        <div className="mx-auto max-w-[1360px] overflow-hidden rounded-[34px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]">
-          <div className="relative min-h-[360px] px-5 pb-3 pt-8 sm:min-h-[410px] sm:px-7 sm:pb-4 sm:pt-9 lg:min-h-[470px] lg:px-10 lg:pb-5 lg:pt-10">
+      <section className={`${homeLayoutLock.pageXClass} pb-5 pt-5 md:pb-6 md:pt-7`}>
+        <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
+          <div className="relative min-h-[360px] px-5 pb-3 pt-8 sm:min-h-[410px] sm:px-6 sm:pb-4 sm:pt-9 lg:min-h-[470px] lg:px-8 lg:pb-5 lg:pt-10">
             <Image
               src="/home-assets/background-hero-tour-package.png"
               alt="RedFeng search hero"
               fill
               priority
-              sizes="(max-width: 1440px) 100vw, 1360px"
+              sizes="(max-width: 1440px) 100vw, 1280px"
               className="object-cover object-center"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.94)_0%,rgba(255,248,241,0.84)_34%,rgba(255,244,235,0.46)_62%,rgba(255,243,236,0.18)_100%)]" />
@@ -87,8 +88,8 @@ export default async function SearchResultsPage({
         </div>
       </section>
 
-      <section className="-mt-8 px-4 pb-1 sm:px-6 md:px-8 lg:-mt-12">
-        <div id="package-search" className="mx-auto max-w-[1360px]">
+      <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-1 lg:-mt-12`}>
+        <div id="package-search" className={homeLayoutLock.contentWidthClass}>
           <SearchBar
             key={`search:${locale}:${searchParamsKey}`}
             locale={locale}

@@ -15,6 +15,7 @@ import {
   HeroSearchMobile,
   HeroTabs,
 } from "@/app/components/home/web/hero"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 
 export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
@@ -35,15 +36,15 @@ export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
       <div className="relative min-h-[500px] overflow-hidden bg-[#081f42]">
         <DesktopHeroBackdrop />
 
-        <div className="home-hero-shell relative mx-auto max-w-[1280px] px-5 pb-[5.25rem] pt-6 sm:px-6 lg:px-8">
+        <div className={`home-hero-shell ${homeLayoutLock.heroShellClass}`}>
           <HeroHeader locale={locale} />
           <MobileHeroBackdrop />
           <HeroIntro locale={locale} />
         </div>
       </div>
 
-      <div className="home-hero-search-wrap relative z-[220] mx-auto -mt-32 max-w-[1280px] overflow-visible px-4 pb-8 sm:-mt-36 sm:px-6 lg:-mt-[12.5rem] lg:px-8 lg:pb-10">
-        <div className="home-hero-search-card relative z-[220] overflow-visible rounded-[32px] border border-[#edf1f5] bg-white shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)]">
+      <div className={`home-hero-search-wrap ${homeLayoutLock.floatingSearchShellClass}`}>
+        <div className={`home-hero-search-card relative z-[220] overflow-visible ${homeLayoutLock.cardRadiusClass} border border-[#edf1f5] bg-white shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)]`}>
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} locale={locale} />
           <HeroSearchPanel
             activeTab={activeTab}
@@ -1036,10 +1037,6 @@ function formatDateForLocale(date: Date, locale: Locale) {
   const monthLabels = {
     en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     zh: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"],
-  }
-  const weekdayLabels = {
-    en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-    zh: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"],
   }
 
   if (locale === "en") {

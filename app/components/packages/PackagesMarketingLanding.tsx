@@ -4,6 +4,7 @@ import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PackagesHeroSearch from "@/app/components/packages/PackagesHeroSearch"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
 import { getCurrentLocale } from "@/lib/locale"
@@ -365,9 +366,9 @@ export default async function PackagesMarketingLanding() {
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <main className="px-3 pb-14 pt-2 sm:px-5 md:px-8 md:pt-3">
-        <section className="mx-auto max-w-[1360px] overflow-hidden rounded-[32px] bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)] sm:rounded-[40px]">
-          <div className="relative min-h-[860px] px-4 pb-8 pt-[108px] sm:px-7 sm:pb-10 md:pt-[126px] lg:min-h-[900px] lg:px-10 xl:min-h-[940px]">
+      <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
+        <section className={`${homeLayoutLock.contentWidthClass} overflow-hidden ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
+          <div className="relative min-h-[860px] px-4 pb-8 pt-[108px] sm:px-6 sm:pb-10 md:pt-[126px] lg:min-h-[900px] lg:px-8 xl:min-h-[940px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
@@ -381,7 +382,7 @@ export default async function PackagesMarketingLanding() {
               alt="Travel package hero"
               fill
               priority
-              sizes="(max-width: 1440px) 100vw, 1360px"
+              sizes="(max-width: 1440px) 100vw, 1280px"
               className="hidden object-cover object-center sm:block"
             />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,241,0.98)_0%,rgba(255,248,241,0.9)_24%,rgba(255,240,231,0.58)_50%,rgba(255,247,243,0.12)_100%)]" />
@@ -403,7 +404,7 @@ export default async function PackagesMarketingLanding() {
             </div>
 
             <div className="relative z-10 mt-[350px] sm:mt-[380px] lg:mt-[430px]">
-              <div className="mx-auto max-w-[1180px] rounded-[32px] border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4">
+              <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
                 <PackagesHeroFilterBar
                   locale={locale}
                   countries={searchBarCountries}
@@ -455,7 +456,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-8 max-w-[1360px] rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:rounded-[32px] sm:p-6">
+        <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-8 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
               <h2 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{copy.promoTitle}</h2>
@@ -494,7 +495,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-10 max-w-[1360px]">
+        <section className={`${homeLayoutLock.contentWidthClass} mt-10`}>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.popularTitle}</h2>
             <Link href="/packages/catalog" className="text-sm font-semibold text-[#ef4423] transition hover:text-[#d93b1d]">
@@ -525,7 +526,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-10 max-w-[1360px]">
+        <section className={`${homeLayoutLock.contentWidthClass} mt-10`}>
           <div className="flex items-center justify-between gap-4">
             <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.recommendationTitle}</h2>
             <div className="hidden items-center gap-2 md:flex">
@@ -561,7 +562,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className="mx-auto mt-10 max-w-[1360px] overflow-hidden rounded-[28px] border border-[#f0ddd2] bg-[linear-gradient(90deg,#fff0eb_0%,#fff6f2_40%,#fff9f5_100%)] shadow-[0_26px_70px_-44px_rgba(15,23,42,0.16)] sm:rounded-[30px]">
+        <section className={`${homeLayoutLock.contentWidthClass} mt-10 overflow-hidden rounded-[28px] border border-[#f0ddd2] bg-[linear-gradient(90deg,#fff0eb_0%,#fff6f2_40%,#fff9f5_100%)] shadow-[0_26px_70px_-44px_rgba(15,23,42,0.16)] sm:rounded-[30px]`}>
           <div className="grid gap-6 px-4 py-6 sm:px-5 lg:grid-cols-[1fr_1.2fr_260px] lg:items-center lg:px-8">
             <div>
               <h2 className="text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">{copy.newsletterTitle}</h2>

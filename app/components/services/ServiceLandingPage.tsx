@@ -1,5 +1,6 @@
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import type { Locale } from "@/lib/i18n"
@@ -16,8 +17,8 @@ export default function ServiceLandingPage({ locale, service }: ServiceLandingPa
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} />
 
-      <main className="px-4 pb-10 pt-5 sm:px-6 md:px-8 md:pb-14 md:pt-7">
-        <div className="mx-auto max-w-[1360px] space-y-6">
+      <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14 md:pt-7`}>
+        <div className={`${homeLayoutLock.contentWidthClass} space-y-6`}>
           <section className={`overflow-hidden rounded-[32px] border border-white/50 bg-gradient-to-br ${service.accent} p-6 text-white shadow-[0_28px_90px_-42px_rgba(15,23,42,0.42)] sm:p-7 lg:p-8`}>
             <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
               <div>
