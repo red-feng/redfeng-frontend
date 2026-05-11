@@ -368,7 +368,7 @@ export default async function PackagesMarketingLanding() {
 
       <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
         <section className={`${homeLayoutLock.contentWidthClass} overflow-hidden ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
-          <div className="relative min-h-[860px] px-4 pb-8 pt-[108px] sm:px-6 sm:pb-10 md:pt-[126px] lg:min-h-[900px] lg:px-8 xl:min-h-[940px]">
+          <div className="relative min-h-[660px] px-4 pb-8 pt-[104px] sm:px-6 sm:pb-10 md:pt-[118px] lg:min-h-[700px] lg:px-8 xl:min-h-[740px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
@@ -389,7 +389,7 @@ export default async function PackagesMarketingLanding() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[640px] pt-5 sm:pt-8 lg:pt-12">
+            <div className="relative z-10 max-w-[640px] pt-4 sm:pt-6 lg:pt-8">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
               <h1 className="mt-4 max-w-[620px] text-[36px] font-semibold leading-[0.98] tracking-[-0.06em] text-slate-950 sm:text-[56px] lg:text-[72px] xl:text-[76px]">
                 {copy.title}
@@ -403,7 +403,7 @@ export default async function PackagesMarketingLanding() {
               </div>
             </div>
 
-            <div className="relative z-10 mt-[350px] sm:mt-[380px] lg:mt-[430px]">
+            <div className="relative z-10 mt-[210px] sm:mt-[230px] lg:mt-[260px]">
               <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
                 <PackagesHeroFilterBar
                   locale={locale}
