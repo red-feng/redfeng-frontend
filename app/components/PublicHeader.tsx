@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { homeHeaderLock } from "@/app/components/home/shared/homeHeaderLock"
+import { publicHeaderBaseline } from "@/app/components/publicHeaderBaseline"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
@@ -100,10 +101,10 @@ export default async function PublicHeader({
   if (isOverlay) {
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
-        <div className="public-header-shell relative mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
+        <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-8 top-8 flex items-center gap-2">
+              <a href="https://redfeng.co/" className={`public-header-logo-link ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -140,7 +141,7 @@ export default async function PublicHeader({
                     locale={locale}
                     availableLocales={availableLocales}
                     mode="currency"
-                    tone="glass-dark"
+                    tone={publicHeaderBaseline.desktopLocaleTone}
                     labels={{
                       language: t.language,
                       langId: t.langId,
@@ -195,11 +196,11 @@ export default async function PublicHeader({
 
   return (
     <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
-      <div className="public-header-shell relative mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
+      <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopDefaultPaddingClass}`}>
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-8 top-8 flex items-center gap-2">
+              <a href="https://redfeng.co/" className={`public-header-logo-link ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -236,7 +237,7 @@ export default async function PublicHeader({
                     locale={locale}
                     availableLocales={availableLocales}
                     mode="currency"
-                    tone="glass-dark"
+                    tone={publicHeaderBaseline.desktopLocaleTone}
                     labels={{
                       language: t.language,
                       langId: t.langId,
