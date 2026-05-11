@@ -103,7 +103,7 @@ export default async function PublicHeader({
         <div className="public-header-shell relative mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-4 flex items-center gap-2">
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-6 flex items-center gap-2">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -140,8 +140,7 @@ export default async function PublicHeader({
                     locale={locale}
                     availableLocales={availableLocales}
                     mode="currency"
-                    className="border-slate-200 bg-white/88 text-slate-900 shadow-sm hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
-                    iconClassName="text-slate-500"
+                    tone="dark"
                     labels={{
                       language: t.language,
                       langId: t.langId,
@@ -200,7 +199,7 @@ export default async function PublicHeader({
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-4 flex items-center gap-2">
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-6 flex items-center gap-2">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -237,8 +236,7 @@ export default async function PublicHeader({
                     locale={locale}
                     availableLocales={availableLocales}
                     mode="currency"
-                    className="border-slate-200 bg-white/88 text-slate-900 shadow-sm hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
-                    iconClassName="text-slate-500"
+                    tone="dark"
                     labels={{
                       language: t.language,
                       langId: t.langId,
@@ -285,8 +283,7 @@ export default async function PublicHeader({
                   locale={locale}
                   availableLocales={availableLocales}
                   mode="currency"
-                  className="border-slate-200 bg-white/88 text-slate-900 shadow-sm hover:border-orange-200 hover:bg-white hover:text-[#ef4423] focus:border-orange-200"
-                  iconClassName="text-slate-500"
+                  tone="dark"
                   labels={{
                     language: t.language,
                     langId: t.langId,
