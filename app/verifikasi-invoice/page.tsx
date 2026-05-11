@@ -1,5 +1,6 @@
 import Link from "next/link"
 import PublicHeader from "@/app/components/PublicHeader"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatBookingCode, formatMerchantCode } from "@/lib/merchant-code"
 import { normalizeLocale } from "@/lib/i18n"
@@ -616,8 +617,11 @@ export default async function VerificationPage({ searchParams }: VerificationPag
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff7ed_0%,#fffbf5_24%,#f5f5f4_100%)]">
       <PublicHeader locale={locale} />
 
-      <main className="mx-auto max-w-6xl px-4 py-10 md:px-6 md:py-14">
-        <section className="overflow-hidden rounded-[36px] border border-orange-200/80 bg-[linear-gradient(135deg,#8a2d0a_0%,#f76707_62%,#ffb55a_100%)] p-8 text-white shadow-[0_32px_80px_-40px_rgba(124,45,18,0.7)] md:p-10">
+      <main className={`${homeLayoutLock.pageXClass} py-10 md:py-14`}>
+        <div className={homeLayoutLock.contentWidthClass}>
+        <section
+          className={`${homeLayoutLock.cardRadiusClass} overflow-hidden border border-orange-200/80 bg-[linear-gradient(135deg,#8a2d0a_0%,#f76707_62%,#ffb55a_100%)] p-8 text-white shadow-[0_32px_80px_-40px_rgba(124,45,18,0.7)] md:p-10`}
+        >
           <p className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-50">
             {t.heroBadge}
           </p>
@@ -879,7 +883,7 @@ export default async function VerificationPage({ searchParams }: VerificationPag
               </div>
             </section>
 
-            <section className="mt-8 rounded-[32px] border border-orange-100 bg-white p-7 shadow-sm">
+            <section className={`mt-8 ${homeLayoutLock.cardRadiusClass} border border-orange-100 bg-white p-7 shadow-sm`}>
                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-500">{t.pickupTimeline}</p>
                <h2 className="mt-3 text-2xl font-semibold text-slate-900">{t.pickupStatusTitle}</h2>
               <div className="mt-6 grid gap-4 md:grid-cols-3">
@@ -900,6 +904,7 @@ export default async function VerificationPage({ searchParams }: VerificationPag
             </section>
           </>
         )}
+        </div>
       </main>
     </div>
   )

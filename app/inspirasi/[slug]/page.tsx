@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import {
@@ -40,9 +41,9 @@ export default async function InspirationDetailPage({ params }: InspirationDetai
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicHeader locale={locale} />
 
-      <main className="px-4 pb-8 pt-5 sm:px-6 md:px-8 md:pb-10 md:pt-7">
-        <div className="mx-auto max-w-[1120px] space-y-6">
-          <section className="rounded-[32px] border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7">
+      <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
+        <div className={`${homeLayoutLock.wideContentWidthClass} space-y-6`}>
+          <section className={`${homeLayoutLock.cardRadiusClass} border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7`}>
             <span className="inline-flex rounded-full bg-[#fff3ef] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ef3b2d]">
               {item.category}
             </span>
@@ -52,7 +53,7 @@ export default async function InspirationDetailPage({ params }: InspirationDetai
             <p className="mt-3 text-sm leading-7 text-slate-600">{item.readTime}</p>
           </section>
 
-          <section className="overflow-hidden rounded-[32px] border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]">
+          <section className={`overflow-hidden ${homeLayoutLock.cardRadiusClass} border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]`}>
             <div className="h-[240px] bg-cover bg-center sm:h-[320px]" style={{ backgroundImage: `linear-gradient(180deg, rgba(15,23,42,0.08) 0%, rgba(15,23,42,0.18) 100%), url('${item.image}')` }} />
             <div className="p-6 sm:p-7">
               <p className="text-sm leading-8 text-slate-700">{item.bodyIntro}</p>

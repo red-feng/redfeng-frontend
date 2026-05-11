@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import {
@@ -40,15 +41,15 @@ export default async function PopularBookingDetailPage({ params }: PopularBookin
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicHeader locale={locale} />
 
-      <main className="px-4 pb-8 pt-5 sm:px-6 md:px-8 md:pb-10 md:pt-7">
-        <div className="mx-auto max-w-[1360px] space-y-6">
-          <section className="rounded-[32px] border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7">
+      <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
+        <div className={`${homeLayoutLock.contentWidthClass} space-y-6`}>
+          <section className={`${homeLayoutLock.cardRadiusClass} border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7`}>
             <Link href="/" className="inline-flex text-[13px] font-semibold text-orange-600 transition hover:text-orange-700">
               Kembali ke beranda
             </Link>
           </section>
 
-          <section className="overflow-hidden rounded-[32px] border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]">
+          <section className={`overflow-hidden ${homeLayoutLock.cardRadiusClass} border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]`}>
             <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
               <div className="relative min-h-[280px] bg-slate-900">
                 <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />

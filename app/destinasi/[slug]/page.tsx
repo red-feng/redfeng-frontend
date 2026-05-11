@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import {
@@ -40,9 +41,9 @@ export default async function DestinationDetailPage({ params }: DestinationDetai
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicHeader locale={locale} />
 
-      <main className="px-4 pb-8 pt-5 sm:px-6 md:px-8 md:pb-10 md:pt-7">
-        <div className="mx-auto max-w-[1240px] space-y-6">
-          <section className="overflow-hidden rounded-[32px] border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]">
+      <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
+        <div className={`${homeLayoutLock.contentWidthClass} space-y-6`}>
+          <section className={`overflow-hidden ${homeLayoutLock.cardRadiusClass} border border-[#eef2f6] bg-white shadow-[0_24px_70px_-38px_rgba(15,23,42,0.12)]`}>
             <div className="relative h-[280px] sm:h-[360px]">
               <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url('${item.image}')` }} />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.08)_0%,rgba(15,23,42,0.72)_100%)]" />

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 
 export const metadata: Metadata = {
   title: "Terms of Service | Red Feng",
@@ -46,12 +47,14 @@ const sections = [
 
 export default function TermsPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f6f3ee] px-4 py-8 md:px-6 md:py-10">
+    <main className={`relative min-h-screen overflow-hidden bg-[#f6f3ee] ${homeLayoutLock.pageXClass} py-8 md:py-10`}>
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(251,146,60,0.2),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(194,65,12,0.14),_transparent_24%),linear-gradient(180deg,#fbf7f1_0%,#f4efe8_100%)]" />
       <div className="absolute left-[-7rem] top-24 h-72 w-72 rounded-full bg-orange-200/40 blur-3xl" />
       <div className="absolute bottom-0 right-[-6rem] h-80 w-80 rounded-full bg-amber-100/80 blur-3xl" />
 
-      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[36px] border border-white/70 bg-white shadow-[0_30px_120px_rgba(95,45,12,0.12)]">
+      <div
+        className={`relative ${homeLayoutLock.contentWidthClass} overflow-hidden ${homeLayoutLock.cardRadiusClass} border border-white/70 bg-white shadow-[0_30px_120px_rgba(95,45,12,0.12)]`}
+      >
         <section className="grid gap-8 bg-[linear-gradient(145deg,#a84316_0%,#d86118_30%,#ef7f1a_58%,#f6b14f_100%)] px-6 py-8 text-white md:grid-cols-[1.1fr_0.9fr] md:px-10 md:py-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-50/80">

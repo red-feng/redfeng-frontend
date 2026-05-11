@@ -3,6 +3,7 @@
 import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { createClient } from "@/lib/supabase/client"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { getMinimumBookingDate } from "@/lib/booking/bookingWindow"
@@ -450,8 +451,12 @@ export default function CheckoutClient({
   }
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 pb-36 sm:p-6 sm:pb-36 md:p-10 md:pb-10">
-      <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <>
+      <div className="bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)]">
+        <SimplePublicLogoHeader />
+      </div>
+      <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-4 pb-36 pt-4 sm:p-6 sm:pb-36 md:p-10 md:pb-10">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <section className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:rounded-[28px] sm:p-6 md:p-8">
           <p className="text-sm font-semibold uppercase tracking-[0.28em] text-orange-500">{ui.checkoutLabel}</p>
           <h1 className="mt-3 text-[28px] font-bold text-slate-900 sm:text-3xl">{data.title || ui.paymentDetailFallback}</h1>
@@ -853,31 +858,32 @@ export default function CheckoutClient({
             </div>
           </section>
         </aside>
-      </div>
-      <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-3 shadow-[0_-20px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur lg:hidden">
-        <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-              {paymentType === "dp" ? ui.payNow : t.totalPay}
-            </p>
-            <p className="mt-1 truncate text-lg font-bold text-slate-950">
-              {formatPackageMoney(
-                paymentType === "dp" ? localizedDpAmount : localizedTotal,
-                data.currency,
-                locale,
-              )}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleBooking}
-            disabled={submitting || !hasMetMinimumParticipants || fixedDepartureTooSoon}
-            className="shrink-0 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-          >
-            {primaryButtonLabel}
-          </button>
         </div>
-      </div>
-    </main>
+        <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-slate-200/80 bg-white/95 px-4 pb-[calc(env(safe-area-inset-bottom)+10px)] pt-3 shadow-[0_-20px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-xl items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                {paymentType === "dp" ? ui.payNow : t.totalPay}
+              </p>
+              <p className="mt-1 truncate text-lg font-bold text-slate-950">
+                {formatPackageMoney(
+                  paymentType === "dp" ? localizedDpAmount : localizedTotal,
+                  data.currency,
+                  locale,
+                )}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleBooking}
+              disabled={submitting || !hasMetMinimumParticipants || fixedDepartureTooSoon}
+              className="shrink-0 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+            >
+              {primaryButtonLabel}
+            </button>
+          </div>
+        </div>
+      </main>
+    </>
   )
 }
