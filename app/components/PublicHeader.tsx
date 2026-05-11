@@ -112,7 +112,9 @@ export default async function PublicHeader({
               </a>
 
               <nav className="ml-[12rem] flex items-center gap-1">
-                {publicHeaderTopNavItems.map((item) => (
+                {publicHeaderTopNavItems
+                  .filter((item) => item.key !== "help")
+                  .map((item) => (
                   <div key={item.key}>
                     {renderPublicHeaderLink({
                       href: item.href,
@@ -121,10 +123,15 @@ export default async function PublicHeader({
                       external: item.external,
                     })}
                   </div>
-                ))}
+                  ))}
               </nav>
 
               <div className="flex items-center gap-3">
+                {renderPublicHeaderLink({
+                  href: "/contact",
+                  className: navLinkClass,
+                  label: t.help,
+                })}
                 <div className="hidden lg:block">
                   <PublicHeaderLocaleSelect
                     locale={locale}

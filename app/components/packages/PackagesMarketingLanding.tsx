@@ -365,9 +365,9 @@ export default async function PackagesMarketingLanding() {
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <main className="px-3 pb-14 pt-4 sm:px-5 md:px-8 md:pt-6">
+      <main className="px-3 pb-14 pt-2 sm:px-5 md:px-8 md:pt-3">
         <section className="mx-auto max-w-[1360px] overflow-hidden rounded-[32px] bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)] sm:rounded-[40px]">
-          <div className="relative min-h-[860px] px-4 pb-8 pt-[120px] sm:px-7 sm:pb-10 md:pt-[142px] lg:min-h-[900px] lg:px-10 xl:min-h-[940px]">
+          <div className="relative min-h-[860px] px-4 pb-8 pt-[108px] sm:px-7 sm:pb-10 md:pt-[126px] lg:min-h-[900px] lg:px-10 xl:min-h-[940px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
@@ -388,7 +388,7 @@ export default async function PackagesMarketingLanding() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[640px] pt-3 sm:pt-6 lg:pt-10">
+            <div className="relative z-10 max-w-[640px] pt-5 sm:pt-8 lg:pt-12">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
               <h1 className="mt-4 max-w-[620px] text-[36px] font-semibold leading-[0.98] tracking-[-0.06em] text-slate-950 sm:text-[56px] lg:text-[72px] xl:text-[76px]">
                 {copy.title}
