@@ -119,6 +119,7 @@ export default async function PublicHeader({
                     <PublicHeaderLocaleSelect
                       locale={locale}
                       availableLocales={availableLocales}
+                      mode="currency"
                       labels={{
                         language: t.language,
                         langId: t.langId,
