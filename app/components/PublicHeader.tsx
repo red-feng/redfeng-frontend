@@ -103,7 +103,7 @@ export default async function PublicHeader({
         <div className="public-header-shell relative mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-8 flex items-center gap-2">
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute -left-4 top-8 flex items-center gap-2">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -199,7 +199,7 @@ export default async function PublicHeader({
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className="public-header-logo-link absolute left-0 top-8 flex items-center gap-2">
+              <a href="https://redfeng.co/" className="public-header-logo-link absolute -left-4 top-8 flex items-center gap-2">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
