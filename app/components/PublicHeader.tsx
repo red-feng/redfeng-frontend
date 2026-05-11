@@ -236,7 +236,7 @@ export default async function PublicHeader({
                     locale={locale}
                     availableLocales={availableLocales}
                     mode="currency"
-                    tone="dark"
+                    tone="glass-dark"
                     labels={{
                       language: t.language,
                       langId: t.langId,
