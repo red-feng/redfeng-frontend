@@ -3,15 +3,41 @@ import Link from "next/link"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import PublicHeaderAccountControls from "@/app/components/PublicHeaderAccountControls"
 import PublicHeaderLocaleSelect from "@/app/components/PublicHeaderLocaleSelect"
+import {
+  getPublicHeaderActivityLabel,
+  publicHeaderProductNavItems,
+  publicHeaderTopNavItems,
+} from "@/app/components/publicHeaderNav"
 import { createClient } from "@/lib/supabase/server"
 import { resolvePublicAccountRole, type PublicAccountRole } from "@/lib/login-role-lock"
-import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 
 type PublicHeaderProps = {
   locale: Locale
   languageOptions?: Locale[]
   redirectSuperadminFromHome?: boolean
   variant?: "default" | "overlay"
+}
+
+function renderPublicHeaderLink({
+  href,
+  className,
+  label,
+  external = false,
+}: {
+  href: string
+  className: string
+  label: string
+  external?: boolean
+}) {
+  return external ? (
+    <a href={href} className={className}>
+      {label}
+    </a>
+  ) : (
+    <Link href={href} className={className}>
+      {label}
+    </Link>
+  )
 }
 
 export default async function PublicHeader({
@@ -27,11 +53,7 @@ export default async function PublicHeader({
   let initialRole: PublicAccountRole = "guest"
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle()
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
     initialRole = resolvePublicAccountRole(profile?.role)
   }
 
@@ -39,12 +61,38 @@ export default async function PublicHeader({
   const availableLocales =
     languageOptions && languageOptions.length > 0 ? languageOptions : (["id", "en", "zh"] as Locale[])
   const isOverlay = variant === "overlay"
+  const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
     ? "whitespace-nowrap px-1 py-2 text-[15px] font-medium text-slate-700 transition hover:text-orange-600"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none"
   const activePackageLinkClass = isOverlay
     ? "whitespace-nowrap border-b-2 border-[#ef4423] px-1 py-2 text-[15px] font-semibold text-[#ef4423] transition hover:text-orange-600"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none"
+
+  const topNav = (
+    <nav className={`flex min-w-max items-center ${isOverlay ? "gap-5" : "gap-2 sm:gap-5"} text-[14px] font-medium text-slate-700 sm:text-[15px]`}>
+      {publicHeaderTopNavItems.map((item) => (
+        <div key={item.key}>
+          {renderPublicHeaderLink({
+            href: item.href,
+            className: navLinkClass,
+            label: t[item.key as keyof typeof t],
+            external: item.external,
+          })}
+        </div>
+      ))}
+    </nav>
+  )
+
+  const productNav = (
+    <nav className={`flex min-w-max items-center ${isOverlay ? "gap-5" : "gap-2 sm:gap-5"} text-sm font-medium text-slate-700 sm:text-[15px]`}>
+      {publicHeaderProductNavItems.map((item) => (
+        <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
+          {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
+        </Link>
+      ))}
+    </nav>
+  )
 
   if (isOverlay) {
     return (
@@ -64,25 +112,7 @@ export default async function PublicHeader({
                   />
                 </a>
 
-                <div className="hidden xl:flex xl:flex-1 xl:justify-center">
-                  <nav className="flex items-center gap-5 text-[14px] font-medium text-slate-700">
-                    <Link href="/promo" className={navLinkClass}>
-                      {t.promo}
-                    </Link>
-                    <Link href="/customer/bookings" className={navLinkClass}>
-                      {t.orders}
-                    </Link>
-                    <a href="https://redfeng.co/kemitraan_tour/" className={navLinkClass}>
-                      {t.partnerTour}
-                    </a>
-                    <Link href="/verifikasi-invoice" className={navLinkClass}>
-                      {t.verifyInvoice}
-                    </Link>
-                    <Link href="/contact" className={navLinkClass}>
-                      {t.help}
-                    </Link>
-                  </nav>
-                </div>
+                <div className="hidden xl:flex xl:flex-1 xl:justify-center">{topNav}</div>
 
                 <div className="flex items-center gap-3">
                   <div className="hidden lg:block">
@@ -107,76 +137,27 @@ export default async function PublicHeader({
               </div>
 
               <div className="hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
-                <nav className="flex min-w-max items-center gap-5 text-sm font-medium text-slate-700 sm:text-[15px]">
-                  <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
-                    {t.flight}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
-                    {t.hotel}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
-                    {t.train}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
-                    {t.busTravel}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
-                    {t.seaShip}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
-                    {t.cruise}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
-                    {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
-                  </Link>
-                  <Link href="/packages" className={activePackageLinkClass}>
-                    {t.packageTour}
-                  </Link>
-                </nav>
+                {productNav}
               </div>
 
               <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
-                <nav className="flex min-w-max items-center gap-5">
-                  <Link href="/promo" className={navLinkClass}>
-                    {t.promo}
-                  </Link>
-                  <Link href="/customer/bookings" className={navLinkClass}>
-                    {t.orders}
-                  </Link>
-                  <a href="https://redfeng.co/kemitraan_tour/" className={navLinkClass}>
-                    {t.partnerTour}
-                  </a>
-                  <Link href="/verifikasi-invoice" className={navLinkClass}>
-                    {t.verifyInvoice}
-                  </Link>
-                  <Link href="/contact" className={navLinkClass}>
-                    {t.help}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
-                    {t.flight}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
-                    {t.hotel}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
-                    {t.train}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
-                    {t.seaShip}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
-                    {t.cruise}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
-                    {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
-                  </Link>
-                  <Link href="/packages" className={activePackageLinkClass}>
-                    {t.packageTour}
-                  </Link>
-                  <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
-                    {t.busTravel}
-                  </Link>
-                </nav>
+                <div className="flex min-w-max items-center gap-5">
+                  {publicHeaderTopNavItems.map((item) => (
+                    <div key={item.key}>
+                      {renderPublicHeaderLink({
+                        href: item.href,
+                        className: navLinkClass,
+                        label: t[item.key as keyof typeof t],
+                        external: item.external,
+                      })}
+                    </div>
+                  ))}
+                  {publicHeaderProductNavItems.map((item) => (
+                    <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
+                      {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -189,7 +170,7 @@ export default async function PublicHeader({
     <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
       <div className="public-header-shell mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-5">
         <div className="flex flex-col gap-4 lg:gap-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <a href="https://redfeng.co/" className="public-header-logo-link flex items-center gap-3">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
@@ -201,71 +182,36 @@ export default async function PublicHeader({
               />
             </a>
 
-            <PublicHeaderAccountControls
-              locale={locale}
-              redirectSuperadminFromHome={redirectSuperadminFromHome}
-              initialRole={initialRole}
-              variant={variant}
-            />
+            <div className="hidden xl:flex xl:flex-1 xl:justify-center">{topNav}</div>
+
+            <div className="flex items-center gap-3">
+              <div className="hidden lg:block">
+                <PublicHeaderLocaleSelect
+                  locale={locale}
+                  availableLocales={availableLocales}
+                  labels={{
+                    language: t.language,
+                    langId: t.langId,
+                    langEn: t.langEn,
+                    langZh: t.langZh,
+                  }}
+                />
+              </div>
+              <PublicHeaderAccountControls
+                locale={locale}
+                redirectSuperadminFromHome={redirectSuperadminFromHome}
+                initialRole={initialRole}
+                variant={variant}
+              />
+            </div>
           </div>
 
-          <div className="public-header-topnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
-            <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
-              <Link href="/promo" className={navLinkClass}>
-                {t.promo}
-              </Link>
-              <Link href="/customer/bookings" className={navLinkClass}>
-                {t.orders}
-              </Link>
-              <a href="https://redfeng.co/kemitraan_tour/" className={navLinkClass}>
-                {t.partnerTour}
-              </a>
-              <Link href="/verifikasi-invoice" className={navLinkClass}>
-                {t.verifyInvoice}
-              </Link>
-              <Link href="/contact" className={navLinkClass}>
-                {t.help}
-              </Link>
-              <PublicHeaderLocaleSelect
-                locale={locale}
-                availableLocales={availableLocales}
-                labels={{
-                  language: t.language,
-                  langId: t.langId,
-                  langEn: t.langEn,
-                  langZh: t.langZh,
-                }}
-              />
-            </nav>
+          <div className="public-header-topnav overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden xl:hidden">
+            {topNav}
           </div>
 
           <div className="public-header-productnav hidden overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:block">
-            <nav className="flex min-w-max items-center gap-2 text-sm font-medium text-slate-700 sm:gap-5 sm:text-[15px]">
-              <Link href={servicePageConfigByLabel["Pesawat"].href} className={navLinkClass}>
-                {t.flight}
-              </Link>
-              <Link href={servicePageConfigByLabel["Hotel"].href} className={navLinkClass}>
-                {t.hotel}
-              </Link>
-              <Link href={servicePageConfigByLabel["Kereta"].href} className={navLinkClass}>
-                {t.train}
-              </Link>
-              <Link href={servicePageConfigByLabel["Bus"].href} className={navLinkClass}>
-                {t.busTravel}
-              </Link>
-              <Link href={servicePageConfigByLabel["Kapal"].href} className={navLinkClass}>
-                {t.seaShip}
-              </Link>
-              <Link href={servicePageConfigByLabel["Kapal Pesiar"].href} className={navLinkClass}>
-                {t.cruise}
-              </Link>
-              <Link href={servicePageConfigByLabel["Aktivitas"].href} className={navLinkClass}>
-                {locale === "en" ? "Activities" : locale === "zh" ? "活动" : "Aktivitas"}
-              </Link>
-              <Link href="/packages" className={activePackageLinkClass}>
-                {t.packageTour}
-              </Link>
-            </nav>
+            {productNav}
           </div>
         </div>
       </div>
