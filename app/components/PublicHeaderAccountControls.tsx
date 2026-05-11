@@ -28,9 +28,10 @@ export default function PublicHeaderAccountControls({
   const pathname = usePathname()
   const [supabase] = useState(() => createClient("customer"))
   const t = dictionaries[locale].header
-  const guestLoginLabel = locale === "zh" ? "登录" : locale === "en" ? "Login" : "Masuk"
-  const registerLabel = locale === "zh" ? "注册" : locale === "en" ? "Register" : "Daftar"
-  const signOutLabel = locale === "zh" ? "退出登录" : locale === "en" ? "Logout" : "Keluar"
+  const guestLoginLabel = locale === "zh" ? "\u767b\u5f55" : locale === "en" ? "Login" : "Masuk"
+  const guestLoginRegisterLabel = locale === "zh" ? "\u767b\u5f55 / \u6ce8\u518c" : locale === "en" ? "Login / Register" : "Login / Daftar"
+  const registerLabel = locale === "zh" ? "\u6ce8\u518c" : locale === "en" ? "Register" : "Daftar"
+  const signOutLabel = locale === "zh" ? "\u9000\u51fa\u767b\u5f55" : locale === "en" ? "Logout" : "Keluar"
   const [accountRole, setAccountRole] = useState<PublicAccountRole>(initialRole)
   const [isAuthenticated, setIsAuthenticated] = useState(initialRole !== "guest")
 
@@ -54,11 +55,7 @@ export default function PublicHeaderAccountControls({
         return
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle()
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle()
 
       if (!isMounted) return
 
@@ -89,20 +86,30 @@ export default function PublicHeaderAccountControls({
 
   return (
     <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
-      {!isAuthenticated && (
+      {!isAuthenticated && isOverlay ? (
+        <Link
+          href="/login"
+          className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-7 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:bg-[#ef5b2a]"
+        >
+          {guestLoginRegisterLabel}
+        </Link>
+      ) : null}
+      {!isAuthenticated && !isOverlay ? (
         <Link
           href="/register"
-          className={isOverlay ? "rounded-2xl border border-white/80 bg-white/80 px-4 py-2.5 text-sm font-semibold text-[#ef4423] shadow-sm transition hover:bg-white" : "rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"}
+          className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"
         >
           {registerLabel}
         </Link>
+      ) : null}
+      {(!isOverlay || isAuthenticated) && (
+        <Link
+          href={accountHref}
+          className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(249,115,22,0.9)] transition hover:bg-orange-600"
+        >
+          {accountLabel}
+        </Link>
       )}
-      <Link
-        href={accountHref}
-        className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(249,115,22,0.9)] transition hover:bg-orange-600"
-      >
-        {accountLabel}
-      </Link>
       {isAuthenticated && (
         <SignOutButton
           label={signOutLabel}
