@@ -65,10 +65,10 @@ export default async function PublicHeader({
   const isOverlay = variant === "overlay"
   const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-white transition hover:bg-white/12 hover:text-[#ffd2c4]"
+    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none"
   const activePackageLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-white transition hover:bg-white/12 hover:text-[#ffd2c4]"
+    ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-slate-950 transition hover:bg-black/5 hover:text-[#ef4423]"
     : "whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none"
 
   const topNav = (
@@ -101,7 +101,7 @@ export default async function PublicHeader({
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className="public-header-shell mx-auto max-w-7xl px-4 pt-5 md:px-6 md:pt-6">
           <div className="hidden flex-col items-center lg:flex">
-            <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-white">
+            <div className="flex w-full items-center justify-end gap-5 pr-1 pt-2 text-[14px] font-medium text-slate-900">
               <a href="https://redfeng.co/" className="public-header-logo-link absolute left-4 top-2 flex items-center gap-2 md:left-6">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
@@ -149,7 +149,7 @@ export default async function PublicHeader({
                 </div>
                 <NotificationBellLink
                   items={defaultNotificationItems}
-                  className="text-white transition hover:text-[#ffd2c4]"
+                  className="text-slate-900 transition hover:text-[#ef4423]"
                   iconClassName="h-5 w-5"
                   badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
                 />

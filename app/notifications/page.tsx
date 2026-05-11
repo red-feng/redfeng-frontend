@@ -1,8 +1,8 @@
-import PublicHeader from "@/app/components/PublicHeader"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { defaultNotificationItems } from "@/app/components/notifications/defaultNotifications"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import NotificationsPageClient from "@/app/components/notifications/NotificationsPageClient"
+import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
 import { getCurrentLocale } from "@/lib/locale"
 
 export const dynamic = "force-dynamic"
@@ -12,7 +12,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
-      <PublicHeader locale={locale} />
+      <SimplePublicLogoHeader />
 
       <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
         <div className={`${homeLayoutLock.contentWidthClass} space-y-6`}>

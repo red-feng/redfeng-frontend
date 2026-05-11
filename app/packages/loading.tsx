@@ -1,6 +1,9 @@
+import SimplePublicLogoHeader from "@/app/components/SimplePublicLogoHeader"
+
 export default function PackagesLoading() {
   return (
     <div className="min-h-screen animate-public-page-in bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] px-4 py-5 pb-32 sm:px-6 md:px-8">
+      <SimplePublicLogoHeader />
       <div className="mx-auto max-w-[1360px] space-y-5">
         <div className="h-32 rounded-[30px] border border-orange-100 bg-white/80 p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.22)]">
           <div className="loading-shimmer h-3 w-24 rounded-full" />
