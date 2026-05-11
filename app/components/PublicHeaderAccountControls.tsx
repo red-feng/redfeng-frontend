@@ -89,7 +89,7 @@ export default function PublicHeaderAccountControls({
       {!isAuthenticated && isOverlay ? (
         <Link
           href="/login"
-          className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-7 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:bg-[#ef5b2a]"
+          className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:bg-[#ef5b2a]"
         >
           {guestLoginRegisterLabel}
         </Link>
