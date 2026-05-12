@@ -42,6 +42,15 @@ function ChevronIcon() {
   )
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4 4" />
+    </svg>
+  )
+}
+
 export default function PackagesHeroFilterBar({
   locale,
   countries,
@@ -165,9 +174,10 @@ export default function PackagesHeroFilterBar({
         type="button"
         onClick={applyFilter}
         disabled={isPending}
+        aria-label={buttonLabel}
         className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-full"
       >
-        {buttonLabel}
+        <SearchIcon />
       </button>
     </div>
   )

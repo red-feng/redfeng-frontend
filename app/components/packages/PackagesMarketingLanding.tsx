@@ -460,7 +460,7 @@ export default async function PackagesMarketingLanding() {
         </div>
 
         <section className={`${homeLayoutLock.contentWidthClass} mt-5 sm:mt-6 lg:mt-7`}>
-          <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
+          <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-[#f0e4da] bg-white p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.18)] md:p-4`}>
             <PackagesHeroFilterBar
               locale={locale}
               countries={searchBarCountries}
