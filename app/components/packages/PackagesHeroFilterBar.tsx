@@ -84,18 +84,18 @@ export default function PackagesHeroFilterBar({
   }
 
   return (
-    <div className={`grid gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_220px] ${isPending ? "opacity-80" : "opacity-100"}`}>
-      <label className="flex min-w-0 items-center gap-3 rounded-[24px] px-4 py-4 md:px-5">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
+    <div className={`grid gap-2.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_200px] ${isPending ? "opacity-80" : "opacity-100"}`}>
+      <label className="flex min-w-0 items-center gap-3 rounded-[22px] px-3.5 py-3 md:px-4.5">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <GlobeIcon />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[12px] text-slate-500">{labels.destination}</span>
-          <span className="mt-1 flex items-center gap-2">
+            <span className="block text-[11px] text-slate-500">{labels.destination}</span>
+            <span className="mt-1 flex items-center gap-2">
             <select
               value={country}
               onChange={(event) => setCountry(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[16px] font-semibold text-slate-950 outline-none"
+               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
               <option value="">{labels.allDestinations}</option>
               {countryOptions.map((option) => (
@@ -111,17 +111,17 @@ export default function PackagesHeroFilterBar({
         </span>
       </label>
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 md:px-5 xl:border-l xl:border-t-0">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
+      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <CalendarIcon />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[12px] text-slate-500">{labels.duration}</span>
+            <span className="block text-[11px] text-slate-500">{labels.duration}</span>
           <span className="mt-1 flex items-center gap-2">
             <select
               value={duration}
               onChange={(event) => setDuration(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[16px] font-semibold text-slate-950 outline-none"
+               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
               <option value="">{labels.allDurations}</option>
               <option value="1-3">1-3</option>
@@ -135,17 +135,17 @@ export default function PackagesHeroFilterBar({
         </span>
       </label>
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-4 py-4 md:px-5 xl:border-l xl:border-t-0">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
+      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <UsersIcon />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[12px] text-slate-500">{labels.type}</span>
+            <span className="block text-[11px] text-slate-500">{labels.type}</span>
           <span className="mt-1 flex items-center gap-2">
             <select
               value={style}
               onChange={(event) => setStyle(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[16px] font-semibold text-slate-950 outline-none"
+               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
               <option value="">{labels.allTypes}</option>
               {travelStyleOptions.map((option) => (
@@ -165,7 +165,7 @@ export default function PackagesHeroFilterBar({
         type="button"
         onClick={applyFilter}
         disabled={isPending}
-        className="inline-flex items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-full"
+        className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-full"
       >
         {buttonLabel}
       </button>
