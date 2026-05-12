@@ -389,7 +389,7 @@ export default async function PackagesMarketingLanding() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[640px] pt-5 sm:pt-6 lg:pt-8">
+            <div className="relative z-10 max-w-[640px] pt-6 sm:pt-7 lg:pt-9">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
               <h1 className="mt-4 max-w-[620px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]">
                 {copy.title}
@@ -453,13 +453,13 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <div className="relative z-[220] mx-auto -mt-44 max-w-[1280px] px-4 sm:-mt-48 sm:px-6 lg:-mt-[12.25rem] lg:px-8">
+        <div className="relative z-[220] mx-auto -mt-48 max-w-[1280px] px-4 sm:-mt-52 sm:px-6 lg:-mt-[13rem] lg:px-8">
           <div className="max-w-[430px] sm:max-w-[500px] lg:max-w-[500px]">
             <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
           </div>
         </div>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-2 sm:mt-3 lg:mt-4`}>
+        <section className={`${homeLayoutLock.contentWidthClass} mt-0 sm:mt-1 lg:mt-2`}>
           <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
             <PackagesHeroFilterBar
               locale={locale}
