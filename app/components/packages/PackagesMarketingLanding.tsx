@@ -5,7 +5,6 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
-import PackagesHeroSearch from "@/app/components/packages/PackagesHeroSearch"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
@@ -452,12 +451,6 @@ export default async function PackagesMarketingLanding() {
             </div>
           </div>
         </section>
-
-        <div className="relative z-[220] mx-auto -mt-52 max-w-[1280px] px-4 sm:-mt-56 sm:px-6 lg:-mt-[13.25rem] lg:px-8">
-          <div className="max-w-[420px] sm:max-w-[490px] lg:max-w-[490px]">
-            <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
-          </div>
-        </div>
 
         <section className={`${homeLayoutLock.contentWidthClass} relative z-[210] mt-5 sm:mt-6 lg:mt-7`}>
           <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-[#f0e4da] bg-white p-3 shadow-[0_28px_56px_-26px_rgba(15,23,42,0.22)] md:p-4`}>
