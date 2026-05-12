@@ -453,7 +453,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <div className="relative z-[220] mx-auto -mt-40 max-w-[1280px] px-4 sm:-mt-44 sm:px-6 lg:-mt-[10.5rem] lg:px-8">
+        <div className="relative z-[220] mx-auto -mt-52 max-w-[1280px] px-4 sm:-mt-56 sm:px-6 lg:-mt-[13.25rem] lg:px-8">
           <div className="max-w-[420px] sm:max-w-[490px] lg:max-w-[490px]">
             <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
           </div>
