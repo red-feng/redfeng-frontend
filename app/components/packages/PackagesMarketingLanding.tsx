@@ -367,7 +367,7 @@ export default async function PackagesMarketingLanding() {
 
       <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
         <section className={`${homeLayoutLock.contentWidthClass} relative overflow-visible ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
-          <div className="relative min-h-[560px] px-4 pb-28 pt-[100px] sm:px-6 sm:pb-32 md:pt-[112px] lg:min-h-[620px] lg:px-8 xl:min-h-[660px]">
+          <div className="relative min-h-[500px] px-4 pb-20 pt-[100px] sm:px-6 sm:pb-24 md:pt-[112px] lg:min-h-[560px] lg:px-8 xl:min-h-[600px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
