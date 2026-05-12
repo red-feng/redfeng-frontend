@@ -453,13 +453,13 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <div className="relative z-[220] mx-auto -mt-14 max-w-[1280px] px-4 sm:-mt-16 sm:px-6 lg:-mt-[4.5rem] lg:px-8">
-          <div className="max-w-[640px]">
+        <div className="relative z-[220] mx-auto -mt-24 max-w-[1280px] px-4 sm:-mt-28 sm:px-6 lg:-mt-[7.25rem] lg:px-8">
+          <div className="max-w-[430px] sm:max-w-[500px] lg:max-w-[520px]">
             <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
           </div>
         </div>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-5`}>
+        <section className={`${homeLayoutLock.contentWidthClass} mt-8 sm:mt-9 lg:mt-10`}>
           <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
             <PackagesHeroFilterBar
               locale={locale}
