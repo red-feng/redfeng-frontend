@@ -61,12 +61,12 @@ export default function PackagesHeroFilterBar({
   countries: string[]
   buttonLabel: string
   labels: {
-    destination: string
-    allDestinations: string
+    country: string
+    allCountries: string
+    style: string
+    allStyles: string
     duration: string
     allDurations: string
-    type: string
-    allTypes: string
   }
 }) {
   const router = useRouter()
@@ -99,14 +99,14 @@ export default function PackagesHeroFilterBar({
           <GlobeIcon />
         </span>
         <span className="min-w-0 flex-1">
-            <span className="block text-[11px] text-slate-500">{labels.destination}</span>
-            <span className="mt-1 flex items-center gap-2">
+          <span className="block text-[11px] text-slate-500">{labels.country}</span>
+          <span className="mt-1 flex items-center gap-2">
             <select
               value={country}
               onChange={(event) => setCountry(event.target.value)}
-               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
+              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
-              <option value="">{labels.allDestinations}</option>
+              <option value="">{labels.allCountries}</option>
               {countryOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -122,20 +122,22 @@ export default function PackagesHeroFilterBar({
 
       <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
-          <CalendarIcon />
+          <UsersIcon />
         </span>
         <span className="min-w-0 flex-1">
-            <span className="block text-[11px] text-slate-500">{labels.duration}</span>
+          <span className="block text-[11px] text-slate-500">{labels.style}</span>
           <span className="mt-1 flex items-center gap-2">
             <select
-              value={duration}
-              onChange={(event) => setDuration(event.target.value)}
-               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
+              value={style}
+              onChange={(event) => setStyle(event.target.value)}
+              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
-              <option value="">{labels.allDurations}</option>
-              <option value="1-3">1-3</option>
-              <option value="4-7">4-7</option>
-              <option value="8+">8+</option>
+              <option value="">{labels.allStyles}</option>
+              {travelStyleOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {formatTravelStyleLabel(option.value, locale)}
+                </option>
+              ))}
             </select>
             <span className="shrink-0 text-slate-400">
               <ChevronIcon />
@@ -146,22 +148,20 @@ export default function PackagesHeroFilterBar({
 
       <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
-          <UsersIcon />
+          <CalendarIcon />
         </span>
         <span className="min-w-0 flex-1">
-            <span className="block text-[11px] text-slate-500">{labels.type}</span>
+          <span className="block text-[11px] text-slate-500">{labels.duration}</span>
           <span className="mt-1 flex items-center gap-2">
             <select
-              value={style}
-              onChange={(event) => setStyle(event.target.value)}
-               className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
+              value={duration}
+              onChange={(event) => setDuration(event.target.value)}
+              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
             >
-              <option value="">{labels.allTypes}</option>
-              {travelStyleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {formatTravelStyleLabel(option.value, locale)}
-                </option>
-              ))}
+              <option value="">{labels.allDurations}</option>
+              <option value="1-3">1-3</option>
+              <option value="4-7">4-7</option>
+              <option value="8+">8+</option>
             </select>
             <span className="shrink-0 text-slate-400">
               <ChevronIcon />

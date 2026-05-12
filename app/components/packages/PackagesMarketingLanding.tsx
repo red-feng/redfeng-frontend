@@ -283,12 +283,12 @@ export default async function PackagesMarketingLanding() {
       newsletterBody: "Berlangganan newsletter kami dan dapatkan penawaran menarik setiap minggunya.",
       newsletterPlaceholder: "Masukkan email Anda",
       newsletterButton: "Langganan",
-      destinationLabel: "Tujuan / Destinasi",
-      allDestinations: "Semua Destinasi",
+      countryLabel: "Negara",
+      allCountries: "Semua Negara",
+      styleLabel: "Travel Style",
+      allStyles: "Semua Travel Style",
       durationLabel: "Durasi",
       allDurations: "Semua Durasi",
-      typeLabel: "Tipe Paket",
-      allTypes: "Semua Tipe",
       offerLine: "untuk berbagai destinasi pilihan",
     },
     en: {
@@ -317,12 +317,12 @@ export default async function PackagesMarketingLanding() {
       newsletterBody: "Subscribe to our newsletter and receive fresh travel offers every week.",
       newsletterPlaceholder: "Enter your email",
       newsletterButton: "Subscribe",
-      destinationLabel: "Destination",
-      allDestinations: "All Destinations",
+      countryLabel: "Country",
+      allCountries: "All Countries",
+      styleLabel: "Travel Style",
+      allStyles: "All Travel Styles",
       durationLabel: "Duration",
       allDurations: "All Durations",
-      typeLabel: "Package Type",
-      allTypes: "All Types",
       offerLine: "for selected destination highlights",
     },
     zh: {
@@ -351,12 +351,12 @@ export default async function PackagesMarketingLanding() {
       newsletterBody: "订阅我们的 newsletter，每周获取新的旅行优惠信息。",
       newsletterPlaceholder: "输入你的邮箱",
       newsletterButton: "订阅",
-      destinationLabel: "目的地",
-      allDestinations: "全部目的地",
+      countryLabel: "国家",
+      allCountries: "全部国家",
+      styleLabel: "旅行风格",
+      allStyles: "全部旅行风格",
       durationLabel: "时长",
       allDurations: "全部时长",
-      typeLabel: "套餐类型",
-      allTypes: "全部类型",
       offerLine: "适用于精选目的地",
     },
   }[locale]
@@ -407,12 +407,12 @@ export default async function PackagesMarketingLanding() {
                   countries={searchBarCountries}
                   buttonLabel={locale === "en" ? "Apply Filter" : locale === "zh" ? "应用筛选" : "Terapkan Filter"}
                   labels={{
-                    destination: copy.destinationLabel,
-                    allDestinations: copy.allDestinations,
+                    country: copy.countryLabel,
+                    allCountries: copy.allCountries,
+                    style: copy.styleLabel,
+                    allStyles: copy.allStyles,
                     duration: copy.durationLabel,
                     allDurations: copy.allDurations,
-                    type: copy.typeLabel,
-                    allTypes: copy.allTypes,
                   }}
                 />
               </div>
@@ -466,12 +466,12 @@ export default async function PackagesMarketingLanding() {
               countries={searchBarCountries}
               buttonLabel={locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter"}
               labels={{
-                destination: copy.destinationLabel,
-                allDestinations: copy.allDestinations,
+                country: copy.countryLabel,
+                allCountries: copy.allCountries,
+                style: copy.styleLabel,
+                allStyles: copy.allStyles,
                 duration: copy.durationLabel,
                 allDurations: copy.allDurations,
-                type: copy.typeLabel,
-                allTypes: copy.allTypes,
               }}
             />
           </div>
