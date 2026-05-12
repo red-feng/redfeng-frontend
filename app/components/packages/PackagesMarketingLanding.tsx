@@ -4,6 +4,7 @@ import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
+import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/sections"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
 import { getCurrentLocale } from "@/lib/locale"
@@ -609,36 +610,9 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-10 overflow-hidden rounded-[28px] border border-[#f0ddd2] bg-[linear-gradient(90deg,#fff0eb_0%,#fff6f2_40%,#fff9f5_100%)] shadow-[0_26px_70px_-44px_rgba(15,23,42,0.16)] sm:rounded-[30px]`}>
-          <div className="grid gap-6 px-4 py-6 sm:px-5 lg:grid-cols-[1fr_1.2fr_260px] lg:items-center lg:px-8">
-            <div>
-              <h2 className="text-[26px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px]">{copy.newsletterTitle}</h2>
-              <p className="mt-3 max-w-xl text-sm leading-7 text-slate-600">{copy.newsletterBody}</p>
-            </div>
-            <form className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="email"
-                placeholder={copy.newsletterPlaceholder}
-                className="h-14 flex-1 rounded-[18px] border border-white bg-white px-4 text-sm text-slate-700 outline-none placeholder:text-slate-400 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.18)]"
-              />
-              <button
-                type="button"
-                className="inline-flex h-14 items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-6 text-sm font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105"
-              >
-                {copy.newsletterButton}
-              </button>
-            </form>
-            <div className="relative hidden h-[130px] lg:block">
-              <Image
-                src="/home-assets/newsletter-bg-generated-china.png"
-                alt="Travel newsletter"
-                fill
-                sizes="260px"
-                className="object-contain object-right"
-              />
-            </div>
-          </div>
-        </section>
+        <HomeNewsletterSection locale={locale} />
+        <HomeFooter locale={locale} />
+
       </main>
 
       <PublicStickyAction locale={locale} href="/packages/catalog" label={copy.heroSearchButton} summary={copy.title} />
