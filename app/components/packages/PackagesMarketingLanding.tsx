@@ -368,7 +368,7 @@ export default async function PackagesMarketingLanding() {
 
       <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
         <section className={`${homeLayoutLock.contentWidthClass} relative overflow-visible ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
-          <div className="relative min-h-[440px] px-4 pb-24 pt-[100px] sm:px-6 sm:pb-28 md:pt-[112px] lg:min-h-[500px] lg:px-8 xl:min-h-[520px]">
+          <div className="relative min-h-[560px] px-4 pb-28 pt-[100px] sm:px-6 sm:pb-32 md:pt-[112px] lg:min-h-[620px] lg:px-8 xl:min-h-[660px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
@@ -389,12 +389,12 @@ export default async function PackagesMarketingLanding() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[640px] pt-6 sm:pt-7 lg:pt-9">
+            <div className="relative z-10 max-w-[600px] pt-7 sm:pt-8 lg:pt-10">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
-              <h1 className="mt-4 max-w-[620px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]">
+              <h1 className="mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]">
                 {copy.title}
               </h1>
-              <p className="mt-4 max-w-[520px] text-[13px] leading-6 text-slate-700 sm:mt-4 sm:text-[14px] sm:leading-7 lg:max-w-[540px] lg:text-[15px] lg:leading-7">
+              <p className="mt-4 max-w-[500px] text-[13px] leading-6 text-slate-700 sm:mt-4 sm:text-[14px] sm:leading-7 lg:max-w-[520px] lg:text-[15px] lg:leading-7">
                 {copy.body}
               </p>
 
@@ -453,13 +453,13 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <div className="relative z-[220] mx-auto -mt-48 max-w-[1280px] px-4 sm:-mt-52 sm:px-6 lg:-mt-[13rem] lg:px-8">
-          <div className="max-w-[430px] sm:max-w-[500px] lg:max-w-[500px]">
+        <div className="relative z-[220] mx-auto -mt-26 max-w-[1280px] px-4 sm:-mt-30 sm:px-6 lg:-mt-[7.5rem] lg:px-8">
+          <div className="max-w-[420px] sm:max-w-[490px] lg:max-w-[490px]">
             <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
           </div>
         </div>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-0 sm:mt-1 lg:mt-2`}>
+        <section className={`${homeLayoutLock.contentWidthClass} mt-5 sm:mt-6 lg:mt-7`}>
           <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
             <PackagesHeroFilterBar
               locale={locale}
