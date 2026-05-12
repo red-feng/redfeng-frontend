@@ -400,7 +400,7 @@ export default async function PackagesMarketingLanding() {
 
             </div>
 
-            <div className="relative z-10 mt-5 sm:mt-6 lg:mt-7">
+            <div className="hidden">
               <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
                 <PackagesHeroFilterBar
                   locale={locale}
@@ -458,6 +458,57 @@ export default async function PackagesMarketingLanding() {
             <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
           </div>
         </div>
+
+        <section className={`${homeLayoutLock.contentWidthClass} mt-5`}>
+          <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
+            <PackagesHeroFilterBar
+              locale={locale}
+              countries={searchBarCountries}
+              buttonLabel={locale === "en" ? "Apply Filter" : locale === "zh" ? "åº”ç”¨ç­›é€‰" : "Terapkan Filter"}
+              labels={{
+                destination: copy.destinationLabel,
+                allDestinations: copy.allDestinations,
+                duration: copy.durationLabel,
+                allDurations: copy.allDurations,
+                type: copy.typeLabel,
+                allTypes: copy.allTypes,
+              }}
+            />
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-4">
+            {copy.benefitTitle.map((title, index) => (
+              <article key={title} className="rounded-[24px] border border-white/85 bg-white/78 p-4 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur sm:rounded-[26px] sm:p-5">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
+                  {index === 0 ? (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[1.8]">
+                      <path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 9.2 6.5c1.3 0 2.5.6 3.3 1.7.8-1.1 2-1.7 3.3-1.7A4.2 4.2 0 0 1 20 10.7C20 15.6 12 20 12 20Z" />
+                    </svg>
+                  ) : index === 1 ? (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[1.8]">
+                      <path d="M7 7.5h10a2 2 0 0 1 2 2V18H5V9.5a2 2 0 0 1 2-2Z" />
+                      <path d="M9 7.5V6a3 3 0 0 1 6 0v1.5" />
+                    </svg>
+                  ) : index === 2 ? (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[1.8]">
+                      <path d="M4 12a8 8 0 0 1 16 0" />
+                      <rect x="3.5" y="11" width="4" height="7" rx="2" />
+                      <rect x="16.5" y="11" width="4" height="7" rx="2" />
+                      <path d="M18.5 18a3 3 0 0 1-3 3H12" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 fill-none stroke-current stroke-[1.8]">
+                      <rect x="4" y="6" width="16" height="12" rx="2.5" />
+                      <path d="M7 12l3 3 7-7" />
+                    </svg>
+                  )}
+                </div>
+                <h2 className="mt-4 text-lg font-semibold text-slate-950">{title}</h2>
+                <p className="mt-2 text-sm leading-7 text-slate-600">{copy.benefitBody[index]}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-8 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
