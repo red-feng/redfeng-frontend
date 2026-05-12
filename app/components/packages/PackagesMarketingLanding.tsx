@@ -367,8 +367,8 @@ export default async function PackagesMarketingLanding() {
       <PublicHeader locale={locale} variant="overlay" />
 
       <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
-        <section className={`${homeLayoutLock.contentWidthClass} overflow-hidden ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
-          <div className="relative min-h-[560px] px-4 pb-8 pt-[100px] sm:px-6 sm:pb-10 md:pt-[112px] lg:min-h-[610px] lg:px-8 xl:min-h-[640px]">
+        <section className={`${homeLayoutLock.contentWidthClass} relative overflow-visible ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
+          <div className="relative min-h-[400px] px-4 pb-20 pt-[100px] sm:px-6 sm:pb-24 md:pt-[112px] lg:min-h-[430px] lg:px-8 xl:min-h-[460px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="Travel package hero"
@@ -398,12 +398,9 @@ export default async function PackagesMarketingLanding() {
                 {copy.body}
               </p>
 
-              <div className="mt-6 max-w-[640px] sm:mt-7">
-                <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
-              </div>
             </div>
 
-            <div className="relative z-10 mt-[135px] sm:mt-[155px] lg:mt-[170px]">
+            <div className="relative z-10 mt-5 sm:mt-6 lg:mt-7">
               <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-white/80 bg-white/94 p-3 shadow-[0_32px_70px_-34px_rgba(15,23,42,0.24)] backdrop-blur md:p-4`}>
                 <PackagesHeroFilterBar
                   locale={locale}
@@ -455,6 +452,12 @@ export default async function PackagesMarketingLanding() {
             </div>
           </div>
         </section>
+
+        <div className="relative z-[220] mx-auto -mt-14 max-w-[1280px] px-4 sm:-mt-16 sm:px-6 lg:-mt-[4.5rem] lg:px-8">
+          <div className="max-w-[640px]">
+            <PackagesHeroSearch placeholder={copy.heroSearch} buttonLabel={copy.heroSearchButton} />
+          </div>
+        </div>
 
         <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-8 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
