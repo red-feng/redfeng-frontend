@@ -389,7 +389,7 @@ export default async function PackagesMarketingLanding() {
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="absolute left-[8%] top-[26%] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(255,216,147,0.92)_0%,rgba(255,216,147,0.48)_42%,rgba(255,216,147,0)_72%)] blur-[2px] sm:block" />
 
-            <div className="relative z-10 max-w-[600px] pt-7 sm:pt-8 lg:pt-10">
+            <div className="relative z-10 max-w-[600px] pt-10 sm:pt-11 lg:pt-14">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
               <h1 className="mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]">
                 {copy.title}
