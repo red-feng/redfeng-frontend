@@ -504,7 +504,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-8 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
+        <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-10 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
               <h2 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{copy.promoTitle}</h2>
@@ -543,9 +543,9 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-10`}>
+        <section className={`${homeLayoutLock.contentWidthClass} mt-12`}>
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.popularTitle}</h2>
+            <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px] lg:text-[32px]">{copy.popularTitle}</h2>
             <Link href="/packages/catalog" className="text-sm font-semibold text-[#ef4423] transition hover:text-[#d93b1d]">
               {copy.seeAll}
             </Link>
@@ -574,9 +574,9 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-12`}>
+        <section className={`${homeLayoutLock.contentWidthClass} mt-14`}>
           <div className="flex items-end justify-between gap-4">
-            <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.recommendationTitle}</h2>
+            <h2 className="max-w-[760px] text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px] lg:text-[32px]">{copy.recommendationTitle}</h2>
             <div className="hidden items-center gap-2 md:flex md:self-start">
               <button
                 type="button"
@@ -596,7 +596,7 @@ export default async function PackagesMarketingLanding() {
               </button>
             </div>
           </div>
-          <div className="mt-6 grid gap-5 xl:grid-cols-3">
+          <div className="mt-7 grid gap-5 xl:grid-cols-3">
             {topPackages.map((pkg) => (
               <PackageRecoCard
                 key={pkg.id}
@@ -610,7 +610,7 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <div className="mt-14">
+        <div className="mt-16">
           <HomeNewsletterSection locale={locale} />
         </div>
         <HomeFooter locale={locale} />
