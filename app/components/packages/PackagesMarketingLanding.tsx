@@ -154,7 +154,7 @@ function PackageRecoCard({
       <div className="flex flex-1 flex-col p-5">
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="line-clamp-2 min-h-[3.2rem] text-[19px] font-semibold leading-[1.18] tracking-[-0.03em] text-slate-950 transition hover:text-[#ef4423] xl:min-h-[3.55rem] xl:text-[24px]"
+          className="line-clamp-2 min-h-[2.7rem] text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 transition hover:text-[#ef4423] md:text-[17px] md:leading-[1.2]"
         >
           {title}
         </Link>
@@ -208,7 +208,7 @@ function PackageRecoCard({
         <div className="mt-auto flex items-end justify-between gap-4 pt-5">
           <div className="min-w-0">
             <p className="text-[11px] leading-none text-slate-400">{fromLabel}</p>
-            <p className="mt-1.5 text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[19px]">
+            <p className="mt-1.5 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[17px]">
               {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
             </p>
             <p className="mt-1 text-[11px] font-medium leading-none text-slate-500">/ orang</p>
