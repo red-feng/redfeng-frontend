@@ -124,7 +124,7 @@ function PackageRecoCard({
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
 
   return (
-    <article className="overflow-hidden rounded-[30px] border border-[#e9e3db] bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_-34px_rgba(15,23,42,0.22)]">
+    <article className="flex h-full flex-col overflow-hidden rounded-[30px] border border-[#e9e3db] bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_-34px_rgba(15,23,42,0.22)]">
       <div className="relative h-[220px] w-full overflow-hidden">
         {pkg.cover_image ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -151,10 +151,10 @@ function PackageRecoCard({
         </div>
       </div>
 
-      <div className="p-5">
+      <div className="flex flex-1 flex-col p-5">
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="line-clamp-2 text-[22px] font-semibold leading-tight tracking-[-0.035em] text-slate-950 transition hover:text-[#ef4423] xl:text-[24px]"
+          className="line-clamp-2 min-h-[3.8rem] text-[22px] font-semibold leading-tight tracking-[-0.035em] text-slate-950 transition hover:text-[#ef4423] xl:min-h-[4.15rem] xl:text-[24px]"
         >
           {title}
         </Link>
@@ -205,7 +205,7 @@ function PackageRecoCard({
           </div>
         </div>
 
-        <div className="mt-5 flex items-end justify-between gap-4">
+        <div className="mt-auto flex items-end justify-between gap-4 pt-5">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{fromLabel}</p>
             <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[#ef4423] xl:text-[30px]">
@@ -574,13 +574,13 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} mt-10`}>
-          <div className="flex items-center justify-between gap-4">
+        <section className={`${homeLayoutLock.contentWidthClass} mt-12`}>
+          <div className="flex items-end justify-between gap-4">
             <h2 className="text-[34px] font-semibold tracking-[-0.04em] text-slate-950">{copy.recommendationTitle}</h2>
-            <div className="hidden items-center gap-2 md:flex">
+            <div className="hidden items-center gap-2 md:flex md:self-start">
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:text-[#ef4423]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:border-[#efcbbd] hover:text-[#ef4423]"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
                   <path d="m14.5 6.5-5 5 5 5" />
@@ -588,7 +588,7 @@ export default async function PackagesMarketingLanding() {
               </button>
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:text-[#ef4423]"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-[#eadfd8] bg-white text-slate-500 shadow-sm transition hover:border-[#efcbbd] hover:text-[#ef4423]"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
                   <path d="m9.5 6.5 5 5-5 5" />
@@ -596,7 +596,7 @@ export default async function PackagesMarketingLanding() {
               </button>
             </div>
           </div>
-          <div className="mt-5 grid gap-5 xl:grid-cols-3">
+          <div className="mt-6 grid gap-5 xl:grid-cols-3">
             {topPackages.map((pkg) => (
               <PackageRecoCard
                 key={pkg.id}
@@ -610,7 +610,9 @@ export default async function PackagesMarketingLanding() {
           </div>
         </section>
 
-        <HomeNewsletterSection locale={locale} />
+        <div className="mt-14">
+          <HomeNewsletterSection locale={locale} />
+        </div>
         <HomeFooter locale={locale} />
 
       </main>
