@@ -107,6 +107,7 @@ function RecommendationCard({
   const minimumParticipants = Number(pkg.minimal_peserta || 0)
   const hasMinimumParticipants = Number.isFinite(minimumParticipants) && minimumParticipants > 0
   const hasPrice = Boolean(pricing?.currency) && Number(pricing?.priceAdult || 0) > 0
+  const formattedPrice = hasPrice && pricing ? formatPackageMoney(pricing.priceAdult, pricing.currency, locale) : null
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[30px] border border-[#e9e3db] bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_-34px_rgba(15,23,42,0.22)]">
@@ -183,7 +184,7 @@ function RecommendationCard({
               <>
                 <p className="text-[11px] leading-none text-slate-400">{fromLabel}</p>
                 <p className="mt-1.5 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[17px]">
-                  {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
+                  {formattedPrice}
                 </p>
                 <p className="mt-1 text-[11px] font-medium leading-none text-slate-500">/ orang</p>
               </>
