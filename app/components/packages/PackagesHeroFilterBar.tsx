@@ -93,7 +93,7 @@ export default function PackagesHeroFilterBar({
   }
 
   return (
-    <div className={`grid gap-2.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_200px] ${isPending ? "opacity-80" : "opacity-100"}`}>
+    <div className={`grid gap-2.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_56px] ${isPending ? "opacity-80" : "opacity-100"}`}>
       <label className="flex min-w-0 items-center gap-3 rounded-[22px] px-3.5 py-3 md:px-4.5">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
           <GlobeIcon />
@@ -175,7 +175,7 @@ export default function PackagesHeroFilterBar({
         onClick={applyFilter}
         disabled={isPending}
         aria-label={buttonLabel}
-        className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-full"
+        className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-70 xl:h-[56px] xl:w-[56px] xl:px-0 xl:py-0"
       >
         <SearchIcon />
       </button>
