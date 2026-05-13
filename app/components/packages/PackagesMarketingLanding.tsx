@@ -403,7 +403,6 @@ export default async function PackagesMarketingLanding() {
             title={copy.recommendationTitle}
             packages={topPackages}
             locale={locale}
-            availableLabel={copy.availableNow}
             fromLabel={copy.fromLabel}
             actionLabel={copy.choosePackage}
           />
