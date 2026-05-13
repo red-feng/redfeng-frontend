@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useMemo, useState, useTransition } from "react"
+import { type ReactNode, useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { type Locale } from "@/lib/i18n"
 import { formatTravelStyleLabel, travelStyleOptions } from "@/lib/travelStyles"
 
@@ -51,6 +51,132 @@ function SearchIcon() {
   )
 }
 
+type DropdownOption = {
+  value: string
+  label: string
+}
+
+function FilterDropdownField({
+  icon,
+  label,
+  value,
+  placeholder,
+  options,
+  isOpen,
+  onToggle,
+  onClose,
+  onChange,
+  withLeftBorder = false,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  placeholder: string
+  options: DropdownOption[]
+  isOpen: boolean
+  onToggle: () => void
+  onClose: () => void
+  onChange: (value: string) => void
+  withLeftBorder?: boolean
+}) {
+  const rootRef = useRef<HTMLDivElement | null>(null)
+  const selectedLabel = options.find((option) => option.value === value)?.label || placeholder
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        onClose()
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose()
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown)
+    window.addEventListener("keydown", handleEscape)
+
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown)
+      window.removeEventListener("keydown", handleEscape)
+    }
+  }, [isOpen, onClose])
+
+  return (
+    <div
+      ref={rootRef}
+      className={`relative flex min-w-0 items-center gap-3 px-3.5 py-3 md:px-4.5 ${
+        withLeftBorder ? "border-t border-slate-100 xl:border-l xl:border-t-0" : "rounded-[22px]"
+      }`}
+    >
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="block text-[11px] text-slate-500">{label}</p>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="mt-1 flex w-full items-center gap-3 rounded-[12px] bg-transparent text-left outline-none"
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+        >
+          <span className="min-w-0 flex-1 truncate pr-2 text-[15px] font-semibold leading-6 text-slate-950">
+            {selectedLabel}
+          </span>
+          <span className={`shrink-0 text-slate-400 transition ${isOpen ? "rotate-180 text-[#ef4423]" : ""}`}>
+            <ChevronIcon />
+          </span>
+        </button>
+
+        {isOpen ? (
+          <div className="absolute left-0 right-0 top-full z-[260] mt-3 px-3.5 md:px-4.5">
+            <div className="overflow-hidden rounded-[20px] border border-[#efe2d8] bg-white p-2 shadow-[0_24px_60px_-28px_rgba(15,23,42,0.22)]">
+              <div role="listbox" className="max-h-72 overflow-y-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange("")
+                    onToggle()
+                  }}
+                  className={`flex w-full items-center rounded-[14px] px-4 py-3 text-left text-[14px] font-medium transition ${
+                    value === "" ? "bg-[#fff1ea] text-[#ef4423]" : "text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {placeholder}
+                </button>
+                {options.map((option) => {
+                  const active = option.value === value
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        onChange(option.value)
+                        onToggle()
+                      }}
+                      className={`flex w-full items-center rounded-[14px] px-4 py-3 text-left text-[14px] font-medium transition ${
+                        active ? "bg-[#fff1ea] text-[#ef4423]" : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className="truncate">{option.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 export default function PackagesHeroFilterBar({
   locale,
   countries,
@@ -75,10 +201,26 @@ export default function PackagesHeroFilterBar({
   const [country, setCountry] = useState(searchParams.get("country") || "")
   const [duration, setDuration] = useState(searchParams.get("duration") || "")
   const [style, setStyle] = useState(searchParams.get("style") || "")
+  const [openMenu, setOpenMenu] = useState<"country" | "style" | "duration" | null>(null)
 
-  const countryOptions = useMemo(
-    () => [...new Set(countries.map((value) => value.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+  const countryOptions = useMemo<DropdownOption[]>(
+    () =>
+      [...new Set(countries.map((value) => value.trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({ value, label: value })),
     [countries],
+  )
+  const styleOptions = useMemo<DropdownOption[]>(
+    () => travelStyleOptions.map((option) => ({ value: option.value, label: formatTravelStyleLabel(option.value, locale) })),
+    [locale],
+  )
+  const durationOptions = useMemo<DropdownOption[]>(
+    () => [
+      { value: "1-3", label: "1-3" },
+      { value: "4-7", label: "4-7" },
+      { value: "8+", label: "8+" },
+    ],
+    [],
   )
 
   const applyFilter = () => {
@@ -94,81 +236,43 @@ export default function PackagesHeroFilterBar({
 
   return (
     <div className={`grid gap-2.5 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_56px] ${isPending ? "opacity-80" : "opacity-100"}`}>
-      <label className="flex min-w-0 items-center gap-3 rounded-[22px] px-3.5 py-3 md:px-4.5">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
-          <GlobeIcon />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] text-slate-500">{labels.country}</span>
-          <span className="mt-1 flex items-center gap-2">
-            <select
-              value={country}
-              onChange={(event) => setCountry(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
-            >
-              <option value="">{labels.allCountries}</option>
-              {countryOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            <span className="shrink-0 text-slate-400">
-              <ChevronIcon />
-            </span>
-          </span>
-        </span>
-      </label>
+      <FilterDropdownField
+        icon={<GlobeIcon />}
+        label={labels.country}
+        value={country}
+        placeholder={labels.allCountries}
+        options={countryOptions}
+        isOpen={openMenu === "country"}
+        onToggle={() => setOpenMenu((current) => (current === "country" ? null : "country"))}
+        onClose={() => setOpenMenu(null)}
+        onChange={setCountry}
+      />
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
-          <UsersIcon />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] text-slate-500">{labels.style}</span>
-          <span className="mt-1 flex items-center gap-2">
-            <select
-              value={style}
-              onChange={(event) => setStyle(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
-            >
-              <option value="">{labels.allStyles}</option>
-              {travelStyleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {formatTravelStyleLabel(option.value, locale)}
-                </option>
-              ))}
-            </select>
-            <span className="shrink-0 text-slate-400">
-              <ChevronIcon />
-            </span>
-          </span>
-        </span>
-      </label>
+      <FilterDropdownField
+        icon={<UsersIcon />}
+        label={labels.style}
+        value={style}
+        placeholder={labels.allStyles}
+        options={styleOptions}
+        isOpen={openMenu === "style"}
+        onToggle={() => setOpenMenu((current) => (current === "style" ? null : "style"))}
+        onClose={() => setOpenMenu(null)}
+        onChange={setStyle}
+        withLeftBorder
+      />
 
-      <label className="flex min-w-0 items-center gap-3 border-t border-slate-100 px-3.5 py-3 md:px-4.5 xl:border-l xl:border-t-0">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423] shadow-inner">
-          <CalendarIcon />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] text-slate-500">{labels.duration}</span>
-          <span className="mt-1 flex items-center gap-2">
-            <select
-              value={duration}
-              onChange={(event) => setDuration(event.target.value)}
-              className="w-full appearance-none bg-transparent text-[15px] font-semibold text-slate-950 outline-none"
-            >
-              <option value="">{labels.allDurations}</option>
-              <option value="1-3">1-3</option>
-              <option value="4-7">4-7</option>
-              <option value="8+">8+</option>
-            </select>
-            <span className="shrink-0 text-slate-400">
-              <ChevronIcon />
-            </span>
-          </span>
-        </span>
-      </label>
+      <FilterDropdownField
+        icon={<CalendarIcon />}
+        label={labels.duration}
+        value={duration}
+        placeholder={labels.allDurations}
+        options={durationOptions}
+        isOpen={openMenu === "duration"}
+        onToggle={() => setOpenMenu((current) => (current === "duration" ? null : "duration"))}
+        onClose={() => setOpenMenu(null)}
+        onChange={setDuration}
+        withLeftBorder
+      />
 
       <button
         type="button"
