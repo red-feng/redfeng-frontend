@@ -3,7 +3,7 @@ import { unstable_cache } from "next/cache"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { fetchLatestCurrencyRates } from "@/lib/currency-rates"
 import { type Locale } from "@/lib/i18n"
-import { localeCurrencyMap, normalizePackageCurrency, roundConvertedPrice } from "@/lib/package-pricing"
+import { formatPackageMoney, localeCurrencyMap, normalizePackageCurrency, roundConvertedPrice } from "@/lib/package-pricing"
 import { normalizeFacilityName } from "@/lib/facility-labels"
 
 export const localePriceRangeMap: Record<Locale, number> = {
@@ -51,6 +51,13 @@ export type HomePackageListItem = {
     priceAdult: number
     priceChild: number
   }
+}
+
+export type PopularCatalogDestination = {
+  country: string
+  totalPackages: number
+  totalViews: number
+  priceLabel: string | null
 }
 
 const packageFilterBaseSelect = `
@@ -259,6 +266,118 @@ export async function getLatestApprovedPackages(locale: Locale) {
 
 export async function getLatestCatalogPackages(locale: Locale) {
   return getLatestApprovedPackages(locale)
+}
+
+const getPopularCatalogDestinationsCached = unstable_cache(
+  async (locale: Locale, limit: number, days: number) => {
+    const supabase = createAdminClient()
+    const publicMerchantIds = await getPublicMerchantIds()
+
+    if (publicMerchantIds.size === 0) {
+      return [] as PopularCatalogDestination[]
+    }
+
+    const { data: packagesData, error: packagesError } = await supabase
+      .from("packages")
+      .select(packageListBaseSelect)
+      .eq("status", "approved")
+      .in("merchant_id", Array.from(publicMerchantIds))
+
+    if (packagesError || !packagesData) {
+      if (packagesError) {
+        console.log("POPULAR DESTINATIONS PACKAGES ERROR:", packagesError)
+      }
+      return [] as PopularCatalogDestination[]
+    }
+
+    const localizedPackages = await attachLivePricingToPackages(packagesData as HomePackageListItem[], locale)
+    const destinationCountryIds = [
+      ...new Set(
+        localizedPackages
+          .map((pkg) => String(pkg.destination_country_id || "").trim())
+          .filter(Boolean),
+      ),
+    ]
+    const countryNameById = await fetchCountryNameMap(destinationCountryIds)
+    const enrichedPackages = enrichPackageCatalogFields(localizedPackages, countryNameById)
+    const packageIds = enrichedPackages.map((pkg) => pkg.id)
+
+    if (packageIds.length === 0) {
+      return [] as PopularCatalogDestination[]
+    }
+
+    const sinceDate = new Date()
+    sinceDate.setDate(sinceDate.getDate() - Math.max(days, 1))
+
+    const { data: packageViewsData, error: packageViewsError } = await supabase
+      .from("package_views")
+      .select("package_id, viewed_at")
+      .in("package_id", packageIds)
+      .gte("viewed_at", sinceDate.toISOString())
+
+    if (packageViewsError) {
+      console.log("POPULAR DESTINATIONS VIEWS ERROR:", packageViewsError)
+    }
+
+    const viewsByPackageId = new Map<string, number>()
+    for (const view of (packageViewsData || []) as Array<{ package_id?: string | null }>) {
+      const packageId = String(view.package_id || "").trim()
+      if (!packageId) continue
+      viewsByPackageId.set(packageId, (viewsByPackageId.get(packageId) || 0) + 1)
+    }
+
+    const countriesMap = new Map<string, { totalPackages: number; totalViews: number; lowestPrice: number | null; currency: string | null }>()
+    for (const pkg of enrichedPackages) {
+      const country = String(pkg.country || "").trim()
+      if (!country) continue
+
+      const current = countriesMap.get(country) || {
+        totalPackages: 0,
+        totalViews: 0,
+        lowestPrice: null,
+        currency: pkg.livePricing?.currency || null,
+      }
+      const currentPrice = Number(pkg.livePricing?.priceAdult || 0)
+      const nextLowestPrice =
+        currentPrice > 0 && (current.lowestPrice === null || currentPrice < current.lowestPrice)
+          ? currentPrice
+          : current.lowestPrice
+
+      countriesMap.set(country, {
+        totalPackages: current.totalPackages + 1,
+        totalViews: current.totalViews + Number(viewsByPackageId.get(pkg.id) || 0),
+        lowestPrice: nextLowestPrice,
+        currency: current.currency || pkg.livePricing?.currency || null,
+      })
+    }
+
+    return Array.from(countriesMap.entries())
+      .map(([country, value]) => ({
+        country,
+        totalPackages: value.totalPackages,
+        totalViews: value.totalViews,
+        priceLabel:
+          value.lowestPrice !== null && value.currency
+            ? formatPackageMoney(value.lowestPrice, value.currency, locale)
+            : null,
+      }))
+      .sort(
+        (left, right) =>
+          right.totalViews - left.totalViews ||
+          right.totalPackages - left.totalPackages ||
+          left.country.localeCompare(right.country),
+      )
+      .slice(0, limit)
+  },
+  ["popular-catalog-destinations"],
+  { revalidate: 300 },
+)
+
+export async function getPopularCatalogDestinations(
+  locale: Locale,
+  options?: { limit?: number; days?: number },
+) {
+  return getPopularCatalogDestinationsCached(locale, options?.limit ?? 6, options?.days ?? 30)
 }
 
 const searchCountryIdsByNameCached = unstable_cache(

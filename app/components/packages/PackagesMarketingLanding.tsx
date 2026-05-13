@@ -8,13 +8,10 @@ import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
 import PackagesRecommendationsSection from "@/app/components/packages/PackagesRecommendationsSection"
-import { getLatestCatalogPackages } from "@/lib/home-packages"
+import { getLatestCatalogPackages, getPopularCatalogDestinations } from "@/lib/home-packages"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
-import { dictionaries, type Locale } from "@/lib/i18n"
-import { formatPackageMoney } from "@/lib/package-pricing"
-
-type PackageItem = Awaited<ReturnType<typeof getPublicCatalogData>>["packagesResult"]["items"][number]
+import { dictionaries } from "@/lib/i18n"
 
 function getCountryImage(country: string) {
   const key = country.trim().toLowerCase()
@@ -36,43 +33,17 @@ function getCountryImage(country: string) {
   return imageMap[key] || "/home-assets/background-hero-tour-package.png"
 }
 
-function getLowestPrice(packages: PackageItem[], locale: Locale) {
-  const availablePrices = packages
-    .map((pkg) => ({
-      price: Number(pkg.livePricing?.priceAdult || 0),
-      currency: pkg.livePricing?.currency || pkg.currency || "IDR",
-    }))
-    .filter((entry) => entry.price > 0)
-    .sort((left, right) => left.price - right.price)
-
-  if (!availablePrices.length) return null
-  return formatPackageMoney(availablePrices[0].price, availablePrices[0].currency, locale)
-}
-
 export default async function PackagesMarketingLanding() {
   const locale = await getCurrentLocale()
-  const { packagesResult, searchBarCountries } = await getPublicCatalogData({}, locale)
-  const allPackages = packagesResult.items
+  const { searchBarCountries } = await getPublicCatalogData({}, locale)
   const topPackages = await getLatestCatalogPackages(locale)
-
-  const byCountry = allPackages.reduce<Record<string, PackageItem[]>>((acc, pkg) => {
-    const country = String(pkg.country || "").trim()
-    if (!country) return acc
-    if (!acc[country]) acc[country] = []
-    acc[country].push(pkg)
-    return acc
-  }, {})
-
-  const popularDestinations = Object.entries(byCountry)
-    .map(([country, items]) => ({
-      country,
-      items,
-      total: items.length,
-      image: getCountryImage(country),
-      price: getLowestPrice(items, locale),
-    }))
-    .sort((left, right) => right.total - left.total || left.country.localeCompare(right.country))
-    .slice(0, 6)
+  const popularDestinationsBase = await getPopularCatalogDestinations(locale, { limit: 6, days: 30 })
+  const popularDestinations = popularDestinationsBase.map((entry) => ({
+    ...entry,
+    image: getCountryImage(entry.country),
+    total: entry.totalPackages,
+    price: entry.priceLabel,
+  }))
 
   const promoDestinations = popularDestinations.slice(0, 4).map((entry, index) => ({
     ...entry,
