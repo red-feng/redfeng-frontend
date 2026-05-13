@@ -57,6 +57,8 @@ export type PopularCatalogDestination = {
   country: string
   totalPackages: number
   totalViews: number
+  totalBookings: number
+  popularityScore: number
   priceLabel: string | null
 }
 
@@ -319,6 +321,16 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       console.log("POPULAR DESTINATIONS VIEWS ERROR:", packageViewsError)
     }
 
+    const { data: bookingsData, error: bookingsError } = await supabase
+      .from("bookings")
+      .select("package_id, created_at")
+      .in("package_id", packageIds)
+      .gte("created_at", sinceDate.toISOString())
+
+    if (bookingsError) {
+      console.log("POPULAR DESTINATIONS BOOKINGS ERROR:", bookingsError)
+    }
+
     const viewsByPackageId = new Map<string, number>()
     for (const view of (packageViewsData || []) as Array<{ package_id?: string | null }>) {
       const packageId = String(view.package_id || "").trim()
@@ -326,7 +338,20 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       viewsByPackageId.set(packageId, (viewsByPackageId.get(packageId) || 0) + 1)
     }
 
-    const countriesMap = new Map<string, { totalPackages: number; totalViews: number; lowestPrice: number | null; currency: string | null }>()
+    const bookingsByPackageId = new Map<string, number>()
+    for (const booking of (bookingsData || []) as Array<{ package_id?: string | null }>) {
+      const packageId = String(booking.package_id || "").trim()
+      if (!packageId) continue
+      bookingsByPackageId.set(packageId, (bookingsByPackageId.get(packageId) || 0) + 1)
+    }
+
+    const countriesMap = new Map<string, {
+      totalPackages: number
+      totalViews: number
+      totalBookings: number
+      lowestPrice: number | null
+      currency: string | null
+    }>()
     for (const pkg of enrichedPackages) {
       const country = String(pkg.country || "").trim()
       if (!country) continue
@@ -334,6 +359,7 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       const current = countriesMap.get(country) || {
         totalPackages: 0,
         totalViews: 0,
+        totalBookings: 0,
         lowestPrice: null,
         currency: pkg.livePricing?.currency || null,
       }
@@ -346,23 +372,32 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       countriesMap.set(country, {
         totalPackages: current.totalPackages + 1,
         totalViews: current.totalViews + Number(viewsByPackageId.get(pkg.id) || 0),
+        totalBookings: current.totalBookings + Number(bookingsByPackageId.get(pkg.id) || 0),
         lowestPrice: nextLowestPrice,
         currency: current.currency || pkg.livePricing?.currency || null,
       })
     }
 
     return Array.from(countriesMap.entries())
-      .map(([country, value]) => ({
-        country,
-        totalPackages: value.totalPackages,
-        totalViews: value.totalViews,
-        priceLabel:
-          value.lowestPrice !== null && value.currency
-            ? formatPackageMoney(value.lowestPrice, value.currency, locale)
-            : null,
-      }))
+      .map(([country, value]) => {
+        const popularityScore = value.totalBookings * 20 + value.totalViews
+
+        return {
+          country,
+          totalPackages: value.totalPackages,
+          totalViews: value.totalViews,
+          totalBookings: value.totalBookings,
+          popularityScore,
+          priceLabel:
+            value.lowestPrice !== null && value.currency
+              ? formatPackageMoney(value.lowestPrice, value.currency, locale)
+              : null,
+        }
+      })
       .sort(
         (left, right) =>
+          right.popularityScore - left.popularityScore ||
+          right.totalBookings - left.totalBookings ||
           right.totalViews - left.totalViews ||
           right.totalPackages - left.totalPackages ||
           left.country.localeCompare(right.country),
