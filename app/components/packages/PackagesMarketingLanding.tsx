@@ -525,7 +525,7 @@ export default async function PackagesMarketingLanding() {
               <Link
                 key={entry.country}
                 href={`/packages/catalog?country=${encodeURIComponent(entry.country)}`}
-                className="overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.22)]"
+                className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.22)]"
               >
                 <div className="relative h-[185px]">
                   <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
@@ -533,10 +533,10 @@ export default async function PackagesMarketingLanding() {
                     Diskon {entry.discount}%
                   </span>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-slate-950">{entry.country}</h3>
+                <div className="flex flex-1 flex-col p-4">
+                  <h3 className="min-h-[3.5rem] text-lg font-semibold text-slate-950">{entry.country}</h3>
                   <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-2 text-[26px] font-semibold tracking-[-0.04em] text-slate-950">{entry.price || "-"}</p>
+                  <p className="mt-auto pt-2 text-[26px] font-semibold tracking-[-0.04em] text-slate-950">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
@@ -556,7 +556,7 @@ export default async function PackagesMarketingLanding() {
               <Link
                 key={entry.country}
                 href={`/packages/catalog?country=${encodeURIComponent(entry.country)}`}
-                className="overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.15)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.2)]"
+                className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.15)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.2)]"
               >
                 <div className="relative h-[190px] sm:h-[235px]">
                   <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
@@ -565,9 +565,9 @@ export default async function PackagesMarketingLanding() {
                     <h3 className="text-[20px] font-semibold tracking-[-0.04em] text-white sm:text-[24px]">{entry.country}</h3>
                   </div>
                 </div>
-                <div className="p-3 sm:p-4">
+                <div className="flex flex-1 flex-col p-3 sm:p-4">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-2 text-[18px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[22px]">{entry.price || "-"}</p>
+                  <p className="mt-auto pt-2 text-[18px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[22px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
