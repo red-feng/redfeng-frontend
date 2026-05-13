@@ -50,25 +50,6 @@ function MapPinIcon() {
   )
 }
 
-function FacilityIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-      <rect x="5" y="5" width="14" height="14" rx="3" />
-      <path d="M8.5 12h7M12 8.5v7" />
-    </svg>
-  )
-}
-
-function getFacilityName(relation: RecommendationPackage["package_facilities"]) {
-  return (relation || [])
-    .map((item) => {
-      if (Array.isArray(item.facilities)) return item.facilities[0]?.name || ""
-      return item.facilities?.name || ""
-    })
-    .map((value) => value.trim())
-    .filter(Boolean)
-}
-
 function getPackageTitle(pkg: RecommendationPackage, locale: Locale) {
   const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
   return translation?.title?.trim() || String(pkg.slug || "").trim() || null
@@ -83,12 +64,10 @@ function getItemsPerPage(width: number) {
 function RecommendationCard({
   pkg,
   locale,
-  fromLabel,
   actionLabel,
 }: {
   pkg: RecommendationPackage
   locale: Locale
-  fromLabel: string
   actionLabel: string
 }) {
   const title = getPackageTitle(pkg, locale)
@@ -102,7 +81,6 @@ function RecommendationCard({
         }
       : null
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
-  const facilityNames = getFacilityName(pkg.package_facilities).slice(0, 3)
   const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
   const minimumParticipants = Number(pkg.minimal_peserta || 0)
   const hasMinimumParticipants = Number.isFinite(minimumParticipants) && minimumParticipants > 0
@@ -165,25 +143,11 @@ function RecommendationCard({
           ) : null}
         </div>
 
-        {facilityNames.length > 0 ? (
-          <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[10px] text-slate-500 md:text-[11px]">
-            {facilityNames.map((facilityName) => (
-              <div key={facilityName} className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-                <p className="flex items-center gap-1.5 font-semibold text-slate-700">
-                  <FacilityIcon />
-                  <span className="line-clamp-1">{facilityName}</span>
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
-
         <div className="mt-auto flex items-end justify-between gap-4 pt-5">
           <div className="min-w-0">
             {hasPrice ? (
               <>
-                <p className="text-[11px] leading-none text-slate-400">{fromLabel}</p>
-                <p className="mt-1.5 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[17px]">
+                <p className="text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[17px]">
                   {formattedPrice}
                 </p>
                 <p className="mt-1 text-[11px] font-medium leading-none text-slate-500">/ orang</p>
@@ -206,13 +170,11 @@ export default function PackagesRecommendationsSection({
   title,
   packages,
   locale,
-  fromLabel,
   actionLabel,
 }: {
   title: string
   packages: RecommendationPackage[]
   locale: Locale
-  fromLabel: string
   actionLabel: string
 }) {
   const [itemsPerPage, setItemsPerPage] = useState(4)
@@ -265,7 +227,6 @@ export default function PackagesRecommendationsSection({
             key={pkg.id}
             pkg={pkg}
             locale={locale}
-            fromLabel={fromLabel}
             actionLabel={actionLabel}
           />
         ))}
