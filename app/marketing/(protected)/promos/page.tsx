@@ -1,20 +1,53 @@
 import { deleteMarketingPromo, upsertMarketingPromo } from "@/app/marketing/(protected)/actions"
 import { createAdminClient } from "@/lib/supabase/admin"
 
+type MarketingPromoSearchParams = {
+  success?: string
+  error?: string
+  q?: string
+  status?: string
+}
+
 export default async function MarketingPromosPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ success?: string; error?: string }>
+  searchParams?: Promise<MarketingPromoSearchParams>
 }) {
   const params = searchParams ? await searchParams : {}
+  const query = String(params.q || "").trim().toLowerCase()
+  const statusFilter = String(params.status || "all").trim()
   const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
+
+  let promoQuery = adminSupabase
     .from("marketing_promos")
     .select("id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, sort_order")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true })
 
-  const promos = (data as Array<Record<string, string | number | boolean | null>> | null) || []
+  if (statusFilter === "active") {
+    promoQuery = promoQuery.eq("is_active", true)
+  }
+
+  if (statusFilter === "inactive") {
+    promoQuery = promoQuery.eq("is_active", false)
+  }
+
+  const { data } = await promoQuery
+  const promos = ((data as Array<Record<string, string | number | boolean | null>> | null) || []).filter((promo) => {
+    if (!query) return true
+
+    const haystack = [
+      promo.slug,
+      promo.title_id,
+      promo.title_en,
+      promo.title_zh,
+      promo.target_href,
+    ]
+      .map((value) => String(value || "").toLowerCase())
+      .join(" ")
+
+    return haystack.includes(query)
+  })
 
   return (
     <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-10">
@@ -31,17 +64,62 @@ export default async function MarketingPromosPage({
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
 
         <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="xl:col-span-3">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Cari promo</label>
+              <input
+                name="q"
+                defaultValue={String(params.q || "")}
+                placeholder="Cari berdasarkan slug, judul, atau target href"
+                className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+              <select
+                name="status"
+                defaultValue={statusFilter}
+                className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+              >
+                <option value="all">Semua status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+            <div className="flex gap-3 xl:col-span-4">
+              <button className="rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                Terapkan filter
+              </button>
+              <a
+                href="/marketing/promos"
+                className="rounded-[18px] border border-[#e6d8c2] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Reset
+              </a>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create promo</p>
           <PromoForm />
         </section>
 
         <section className="space-y-4">
+          {!promos.length ? (
+            <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+              Belum ada promo yang cocok dengan filter saat ini.
+            </div>
+          ) : null}
           {promos.map((promo) => (
             <article key={String(promo.id)} className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
               <div className="mb-5 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Existing promo</p>
                   <h2 className="mt-2 text-xl font-semibold text-slate-950">{String(promo.slug)}</h2>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Status: {Boolean(promo.is_active) ? "Active" : "Inactive"} | Sort: {String(promo.sort_order || 0)}
+                  </p>
                 </div>
                 <form action={deleteMarketingPromo}>
                   <input type="hidden" name="promo_id" value={String(promo.id)} />

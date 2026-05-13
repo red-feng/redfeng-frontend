@@ -16,6 +16,7 @@ import {
 import { submitOperationsManagerReport } from "./actions"
 import { createAdminAccount } from "@/app/admin/(protected)/team-accounts/actions"
 import { createFinanceAccount } from "@/app/finance/(protected)/team-accounts/finance-actions"
+import { createMarketingAccount } from "@/app/marketing/(protected)/actions"
 
 type AdminWorkspacePortal = "admin" | "superadmin"
 const JAKARTA_TIMEZONE = "Asia/Jakarta"
@@ -5385,7 +5386,7 @@ export default async function AdminDashboard({
               </div>
             </div>
 
-            <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-2">
+            <div className="mt-5 grid gap-4 sm:mt-6 sm:gap-5 lg:grid-cols-3">
                 <form action={createAdminAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 sm:rounded-[28px] sm:p-6">
                   <input type="hidden" name="role" value="operations_manager" />
                   <input type="hidden" name="return_to" value="/superadmin/dashboard" />
@@ -5465,6 +5466,59 @@ export default async function AdminDashboard({
                     </button>
                   </div>
                 </form>
+                <form action={createMarketingAccount} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5 sm:rounded-[28px] sm:p-6">
+                  <input type="hidden" name="role" value="marketing_manager" />
+                  <input type="hidden" name="return_to" value="/superadmin/dashboard" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Create marketing manager</p>
+                  <h3 className="mt-3 text-xl font-semibold text-slate-950">Akun manager marketing</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Login nanti lewat portal marketing menggunakan username dan password awal yang Anda isi di bawah.
+                  </p>
+                  <div className="mt-5 space-y-3">
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Username
+                      </label>
+                      <input
+                        name="username"
+                        type="text"
+                        required
+                        placeholder="mis: marketing.manager"
+                        className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                        Password awal
+                      </label>
+                      <input
+                        name="password"
+                        type="text"
+                        required
+                        minLength={8}
+                        placeholder="Minimal 8 karakter"
+                        className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                      />
+                    </div>
+                    <button className="w-full rounded-[18px] bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                      Buat akun marketing manager
+                    </button>
+                  </div>
+                </form>
+            </div>
+            <div className="mt-5 grid gap-3 sm:mt-6 md:grid-cols-2">
+              <Link
+                href="/superadmin/marketing-team-accounts"
+                className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:bg-orange-50"
+              >
+                Buka pengelolaan akun marketing
+              </Link>
+              <Link
+                href="/marketing/dashboard"
+                className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:bg-orange-50"
+              >
+                Masuk ke workspace marketing
+              </Link>
             </div>
           </section>
         ) : null}
