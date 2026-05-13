@@ -13,6 +13,8 @@ type RecommendationPackage = {
   cover_image?: string | null
   city?: string | null
   country?: string | null
+  destination_country_id?: string | null
+  destination_province?: string | null
   departure_date: string | null
   minimal_peserta: number | null
   travel_style: string | null
@@ -21,6 +23,10 @@ type RecommendationPackage = {
   price_child?: number | null
   default_language?: string | null
   published_languages?: string[] | null
+  package_facilities?: {
+    facility_id: string
+    facilities: { name: string } | { name: string }[] | null
+  }[] | null
   package_translations?: {
     language_code?: string | null
     title: string | null
@@ -45,39 +51,23 @@ function MapPinIcon() {
   )
 }
 
-function BedIcon() {
+function FacilityIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-      <path d="M4 11.5h16V19" />
-      <path d="M4 19v-9a2.5 2.5 0 0 1 2.5-2.5h4A2.5 2.5 0 0 1 13 10v1.5" />
-      <path d="M13 9h4a3 3 0 0 1 3 3v7" />
+      <rect x="5" y="5" width="14" height="14" rx="3" />
+      <path d="M8.5 12h7M12 8.5v7" />
     </svg>
   )
 }
 
-function UtensilsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-      <path d="M7 4v7" />
-      <path d="M10 4v7" />
-      <path d="M7 7H5.5A1.5 1.5 0 0 1 4 5.5V4" />
-      <path d="M10 7h1.5A1.5 1.5 0 0 0 13 5.5V4" />
-      <path d="M8.5 11v9" />
-      <path d="M18 4v16" />
-      <path d="M18 4c-2 0-3 1.8-3 4v3h3" />
-    </svg>
-  )
-}
-
-function BusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-      <rect x="5" y="4.5" width="14" height="12" rx="3" />
-      <path d="M8 16.5v3M16 16.5v3M5 10.5h14" />
-      <circle cx="8.5" cy="13.5" r="1" fill="currentColor" stroke="none" />
-      <circle cx="15.5" cy="13.5" r="1" fill="currentColor" stroke="none" />
-    </svg>
-  )
+function getFacilityName(relation: RecommendationPackage["package_facilities"]) {
+  return (relation || [])
+    .map((item) => {
+      if (Array.isArray(item.facilities)) return item.facilities[0]?.name || ""
+      return item.facilities?.name || ""
+    })
+    .map((value) => value.trim())
+    .filter(Boolean)
 }
 
 function getPackageTitle(pkg: RecommendationPackage, locale: Locale) {
@@ -116,6 +106,7 @@ function RecommendationCard({
     priceChild: Number(pkg.price_child || 0),
   }
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
+  const facilityNames = getFacilityName(pkg.package_facilities).slice(0, 3)
 
   return (
     <article className="flex h-full flex-col overflow-hidden rounded-[30px] border border-[#e9e3db] bg-white shadow-[0_24px_60px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_30px_70px_-34px_rgba(15,23,42,0.22)]">
@@ -175,29 +166,19 @@ function RecommendationCard({
           ) : null}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[10px] text-slate-500 md:text-[11px]">
-          <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
-              <BedIcon />
-              Hotel
-            </p>
-            <p className="mt-1">3x</p>
+        {facilityNames.length > 0 ? (
+          <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[10px] text-slate-500 md:text-[11px]">
+            {facilityNames.map((facilityName) => (
+              <div key={facilityName} className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
+                <p className="flex items-center gap-1.5 font-semibold text-slate-700">
+                  <FacilityIcon />
+                  <span className="line-clamp-1">{facilityName}</span>
+                </p>
+                <p className="mt-1">Tersedia</p>
+              </div>
+            ))}
           </div>
-          <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
-              <UtensilsIcon />
-              Makan
-            </p>
-            <p className="mt-1">4x</p>
-          </div>
-          <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
-            <p className="flex items-center gap-1.5 font-semibold text-slate-700">
-              <BusIcon />
-              Transport
-            </p>
-            <p className="mt-1">Termasuk</p>
-          </div>
-        </div>
+        ) : null}
 
         <div className="mt-auto flex items-end justify-between gap-4 pt-5">
           <div className="min-w-0">

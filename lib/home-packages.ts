@@ -34,6 +34,10 @@ export type HomePackageListItem = {
   price_child?: number | null
   default_language?: string | null
   published_languages?: string[] | null
+  package_facilities?: {
+    facility_id: string
+    facilities: { name: string } | { name: string }[] | null
+  }[] | null
   package_translations?: {
     language_code?: string | null
     title: string | null
@@ -94,6 +98,10 @@ const packagePricingSelect = `
 
 const packageListSelect = `
   ${packageListBaseSelect},
+  package_facilities(
+    facility_id,
+    facilities(name)
+  ),
   package_translations(language_code, title, description, currency, price_adult, price_child)
 `
 
@@ -230,7 +238,16 @@ const getLatestApprovedPackagesCached = unstable_cache(
       return [] as HomePackageListItem[]
     }
 
-    return attachLivePricingToPackages(data as HomePackageListItem[], locale)
+    const localizedPackages = await attachLivePricingToPackages(data as HomePackageListItem[], locale)
+    const destinationCountryIds = [
+      ...new Set(
+        localizedPackages
+          .map((pkg) => String(pkg.destination_country_id || "").trim())
+          .filter(Boolean),
+      ),
+    ]
+    const countryNameById = await fetchCountryNameMap(destinationCountryIds)
+    return enrichPackageCatalogFields(localizedPackages, countryNameById)
   },
   ["latest-approved-packages"],
   { revalidate: 60 },
@@ -320,6 +337,14 @@ async function fetchCountryNameMap(countryIds: string[]) {
   return new Map(
     (countries || []).map((country) => [String(country.id || ""), String(country.name || "").trim()]),
   )
+}
+
+function enrichPackageCatalogFields<T extends HomePackageListItem>(packages: T[], countryNameById: Map<string, string>): T[] {
+  return packages.map((pkg) => ({
+    ...pkg,
+    city: pkg.city || pkg.destination_province || null,
+    country: countryNameById.get(String(pkg.destination_country_id || "")) || pkg.country || null,
+  }))
 }
 
 function comparePackageDates(leftDate: string | null | undefined, rightDate: string | null | undefined) {
@@ -563,16 +588,7 @@ export async function getHomePackages(
   ]
   const countryNameById = await fetchCountryNameMap(destinationCountryIds)
 
-  const pageDataMap = new Map(
-    detailedPackages.map((pkg) => [
-      pkg.id,
-      {
-        ...pkg,
-        city: pkg.city || pkg.destination_province || null,
-        country: countryNameById.get(String(pkg.destination_country_id || "")) || pkg.country || null,
-      },
-    ]),
-  )
+  const pageDataMap = new Map(enrichPackageCatalogFields(detailedPackages, countryNameById).map((pkg) => [pkg.id, pkg]))
 
   return {
     availableCountries,
