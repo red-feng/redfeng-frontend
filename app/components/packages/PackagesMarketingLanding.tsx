@@ -13,26 +13,6 @@ import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 import { dictionaries } from "@/lib/i18n"
 
-function getCountryImage(country: string) {
-  const key = country.trim().toLowerCase()
-  const imageMap: Record<string, string> = {
-    indonesia: "/home-assets/dest-bali.png",
-    japan: "/home-assets/dest-tokyo.png",
-    jepang: "/home-assets/dest-tokyo.png",
-    singapore: "/home-assets/dest-singapore.png",
-    singapura: "/home-assets/dest-singapore.png",
-    thailand: "/home-assets/dest-bangkok.png",
-    australia: "/home-assets/hero-reference.png",
-    swiss: "/home-assets/hero-reference.png",
-    switzerland: "/home-assets/hero-reference.png",
-    vietnam: "/home-assets/dest-labuanbajo.png",
-    dubai: "/home-assets/hero-reference.png",
-    china: "/home-assets/newsletter-bg-generated-china.png",
-  }
-
-  return imageMap[key] || "/home-assets/background-hero-tour-package.png"
-}
-
 export default async function PackagesMarketingLanding() {
   const locale = await getCurrentLocale()
   const { searchBarCountries } = await getPublicCatalogData({}, locale)
@@ -40,7 +20,7 @@ export default async function PackagesMarketingLanding() {
   const popularDestinationsBase = await getPopularCatalogDestinations(locale, { limit: 6, days: 30 })
   const popularDestinations = popularDestinationsBase.map((entry) => ({
     ...entry,
-    image: getCountryImage(entry.country),
+    image: entry.coverImage,
     total: entry.totalPackages,
     price: entry.priceLabel,
   }))
@@ -323,7 +303,11 @@ export default async function PackagesMarketingLanding() {
                 className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.22)]"
               >
                 <div className="relative h-[185px]">
-                  <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
+                  {entry.image ? (
+                    <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(135deg,#fff7ef_0%,#f8fafc_100%)]" aria-hidden="true" />
+                  )}
                   <span className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#ef4423] shadow-sm">
                     Diskon {entry.discount}%
                   </span>
@@ -353,7 +337,11 @@ export default async function PackagesMarketingLanding() {
                 className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.15)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.2)]"
               >
                 <div className="relative h-[190px] sm:h-[235px]">
-                  <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
+                  {entry.image ? (
+                    <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
+                  ) : (
+                    <div className="h-full w-full bg-[linear-gradient(135deg,#fff7ef_0%,#f8fafc_100%)]" aria-hidden="true" />
+                  )}
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.18)_54%,rgba(15,23,42,0.54)_100%)]" />
                   <div className="absolute inset-x-0 bottom-0 p-4">
                     <h3 className="text-[12px] font-semibold leading-none tracking-normal text-white sm:text-[18px]">{entry.country}</h3>

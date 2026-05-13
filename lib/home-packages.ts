@@ -60,6 +60,7 @@ export type PopularCatalogDestination = {
   totalBookings: number
   popularityScore: number
   priceLabel: string | null
+  coverImage: string | null
 }
 
 const packageFilterBaseSelect = `
@@ -301,7 +302,11 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       ),
     ]
     const countryNameById = await fetchCountryNameMap(destinationCountryIds)
-    const enrichedPackages = enrichPackageCatalogFields(localizedPackages, countryNameById)
+    const enrichedPackages = enrichPackageCatalogFields(localizedPackages, countryNameById).sort((left, right) => {
+      const leftReviewedAt = left.reviewed_at || ""
+      const rightReviewedAt = right.reviewed_at || ""
+      return rightReviewedAt.localeCompare(leftReviewedAt)
+    })
     const packageIds = enrichedPackages.map((pkg) => pkg.id)
 
     if (packageIds.length === 0) {
@@ -351,6 +356,9 @@ const getPopularCatalogDestinationsCached = unstable_cache(
       totalBookings: number
       lowestPrice: number | null
       currency: string | null
+      coverImage: string | null
+      bestPackageScore: number
+      bestPackageReviewedAt: string | null
     }>()
     for (const pkg of enrichedPackages) {
       const country = String(pkg.country || "").trim()
@@ -362,19 +370,40 @@ const getPopularCatalogDestinationsCached = unstable_cache(
         totalBookings: 0,
         lowestPrice: null,
         currency: pkg.livePricing?.currency || null,
+        coverImage: null,
+        bestPackageScore: -1,
+        bestPackageReviewedAt: null,
       }
       const currentPrice = Number(pkg.livePricing?.priceAdult || 0)
+      const packageViews = Number(viewsByPackageId.get(pkg.id) || 0)
+      const packageBookings = Number(bookingsByPackageId.get(pkg.id) || 0)
+      const packageScore = packageBookings * 20 + packageViews
       const nextLowestPrice =
         currentPrice > 0 && (current.lowestPrice === null || currentPrice < current.lowestPrice)
           ? currentPrice
           : current.lowestPrice
+      const packageReviewedAt = pkg.reviewed_at || null
+      const shouldUsePackageImage =
+        Boolean(pkg.cover_image) &&
+        (
+          packageScore > current.bestPackageScore ||
+          (
+            packageScore === current.bestPackageScore &&
+            packageReviewedAt !== null &&
+            (current.bestPackageReviewedAt === null || packageReviewedAt > current.bestPackageReviewedAt)
+          ) ||
+          (current.coverImage === null && current.bestPackageScore < 0)
+        )
 
       countriesMap.set(country, {
         totalPackages: current.totalPackages + 1,
-        totalViews: current.totalViews + Number(viewsByPackageId.get(pkg.id) || 0),
-        totalBookings: current.totalBookings + Number(bookingsByPackageId.get(pkg.id) || 0),
+        totalViews: current.totalViews + packageViews,
+        totalBookings: current.totalBookings + packageBookings,
         lowestPrice: nextLowestPrice,
         currency: current.currency || pkg.livePricing?.currency || null,
+        coverImage: shouldUsePackageImage ? pkg.cover_image || null : current.coverImage,
+        bestPackageScore: shouldUsePackageImage ? packageScore : current.bestPackageScore,
+        bestPackageReviewedAt: shouldUsePackageImage ? packageReviewedAt : current.bestPackageReviewedAt,
       })
     }
 
@@ -388,6 +417,7 @@ const getPopularCatalogDestinationsCached = unstable_cache(
           totalViews: value.totalViews,
           totalBookings: value.totalBookings,
           popularityScore,
+          coverImage: value.coverImage,
           priceLabel:
             value.lowestPrice !== null && value.currency
               ? formatPackageMoney(value.lowestPrice, value.currency, locale)
