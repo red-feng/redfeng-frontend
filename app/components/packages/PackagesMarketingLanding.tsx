@@ -154,11 +154,11 @@ function PackageRecoCard({
       <div className="flex flex-1 flex-col p-5">
         <Link
           href={`/packages/${encodeURIComponent(pkg.slug)}`}
-          className="line-clamp-2 min-h-[3.8rem] text-[22px] font-semibold leading-tight tracking-[-0.035em] text-slate-950 transition hover:text-[#ef4423] xl:min-h-[4.15rem] xl:text-[24px]"
+          className="line-clamp-2 min-h-[3.2rem] text-[19px] font-semibold leading-[1.18] tracking-[-0.03em] text-slate-950 transition hover:text-[#ef4423] xl:min-h-[3.55rem] xl:text-[24px]"
         >
           {title}
         </Link>
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-500">
+        <p className="mt-2 flex items-center gap-1.5 text-[12px] leading-[1.2] text-slate-500 md:text-[13px]">
           <span className="text-[#ef4423]">
             <MapPinIcon />
           </span>
@@ -167,21 +167,21 @@ function PackageRecoCard({
 
         <div className="mt-4 flex flex-wrap gap-2">
           {pkg.travel_style ? (
-            <span className="rounded-full bg-[#fff1ea] px-3 py-1.5 text-[11px] font-semibold text-[#ef4423]">
+            <span className="rounded-full bg-[#fff1ea] px-3 py-1.5 text-[10px] font-medium text-[#ef4423]">
               {formatTravelStyleLabel(pkg.travel_style, locale)}
             </span>
           ) : null}
-          <span className="rounded-full bg-[#f4f6fb] px-3 py-1.5 text-[11px] font-semibold text-slate-700">
+          <span className="rounded-full bg-[#f4f6fb] px-3 py-1.5 text-[10px] font-medium text-slate-700">
             {participantLabel} {pkg.minimal_peserta || 0}
           </span>
           {pkg.departure_date ? (
-            <span className="rounded-full bg-[#fff7e8] px-3 py-1.5 text-[11px] font-semibold text-amber-700">
+            <span className="rounded-full bg-[#fff7e8] px-3 py-1.5 text-[10px] font-medium text-amber-700">
               {pkg.departure_date}
             </span>
           ) : null}
         </div>
 
-        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[11px] text-slate-500">
+        <div className="mt-5 grid grid-cols-3 gap-2 border-t border-[#f2ebe5] pt-4 text-[10px] text-slate-500 md:text-[11px]">
           <div className="rounded-[14px] bg-[#faf7f4] px-3 py-2">
             <p className="flex items-center gap-1.5 font-semibold text-slate-700">
               <BedIcon />
@@ -207,15 +207,15 @@ function PackageRecoCard({
 
         <div className="mt-auto flex items-end justify-between gap-4 pt-5">
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{fromLabel}</p>
-            <p className="mt-2 text-[28px] font-semibold tracking-[-0.04em] text-[#ef4423] xl:text-[30px]">
+            <p className="text-[11px] leading-none text-slate-400">{fromLabel}</p>
+            <p className="mt-1.5 text-[17px] font-bold leading-[1.15] tracking-[-0.02em] text-[#ef4423] md:text-[19px]">
               {formatPackageMoney(pricing.priceAdult, pricing.currency, locale)}
             </p>
-            <p className="mt-1 text-xs text-slate-400">/ orang</p>
+            <p className="mt-1 text-[11px] font-medium leading-none text-slate-500">/ orang</p>
           </div>
           <Link
             href={`/packages/${encodeURIComponent(pkg.slug)}`}
-            className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.7)] transition hover:brightness-105"
+            className="inline-flex items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.7)] transition hover:brightness-105"
           >
             {actionLabel}
           </Link>
@@ -507,15 +507,15 @@ export default async function PackagesMarketingLanding() {
         <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-10 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
-              <h2 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-950">{copy.promoTitle}</h2>
-              <p className="mt-4 text-sm text-slate-500">{copy.promoBody}</p>
-              <p className="mt-3 text-[48px] font-semibold tracking-[-0.05em] text-[#ef4423]">
-                30% <span className="text-[24px]">OFF</span>
+              <h2 className="text-[19px] font-bold leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[24px]">{copy.promoTitle}</h2>
+              <p className="mt-4 text-[13px] font-medium leading-none text-slate-500">{copy.promoBody}</p>
+              <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] text-[#ef4423] sm:text-[19px]">
+                30% <span className="text-[13px] sm:text-[14px]">OFF</span>
               </p>
-              <p className="mt-1 max-w-[220px] text-sm leading-6 text-slate-500">{copy.offerLine}</p>
+              <p className="mt-3 max-w-[220px] text-[12px] leading-[1.3] text-slate-500 sm:text-[13px]">{copy.offerLine}</p>
               <Link
                 href="/promo"
-                className="mt-6 inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105"
+                className="mt-5 inline-flex items-center justify-center rounded-[14px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_16px_32px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105"
               >
                 {copy.promoAction}
               </Link>
@@ -534,9 +534,9 @@ export default async function PackagesMarketingLanding() {
                   </span>
                 </div>
                 <div className="flex flex-1 flex-col p-4">
-                  <h3 className="min-h-[3.5rem] text-lg font-semibold text-slate-950">{entry.country}</h3>
-                  <p className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-auto pt-2 text-[26px] font-semibold tracking-[-0.04em] text-slate-950">{entry.price || "-"}</p>
+                  <h3 className="min-h-[2.7rem] text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px]">{entry.country}</h3>
+                  <p className="mt-1 text-[11px] leading-none text-slate-400">{copy.fromLabel}</p>
+                  <p className="mt-auto pt-2 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
@@ -545,8 +545,8 @@ export default async function PackagesMarketingLanding() {
 
         <section className={`${homeLayoutLock.contentWidthClass} mt-12`}>
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px] lg:text-[32px]">{copy.popularTitle}</h2>
-            <Link href="/packages/catalog" className="text-sm font-semibold text-[#ef4423] transition hover:text-[#d93b1d]">
+            <h2 className="text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">{copy.popularTitle}</h2>
+            <Link href="/packages/catalog" className="text-[14px] font-semibold text-slate-900 transition hover:text-[#d93b1d]">
               {copy.seeAll}
             </Link>
           </div>
@@ -562,12 +562,12 @@ export default async function PackagesMarketingLanding() {
                   <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.02)_0%,rgba(15,23,42,0.18)_54%,rgba(15,23,42,0.54)_100%)]" />
                   <div className="absolute inset-x-0 bottom-0 p-4">
-                    <h3 className="text-[20px] font-semibold tracking-[-0.04em] text-white sm:text-[24px]">{entry.country}</h3>
+                    <h3 className="text-[12px] font-semibold leading-none tracking-normal text-white sm:text-[18px]">{entry.country}</h3>
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col p-3 sm:p-4">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-auto pt-2 text-[18px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[22px]">{entry.price || "-"}</p>
+                  <p className="text-[11px] leading-none text-slate-400">{copy.fromLabel}</p>
+                  <p className="mt-auto pt-2 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
@@ -576,7 +576,7 @@ export default async function PackagesMarketingLanding() {
 
         <section className={`${homeLayoutLock.contentWidthClass} mt-14`}>
           <div className="flex items-end justify-between gap-4">
-            <h2 className="max-w-[760px] text-[28px] font-semibold tracking-[-0.04em] text-slate-950 sm:text-[30px] lg:text-[32px]">{copy.recommendationTitle}</h2>
+            <h2 className="max-w-[760px] text-[14px] font-semibold leading-[1.32] tracking-normal text-slate-900 lg:text-[15px]">{copy.recommendationTitle}</h2>
             <div className="hidden items-center gap-2 md:flex md:self-start">
               <button
                 type="button"
