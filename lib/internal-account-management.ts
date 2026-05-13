@@ -27,6 +27,8 @@ export async function getInternalManagerActor(returnTo?: string) {
     ? "/superadmin/login"
     : returnTo?.startsWith("/finance")
       ? "/finance/login"
+      : returnTo?.startsWith("/marketing")
+        ? "/marketing/login"
       : "/admin/login"
 
   if (!user) {
@@ -34,7 +36,7 @@ export async function getInternalManagerActor(returnTo?: string) {
   }
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-  if (!profile || !["admin", "operations_manager", "finance", "finance_manager", "superadmin"].includes(profile.role || "")) {
+  if (!profile || !["admin", "operations_manager", "finance", "finance_manager", "marketing", "marketing_manager", "superadmin"].includes(profile.role || "")) {
     redirect(loginPath)
   }
 

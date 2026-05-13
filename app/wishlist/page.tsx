@@ -3,15 +3,16 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { destinationCatalog, popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 import WishlistPageClient from "@/app/components/favorites/WishlistPageClient"
-import { promoCatalog } from "@/app/components/promo/promoCatalog"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingPromos } from "@/lib/marketing-content"
 
 export const dynamic = "force-dynamic"
 
 export default async function WishlistPage() {
   const locale = await getCurrentLocale()
+  const promos = await getMarketingPromos(locale)
   const suggestedItems = [
-    ...promoCatalog.slice(0, 3).map((item) => ({
+    ...promos.slice(0, 3).map((item) => ({
       key: item.favoriteKey,
       title: item.title.replace(/\n/g, " "),
       subtitle: item.price,

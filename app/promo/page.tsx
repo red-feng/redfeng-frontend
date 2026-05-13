@@ -4,8 +4,8 @@ import Link from "next/link"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
-import { promoCatalog } from "@/app/components/promo/promoCatalog"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingPromos } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
   title: "Promo | Red Feng",
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function PromoPage() {
   const locale = await getCurrentLocale()
+  const promos = await getMarketingPromos(locale)
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
@@ -36,9 +37,9 @@ export default async function PromoPage() {
           </section>
 
           <section className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {promoCatalog.map((card) => (
+            {promos.map((card) => (
               <article
-                key={card.title}
+                key={card.slug}
                 className="group relative flex min-h-[320px] flex-col overflow-hidden rounded-[28px] px-5 py-5 text-white shadow-[0_24px_52px_-30px_rgba(15,23,42,0.34)]"
               >
                 <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`} />

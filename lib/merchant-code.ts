@@ -27,6 +27,10 @@ export function formatFinanceCode(financeId: string | null | undefined) {
   return formatIdentityCode("RFF", financeId, "RFF-UNASSIGNED")
 }
 
+export function formatMarketingCode(marketingId: string | null | undefined) {
+  return formatIdentityCode("RFMK", marketingId, "RFMK-UNASSIGNED")
+}
+
 export function formatInternalUserCode(userId: string | null | undefined) {
   return formatIdentityCode("RFU", userId, "RFU-UNASSIGNED")
 }

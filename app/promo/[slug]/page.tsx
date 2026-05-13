@@ -4,20 +4,21 @@ import { notFound } from "next/navigation"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
-import { promoCatalog, getPromoBySlug } from "@/app/components/promo/promoCatalog"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingPromoBySlug, getMarketingPromoSlugs } from "@/lib/marketing-content"
 
 type PromoDetailPageProps = {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  return promoCatalog.map((item) => ({ slug: item.slug }))
+  return getMarketingPromoSlugs()
 }
 
 export async function generateMetadata({ params }: PromoDetailPageProps): Promise<Metadata> {
   const { slug } = await params
-  const promo = getPromoBySlug(slug)
+  const locale = await getCurrentLocale()
+  const promo = await getMarketingPromoBySlug(slug, locale)
 
   if (!promo) {
     return {
@@ -36,8 +37,8 @@ export async function generateMetadata({ params }: PromoDetailPageProps): Promis
 
 export default async function PromoDetailPage({ params }: PromoDetailPageProps) {
   const { slug } = await params
-  const promo = getPromoBySlug(slug)
   const locale = await getCurrentLocale()
+  const promo = await getMarketingPromoBySlug(slug, locale)
 
   if (!promo) notFound()
 

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NextResponse } from "next/server"
-import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
+import { isAdminPortalRole, isFinancePortalRole, isMarketingPortalRole } from "@/lib/internal-roles"
 import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, CUSTOMER_PORTAL_DEFAULT_REDIRECT, normalizeActivePortal } from "@/lib/portal-context"
 import { ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -15,6 +15,10 @@ function getCustomerPortalRoleError(role: string | null | undefined) {
 
   if (normalizedRole === "finance" || normalizedRole === "finance_manager") {
     return "Akun Google ini terdaftar sebagai finance. Gunakan portal finance untuk melanjutkan."
+  }
+
+  if (normalizedRole === "marketing" || normalizedRole === "marketing_manager") {
+    return "Akun Google ini terdaftar sebagai marketing. Gunakan portal marketing untuk melanjutkan."
   }
 
   if (normalizedRole === "superadmin") {
@@ -107,7 +111,7 @@ export async function GET(request: Request) {
 
       const effectiveRole = profile.role
 
-      if (isAdminPortalRole(effectiveRole) || isFinancePortalRole(effectiveRole) || effectiveRole === "superadmin") {
+      if (isAdminPortalRole(effectiveRole) || isFinancePortalRole(effectiveRole) || isMarketingPortalRole(effectiveRole) || effectiveRole === "superadmin") {
         await supabase.auth.signOut()
         return NextResponse.redirect(
           new URL(`/login?error=${encodeURIComponent(getCustomerPortalRoleError(effectiveRole))}`, origin),

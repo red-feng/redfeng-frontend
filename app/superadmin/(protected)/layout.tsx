@@ -94,6 +94,10 @@ export default async function SuperadminProtectedLayout({
     const scope = normalizeStatus(log.metadata?.scope)
     return scope === "finance_team" && isNewerThan(log.created_at, seenFinanceAccountsAt)
   }).length
+  const marketingAccountsBadgeCount = internalAccountLogs.filter((log) => {
+    const scope = normalizeStatus(log.metadata?.scope)
+    return scope === "marketing_team"
+  }).length
   const superadminAccountsBadgeCount = internalAccountLogs.filter((log) => {
     const scope = normalizeStatus(log.metadata?.scope)
     return scope === "superadmin_accounts" && isNewerThan(log.created_at, seenSuperadminAccountsAt)
@@ -117,6 +121,7 @@ export default async function SuperadminProtectedLayout({
       children: [
         { href: "/superadmin/team-accounts", label: "Ops Team Accounts", badgeCount: opsAccountsBadgeCount },
         { href: "/superadmin/finance-team-accounts", label: "Finance Team Accounts", badgeCount: financeAccountsBadgeCount },
+        { href: "/superadmin/marketing-team-accounts", label: "Marketing Team Accounts", badgeCount: marketingAccountsBadgeCount },
         { href: "/superadmin/superadmin-accounts", label: "Superadmin Accounts", badgeCount: superadminAccountsBadgeCount },
       ],
     },

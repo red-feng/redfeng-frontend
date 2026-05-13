@@ -3,40 +3,18 @@
 import Link from "next/link"
 import { useRef } from "react"
 import type { Locale } from "@/lib/i18n"
+import type { MarketingPromo } from "@/lib/marketing-content"
 
 import FavoriteButton from "@/app/components/favorites/FavoriteButton"
 import { ArrowRightIcon } from "@/app/components/home/shared/homeContent"
-import { promoCatalog } from "@/app/components/promo/promoCatalog"
-import { formatHomePriceFromIdr } from "@/lib/home-pricing"
 
-export default function WebHomePromoSection({ locale }: { locale: Locale }) {
+export default function WebHomePromoSection({ locale, promos }: { locale: Locale; promos: MarketingPromo[] }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const copy = {
     id: { prev: "Promo sebelumnya", next: "Promo berikutnya", promoMeta: "Promo" },
     en: { prev: "Previous promo", next: "Next promo", promoMeta: "Promo" },
     zh: { prev: "上一个优惠", next: "下一个优惠", promoMeta: "优惠" },
   }[locale]
-  const localizedPromoContent = {
-    id: [
-      { title: "Terbang Hemat\nke Banyak Destinasi", badge: "Promo Terbatas", eyebrow: "Diskon hingga", cta: "Pesan Sekarang" },
-      { title: "Hotel Pilihan\nHarga Terbaik", badge: undefined, eyebrow: "Diskon hingga", cta: "Booking Sekarang" },
-      { title: "Paket Wisata\nDomestik & Internasional", badge: undefined, eyebrow: "Mulai dari", cta: "Lihat Paket" },
-      { title: "Promo Kereta\nAntarkota Favorit", badge: undefined, eyebrow: "Mulai dari", cta: "Pesan Kereta" },
-    ],
-    en: [
-      { title: "Save More on Flights\nto Many Destinations", badge: "Limited Promo", eyebrow: "Discount up to", cta: "Book Now" },
-      { title: "Selected Hotels\nBest Rates", badge: undefined, eyebrow: "Discount up to", cta: "Book Now" },
-      { title: "Tour Packages\nDomestic & International", badge: undefined, eyebrow: "Starting from", cta: "View Packages" },
-      { title: "Train Promo\nFavorite Intercity Routes", badge: undefined, eyebrow: "Starting from", cta: "Book Train" },
-    ],
-    zh: [
-      { title: "超值机票优惠\n飞往更多目的地", badge: "限时优惠", eyebrow: "最高优惠", cta: "立即预订" },
-      { title: "精选酒店\n超值好价", badge: undefined, eyebrow: "最高优惠", cta: "立即预订" },
-      { title: "旅游套餐\n国内与国际精选", badge: undefined, eyebrow: "起价", cta: "查看套餐" },
-      { title: "火车优惠\n热门城际路线", badge: undefined, eyebrow: "起价", cta: "预订火车" },
-    ],
-  }[locale]
-  const localizedPromoPrices = [500000, null, 1900000, 150000]
 
   const scrollByCard = (direction: "prev" | "next") => {
     const track = trackRef.current
@@ -52,7 +30,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
   }
 
   return (
-    <section className="home-promo-section relative z-0 isolate mx-auto max-w-[1240px] px-4 pt-6 pb-10 sm:px-6 lg:px-8 lg:pt-7 lg:pb-12">
+    <section className="home-promo-section relative z-0 isolate mx-auto max-w-[1240px] px-4 pb-10 pt-6 sm:px-6 lg:px-8 lg:pb-12 lg:pt-7">
       <div className="relative">
         <button
           type="button"
@@ -74,14 +52,11 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
           ref={trackRef}
           className="home-promo-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:gap-[18px]"
         >
-          {promoCatalog.map((card, index) => {
-            const localized = localizedPromoContent[index]
-            const localizedPrice = localizedPromoPrices[index] ? formatHomePriceFromIdr(localizedPromoPrices[index] || 0, locale) : card.price
-            return (
+          {promos.map((card, index) => (
             <article
-              key={card.title}
+              key={card.slug}
               data-promo-card
-            className="home-promo-card group relative flex min-h-[286px] w-[302px] min-w-[302px] snap-start flex-col overflow-hidden rounded-[26px] bg-slate-900 px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_34px_74px_-42px_rgba(15,23,42,0.46)] sm:min-h-[320px] sm:w-[356px] sm:min-w-[356px] sm:px-6 sm:py-6 lg:min-h-[332px] lg:w-[390px] lg:min-w-[390px] xl:w-[408px] xl:min-w-[408px] xl:px-7 xl:py-7"
+              className="home-promo-card group relative flex min-h-[286px] w-[302px] min-w-[302px] snap-start flex-col overflow-hidden rounded-[26px] bg-slate-900 px-6 py-6 text-white shadow-[0_28px_70px_-42px_rgba(15,23,42,0.42)] transition-[transform,box-shadow] duration-500 ease-out hover:-translate-y-0.5 hover:shadow-[0_34px_74px_-42px_rgba(15,23,42,0.46)] sm:min-h-[320px] sm:w-[356px] sm:min-w-[356px] sm:px-6 sm:py-6 lg:min-h-[332px] lg:w-[390px] lg:min-w-[390px] xl:w-[408px] xl:min-w-[408px] xl:px-7 xl:py-7"
             >
               <div className={`absolute inset-0 bg-gradient-to-br ${card.gradient}`} />
               <div className={`absolute inset-0 scale-[1.005] bg-no-repeat transition-transform duration-700 ease-out group-hover:scale-[1.028] ${card.imageClass}`} style={{ backgroundImage: `url('${card.image}')` }} />
@@ -93,7 +68,7 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
                   item={{
                     key: card.favoriteKey,
                     title: card.title.replace(/\n/g, " "),
-                    subtitle: localizedPrice,
+                    subtitle: card.price,
                     href: card.detailHref,
                     meta: copy.promoMeta,
                   }}
@@ -104,25 +79,25 @@ export default function WebHomePromoSection({ locale }: { locale: Locale }) {
               <div className={`relative z-10 flex h-full flex-col ${index === 0 ? "max-w-[220px] sm:max-w-[232px]" : "max-w-[232px] sm:max-w-[242px]"}`}>
                 {card.badge ? (
                   <span className="inline-flex w-fit rounded-full bg-white px-3.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#ff5b4d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.9)]">
-                    {localized?.badge || card.badge}
+                    {card.badge}
                   </span>
                 ) : null}
                 <h3 className="mt-7 whitespace-pre-line text-[19px] font-bold leading-[1.1] tracking-[-0.035em] sm:text-[24px]">
-                  {localized?.title || card.title}
+                  {card.title}
                 </h3>
                 <div className="mt-auto pt-8">
-                  <p className="text-[13px] font-medium leading-none text-white/88">{localized?.eyebrow || card.eyebrow}</p>
-                  <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{localizedPrice}</p>
+                  <p className="text-[13px] font-medium leading-none text-white/88">{card.eyebrow}</p>
+                  <p className="mt-2 text-[17px] font-bold leading-none tracking-[-0.03em] sm:text-[19px]">{card.price}</p>
                 </div>
                 <Link
                   href={card.detailHref}
                   className="mt-5 w-fit rounded-[14px] bg-white px-5 py-3 text-[13px] font-semibold text-slate-950 shadow-[0_18px_36px_-24px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:scale-[1.02]"
                 >
-                  {localized?.cta || card.cta}
+                  {card.cta}
                 </Link>
               </div>
             </article>
-          )})}
+          ))}
         </div>
       </div>
     </section>

@@ -1,7 +1,7 @@
 export const ACTIVE_PORTAL_COOKIE = "rf_active_portal"
 export const ACTIVE_PORTAL_MAX_AGE = 60 * 60 * 24 * 30
 
-export const PORTAL_SESSION_NAMESPACES = ["customer", "merchant", "admin", "finance", "superadmin"] as const
+export const PORTAL_SESSION_NAMESPACES = ["customer", "merchant", "admin", "finance", "marketing", "superadmin"] as const
 
 export type ActivePortal = (typeof PORTAL_SESSION_NAMESPACES)[number]
 
@@ -26,6 +26,7 @@ export function resolvePortalFromPathname(pathname: string | null | undefined): 
   if (normalizedPathname.startsWith("/merchant")) return "merchant"
   if (normalizedPathname.startsWith("/admin")) return "admin"
   if (normalizedPathname.startsWith("/finance")) return "finance"
+  if (normalizedPathname.startsWith("/marketing")) return "marketing"
   if (normalizedPathname.startsWith("/superadmin")) return "superadmin"
 
   return "customer"

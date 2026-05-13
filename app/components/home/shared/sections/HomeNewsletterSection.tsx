@@ -1,6 +1,19 @@
 import type { Locale } from "@/lib/i18n"
+import { subscribeToNewsletter } from "./HomeNewsletterSection.actions"
 
-export default function HomeNewsletterSection({ locale }: { locale: Locale }) {
+type HomeNewsletterSectionProps = {
+  locale: Locale
+  redirectPath?: "/" | "/packages"
+  successMessage?: string
+  errorMessage?: string
+}
+
+export default function HomeNewsletterSection({
+  locale,
+  redirectPath = "/",
+  successMessage,
+  errorMessage,
+}: HomeNewsletterSectionProps) {
   const copy = {
     id: {
       title: "Dapatkan promo & info terbaru dari RedFeng!",
@@ -23,7 +36,7 @@ export default function HomeNewsletterSection({ locale }: { locale: Locale }) {
   }[locale]
 
   return (
-    <section className="home-newsletter-section mx-auto max-w-[1240px] px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
+    <section id="newsletter" className="home-newsletter-section mx-auto max-w-[1240px] scroll-mt-28 px-4 pb-10 sm:px-6 lg:px-8 lg:pb-12">
       <div
         className="relative overflow-hidden rounded-[22px] border border-[#f4ddd5] bg-cover bg-center bg-no-repeat px-4 py-6 shadow-[0_20px_50px_-42px_rgba(15,23,42,0.2)] lg:px-6 lg:py-7"
         style={{
@@ -39,14 +52,35 @@ export default function HomeNewsletterSection({ locale }: { locale: Locale }) {
               {copy.body}
             </p>
           </div>
-          <div className="relative z-10 grid grid-cols-[1fr_auto] gap-3">
-            <input
-              type="email"
-              placeholder={copy.placeholder}
-              className="h-12 rounded-xl border border-white bg-white px-5 text-[14px] text-slate-900 outline-none placeholder:text-slate-400 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.25)]"
-            />
-            <button className="h-12 min-w-[124px] rounded-xl bg-[#ef3b2d] px-6 text-[14px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]">{copy.cta}</button>
-          </div>
+          <form action={subscribeToNewsletter} className="relative z-10">
+            <input type="hidden" name="locale" value={locale} />
+            <input type="hidden" name="redirect_path" value={redirectPath} />
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <input
+                type="email"
+                name="email"
+                required
+                placeholder={copy.placeholder}
+                className="h-12 rounded-xl border border-white bg-white px-5 text-[14px] text-slate-900 outline-none placeholder:text-slate-400 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.25)]"
+              />
+              <button
+                type="submit"
+                className="h-12 min-w-[124px] rounded-xl bg-[#ef3b2d] px-6 text-[14px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,59,45,0.7)]"
+              >
+                {copy.cta}
+              </button>
+            </div>
+            {successMessage ? (
+              <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] text-emerald-700">
+                {successMessage}
+              </p>
+            ) : null}
+            {errorMessage ? (
+              <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-[13px] text-rose-700">
+                {errorMessage}
+              </p>
+            ) : null}
+          </form>
         </div>
       </div>
     </section>

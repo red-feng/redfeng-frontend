@@ -10,24 +10,25 @@ import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterB
 import PackagesRecommendationsSection from "@/app/components/packages/PackagesRecommendationsSection"
 import { getLatestCatalogPackages, getPopularCatalogDestinations } from "@/lib/home-packages"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingPromos } from "@/lib/marketing-content"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 import { dictionaries } from "@/lib/i18n"
 
-export default async function PackagesMarketingLanding() {
+type PackagesMarketingLandingProps = {
+  searchParams?: { newsletter_success?: string; newsletter_error?: string }
+}
+
+export default async function PackagesMarketingLanding({ searchParams }: PackagesMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const { searchBarCountries } = await getPublicCatalogData({}, locale)
   const topPackages = await getLatestCatalogPackages(locale)
+  const promos = await getMarketingPromos(locale)
   const popularDestinationsBase = await getPopularCatalogDestinations(locale, { limit: 6, days: 30 })
   const popularDestinations = popularDestinationsBase.map((entry) => ({
     ...entry,
     image: entry.coverImage,
     total: entry.totalPackages,
     price: entry.priceLabel,
-  }))
-
-  const promoDestinations = popularDestinations.slice(0, 4).map((entry, index) => ({
-    ...entry,
-    discount: [30, 25, 20, 15][index] || 10,
   }))
 
   const t = dictionaries[locale]
@@ -296,25 +297,28 @@ export default async function PackagesMarketingLanding() {
               </Link>
             </article>
 
-            {promoDestinations.map((entry) => (
+            {promos.slice(0, 4).map((entry) => (
               <Link
-                key={entry.country}
-                href={`/packages/catalog?country=${encodeURIComponent(entry.country)}`}
+                key={entry.slug}
+                href={entry.detailHref}
                 className="flex h-full flex-col overflow-hidden rounded-[24px] border border-[#ece2db] bg-white shadow-[0_18px_40px_-30px_rgba(15,23,42,0.18)] transition hover:-translate-y-1 hover:shadow-[0_24px_50px_-28px_rgba(15,23,42,0.22)]"
               >
                 <div className="relative h-[185px]">
                   {entry.image ? (
-                    <Image src={entry.image} alt={entry.country} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
+                    <Image src={entry.image} alt={entry.title.replace(/\n/g, " ")} fill sizes="(max-width: 1280px) 100vw, 220px" className="object-cover" />
                   ) : (
                     <div className="h-full w-full bg-[linear-gradient(135deg,#fff7ef_0%,#f8fafc_100%)]" aria-hidden="true" />
                   )}
-                  <span className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#ef4423] shadow-sm">
-                    Diskon {entry.discount}%
-                  </span>
+                  {entry.badge ? (
+                    <span className="absolute right-3 top-3 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#ef4423] shadow-sm">
+                      {entry.badge}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="flex flex-1 flex-col p-4">
-                  <h3 className="min-h-[2.7rem] text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px]">{entry.country}</h3>
-                  <p className="mt-auto pt-3 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
+                  <h3 className="min-h-[2.7rem] whitespace-pre-line text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px]">{entry.title}</h3>
+                  <p className="mt-3 text-[11px] leading-none text-slate-400">{entry.eyebrow}</p>
+                  <p className="mt-auto pt-2 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
@@ -368,7 +372,12 @@ export default async function PackagesMarketingLanding() {
       </main>
 
       <div className="mt-16">
-        <HomeNewsletterSection locale={locale} />
+        <HomeNewsletterSection
+          locale={locale}
+          redirectPath="/packages"
+          successMessage={searchParams?.newsletter_success}
+          errorMessage={searchParams?.newsletter_error}
+        />
       </div>
       <HomeFooter locale={locale} />
 

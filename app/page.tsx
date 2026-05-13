@@ -11,24 +11,39 @@ import {
 } from "@/app/components/home/shared/sections"
 import { WebHomePopularSection, WebHomePromoSection, WebHomeServicesSection } from "@/app/components/home/web"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingInspirationArticles, getMarketingPromos } from "@/lib/marketing-content"
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{ newsletter_success?: string; newsletter_error?: string }>
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const locale = await getCurrentLocale()
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  const [promos, inspirationArticles] = await Promise.all([
+    getMarketingPromos(locale),
+    getMarketingInspirationArticles(locale),
+  ])
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <main className="pb-28 md:pb-0">
         <HomeHeroSection locale={locale} />
         <WebHomeServicesSection locale={locale} />
-        <AppHomeFeedSection locale={locale} />
-        <WebHomePromoSection locale={locale} />
+        <AppHomeFeedSection locale={locale} promos={promos} />
+        <WebHomePromoSection locale={locale} promos={promos} />
         <WebHomePopularSection locale={locale} />
         <HomeDestinationsSection locale={locale} />
-        <HomeInspirationSection locale={locale} />
+        <HomeInspirationSection locale={locale} articles={inspirationArticles} />
         <AppHomeFooterSection />
         <HomeTrustSection locale={locale} />
         <HomeWhyChooseSection locale={locale} />
-        <HomeNewsletterSection locale={locale} />
+        <HomeNewsletterSection
+          locale={locale}
+          redirectPath="/"
+          successMessage={resolvedSearchParams.newsletter_success}
+          errorMessage={resolvedSearchParams.newsletter_error}
+        />
         <HomeFooter locale={locale} />
       </main>
 

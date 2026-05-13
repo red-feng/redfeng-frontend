@@ -6,7 +6,7 @@ import { normalizeLocale } from "@/lib/i18n"
 import { getCurrentLocale } from "@/lib/locale"
 import { formatCustomerCode } from "@/lib/merchant-code"
 import { CUSTOMER_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context"
-import { isAdminPortalRole, isFinancePortalRole } from "@/lib/internal-roles"
+import { isAdminPortalRole, isFinancePortalRole, isMarketingPortalRole } from "@/lib/internal-roles"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
@@ -69,6 +69,8 @@ export default async function CustomerLayout({
     redirect("/admin/login")
   } else if (isFinancePortalRole(profile.role)) {
     redirect("/finance/login")
+  } else if (isMarketingPortalRole(profile.role)) {
+    redirect("/marketing/login")
   } else if (profile.role === "customer") {
     await ensureCustomerBaselineRole(adminSupabase, user.id, "customer_layout_customer_access")
   } else if (profile.role !== "customer") {

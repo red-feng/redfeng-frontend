@@ -4,23 +4,21 @@ import { notFound } from "next/navigation"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
-import {
-  getInspirationArticleBySlug,
-  inspirationArticleCatalog,
-} from "@/app/components/home/shared/homeDetailCatalog"
 import { getCurrentLocale } from "@/lib/locale"
+import { getMarketingInspirationArticleBySlug, getMarketingInspirationSlugs } from "@/lib/marketing-content"
 
 type InspirationDetailPageProps = {
   params: Promise<{ slug: string }>
 }
 
 export async function generateStaticParams() {
-  return inspirationArticleCatalog.map((item) => ({ slug: item.slug }))
+  return getMarketingInspirationSlugs()
 }
 
 export async function generateMetadata({ params }: InspirationDetailPageProps): Promise<Metadata> {
   const { slug } = await params
-  const item = getInspirationArticleBySlug(slug)
+  const locale = await getCurrentLocale()
+  const item = await getMarketingInspirationArticleBySlug(slug, locale)
   if (!item) return { title: "Inspirasi | Red Feng" }
 
   return {
@@ -32,8 +30,8 @@ export async function generateMetadata({ params }: InspirationDetailPageProps): 
 
 export default async function InspirationDetailPage({ params }: InspirationDetailPageProps) {
   const { slug } = await params
-  const item = getInspirationArticleBySlug(slug)
   const locale = await getCurrentLocale()
+  const item = await getMarketingInspirationArticleBySlug(slug, locale)
 
   if (!item) notFound()
 

@@ -7,6 +7,8 @@ export const ACCOUNT_ROLES = [
   "operations_manager",
   "finance",
   "finance_manager",
+  "marketing",
+  "marketing_manager",
   "superadmin",
 ] as const
 
