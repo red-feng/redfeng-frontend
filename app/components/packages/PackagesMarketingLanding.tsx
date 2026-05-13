@@ -359,8 +359,7 @@ export default async function PackagesMarketingLanding() {
                 </div>
                 <div className="flex flex-1 flex-col p-4">
                   <h3 className="min-h-[2.7rem] text-[14px] font-semibold leading-[1.22] tracking-[-0.015em] text-slate-900 md:text-[17px]">{entry.country}</h3>
-                  <p className="mt-1 text-[11px] leading-none text-slate-400">{copy.fromLabel}</p>
-                  <p className="mt-auto pt-2 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
+                  <p className="mt-auto pt-3 text-[14px] font-bold leading-[1.15] tracking-[-0.02em] text-slate-900 md:text-[17px]">{entry.price || "-"}</p>
                 </div>
               </Link>
             ))}
