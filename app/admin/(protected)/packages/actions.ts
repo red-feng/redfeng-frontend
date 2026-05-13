@@ -67,7 +67,6 @@ export async function approvePackageById(packageId: string) {
     throw new Error(error.message)
   }
 
-  revalidatePath("/")
   revalidatePath("/admin/dashboard")
   revalidatePath("/admin/packages")
 

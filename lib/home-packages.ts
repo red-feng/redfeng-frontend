@@ -20,6 +20,7 @@ export type HomePackageListItem = {
   id: string
   slug: string
   merchant_id: string | null
+  reviewed_at?: string | null
   cover_image?: string | null
   city?: string | null
   country?: string | null
@@ -69,6 +70,7 @@ const packageListBaseSelect = `
   id,
   slug,
   merchant_id,
+  reviewed_at,
   cover_image,
   city,
   country,
@@ -202,6 +204,44 @@ const getFeaturedHomePackagesCached = unstable_cache(
 
 export async function getFeaturedHomePackages(locale: Locale) {
   return getFeaturedHomePackagesCached(locale)
+}
+
+const getLatestApprovedPackagesCached = unstable_cache(
+  async (locale: Locale) => {
+    const supabase = createAdminClient()
+    const publicMerchantIds = await getPublicMerchantIds()
+
+    if (publicMerchantIds.size === 0) {
+      return [] as HomePackageListItem[]
+    }
+
+    const { data, error } = await supabase
+      .from("packages")
+      .select(packageListSelect)
+      .eq("status", "approved")
+      .in("merchant_id", Array.from(publicMerchantIds))
+      .order("reviewed_at", { ascending: false, nullsFirst: false })
+      .limit(12)
+
+    if (error || !data) {
+      if (error) {
+        console.log("LATEST APPROVED PACKAGES ERROR:", error)
+      }
+      return [] as HomePackageListItem[]
+    }
+
+    return attachLivePricingToPackages(data as HomePackageListItem[], locale)
+  },
+  ["latest-approved-packages"],
+  { revalidate: 60 },
+)
+
+export async function getLatestApprovedPackages(locale: Locale) {
+  return getLatestApprovedPackagesCached(locale)
+}
+
+export async function getLatestCatalogPackages(locale: Locale) {
+  return getLatestApprovedPackages(locale)
 }
 
 const searchCountryIdsByNameCached = unstable_cache(
