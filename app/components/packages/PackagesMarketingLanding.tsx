@@ -11,7 +11,7 @@ import PackagesRecommendationsSection from "@/app/components/packages/PackagesRe
 import { getLatestCatalogPackages } from "@/lib/home-packages"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
-import { dictionaries } from "@/lib/i18n"
+import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 
 type PackageItem = Awaited<ReturnType<typeof getPublicCatalogData>>["packagesResult"]["items"][number]
