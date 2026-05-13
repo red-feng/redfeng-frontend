@@ -408,12 +408,12 @@ export default async function PackagesMarketingLanding() {
           />
         </div>
 
-        <div className="mt-16">
-          <HomeNewsletterSection locale={locale} />
-        </div>
-        <HomeFooter locale={locale} />
-
       </main>
+
+      <div className="mt-16">
+        <HomeNewsletterSection locale={locale} />
+      </div>
+      <HomeFooter locale={locale} />
 
       <PublicStickyAction locale={locale} href="/packages/catalog" label={copy.heroSearchButton} summary={copy.title} />
       <PublicMobileNav locale={locale} />
