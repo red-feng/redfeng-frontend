@@ -46,6 +46,8 @@ type PlacementRow = {
 type PromoEventRow = {
   event_type: string | null
   placement_key: string | null
+  promo_id: string | null
+  promo_slug: string | null
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -106,7 +108,7 @@ export default async function MarketingDashboardPage({
       .lt("subscribed_at", last7Iso),
     adminSupabase.from("marketing_promos").select("id, is_active, status, starts_at, ends_at"),
     adminSupabase.from("marketing_promo_placements").select("promo_id, placement_key").eq("is_active", true),
-    adminSupabase.from("marketing_promo_events").select("event_type, placement_key").gte("occurred_at", startOfTodayIso),
+    adminSupabase.from("marketing_promo_events").select("event_type, placement_key, promo_id, promo_slug").gte("occurred_at", startOfTodayIso),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase
@@ -176,6 +178,65 @@ export default async function MarketingDashboardPage({
     if (event.event_type === "impression") bucket.impressions += 1
     if (event.event_type === "click") bucket.clicks += 1
   }
+  const promoMetaMap = new Map(
+    recentPromos.map((promo) => [
+      promo.id,
+      {
+        slug: promo.slug,
+        title: promo.title_id || promo.slug,
+        state: getMarketingPromoEffectiveStateLabel(getMarketingPromoEffectiveState(promo, nowIso)),
+      },
+    ]),
+  )
+  for (const promo of allPromos) {
+    if (!promoMetaMap.has(promo.id)) {
+      promoMetaMap.set(promo.id, {
+        slug: promo.id,
+        title: promo.id,
+        state: getMarketingPromoEffectiveStateLabel(getMarketingPromoEffectiveState(promo, nowIso)),
+      })
+    }
+  }
+  const promoPerformanceMap = new Map<
+    string,
+    {
+      promoId: string | null
+      promoSlug: string
+      title: string
+      state: string
+      impressions: number
+      clicks: number
+    }
+  >()
+  for (const event of todayPromoEvents) {
+    const promoSlug = String(event.promo_slug || "").trim()
+    const promoId = String(event.promo_id || "").trim() || null
+    const key = promoId || promoSlug
+    if (!key || !promoSlug) continue
+    const meta = promoId ? promoMetaMap.get(promoId) : null
+    const current = promoPerformanceMap.get(key) || {
+      promoId,
+      promoSlug,
+      title: meta?.title || promoSlug,
+      state: meta?.state || "Unknown",
+      impressions: 0,
+      clicks: 0,
+    }
+    if (event.event_type === "impression") current.impressions += 1
+    if (event.event_type === "click") current.clicks += 1
+    promoPerformanceMap.set(key, current)
+  }
+  const topPerformingPromos = Array.from(promoPerformanceMap.values())
+    .map((promo) => ({
+      ...promo,
+      ctr: promo.impressions > 0 ? (promo.clicks / promo.impressions) * 100 : 0,
+    }))
+    .sort((a, b) => {
+      if (b.clicks !== a.clicks) return b.clicks - a.clicks
+      if (b.ctr !== a.ctr) return b.ctr - a.ctr
+      return b.impressions - a.impressions
+    })
+    .slice(0, 5)
 
   const metricCards = [
     {
@@ -349,6 +410,50 @@ export default async function MarketingDashboardPage({
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Top performing promos</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Promo dengan performa terbaik hari ini</h2>
+            </div>
+            {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Lihat semua promo</Link> : null}
+          </div>
+          <div className="mt-5 space-y-3">
+            {!topPerformingPromos.length ? (
+              <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                Belum ada impresi atau klik promo yang tercatat hari ini.
+              </div>
+            ) : (
+              topPerformingPromos.map((promo, index) => (
+                <article key={`${promo.promoId || promo.promoSlug}-${index}`} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">Rank #{index + 1}</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">{promo.title}</p>
+                      <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">{promo.promoSlug}</p>
+                      <p className="mt-2 text-xs text-slate-500">State: {promo.state}</p>
+                    </div>
+                    <div className="grid min-w-[200px] grid-cols-3 gap-2 text-center">
+                      <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Impresi</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{formatCompactCount(promo.impressions)}</p>
+                      </div>
+                      <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Klik</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{formatCompactCount(promo.clicks)}</p>
+                      </div>
+                      <div className="rounded-[16px] border border-slate-200 bg-white px-3 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">CTR</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{promo.ctr.toFixed(1)}%</p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </section>
 
