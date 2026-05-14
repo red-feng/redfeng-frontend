@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 type DashboardSearchParams = {
@@ -21,6 +22,9 @@ type PromoRow = {
   title_id: string | null
   target_href: string | null
   is_active: boolean | null
+  status: string | null
+  starts_at: string | null
+  ends_at: string | null
   updated_at: string | null
 }
 
@@ -71,8 +75,7 @@ export default async function MarketingDashboardPage({
     { count: todaySubscribers },
     { count: last7Subscribers },
     { count: previous7Subscribers },
-    { count: activePromos },
-    { count: inactivePromos },
+    allPromosResult,
     { count: activeArticles },
     { count: inactiveArticles },
     recentSubscribersResult,
@@ -88,8 +91,7 @@ export default async function MarketingDashboardPage({
       .select("id", { count: "exact", head: true })
       .gte("subscribed_at", previous7Iso)
       .lt("subscribed_at", last7Iso),
-    adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", true),
-    adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", false),
+    adminSupabase.from("marketing_promos").select("id, is_active, status, starts_at, ends_at"),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase
@@ -99,7 +101,7 @@ export default async function MarketingDashboardPage({
       .limit(5),
     adminSupabase
       .from("marketing_promos")
-      .select("id, slug, title_id, target_href, is_active, updated_at")
+      .select("id, slug, title_id, target_href, is_active, status, starts_at, ends_at, updated_at")
       .order("updated_at", { ascending: false })
       .limit(4),
     adminSupabase
@@ -113,6 +115,16 @@ export default async function MarketingDashboardPage({
   const recentPromos = (recentPromosResult.data as PromoRow[] | null) || []
   const recentArticles = (recentArticlesResult.data as ArticleRow[] | null) || []
   const weekGrowth = Math.max((last7Subscribers || 0) - (previous7Subscribers || 0), 0)
+  const allPromos = (allPromosResult.data as Array<Pick<PromoRow, "is_active" | "status" | "starts_at" | "ends_at">> | null) || []
+  const nowIso = now.toISOString()
+  const promoStateCounts = allPromos.reduce(
+    (acc, promo) => {
+      const state = getMarketingPromoEffectiveState(promo, nowIso)
+      acc[state] += 1
+      return acc
+    },
+    { live: 0, waiting: 0, expired: 0, hidden: 0 },
+  )
 
   const metricCards = [
     {
@@ -131,9 +143,9 @@ export default async function MarketingDashboardPage({
       note: `Naik ${formatCompactCount(weekGrowth)} dibanding gelombang 7 hari sebelumnya.`,
     },
     {
-      label: "Promo aktif",
-      value: formatCompactCount(activePromos || 0),
-      note: `${formatCompactCount(inactivePromos || 0)} promo nonaktif masih tersimpan sebagai stok campaign.`,
+      label: "Promo live",
+      value: formatCompactCount(promoStateCounts.live),
+      note: `${formatCompactCount(promoStateCounts.waiting)} waiting, ${formatCompactCount(promoStateCounts.expired)} expired, ${formatCompactCount(promoStateCounts.hidden)} hidden.`,
     },
     {
       label: "Inspirasi aktif",
@@ -205,7 +217,7 @@ export default async function MarketingDashboardPage({
                 <div>
                   <p className="text-sm text-orange-50/80">Promo live</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
-                    {formatCompactCount(activePromos || 0)}
+                    {formatCompactCount(promoStateCounts.live)}
                   </p>
                 </div>
                 <div>
@@ -283,10 +295,10 @@ export default async function MarketingDashboardPage({
               <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">Content backlog</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">
-                  {formatCompactCount(inactivePromos || 0)} promo nonaktif
+                  {formatCompactCount(promoStateCounts.hidden)} promo hidden
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  {formatCompactCount(inactiveArticles || 0)} artikel nonaktif
+                  {formatCompactCount(promoStateCounts.waiting)} waiting, {formatCompactCount(inactiveArticles || 0)} artikel nonaktif
                 </p>
               </div>
             </div>
@@ -346,10 +358,23 @@ export default async function MarketingDashboardPage({
                         <p className="text-sm font-semibold text-slate-950">{promo.title_id || promo.slug}</p>
                         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">{promo.slug}</p>
                         <p className="mt-2 text-xs text-slate-500">Target: {promo.target_href || "/promo"}</p>
+                        <p className="mt-2 text-xs text-slate-500">
+                          State: {getMarketingPromoEffectiveStateLabel(getMarketingPromoEffectiveState(promo, nowIso))}
+                        </p>
                       </div>
                       <div className="text-right">
-                        <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${promo.is_active ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-slate-200 bg-slate-100 text-slate-600"}`}>
-                          {promo.is_active ? "Active" : "Inactive"}
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${
+                            getMarketingPromoEffectiveState(promo, nowIso) === "live"
+                              ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : getMarketingPromoEffectiveState(promo, nowIso) === "waiting"
+                                ? "border border-amber-200 bg-amber-50 text-amber-700"
+                                : getMarketingPromoEffectiveState(promo, nowIso) === "expired"
+                                  ? "border border-rose-200 bg-rose-50 text-rose-700"
+                                  : "border border-slate-200 bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {getMarketingPromoEffectiveStateLabel(getMarketingPromoEffectiveState(promo, nowIso))}
                         </span>
                         <p className="mt-2 text-xs text-slate-400">{formatDateTime(promo.updated_at)}</p>
                       </div>

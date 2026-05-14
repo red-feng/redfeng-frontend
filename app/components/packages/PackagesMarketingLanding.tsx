@@ -22,7 +22,7 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
   const locale = await getCurrentLocale()
   const { searchBarCountries } = await getPublicCatalogData({}, locale)
   const topPackages = await getLatestCatalogPackages(locale)
-  const promos = await getMarketingPromos(locale)
+  const promos = await getMarketingPromos(locale, { placement: "packages_featured" })
   const popularDestinationsBase = await getPopularCatalogDestinations(locale, { limit: 6, days: 30 })
   const popularDestinations = popularDestinationsBase.map((entry) => ({
     ...entry,

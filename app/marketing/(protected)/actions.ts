@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache"
 import { createAdminAuditLog } from "@/lib/admin-audit"
+import { isMarketingPromoStatus, shouldPromoBeIndexable } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { buildInternalMarketingEmail, isValidInternalUsername, normalizeInternalUsername } from "@/lib/internal-auth"
+import { isMarketingPromoPlacementKey, marketingPromoPlacementKeys } from "@/lib/marketing-promo-placements"
 import { isMarketingManagedRole } from "@/lib/internal-roles"
 import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
 import {
@@ -58,6 +60,24 @@ function getText(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim()
 }
 
+function getSelectedPromoPlacements(formData: FormData) {
+  const selected = formData
+    .getAll("placements")
+    .map((value) => String(value || "").trim())
+    .filter(isMarketingPromoPlacementKey)
+
+  return Array.from(new Set(selected.length ? selected : [...marketingPromoPlacementKeys]))
+}
+
+function parseDateTimeValue(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return null
+  return parsed.toISOString()
+}
+
 export async function updateNewsletterSubscriberStatus(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/marketing/newsletters")
   const actor = await ensureMarketingContentOperator(returnTo)
@@ -104,6 +124,10 @@ export async function upsertMarketingPromo(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/marketing/promos")
   const actor = await ensureMarketingContentOperator(returnTo)
   const promoId = getText(formData, "promo_id")
+  const selectedPlacements = getSelectedPromoPlacements(formData)
+  const status = getText(formData, "status").toLowerCase()
+  const startsAt = parseDateTimeValue(formData.get("starts_at"))
+  const endsAt = parseDateTimeValue(formData.get("ends_at"))
   const slug = getText(formData, "slug")
   const titleId = getText(formData, "title_id")
   const titleEn = getText(formData, "title_en")
@@ -112,6 +136,20 @@ export async function upsertMarketingPromo(formData: FormData) {
   if (!slug || !titleId || !titleEn || !titleZh) {
     redirectWithMessage(returnTo, "Slug dan seluruh judul promo wajib diisi.", "error")
   }
+
+  if (!isMarketingPromoStatus(status)) {
+    redirectWithMessage(returnTo, "Status promo tidak valid.", "error")
+  }
+
+  if (status === "scheduled" && !startsAt) {
+    redirectWithMessage(returnTo, "Promo scheduled wajib memiliki tanggal mulai tayang.", "error")
+  }
+
+  if (startsAt && endsAt && new Date(endsAt).getTime() < new Date(startsAt).getTime()) {
+    redirectWithMessage(returnTo, "Tanggal akhir promo tidak boleh lebih awal dari tanggal mulai.", "error")
+  }
+
+  const shouldBeIndexable = shouldPromoBeIndexable(status)
 
   const payload = {
     ...(promoId ? { id: promoId } : {}),
@@ -137,7 +175,10 @@ export async function upsertMarketingPromo(formData: FormData) {
     overlay_class: getText(formData, "overlay_class"),
     glow_class: getText(formData, "glow_class"),
     target_href: getText(formData, "target_href") || "/promo",
-    is_active: String(formData.get("is_active") || "") === "on",
+    is_active: shouldBeIndexable && String(formData.get("is_active") || "") === "on",
+    status,
+    starts_at: startsAt,
+    ends_at: endsAt,
     sort_order: parseSortOrder(formData.get("sort_order")),
     updated_by: actor.id,
     updated_at: new Date().toISOString(),
@@ -157,6 +198,26 @@ export async function upsertMarketingPromo(formData: FormData) {
     redirectWithMessage(returnTo, error.message, "error")
   }
 
+  const placementRows = selectedPlacements.map((placementKey) => ({
+    promo_id: data.id,
+    placement_key: placementKey,
+    sort_order: payload.sort_order,
+    is_active: payload.is_active,
+    updated_at: new Date().toISOString(),
+  }))
+
+  const { error: deletePlacementError } = await adminSupabase.from("marketing_promo_placements").delete().eq("promo_id", data.id)
+
+  if (deletePlacementError) {
+    redirectWithMessage(returnTo, deletePlacementError.message, "error")
+  }
+
+  const { error: placementError } = await adminSupabase.from("marketing_promo_placements").insert(placementRows)
+
+  if (placementError) {
+    redirectWithMessage(returnTo, placementError.message, "error")
+  }
+
   await createAdminAuditLog({
     actorId: actor.id,
     actorRole: actor.role,
@@ -168,10 +229,15 @@ export async function upsertMarketingPromo(formData: FormData) {
       scope: "marketing_content",
       section: "promos",
       slug,
+      status,
+      startsAt,
+      endsAt,
+      placements: selectedPlacements,
     },
   })
 
   revalidatePath("/")
+  revalidatePath("/packages")
   revalidatePath("/promo")
   revalidatePath("/wishlist")
   revalidatePath("/marketing/dashboard")
@@ -211,6 +277,7 @@ export async function deleteMarketingPromo(formData: FormData) {
   })
 
   revalidatePath("/")
+  revalidatePath("/packages")
   revalidatePath("/promo")
   revalidatePath("/wishlist")
   revalidatePath("/marketing/dashboard")

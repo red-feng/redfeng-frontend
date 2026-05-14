@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function PromoPage() {
   const locale = await getCurrentLocale()
-  const promos = await getMarketingPromos(locale)
+  const promos = await getMarketingPromos(locale, { placement: "promo_listing" })
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">

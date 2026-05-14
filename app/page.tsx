@@ -21,7 +21,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const locale = await getCurrentLocale()
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const [promos, inspirationArticles] = await Promise.all([
-    getMarketingPromos(locale),
+    getMarketingPromos(locale, { placement: "homepage_feed" }),
     getMarketingInspirationArticles(locale),
   ])
 

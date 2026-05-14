@@ -1,6 +1,8 @@
 import type { Locale } from "@/lib/i18n"
 import { inspirationArticleCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
+import type { MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
+import { getMarketingPromoEffectiveState, type MarketingPromoStatus } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 type PromoRow = {
@@ -28,6 +30,9 @@ type PromoRow = {
   glow_class: string
   target_href: string
   is_active: boolean
+  status: MarketingPromoStatus
+  starts_at: string | null
+  ends_at: string | null
   sort_order: number
 }
 
@@ -77,6 +82,11 @@ export type MarketingPromo = {
   targetHref: string
   detailHref: string
   favoriteKey: string
+}
+
+type MarketingPromosOptions = {
+  placement?: MarketingPromoPlacementKey
+  limit?: number
 }
 
 export type MarketingInspirationArticle = {
@@ -163,6 +173,9 @@ function buildFallbackPromos(): PromoRow[] {
     glow_class: promo.glowClass || (promo as never as { glowClass: string }).glowClass,
     target_href: promo.targetHref,
     is_active: true,
+    status: "active",
+    starts_at: null,
+    ends_at: null,
     sort_order: index,
   }))
 }
@@ -199,29 +212,88 @@ function buildFallbackInspirationRows(): InspirationRow[] {
   }))
 }
 
-export async function getMarketingPromos(locale: Locale) {
+const promoSelect =
+  "id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, status, starts_at, ends_at, sort_order"
+
+function isPromoCurrentlyVisible(row: PromoRow, nowIso: string) {
+  return getMarketingPromoEffectiveState(row, nowIso) === "live"
+}
+
+async function fetchAllActivePromoRows() {
   const adminSupabase = createAdminClient()
   const { data, error } = await adminSupabase
     .from("marketing_promos")
-    .select("id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, sort_order")
+    .select(promoSelect)
+    .in("status", ["active", "scheduled"])
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true })
+
+  if (error || !data?.length) return null
+
+  const nowIso = new Date().toISOString()
+  return (data as PromoRow[]).filter((row) => isPromoCurrentlyVisible(row, nowIso))
+}
+
+async function fetchPromoRowsByPlacement(placement: MarketingPromoPlacementKey) {
+  const adminSupabase = createAdminClient()
+  const { data: placementRows, error: placementError } = await adminSupabase
+    .from("marketing_promo_placements")
+    .select("promo_id, sort_order, created_at")
+    .eq("placement_key", placement)
     .eq("is_active", true)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true })
 
-  const rows = error || !data?.length ? buildFallbackPromos() : (data as PromoRow[])
-  return rows.map((row) => mapPromoRow(row, locale))
+  if (placementError) {
+    return null
+  }
+
+  if (!placementRows?.length) {
+    return []
+  }
+
+  const promoIds = placementRows.map((row) => row.promo_id).filter(Boolean)
+
+  if (!promoIds.length) {
+    return []
+  }
+
+  const { data: promoRows, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select(promoSelect)
+    .in("id", promoIds)
+    .in("status", ["active", "scheduled"])
+
+  if (promoError || !promoRows?.length) {
+    return null
+  }
+
+  const nowIso = new Date().toISOString()
+  const promoMap = new Map((promoRows as PromoRow[]).map((row) => [row.id, row]))
+  return promoIds.map((promoId) => promoMap.get(promoId)).filter((row) => Boolean(row) && isPromoCurrentlyVisible(row as PromoRow, nowIso)) as PromoRow[]
+}
+
+export async function getMarketingPromos(locale: Locale, options: MarketingPromosOptions = {}) {
+  const rowsFromPlacement = options.placement ? await fetchPromoRowsByPlacement(options.placement) : await fetchAllActivePromoRows()
+  const rows = rowsFromPlacement ?? buildFallbackPromos()
+  const localizedRows = rows.map((row) => mapPromoRow(row, locale))
+
+  if (typeof options.limit === "number" && options.limit >= 0) {
+    return localizedRows.slice(0, options.limit)
+  }
+
+  return localizedRows
 }
 
 export async function getMarketingPromoBySlug(slug: string, locale: Locale) {
   const adminSupabase = createAdminClient()
   const { data } = await adminSupabase
     .from("marketing_promos")
-    .select("id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, sort_order")
+    .select(promoSelect)
     .eq("slug", slug)
-    .eq("is_active", true)
     .maybeSingle()
 
-  if (data) return mapPromoRow(data as PromoRow, locale)
+  if (data && isPromoCurrentlyVisible(data as PromoRow, new Date().toISOString())) return mapPromoRow(data as PromoRow, locale)
 
   const fallback = buildFallbackPromos().find((row) => row.slug === slug)
   return fallback ? mapPromoRow(fallback, locale) : null
@@ -229,8 +301,45 @@ export async function getMarketingPromoBySlug(slug: string, locale: Locale) {
 
 export async function getMarketingPromoSlugs() {
   const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase.from("marketing_promos").select("slug").eq("is_active", true).order("sort_order", { ascending: true })
-  if (data?.length) return data.map((item) => ({ slug: item.slug }))
+  const { data } = await adminSupabase
+    .from("marketing_promos")
+    .select("slug, is_active, status, starts_at, ends_at")
+    .in("status", ["active", "scheduled"])
+  if (data?.length) {
+    const nowIso = new Date().toISOString()
+    const rows = (data as Array<{ slug: string } & Pick<PromoRow, "is_active" | "status" | "starts_at" | "ends_at">>).filter((row) =>
+      isPromoCurrentlyVisible(
+        {
+          id: "",
+          title_id: "",
+          title_en: "",
+          title_zh: "",
+          badge_id: null,
+          badge_en: null,
+          badge_zh: null,
+          eyebrow_id: "",
+          eyebrow_en: "",
+          eyebrow_zh: "",
+          price_id: "",
+          price_en: "",
+          price_zh: "",
+          cta_id: "",
+          cta_en: "",
+          cta_zh: "",
+          image: "",
+          gradient: "",
+          image_class: "",
+          overlay_class: "",
+          glow_class: "",
+          target_href: "/promo",
+          sort_order: 0,
+          ...row,
+        },
+        nowIso,
+      ),
+    )
+    if (rows.length) return rows.map((item) => ({ slug: item.slug }))
+  }
   return buildFallbackPromos().map((row) => ({ slug: row.slug }))
 }
 

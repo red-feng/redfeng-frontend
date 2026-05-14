@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 
 export default async function WishlistPage() {
   const locale = await getCurrentLocale()
-  const promos = await getMarketingPromos(locale)
+  const promos = await getMarketingPromos(locale, { placement: "wishlist_suggestions" })
   const suggestedItems = [
     ...promos.slice(0, 3).map((item) => ({
       key: item.favoriteKey,
