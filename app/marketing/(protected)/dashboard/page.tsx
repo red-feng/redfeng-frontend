@@ -52,10 +52,13 @@ function formatCompactCount(value: number | null | undefined) {
 
 export default async function MarketingDashboardPage({
   searchParams,
+  portal = "marketing",
 }: {
   searchParams?: Promise<DashboardSearchParams>
+  portal?: "marketing" | "superadmin"
 }) {
   const params = searchParams ? await searchParams : {}
+  const isSuperadminPreview = portal === "superadmin"
   const adminSupabase = createAdminClient()
   const now = new Date()
   const startOfTodayIso = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
@@ -157,16 +160,16 @@ export default async function MarketingDashboardPage({
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href="/marketing/promos"
+                  href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/promos"}
                   className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
                 >
-                  Kelola promo
+                  {isSuperadminPreview ? "Buka struktur marketing" : "Kelola promo"}
                 </Link>
                 <Link
-                  href="/marketing/inspiration"
+                  href={isSuperadminPreview ? "/superadmin/dashboard" : "/marketing/inspiration"}
                   className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                 >
-                  Kelola inspirasi
+                  {isSuperadminPreview ? "Kembali ke superadmin" : "Kelola inspirasi"}
                 </Link>
               </div>
             </div>
@@ -225,22 +228,22 @@ export default async function MarketingDashboardPage({
             </div>
             <div className="mt-5 grid gap-3">
               <Link
-                href="/marketing/newsletters"
+                href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/newsletters"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                Buka audience newsletter dan cek subscriber baru
+                {isSuperadminPreview ? "Buka struktur akun marketing" : "Buka audience newsletter dan cek subscriber baru"}
               </Link>
               <Link
-                href="/marketing/promos"
+                href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/promos"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                Update promo publik di homepage, promo page, dan wishlist
+                {isSuperadminPreview ? "Lihat owner workspace marketing" : "Update promo publik di homepage, promo page, dan wishlist"}
               </Link>
               <Link
-                href="/marketing/inspiration"
+                href={isSuperadminPreview ? "/superadmin/dashboard" : "/marketing/inspiration"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                Atur blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot;
+                {isSuperadminPreview ? "Kembali ke executive control center" : "Atur blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot;"}
               </Link>
             </div>
 
@@ -305,9 +308,7 @@ export default async function MarketingDashboardPage({
                   Promo yang paling baru disentuh
                 </h2>
               </div>
-              <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">
-                Buka semua
-              </Link>
+              {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Buka semua</Link> : null}
             </div>
             <div className="mt-5 space-y-3">
               {!recentPromos.length ? (
@@ -344,9 +345,7 @@ export default async function MarketingDashboardPage({
                   Artikel inspirasi terbaru
                 </h2>
               </div>
-              <Link href="/marketing/inspiration" className="text-sm font-semibold text-orange-600">
-                Buka semua
-              </Link>
+              {!isSuperadminPreview ? <Link href="/marketing/inspiration" className="text-sm font-semibold text-orange-600">Buka semua</Link> : null}
             </div>
             <div className="mt-5 space-y-3">
               {!recentArticles.length ? (

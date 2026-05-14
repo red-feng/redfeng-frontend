@@ -42,7 +42,7 @@ export default async function SuperadminProtectedLayout({
   const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
     adminSupabase
       .from("superadmin_nav_seen_states")
-      .select("seen_ops_accounts_at, seen_finance_accounts_at, seen_superadmin_accounts_at, seen_bookings_at, seen_audit_log_at")
+      .select("seen_ops_accounts_at, seen_finance_accounts_at, seen_marketing_accounts_at, seen_superadmin_accounts_at, seen_bookings_at, seen_audit_log_at")
       .eq("superadmin_user_id", user.id)
       .maybeSingle(),
     adminSupabase
@@ -69,6 +69,7 @@ export default async function SuperadminProtectedLayout({
     null
   const seenOpsAccountsAt = seenState?.seen_ops_accounts_at || undefined
   const seenFinanceAccountsAt = seenState?.seen_finance_accounts_at || undefined
+  const seenMarketingAccountsAt = seenState?.seen_marketing_accounts_at || undefined
   const seenSuperadminAccountsAt = seenState?.seen_superadmin_accounts_at || undefined
   const seenAuditLogAt = seenState?.seen_audit_log_at || undefined
 
@@ -96,7 +97,7 @@ export default async function SuperadminProtectedLayout({
   }).length
   const marketingAccountsBadgeCount = internalAccountLogs.filter((log) => {
     const scope = normalizeStatus(log.metadata?.scope)
-    return scope === "marketing_team"
+    return scope === "marketing_team" && isNewerThan(log.created_at, seenMarketingAccountsAt)
   }).length
   const superadminAccountsBadgeCount = internalAccountLogs.filter((log) => {
     const scope = normalizeStatus(log.metadata?.scope)
@@ -110,7 +111,8 @@ export default async function SuperadminProtectedLayout({
     { label: "Overview" },
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
-    { href: "/superadmin/finance-manager", label: "Preview Finance Manager", badgeCount: 0 },
+    { href: "/superadmin/finance-manager", label: "Finance Overview", badgeCount: 0 },
+    { href: "/superadmin/marketing-manager", label: "Marketing Overview", badgeCount: 0 },
     { label: "Operational" },
     { href: "/superadmin/bookings", label: "Booking & Transaksi", badgeCount: bookingsBadgeCount },
     { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },

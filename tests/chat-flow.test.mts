@@ -210,6 +210,7 @@ runCase("superadmin nav seen-state stays mapped to DB columns", () => {
   assert.deepEqual(SUPERADMIN_NAV_SECTION_TO_COLUMN, {
     ops_accounts: "seen_ops_accounts_at",
     finance_accounts: "seen_finance_accounts_at",
+    marketing_accounts: "seen_marketing_accounts_at",
     superadmin_accounts: "seen_superadmin_accounts_at",
     bookings: "seen_bookings_at",
     audit_log: "seen_audit_log_at",
