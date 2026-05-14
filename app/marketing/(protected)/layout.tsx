@@ -57,6 +57,7 @@ export default async function MarketingProtectedLayout({
         { label: "Audience" },
         { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
+        { href: "/marketing/email-campaigns", label: "Email Campaigns" },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {
@@ -74,6 +75,7 @@ export default async function MarketingProtectedLayout({
         { label: "Audience" },
         { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
+        { href: "/marketing/email-campaigns", label: "Email Campaigns" },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {

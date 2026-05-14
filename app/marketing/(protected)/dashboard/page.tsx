@@ -318,6 +318,14 @@ export default async function MarketingDashboardPage({
                 >
                   {isSuperadminPreview ? "Preview promo" : "Kelola promo"}
                 </Link>
+                {!isSuperadminPreview ? (
+                  <Link
+                    href="/marketing/email-campaigns"
+                    className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
+                  >
+                    Kelola email campaign
+                  </Link>
+                ) : null}
                 <Link
                   href={isSuperadminPreview ? "/superadmin/marketing-inspiration" : "/marketing/inspiration"}
                   className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
@@ -478,6 +486,14 @@ export default async function MarketingDashboardPage({
               >
                 {isSuperadminPreview ? "Preview promo publik" : "Update promo publik di homepage, promo page, dan wishlist"}
               </Link>
+              {!isSuperadminPreview ? (
+                <Link
+                  href="/marketing/email-campaigns"
+                  className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                >
+                  Siapkan dan kirim campaign email ke subscriber aktif
+                </Link>
+              ) : null}
               <Link
                 href={isSuperadminPreview ? "/superadmin/marketing-inspiration" : "/marketing/inspiration"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
