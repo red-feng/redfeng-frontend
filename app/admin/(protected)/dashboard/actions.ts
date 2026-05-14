@@ -34,9 +34,13 @@ function readWidgetSortOrders(formData: FormData, allKeys: string[]) {
   )
 }
 
+function resolveInternalPortalFromReturnTo(returnTo: string) {
+  return returnTo.startsWith("/superadmin") ? "superadmin" : "admin"
+}
+
 export async function submitOperationsManagerReport(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/admin/dashboard")
-  const supabase = await createClient()
+  const supabase = await createClient(resolveInternalPortalFromReturnTo(returnTo))
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -113,7 +117,7 @@ export async function submitOperationsManagerReport(formData: FormData) {
 }
 
 async function getOperationsWidgetUser(returnTo: string) {
-  const supabase = await createClient()
+  const supabase = await createClient(resolveInternalPortalFromReturnTo(returnTo))
   const {
     data: { user },
   } = await supabase.auth.getUser()

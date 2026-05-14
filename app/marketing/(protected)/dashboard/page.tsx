@@ -142,6 +142,17 @@ export default async function MarketingDashboardPage({
     },
   ]
 
+  const heroEyebrow = isSuperadminPreview ? "Marketing Manager" : "Marketing Control Center"
+  const heroTitle = isSuperadminPreview
+    ? "Pantau audience, promo, dan blok inspirasi marketing dari overview lintas tim."
+    : "Audience, promo, dan konten inspirasi sekarang bergerak dari satu workspace."
+  const heroBody = isSuperadminPreview
+    ? "Preview ini membantu superadmin membaca pertumbuhan subscriber, stok campaign aktif, dan kesehatan konten inspirasi tanpa berpindah ke portal marketing utama."
+    : "Dashboard ini dibuat untuk menjaga ritme akuisisi subscriber, memastikan promo publik tetap hidup, dan merapikan blok inspirasi homepage tanpa bergantung pada konten statis."
+  const actionHeading = isSuperadminPreview ? "Manager focus" : "Quick actions"
+  const actionTitle = isSuperadminPreview ? "Titik kontrol domain marketing" : "Jalur kerja marketing hari ini"
+  const audienceTitle = isSuperadminPreview ? "Audience terbaru" : "Subscriber terbaru"
+
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
@@ -149,14 +160,13 @@ export default async function MarketingDashboardPage({
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Marketing Control Center
+                {heroEyebrow}
               </span>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
-                Audience, promo, dan konten inspirasi sekarang bergerak dari satu workspace.
+                {heroTitle}
               </h1>
               <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Dashboard ini dibuat untuk menjaga ritme akuisisi subscriber, memastikan promo publik tetap hidup, dan
-                merapikan blok inspirasi homepage tanpa bergantung pada konten statis.
+                {heroBody}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
@@ -220,10 +230,8 @@ export default async function MarketingDashboardPage({
           <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Quick actions</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">
-                  Jalur kerja marketing hari ini
-                </h2>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{actionHeading}</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">{actionTitle}</h2>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
@@ -271,7 +279,7 @@ export default async function MarketingDashboardPage({
 
           <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent audience</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Subscriber terbaru</h2>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">{audienceTitle}</h2>
             <div className="mt-5 space-y-3">
               {!recentSubscribers.length ? (
                 <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">

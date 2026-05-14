@@ -277,6 +277,11 @@ export default async function FinanceDashboardPage({
     : []
 
   if (showFinanceManagerView) {
+    const isSuperadminPreview = isSuperadmin && portal === "superadmin"
+    const heroBody = isSuperadminPreview
+      ? "Preview ini membantu superadmin membaca beban outstanding, payout yang mulai macet, dan kesiapan keputusan finansial tanpa berpindah ke workspace finance utama."
+      : "Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin."
+    const managerFocusLabel = isSuperadminPreview ? "Manager focus" : "Finance pulse"
     const managerMetricCards = [
       { label: "Transaksi customer", value: formatMoney(grossCustomerTransactionTotal), note: "Total uang customer yang sudah masuk ke Red Feng." },
       { label: "Dana tertahan", value: formatMoney(customerHeldFundsTotal), note: "Dana customer yang masih ada di escrow / belum selesai." },
@@ -329,7 +334,7 @@ export default async function FinanceDashboardPage({
                   Pantau queue payout, aging, dan performa tim finance dari satu dashboard.
                 </h1>
                 <p className="mt-4 text-base leading-8 text-orange-50/90">
-                  Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin.
+                  {heroBody}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <Link
@@ -354,7 +359,7 @@ export default async function FinanceDashboardPage({
               </div>
 
               <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Finance pulse</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">{managerFocusLabel}</p>
                 <div className="mt-5 grid gap-4">
                   <div>
                     <p className="text-sm text-orange-50/80">Outstanding</p>

@@ -151,24 +151,72 @@ export default async function SuperadminDashboardPage({
   const domainCards = [
     {
       label: "Operations domain",
+      eyebrow: "Operations overview",
       headline: `${formatCompactCount(operationsManagerCount)} manager / ${formatCompactCount(adminCount)} admin`,
-      note: `${formatCompactCount(financeReadyBookings)} booking siap diteruskan atau dipantau lintas tim.`,
-      href: "/superadmin/operations-manager",
-      cta: "Buka operations overview",
+      note: "Pantau backlog operasional, ritme SLA, queue lintas kontrol, dan laporan operations manager dari satu halaman domain.",
+      metrics: [
+        `${formatCompactCount(financeReadyBookings)} finance-ready booking`,
+        `${formatCompactCount(operationsManagerCount + adminCount)} anggota tim operasi`,
+      ],
+      links: [
+        { href: "/superadmin/operations-manager", label: "Buka operations overview" },
+        { href: "/superadmin/bookings", label: "Lihat booking & transaksi" },
+        { href: "/superadmin/team-accounts", label: "Buka ops team accounts" },
+      ],
     },
     {
       label: "Finance domain",
+      eyebrow: "Finance overview",
       headline: `${formatCompactCount(financeManagerCount)} manager / ${formatCompactCount(financeCount)} finance`,
-      note: "Gunakan preview finance untuk memeriksa struktur tim dan ritme approval keuangan.",
-      href: "/superadmin/finance-manager",
-      cta: "Buka finance overview",
+      note: "Gunakan preview finance untuk membaca queue approval, performa kontrol dana, dan struktur tim keuangan tanpa keluar dari portal superadmin.",
+      metrics: [
+        `${formatCompactCount(financeManagerCount + financeCount)} anggota tim finance`,
+        `${formatCompactCount(auditLogCount)} audit rows tersedia`,
+      ],
+      links: [
+        { href: "/superadmin/finance-manager", label: "Buka finance overview" },
+        { href: "/superadmin/finance-team-accounts", label: "Buka finance team accounts" },
+        { href: "/superadmin/audit-log", label: "Tinjau audit trail" },
+      ],
     },
     {
       label: "Marketing domain",
+      eyebrow: "Marketing overview",
       headline: `${formatCompactCount(marketingManagerCount)} manager / ${formatCompactCount(marketingCount)} marketing`,
-      note: `${formatCompactCount(activeSubscribers)} subscriber aktif, ${formatCompactCount(activePromos)} promo live, ${formatCompactCount(activeArticles)} artikel live.`,
-      href: "/superadmin/marketing-manager",
-      cta: "Buka marketing overview",
+      note: "Lihat audience, promo, dan blok inspirasi sebagai satu domain campaign agar superadmin bisa memantau kesehatan funnel marketing secara ringkas.",
+      metrics: [
+        `${formatCompactCount(activeSubscribers)} subscriber aktif`,
+        `${formatCompactCount(activePromos)} promo live / ${formatCompactCount(activeArticles)} artikel live`,
+      ],
+      links: [
+        { href: "/superadmin/marketing-manager", label: "Buka marketing overview" },
+        { href: "/superadmin/marketing-newsletters", label: "Preview newsletter audience" },
+        { href: "/superadmin/marketing-promos", label: "Preview promo content" },
+      ],
+    },
+  ]
+
+  const controlLanes = [
+    {
+      label: "Struktur organisasi",
+      note: "Jalur ini dipakai untuk membentuk owner domain dan menjaga hierarki akun internal tetap rapi.",
+      links: [
+        { href: "/superadmin/team-accounts", label: "Kelola Operations Team Accounts" },
+        { href: "/superadmin/finance-team-accounts", label: "Kelola Finance Team Accounts" },
+        { href: "/superadmin/marketing-team-accounts", label: "Kelola Marketing Team Accounts" },
+        { href: "/superadmin/superadmin-accounts", label: "Kelola Superadmin Accounts" },
+      ],
+    },
+    {
+      label: "Kontrol lintas fungsi",
+      note: "Gunakan jalur cepat ini saat perlu meninjau domain operasional, komunikasi internal, atau jejak audit.",
+      links: [
+        { href: "/superadmin/operations-manager", label: "Buka Operations Overview" },
+        { href: "/superadmin/finance-manager", label: "Buka Finance Overview" },
+        { href: "/superadmin/marketing-manager", label: "Buka Marketing Overview" },
+        { href: "/superadmin/internal-chat", label: "Buka Internal Chat" },
+        { href: "/superadmin/audit-log", label: "Buka Audit Trail" },
+      ],
     },
   ]
 
@@ -273,15 +321,34 @@ export default async function SuperadminDashboardPage({
               key={card.label}
               className="rounded-[24px] border border-violet-200/50 bg-white/90 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6"
             >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">{card.label}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-violet-600">{card.eyebrow}</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">{card.headline}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">{card.note}</p>
-              <Link
-                href={card.href}
-                className="mt-5 inline-flex rounded-full border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
-              >
-                {card.cta}
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {card.metrics.map((metric) => (
+                  <span
+                    key={metric}
+                    className="inline-flex rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-[11px] font-semibold text-violet-700"
+                  >
+                    {metric}
+                  </span>
+                ))}
+              </div>
+              <div className="mt-5 grid gap-2.5">
+                {card.links.map((link, index) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={
+                      index === 0
+                        ? "inline-flex rounded-full border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+                        : "inline-flex rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    }
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </article>
           ))}
         </section>
@@ -364,19 +431,24 @@ export default async function SuperadminDashboardPage({
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">
               Jalur kerja superadmin
             </h2>
-            <div className="mt-5 grid gap-3">
-              <Link href="/superadmin/team-accounts" className="rounded-[22px] border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-violet-100/50">
-                Kelola Operations Team Accounts
-              </Link>
-              <Link href="/superadmin/finance-team-accounts" className="rounded-[22px] border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-violet-100/50">
-                Kelola Finance Team Accounts
-              </Link>
-              <Link href="/superadmin/marketing-team-accounts" className="rounded-[22px] border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-violet-100/50">
-                Kelola Marketing Team Accounts
-              </Link>
-              <Link href="/superadmin/superadmin-accounts" className="rounded-[22px] border border-violet-100 bg-violet-50/30 px-5 py-4 text-sm font-semibold text-slate-900 transition hover:bg-violet-100/50">
-                Kelola Superadmin Accounts
-              </Link>
+            <div className="mt-5 space-y-4">
+              {controlLanes.map((lane) => (
+                <div key={lane.label} className="rounded-[22px] border border-violet-100 bg-violet-50/20 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">{lane.label}</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{lane.note}</p>
+                  <div className="mt-4 grid gap-3">
+                    {lane.links.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="rounded-[18px] border border-violet-100 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-violet-100/40"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </article>
 
