@@ -160,16 +160,16 @@ export default async function MarketingDashboardPage({
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/promos"}
+                  href={isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"}
                   className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
                 >
-                  {isSuperadminPreview ? "Buka struktur marketing" : "Kelola promo"}
+                  {isSuperadminPreview ? "Preview promo" : "Kelola promo"}
                 </Link>
                 <Link
-                  href={isSuperadminPreview ? "/superadmin/dashboard" : "/marketing/inspiration"}
+                  href={isSuperadminPreview ? "/superadmin/marketing-inspiration" : "/marketing/inspiration"}
                   className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                 >
-                  {isSuperadminPreview ? "Kembali ke superadmin" : "Kelola inspirasi"}
+                  {isSuperadminPreview ? "Preview inspirasi" : "Kelola inspirasi"}
                 </Link>
               </div>
             </div>
@@ -228,22 +228,22 @@ export default async function MarketingDashboardPage({
             </div>
             <div className="mt-5 grid gap-3">
               <Link
-                href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/newsletters"}
+                href={isSuperadminPreview ? "/superadmin/marketing-newsletters" : "/marketing/newsletters"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                {isSuperadminPreview ? "Buka struktur akun marketing" : "Buka audience newsletter dan cek subscriber baru"}
+                {isSuperadminPreview ? "Preview audience newsletter" : "Buka audience newsletter dan cek subscriber baru"}
               </Link>
               <Link
-                href={isSuperadminPreview ? "/superadmin/marketing-team-accounts" : "/marketing/promos"}
+                href={isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                {isSuperadminPreview ? "Lihat owner workspace marketing" : "Update promo publik di homepage, promo page, dan wishlist"}
+                {isSuperadminPreview ? "Preview promo publik" : "Update promo publik di homepage, promo page, dan wishlist"}
               </Link>
               <Link
-                href={isSuperadminPreview ? "/superadmin/dashboard" : "/marketing/inspiration"}
+                href={isSuperadminPreview ? "/superadmin/marketing-inspiration" : "/marketing/inspiration"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
               >
-                {isSuperadminPreview ? "Kembali ke executive control center" : "Atur blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot;"}
+                {isSuperadminPreview ? "Preview blok inspirasi" : "Atur blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot;"}
               </Link>
             </div>
 

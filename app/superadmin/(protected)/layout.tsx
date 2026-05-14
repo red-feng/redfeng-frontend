@@ -39,7 +39,7 @@ export default async function SuperadminProtectedLayout({
     redirect(`/superadmin/login?error=${encodeURIComponent(buildPortalSessionError("session-changed", profile.role))}`)
   }
 
-  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount, merchantSupportRooms] = await Promise.all([
+  const [seenStateResult, bookingResult, auditLogsResult, internalAccountLogResult, internalChatUnreadBadgeCount, merchantSupportRooms, activeSubscribersResult, activePromosResult, inactivePromosResult, activeArticlesResult, inactiveArticlesResult] = await Promise.all([
     adminSupabase
       .from("superadmin_nav_seen_states")
       .select("seen_ops_accounts_at, seen_finance_accounts_at, seen_marketing_accounts_at, seen_superadmin_accounts_at, seen_bookings_at, seen_audit_log_at")
@@ -62,6 +62,11 @@ export default async function SuperadminProtectedLayout({
       .limit(200),
     getInternalChatUnreadBadgeCount(adminSupabase, user.id),
     loadMerchantSupportRoomsForAdmin(adminSupabase),
+    adminSupabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "active"),
+    adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", true),
+    adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", false),
+    adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
+    adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
   ])
 
   const seenState =
@@ -106,13 +111,26 @@ export default async function SuperadminProtectedLayout({
   const bookingsBadgeCount = financeReadyRows.length
   const auditLogBadgeCount = auditLogs.filter((log) => isNewerThan(log.created_at, seenAuditLogAt)).length
   const merchantSupportBadgeCount = getMerchantSupportUnreadCountForAdmin(merchantSupportRooms)
+  const activeSubscribersCount = activeSubscribersResult.count || 0
+  const activePromosCount = activePromosResult.count || 0
+  const inactivePromosCount = inactivePromosResult.count || 0
+  const activeArticlesCount = activeArticlesResult.count || 0
+  const inactiveArticlesCount = inactiveArticlesResult.count || 0
 
   const navItems = [
     { label: "Overview" },
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
     { href: "/superadmin/finance-manager", label: "Finance Overview", badgeCount: 0 },
-    { href: "/superadmin/marketing-manager", label: "Marketing Overview", badgeCount: 0 },
+    {
+      label: "Marketing Overview",
+      children: [
+        { href: "/superadmin/marketing-manager", label: "Dashboard" },
+        { href: "/superadmin/marketing-newsletters", label: "Newsletter Audience", badgeCount: activeSubscribersCount },
+        { href: "/superadmin/marketing-promos", label: "Promo Preview", badgeCount: activePromosCount, secondaryBadgeCount: inactivePromosCount },
+        { href: "/superadmin/marketing-inspiration", label: "Inspiration Preview", badgeCount: activeArticlesCount, secondaryBadgeCount: inactiveArticlesCount },
+      ],
+    },
     { label: "Operational" },
     { href: "/superadmin/bookings", label: "Booking & Transaksi", badgeCount: bookingsBadgeCount },
     { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },

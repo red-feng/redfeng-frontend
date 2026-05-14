@@ -9,6 +9,8 @@ type MarketingNewsletterSearchParams = {
   source?: string
 }
 
+type MarketingNewsletterPortal = "marketing" | "superadmin"
+
 type SubscriberRow = {
   id: string
   email: string
@@ -30,10 +32,13 @@ function formatDateTime(value: string | null | undefined) {
 
 export default async function MarketingNewslettersPage({
   searchParams,
+  portal = "marketing",
 }: {
   searchParams?: Promise<MarketingNewsletterSearchParams>
+  portal?: MarketingNewsletterPortal
 }) {
   const params = searchParams ? await searchParams : {}
+  const isSuperadminPreview = portal === "superadmin"
   const query = String(params.q || "").trim()
   const statusFilter = String(params.status || "all").trim()
   const sourceFilter = String(params.source || "all").trim()
@@ -68,7 +73,9 @@ export default async function MarketingNewslettersPage({
   if (query) exportQuery.set("q", query)
   if (statusFilter !== "all") exportQuery.set("status", statusFilter)
   if (sourceFilter !== "all") exportQuery.set("source", sourceFilter)
-  const exportHref = `/marketing/newsletters/export${exportQuery.toString() ? `?${exportQuery.toString()}` : ""}`
+  const basePath = isSuperadminPreview ? "/superadmin/marketing-newsletters" : "/marketing/newsletters"
+  const exportBasePath = isSuperadminPreview ? "/superadmin/marketing-newsletters/export" : "/marketing/newsletters/export"
+  const exportHref = `${exportBasePath}${exportQuery.toString() ? `?${exportQuery.toString()}` : ""}`
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -83,8 +90,9 @@ export default async function MarketingNewslettersPage({
                 Kelola audience email yang masuk dari homepage dan landing packages.
               </h1>
               <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Halaman ini dipakai untuk memantau pertumbuhan subscriber, membersihkan audience, dan menyiapkan basis
-                campaign marketing berikutnya.
+                {isSuperadminPreview
+                  ? "Superadmin membaca pertumbuhan subscriber, kualitas audience, dan kesiapan basis campaign tanpa harus pindah ke portal marketing."
+                  : "Halaman ini dipakai untuk memantau pertumbuhan subscriber, membersihkan audience, dan menyiapkan basis campaign marketing berikutnya."}
               </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
@@ -169,7 +177,7 @@ export default async function MarketingNewslettersPage({
                   Terapkan filter
                 </button>
                 <a
-                  href="/marketing/newsletters"
+                  href={basePath}
                   className="rounded-[18px] border border-[#e6d8c2] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Reset
@@ -207,7 +215,7 @@ export default async function MarketingNewslettersPage({
                     </span>
                     <form action={updateNewsletterSubscriberStatus}>
                       <input type="hidden" name="subscriber_id" value={item.id} />
-                      <input type="hidden" name="return_to" value="/marketing/newsletters" />
+                      <input type="hidden" name="return_to" value={basePath} />
                       <input type="hidden" name="next_status" value={item.status === "active" ? "unsubscribed" : "active"} />
                       <button className="rounded-[16px] border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-100">
                         {item.status === "active" ? "Tandai unsubscribed" : "Aktifkan kembali"}

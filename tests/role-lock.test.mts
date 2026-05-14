@@ -96,9 +96,10 @@ async function main() {
 
   await runCase("internal chat policy keeps frozen role allow matrix", () => {
     assert.match(internalChatSource, /const INTERNAL_DIRECT_ALLOWED_TARGETS:[\s\S]*Object\.freeze\(\{/)
-    assert.match(internalChatSource, /superadmin:\s*\["superadmin", "operations_manager", "finance_manager"\]/)
-    assert.match(internalChatSource, /operations_manager:\s*\["superadmin", "operations_manager", "admin", "finance_manager"\]/)
-    assert.match(internalChatSource, /finance_manager:\s*\["superadmin", "finance_manager", "finance", "operations_manager"\]/)
+    assert.match(internalChatSource, /superadmin:\s*\["superadmin", "operations_manager", "finance_manager", "marketing_manager"\]/)
+    assert.match(internalChatSource, /operations_manager:\s*\["superadmin", "operations_manager", "admin", "finance_manager", "marketing_manager"\]/)
+    assert.match(internalChatSource, /finance_manager:\s*\["superadmin", "finance_manager", "finance", "operations_manager", "marketing_manager"\]/)
+    assert.match(internalChatSource, /marketing_manager:\s*\["superadmin", "marketing_manager", "operations_manager", "finance_manager"\]/)
     assert.match(internalChatSource, /admin:\s*\["operations_manager", "admin", "finance"\]/)
     assert.match(internalChatSource, /finance:\s*\["finance_manager", "finance", "admin"\]/)
   })
@@ -156,6 +157,8 @@ async function main() {
       "operations_manager",
       "finance",
       "finance_manager",
+      "marketing",
+      "marketing_manager",
       "superadmin",
     ])
     assert.equal(normalizeAccountRole("merchant"), "merchant")
@@ -163,7 +166,7 @@ async function main() {
     assert.match(accountRolesMigrationSource, /create table if not exists public\.account_roles/)
     assert.match(accountRolesMigrationSource, /primary key \(user_id, role\)/)
     assert.match(accountRolesMigrationSource, /status in \('active', 'revoked', 'suspended'\)/)
-    assert.match(accountRolesMigrationSource, /where role in \('customer', 'merchant'\)/)
+    assert.match(accountRolesMigrationSource, /where role in \('customer', 'merchant', 'admin', 'operations_manager', 'finance', 'finance_manager', 'superadmin'\)/)
   })
 
   await runCase("public account role keeps merchant compatible with customer portal", () => {

@@ -8,15 +8,21 @@ type MarketingPromoSearchParams = {
   status?: string
 }
 
+type MarketingPromoPortal = "marketing" | "superadmin"
+
 export default async function MarketingPromosPage({
   searchParams,
+  portal = "marketing",
 }: {
   searchParams?: Promise<MarketingPromoSearchParams>
+  portal?: MarketingPromoPortal
 }) {
   const params = searchParams ? await searchParams : {}
+  const isSuperadminPreview = portal === "superadmin"
   const query = String(params.q || "").trim().toLowerCase()
   const statusFilter = String(params.status || "all").trim()
   const adminSupabase = createAdminClient()
+  const basePath = isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"
 
   let promoQuery = adminSupabase
     .from("marketing_promos")
@@ -61,8 +67,9 @@ export default async function MarketingPromosPage({
                 Kelola promo publik dari satu panel marketing.
               </h1>
               <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Promo di homepage, halaman promo, detail promo, wishlist, dan blok komersial lain sekarang dipusatkan
-                di workspace ini agar ritme campaign lebih mudah dijaga.
+                {isSuperadminPreview
+                  ? "Superadmin dapat melihat promo publik yang sedang hidup, stok campaign nonaktif, dan struktur kontennya tanpa meninggalkan portal kontrol lintas tim."
+                  : "Promo di homepage, halaman promo, detail promo, wishlist, dan blok komersial lain sekarang dipusatkan di workspace ini agar ritme campaign lebih mudah dijaga."}
               </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
@@ -134,7 +141,7 @@ export default async function MarketingPromosPage({
                 Terapkan filter
               </button>
               <a
-                href="/marketing/promos"
+                href={basePath}
                 className="rounded-[18px] border border-[#e6d8c2] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Reset
@@ -144,12 +151,16 @@ export default async function MarketingPromosPage({
         </section>
 
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create promo</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+            {isSuperadminPreview ? "Promo template preview" : "Create promo"}
+          </p>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-500">
-            Buat promo baru atau jadikan panel ini sebagai template untuk campaign berikutnya.
+            {isSuperadminPreview
+              ? "Superadmin tetap bisa mengubah promo dari jalur ini bila diperlukan, tetapi panel ini terutama dipakai untuk membaca struktur campaign yang sedang dijalankan tim marketing."
+              : "Buat promo baru atau jadikan panel ini sebagai template untuk campaign berikutnya."}
           </p>
           <div className="mt-5">
-            <PromoForm />
+            <PromoForm portal={portal} />
           </div>
         </section>
 
@@ -172,13 +183,13 @@ export default async function MarketingPromosPage({
                 <form action={deleteMarketingPromo}>
                   <input type="hidden" name="promo_id" value={String(promo.id)} />
                   <input type="hidden" name="slug" value={String(promo.slug)} />
-                  <input type="hidden" name="return_to" value="/marketing/promos" />
+                  <input type="hidden" name="return_to" value={basePath} />
                   <button className="rounded-[16px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100">
                     Hapus promo
                   </button>
                 </form>
               </div>
-              <PromoForm promo={promo} />
+              <PromoForm promo={promo} portal={portal} />
             </article>
           ))}
         </section>
@@ -187,11 +198,18 @@ export default async function MarketingPromosPage({
   )
 }
 
-function PromoForm({ promo }: { promo?: Record<string, string | number | boolean | null> }) {
+function PromoForm({
+  promo,
+  portal,
+}: {
+  promo?: Record<string, string | number | boolean | null>
+  portal: MarketingPromoPortal
+}) {
+  const returnTo = portal === "superadmin" ? "/superadmin/marketing-promos" : "/marketing/promos"
   return (
     <form action={upsertMarketingPromo} className="grid gap-4">
       <input type="hidden" name="promo_id" value={promo ? String(promo.id) : ""} />
-      <input type="hidden" name="return_to" value="/marketing/promos" />
+      <input type="hidden" name="return_to" value={returnTo} />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Field label="Slug" name="slug" defaultValue={promo ? String(promo.slug || "") : ""} />
         <Field label="Target href" name="target_href" defaultValue={promo ? String(promo.target_href || "") : "/promo"} />

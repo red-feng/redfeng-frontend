@@ -9,7 +9,7 @@ type InternalProfileRow = {
   role: string | null
 }
 
-type InternalRoleCode = "admin" | "operations_manager" | "finance" | "finance_manager" | "superadmin"
+type InternalRoleCode = "admin" | "operations_manager" | "finance" | "finance_manager" | "marketing_manager" | "superadmin"
 
 export const INTERNAL_CHAT_ROLE_POLICY_VERSION = "2026-04-14"
 const INTERNAL_CHAT_LOCKED_ROLES = Object.freeze([
@@ -17,6 +17,7 @@ const INTERNAL_CHAT_LOCKED_ROLES = Object.freeze([
   "operations_manager",
   "finance",
   "finance_manager",
+  "marketing_manager",
   "superadmin",
 ] as const)
 
@@ -81,9 +82,10 @@ export type InternalChatUserOption = {
 export const INTERNAL_CHAT_PAGE_SIZE = 50
 
 const INTERNAL_DIRECT_ALLOWED_TARGETS: Readonly<Record<InternalRoleCode, readonly InternalRoleCode[]>> = Object.freeze({
-  superadmin: ["superadmin", "operations_manager", "finance_manager"],
-  operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager"],
-  finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager"],
+  superadmin: ["superadmin", "operations_manager", "finance_manager", "marketing_manager"],
+  operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager", "marketing_manager"],
+  finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager", "marketing_manager"],
+  marketing_manager: ["superadmin", "marketing_manager", "operations_manager", "finance_manager"],
   admin: ["operations_manager", "admin", "finance"],
   finance: ["finance_manager", "finance", "admin"],
 })
@@ -95,6 +97,7 @@ function normalizeInternalRoleCode(role: string | null | undefined): InternalRol
     normalized === "operations_manager" ||
     normalized === "finance" ||
     normalized === "finance_manager" ||
+    normalized === "marketing_manager" ||
     normalized === "superadmin"
   ) {
     return normalized
@@ -495,4 +498,3 @@ export async function listInternalChatUsers(adminSupabase: AdminSupabase, curren
     }))
     .sort((left, right) => left.username.localeCompare(right.username))
 }
-
