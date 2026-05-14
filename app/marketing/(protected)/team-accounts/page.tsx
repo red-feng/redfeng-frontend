@@ -40,6 +40,7 @@ export default async function MarketingTeamAccountsPage({
   const isSuperadmin = resolvedRole === "superadmin"
   const basePath = isSuperadmin ? "/superadmin/marketing-team-accounts" : "/marketing/team-accounts"
   const backHref = isSuperadmin ? "/superadmin/dashboard" : "/marketing/dashboard"
+  const isSuperadminView = portal === "superadmin"
 
   const { data: marketingProfiles } = await adminSupabase
     .from("profiles")
@@ -58,14 +59,17 @@ export default async function MarketingTeamAccountsPage({
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Marketing Team Accounts
+                {isSuperadminView ? "Marketing Structure Control" : "Marketing Team Accounts"}
               </span>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
-                Marketing manager memegang tim, superadmin memegang struktur puncaknya.
+                {isSuperadminView
+                  ? "Superadmin menjaga struktur akun marketing dari panel kontrol lintas tim."
+                  : "Marketing manager memegang tim, superadmin memegang struktur puncaknya."}
               </h1>
               <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Semua akun marketing internal login dengan username dan password. Marketing manager membuat akun
-                marketing team, sedangkan superadmin dapat membuat marketing manager bila struktur tim diperluas.
+                {isSuperadminView
+                  ? "Dari portal superadmin, Anda bisa melihat struktur marketing secara utuh, membuat marketing manager baru, dan menjaga agar kepemilikan workspace marketing tetap jelas."
+                  : "Semua akun marketing internal login dengan username dan password. Marketing manager membuat akun marketing team, sedangkan superadmin dapat membuat marketing manager bila struktur tim diperluas."}
               </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
@@ -80,7 +84,7 @@ export default async function MarketingTeamAccountsPage({
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{marketingCount.toLocaleString("id-ID")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">Other accounts shown</p>
+                  <p className="text-sm text-orange-50/80">{isSuperadminView ? "Accounts in directory" : "Other accounts shown"}</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{teamProfiles.length.toLocaleString("id-ID")}</p>
                 </div>
               </div>
@@ -115,7 +119,9 @@ export default async function MarketingTeamAccountsPage({
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create marketing account</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Buat akun marketing baru</h2>
               <p className="mt-2 text-sm leading-7 text-slate-500">
-                Gunakan panel ini untuk menambah anggota baru ke workspace marketing tanpa keluar dari alur kerja utama.
+                {isSuperadminView
+                  ? "Gunakan panel ini untuk membentuk struktur marketing dari level superadmin, termasuk saat Anda perlu menambahkan marketing manager baru."
+                  : "Gunakan panel ini untuk menambah anggota baru ke workspace marketing tanpa keluar dari alur kerja utama."}
               </p>
               <form action={createMarketingAccount} className="mt-6 space-y-4">
                 <input type="hidden" name="return_to" value={basePath} />
@@ -165,7 +171,7 @@ export default async function MarketingTeamAccountsPage({
                 <p>3. Marketing team fokus eksekusi harian, sedangkan marketing manager fokus ritme campaign dan quality control.</p>
               </div>
               <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
-                Kembali ke marketing dashboard
+                {isSuperadminView ? "Kembali ke superadmin dashboard" : "Kembali ke marketing dashboard"}
               </Link>
             </section>
           </div>
