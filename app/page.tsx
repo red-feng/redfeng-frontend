@@ -1,6 +1,7 @@
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import HomeHeroSection from "@/app/components/home/HomeHeroSection"
 import { AppHomeFeedSection, AppHomeFooterSection } from "@/app/components/home/mobile-app"
+import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import {
   HomeDestinationsSection,
   HomeFooter,
@@ -30,6 +31,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <main className="pb-28 md:pb-0">
         <HomeHeroSection locale={locale} />
         <WebHomeServicesSection locale={locale} />
+        <PromoPlacementImpressionBeacon placement="homepage_feed" sourcePath="/" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
         <AppHomeFeedSection locale={locale} promos={promos} />
         <WebHomePromoSection locale={locale} promos={promos} />
         <WebHomePopularSection locale={locale} />

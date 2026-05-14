@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { isMarketingPromoPlacementKey, marketingPromoPlacements, type MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
 
@@ -35,6 +36,16 @@ type ArticleRow = {
   href: string | null
   is_active: boolean | null
   updated_at: string | null
+}
+
+type PlacementRow = {
+  promo_id: string | null
+  placement_key: string | null
+}
+
+type PromoEventRow = {
+  event_type: string | null
+  placement_key: string | null
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -76,6 +87,8 @@ export default async function MarketingDashboardPage({
     { count: last7Subscribers },
     { count: previous7Subscribers },
     allPromosResult,
+    placementRowsResult,
+    todayPromoEventsResult,
     { count: activeArticles },
     { count: inactiveArticles },
     recentSubscribersResult,
@@ -92,6 +105,8 @@ export default async function MarketingDashboardPage({
       .gte("subscribed_at", previous7Iso)
       .lt("subscribed_at", last7Iso),
     adminSupabase.from("marketing_promos").select("id, is_active, status, starts_at, ends_at"),
+    adminSupabase.from("marketing_promo_placements").select("promo_id, placement_key").eq("is_active", true),
+    adminSupabase.from("marketing_promo_events").select("event_type, placement_key").gte("occurred_at", startOfTodayIso),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase
@@ -115,7 +130,9 @@ export default async function MarketingDashboardPage({
   const recentPromos = (recentPromosResult.data as PromoRow[] | null) || []
   const recentArticles = (recentArticlesResult.data as ArticleRow[] | null) || []
   const weekGrowth = Math.max((last7Subscribers || 0) - (previous7Subscribers || 0), 0)
-  const allPromos = (allPromosResult.data as Array<Pick<PromoRow, "is_active" | "status" | "starts_at" | "ends_at">> | null) || []
+  const allPromos = (allPromosResult.data as Array<Pick<PromoRow, "id" | "is_active" | "status" | "starts_at" | "ends_at">> | null) || []
+  const placementRows = (placementRowsResult.data as PlacementRow[] | null) || []
+  const todayPromoEvents = (todayPromoEventsResult.data as PromoEventRow[] | null) || []
   const nowIso = now.toISOString()
   const promoStateCounts = allPromos.reduce(
     (acc, promo) => {
@@ -125,6 +142,40 @@ export default async function MarketingDashboardPage({
     },
     { live: 0, waiting: 0, expired: 0, hidden: 0 },
   )
+  const promoStateById = new Map(allPromos.map((promo) => [promo.id, getMarketingPromoEffectiveState(promo, nowIso)]))
+  const placementAnalytics = marketingPromoPlacements.map((placement) => {
+    const counts = { live: 0, waiting: 0, expired: 0, hidden: 0 }
+    for (const row of placementRows) {
+      if (row.placement_key !== placement.key || !row.promo_id) continue
+      const state = promoStateById.get(row.promo_id)
+      if (!state) continue
+      counts[state] += 1
+    }
+    return {
+      ...placement,
+      counts,
+      total: counts.live + counts.waiting + counts.expired + counts.hidden,
+    }
+  })
+  const eventCounts = todayPromoEvents.reduce(
+    (acc, event) => {
+      if (event.event_type === "impression") acc.impressions += 1
+      if (event.event_type === "click") acc.clicks += 1
+      return acc
+    },
+    { impressions: 0, clicks: 0 },
+  )
+  const placementEventMap = new Map<MarketingPromoPlacementKey, { impressions: number; clicks: number }>(
+    marketingPromoPlacements.map((placement) => [placement.key, { impressions: 0, clicks: 0 }]),
+  )
+  for (const event of todayPromoEvents) {
+    const placementKey = String(event.placement_key || "")
+    if (!isMarketingPromoPlacementKey(placementKey)) continue
+    const bucket = placementEventMap.get(placementKey)
+    if (!bucket) continue
+    if (event.event_type === "impression") bucket.impressions += 1
+    if (event.event_type === "click") bucket.clicks += 1
+  }
 
   const metricCards = [
     {
@@ -146,6 +197,16 @@ export default async function MarketingDashboardPage({
       label: "Promo live",
       value: formatCompactCount(promoStateCounts.live),
       note: `${formatCompactCount(promoStateCounts.waiting)} waiting, ${formatCompactCount(promoStateCounts.expired)} expired, ${formatCompactCount(promoStateCounts.hidden)} hidden.`,
+    },
+    {
+      label: "Impresi hari ini",
+      value: formatCompactCount(eventCounts.impressions),
+      note: "Tercatat dari beacon slot promo publik yang sedang aktif.",
+    },
+    {
+      label: "Klik CTA hari ini",
+      value: formatCompactCount(eventCounts.clicks),
+      note: "Klik menuju target promo yang melewati redirect logger.",
     },
     {
       label: "Inspirasi aktif",
@@ -240,7 +301,7 @@ export default async function MarketingDashboardPage({
         {params.success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{params.success}</div> : null}
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
 
-        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-7">
           {metricCards.map((card) => (
             <article
               key={card.label}
@@ -251,6 +312,44 @@ export default async function MarketingDashboardPage({
               <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
             </article>
           ))}
+        </section>
+
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Placement analytics</p>
+              <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Kesehatan promo per slot publik</h2>
+            </div>
+            {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Kelola placement</Link> : null}
+          </div>
+          <div className="mt-5 grid gap-3 lg:grid-cols-2 2xl:grid-cols-4">
+            {placementAnalytics.map((placement) => (
+              <article key={placement.key} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{placement.label}</p>
+                <p className="mt-2 text-sm text-slate-500">{placement.description}</p>
+                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{formatCompactCount(placement.counts.live)}</p>
+                <p className="mt-1 text-xs text-emerald-700">Live</p>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">Waiting</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.waiting)}</p>
+                  </div>
+                  <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-700">Expired</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.expired)}</p>
+                  </div>
+                  <div className="rounded-[16px] border border-slate-200 bg-slate-100 px-2 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Hidden</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.hidden)}</p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-500">Total mapping aktif: {formatCompactCount(placement.total)}</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  Hari ini: {formatCompactCount(placementEventMap.get(placement.key)?.impressions || 0)} impresi / {formatCompactCount(placementEventMap.get(placement.key)?.clicks || 0)} klik
+                </p>
+              </article>
+            ))}
+          </div>
         </section>
 
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.92fr_1.08fr]">

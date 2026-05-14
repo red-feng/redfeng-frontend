@@ -1,6 +1,7 @@
 import PublicHeader from "@/app/components/PublicHeader"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
+import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import { destinationCatalog, popularBookingCatalog } from "@/app/components/home/shared/homeDetailCatalog"
 import WishlistPageClient from "@/app/components/favorites/WishlistPageClient"
 import { getCurrentLocale } from "@/lib/locale"
@@ -41,6 +42,7 @@ export default async function WishlistPage() {
 
       <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
         <div className={`${homeLayoutLock.contentWidthClass} space-y-6`}>
+          <PromoPlacementImpressionBeacon placement="wishlist_suggestions" sourcePath="/wishlist" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
           <section className="rounded-[30px] border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">Wishlist / Favorite</p>
             <h1 className="mt-3 max-w-3xl text-[28px] font-semibold tracking-[-0.03em] text-slate-950 sm:text-[36px]">

@@ -5,6 +5,7 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { getCurrentLocale } from "@/lib/locale"
+import { buildMarketingPromoClickHref } from "@/lib/marketing-promo-analytics"
 import { getMarketingPromoBySlug, getMarketingPromoSlugs } from "@/lib/marketing-content"
 
 type PromoDetailPageProps = {
@@ -79,7 +80,7 @@ export default async function PromoDetailPage({ params }: PromoDetailPageProps) 
 
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Link
-                    href={promo.targetHref}
+                    href={buildMarketingPromoClickHref({ slug: promo.slug, sourcePath: `/promo/${promo.slug}` })}
                     className="inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-[14px] font-semibold text-slate-950 shadow-[0_18px_30px_-22px_rgba(15,23,42,0.4)]"
                   >
                     {promo.cta}

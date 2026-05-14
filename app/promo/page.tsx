@@ -2,9 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { getCurrentLocale } from "@/lib/locale"
+import { buildMarketingPromoClickHref } from "@/lib/marketing-promo-analytics"
 import { getMarketingPromos } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
@@ -25,6 +27,7 @@ export default async function PromoPage() {
 
       <main className={`${homeLayoutLock.pageXClass} pb-8 pt-5 md:pb-10 md:pt-7`}>
         <div className={homeLayoutLock.contentWidthClass}>
+          <PromoPlacementImpressionBeacon placement="promo_listing" sourcePath="/promo" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
           <section className={`${homeLayoutLock.cardRadiusClass} border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7`}>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">Promo aktif</p>
             <h1 className="mt-3 max-w-3xl text-[28px] font-semibold tracking-[-0.03em] text-slate-950 sm:text-[36px]">
@@ -78,7 +81,7 @@ export default async function PromoPage() {
                         </svg>
                       </Link>
                       <Link
-                        href={card.targetHref}
+                        href={buildMarketingPromoClickHref({ slug: card.slug, placement: "promo_listing", sourcePath: "/promo" })}
                         className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-3 text-[13px] font-semibold text-white backdrop-blur-sm"
                       >
                         {card.cta}

@@ -5,6 +5,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/sections"
+import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PackagesHeroFilterBar from "@/app/components/packages/PackagesHeroFilterBar"
 import PackagesRecommendationsSection from "@/app/components/packages/PackagesRecommendationsSection"
@@ -281,6 +282,7 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
         </section>
 
         <section className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-10 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
+          <PromoPlacementImpressionBeacon placement="packages_featured" sourcePath="/packages" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
               <h2 className="text-[19px] font-bold leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[24px]">{copy.promoTitle}</h2>
