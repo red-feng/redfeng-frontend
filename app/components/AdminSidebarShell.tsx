@@ -136,7 +136,15 @@ function SidebarContent({
         ) : null}
         <SignOutButton
           portal={portal}
-          redirectTo={portal === "superadmin" ? "https://app.redfeng.co/superadmin/login" : "https://app.redfeng.co/admin/login"}
+          redirectTo={
+            portal === "superadmin"
+              ? "https://app.redfeng.co/superadmin/login"
+              : portal === "finance"
+                ? "https://app.redfeng.co/finance/login"
+                : portal === "marketing"
+                  ? "https://app.redfeng.co/marketing/login"
+                  : "https://app.redfeng.co/admin/login"
+          }
           className={`inline-flex w-full items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
             isOperationsManager ? "border border-[#f4d7d7] bg-white text-rose-500 hover:bg-rose-50" : "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
           }`}

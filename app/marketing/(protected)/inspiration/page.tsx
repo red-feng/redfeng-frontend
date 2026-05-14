@@ -32,7 +32,12 @@ export default async function MarketingInspirationPage({
     articleQuery = articleQuery.eq("is_active", false)
   }
 
-  const { data } = await articleQuery
+  const [{ data }, { count: activeCount }, { count: inactiveCount }] = await Promise.all([
+    articleQuery,
+    adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
+    adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
+  ])
+
   const articles = ((data as Array<Record<string, string | number | boolean | null>> | null) || []).filter((article) => {
     if (!query) return true
 
@@ -53,22 +58,64 @@ export default async function MarketingInspirationPage({
   })
 
   return (
-    <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Inspiration block</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-            Kelola blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot;
-          </h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Marketing sekarang memegang kartu artikel dan isi detail yang tampil di homepage serta halaman inspirasi.
-          </p>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Inspiration Content
+              </span>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
+                Kelola blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot; dari satu panel.
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
+                Marketing memegang artikel inspirasi dan isi detailnya agar homepage, discovery, dan momentum campaign
+                tetap terarah tanpa bergantung pada hardcoded content.
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Content snapshot</p>
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <p className="text-sm text-orange-50/80">Active article</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Inactive article</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(inactiveCount || 0).toLocaleString("id-ID")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Filtered result</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{articles.length.toLocaleString("id-ID")}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
         {params.success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{params.success}</div> : null}
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Active article</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Artikel yang sedang dipakai di area publik.</p>
+          </article>
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Inactive article</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{(inactiveCount || 0).toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Stok ide yang masih disimpan untuk momentum berikutnya.</p>
+          </article>
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Current result</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{articles.length.toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Artikel yang sedang tampil sesuai filter sekarang.</p>
+          </article>
+        </section>
+
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="xl:col-span-3">
               <label className="mb-2 block text-sm font-medium text-slate-700">Cari artikel</label>
@@ -105,9 +152,14 @@ export default async function MarketingInspirationPage({
           </form>
         </section>
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create article</p>
-          <InspirationForm />
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-500">
+            Gunakan panel ini untuk menulis artikel baru atau menyegarkan isi blok inspirasi yang sedang berjalan.
+          </p>
+          <div className="mt-5">
+            <InspirationForm />
+          </div>
         </section>
 
         <section className="space-y-4">
@@ -117,8 +169,8 @@ export default async function MarketingInspirationPage({
             </div>
           ) : null}
           {articles.map((article) => (
-            <article key={String(article.id)} className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-              <div className="mb-5 flex items-center justify-between gap-3">
+            <article key={String(article.id)} className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Existing article</p>
                   <h2 className="mt-2 text-xl font-semibold text-slate-950">{String(article.slug)}</h2>

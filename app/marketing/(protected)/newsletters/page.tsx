@@ -18,6 +18,16 @@ type SubscriberRow = {
   subscribed_at: string | null
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
+}
+
 export default async function MarketingNewslettersPage({
   searchParams,
 }: {
@@ -61,26 +71,38 @@ export default async function MarketingNewslettersPage({
   const exportHref = `/marketing/newsletters/export${exportQuery.toString() ? `?${exportQuery.toString()}` : ""}`
 
   return (
-    <main className="min-h-screen px-6 py-8 sm:px-8 lg:px-10">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Newsletter audience</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.03em] text-slate-950">Kelola subscriber newsletter</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-            Semua email yang masuk dari form newsletter homepage dan landing packages terkumpul di sini untuk dipakai tim marketing.
-          </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">Active</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{(activeCount || 0).toLocaleString("id-ID")}</p>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 lg:space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_320px]">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Newsletter Audience
+              </span>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
+                Kelola audience email yang masuk dari homepage dan landing packages.
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
+                Halaman ini dipakai untuk memantau pertumbuhan subscriber, membersihkan audience, dan menyiapkan basis
+                campaign marketing berikutnya.
+              </p>
             </div>
-            <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">Unsubscribed</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{(unsubscribedCount || 0).toLocaleString("id-ID")}</p>
-            </div>
-            <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">Current result</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{subscribers.length.toLocaleString("id-ID")}</p>
+            <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Audience snapshot</p>
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <p className="text-sm text-orange-50/80">Active subscribers</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Unsubscribed</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(unsubscribedCount || 0).toLocaleString("id-ID")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Filtered result</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{subscribers.length.toLocaleString("id-ID")}</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -88,7 +110,25 @@ export default async function MarketingNewslettersPage({
         {params.success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{params.success}</div> : null}
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
 
-        <section className="rounded-[32px] border border-[#f3dbc3] bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Active</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Subscriber yang masih bisa dipakai untuk campaign.</p>
+          </article>
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Unsubscribed</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{(unsubscribedCount || 0).toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Audience yang sudah dihentikan dari status aktif.</p>
+          </article>
+          <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Current result</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{subscribers.length.toLocaleString("id-ID")}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Hasil yang sedang tampil sesuai filter pencarian.</p>
+          </article>
+        </section>
+
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <form className="grid flex-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
               <div className="xl:col-span-2">
@@ -152,16 +192,14 @@ export default async function MarketingNewslettersPage({
             </div>
           ) : (
             subscribers.map((item) => (
-              <article key={item.id} className="rounded-[28px] border border-[#f0ddc7] bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+              <article key={item.id} className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[28px] sm:p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <p className="text-lg font-semibold text-slate-950">{item.email}</p>
                     <p className="mt-2 text-sm text-slate-500">
                       Sumber: {item.source_path || "/"} | Locale: {String(item.locale || "id").toUpperCase()}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      Subscribe: {item.subscribed_at ? new Date(item.subscribed_at).toLocaleString("id-ID") : "-"}
-                    </p>
+                    <p className="mt-1 text-sm text-slate-500">Subscribe: {formatDateTime(item.subscribed_at)}</p>
                   </div>
                   <div className="flex flex-col items-start gap-3 md:items-end">
                     <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${item.status === "active" ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-slate-200 bg-slate-100 text-slate-600"}`}>
