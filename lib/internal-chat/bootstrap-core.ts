@@ -10,6 +10,8 @@ type InternalRoleCode =
   | "operations_manager"
   | "finance"
   | "finance_manager"
+  | "marketing"
+  | "marketing_manager"
   | "superadmin"
 
 type InternalProfileRow = {
@@ -24,6 +26,8 @@ function normalizeRole(role: string | null | undefined): InternalRoleCode | null
     normalized === "operations_manager" ||
     normalized === "finance" ||
     normalized === "finance_manager" ||
+    normalized === "marketing" ||
+    normalized === "marketing_manager" ||
     normalized === "superadmin"
   ) {
     return normalized
@@ -101,6 +105,10 @@ function buildWelcomeMessage(createdRole: InternalRoleCode) {
       return "Selamat bergabung. Akun admin Anda sudah aktif, silakan gunakan chat internal untuk koordinasi harian."
     case "finance":
       return "Selamat bergabung. Akun finance Anda sudah aktif, silakan gunakan chat internal untuk koordinasi harian."
+    case "marketing_manager":
+      return "Selamat bergabung. Akun marketing manager Anda sudah aktif untuk koordinasi internal."
+    case "marketing":
+      return "Selamat bergabung. Akun marketing Anda sudah aktif, silakan gunakan chat internal untuk koordinasi harian."
     default:
       return "Selamat datang di internal chat Red Feng."
   }
@@ -152,6 +160,20 @@ export async function bootstrapInternalChatForNewAccount(params: {
       adminSupabase,
       financeManager.id,
       financeManager.role,
+      createdUserId,
+      normalizedCreatedRole,
+      welcomeMessage,
+    )
+    return
+  }
+
+  if (normalizedCreatedRole === "marketing") {
+    const marketingManager = await findFirstProfileByRole(adminSupabase, "marketing_manager")
+    if (!marketingManager || marketingManager.id === createdUserId) return
+    await seedWelcomeMessage(
+      adminSupabase,
+      marketingManager.id,
+      marketingManager.role,
       createdUserId,
       normalizedCreatedRole,
       welcomeMessage,

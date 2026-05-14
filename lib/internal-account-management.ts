@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
+import type { ActivePortal } from "@/lib/portal-context"
 
 export function resolveReturnTo(formData: FormData, fallbackPath: string) {
   const returnTo = String(formData.get("return_to") || "").trim()
@@ -17,19 +18,27 @@ export function formatAccountErrorMessage(message: string, requestedRole: string
   return message
 }
 
+function resolveInternalPortalFromReturnTo(returnTo?: string): ActivePortal {
+  if (returnTo?.startsWith("/superadmin")) return "superadmin"
+  if (returnTo?.startsWith("/finance")) return "finance"
+  if (returnTo?.startsWith("/marketing")) return "marketing"
+  return "admin"
+}
+
 export async function getInternalManagerActor(returnTo?: string) {
-  const supabase = await createClient()
+  const portal = resolveInternalPortalFromReturnTo(returnTo)
+  const supabase = await createClient(portal)
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const loginPath = returnTo?.startsWith("/superadmin")
+  const loginPath = portal === "superadmin"
     ? "/superadmin/login"
-    : returnTo?.startsWith("/finance")
+    : portal === "finance"
       ? "/finance/login"
-      : returnTo?.startsWith("/marketing")
+      : portal === "marketing"
         ? "/marketing/login"
-      : "/admin/login"
+        : "/admin/login"
 
   if (!user) {
     redirect(loginPath)
