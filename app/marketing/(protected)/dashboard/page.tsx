@@ -283,12 +283,12 @@ export default async function MarketingDashboardPage({
   const heroBody = isSuperadminPreview
     ? "Preview ini membantu superadmin membaca pertumbuhan subscriber, stok campaign aktif, dan kesehatan konten inspirasi tanpa berpindah ke portal marketing utama."
     : "Dashboard ini dibuat untuk menjaga ritme akuisisi subscriber, memastikan promo publik tetap hidup, dan merapikan blok inspirasi homepage tanpa bergantung pada konten statis."
-  const actionHeading = isSuperadminPreview ? "Manager focus" : "Quick actions"
+  const actionHeading = isSuperadminPreview ? "Fokus manajer" : "Aksi cepat"
   const actionTitle = isSuperadminPreview ? "Titik kontrol domain marketing" : "Jalur kerja marketing hari ini"
   const audienceTitle = isSuperadminPreview ? "Audience terbaru" : "Subscriber terbaru"
-  const snapshotLabel = isSuperadminPreview ? "Live marketing snapshot" : "Live campaign snapshot"
-  const promoPulseHeading = isSuperadminPreview ? "Promo preview" : "Promo pulse"
-  const inspirationPulseHeading = isSuperadminPreview ? "Inspiration preview" : "Inspiration pulse"
+  const snapshotLabel = isSuperadminPreview ? "Snapshot marketing live" : "Snapshot campaign live"
+  const promoPulseHeading = isSuperadminPreview ? "Preview promo" : "Denyut promo"
+  const inspirationPulseHeading = isSuperadminPreview ? "Preview inspirasi" : "Denyut inspirasi"
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -331,7 +331,7 @@ export default async function MarketingDashboardPage({
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">{snapshotLabel}</p>
               <div className="mt-5 grid gap-4">
                 <div>
-                  <p className="text-sm text-orange-50/80">Active subscribers</p>
+                  <p className="text-sm text-orange-50/80">Subscriber aktif</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
                     {formatCompactCount(activeSubscribers || 0)}
                   </p>
@@ -349,7 +349,7 @@ export default async function MarketingDashboardPage({
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">7-day growth</p>
+                  <p className="text-sm text-orange-50/80">Pertumbuhan 7 hari</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
                     {formatCompactCount(weekGrowth)}
                   </p>
@@ -378,7 +378,7 @@ export default async function MarketingDashboardPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Placement analytics</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analitik placement</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Kesehatan promo per slot publik</h2>
             </div>
             {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Kelola placement</Link> : null}
@@ -416,7 +416,7 @@ export default async function MarketingDashboardPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Top performing promos</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Promo berkinerja terbaik</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Promo dengan performa terbaik hari ini</h2>
             </div>
             {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Lihat semua promo</Link> : null}
@@ -509,7 +509,7 @@ export default async function MarketingDashboardPage({
           </article>
 
           <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Recent audience</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Audience terbaru</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">{audienceTitle}</h2>
             <div className="mt-5 space-y-3">
               {!recentSubscribers.length ? (

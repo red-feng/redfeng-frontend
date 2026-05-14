@@ -86,7 +86,7 @@ export default async function AdminProtectedLayout({
   const merchantNavChildren = [
     {
       href: "/admin/merchants",
-      label: "Directory",
+      label: "Direktori",
       badgeCount: 0,
     },
     {
@@ -128,7 +128,7 @@ export default async function AdminProtectedLayout({
         { href: "/admin/bookings", label: "Booking Center", badgeCount: financeReadyBadgeCount },
         { href: "/admin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { href: "/admin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
-        { href: "/admin/audit-log", label: "Audit Log", badgeCount: 0 },
+        { href: "/admin/audit-log", label: "Audit Trail", badgeCount: 0 },
       ]
 
   return (

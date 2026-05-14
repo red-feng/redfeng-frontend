@@ -52,10 +52,10 @@ export default async function MarketingProtectedLayout({
 
   const navItems = isMarketingManager
     ? [
-        { label: "Overview" },
+        { label: "Ringkasan" },
         { href: "/marketing/dashboard", label: "Dashboard", badgeCount: 0 },
         { label: "Audience" },
-        { href: "/marketing/newsletters", label: "Newsletter", badgeCount: activeSubscribers || 0 },
+        { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
@@ -65,14 +65,14 @@ export default async function MarketingProtectedLayout({
           badgeCount: articleCount || 0,
           secondaryBadgeCount: draftLikeInactiveArticles || 0,
         },
-        { label: "System" },
+        { label: "Sistem" },
         { href: "/marketing/team-accounts", label: "Team Accounts" },
       ]
     : [
-        { label: "Overview" },
+        { label: "Ringkasan" },
         { href: "/marketing/dashboard", label: "Dashboard", badgeCount: 0 },
         { label: "Audience" },
-        { href: "/marketing/newsletters", label: "Newsletter", badgeCount: activeSubscribers || 0 },
+        { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },

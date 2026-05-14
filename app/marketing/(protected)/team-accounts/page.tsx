@@ -73,7 +73,7 @@ export default async function MarketingTeamAccountsPage({
               </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Account snapshot</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Ringkasan akun</p>
               <div className="mt-5 grid gap-4">
                 <div>
                   <p className="text-sm text-orange-50/80">Marketing manager</p>
@@ -84,7 +84,7 @@ export default async function MarketingTeamAccountsPage({
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{marketingCount.toLocaleString("id-ID")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-orange-50/80">{isSuperadminView ? "Accounts in directory" : "Other accounts shown"}</p>
+                  <p className="text-sm text-orange-50/80">{isSuperadminView ? "Akun di direktori" : "Akun lain yang tampil"}</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{teamProfiles.length.toLocaleString("id-ID")}</p>
                 </div>
               </div>
@@ -102,12 +102,12 @@ export default async function MarketingTeamAccountsPage({
             <p className="mt-2 text-xs leading-6 text-slate-500">Akun pemilik ritme campaign dan struktur tim.</p>
           </article>
           <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Executors</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Eksekutor</p>
             <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{marketingCount.toLocaleString("id-ID")}</p>
             <p className="mt-2 text-xs leading-6 text-slate-500">Akun marketing harian yang menggerakkan promo dan konten.</p>
           </article>
           <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Directory view</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Tampilan direktori</p>
             <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{teamProfiles.length.toLocaleString("id-ID")}</p>
             <p className="mt-2 text-xs leading-6 text-slate-500">Akun lain yang tampil di daftar selain akun yang sedang dipakai.</p>
           </article>
@@ -116,7 +116,7 @@ export default async function MarketingTeamAccountsPage({
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.92fr_1.08fr]">
           <div className="space-y-4 sm:space-y-6">
             <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Create marketing account</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Buat akun marketing</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Buat akun marketing baru</h2>
               <p className="mt-2 text-sm leading-7 text-slate-500">
                 {isSuperadminView
@@ -168,7 +168,7 @@ export default async function MarketingTeamAccountsPage({
           </div>
 
           <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Marketing team directory</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Direktori tim marketing</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Daftar akun marketing</h2>
             <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-800">
               Akun yang sedang Anda pakai tidak ditampilkan di daftar ini. Reset password dan hapus akun sendiri diblok dari panel agar session aktif tidak terputus tanpa sengaja.

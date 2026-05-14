@@ -118,7 +118,7 @@ export default async function SuperadminProtectedLayout({
   const inactiveArticlesCount = inactiveArticlesResult.count || 0
 
   const navItems = [
-    { label: "Overview" },
+    { label: "Ringkasan" },
     { href: "/superadmin/dashboard", label: "Dashboard", badgeCount: 0 },
     { href: "/superadmin/operations-manager", label: "Operations Overview", badgeCount: 0 },
     { href: "/superadmin/finance-manager", label: "Finance Overview", badgeCount: 0 },
@@ -127,17 +127,17 @@ export default async function SuperadminProtectedLayout({
       children: [
         { href: "/superadmin/marketing-manager", label: "Dashboard" },
         { href: "/superadmin/marketing-newsletters", label: "Newsletter Audience", badgeCount: activeSubscribersCount },
-        { href: "/superadmin/marketing-promos", label: "Promo Preview", badgeCount: activePromosCount, secondaryBadgeCount: inactivePromosCount },
-        { href: "/superadmin/marketing-inspiration", label: "Inspiration Preview", badgeCount: activeArticlesCount, secondaryBadgeCount: inactiveArticlesCount },
+        { href: "/superadmin/marketing-promos", label: "Preview Promo", badgeCount: activePromosCount, secondaryBadgeCount: inactivePromosCount },
+        { href: "/superadmin/marketing-inspiration", label: "Preview Inspiration", badgeCount: activeArticlesCount, secondaryBadgeCount: inactiveArticlesCount },
       ],
     },
-    { label: "Operational" },
+    { label: "Operasional" },
     { href: "/superadmin/bookings", label: "Booking & Transaksi", badgeCount: bookingsBadgeCount },
     { href: "/superadmin/merchant-support", label: "Merchant Support", badgeCount: merchantSupportBadgeCount },
     { href: "/superadmin/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
-    { label: "System" },
+    { label: "Sistem" },
     {
-      label: "Internal Control",
+      label: "Kontrol Internal",
       children: [
         { href: "/superadmin/team-accounts", label: "Ops Team Accounts", badgeCount: opsAccountsBadgeCount },
         { href: "/superadmin/finance-team-accounts", label: "Finance Team Accounts", badgeCount: financeAccountsBadgeCount },

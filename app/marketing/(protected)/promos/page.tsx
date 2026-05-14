@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { deleteMarketingPromo, upsertMarketingPromo } from "@/app/marketing/(protected)/actions"
 import { getMarketingPromoPlacementLabel, marketingPromoPlacementKeys, marketingPromoPlacements } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel, getMarketingPromoStatusLabel, marketingPromoStatuses } from "@/lib/marketing-promo-status"
@@ -8,6 +9,7 @@ type MarketingPromoSearchParams = {
   error?: string
   q?: string
   status?: string
+  workflow?: string
 }
 
 type MarketingPromoPortal = "marketing" | "superadmin"
@@ -41,6 +43,7 @@ type PromoEditorRecord = {
   starts_at: string | null
   ends_at: string | null
   sort_order: number | null
+  updated_at: string | null
   placement_keys: string[]
 }
 
@@ -55,13 +58,14 @@ export default async function MarketingPromosPage({
   const isSuperadminPreview = portal === "superadmin"
   const query = String(params.q || "").trim().toLowerCase()
   const statusFilter = String(params.status || "all").trim()
+  const workflowFilter = String(params.workflow || "all").trim()
   const adminSupabase = createAdminClient()
   const basePath = isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"
   const nowIso = new Date().toISOString()
 
   let promoQuery = adminSupabase
     .from("marketing_promos")
-    .select("id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, status, starts_at, ends_at, sort_order")
+    .select("id, slug, title_id, title_en, title_zh, badge_id, badge_en, badge_zh, eyebrow_id, eyebrow_en, eyebrow_zh, price_id, price_en, price_zh, cta_id, cta_en, cta_zh, image, gradient, image_class, overlay_class, glow_class, target_href, is_active, status, starts_at, ends_at, sort_order, updated_at")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true })
 
@@ -100,6 +104,15 @@ export default async function MarketingPromosPage({
       ...promo,
       placement_keys: placementsByPromoId.get(String(promo.id || "")) || [],
     }))
+    .map((promo) => {
+      const effectiveState = getMarketingPromoEffectiveState(promo, nowIso)
+      return {
+        ...promo,
+        effectiveState,
+        effectiveStateLabel: getMarketingPromoEffectiveStateLabel(effectiveState),
+        workflowState: getPromoWorkflowState(promo, effectiveState),
+      }
+    })
     .filter((promo) => {
       if (!query) return true
 
@@ -108,7 +121,31 @@ export default async function MarketingPromosPage({
         .join(" ")
 
       return haystack.includes(query)
-    })) as PromoEditorRecord[]
+    })
+    .filter((promo) => {
+      if (workflowFilter === "all") return true
+      return promo.workflowState === workflowFilter
+    })) as Array<
+    PromoEditorRecord & {
+      effectiveState: ReturnType<typeof getMarketingPromoEffectiveState>
+      effectiveStateLabel: string
+      workflowState: ReturnType<typeof getPromoWorkflowState>
+    }
+  >
+
+  const liveCount = promos.filter((promo) => promo.effectiveState === "live").length
+  const waitingCount = promos.filter((promo) => promo.effectiveState === "waiting").length
+  const hiddenCount = promos.filter((promo) => promo.effectiveState === "hidden").length
+  const expiredCount = promos.filter((promo) => promo.effectiveState === "expired").length
+  const needsPlacement = promos.filter((promo) => promo.workflowState === "needs-placement")
+  const needsSchedule = promos.filter((promo) => promo.workflowState === "needs-schedule")
+  const nextLaunchPromo = [...promos]
+    .filter((promo) => promo.effectiveState === "waiting" && promo.starts_at)
+    .sort((a, b) => new Date(String(a.starts_at)).getTime() - new Date(String(b.starts_at)).getTime())[0]
+  const recentlyTouched = [...promos]
+    .filter((promo) => promo.updated_at)
+    .sort((a, b) => new Date(String(b.updated_at)).getTime() - new Date(String(a.updated_at)).getTime())
+    .slice(0, 4)
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -127,7 +164,7 @@ export default async function MarketingPromosPage({
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Promo snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
-                  <p className="text-sm text-orange-50/80">Active promo</p>
+                  <p className="text-sm text-orange-50/80">Promo aktif</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
                 </div>
                 <div>
@@ -148,7 +185,7 @@ export default async function MarketingPromosPage({
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-3">
           <article className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Active promo</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Promo aktif</p>
             <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
             <p className="mt-2 text-xs leading-6 text-slate-500">Promo yang sedang hidup di halaman publik.</p>
           </article>
@@ -164,8 +201,70 @@ export default async function MarketingPromosPage({
           </article>
         </section>
 
+        <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+          <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Workflow lanes</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Baca antrian promo dari draft sampai live</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                { label: "Live", value: liveCount, note: "Promo sedang tayang ke publik.", tone: "emerald" },
+                { label: "Waiting", value: waitingCount, note: "Sudah siap tapi menunggu jadwal mulai.", tone: "sky" },
+                { label: "Needs placement", value: needsPlacement.length, note: "Butuh slot publik sebelum bisa efektif.", tone: "amber" },
+                { label: "Needs schedule", value: needsSchedule.length, note: "Butuh jadwal atau aktivasi sebelum launch.", tone: "rose" },
+                { label: "Hidden", value: hiddenCount, note: "Tidak tampil karena draft, pause, atau indexing off.", tone: "slate" },
+                { label: "Expired", value: expiredCount, note: "Window tayang sudah selesai.", tone: "orange" },
+              ].map((lane) => (
+                <article key={lane.label} className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{lane.label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-slate-950">{lane.value.toLocaleString("id-ID")}</p>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">{lane.note}</p>
+                </article>
+              ))}
+            </div>
+          </article>
+
+          <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Action queue</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Titik kerja paling dekat untuk tim marketing</h2>
+            <div className="mt-5 space-y-3">
+              <div className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">Next launch</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {nextLaunchPromo
+                    ? `${nextLaunchPromo.title_id || nextLaunchPromo.slug} dijadwalkan mulai ${formatDateWindow(nextLaunchPromo.starts_at, null)}`
+                    : "Belum ada promo scheduled yang menunggu waktu tayang."}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">Placement issues</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {needsPlacement.length
+                    ? `${needsPlacement.length.toLocaleString("id-ID")} promo belum punya placement aktif.`
+                    : "Semua promo pada hasil filter ini sudah punya placement publik."}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">Scheduling issues</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {needsSchedule.length
+                    ? `${needsSchedule.length.toLocaleString("id-ID")} promo masih butuh jadwal atau aktivasi.`
+                    : "Tidak ada promo yang tertahan hanya karena jadwal atau aktivasi."}
+                </p>
+              </div>
+              <div className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">Recently touched</p>
+                <p className="mt-2 text-sm text-slate-600">
+                  {recentlyTouched.length
+                    ? recentlyTouched.map((promo) => promo.title_id || promo.slug).join(", ")
+                    : "Belum ada update promo terbaru pada hasil filter ini."}
+                </p>
+              </div>
+            </div>
+          </article>
+        </section>
+
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div className="xl:col-span-3">
               <label className="mb-2 block text-sm font-medium text-slate-700">Cari promo</label>
               <input
@@ -189,7 +288,22 @@ export default async function MarketingPromosPage({
                 <option value="paused">Paused</option>
               </select>
             </div>
-            <div className="flex gap-3 xl:col-span-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Workflow</label>
+              <select
+                name="workflow"
+                defaultValue={workflowFilter}
+                className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+              >
+                <option value="all">Semua workflow</option>
+                <option value="launch-ready">Launch ready</option>
+                <option value="needs-placement">Needs placement</option>
+                <option value="needs-schedule">Needs schedule</option>
+                <option value="paused">Paused</option>
+                <option value="expired">Expired</option>
+              </select>
+            </div>
+            <div className="flex gap-3 xl:col-span-5">
               <button className="rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
                 Terapkan filter
               </button>
@@ -205,7 +319,7 @@ export default async function MarketingPromosPage({
 
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
-            {isSuperadminPreview ? "Promo template preview" : "Create promo"}
+            {isSuperadminPreview ? "Preview template promo" : "Buat promo"}
           </p>
           <div className="mt-5">
             <PromoForm portal={portal} />
@@ -228,7 +342,7 @@ export default async function MarketingPromosPage({
                     Status: {getMarketingPromoStatusLabel(String(promo.status || "draft"))} | Sort: {String(promo.sort_order || 0)}
                   </p>
                   <p className="mt-2 text-sm text-slate-500">
-                    Effective state: {getMarketingPromoEffectiveStateLabel(getMarketingPromoEffectiveState(promo, nowIso))}
+                    Effective state: {promo.effectiveStateLabel}
                   </p>
                   <p className="mt-2 text-sm text-slate-500">
                     Window: {formatDateWindow(promo.starts_at, promo.ends_at)}
@@ -236,6 +350,20 @@ export default async function MarketingPromosPage({
                   <p className="mt-2 text-sm text-slate-500">
                     Placements: {(promo.placement_keys || []).length ? (promo.placement_keys || []).map((value) => getMarketingPromoPlacementLabel(String(value))).join(", ") : "Belum dipilih"}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${getWorkflowBadgeClass(promo.workflowState)}`}>
+                      {getWorkflowLabel(promo.workflowState)}
+                    </span>
+                    {promo.is_active ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Placement enabled
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        Placement blocked
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <form action={deleteMarketingPromo}>
                   <input type="hidden" name="promo_id" value={String(promo.id)} />
@@ -264,67 +392,142 @@ function PromoForm({
 }) {
   const returnTo = portal === "superadmin" ? "/superadmin/marketing-promos" : "/marketing/promos"
   const selectedPlacements = promo?.placement_keys?.length ? promo.placement_keys : [...marketingPromoPlacementKeys]
+  const formTitle = promo ? "Edit promo" : "Buat promo"
+  const formSubtitle = promo
+    ? "Rapikan identitas, jadwal, placement, dan visual promo dari panel yang lebih terstruktur."
+    : "Mulai dari identitas campaign, lanjut ke copy penawaran, lalu tentukan jadwal dan placement publik."
   return (
     <form action={upsertMarketingPromo} className="grid gap-4">
       <input type="hidden" name="promo_id" value={promo ? String(promo.id) : ""} />
       <input type="hidden" name="return_to" value={returnTo} />
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <Field label="Slug" name="slug" defaultValue={promo ? String(promo.slug || "") : ""} />
-        <Field label="Target href" name="target_href" defaultValue={promo ? String(promo.target_href || "") : "/promo"} />
-        <Field label="Sort order" name="sort_order" type="number" defaultValue={promo ? String(promo.sort_order || 0) : "0"} />
-        <SelectField
-          label="Status promo"
-          name="status"
-          defaultValue={promo ? String(promo.status || "draft") : "active"}
-          options={marketingPromoStatuses.map((status) => ({ value: status, label: getMarketingPromoStatusLabel(status) }))}
-        />
-        <Field label="Mulai tayang" name="starts_at" type="datetime-local" defaultValue={toDateTimeLocalInput(promo?.starts_at)} required={false} />
-        <Field label="Selesai tayang" name="ends_at" type="datetime-local" defaultValue={toDateTimeLocalInput(promo?.ends_at)} required={false} />
-        <Field label="Title ID" name="title_id" defaultValue={promo ? String(promo.title_id || "") : ""} />
-        <Field label="Title EN" name="title_en" defaultValue={promo ? String(promo.title_en || "") : ""} />
-        <Field label="Title ZH" name="title_zh" defaultValue={promo ? String(promo.title_zh || "") : ""} />
-        <Field label="Badge ID" name="badge_id" defaultValue={promo ? String(promo.badge_id || "") : ""} />
-        <Field label="Badge EN" name="badge_en" defaultValue={promo ? String(promo.badge_en || "") : ""} />
-        <Field label="Badge ZH" name="badge_zh" defaultValue={promo ? String(promo.badge_zh || "") : ""} />
-        <Field label="Eyebrow ID" name="eyebrow_id" defaultValue={promo ? String(promo.eyebrow_id || "") : ""} />
-        <Field label="Eyebrow EN" name="eyebrow_en" defaultValue={promo ? String(promo.eyebrow_en || "") : ""} />
-        <Field label="Eyebrow ZH" name="eyebrow_zh" defaultValue={promo ? String(promo.eyebrow_zh || "") : ""} />
-        <Field label="Price ID" name="price_id" defaultValue={promo ? String(promo.price_id || "") : ""} />
-        <Field label="Price EN" name="price_en" defaultValue={promo ? String(promo.price_en || "") : ""} />
-        <Field label="Price ZH" name="price_zh" defaultValue={promo ? String(promo.price_zh || "") : ""} />
-        <Field label="CTA ID" name="cta_id" defaultValue={promo ? String(promo.cta_id || "") : ""} />
-        <Field label="CTA EN" name="cta_en" defaultValue={promo ? String(promo.cta_en || "") : ""} />
-        <Field label="CTA ZH" name="cta_zh" defaultValue={promo ? String(promo.cta_zh || "") : ""} />
-        <Field label="Image" name="image" defaultValue={promo ? String(promo.image || "") : ""} />
-        <Field label="Gradient" name="gradient" defaultValue={promo ? String(promo.gradient || "") : ""} />
-        <Field label="Image class" name="image_class" defaultValue={promo ? String(promo.image_class || "") : ""} />
-        <Field label="Overlay class" name="overlay_class" defaultValue={promo ? String(promo.overlay_class || "") : ""} />
-        <Field label="Glow class" name="glow_class" defaultValue={promo ? String(promo.glow_class || "") : ""} />
+      <div className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{formTitle}</p>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{formSubtitle}</p>
       </div>
-      <div className="space-y-3">
-        <p className="text-sm font-medium text-slate-700">Placement publik</p>
-        <div className="grid gap-3 md:grid-cols-2">
-          {marketingPromoPlacements.map((placement) => (
-            <label key={placement.key} className="rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700">
-              <span className="flex items-start gap-3">
-                <input type="checkbox" name="placements" value={placement.key} defaultChecked={selectedPlacements.includes(placement.key)} className="mt-1" />
-                <span>
-                  <span className="block font-semibold text-slate-900">{placement.label}</span>
-                  <span className="mt-1 block text-xs leading-6 text-slate-500">{placement.description}</span>
-                </span>
-              </span>
-            </label>
-          ))}
+
+      <FormSection
+        eyebrow="Campaign identity"
+        title="Mulai dari identitas dan tujuan landing"
+        description="Bagian ini menentukan slug, target link, urutan tampil, dan status dasar campaign."
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Field label="Slug" name="slug" defaultValue={promo ? String(promo.slug || "") : ""} />
+          <Field label="Target href" name="target_href" defaultValue={promo ? String(promo.target_href || "") : "/promo"} />
+          <Field label="Sort order" name="sort_order" type="number" defaultValue={promo ? String(promo.sort_order || 0) : "0"} />
+          <SelectField
+            label="Status promo"
+            name="status"
+            defaultValue={promo ? String(promo.status || "draft") : "active"}
+            options={marketingPromoStatuses.map((status) => ({ value: status, label: getMarketingPromoStatusLabel(status) }))}
+          />
         </div>
-      </div>
-      <label className="inline-flex items-center gap-3 text-sm font-medium text-slate-700">
-        <input type="checkbox" name="is_active" defaultChecked={promo ? Boolean(promo.is_active) : true} />
-        Izinkan promo masuk ke placement publik
-      </label>
+      </FormSection>
+
+      <FormSection
+        eyebrow="Offer copy"
+        title="Isi copy promo untuk tiga bahasa"
+        description="Judul, eyebrow, harga, CTA, dan badge menjadi inti pesan yang dibaca user di slot publik."
+      >
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="space-y-4 rounded-[22px] border border-[#efe1cf] bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-slate-950">Headline & badge</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Title ID" name="title_id" defaultValue={promo ? String(promo.title_id || "") : ""} />
+              <Field label="Title EN" name="title_en" defaultValue={promo ? String(promo.title_en || "") : ""} />
+              <Field label="Title ZH" name="title_zh" defaultValue={promo ? String(promo.title_zh || "") : ""} />
+              <Field label="Badge ID" name="badge_id" defaultValue={promo ? String(promo.badge_id || "") : ""} />
+              <Field label="Badge EN" name="badge_en" defaultValue={promo ? String(promo.badge_en || "") : ""} />
+              <Field label="Badge ZH" name="badge_zh" defaultValue={promo ? String(promo.badge_zh || "") : ""} />
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-[22px] border border-[#efe1cf] bg-white px-4 py-4">
+            <p className="text-sm font-semibold text-slate-950">Eyebrow, price, CTA</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Field label="Eyebrow ID" name="eyebrow_id" defaultValue={promo ? String(promo.eyebrow_id || "") : ""} />
+              <Field label="Eyebrow EN" name="eyebrow_en" defaultValue={promo ? String(promo.eyebrow_en || "") : ""} />
+              <Field label="Eyebrow ZH" name="eyebrow_zh" defaultValue={promo ? String(promo.eyebrow_zh || "") : ""} />
+              <Field label="Price ID" name="price_id" defaultValue={promo ? String(promo.price_id || "") : ""} />
+              <Field label="Price EN" name="price_en" defaultValue={promo ? String(promo.price_en || "") : ""} />
+              <Field label="Price ZH" name="price_zh" defaultValue={promo ? String(promo.price_zh || "") : ""} />
+              <Field label="CTA ID" name="cta_id" defaultValue={promo ? String(promo.cta_id || "") : ""} />
+              <Field label="CTA EN" name="cta_en" defaultValue={promo ? String(promo.cta_en || "") : ""} />
+              <Field label="CTA ZH" name="cta_zh" defaultValue={promo ? String(promo.cta_zh || "") : ""} />
+            </div>
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        eyebrow="Schedule & delivery"
+        title="Atur kapan promo aktif dan di mana ia boleh hidup"
+        description="Jadwal tayang dan izin placement publik menentukan apakah promo siap launch atau masih tertahan."
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Field label="Mulai tayang" name="starts_at" type="datetime-local" defaultValue={toDateTimeLocalInput(promo?.starts_at)} required={false} />
+          <Field label="Selesai tayang" name="ends_at" type="datetime-local" defaultValue={toDateTimeLocalInput(promo?.ends_at)} required={false} />
+          <label className="flex items-center rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm font-medium text-slate-700">
+            <input type="checkbox" name="is_active" defaultChecked={promo ? Boolean(promo.is_active) : true} className="mr-3" />
+            Izinkan promo masuk ke placement publik
+          </label>
+        </div>
+        <div className="mt-4 space-y-3">
+          <p className="text-sm font-medium text-slate-700">Placement publik</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            {marketingPromoPlacements.map((placement) => (
+              <label key={placement.key} className="rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700">
+                <span className="flex items-start gap-3">
+                  <input type="checkbox" name="placements" value={placement.key} defaultChecked={selectedPlacements.includes(placement.key)} className="mt-1" />
+                  <span>
+                    <span className="block font-semibold text-slate-900">{placement.label}</span>
+                    <span className="mt-1 block text-xs leading-6 text-slate-500">{placement.description}</span>
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        eyebrow="Visual style"
+        title="Atur asset dan class visual promo"
+        description="Gunakan bagian ini untuk menghubungkan asset gambar serta class visual yang membentuk banner publik."
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <Field label="Image" name="image" defaultValue={promo ? String(promo.image || "") : ""} />
+          <Field label="Gradient" name="gradient" defaultValue={promo ? String(promo.gradient || "") : ""} />
+          <Field label="Image class" name="image_class" defaultValue={promo ? String(promo.image_class || "") : ""} />
+          <Field label="Overlay class" name="overlay_class" defaultValue={promo ? String(promo.overlay_class || "") : ""} />
+          <Field label="Glow class" name="glow_class" defaultValue={promo ? String(promo.glow_class || "") : ""} />
+        </div>
+      </FormSection>
+
       <button className="w-fit rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
         {promo ? "Simpan perubahan promo" : "Buat promo"}
       </button>
     </form>
+  )
+}
+
+function FormSection({
+  eyebrow,
+  title,
+  description,
+  children,
+}: {
+  eyebrow: string
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  return (
+    <section className="rounded-[24px] border border-[#efe1cf] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.04)]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">{eyebrow}</p>
+      <h3 className="mt-2 text-lg font-semibold text-slate-950">{title}</h3>
+      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      <div className="mt-5">{children}</div>
+    </section>
   )
 }
 
@@ -400,4 +603,53 @@ function formatDateWindow(startsAt: string | null, endsAt: string | null) {
   if (!startsAt && !endsAt) return "Tanpa jadwal"
   const format = (value: string | null) => (value ? new Date(value).toLocaleString("id-ID") : "sekarang")
   return `${format(startsAt)} - ${endsAt ? format(endsAt) : "tanpa batas"}`
+}
+
+function getPromoWorkflowState(
+  promo: Pick<PromoEditorRecord, "placement_keys" | "status" | "is_active" | "starts_at">,
+  effectiveState: ReturnType<typeof getMarketingPromoEffectiveState>,
+) {
+  const placementCount = promo.placement_keys?.length || 0
+  const status = String(promo.status || "draft")
+
+  if (effectiveState === "expired") return "expired"
+  if (status === "paused") return "paused"
+  if (!promo.is_active || placementCount === 0) return "needs-placement"
+  if (status === "scheduled" && !promo.starts_at) return "needs-schedule"
+  if (status === "draft") return "needs-schedule"
+  return "launch-ready"
+}
+
+function getWorkflowLabel(value: ReturnType<typeof getPromoWorkflowState>) {
+  switch (value) {
+    case "launch-ready":
+      return "Launch ready"
+    case "needs-placement":
+      return "Needs placement"
+    case "needs-schedule":
+      return "Needs schedule"
+    case "paused":
+      return "Paused"
+    case "expired":
+      return "Expired"
+    default:
+      return value
+  }
+}
+
+function getWorkflowBadgeClass(value: ReturnType<typeof getPromoWorkflowState>) {
+  switch (value) {
+    case "launch-ready":
+      return "bg-emerald-50 text-emerald-700"
+    case "needs-placement":
+      return "bg-amber-50 text-amber-700"
+    case "needs-schedule":
+      return "bg-rose-50 text-rose-700"
+    case "paused":
+      return "bg-slate-100 text-slate-700"
+    case "expired":
+      return "bg-orange-50 text-orange-700"
+    default:
+      return "bg-slate-100 text-slate-700"
+  }
 }
