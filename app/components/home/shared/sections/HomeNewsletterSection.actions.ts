@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation"
 import type { Locale } from "@/lib/i18n"
+import { isValidNewsletterEmail } from "@/lib/newsletter-unsubscribe"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 const copy = {
@@ -38,17 +39,13 @@ function buildRedirectUrl(pathname: string, key: "newsletter_success" | "newslet
   return `${pathname}?${params.toString()}#newsletter`
 }
 
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-
 export async function subscribeToNewsletter(formData: FormData) {
   const locale = normalizeLocale(String(formData.get("locale") || "id"))
   const redirectPath = normalizeRedirectPath(String(formData.get("redirect_path") || "/"))
   const email = String(formData.get("email") || "").trim().toLowerCase()
   const t = copy[locale]
 
-  if (!isValidEmail(email)) {
+  if (!isValidNewsletterEmail(email)) {
     redirect(buildRedirectUrl(redirectPath, "newsletter_error", t.invalidEmail))
   }
 

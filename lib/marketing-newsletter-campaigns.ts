@@ -1,5 +1,10 @@
 import { Resend } from "resend"
 import { getOptionalEnv } from "@/lib/env"
+import {
+  buildNewsletterUnsubscribeUrl,
+  getNewsletterUnsubscribeLabel,
+  normalizeNewsletterLocale,
+} from "@/lib/newsletter-unsubscribe"
 
 type NewsletterCampaignSubscriber = {
   email: string
@@ -14,6 +19,13 @@ type SendNewsletterCampaignInput = {
   subscribers: NewsletterCampaignSubscriber[]
 }
 
+type NewsletterCampaignDeliveryResult = {
+  email: string
+  locale: string
+  status: "sent" | "failed"
+  errorMessage?: string | null
+}
+
 function stripHtml(html: string) {
   return html
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
@@ -23,10 +35,16 @@ function stripHtml(html: string) {
     .trim()
 }
 
-function buildNewsletterHtml(previewText: string | null | undefined, bodyHtml: string) {
+function buildNewsletterHtml(
+  previewText: string | null | undefined,
+  bodyHtml: string,
+  unsubscribeUrl: string,
+  locale?: string | null,
+) {
   const hiddenPreview = previewText
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${previewText}</div>`
     : ""
+  const unsubscribeLabel = getNewsletterUnsubscribeLabel(locale)
 
   return `
     <div style="margin:0;padding:24px;background:#f7f1e8;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
@@ -38,9 +56,20 @@ function buildNewsletterHtml(previewText: string | null | undefined, bodyHtml: s
         <div style="padding:32px;">
           ${bodyHtml}
         </div>
+        <div style="padding:0 32px 32px 32px;">
+          <div style="padding-top:20px;border-top:1px solid #f3dbc3;font-size:13px;line-height:1.7;color:#6b7280;">
+            <a href="${unsubscribeUrl}" style="color:#c2410c;text-decoration:none;font-weight:600;">${unsubscribeLabel}</a>
+          </div>
+        </div>
       </div>
     </div>
   `
+}
+
+function buildNewsletterText(bodyText: string | null | undefined, bodyHtml: string, unsubscribeUrl: string, locale?: string | null) {
+  const text = String(bodyText || "").trim() || stripHtml(bodyHtml)
+  const unsubscribeLabel = getNewsletterUnsubscribeLabel(locale)
+  return `${text}\n\n${unsubscribeLabel}: ${unsubscribeUrl}`.trim()
 }
 
 export async function sendNewsletterCampaign(input: SendNewsletterCampaignInput) {
@@ -52,27 +81,46 @@ export async function sendNewsletterCampaign(input: SendNewsletterCampaignInput)
   }
 
   const resend = new Resend(apiKey)
-  const html = buildNewsletterHtml(input.previewText, input.bodyHtml)
-  const text = String(input.bodyText || "").trim() || stripHtml(input.bodyHtml)
   let sentCount = 0
+  const results: NewsletterCampaignDeliveryResult[] = []
 
   for (const subscriber of input.subscribers) {
     const email = String(subscriber.email || "").trim()
     if (!email) continue
+    const locale = normalizeNewsletterLocale(subscriber.locale)
+    const unsubscribeUrl = buildNewsletterUnsubscribeUrl(email, locale)
+    const html = buildNewsletterHtml(input.previewText, input.bodyHtml, unsubscribeUrl, locale)
+    const text = buildNewsletterText(input.bodyText, input.bodyHtml, unsubscribeUrl, locale)
 
-    await resend.emails.send({
-      from: fromEmail,
-      to: email,
-      subject: input.subject,
-      html,
-      text,
-    })
+    try {
+      await resend.emails.send({
+        from: fromEmail,
+        to: email,
+        subject: input.subject,
+        html,
+        text,
+      })
 
-    sentCount += 1
+      sentCount += 1
+      results.push({
+        email,
+        locale,
+        status: "sent",
+      })
+    } catch (error) {
+      results.push({
+        email,
+        locale,
+        status: "failed",
+        errorMessage: error instanceof Error ? error.message : "Pengiriman email gagal.",
+      })
+    }
   }
 
   return {
     audienceCount: input.subscribers.length,
     sentCount,
+    failedCount: results.filter((result) => result.status === "failed").length,
+    results,
   }
 }

@@ -50,6 +50,10 @@ type PromoEventRow = {
   promo_slug: string | null
 }
 
+type NewsletterCampaignStatusRow = {
+  status: string | null
+}
+
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "-"
   const parsed = new Date(value)
@@ -88,6 +92,7 @@ export default async function MarketingDashboardPage({
     { count: todaySubscribers },
     { count: last7Subscribers },
     { count: previous7Subscribers },
+    newsletterCampaignStatusResult,
     allPromosResult,
     placementRowsResult,
     todayPromoEventsResult,
@@ -106,6 +111,7 @@ export default async function MarketingDashboardPage({
       .select("id", { count: "exact", head: true })
       .gte("subscribed_at", previous7Iso)
       .lt("subscribed_at", last7Iso),
+    adminSupabase.from("marketing_newsletter_campaigns").select("status"),
     adminSupabase.from("marketing_promos").select("id, is_active, status, starts_at, ends_at"),
     adminSupabase.from("marketing_promo_placements").select("promo_id, placement_key").eq("is_active", true),
     adminSupabase.from("marketing_promo_events").select("event_type, placement_key, promo_id, promo_slug").gte("occurred_at", startOfTodayIso),
@@ -131,7 +137,18 @@ export default async function MarketingDashboardPage({
   const recentSubscribers = (recentSubscribersResult.data as SubscriberRow[] | null) || []
   const recentPromos = (recentPromosResult.data as PromoRow[] | null) || []
   const recentArticles = (recentArticlesResult.data as ArticleRow[] | null) || []
+  const newsletterCampaignStatuses = (newsletterCampaignStatusResult.data as NewsletterCampaignStatusRow[] | null) || []
   const weekGrowth = Math.max((last7Subscribers || 0) - (previous7Subscribers || 0), 0)
+  const newsletterCampaignCounts = newsletterCampaignStatuses.reduce(
+    (acc, campaign) => {
+      const status = String(campaign.status || "draft")
+      if (status === "approved") acc.approved += 1
+      else if (status === "sent") acc.sent += 1
+      else acc.draft += 1
+      return acc
+    },
+    { draft: 0, approved: 0, sent: 0 },
+  )
   const allPromos = (allPromosResult.data as Array<Pick<PromoRow, "id" | "is_active" | "status" | "starts_at" | "ends_at">> | null) || []
   const placementRows = (placementRowsResult.data as PlacementRow[] | null) || []
   const todayPromoEvents = (todayPromoEventsResult.data as PromoEventRow[] | null) || []
@@ -253,6 +270,11 @@ export default async function MarketingDashboardPage({
       label: "7 hari terakhir",
       value: formatCompactCount(last7Subscribers || 0),
       note: `Naik ${formatCompactCount(weekGrowth)} dibanding gelombang 7 hari sebelumnya.`,
+    },
+    {
+      label: "Campaign approval",
+      value: formatCompactCount(newsletterCampaignCounts.draft),
+      note: `${formatCompactCount(newsletterCampaignCounts.approved)} siap kirim, ${formatCompactCount(newsletterCampaignCounts.sent)} sudah terkirim.`,
     },
     {
       label: "Promo live",
@@ -491,7 +513,14 @@ export default async function MarketingDashboardPage({
                   href="/marketing/email-campaigns"
                   className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
                 >
-                  Siapkan dan kirim campaign email ke subscriber aktif
+                  <span className="flex items-center justify-between gap-3">
+                    <span>Siapkan dan kirim campaign email ke subscriber aktif</span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-orange-700">
+                      {formatCompactCount(newsletterCampaignCounts.draft)} review
+                      <span className="text-orange-400">/</span>
+                      {formatCompactCount(newsletterCampaignCounts.approved)} ready
+                    </span>
+                  </span>
                 </Link>
               ) : null}
               <Link
@@ -519,6 +548,15 @@ export default async function MarketingDashboardPage({
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
                   {formatCompactCount(promoStateCounts.waiting)} waiting, {formatCompactCount(inactiveArticles || 0)} artikel nonaktif
+                </p>
+              </div>
+              <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4 sm:col-span-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">Campaign approval lane</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">
+                  {formatCompactCount(newsletterCampaignCounts.draft)} menunggu approval
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {formatCompactCount(newsletterCampaignCounts.approved)} siap kirim, {formatCompactCount(newsletterCampaignCounts.sent)} sudah terkirim
                 </p>
               </div>
             </div>

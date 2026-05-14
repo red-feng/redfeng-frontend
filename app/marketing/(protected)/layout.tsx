@@ -42,12 +42,16 @@ export default async function MarketingProtectedLayout({
     { count: articleCount },
     { count: draftLikeInactivePromos },
     { count: draftLikeInactiveArticles },
+    { count: draftCampaignCount },
+    { count: approvedCampaignCount },
   ] = await Promise.all([
     adminSupabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
+    adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "draft"),
+    adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "approved"),
   ])
 
   const navItems = isMarketingManager
@@ -57,7 +61,12 @@ export default async function MarketingProtectedLayout({
         { label: "Audience" },
         { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
-        { href: "/marketing/email-campaigns", label: "Email Campaigns" },
+        {
+          href: "/marketing/email-campaigns",
+          label: "Email Campaigns",
+          badgeCount: draftCampaignCount || 0,
+          secondaryBadgeCount: approvedCampaignCount || 0,
+        },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {
@@ -75,7 +84,12 @@ export default async function MarketingProtectedLayout({
         { label: "Audience" },
         { href: "/marketing/newsletters", label: "Newsletter Audience", badgeCount: activeSubscribers || 0 },
         { label: "Campaign" },
-        { href: "/marketing/email-campaigns", label: "Email Campaigns" },
+        {
+          href: "/marketing/email-campaigns",
+          label: "Email Campaigns",
+          badgeCount: draftCampaignCount || 0,
+          secondaryBadgeCount: approvedCampaignCount || 0,
+        },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {

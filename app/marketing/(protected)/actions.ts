@@ -8,7 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { buildInternalMarketingEmail, isValidInternalUsername, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isMarketingPromoPlacementKey, marketingPromoPlacementKeys } from "@/lib/marketing-promo-placements"
-import { isMarketingManagedRole } from "@/lib/internal-roles"
+import { isMarketingApprovalRole, isMarketingManagedRole } from "@/lib/internal-roles"
 import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
 import {
   formatAccountErrorMessage,
@@ -40,6 +40,14 @@ async function ensureMarketingContentOperator(returnTo?: string) {
   const actor = await getMarketingActor(returnTo)
   if (!["marketing", "marketing_manager", "superadmin"].includes(actor.role)) {
     redirectWithMessage(returnTo || "/marketing/dashboard", "Akun ini belum bisa mengelola konten marketing.", "error")
+  }
+  return actor
+}
+
+async function ensureMarketingCampaignApprover(returnTo?: string) {
+  const actor = await getMarketingActor(returnTo)
+  if (!isMarketingApprovalRole(actor.role)) {
+    redirectWithMessage(returnTo || "/marketing/email-campaigns", "Hanya marketing manager atau superadmin yang dapat menyetujui dan mengirim campaign.", "error")
   }
   return actor
 }
@@ -138,6 +146,27 @@ export async function upsertMarketingNewsletterCampaign(formData: FormData) {
     redirectWithMessage(returnTo, "Judul, subject, dan body HTML campaign wajib diisi.", "error")
   }
 
+  const adminSupabase = createAdminClient()
+  let approvalReset = false
+
+  if (campaignId) {
+    const { data: existingCampaign, error: existingCampaignError } = await adminSupabase
+      .from("marketing_newsletter_campaigns")
+      .select("id, status")
+      .eq("id", campaignId)
+      .maybeSingle()
+
+    if (existingCampaignError || !existingCampaign) {
+      redirectWithMessage(returnTo, existingCampaignError?.message || "Campaign email tidak ditemukan.", "error")
+    }
+
+    if (existingCampaign.status === "sent") {
+      redirectWithMessage(returnTo, "Campaign yang sudah terkirim tidak bisa diubah lagi.", "error")
+    }
+
+    approvalReset = existingCampaign.status === "approved"
+  }
+
   const payload = {
     ...(campaignId ? { id: campaignId } : {}),
     title,
@@ -145,11 +174,13 @@ export async function upsertMarketingNewsletterCampaign(formData: FormData) {
     preview_text: getOptionalText(formData, "preview_text"),
     body_html: bodyHtml,
     body_text: getOptionalText(formData, "body_text"),
+    status: "draft",
+    approved_by: null,
+    approved_at: null,
     updated_by: actor.id,
     updated_at: new Date().toISOString(),
   }
 
-  const adminSupabase = createAdminClient()
   const { data, error } = await adminSupabase
     .from("marketing_newsletter_campaigns")
     .upsert(campaignId ? payload : { ...payload, created_by: actor.id }, { onConflict: "id" })
@@ -172,17 +203,27 @@ export async function upsertMarketingNewsletterCampaign(formData: FormData) {
       section: "email_campaigns",
       title,
       subject,
+      status: "draft",
+      approvalReset,
     },
   })
 
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/email-campaigns")
-  redirectWithMessage(returnTo, campaignId ? "Campaign email berhasil diperbarui." : "Campaign email berhasil dibuat.", "success")
+  redirectWithMessage(
+    returnTo,
+    campaignId
+      ? approvalReset
+        ? "Campaign email diperbarui dan kembali ke draft untuk menunggu approval ulang."
+        : "Campaign email berhasil diperbarui."
+      : "Campaign email berhasil dibuat.",
+    "success",
+  )
 }
 
-export async function sendMarketingNewsletterCampaign(formData: FormData) {
+export async function approveMarketingNewsletterCampaign(formData: FormData) {
   const returnTo = resolveReturnTo(formData, "/marketing/email-campaigns")
-  const actor = await ensureMarketingContentOperator(returnTo)
+  const actor = await ensureMarketingCampaignApprover(returnTo)
   const campaignId = getText(formData, "campaign_id")
 
   if (!campaignId) {
@@ -192,7 +233,7 @@ export async function sendMarketingNewsletterCampaign(formData: FormData) {
   const adminSupabase = createAdminClient()
   const { data: campaign, error: campaignError } = await adminSupabase
     .from("marketing_newsletter_campaigns")
-    .select("id, title, subject, preview_text, body_html, body_text, status")
+    .select("id, title, status")
     .eq("id", campaignId)
     .maybeSingle()
 
@@ -202,6 +243,73 @@ export async function sendMarketingNewsletterCampaign(formData: FormData) {
 
   if (campaign.status === "sent") {
     redirectWithMessage(returnTo, "Campaign ini sudah pernah dikirim.", "error")
+  }
+
+  if (campaign.status === "approved") {
+    redirectWithMessage(returnTo, "Campaign ini sudah disetujui dan siap dikirim.", "error")
+  }
+
+  const now = new Date().toISOString()
+  const { error: updateError } = await adminSupabase
+    .from("marketing_newsletter_campaigns")
+    .update({
+      status: "approved",
+      approved_by: actor.id,
+      approved_at: now,
+      updated_by: actor.id,
+      updated_at: now,
+    })
+    .eq("id", campaignId)
+
+  if (updateError) {
+    redirectWithMessage(returnTo, updateError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: campaignId,
+    action: "approve_marketing_newsletter_campaign",
+    summary: `Campaign newsletter ${campaign.title} disetujui`,
+    metadata: {
+      scope: "marketing_content",
+      section: "email_campaigns",
+      status: "approved",
+    },
+  })
+
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/email-campaigns")
+  redirectWithMessage(returnTo, "Campaign email berhasil disetujui dan siap dikirim.", "success")
+}
+
+export async function sendMarketingNewsletterCampaign(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/email-campaigns")
+  const actor = await ensureMarketingCampaignApprover(returnTo)
+  const campaignId = getText(formData, "campaign_id")
+
+  if (!campaignId) {
+    redirectWithMessage(returnTo, "Campaign email tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: campaign, error: campaignError } = await adminSupabase
+    .from("marketing_newsletter_campaigns")
+    .select("id, title, subject, preview_text, body_html, body_text, status, last_sent_at")
+    .eq("id", campaignId)
+    .maybeSingle()
+
+  if (campaignError || !campaign) {
+    redirectWithMessage(returnTo, campaignError?.message || "Campaign email tidak ditemukan.", "error")
+  }
+
+  if (campaign.status === "sent") {
+    redirectWithMessage(returnTo, "Campaign ini sudah pernah dikirim.", "error")
+  }
+
+  if (campaign.status !== "approved") {
+    redirectWithMessage(returnTo, "Campaign harus disetujui marketing manager atau superadmin sebelum dikirim.", "error")
   }
 
   const { data: subscribers, error: subscribersError } = await adminSupabase
@@ -226,21 +334,85 @@ export async function sendMarketingNewsletterCampaign(formData: FormData) {
   }
 
   try {
+    const { data: existingDeliveries, error: existingDeliveriesError } = await adminSupabase
+      .from("marketing_newsletter_campaign_deliveries")
+      .select("email, status")
+      .eq("campaign_id", campaignId)
+
+    if (existingDeliveriesError) {
+      redirectWithMessage(returnTo, existingDeliveriesError.message, "error")
+    }
+
+    const sentEmailSet = new Set(
+      ((existingDeliveries as Array<{ email: string | null; status: string | null }> | null) || [])
+        .filter((delivery) => delivery.status === "sent")
+        .map((delivery) => String(delivery.email || "").trim().toLowerCase())
+        .filter(Boolean),
+    )
+
+    const pendingAudience = audience.filter((subscriber) => !sentEmailSet.has(String(subscriber.email || "").trim().toLowerCase()))
+
+    if (!pendingAudience.length) {
+      const { error: completeUpdateError } = await adminSupabase
+        .from("marketing_newsletter_campaigns")
+        .update({
+          status: "sent",
+          audience_count: audience.length,
+          sent_count: audience.length,
+          last_sent_at: new Date().toISOString(),
+          updated_by: actor.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", campaignId)
+
+      if (completeUpdateError) {
+        redirectWithMessage(returnTo, completeUpdateError.message, "error")
+      }
+
+      revalidatePath("/marketing/dashboard")
+      revalidatePath("/marketing/email-campaigns")
+      redirectWithMessage(returnTo, "Semua subscriber aktif untuk campaign ini sudah pernah menerima emailnya.", "success")
+    }
+
     const delivery = await sendNewsletterCampaign({
       subject: String(campaign.subject || "").trim(),
       previewText: String(campaign.preview_text || "").trim() || null,
       bodyHtml: String(campaign.body_html || "").trim(),
       bodyText: String(campaign.body_text || "").trim() || null,
-      subscribers: audience,
+      subscribers: pendingAudience,
     })
+
+    const deliveryRows = delivery.results.map((result) => ({
+      campaign_id: campaignId,
+      email: result.email,
+      locale: result.locale,
+      status: result.status,
+      error_message: result.errorMessage || null,
+      sent_at: result.status === "sent" ? new Date().toISOString() : null,
+      last_attempt_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }))
+
+    if (deliveryRows.length) {
+      const { error: deliveryLogError } = await adminSupabase
+        .from("marketing_newsletter_campaign_deliveries")
+        .upsert(deliveryRows, { onConflict: "campaign_id,email" })
+
+      if (deliveryLogError) {
+        redirectWithMessage(returnTo, deliveryLogError.message, "error")
+      }
+    }
+
+    const totalSentCount = sentEmailSet.size + delivery.sentCount
+    const isComplete = totalSentCount >= audience.length
 
     const { error: updateError } = await adminSupabase
       .from("marketing_newsletter_campaigns")
       .update({
-        status: "sent",
-        audience_count: delivery.audienceCount,
-        sent_count: delivery.sentCount,
-        last_sent_at: new Date().toISOString(),
+        status: isComplete ? "sent" : "approved",
+        audience_count: audience.length,
+        sent_count: totalSentCount,
+        last_sent_at: delivery.sentCount > 0 ? new Date().toISOString() : campaign.last_sent_at,
         updated_by: actor.id,
         updated_at: new Date().toISOString(),
       })
@@ -254,16 +426,20 @@ export async function sendMarketingNewsletterCampaign(formData: FormData) {
       actorId: actor.id,
       actorRole: actor.role,
       targetType: "internal_account",
-      targetId: campaignId,
-      action: "send_marketing_newsletter_campaign",
-      summary: `Campaign newsletter ${campaign.title} dikirim`,
-      metadata: {
-        scope: "marketing_content",
-        section: "email_campaigns",
-        audienceCount: delivery.audienceCount,
-        sentCount: delivery.sentCount,
-      },
-    })
+        targetId: campaignId,
+        action: "send_marketing_newsletter_campaign",
+        summary: `Campaign newsletter ${campaign.title} dikirim`,
+        metadata: {
+          scope: "marketing_content",
+          section: "email_campaigns",
+          audienceCount: audience.length,
+          pendingAudienceCount: pendingAudience.length,
+          sentCount: totalSentCount,
+          sentThisAttempt: delivery.sentCount,
+          failedThisAttempt: delivery.failedCount,
+          completed: isComplete,
+        },
+      })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Pengiriman campaign email gagal."
     redirectWithMessage(returnTo, message, "error")
@@ -271,7 +447,21 @@ export async function sendMarketingNewsletterCampaign(formData: FormData) {
 
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/email-campaigns")
-  redirectWithMessage(returnTo, "Campaign email berhasil dikirim ke subscriber aktif.", "success")
+  const { data: finalDeliveryRows } = await adminSupabase
+    .from("marketing_newsletter_campaign_deliveries")
+    .select("status")
+    .eq("campaign_id", campaignId)
+
+  const sentAfterAttempt = ((finalDeliveryRows as Array<{ status: string | null }> | null) || []).filter((row) => row.status === "sent").length
+  if (sentAfterAttempt >= audience.length) {
+    redirectWithMessage(returnTo, "Campaign email berhasil dikirim ke semua subscriber aktif.", "success")
+  }
+
+  redirectWithMessage(
+    returnTo,
+    `Pengiriman campaign dijalankan, tetapi masih ada subscriber yang belum sukses terkirim. Retry berikutnya akan melanjutkan sisanya tanpa mengulang yang sudah sukses.`,
+    "success",
+  )
 }
 
 export async function deleteMarketingNewsletterCampaign(formData: FormData) {
