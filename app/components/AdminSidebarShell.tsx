@@ -16,6 +16,20 @@ type AdminSidebarShellProps = {
   showFullBrand?: boolean
 }
 
+function getWorkspaceTitle({
+  isOperationsManager,
+  portal,
+}: {
+  isOperationsManager: boolean
+  portal: ActivePortal
+}) {
+  if (portal === "superadmin") return "Superadmin Portal"
+  if (portal === "marketing") return "Marketing Portal"
+  if (portal === "finance") return "Finance Portal"
+  if (isOperationsManager) return "Operations Portal"
+  return "Admin Portal"
+}
+
 function BrandMark({
   isOperationsManager,
   showFullBrand,
@@ -81,6 +95,8 @@ function SidebarContent({
   roleLabel: string
   showFullBrand?: boolean
 }) {
+  const workspaceTitle = getWorkspaceTitle({ isOperationsManager, portal })
+
   return (
     <>
       <div
@@ -112,7 +128,7 @@ function SidebarContent({
 
       <div className={isDesktop ? `hidden px-7 pb-4 lg:block ${isOperationsManager ? "pt-1" : ""}` : "px-5 pb-4"}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.34em] text-slate-400">
-          {isOperationsManager ? "Dashboard Operasional" : showFullBrand ? "Super Admin" : "Admin Workspace"}
+          {workspaceTitle}
         </p>
         <p className="mt-3 text-xs font-semibold text-slate-700">{roleLabel}</p>
         <p className="mt-1 text-[11px] text-slate-400">{adminCode}</p>
@@ -165,6 +181,7 @@ export default function AdminSidebarShell({
 }: AdminSidebarShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isDesktopOpen, setIsDesktopOpen] = useState(true)
+  const workspaceTitle = getWorkspaceTitle({ isOperationsManager, portal })
 
   useEffect(() => {
     if (!isMobileOpen) return
@@ -195,7 +212,7 @@ export default function AdminSidebarShell({
         </button>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-950">
-            {isOperationsManager ? "Dashboard Operasional" : showFullBrand ? "Super Admin" : "Admin Workspace"}
+            {workspaceTitle}
           </p>
           <p className="truncate text-[11px] text-slate-400">{roleLabel}</p>
         </div>

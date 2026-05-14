@@ -152,6 +152,9 @@ export default async function MarketingDashboardPage({
   const actionHeading = isSuperadminPreview ? "Manager focus" : "Quick actions"
   const actionTitle = isSuperadminPreview ? "Titik kontrol domain marketing" : "Jalur kerja marketing hari ini"
   const audienceTitle = isSuperadminPreview ? "Audience terbaru" : "Subscriber terbaru"
+  const snapshotLabel = isSuperadminPreview ? "Live marketing snapshot" : "Live campaign snapshot"
+  const promoPulseHeading = isSuperadminPreview ? "Promo preview" : "Promo pulse"
+  const inspirationPulseHeading = isSuperadminPreview ? "Inspiration preview" : "Inspiration pulse"
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -170,8 +173,14 @@ export default async function MarketingDashboardPage({
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href={isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"}
+                  href={isSuperadminPreview ? "/superadmin/marketing-newsletters" : "/marketing/newsletters"}
                   className="inline-flex rounded-full bg-white px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50"
+                >
+                  {isSuperadminPreview ? "Preview audience" : "Buka newsletter"}
+                </Link>
+                <Link
+                  href={isSuperadminPreview ? "/superadmin/marketing-promos" : "/marketing/promos"}
+                  className="inline-flex rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/15"
                 >
                   {isSuperadminPreview ? "Preview promo" : "Kelola promo"}
                 </Link>
@@ -185,7 +194,7 @@ export default async function MarketingDashboardPage({
             </div>
 
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Live campaign snapshot</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">{snapshotLabel}</p>
               <div className="mt-5 grid gap-4">
                 <div>
                   <p className="text-sm text-orange-50/80">Active subscribers</p>
@@ -203,6 +212,12 @@ export default async function MarketingDashboardPage({
                   <p className="text-sm text-orange-50/80">Artikel live</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
                     {formatCompactCount(activeArticles || 0)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">7-day growth</p>
+                  <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">
+                    {formatCompactCount(weekGrowth)}
                   </p>
                 </div>
               </div>
@@ -311,7 +326,7 @@ export default async function MarketingDashboardPage({
           <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Promo pulse</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{promoPulseHeading}</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">
                   Promo yang paling baru disentuh
                 </h2>
@@ -348,7 +363,7 @@ export default async function MarketingDashboardPage({
           <article className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Inspiration pulse</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{inspirationPulseHeading}</p>
                 <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">
                   Artikel inspirasi terbaru
                 </h2>

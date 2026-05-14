@@ -166,15 +166,6 @@ export default async function FinanceTeamAccountsPage({
                   Buat akun finance
                 </button>
               </form>
-            </section>
-
-            <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Reporting line</p>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Finance manager memimpin finance team dan menyiapkan laporan keuangan internal.</p>
-                <p>2. Superadmin menerima laporan finance manager sebagai ringkasan resmi tim keuangan.</p>
-                <p>3. Finance team fokus eksekusi payout, sementara finance manager fokus quality control dan pelaporan.</p>
-              </div>
               <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 {isSuperadminView ? "Kembali ke superadmin dashboard" : "Kembali ke finance dashboard"}
               </Link>

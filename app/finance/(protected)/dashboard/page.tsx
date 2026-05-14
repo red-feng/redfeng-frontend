@@ -278,10 +278,40 @@ export default async function FinanceDashboardPage({
 
   if (showFinanceManagerView) {
     const isSuperadminPreview = isSuperadmin && portal === "superadmin"
+    const heroEyebrow = isSuperadminPreview ? "Finance Overview" : "Finance Manager"
+    const heroTitle = isSuperadminPreview
+      ? "Pantau queue payout, aging, dan kesiapan keputusan finance dari overview lintas tim."
+      : "Pantau queue payout, aging, dan performa tim finance dari satu dashboard."
     const heroBody = isSuperadminPreview
       ? "Preview ini membantu superadmin membaca beban outstanding, payout yang mulai macet, dan kesiapan keputusan finansial tanpa berpindah ke workspace finance utama."
       : "Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin."
     const managerFocusLabel = isSuperadminPreview ? "Manager focus" : "Finance pulse"
+    const controlHeading = isSuperadminPreview ? "Executive lanes" : "Control lanes"
+    const controlTitle = isSuperadminPreview ? "Jalur review domain finance" : "Jalur kontrol finance hari ini"
+    const controlLinks = [
+      {
+        href: refundsHref,
+        label: isSuperadminPreview ? "Preview auto review refund" : "Masuk ke auto review refund",
+        note: "Tinjau refund otomatis dari kasus DP overdue yang paling sensitif ke customer.",
+      },
+      {
+        href: payoutsHref,
+        label: isSuperadminPreview ? "Preview payout queue" : "Masuk ke payout queue",
+        note: "Baca antrean approve, processing, dan payout aging yang mulai macet.",
+      },
+      {
+        href: auditLogHref,
+        label: isSuperadminPreview ? "Tinjau audit trail finance" : "Buka audit trail finance",
+        note: "Gunakan jejak audit saat perlu memeriksa keputusan transfer dan perubahan status.",
+      },
+    ]
+    if (canManageFinanceSettings) {
+      controlLinks.push({
+        href: settingsHref,
+        label: isSuperadminPreview ? "Preview finance settings" : "Buka finance settings",
+        note: "Pastikan aturan komisi, fee, dan release dana tetap sesuai kebijakan yang aktif.",
+      })
+    }
     const managerMetricCards = [
       { label: "Transaksi customer", value: formatMoney(grossCustomerTransactionTotal), note: "Total uang customer yang sudah masuk ke Red Feng." },
       { label: "Dana tertahan", value: formatMoney(customerHeldFundsTotal), note: "Dana customer yang masih ada di escrow / belum selesai." },
@@ -328,10 +358,10 @@ export default async function FinanceDashboardPage({
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1.18fr)_340px]">
               <div className="max-w-3xl">
                 <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                  Finance Manager
+                  {heroEyebrow}
                 </span>
                 <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
-                  Pantau queue payout, aging, dan performa tim finance dari satu dashboard.
+                  {heroTitle}
                 </h1>
                 <p className="mt-4 text-base leading-8 text-orange-50/90">
                   {heroBody}
@@ -393,6 +423,78 @@ export default async function FinanceDashboardPage({
                 <p className="mt-2 text-xs leading-6 text-slate-500">{card.note}</p>
               </div>
             ))}
+          </section>
+
+          <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">{controlHeading}</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{controlTitle}</h2>
+              <div className="mt-5 grid gap-3">
+                {controlLinks.map((link, index) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={
+                      index === 0
+                        ? "rounded-[22px] border border-slate-950 bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                        : "rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                    }
+                  >
+                    <span className="block">{link.label}</span>
+                    <span className={`mt-1 block text-xs leading-6 ${index === 0 ? "text-white/80" : "text-slate-500"}`}>{link.note}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Team performance</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kinerja tim finance</h2>
+              <div className="mt-6 space-y-4">
+                {financePerformance.length === 0 ? (
+                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                    Belum ada aktivitas finance yang tercatat.
+                  </div>
+                ) : (
+                  financePerformance.map((item) => (
+                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance actor</p>
+                          <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.email}</h3>
+                          <p className="mt-2 text-xs text-slate-500">{String(item.role).replaceAll("_", " ")}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3 text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
+                          <p className="mt-2 text-2xl font-semibold text-slate-950">{item.totalActions}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Approve</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.approved}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Processing</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.processing}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Paid</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.paid}</p>
+                        </div>
+                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rejected</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.rejected}</p>
+                        </div>
+                      </div>
+                      <p className="mt-4 text-xs text-slate-500">
+                        Aksi terakhir: {item.lastActionAt ? new Date(item.lastActionAt).toLocaleString("id-ID") : "-"}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
@@ -512,70 +614,6 @@ export default async function FinanceDashboardPage({
                   <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(paidOutFundsTotal)}</p>
                 </div>
               </div>
-            </div>
-          </section>
-
-          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance team performance</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kinerja tim finance</h2>
-              <div className="mt-6 space-y-4">
-                {financePerformance.length === 0 ? (
-                  <div className="rounded-[24px] border border-dashed border-[#e8d7c1] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
-                    Belum ada aktivitas finance yang tercatat.
-                  </div>
-                ) : (
-                  financePerformance.map((item) => (
-                    <div key={item.id} className="rounded-[24px] border border-[#efe1cf] bg-[#fffaf3] p-5">
-                      <div className="flex flex-wrap items-start justify-between gap-4">
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance actor</p>
-                          <h3 className="mt-2 text-xl font-semibold text-slate-950">{item.email}</h3>
-                          <p className="mt-2 text-xs text-slate-500">{String(item.role).replaceAll("_", " ")}</p>
-                        </div>
-                        <div className="rounded-[18px] border border-[#f0e6da] bg-white px-4 py-3 text-right">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total action</p>
-                          <p className="mt-2 text-2xl font-semibold text-slate-950">{item.totalActions}</p>
-                        </div>
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Approve</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.approved}</p>
-                        </div>
-                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Processing</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.processing}</p>
-                        </div>
-                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Paid</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.paid}</p>
-                        </div>
-                        <div className="rounded-[18px] border border-[#f0e6da] bg-white p-4">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Rejected</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-950">{item.rejected}</p>
-                        </div>
-                      </div>
-                      <p className="mt-4 text-xs text-slate-500">
-                        Aksi terakhir: {item.lastActionAt ? new Date(item.lastActionAt).toLocaleString("id-ID") : "-"}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="grid gap-6">
-              <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Baca</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas finance manager</h2>
-                <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                  <p>1. Menjaga payout aging tetap rendah dan outstanding tidak menumpuk terlalu lama.</p>
-                  <p>2. Melihat apakah team finance bergerak seimbang di approve, processing, paid, dan rejected.</p>
-                  <p>3. Menggunakan Audit Log untuk investigasi keputusan transfer atau payout yang macet.</p>
-                </div>
-              </div>
-
             </div>
           </section>
 
@@ -966,25 +1004,10 @@ export default async function FinanceDashboardPage({
                 ) : null}
               </div>
 
-              <div className="mt-4 rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
-                Fokus utama tim finance di dashboard depan adalah membaca backlog dan segera masuk ke antrean payout. Manajemen akun finance tetap berada di jalur manager, bukan workspace eksekusi harian.
-              </div>
             </div>
           </div>
 
-          <div className="grid gap-4 sm:gap-6">
-            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance note</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Aturan release dana</h2>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Dana customer tetap masuk dan ditahan di rekening Red Feng.</p>
-                <p>2. Merchant klik <span className="font-semibold text-slate-900">Arrived</span> saat sudah di meeting point.</p>
-                <p>3. Customer klik <span className="font-semibold text-slate-900">Picked up</span> saat sudah naik kendaraan.</p>
-                <p>4. Merchant klik <span className="font-semibold text-slate-900">Go</span> agar trip tervalidasi berjalan.</p>
-                <p>5. Booking normal yang sudah lunas masuk queue finance secara semi-otomatis, lalu finance transfer sesuai setting komisi dan biaya.</p>
-              </div>
-            </div>
-          </div>
+          <div className="grid gap-4 sm:gap-6" />
         </section>
       </div>
     </main>

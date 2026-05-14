@@ -96,7 +96,7 @@ export default async function AdminProtectedLayout({
       secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
     },
     { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
-    { href: "/admin/merchants/anomalies", label: "Anomalis", badgeCount: 0 },
+    { href: "/admin/merchants/anomalies", label: "Anomali", badgeCount: 0 },
   ]
   const productNavChildren = visibleProductTypes.map((productType) => ({
     href: toAdminProductNavHref(productType),
@@ -117,9 +117,9 @@ export default async function AdminProtectedLayout({
         { label: "PRODUK & LAYANAN" },
         ...productNavChildren,
         { label: "LAPORAN" },
-        { href: "/admin/dashboard", label: "Report Harian", badgeCount: 0 },
-        { href: "/admin/audit-log", label: "Report Operasional", badgeCount: 0 },
-        { href: "/admin/dashboard/widgets", label: "Data Export", badgeCount: 0 },
+        { href: "/admin/dashboard", label: "Operations Dashboard", badgeCount: 0 },
+        { href: "/admin/audit-log", label: "Audit Trail", badgeCount: 0 },
+        { href: "/admin/dashboard/widgets", label: "Widget & Export", badgeCount: 0 },
       ]
     : [
         { href: "/admin/dashboard", label: "Dashboard", badgeCount: 0 },

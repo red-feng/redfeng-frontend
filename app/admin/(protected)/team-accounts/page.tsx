@@ -165,15 +165,6 @@ export default async function AdminTeamAccountsPage({
                   Buat akun operasional
                 </button>
               </form>
-            </section>
-
-            <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Alur peran</p>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Operations manager memimpin admin team dan menyusun laporan operasional untuk superadmin.</p>
-                <p>2. Superadmin membaca laporan tersebut sebagai ringkasan resmi kinerja merchant, package, dan booking.</p>
-                <p>3. Admin team tetap fokus eksekusi harian, sementara operations manager fokus quality control dan pelaporan.</p>
-              </div>
               <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 {isSuperadminView ? "Kembali ke superadmin dashboard" : "Kembali ke admin dashboard"}
               </Link>

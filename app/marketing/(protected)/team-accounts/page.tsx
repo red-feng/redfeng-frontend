@@ -161,15 +161,6 @@ export default async function MarketingTeamAccountsPage({
                   Buat akun marketing
                 </button>
               </form>
-            </section>
-
-            <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Reporting line</p>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Marketing manager memimpin eksekusi promo, subscriber, dan konten inspirasi.</p>
-                <p>2. Superadmin tetap memegang approval struktur akun dan level manajerialnya.</p>
-                <p>3. Marketing team fokus eksekusi harian, sedangkan marketing manager fokus ritme campaign dan quality control.</p>
-              </div>
               <Link href={backHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
                 {isSuperadminView ? "Kembali ke superadmin dashboard" : "Kembali ke marketing dashboard"}
               </Link>

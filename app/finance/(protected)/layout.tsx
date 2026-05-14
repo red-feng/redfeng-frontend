@@ -43,6 +43,10 @@ export default async function FinanceProtectedLayout({
   const isFinanceManager = profile.role === "finance_manager"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
+  const workspaceTitle = isFinanceManager ? "Finance Manager Portal" : "Finance Portal"
+  const workspaceSubtitle = isFinanceManager
+    ? "Area overview payout, aging, outstanding, dan ritme kerja tim finance."
+    : "Area eksekusi refund, payout, dan kontrol dana internal."
   const [refundsResult, payoutsResult, internalChatUnreadBadgeCount] = await Promise.all([
     adminSupabase
       .from("refund_requests")
@@ -90,16 +94,12 @@ export default async function FinanceProtectedLayout({
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500 sm:px-4">
-                  Finance Workspace
+                  {workspaceTitle}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">
-                  {isFinanceManager ? "Finance manager workspace Red Feng" : "Dashboard finance internal Red Feng"}
+                  {isFinanceManager ? "Overview finance manager Red Feng" : "Workspace finance internal Red Feng"}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {isFinanceManager
-                    ? "Area monitoring payout aging, outstanding, dan ritme kerja tim finance"
-                    : "Area payout, fee, dan pengaturan dana internal"}
-                </p>
+                <p className="text-xs text-slate-500">{workspaceSubtitle}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
                     {financeCode}
