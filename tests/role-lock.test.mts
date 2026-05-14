@@ -99,9 +99,10 @@ async function main() {
     assert.match(internalChatSource, /superadmin:\s*\["superadmin", "operations_manager", "finance_manager", "marketing_manager"\]/)
     assert.match(internalChatSource, /operations_manager:\s*\["superadmin", "operations_manager", "admin", "finance_manager", "marketing_manager"\]/)
     assert.match(internalChatSource, /finance_manager:\s*\["superadmin", "finance_manager", "finance", "operations_manager", "marketing_manager"\]/)
-    assert.match(internalChatSource, /marketing_manager:\s*\["superadmin", "marketing_manager", "operations_manager", "finance_manager"\]/)
-    assert.match(internalChatSource, /admin:\s*\["operations_manager", "admin", "finance"\]/)
-    assert.match(internalChatSource, /finance:\s*\["finance_manager", "finance", "admin"\]/)
+    assert.match(internalChatSource, /marketing_manager:\s*\["superadmin", "marketing_manager", "marketing", "operations_manager", "finance_manager"\]/)
+    assert.match(internalChatSource, /marketing:\s*\["marketing_manager", "marketing", "admin", "finance"\]/)
+    assert.match(internalChatSource, /admin:\s*\["operations_manager", "admin", "finance", "marketing"\]/)
+    assert.match(internalChatSource, /finance:\s*\["finance_manager", "finance", "admin", "marketing"\]/)
   })
 
   await runCase("portal namespace normalization stays explicit", () => {

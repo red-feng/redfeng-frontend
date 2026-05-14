@@ -12,7 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 
 type Props = {
-  portal: "admin" | "finance" | "superadmin"
+  portal: "admin" | "finance" | "marketing" | "superadmin"
   searchParams: Promise<{ room_id?: string; error?: string }>
 }
 
@@ -29,6 +29,12 @@ const PORTAL_HEADLINES: Record<Props["portal"], { badge: string; title: string; 
     description:
       "Sinkronkan keputusan payout, refund, dan koordinasi lintas role lewat chat pribadi internal.",
   },
+  marketing: {
+    badge: "Marketing Internal Chat",
+    title: "Komunikasi internal realtime untuk tim marketing.",
+    description:
+      "Gunakan chat pribadi internal untuk koordinasi campaign, approval, dan ritme kerja harian bersama marketing manager.",
+  },
   superadmin: {
     badge: "Superadmin Internal Chat",
     title: "Chat internal pribadi lintas semua manager.",
@@ -41,7 +47,7 @@ export const dynamic = "force-dynamic"
 
 export default async function InternalChatWorkspace({ portal, searchParams }: Props) {
   const params = await searchParams
-  const supabase = await createClient()
+  const supabase = await createClient(portal)
   const adminSupabase = createAdminClient()
   const {
     data: { user },

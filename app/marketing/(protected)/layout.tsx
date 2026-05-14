@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import AdminSidebarShell from "@/app/components/AdminSidebarShell"
+import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { formatMarketingCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -44,6 +45,7 @@ export default async function MarketingProtectedLayout({
     { count: draftLikeInactiveArticles },
     { count: draftCampaignCount },
     { count: approvedCampaignCount },
+    internalChatUnreadBadgeCount,
   ] = await Promise.all([
     adminSupabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", true),
@@ -52,6 +54,7 @@ export default async function MarketingProtectedLayout({
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "draft"),
     adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    getInternalChatUnreadBadgeCount(adminSupabase, user.id),
   ])
 
   const navItems = isMarketingManager
@@ -75,6 +78,7 @@ export default async function MarketingProtectedLayout({
           badgeCount: articleCount || 0,
           secondaryBadgeCount: draftLikeInactiveArticles || 0,
         },
+        { href: "/marketing/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
         { label: "Sistem" },
         { href: "/marketing/team-accounts", label: "Team Accounts" },
       ]
@@ -98,6 +102,7 @@ export default async function MarketingProtectedLayout({
           badgeCount: articleCount || 0,
           secondaryBadgeCount: draftLikeInactiveArticles || 0,
         },
+        { href: "/marketing/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
       ]
 
   return (

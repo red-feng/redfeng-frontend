@@ -9,7 +9,7 @@ type InternalProfileRow = {
   role: string | null
 }
 
-type InternalRoleCode = "admin" | "operations_manager" | "finance" | "finance_manager" | "marketing_manager" | "superadmin"
+type InternalRoleCode = "admin" | "operations_manager" | "finance" | "finance_manager" | "marketing" | "marketing_manager" | "superadmin"
 
 export const INTERNAL_CHAT_ROLE_POLICY_VERSION = "2026-04-14"
 const INTERNAL_CHAT_LOCKED_ROLES = Object.freeze([
@@ -17,6 +17,7 @@ const INTERNAL_CHAT_LOCKED_ROLES = Object.freeze([
   "operations_manager",
   "finance",
   "finance_manager",
+  "marketing",
   "marketing_manager",
   "superadmin",
 ] as const)
@@ -85,9 +86,10 @@ const INTERNAL_DIRECT_ALLOWED_TARGETS: Readonly<Record<InternalRoleCode, readonl
   superadmin: ["superadmin", "operations_manager", "finance_manager", "marketing_manager"],
   operations_manager: ["superadmin", "operations_manager", "admin", "finance_manager", "marketing_manager"],
   finance_manager: ["superadmin", "finance_manager", "finance", "operations_manager", "marketing_manager"],
-  marketing_manager: ["superadmin", "marketing_manager", "operations_manager", "finance_manager"],
-  admin: ["operations_manager", "admin", "finance"],
-  finance: ["finance_manager", "finance", "admin"],
+  marketing_manager: ["superadmin", "marketing_manager", "marketing", "operations_manager", "finance_manager"],
+  marketing: ["marketing_manager", "marketing", "admin", "finance"],
+  admin: ["operations_manager", "admin", "finance", "marketing"],
+  finance: ["finance_manager", "finance", "admin", "marketing"],
 })
 
 function normalizeInternalRoleCode(role: string | null | undefined): InternalRoleCode | null {
@@ -97,6 +99,7 @@ function normalizeInternalRoleCode(role: string | null | undefined): InternalRol
     normalized === "operations_manager" ||
     normalized === "finance" ||
     normalized === "finance_manager" ||
+    normalized === "marketing" ||
     normalized === "marketing_manager" ||
     normalized === "superadmin"
   ) {
