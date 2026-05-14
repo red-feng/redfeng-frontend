@@ -3363,29 +3363,10 @@ export default async function AdminDashboard({
             </div>
           </section>
 
-          <section className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Panduan Laporan</p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Hal wajib yang dilaporkan ke superadmin</h2>
-              <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                <p>1. Status antrean approval, paket, dan booking yang sedang berjalan.</p>
-                <p>2. Kondisi SLA, backlog, overdue, dan titik kemacetan terbesar.</p>
-                <p>3. Ringkasan transaksi customer: DP, pelunasan, full payment, admin fee, dan pajak yang masuk.</p>
-                <p>4. Status dana customer: held, partial hold, siap handoff, tertahan operasional, dan sudah dibayar keluar.</p>
-                <p>5. Kualitas keputusan tim admin serta anomali transaksi customer yang perlu investigasi.</p>
-                <p>6. Kapasitas tim, eskalasi kasus penting, dan kualitas handoff ke finance.</p>
-                <p>7. Blocker utama, risiko operasional, next steps, dan keputusan yang dibutuhkan dari superadmin.</p>
-              </div>
-            </div>
-          </section>
-
           <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
             <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
               <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Laporan Ke Superadmin</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operations manager</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Isi laporan secara lengkap agar superadmin bisa membaca kondisi antrean, SLA, kualitas keputusan tim, risiko, dan keputusan yang dibutuhkan tanpa mengejar detail tambahan lewat chat.
-              </p>
               <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
                 <input type="hidden" name="return_to" value={reportReturnTo} />
                 <input

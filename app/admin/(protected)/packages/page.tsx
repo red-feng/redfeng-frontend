@@ -101,10 +101,6 @@ export default async function AdminPackagesPage({
           <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-5 py-6 sm:px-8 sm:py-7">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Admin Package Control</p>
             <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Global pending queue</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              Halaman ini khusus untuk paket yang benar-benar menunggu review admin. Untuk melihat semua paket satu merchant secara rapi,
-              masuk lewat merchant directory lalu buka workspace paket merchant tersebut.
-            </p>
           </div>
 
           <div className="grid gap-3 px-5 py-5 sm:grid-cols-2 sm:gap-4 sm:px-8">

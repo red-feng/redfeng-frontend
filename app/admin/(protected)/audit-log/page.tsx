@@ -241,9 +241,6 @@ export default async function AdminAuditLogPage({
           <h1 className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl">
             Jejak keputusan admin untuk approval, produk, booking, dan akses internal.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-orange-50/90">
-            Halaman ini membantu admin dan superadmin menelusuri histori keputusan terbaru berdasarkan actor, target, dan jenis aksi yang benar-benar tercatat dari server action internal.
-          </p>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">

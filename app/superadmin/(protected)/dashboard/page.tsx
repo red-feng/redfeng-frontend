@@ -255,10 +255,6 @@ export default async function SuperadminDashboardPage({
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Superadmin mengawasi struktur tim, domain utama, dan ritme kontrol lintas fungsi.
               </h1>
-              <p className="mt-3 text-sm leading-7 text-violet-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                Halaman ini sekarang dipisah dari dashboard admin harian agar superadmin bisa fokus pada struktur akun,
-                governance, dan kesehatan domain operations, finance, dan marketing.
-              </p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
                   href="/superadmin/superadmin-accounts"
@@ -435,7 +431,6 @@ export default async function SuperadminDashboardPage({
               {controlLanes.map((lane) => (
                 <div key={lane.label} className="rounded-[22px] border border-violet-100 bg-violet-50/20 px-4 py-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">{lane.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{lane.note}</p>
                   <div className="mt-4 grid gap-3">
                     {lane.links.map((link) => (
                       <Link

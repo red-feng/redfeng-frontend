@@ -66,11 +66,6 @@ export default async function MarketingPromosPage({
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Kelola promo publik dari satu panel marketing.
               </h1>
-              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                {isSuperadminPreview
-                  ? "Superadmin dapat melihat promo publik yang sedang hidup, stok campaign nonaktif, dan struktur kontennya tanpa meninggalkan portal kontrol lintas tim."
-                  : "Promo di homepage, halaman promo, detail promo, wishlist, dan blok komersial lain sekarang dipusatkan di workspace ini agar ritme campaign lebih mudah dijaga."}
-              </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Promo snapshot</p>
@@ -153,11 +148,6 @@ export default async function MarketingPromosPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
             {isSuperadminPreview ? "Promo template preview" : "Create promo"}
-          </p>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-500">
-            {isSuperadminPreview
-              ? "Superadmin tetap bisa mengubah promo dari jalur ini bila diperlukan, tetapi panel ini terutama dipakai untuk membaca struktur campaign yang sedang dijalankan tim marketing."
-              : "Buat promo baru atau jadikan panel ini sebagai template untuk campaign berikutnya."}
           </p>
           <div className="mt-5">
             <PromoForm portal={portal} />

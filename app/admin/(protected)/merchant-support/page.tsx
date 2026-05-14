@@ -64,9 +64,6 @@ export default async function AdminMerchantSupportPage({
           <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">
             Semua permintaan bantuan merchant masuk ke satu inbox admin.
           </h1>
-          <p className="mt-4 max-w-3xl text-sm leading-7 text-orange-50/90 md:text-base">
-            Gunakan workspace ini untuk membalas kendala verifikasi, paket, booking, dan payout tanpa keluar dari portal admin.
-          </p>
         </section>
 
         <div className="min-h-0">

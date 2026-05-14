@@ -2,7 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
-import { defaultFinanceSettings, getFinanceSettings } from "@/lib/finance/settings"
+import { getFinanceSettings } from "@/lib/finance/settings"
 import { saveFinanceSettings } from "./actions"
 
 const merchantTransferBanks = [
@@ -167,11 +167,7 @@ export default async function FinanceSettingsPage({
                 <button className="w-full rounded-[20px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto">
                 Simpan Setting
               </button>
-            ) : (
-              <div className="rounded-[20px] border border-sky-200 bg-sky-50 px-4 py-3 text-sm leading-6 text-sky-700">
-                Finance Settings dimiliki finance manager. Tim finance eksekusi tidak mengubah parameter ini dari portal finance.
-              </div>
-            )}
+            ) : null}
           </form>
 
           <section className="space-y-6">
@@ -190,21 +186,9 @@ export default async function FinanceSettingsPage({
                 <p>Transfer bank Mandiri: Rp {(settings.merchantTransferFeeRules.mandiri ?? settings.merchantTransferFee).toLocaleString("id-ID")}</p>
               </div>
             </div>
-            <div className="rounded-[24px] border border-[#f3dbc3] bg-white p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Fallback</p>
-              <p className="mt-3 text-sm leading-7 text-slate-600">
-                Jika migration belum dijalankan, sistem akan memakai default aman:
-                komisi {defaultFinanceSettings.redfengCommissionPercent}%,
-                admin fee bank transfer {defaultFinanceSettings.customerAdminFeeRules.bank_transfer}%,
-                admin fee QRIS {defaultFinanceSettings.customerAdminFeeRules.qris}%,
-                admin fee kartu kredit {defaultFinanceSettings.customerAdminFeeRules.credit_card}%,
-                pajak {defaultFinanceSettings.customerTaxPercent}%,
-                transfer Rp {defaultFinanceSettings.merchantTransferFee.toLocaleString("id-ID")}.
-              </p>
-              <Link href={dashboardHref} className="mt-5 inline-flex text-sm font-semibold text-orange-600">
-                Kembali ke finance dashboard
-              </Link>
-            </div>
+            <Link href={dashboardHref} className="inline-flex text-sm font-semibold text-orange-600">
+              Kembali ke finance dashboard
+            </Link>
           </section>
         </section>
       </div>

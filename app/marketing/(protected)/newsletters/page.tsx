@@ -89,11 +89,6 @@ export default async function MarketingNewslettersPage({
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Kelola audience email yang masuk dari homepage dan landing packages.
               </h1>
-              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                {isSuperadminPreview
-                  ? "Superadmin membaca pertumbuhan subscriber, kualitas audience, dan kesiapan basis campaign tanpa harus pindah ke portal marketing."
-                  : "Halaman ini dipakai untuk memantau pertumbuhan subscriber, membersihkan audience, dan menyiapkan basis campaign marketing berikutnya."}
-              </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Audience snapshot</p>

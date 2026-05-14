@@ -75,11 +75,6 @@ export default async function MarketingInspirationPage({
               <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:mt-5 sm:text-4xl lg:text-5xl">
                 Kelola blok &quot;Temukan ide perjalanan untuk petualangan berikutnya&quot; dari satu panel.
               </h1>
-              <p className="mt-3 text-sm leading-7 text-orange-50/90 sm:mt-4 sm:text-base sm:leading-8">
-                {isSuperadminPreview
-                  ? "Superadmin dapat membaca kualitas blok inspirasi homepage dan struktur artikelnya sebagai bagian dari pengawasan domain marketing."
-                  : "Marketing memegang artikel inspirasi dan isi detailnya agar homepage, discovery, dan momentum campaign tetap terarah tanpa bergantung pada hardcoded content."}
-              </p>
             </div>
             <div className="rounded-[22px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:rounded-[24px] sm:px-5 sm:py-5">
               <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Content snapshot</p>
@@ -162,11 +157,6 @@ export default async function MarketingInspirationPage({
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
             {isSuperadminPreview ? "Article template preview" : "Create article"}
-          </p>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-500">
-            {isSuperadminPreview
-              ? "Superadmin tetap dapat ikut menyentuh konten bila perlu, tetapi area ini terutama berfungsi sebagai preview struktur article management milik tim marketing."
-              : "Gunakan panel ini untuk menulis artikel baru atau menyegarkan isi blok inspirasi yang sedang berjalan."}
           </p>
           <div className="mt-5">
             <InspirationForm portal={portal} />

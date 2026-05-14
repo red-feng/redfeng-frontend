@@ -304,10 +304,6 @@ export default async function SuperadminOperationsManagerPreviewPage({
               <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Pantau backlog operasional, SLA review, dan handoff booking dari satu overview.
               </h1>
-              <p className="mt-4 text-base leading-8 text-orange-50/90">
-                Halaman ini dibuat khusus untuk membaca kesehatan domain operations dari sisi manager dan superadmin,
-                tanpa tercampur oleh ritme dashboard admin harian.
-              </p>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <Link
                   href="/superadmin/merchants"
@@ -545,9 +541,6 @@ export default async function SuperadminOperationsManagerPreviewPage({
           <div className="rounded-[32px] border border-[#f3dbc3] bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:p-7">
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Manager report</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Kirim laporan operations manager ke superadmin</h2>
-            <p className="mt-2 text-sm leading-7 text-slate-500">
-              Gunakan form ini untuk mencatat backlog, kualitas keputusan, risiko operasional, dan dukungan lintas tim yang dibutuhkan.
-            </p>
             <form action={submitOperationsManagerReport} className="mt-6 space-y-4">
               <input type="hidden" name="return_to" value="/superadmin/operations-manager" />
               <input type="hidden" name="metric_snapshot" value={metricSnapshot} />
