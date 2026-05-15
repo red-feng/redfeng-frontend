@@ -61,6 +61,12 @@ type BookingPromoSnapshot = {
   discount_amount?: number | null
   display_discount_amount?: number | null
   display_subtotal_before_discount?: number | null
+  approved_at?: string | null
+  approved_by_name?: string | null
+  marketing_approved_at?: string | null
+  marketing_approved_by_name?: string | null
+  finance_approved_at?: string | null
+  finance_approved_by_name?: string | null
 }
 
 type PackageRow = {
@@ -179,6 +185,16 @@ function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
   } catch {
     return null
   }
+}
+
+function formatPromoApprovalTime(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
 }
 
 function paymentTone(status: string | null) {
@@ -702,7 +718,7 @@ export default async function AdminBookingDetailPage({
         </section>
 
         {(booking.promo_code || displayDiscountAmount > 0 || promoSnapshot?.rule_name) ? (
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Promo</p>
               <p className="mt-3 text-xl font-semibold text-slate-950">{promoSnapshot?.rule_name || booking.promo_code || "-"}</p>
@@ -724,6 +740,20 @@ export default async function AdminBookingDetailPage({
                 {formatPackageMoney(displaySubtotalBeforeDiscount, booking.display_currency || "IDR", locale)}
               </p>
             </div>
+            {(promoSnapshot?.marketing_approved_at || promoSnapshot?.finance_approved_at) ? (
+              <>
+                <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Marketing approval</p>
+                  <p className="mt-3 text-base font-semibold text-slate-950">{formatPromoApprovalTime(promoSnapshot?.marketing_approved_at)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{promoSnapshot?.marketing_approved_by_name || "-"}</p>
+                </div>
+                <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Finance approval</p>
+                  <p className="mt-3 text-base font-semibold text-slate-950">{formatPromoApprovalTime(promoSnapshot?.finance_approved_at || promoSnapshot?.approved_at)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{promoSnapshot?.finance_approved_by_name || promoSnapshot?.approved_by_name || "-"}</p>
+                </div>
+              </>
+            ) : null}
           </section>
         ) : null}
 

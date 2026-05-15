@@ -47,6 +47,29 @@ type TransactionPromoApplicationResult = {
   target: TransactionPromoRuleTargetRecord | null
 }
 
+async function resolvePromoApproverNames(
+  supabase: SupabaseClient,
+  approverIds: string[],
+) {
+  const normalizedIds = Array.from(new Set(approverIds.map((value) => String(value || "").trim()).filter(Boolean)))
+  if (!normalizedIds.length) {
+    return new Map<string, string>()
+  }
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("id, username")
+    .in("id", normalizedIds)
+
+  const result = new Map<string, string>()
+  for (const row of ((data as Array<{ id: string | null; username: string | null }> | null) || [])) {
+    const id = String(row.id || "").trim()
+    if (!id) continue
+    result.set(id, String(row.username || "").trim())
+  }
+  return result
+}
+
 function normalizeString(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
 }
@@ -82,7 +105,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
   const normalizedPromoCode = normalizeTransactionPromoCode(params.promoCode)
   const { data: ruleRows } = await params.supabase
     .from("transaction_promo_rules")
-    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply")
+    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, approved_by, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at")
     .eq("status", "active")
 
   const activeRules = ((ruleRows as TransactionPromoRuleRecord[] | null) || []).filter((rule) => rule.id)
@@ -308,6 +331,13 @@ export async function resolvePackageCheckoutPromoPricing({
   const displaySubtotalAfterDiscount = Math.max(displaySubtotalAmount - displayDiscountAmount, 0)
   const paymentBreakdown = calculateBookingAmounts(paymentSubtotalAfterDiscount, normalizedPaymentMethod, financeSettings)
   const displayBreakdown = calculateBookingAmounts(displaySubtotalAfterDiscount, normalizedPaymentMethod, financeSettings)
+  const approverNameMap = promo.applied
+    ? await resolvePromoApproverNames(supabase, [
+        String(promo.rule?.approved_by || ""),
+        String(promo.rule?.marketing_approved_by || ""),
+        String(promo.rule?.finance_approved_by || ""),
+      ])
+    : new Map<string, string>()
 
   return {
     packagePricing: packagePricing as PackagePricingRow,
@@ -358,6 +388,15 @@ export async function resolvePackageCheckoutPromoPricing({
           locale: activeLocale,
           product_type: "package_tour",
           product_id: packageId,
+          approved_by: promo.rule?.approved_by || null,
+          approved_at: promo.rule?.approved_at || null,
+          approved_by_name: approverNameMap.get(String(promo.rule?.approved_by || "").trim()) || null,
+          marketing_approved_by: promo.rule?.marketing_approved_by || null,
+          marketing_approved_at: promo.rule?.marketing_approved_at || null,
+          marketing_approved_by_name: approverNameMap.get(String(promo.rule?.marketing_approved_by || "").trim()) || null,
+          finance_approved_by: promo.rule?.finance_approved_by || null,
+          finance_approved_at: promo.rule?.finance_approved_at || null,
+          finance_approved_by_name: approverNameMap.get(String(promo.rule?.finance_approved_by || "").trim()) || null,
         }
       : null,
   }

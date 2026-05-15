@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
+import { createClient } from "@/lib/supabase/server"
 import { getBookingProductLabel, normalizeBookingProductType, type BookingProductType } from "@/lib/booking-products"
-import { deleteTransactionPromoRule, upsertTransactionPromoRule } from "@/app/marketing/(protected)/actions"
+import { approveTransactionPromoForMarketing, deleteTransactionPromoRule, upsertTransactionPromoRule } from "@/app/marketing/(protected)/actions"
 import {
   getTransactionPromoChannelLabel,
   getTransactionPromoDiscountTypeLabel,
@@ -46,6 +47,10 @@ type TransactionPromoRule = {
   status: string | null
   is_auto_apply: boolean | null
   approved_at: string | null
+  marketing_approved_by: string | null
+  marketing_approved_at: string | null
+  finance_approved_by: string | null
+  finance_approved_at: string | null
   updated_at: string | null
   created_at: string | null
   transaction_promo_rule_targets: TransactionPromoTarget[] | null
@@ -66,11 +71,17 @@ export default async function MarketingTransactionPromosPage({
   const productTypeFilter = normalizeBookingProductType(String(params.product_type || "").trim()) || "all"
   const modeFilter = String(params.mode || "all").trim().toLowerCase()
   const adminSupabase = createAdminClient()
+  const supabase = await createClient("marketing")
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  const { data: currentProfile } = user ? await supabase.from("profiles").select("role").eq("id", user.id).single() : { data: null }
+  const canApproveMarketing = ["marketing_manager", "superadmin"].includes(String(currentProfile?.role || "").trim().toLowerCase())
   const nowIso = new Date().toISOString()
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel)")
+    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel)")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -90,6 +101,23 @@ export default async function MarketingTransactionPromosPage({
     adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).eq("status", "draft"),
     adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).eq("is_auto_apply", true),
   ])
+
+  const approverIds = Array.from(
+    new Set(
+      (((rulesData as TransactionPromoRule[] | null) || [])).flatMap((rule) => [
+        String(rule.marketing_approved_by || "").trim(),
+        String(rule.finance_approved_by || "").trim(),
+      ]).filter(Boolean),
+    ),
+  )
+  const { data: approverProfiles } = approverIds.length
+    ? await adminSupabase.from("profiles").select("id, username").in("id", approverIds)
+    : { data: [] as Array<{ id: string | null; username: string | null }> }
+  const approverMap = new Map(
+    (((approverProfiles as Array<{ id: string | null; username: string | null }> | null) || []))
+      .map((profile) => [String(profile.id || "").trim(), String(profile.username || "").trim()] as const)
+      .filter(([id]) => Boolean(id)),
+  )
 
   const rules = ((rulesData as TransactionPromoRule[] | null) || [])
     .map((rule) => {
@@ -298,6 +326,16 @@ export default async function MarketingTransactionPromosPage({
                   <p className="mt-2 text-sm text-slate-500">Mode: {rule.is_auto_apply ? "Auto apply" : `Kode ${String(rule.code || "-")}`}</p>
                   <p className="mt-2 text-sm text-slate-500">Target: {rule.productTypes.map((productType) => getBookingProductLabel(productType)).join(", ") || "Belum dipilih"}</p>
                   <p className="mt-2 text-sm text-slate-500">Window: {formatDateWindow(rule.starts_at, rule.ends_at)}</p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Approval: marketing{" "}
+                    {rule.marketing_approved_at
+                      ? `${approverMap.get(String(rule.marketing_approved_by || "").trim()) || "Manager"} pada ${formatDateTime(rule.marketing_approved_at)}`
+                      : "belum"}{" "}
+                    | finance{" "}
+                    {rule.finance_approved_at
+                      ? `${approverMap.get(String(rule.finance_approved_by || "").trim()) || "Finance Manager"} pada ${formatDateTime(rule.finance_approved_at)}`
+                      : "belum"}
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${getStateBadgeClass(rule.liveState)}`}>
                       {getStateLabel(rule.liveState)}
@@ -321,6 +359,15 @@ export default async function MarketingTransactionPromosPage({
                   </button>
                 </form>
               </div>
+              {canApproveMarketing && !rule.marketing_approved_at ? (
+                <form action={approveTransactionPromoForMarketing} className="mb-5">
+                  <input type="hidden" name="rule_id" value={rule.id} />
+                  <input type="hidden" name="return_to" value="/marketing/transaction-promos" />
+                  <button className="rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100">
+                    Setujui dari sisi marketing
+                  </button>
+                </form>
+              ) : null}
               <TransactionPromoForm rule={rule} />
             </article>
           ))}
@@ -345,17 +392,12 @@ function TransactionPromoForm({
       <FormSection
         eyebrow={rule ? "Edit transaction promo" : "Create transaction promo"}
         title="Mulai dari identitas dan logika diskon"
-        description="Bagian ini menentukan nama campaign, kode promo, tipe diskon, dan status rule yang nanti tersambung ke checkout."
+        description="Bagian ini menentukan nama campaign, kode promo, dan tipe diskon. Setiap penyimpanan dari portal marketing akan kembali ke draft sampai disetujui marketing manager lalu finance manager."
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <Field label="Nama promo" name="name" defaultValue={String(rule?.name || "")} />
           <Field label="Kode promo" name="code" defaultValue={String(rule?.code || "")} required={false} />
-          <SelectField
-            label="Status rule"
-            name="status"
-            defaultValue={String(rule?.status || "draft")}
-            options={transactionPromoStatuses.map((status) => ({ value: status, label: getTransactionPromoStatusLabel(status) }))}
-          />
+          <ReadOnlyField label="Status saat ini" value={getTransactionPromoStatusLabel(rule?.status || "draft")} />
           <SelectField
             label="Jenis diskon"
             name="discount_type"
@@ -533,6 +575,15 @@ function TextAreaField({
   )
 }
 
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <label className="mb-2 block text-sm font-medium text-slate-700">{label}</label>
+      <div className="w-full rounded-[18px] border border-[#d8e6e1] bg-slate-50 px-4 py-3 text-sm text-slate-700">{value}</div>
+    </div>
+  )
+}
+
 function SelectField({
   label,
   name,
@@ -578,6 +629,13 @@ function formatDateWindow(startsAt: string | null, endsAt: string | null) {
   if (!startsAt && !endsAt) return "Tanpa jadwal"
   const format = (value: string | null) => (value ? new Date(value).toLocaleString("id-ID") : "sekarang")
   return `${format(startsAt)} - ${endsAt ? format(endsAt) : "tanpa batas"}`
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString("id-ID")
 }
 
 function getTransactionPromoLiveState(rule: Pick<TransactionPromoRule, "status" | "starts_at" | "ends_at">, nowIso: string): TransactionPromoLiveState {

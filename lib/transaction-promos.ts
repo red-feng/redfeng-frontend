@@ -23,6 +23,12 @@ export type TransactionPromoRuleRecord = {
   ends_at?: string | null
   status?: string | null
   is_auto_apply?: boolean | null
+  approved_by?: string | null
+  approved_at?: string | null
+  marketing_approved_by?: string | null
+  marketing_approved_at?: string | null
+  finance_approved_by?: string | null
+  finance_approved_at?: string | null
 }
 
 export type TransactionPromoRuleTargetRecord = {

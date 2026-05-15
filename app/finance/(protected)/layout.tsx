@@ -47,7 +47,7 @@ export default async function FinanceProtectedLayout({
   const workspaceSubtitle = isFinanceManager
     ? "Area overview payout, aging, outstanding, dan ritme kerja tim finance."
     : "Area eksekusi refund, payout, dan kontrol dana internal."
-  const [refundsResult, payoutsResult, internalChatUnreadBadgeCount] = await Promise.all([
+  const [refundsResult, payoutsResult, internalChatUnreadBadgeCount, { count: transactionPromoReadyCount }, { count: transactionPromoActiveCount }] = await Promise.all([
     adminSupabase
       .from("refund_requests")
       .select("id, status, created_at, updated_at"),
@@ -55,6 +55,8 @@ export default async function FinanceProtectedLayout({
       .from("payout_requests")
       .select("id, status, requested_at, processed_at, updated_at"),
     getInternalChatUnreadBadgeCount(adminSupabase, user.id),
+    adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).eq("status", "active"),
   ])
 
   const refundRows =
@@ -75,6 +77,7 @@ export default async function FinanceProtectedLayout({
           { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
+          { href: "/finance/transaction-promos", label: "Transaction Promos", badgeCount: transactionPromoReadyCount || 0, secondaryBadgeCount: transactionPromoActiveCount || 0 },
           { href: "/finance/settings", label: "Finance Settings" },
           { href: "/finance/team-accounts", label: "Team Accounts" },
         ]
@@ -83,6 +86,7 @@ export default async function FinanceProtectedLayout({
           { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
           { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
           { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
+          { href: "/finance/transaction-promos", label: "Transaction Promos", badgeCount: transactionPromoReadyCount || 0, secondaryBadgeCount: transactionPromoActiveCount || 0 },
         ]
 
   return (

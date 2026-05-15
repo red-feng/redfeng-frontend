@@ -9,9 +9,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { buildInternalMarketingEmail, isValidInternalUsername, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isMarketingPromoPlacementKey, marketingPromoPlacementKeys } from "@/lib/marketing-promo-placements"
-import { isMarketingApprovalRole, isMarketingManagedRole } from "@/lib/internal-roles"
+import { isFinanceApprovalRole, isMarketingApprovalRole, isMarketingManagedRole } from "@/lib/internal-roles"
 import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
-import { isTransactionPromoChannel, isTransactionPromoDiscountType, isTransactionPromoStatus, normalizeTransactionPromoCode } from "@/lib/transaction-promos"
+import { isTransactionPromoChannel, isTransactionPromoDiscountType, normalizeTransactionPromoCode } from "@/lib/transaction-promos"
 import {
   formatAccountErrorMessage,
   getInternalManagerActor,
@@ -50,6 +50,22 @@ async function ensureMarketingCampaignApprover(returnTo?: string) {
   const actor = await getMarketingActor(returnTo)
   if (!isMarketingApprovalRole(actor.role)) {
     redirectWithMessage(returnTo || "/marketing/email-campaigns", "Hanya marketing manager atau superadmin yang dapat menyetujui dan mengirim campaign.", "error")
+  }
+  return actor
+}
+
+async function ensureTransactionPromoMarketingApprover(returnTo?: string) {
+  const actor = await getInternalManagerActor(returnTo)
+  if (!isMarketingApprovalRole(actor.role)) {
+    redirectWithMessage(returnTo || "/marketing/transaction-promos", "Hanya marketing manager atau superadmin yang dapat menyetujui promo transaksi dari sisi marketing.", "error")
+  }
+  return actor
+}
+
+async function ensureTransactionPromoFinanceApprover(returnTo?: string) {
+  const actor = await getInternalManagerActor(returnTo)
+  if (!isFinanceApprovalRole(actor.role)) {
+    redirectWithMessage(returnTo || "/finance/transaction-promos", "Hanya finance manager atau superadmin yang dapat memberi persetujuan angka promo transaksi.", "error")
   }
   return actor
 }
@@ -660,7 +676,6 @@ export async function upsertTransactionPromoRule(formData: FormData) {
   const ruleId = getText(formData, "rule_id")
   const name = getText(formData, "name")
   const description = getOptionalText(formData, "description")
-  const requestedStatus = getText(formData, "status").toLowerCase() || "draft"
   const code = normalizeTransactionPromoCode(getText(formData, "code"))
   const discountType = getText(formData, "discount_type").toLowerCase()
   const channel = getText(formData, "channel").toLowerCase() || "public_web"
@@ -681,10 +696,6 @@ export async function upsertTransactionPromoRule(formData: FormData) {
 
   if (!name) {
     redirectWithMessage(returnTo, "Nama promo transaksi wajib diisi.", "error")
-  }
-
-  if (!isTransactionPromoStatus(requestedStatus)) {
-    redirectWithMessage(returnTo, "Status promo transaksi tidak valid.", "error")
   }
 
   if (!isTransactionPromoDiscountType(discountType)) {
@@ -715,35 +726,21 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     redirectWithMessage(returnTo, "Kuota per user tidak boleh melebihi kuota total.", "error")
   }
 
-  if (actor.role === "marketing" && requestedStatus !== "draft") {
-    redirectWithMessage(returnTo, "Role marketing hanya dapat menyimpan promo transaksi sebagai draft.", "error")
-  }
-
   const adminSupabase = createAdminClient()
-  let existingStatus: string | null = null
-  let existingApprovedBy: string | null = null
-  let existingApprovedAt: string | null = null
 
   if (ruleId) {
     const { data: existingRule, error: existingRuleError } = await adminSupabase
       .from("transaction_promo_rules")
-      .select("id, status, approved_by, approved_at")
+      .select("id")
       .eq("id", ruleId)
       .maybeSingle()
 
     if (existingRuleError || !existingRule) {
       redirectWithMessage(returnTo, existingRuleError?.message || "Promo transaksi tidak ditemukan.", "error")
     }
-
-    existingStatus = existingRule.status
-    existingApprovedBy = existingRule.approved_by
-    existingApprovedAt = existingRule.approved_at
   }
 
-  const nextStatus = actor.role === "marketing" ? "draft" : requestedStatus
-  const shouldStampApproval = actor.role !== "marketing" && nextStatus !== "draft"
   const nowIso = new Date().toISOString()
-  const approvalReset = actor.role === "marketing" && existingStatus && existingStatus !== "draft"
 
   const payload = {
     ...(ruleId ? { id: ruleId } : {}),
@@ -758,10 +755,14 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     quota_per_user: quotaPerUser,
     starts_at: startsAt,
     ends_at: endsAt,
-    status: nextStatus,
+    status: "draft",
     is_auto_apply: isAutoApply,
-    approved_by: shouldStampApproval ? actor.id : nextStatus === "draft" ? null : existingApprovedBy,
-    approved_at: shouldStampApproval ? nowIso : nextStatus === "draft" ? null : existingApprovedAt,
+    marketing_approved_by: null,
+    marketing_approved_at: null,
+    finance_approved_by: null,
+    finance_approved_at: null,
+    approved_by: null,
+    approved_at: null,
     updated_by: actor.id,
     updated_at: nowIso,
   }
@@ -809,25 +810,18 @@ export async function upsertTransactionPromoRule(formData: FormData) {
       scope: "marketing_content",
       section: "transaction_promos",
       name,
-      status: nextStatus,
+      status: "draft",
       isAutoApply,
       productTypes,
       channel,
-      approvalReset,
+      approvalReset: Boolean(ruleId),
     },
   })
 
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/transaction-promos")
-  redirectWithMessage(
-    returnTo,
-    ruleId
-      ? approvalReset
-        ? "Promo transaksi diperbarui dan dikembalikan ke draft untuk peninjauan ulang."
-        : "Promo transaksi berhasil diperbarui."
-      : "Promo transaksi berhasil dibuat.",
-    "success",
-  )
+  revalidatePath("/finance/transaction-promos")
+  redirectWithMessage(returnTo, ruleId ? "Promo transaksi diperbarui dan dikembalikan ke draft untuk peninjauan ulang." : "Promo transaksi berhasil dibuat sebagai draft.", "success")
 }
 
 export async function deleteTransactionPromoRule(formData: FormData) {
@@ -863,7 +857,134 @@ export async function deleteTransactionPromoRule(formData: FormData) {
 
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/transaction-promos")
+  revalidatePath("/finance/transaction-promos")
   redirectWithMessage(returnTo, "Promo transaksi berhasil dihapus.", "success")
+}
+
+export async function approveTransactionPromoForMarketing(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/transaction-promos")
+  const actor = await ensureTransactionPromoMarketingApprover(returnTo)
+  const ruleId = getText(formData, "rule_id")
+
+  if (!ruleId) {
+    redirectWithMessage(returnTo, "Promo transaksi tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: rule, error: ruleError } = await adminSupabase
+    .from("transaction_promo_rules")
+    .select("id, name, status, finance_approved_at")
+    .eq("id", ruleId)
+    .maybeSingle()
+
+  if (ruleError || !rule) {
+    redirectWithMessage(returnTo, ruleError?.message || "Promo transaksi tidak ditemukan.", "error")
+  }
+
+  if (String(rule.status || "").toLowerCase() === "active" && rule.finance_approved_at) {
+    redirectWithMessage(returnTo, "Promo transaksi ini sudah aktif dan telah lolos persetujuan finance.", "error")
+  }
+
+  const nowIso = new Date().toISOString()
+  const { error: updateError } = await adminSupabase
+    .from("transaction_promo_rules")
+    .update({
+      status: "approved",
+      marketing_approved_by: actor.id,
+      marketing_approved_at: nowIso,
+      finance_approved_by: null,
+      finance_approved_at: null,
+      approved_by: null,
+      approved_at: null,
+      updated_by: actor.id,
+      updated_at: nowIso,
+    })
+    .eq("id", ruleId)
+
+  if (updateError) {
+    redirectWithMessage(returnTo, updateError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: ruleId,
+    action: "approve_transaction_promo_marketing",
+    summary: `Promo transaksi ${rule.name || ruleId} lolos persetujuan marketing`,
+    metadata: {
+      scope: "marketing_content",
+      section: "transaction_promos",
+      status: "approved",
+    },
+  })
+
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/transaction-promos")
+  revalidatePath("/finance/transaction-promos")
+  redirectWithMessage(returnTo, "Promo transaksi berhasil disetujui dari sisi marketing dan siap direview finance.", "success")
+}
+
+export async function approveTransactionPromoForFinance(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/finance/transaction-promos")
+  const actor = await ensureTransactionPromoFinanceApprover(returnTo)
+  const ruleId = getText(formData, "rule_id")
+
+  if (!ruleId) {
+    redirectWithMessage(returnTo, "Promo transaksi tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: rule, error: ruleError } = await adminSupabase
+    .from("transaction_promo_rules")
+    .select("id, name, status, marketing_approved_at")
+    .eq("id", ruleId)
+    .maybeSingle()
+
+  if (ruleError || !rule) {
+    redirectWithMessage(returnTo, ruleError?.message || "Promo transaksi tidak ditemukan.", "error")
+  }
+
+  if (!rule.marketing_approved_at) {
+    redirectWithMessage(returnTo, "Promo transaksi harus lolos persetujuan marketing manager terlebih dahulu.", "error")
+  }
+
+  const nowIso = new Date().toISOString()
+  const { error: updateError } = await adminSupabase
+    .from("transaction_promo_rules")
+    .update({
+      status: "active",
+      finance_approved_by: actor.id,
+      finance_approved_at: nowIso,
+      approved_by: actor.id,
+      approved_at: nowIso,
+      updated_by: actor.id,
+      updated_at: nowIso,
+    })
+    .eq("id", ruleId)
+
+  if (updateError) {
+    redirectWithMessage(returnTo, updateError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: ruleId,
+    action: "approve_transaction_promo_finance",
+    summary: `Promo transaksi ${rule.name || ruleId} lolos persetujuan finance`,
+    metadata: {
+      scope: "finance_control",
+      section: "transaction_promos",
+      status: "active",
+    },
+  })
+
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/transaction-promos")
+  revalidatePath("/finance/transaction-promos")
+  redirectWithMessage(returnTo, "Promo transaksi berhasil diaktifkan setelah persetujuan finance.", "success")
 }
 
 export async function deleteMarketingPromo(formData: FormData) {

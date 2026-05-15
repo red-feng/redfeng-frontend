@@ -60,6 +60,12 @@ type BookingPromoSnapshot = {
   discount_amount?: number | null
   display_discount_amount?: number | null
   display_subtotal_before_discount?: number | null
+  approved_at?: string | null
+  approved_by_name?: string | null
+  marketing_approved_at?: string | null
+  marketing_approved_by_name?: string | null
+  finance_approved_at?: string | null
+  finance_approved_by_name?: string | null
 }
 
 type BookingParticipantRow = {
@@ -122,6 +128,16 @@ function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
   } catch {
     return null
   }
+}
+
+function formatPromoApprovalTime(value: string | null | undefined) {
+  if (!value) return "-"
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return "-"
+  return parsed.toLocaleString("id-ID", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  })
 }
 
 function isTripCompletedStatus(status: string | null) {
@@ -720,6 +736,24 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
                 <span className="font-semibold text-slate-900">{formatPackageMoney(displaySubtotal, displayCurrency, locale)}</span>
               </div>
             </div>
+            {(promoSnapshot?.marketing_approved_at || promoSnapshot?.finance_approved_at) ? (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
+                  <p className="text-sm text-slate-500">
+                    {locale === "en" ? "Marketing approval" : locale === "zh" ? "营销审批" : "Approval marketing"}
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">{formatPromoApprovalTime(promoSnapshot?.marketing_approved_at)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{promoSnapshot?.marketing_approved_by_name || "-"}</p>
+                </div>
+                <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
+                  <p className="text-sm text-slate-500">
+                    {locale === "en" ? "Finance approval" : locale === "zh" ? "财务审批" : "Approval finance"}
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">{formatPromoApprovalTime(promoSnapshot?.finance_approved_at || promoSnapshot?.approved_at)}</p>
+                  <p className="mt-1 text-xs text-slate-500">{promoSnapshot?.finance_approved_by_name || promoSnapshot?.approved_by_name || "-"}</p>
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 
