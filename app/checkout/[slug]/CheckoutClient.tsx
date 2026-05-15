@@ -236,6 +236,33 @@ type CheckoutPaymentPricing = {
   exchangeDate: string | null
 }
 
+type CheckoutPromoQuote = {
+  applied: boolean
+  source: "code" | "auto" | "none"
+  message: string | null
+  rule_id: string | null
+  rule_name: string | null
+  code: string | null
+  discount_amount: number
+  display_discount_amount: number
+}
+
+type CheckoutPromoPricing = {
+  subtotal_amount: number
+  subtotal_before_discount: number
+  total_amount: number
+  dp_amount: number
+  final_payment_amount: number
+  display_currency: string
+  display_subtotal_amount: number
+  display_subtotal_before_discount: number
+  display_admin_fee_amount: number
+  display_tax_amount: number
+  display_total_amount: number
+  display_dp_amount: number
+  display_final_payment_amount: number
+}
+
 export default function CheckoutClient({
   data,
   locale = "id",
@@ -270,6 +297,18 @@ export default function CheckoutClient({
   const [childCount, setChildCount] = useState(0)
   const [paymentMethod, setPaymentMethod] = useState<FinancePaymentMethod>("bank_transfer")
   const [paymentType, setPaymentType] = useState<"dp" | "full">("full")
+  const [promoCode, setPromoCode] = useState("")
+  const [promoState, setPromoState] = useState<{
+    loading: boolean
+    quote: CheckoutPromoQuote | null
+    pricing: CheckoutPromoPricing | null
+    error: string
+  }>({
+    loading: false,
+    quote: null,
+    pricing: null,
+    error: "",
+  })
   const minimumParticipants = Math.max(Number(data.minimal_peserta || 0), 1)
   const totalParticipants = adultCount + childCount
   const hasMetMinimumParticipants = totalParticipants >= minimumParticipants
@@ -306,6 +345,20 @@ export default function CheckoutClient({
   const localizedTotal = localizedSubtotal + localizedAdminFee + localizedTax
   const localizedDpAmount = Math.round(localizedTotal * 0.3)
   const localizedRemainingAmount = Math.max(localizedTotal - localizedDpAmount, 0)
+  const trimmedPromoCode = promoCode.trim()
+  const effectiveLocalizedSubtotal = promoState.pricing?.display_subtotal_amount ?? localizedSubtotal
+  const effectiveLocalizedSubtotalBeforeDiscount =
+    promoState.pricing?.display_subtotal_before_discount ?? localizedSubtotal
+  const effectiveLocalizedDiscountAmount = promoState.quote?.display_discount_amount ?? 0
+  const effectiveLocalizedTotal = promoState.pricing?.display_total_amount ?? localizedTotal
+  const effectiveLocalizedDpAmount = promoState.pricing?.display_dp_amount ?? localizedDpAmount
+  const effectiveLocalizedRemainingAmount =
+    promoState.pricing?.display_final_payment_amount ?? localizedRemainingAmount
+  const effectiveLocalizedAdminFee = promoState.pricing?.display_admin_fee_amount ?? localizedAdminFee
+  const effectiveLocalizedTax = promoState.pricing?.display_tax_amount ?? localizedTax
+  const effectiveGatewayTotal = promoState.pricing?.total_amount ?? total
+  const effectiveGatewayDpAmount = promoState.pricing?.dp_amount ?? dpAmount
+  const effectiveGatewayRemainingAmount = promoState.pricing?.final_payment_amount ?? remainingAmount
   const allPaymentMethodOptions: Array<{ value: FinancePaymentMethod; label: string; hint: string }> = [
     {
       value: "bank_transfer",
@@ -359,6 +412,79 @@ export default function CheckoutClient({
 
     checkSession()
   }, [supabase])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const quotePromo = async () => {
+      if (adultCount + childCount <= 0) {
+        setPromoState({
+          loading: false,
+          quote: null,
+          pricing: null,
+          error: "",
+        })
+        return
+      }
+
+      setPromoState((current) => ({
+        ...current,
+        loading: true,
+        error: "",
+      }))
+
+      try {
+        const response = await fetch("/api/bookings/promo-quote", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            package_id: data.id,
+            locale,
+            adult_count: adultCount,
+            child_count: childCount,
+            payment_method: resolveActiveCustomerPaymentMethod(paymentMethod),
+            promo_code: trimmedPromoCode,
+          }),
+        })
+
+        const payload = await response.json()
+        if (cancelled) return
+
+        if (!response.ok) {
+          setPromoState({
+            loading: false,
+            quote: null,
+            pricing: null,
+            error: payload.error || ui.bookingCreationIssue,
+          })
+          return
+        }
+
+        setPromoState({
+          loading: false,
+          quote: payload.promo || null,
+          pricing: payload.pricing || null,
+          error:
+            trimmedPromoCode && payload.promo && !payload.promo.applied
+              ? payload.promo.message || "Kode promo belum bisa dipakai."
+              : "",
+        })
+      } catch {
+        if (cancelled) return
+        setPromoState((current) => ({
+          ...current,
+          loading: false,
+          error: trimmedPromoCode ? "Gagal memeriksa promo saat ini." : "",
+        }))
+      }
+    }
+
+    void quotePromo()
+
+    return () => {
+      cancelled = true
+    }
+  }, [adultCount, childCount, data.id, locale, paymentMethod, trimmedPromoCode, ui.bookingCreationIssue])
 
   const effectivePickupDate = usesFixedDeparture ? fixedDepartureDate : pickupDate
   const fixedDepartureTooSoon = usesFixedDeparture && Boolean(fixedDepartureDate) && fixedDepartureDate < minimumBookingDate
@@ -432,6 +558,7 @@ export default function CheckoutClient({
           customer_phone: phone,
           payment_method: resolveActiveCustomerPaymentMethod(paymentMethod),
           payment_type: paymentType,
+          promo_code: trimmedPromoCode,
         }),
       })
 
@@ -711,6 +838,58 @@ export default function CheckoutClient({
               {ui.paymentMethodFootnote}
             </p>
           </div>
+
+          <div className="mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {locale === "id" ? "Kode promo" : locale === "en" ? "Promo code" : "Promo code"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {locale === "id"
+                    ? "Masukkan kode promo jika Anda punya. Auto promo juga akan ikut dicek."
+                    : locale === "en"
+                      ? "Enter your promo code if you have one. Auto promos are also checked."
+                      : "Enter your promo code if you have one. Auto promos are also checked."}
+                </p>
+              </div>
+              {promoState.loading ? (
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">
+                  {locale === "id" ? "Cek promo" : locale === "en" ? "Checking" : "Checking"}
+                </span>
+              ) : null}
+            </div>
+            <input
+              value={promoCode}
+              onChange={(event) => setPromoCode(event.target.value)}
+              placeholder={locale === "id" ? "Contoh: HEMATLIBURAN" : locale === "en" ? "Example: HEMATLIBURAN" : "Example: HEMATLIBURAN"}
+              className="mt-4 w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm uppercase outline-none ring-orange-500 transition focus:ring-2"
+            />
+            {promoState.error ? (
+              <p className="mt-3 text-xs text-rose-600">{promoState.error}</p>
+            ) : promoState.quote?.applied ? (
+              <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                <p className="font-semibold">
+                  {promoState.quote.rule_name || (promoState.quote.source === "auto" ? "Auto promo" : "Promo aktif")}
+                </p>
+                <p className="mt-1">
+                  {locale === "id"
+                    ? `Potongan ${formatPackageMoney(effectiveLocalizedDiscountAmount, data.currency, locale)} sedang dipakai di checkout ini.`
+                    : locale === "en"
+                      ? `A discount of ${formatPackageMoney(effectiveLocalizedDiscountAmount, data.currency, locale)} is applied to this checkout.`
+                      : `A discount of ${formatPackageMoney(effectiveLocalizedDiscountAmount, data.currency, locale)} is applied to this checkout.`}
+                </p>
+              </div>
+            ) : trimmedPromoCode ? (
+              <p className="mt-3 text-xs text-slate-500">
+                {locale === "id"
+                  ? "Kode promo sudah dicek, tetapi belum memberi potongan untuk transaksi ini."
+                  : locale === "en"
+                    ? "The promo code has been checked, but it does not apply to this transaction."
+                    : "The promo code has been checked, but it does not apply to this transaction."}
+              </p>
+            ) : null}
+          </div>
         </section>
 
         <aside className="space-y-6 lg:sticky lg:top-6 lg:h-fit">
@@ -774,14 +953,30 @@ export default function CheckoutClient({
                   </div>
                   <div className="flex items-center justify-between">
                      <span>{formatCopy(ui.packageSubtotal, { currency: data.currency || "IDR" })}</span>
-                    <span className="font-semibold text-slate-900">{formatPackageMoney(localizedSubtotal, data.currency, locale)}</span>
+                    <span className="font-semibold text-slate-900">{formatPackageMoney(effectiveLocalizedSubtotalBeforeDiscount, data.currency, locale)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                     <span>{formatCopy(ui.paymentSubtotal, { currency: data.currency || "IDR" })}</span>
-                     <span className="font-semibold text-slate-900">
-                       {formatPackageMoney(localizedSubtotal, data.currency, locale)}
-                     </span>
+                      <span>{formatCopy(ui.paymentSubtotal, { currency: data.currency || "IDR" })}</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatPackageMoney(effectiveLocalizedSubtotalBeforeDiscount, data.currency, locale)}
+                      </span>
                   </div>
+                  {effectiveLocalizedDiscountAmount > 0 ? (
+                    <div className="mt-2 flex items-center justify-between text-emerald-700">
+                      <span>{locale === "id" ? "Potongan promo" : locale === "en" ? "Promo discount" : "Promo discount"}</span>
+                      <span className="font-semibold">
+                        -{formatPackageMoney(effectiveLocalizedDiscountAmount, data.currency, locale)}
+                      </span>
+                    </div>
+                  ) : null}
+                  {effectiveLocalizedDiscountAmount > 0 ? (
+                    <div className="mt-2 flex items-center justify-between">
+                      <span>{locale === "id" ? "Subtotal setelah promo" : locale === "en" ? "Subtotal after promo" : "Subtotal after promo"}</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatPackageMoney(effectiveLocalizedSubtotal, data.currency, locale)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="mt-2 flex items-center justify-between">
                      <span>
                        {formatCopy(ui.adminFeeMethod, {
@@ -793,29 +988,29 @@ export default function CheckoutClient({
                                : ui.bankTransfer.toLowerCase(),
                          percent: customerAdminFeePercent,
                        })}
-                     </span>
-                     <span className="font-semibold text-slate-900">
-                       {formatPackageMoney(localizedAdminFee, data.currency, locale)}
-                     </span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                     <span>{formatCopy(ui.tax, { percent: financeSettings.customerTaxPercent })}</span>
-                     <span className="font-semibold text-slate-900">
-                       {formatPackageMoney(localizedTax, data.currency, locale)}
-                     </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">
-                     <span>{paymentType === "dp" ? ui.payNow : t.totalPay}</span>
-                     <span>
-                       {formatPackageMoney(
-                         paymentType === "dp" ? localizedDpAmount : localizedTotal,
-                         data.currency,
-                         locale,
-                       )}
-                     </span>
+                      </span>
+                      <span className="font-semibold text-slate-900">
+                        {formatPackageMoney(effectiveLocalizedAdminFee, data.currency, locale)}
+                      </span>
                    </div>
-                   {paymentType === "dp" ? (
-                     <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
+                   <div className="mt-2 flex items-center justify-between">
+                      <span>{formatCopy(ui.tax, { percent: financeSettings.customerTaxPercent })}</span>
+                      <span className="font-semibold text-slate-900">
+                        {formatPackageMoney(effectiveLocalizedTax, data.currency, locale)}
+                      </span>
+                   </div>
+                   <div className="mt-3 flex items-center justify-between text-base font-bold text-slate-900">
+                      <span>{paymentType === "dp" ? ui.payNow : t.totalPay}</span>
+                      <span>
+                        {formatPackageMoney(
+                          paymentType === "dp" ? effectiveLocalizedDpAmount : effectiveLocalizedTotal,
+                          data.currency,
+                          locale,
+                        )}
+                      </span>
+                    </div>
+                    {paymentType === "dp" ? (
+                      <div className="mt-2 flex items-center justify-between text-sm text-slate-600">
                         <span>
                           {locale === "id"
                             ? "Sisa pelunasan"
@@ -823,26 +1018,26 @@ export default function CheckoutClient({
                               ? "Remaining final payment"
                               : "剩余尾款"}
                         </span>
-                       <span className="font-semibold text-slate-900">
-                         {formatPackageMoney(localizedRemainingAmount, data.currency, locale)}
-                       </span>
-                     </div>
-                   ) : null}
+                        <span className="font-semibold text-slate-900">
+                          {formatPackageMoney(effectiveLocalizedRemainingAmount, data.currency, locale)}
+                        </span>
+                      </div>
+                    ) : null}
                    <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
                      <div className="flex items-center justify-between gap-4">
-                       <span>{formatCopy(ui.gatewayProcessed, { currency: paymentPricing.currency })}</span>
-                       <span className="font-semibold text-slate-900">
-                         {formatIdrMoney(paymentType === "dp" ? dpAmount : total)}
-                       </span>
-                     </div>
-                     {paymentType === "dp" ? (
-                       <div className="mt-2 flex items-center justify-between gap-4">
-                         <span>{ui.gatewayRemaining}</span>
-                         <span className="font-semibold text-slate-900">
-                           {formatIdrMoney(remainingAmount)}
-                         </span>
-                       </div>
-                     ) : null}
+                        <span>{formatCopy(ui.gatewayProcessed, { currency: paymentPricing.currency })}</span>
+                        <span className="font-semibold text-slate-900">
+                          {formatIdrMoney(paymentType === "dp" ? effectiveGatewayDpAmount : effectiveGatewayTotal)}
+                        </span>
+                      </div>
+                      {paymentType === "dp" ? (
+                        <div className="mt-2 flex items-center justify-between gap-4">
+                          <span>{ui.gatewayRemaining}</span>
+                          <span className="font-semibold text-slate-900">
+                            {formatIdrMoney(effectiveGatewayRemainingAmount)}
+                          </span>
+                        </div>
+                      ) : null}
                    </div>
                 </div>
               </div>
@@ -867,7 +1062,7 @@ export default function CheckoutClient({
               </p>
               <p className="mt-1 truncate text-lg font-bold text-slate-950">
                 {formatPackageMoney(
-                  paymentType === "dp" ? localizedDpAmount : localizedTotal,
+                  paymentType === "dp" ? effectiveLocalizedDpAmount : effectiveLocalizedTotal,
                   data.currency,
                   locale,
                 )}

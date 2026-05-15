@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { calculateBookingAmounts, getFinanceSettings, resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
-import { convertCurrencyAmount, getLiveLocalizedPackagePricing } from "@/lib/currency-rates"
+import { resolveActiveCustomerPaymentMethod } from "@/lib/finance/settings"
 import { validateBookingWindow } from "@/lib/booking/bookingWindow"
 import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
@@ -9,6 +8,7 @@ import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { resolveBookingProductType } from "@/lib/booking-products"
+import { resolvePackageCheckoutPromoPricing } from "@/lib/transaction-promo-checkout"
 
 function generateBookingCode() {
   const random = Math.floor(1000 + Math.random() * 9000)
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       customer_phone,
       payment_method,
       payment_type,
+      promo_code,
     } = body
 
     const supabase = createClient(
@@ -78,24 +79,6 @@ export async function POST(req: Request) {
     }
 
     const activeLocale = normalizeLocale(locale)
-    const localizedPricing = await getLiveLocalizedPackagePricing({
-      locale: activeLocale,
-      defaultLanguage: packagePricing.default_language,
-      publishedLanguages: packagePricing.published_languages,
-      baseCurrency: packagePricing.currency,
-      baseAdultPrice: packagePricing.price_adult,
-      baseChildPrice: packagePricing.price_child,
-    })
-    const adultPriceCharge = await convertCurrencyAmount({
-      amount: Number(packagePricing.price_adult || 0),
-      fromCurrency: packagePricing.currency || "IDR",
-      toCurrency: "IDR",
-    })
-    const childPriceCharge = await convertCurrencyAmount({
-      amount: Number(packagePricing.price_child || 0),
-      fromCurrency: packagePricing.currency || "IDR",
-      toCurrency: "IDR",
-    })
 
     if (isQuotaTravelStyle(packagePricing.travel_style)) {
       if (!packagePricing.departure_date) {
@@ -150,16 +133,29 @@ export async function POST(req: Request) {
       }
     }
 
-    const financeSettings = await getFinanceSettings(
-      supabase as unknown as Parameters<typeof getFinanceSettings>[0],
-    )
     const bookingProductType = resolveBookingProductType({ packageId: package_id })
-    const subtotalAmount =
-      Number(adultPriceCharge.amount || 0) * Number(adult_count || 0) +
-      Number(childPriceCharge.amount || 0) * Number(child_count || 0)
     const normalizedPaymentMethod = resolveActiveCustomerPaymentMethod(payment_method)
     const normalizedPaymentType = String(payment_type || "full").trim().toLowerCase() === "dp" ? "dp" : "full"
-    const priceBreakdown = calculateBookingAmounts(subtotalAmount, normalizedPaymentMethod, financeSettings)
+    const pricingWithPromo = await resolvePackageCheckoutPromoPricing({
+      supabase,
+      packageId: package_id,
+      locale: activeLocale,
+      adultCount: Number(adult_count || 0),
+      childCount: Number(child_count || 0),
+      paymentMethod: normalizedPaymentMethod,
+      promoCode: promo_code,
+      customerId: user.id,
+      customerEmail: user.email || customer_email,
+    })
+
+    if (String(promo_code || "").trim() && !pricingWithPromo.promo.applied) {
+      return NextResponse.json(
+        { error: pricingWithPromo.promo.message || "Kode promo tidak dapat dipakai." },
+        { status: 400 },
+      )
+    }
+
+    const priceBreakdown = pricingWithPromo.paymentBreakdown
 
     const windowCheck = validateBookingWindow(pickup_date)
     if (!windowCheck.allowed) {
@@ -200,13 +196,11 @@ export async function POST(req: Request) {
         payment_type: normalizedPaymentType,
         payment_status: "pending",
         escrow_status: "pending_payment",
-        display_currency: localizedPricing.currency,
-        display_subtotal_amount:
-          Number(localizedPricing.priceAdult || 0) * Number(adult_count || 0) +
-          Number(localizedPricing.priceChild || 0) * Number(child_count || 0),
-        display_price_adult: Number(localizedPricing.priceAdult || 0),
-        display_price_child: Number(localizedPricing.priceChild || 0),
-        exchange_rate_date: adultPriceCharge.date || childPriceCharge.date,
+        display_currency: pricingWithPromo.displayBreakdown.currency,
+        display_subtotal_amount: pricingWithPromo.displayBreakdown.subtotalAmount,
+        display_price_adult: Number(pricingWithPromo.localizedPricing.priceAdult || 0),
+        display_price_child: Number(pricingWithPromo.localizedPricing.priceChild || 0),
+        exchange_rate_date: pricingWithPromo.paymentPricing.exchangeDate,
         subtotal_amount: priceBreakdown.subtotalAmount,
         customer_admin_fee_amount: priceBreakdown.customerAdminFeeAmount,
         customer_tax_amount: priceBreakdown.customerTaxAmount,
@@ -216,6 +210,12 @@ export async function POST(req: Request) {
         final_payment_amount: priceBreakdown.finalPaymentAmount,
         dp_amount: priceBreakdown.dpAmount,
         payment_method: priceBreakdown.paymentMethod,
+        promo_rule_id: pricingWithPromo.promo.rule?.id || null,
+        promo_code: pricingWithPromo.promo.normalizedCode,
+        promo_discount_amount: pricingWithPromo.promo.applied
+          ? pricingWithPromo.beforePromo.paymentSubtotalAmount - pricingWithPromo.paymentBreakdown.subtotalAmount
+          : 0,
+        promo_snapshot: pricingWithPromo.promoSnapshot || {},
       })
       .select()
       .single()
@@ -227,11 +227,43 @@ export async function POST(req: Request) {
       )
     }
 
+    if (pricingWithPromo.promo.applied && pricingWithPromo.promo.rule?.id) {
+      const { error: redemptionError } = await supabase.from("transaction_promo_redemptions").insert({
+        rule_id: pricingWithPromo.promo.rule.id,
+        booking_id: booking.id,
+        user_id: user.id,
+        email: user.email || customer_email || null,
+        product_type: bookingProductType,
+        product_id: package_id,
+        discount_amount: pricingWithPromo.beforePromo.paymentSubtotalAmount - pricingWithPromo.paymentBreakdown.subtotalAmount,
+        currency: "IDR",
+        status: "reserved",
+        metadata: {
+          source: "package_checkout",
+          promoCode: pricingWithPromo.promo.normalizedCode,
+          paymentMethod: normalizedPaymentMethod,
+          paymentType: normalizedPaymentType,
+          subtotalBeforeDiscount: pricingWithPromo.beforePromo.paymentSubtotalAmount,
+          subtotalAfterDiscount: pricingWithPromo.paymentBreakdown.subtotalAmount,
+        },
+      })
+
+      if (redemptionError) {
+        await deleteDraftBooking(supabase, booking.id)
+        return NextResponse.json(
+          { error: redemptionError.message || "Gagal mengunci kuota promo untuk booking ini." },
+          { status: 500 },
+        )
+      }
+    }
+
     return NextResponse.json({
       booking_id: booking.id,
       payment_type: booking.payment_type,
       dp_amount: booking.dp_amount,
       total_amount: booking.total_amount,
+      promo_applied: Boolean(pricingWithPromo.promo.applied),
+      promo_discount_amount: booking.promo_discount_amount || 0,
     })
   } catch (error) {
     console.error(error)
