@@ -96,6 +96,8 @@ export default async function FinanceDashboardPage({
   const payoutsHref = portal === "superadmin" ? "/superadmin/finance-payouts" : "/finance/payouts"
   const settingsHref = portal === "superadmin" ? "/superadmin/finance-settings" : "/finance/settings"
   const auditLogHref = portal === "superadmin" ? "/superadmin/audit-log" : "/finance/audit-log"
+  const transactionPromosHref = portal === "superadmin" ? "/superadmin/finance-transaction-promos" : "/finance/transaction-promos"
+  const internalChatHref = portal === "superadmin" ? "/superadmin/internal-chat" : "/finance/internal-chat"
 
   const { data: payoutsData } = await adminSupabase
     .from("payout_requests")
@@ -285,8 +287,8 @@ export default async function FinanceDashboardPage({
     const heroBody = isSuperadminPreview
       ? "Preview ini membantu superadmin membaca beban outstanding, payout yang mulai macet, dan kesiapan keputusan finansial tanpa berpindah ke workspace finance utama."
       : "Dashboard ini membantu finance manager membaca beban outstanding, payout yang mulai macet, dan aktivitas tim finance tanpa harus memakai akses superadmin."
-    const managerFocusLabel = isSuperadminPreview ? "Manager focus" : "Finance pulse"
-    const controlHeading = isSuperadminPreview ? "Executive lanes" : "Control lanes"
+    const managerFocusLabel = isSuperadminPreview ? "Pulse finance" : "Pulse finance"
+    const controlHeading = isSuperadminPreview ? "Jalur eksekutif" : "Jalur kontrol"
     const controlTitle = isSuperadminPreview ? "Jalur review domain finance" : "Jalur kontrol finance hari ini"
     const controlLinks = [
       {
@@ -891,7 +893,7 @@ export default async function FinanceDashboardPage({
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
             <div className="max-w-3xl">
               <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
-                Finance Command Center
+                Finance Workspace
               </span>
               <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
                 Kelola payout approval merchant dari workspace finance.
@@ -902,7 +904,7 @@ export default async function FinanceDashboardPage({
             </div>
 
             <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
-              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Live payout snapshot</p>
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Pulse finance</p>
               <div className="mt-5 grid gap-4">
                 <div>
                   <p className="text-sm text-orange-50/80">Pending</p>
@@ -937,10 +939,10 @@ export default async function FinanceDashboardPage({
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Finance priorities</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Prioritas finance</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Prioritas payout hari ini</h2>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Dashboard depan finance lebih berguna jika langsung menunjukkan fokus kerja hari ini, bukan mengulang menu navigasi yang sudah ada di header.
+                Workspace finance sekarang berdiri sendiri, jadi fokus utamanya adalah membaca queue yang bergerak, payout yang mulai aging, dan refund yang perlu keputusan cepat.
               </p>
             </div>
 
@@ -1007,7 +1009,96 @@ export default async function FinanceDashboardPage({
             </div>
           </div>
 
-          <div className="grid gap-4 sm:gap-6" />
+          <div className="grid gap-4 sm:gap-6">
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Jalur kontrol</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Ruang kerja finance hari ini</h2>
+              <div className="mt-5 grid gap-3">
+                <Link
+                  href={payoutsHref}
+                  className="rounded-[22px] border border-slate-950 bg-slate-950 px-5 py-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  <span className="block">Buka payout queue</span>
+                  <span className="mt-1 block text-xs leading-6 text-white/80">
+                    Fokus utama untuk approve, processing, dan payout yang mulai aging.
+                  </span>
+                </Link>
+                <Link
+                  href={refundsHref}
+                  className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                >
+                  <span className="block">Buka auto review refund</span>
+                  <span className="mt-1 block text-xs leading-6 text-slate-500">
+                    Tinjau kasus DP overdue yang paling sensitif ke customer.
+                  </span>
+                </Link>
+                <Link
+                  href={transactionPromosHref}
+                  className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                >
+                  <span className="block">Tinjau promo transaksi</span>
+                  <span className="mt-1 block text-xs leading-6 text-slate-500">
+                    Pastikan rule diskon yang aktif tetap aman terhadap margin dan payout.
+                  </span>
+                </Link>
+                <Link
+                  href={internalChatHref}
+                  className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                >
+                  <span className="block">Buka internal chat</span>
+                  <span className="mt-1 block text-xs leading-6 text-slate-500">
+                    Gunakan jalur chat internal untuk koordinasi cepat dengan operations, marketing, atau manager.
+                  </span>
+                </Link>
+                {canManageFinanceSettings ? (
+                  <Link
+                    href={settingsHref}
+                    className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                  >
+                    <span className="block">Buka finance settings</span>
+                    <span className="mt-1 block text-xs leading-6 text-slate-500">
+                      Cocokkan komisi, fee transfer, dan aturan release dana dengan kebijakan aktif.
+                    </span>
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Posisi dana</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Ringkasan arus dana customer</h2>
+              <div className="mt-6 grid gap-4">
+                {[
+                  {
+                    label: "Transaksi customer",
+                    value: formatMoney(grossCustomerTransactionTotal),
+                    note: "Total dana customer yang sudah tercatat masuk ke Red Feng.",
+                  },
+                  {
+                    label: "Dana tertahan",
+                    value: formatMoney(customerHeldFundsTotal),
+                    note: "Dana yang masih berada di escrow dan belum selesai ke merchant.",
+                  },
+                  {
+                    label: "Sudah paid out",
+                    value: formatMoney(paidOutFundsTotal),
+                    note: "Dana customer yang sudah selesai diteruskan ke merchant.",
+                  },
+                  {
+                    label: "Fee + tax terkumpul",
+                    value: formatMoney(customerAdminFeeCollectedTotal + customerTaxCollectedTotal),
+                    note: "Akumulasi admin fee dan tax customer dari transaksi yang sudah masuk.",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] p-4 sm:rounded-[22px]">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{item.label}</p>
+                    <p className="mt-3 text-2xl font-semibold text-slate-950">{item.value}</p>
+                    <p className="mt-2 text-xs leading-6 text-slate-500">{item.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </main>

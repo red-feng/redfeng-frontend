@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation"
-import AdminNavLinks from "@/app/components/AdminNavLinks"
+import AdminSidebarShell from "@/app/components/AdminSidebarShell"
 import FinanceNavSeenTracker from "@/app/components/FinanceNavSeenTracker"
-import SignOutButton from "@/app/components/SignOutButton"
 import { getInternalChatUnreadBadgeCount } from "@/lib/internal-chat/badge"
 import { formatFinanceCode } from "@/lib/merchant-code"
 import { buildPortalSessionError } from "@/lib/portal-session"
@@ -43,10 +42,6 @@ export default async function FinanceProtectedLayout({
   const isFinanceManager = profile.role === "finance_manager"
   const financeCode = formatFinanceCode(user.id)
   const roleLabel = getRoleLabel(profile.role)
-  const workspaceTitle = isFinanceManager ? "Finance Manager Portal" : "Finance Portal"
-  const workspaceSubtitle = isFinanceManager
-    ? "Area overview payout, aging, outstanding, dan ritme kerja tim finance."
-    : "Area eksekusi refund, payout, dan kontrol dana internal."
   const [refundsResult, payoutsResult, internalChatUnreadBadgeCount, { count: transactionPromoReadyCount }, { count: transactionPromoActiveCount }] = await Promise.all([
     adminSupabase
       .from("refund_requests")
@@ -72,62 +67,49 @@ export default async function FinanceProtectedLayout({
   const payoutBadgeCount = payoutRows.length
 
   const financeNav = isFinanceManager
-      ? [
-          { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
-          { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
-          { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
-          { href: "/finance/transaction-promos", label: "Transaction Promos", badgeCount: transactionPromoReadyCount || 0, secondaryBadgeCount: transactionPromoActiveCount || 0 },
-          { href: "/finance/settings", label: "Finance Settings" },
-          { href: "/finance/team-accounts", label: "Team Accounts" },
-        ]
-      : [
-          { href: "/finance/dashboard", label: "Dashboard" },
-          { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
-          { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
-          { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
-          { href: "/finance/transaction-promos", label: "Transaction Promos", badgeCount: transactionPromoReadyCount || 0, secondaryBadgeCount: transactionPromoActiveCount || 0 },
-        ]
+    ? [
+        { label: "FINANCE" },
+        { href: "/finance/dashboard", label: "Dashboard", badgeCount: 0 },
+        { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
+        { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
+        {
+          href: "/finance/transaction-promos",
+          label: "Transaction Promos",
+          badgeCount: transactionPromoReadyCount || 0,
+          secondaryBadgeCount: transactionPromoActiveCount || 0,
+        },
+        { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
+        { label: "SISTEM" },
+        { href: "/finance/settings", label: "Finance Settings" },
+        { href: "/finance/team-accounts", label: "Team Accounts" },
+      ]
+    : [
+        { label: "FINANCE" },
+        { href: "/finance/dashboard", label: "Dashboard", badgeCount: 0 },
+        { href: "/finance/refunds", label: "Refund Queue", badgeCount: refundBadgeCount },
+        { href: "/finance/payouts", label: "Payout Queue", badgeCount: payoutBadgeCount },
+        {
+          href: "/finance/transaction-promos",
+          label: "Transaction Promos",
+          badgeCount: transactionPromoReadyCount || 0,
+          secondaryBadgeCount: transactionPromoActiveCount || 0,
+        },
+        { href: "/finance/internal-chat", label: "Internal Chat", badgeCount: internalChatUnreadBadgeCount },
+      ]
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)]">
       <FinanceNavSeenTracker />
-      <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-8 lg:px-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500 sm:px-4">
-                  {workspaceTitle}
-                </p>
-                <p className="mt-1 text-sm font-semibold text-slate-950">
-                  {isFinanceManager ? "Overview finance manager Red Feng" : "Workspace finance internal Red Feng"}
-                </p>
-                <p className="text-xs text-slate-500">{workspaceSubtitle}</p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-orange-600">
-                    {financeCode}
-                  </span>
-                  <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                    {roleLabel}
-                  </span>
-                </div>
-              </div>
-              <div className="flex w-full items-center gap-2 md:w-auto">
-                <SignOutButton
-                  portal="finance"
-                  redirectTo="https://app.redfeng.co/finance/login"
-                  className="w-full rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 md:w-auto"
-                />
-              </div>
-            </div>
-            <nav className="overflow-x-auto pb-1">
-              <AdminNavLinks items={financeNav} />
-            </nav>
-          </div>
-        </div>
-      </header>
-      {children}
+      <AdminSidebarShell
+        adminCode={financeCode}
+        isOperationsManager={false}
+        items={financeNav}
+        portal="finance"
+        roleLabel={roleLabel}
+        showFullBrand
+      >
+        {children}
+      </AdminSidebarShell>
     </div>
   )
 }
