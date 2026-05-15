@@ -523,6 +523,14 @@ export default async function MarketingDashboardPage({
                   </span>
                 </Link>
               ) : null}
+              {!isSuperadminPreview ? (
+                <Link
+                  href="/marketing/internal-chat"
+                  className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
+                >
+                  Buka internal chat untuk koordinasi cepat dengan tim marketing, admin, dan finance
+                </Link>
+              ) : null}
               <Link
                 href={isSuperadminPreview ? "/superadmin/marketing-inspiration" : "/marketing/inspiration"}
                 className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900 transition hover:border-orange-200 hover:bg-orange-50/40"
