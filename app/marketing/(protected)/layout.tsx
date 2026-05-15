@@ -40,8 +40,10 @@ export default async function MarketingProtectedLayout({
   const [
     { count: activeSubscribers },
     { count: promoCount },
+    { count: transactionPromoCount },
     { count: articleCount },
     { count: draftLikeInactivePromos },
+    { count: queuedTransactionPromos },
     { count: draftLikeInactiveArticles },
     { count: draftCampaignCount },
     { count: approvedCampaignCount },
@@ -49,8 +51,10 @@ export default async function MarketingProtectedLayout({
   ] = await Promise.all([
     adminSupabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", true),
+    adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", true),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("is_active", false),
+    adminSupabase.from("transaction_promo_rules").select("id", { count: "exact", head: true }).in("status", ["draft", "approved"]),
     adminSupabase.from("marketing_inspiration_articles").select("id", { count: "exact", head: true }).eq("is_active", false),
     adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "draft"),
     adminSupabase.from("marketing_newsletter_campaigns").select("id", { count: "exact", head: true }).eq("status", "approved"),
@@ -71,6 +75,12 @@ export default async function MarketingProtectedLayout({
           secondaryBadgeCount: approvedCampaignCount || 0,
         },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
+        {
+          href: "/marketing/transaction-promos",
+          label: "Transaction Promos",
+          badgeCount: transactionPromoCount || 0,
+          secondaryBadgeCount: queuedTransactionPromos || 0,
+        },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {
           href: "/marketing/inspiration",
@@ -95,6 +105,12 @@ export default async function MarketingProtectedLayout({
           secondaryBadgeCount: approvedCampaignCount || 0,
         },
         { href: "/marketing/promos", label: "Promo Content", badgeCount: promoCount || 0, secondaryBadgeCount: draftLikeInactivePromos || 0 },
+        {
+          href: "/marketing/transaction-promos",
+          label: "Transaction Promos",
+          badgeCount: transactionPromoCount || 0,
+          secondaryBadgeCount: queuedTransactionPromos || 0,
+        },
         { href: "/marketing/promo-analytics", label: "Promo Analytics" },
         {
           href: "/marketing/inspiration",

@@ -9,6 +9,7 @@ import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { markTransactionPromoRedemptionsApplied } from "@/lib/transaction-promo-redemptions"
 
 type LocalizedPackageEmailRow = {
   title?: string | null
@@ -181,6 +182,8 @@ export async function POST(req: Request) {
           gateway_payment_method: gatewayPaymentMethod || null,
         })
         .eq("id", booking.id)
+
+      await markTransactionPromoRedemptionsApplied(supabase, booking.id)
 
       if (resolvedPaymentType !== "dp") {
         const queueResult = await queueBookingToFinance({

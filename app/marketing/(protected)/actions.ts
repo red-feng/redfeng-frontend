@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { sendNewsletterCampaign } from "@/lib/marketing-newsletter-campaigns"
 import { isMarketingPromoStatus, shouldPromoBeIndexable } from "@/lib/marketing-promo-status"
+import { normalizeBookingProductType } from "@/lib/booking-products"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { buildInternalMarketingEmail, isValidInternalUsername, normalizeInternalUsername } from "@/lib/internal-auth"
 import { isMarketingPromoPlacementKey, marketingPromoPlacementKeys } from "@/lib/marketing-promo-placements"
 import { isMarketingApprovalRole, isMarketingManagedRole } from "@/lib/internal-roles"
 import { bootstrapInternalChatForNewAccount } from "@/lib/internal-chat/bootstrap"
+import { isTransactionPromoChannel, isTransactionPromoDiscountType, isTransactionPromoStatus, normalizeTransactionPromoCode } from "@/lib/transaction-promos"
 import {
   formatAccountErrorMessage,
   getInternalManagerActor,
@@ -65,6 +67,22 @@ function parseSortOrder(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function parseOptionalPositiveInteger(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  const parsed = Number(raw)
+  if (!Number.isInteger(parsed) || parsed <= 0) return null
+  return parsed
+}
+
+function parseOptionalNonNegativeNumber(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed < 0) return null
+  return parsed
+}
+
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) || "").trim()
 }
@@ -76,6 +94,17 @@ function getSelectedPromoPlacements(formData: FormData) {
     .filter(isMarketingPromoPlacementKey)
 
   return Array.from(new Set(selected.length ? selected : [...marketingPromoPlacementKeys]))
+}
+
+function getSelectedTransactionPromoProductTypes(formData: FormData) {
+  return Array.from(
+    new Set(
+      formData
+        .getAll("product_types")
+        .map((value) => normalizeBookingProductType(String(value || "").trim()))
+        .filter((value): value is NonNullable<ReturnType<typeof normalizeBookingProductType>> => Boolean(value)),
+    ),
+  )
 }
 
 function parseDateTimeValue(value: FormDataEntryValue | null) {
@@ -623,6 +652,218 @@ export async function upsertMarketingPromo(formData: FormData) {
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/promos")
   redirectWithMessage(returnTo, promoId ? "Promo berhasil diperbarui." : "Promo berhasil dibuat.", "success")
+}
+
+export async function upsertTransactionPromoRule(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/transaction-promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const ruleId = getText(formData, "rule_id")
+  const name = getText(formData, "name")
+  const description = getOptionalText(formData, "description")
+  const requestedStatus = getText(formData, "status").toLowerCase() || "draft"
+  const code = normalizeTransactionPromoCode(getText(formData, "code"))
+  const discountType = getText(formData, "discount_type").toLowerCase()
+  const channel = getText(formData, "channel").toLowerCase() || "public_web"
+  const startsAt = parseDateTimeValue(formData.get("starts_at"))
+  const endsAt = parseDateTimeValue(formData.get("ends_at"))
+  const productTypes = getSelectedTransactionPromoProductTypes(formData)
+  const isAutoApply = String(formData.get("is_auto_apply") || "") === "on"
+  const discountValue = parseOptionalNonNegativeNumber(formData.get("discount_value"))
+  const maxDiscountAmount = parseOptionalNonNegativeNumber(formData.get("max_discount_amount"))
+  const minimumOrderAmount = parseOptionalNonNegativeNumber(formData.get("minimum_order_amount")) ?? 0
+  const quotaTotal = parseOptionalPositiveInteger(formData.get("quota_total"))
+  const quotaPerUser = parseOptionalPositiveInteger(formData.get("quota_per_user"))
+  const productId = getOptionalText(formData, "product_id")
+  const productReference = getOptionalText(formData, "product_reference")
+  const merchantId = getOptionalText(formData, "merchant_id")
+  const paymentMethod = getOptionalText(formData, "payment_method")
+  const customerLocale = getOptionalText(formData, "customer_locale")
+
+  if (!name) {
+    redirectWithMessage(returnTo, "Nama promo transaksi wajib diisi.", "error")
+  }
+
+  if (!isTransactionPromoStatus(requestedStatus)) {
+    redirectWithMessage(returnTo, "Status promo transaksi tidak valid.", "error")
+  }
+
+  if (!isTransactionPromoDiscountType(discountType)) {
+    redirectWithMessage(returnTo, "Jenis diskon promo transaksi tidak valid.", "error")
+  }
+
+  if (!isTransactionPromoChannel(channel)) {
+    redirectWithMessage(returnTo, "Channel promo transaksi tidak valid.", "error")
+  }
+
+  if (!discountValue || discountValue <= 0) {
+    redirectWithMessage(returnTo, "Nilai diskon promo transaksi wajib lebih dari nol.", "error")
+  }
+
+  if (!isAutoApply && !code) {
+    redirectWithMessage(returnTo, "Promo manual wajib memiliki kode promo.", "error")
+  }
+
+  if (startsAt && endsAt && new Date(endsAt).getTime() < new Date(startsAt).getTime()) {
+    redirectWithMessage(returnTo, "Tanggal akhir promo transaksi tidak boleh lebih awal dari tanggal mulai.", "error")
+  }
+
+  if (!productTypes.length) {
+    redirectWithMessage(returnTo, "Pilih minimal satu jenis transaksi untuk promo ini.", "error")
+  }
+
+  if (quotaTotal && quotaPerUser && quotaPerUser > quotaTotal) {
+    redirectWithMessage(returnTo, "Kuota per user tidak boleh melebihi kuota total.", "error")
+  }
+
+  if (actor.role === "marketing" && requestedStatus !== "draft") {
+    redirectWithMessage(returnTo, "Role marketing hanya dapat menyimpan promo transaksi sebagai draft.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  let existingStatus: string | null = null
+  let existingApprovedBy: string | null = null
+  let existingApprovedAt: string | null = null
+
+  if (ruleId) {
+    const { data: existingRule, error: existingRuleError } = await adminSupabase
+      .from("transaction_promo_rules")
+      .select("id, status, approved_by, approved_at")
+      .eq("id", ruleId)
+      .maybeSingle()
+
+    if (existingRuleError || !existingRule) {
+      redirectWithMessage(returnTo, existingRuleError?.message || "Promo transaksi tidak ditemukan.", "error")
+    }
+
+    existingStatus = existingRule.status
+    existingApprovedBy = existingRule.approved_by
+    existingApprovedAt = existingRule.approved_at
+  }
+
+  const nextStatus = actor.role === "marketing" ? "draft" : requestedStatus
+  const shouldStampApproval = actor.role !== "marketing" && nextStatus !== "draft"
+  const nowIso = new Date().toISOString()
+  const approvalReset = actor.role === "marketing" && existingStatus && existingStatus !== "draft"
+
+  const payload = {
+    ...(ruleId ? { id: ruleId } : {}),
+    code,
+    name,
+    description,
+    discount_type: discountType,
+    discount_value: discountValue,
+    max_discount_amount: maxDiscountAmount,
+    minimum_order_amount: minimumOrderAmount,
+    quota_total: quotaTotal,
+    quota_per_user: quotaPerUser,
+    starts_at: startsAt,
+    ends_at: endsAt,
+    status: nextStatus,
+    is_auto_apply: isAutoApply,
+    approved_by: shouldStampApproval ? actor.id : nextStatus === "draft" ? null : existingApprovedBy,
+    approved_at: shouldStampApproval ? nowIso : nextStatus === "draft" ? null : existingApprovedAt,
+    updated_by: actor.id,
+    updated_at: nowIso,
+  }
+
+  const { data, error } = await adminSupabase
+    .from("transaction_promo_rules")
+    .upsert(ruleId ? payload : { ...payload, created_by: actor.id }, { onConflict: "id" })
+    .select("id")
+    .single()
+
+  if (error) {
+    redirectWithMessage(returnTo, error.message, "error")
+  }
+
+  const { error: deleteTargetsError } = await adminSupabase.from("transaction_promo_rule_targets").delete().eq("rule_id", data.id)
+  if (deleteTargetsError) {
+    redirectWithMessage(returnTo, deleteTargetsError.message, "error")
+  }
+
+  const targetRows = productTypes.map((productType) => ({
+    rule_id: data.id,
+    product_type: productType,
+    product_id: productId,
+    product_reference: productReference,
+    merchant_id: merchantId,
+    payment_method: paymentMethod,
+    customer_locale: customerLocale,
+    channel,
+    updated_at: nowIso,
+  }))
+
+  const { error: targetError } = await adminSupabase.from("transaction_promo_rule_targets").insert(targetRows)
+  if (targetError) {
+    redirectWithMessage(returnTo, targetError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: data.id,
+    action: ruleId ? "update_transaction_promo_rule" : "create_transaction_promo_rule",
+    summary: ruleId ? `Promo transaksi ${name} diperbarui` : `Promo transaksi ${name} dibuat`,
+    metadata: {
+      scope: "marketing_content",
+      section: "transaction_promos",
+      name,
+      status: nextStatus,
+      isAutoApply,
+      productTypes,
+      channel,
+      approvalReset,
+    },
+  })
+
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/transaction-promos")
+  redirectWithMessage(
+    returnTo,
+    ruleId
+      ? approvalReset
+        ? "Promo transaksi diperbarui dan dikembalikan ke draft untuk peninjauan ulang."
+        : "Promo transaksi berhasil diperbarui."
+      : "Promo transaksi berhasil dibuat.",
+    "success",
+  )
+}
+
+export async function deleteTransactionPromoRule(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/transaction-promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const ruleId = getText(formData, "rule_id")
+  const name = getText(formData, "name")
+
+  if (!ruleId) {
+    redirectWithMessage(returnTo, "Promo transaksi tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { error } = await adminSupabase.from("transaction_promo_rules").delete().eq("id", ruleId)
+
+  if (error) {
+    redirectWithMessage(returnTo, error.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: ruleId,
+    action: "delete_transaction_promo_rule",
+    summary: `Promo transaksi ${name || ruleId} dihapus`,
+    metadata: {
+      scope: "marketing_content",
+      section: "transaction_promos",
+      name,
+    },
+  })
+
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/transaction-promos")
+  redirectWithMessage(returnTo, "Promo transaksi berhasil dihapus.", "success")
 }
 
 export async function deleteMarketingPromo(formData: FormData) {

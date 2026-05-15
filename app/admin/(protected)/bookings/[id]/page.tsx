@@ -49,6 +49,18 @@ type BookingDetailRow = {
   merchant_arrived_at: string | null
   customer_picked_up_at: string | null
   merchant_picked_up_at: string | null
+  promo_code: string | null
+  promo_discount_amount: number | null
+  promo_snapshot: Record<string, unknown> | null
+}
+
+type BookingPromoSnapshot = {
+  rule_name?: string | null
+  code?: string | null
+  source?: string | null
+  discount_amount?: number | null
+  display_discount_amount?: number | null
+  display_subtotal_before_discount?: number | null
 }
 
 type PackageRow = {
@@ -155,6 +167,18 @@ function formatDate(value: string | null) {
 
 function formatMoney(value: number | null | undefined) {
   return `Rp ${Number(value || 0).toLocaleString("id-ID")}`
+}
+
+function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
+  if (!value) return null
+  if (typeof value === "object" && !Array.isArray(value)) return value as BookingPromoSnapshot
+  if (typeof value !== "string") return null
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as BookingPromoSnapshot) : null
+  } catch {
+    return null
+  }
 }
 
 function paymentTone(status: string | null) {
@@ -465,7 +489,7 @@ export default async function AdminBookingDetailPage({
   const { data: booking, error } = await adminSupabase
     .from("bookings")
     .select(
-      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, supplier_id, supplier_booking_reference, supplier_order_status, fulfillment_mode, supplier_net_cost_amount, redfeng_spread_amount, redfeng_recorded_profit_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at",
+      "id, booking_code, customer_name, customer_email, pickup_date, created_at, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, final_payment_amount, supplier_id, supplier_booking_reference, supplier_order_status, fulfillment_mode, supplier_net_cost_amount, redfeng_spread_amount, redfeng_recorded_profit_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, booking_product_type, escrow_status, merchant_arrived_at, customer_picked_up_at, merchant_picked_up_at, promo_code, promo_discount_amount, promo_snapshot",
     )
     .eq("id", id)
     .maybeSingle<BookingDetailRow>()
@@ -546,6 +570,15 @@ export default async function AdminBookingDetailPage({
   const supplierLabel = supplier ? getVisibleSupplierLabel(supplier) : "-"
   const supplierReferenceLabel = supplier ? getVisibleSupplierReference(supplier) : "-"
   const supplierStatus = normalizeSupplierOrderStatus(booking.supplier_order_status)
+  const promoSnapshot = parsePromoSnapshot(booking.promo_snapshot)
+  const displayDiscountAmount = Math.max(
+    Number(promoSnapshot?.display_discount_amount ?? booking.promo_discount_amount ?? 0),
+    0,
+  )
+  const displaySubtotalBeforeDiscount = Math.max(
+    Number(promoSnapshot?.display_subtotal_before_discount ?? Number(booking.display_subtotal_amount || 0) + displayDiscountAmount),
+    Number(booking.display_subtotal_amount || 0),
+  )
   const timeline = [
     {
       label: "Merchant Arrived",
@@ -667,6 +700,32 @@ export default async function AdminBookingDetailPage({
             <p className="mt-3 text-2xl font-semibold text-slate-950">{formatDate(booking.pickup_date)}</p>
           </div>
         </section>
+
+        {(booking.promo_code || displayDiscountAmount > 0 || promoSnapshot?.rule_name) ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Promo</p>
+              <p className="mt-3 text-xl font-semibold text-slate-950">{promoSnapshot?.rule_name || booking.promo_code || "-"}</p>
+            </div>
+            <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Kode promo</p>
+              <p className="mt-3 text-xl font-semibold uppercase text-slate-950">{booking.promo_code || promoSnapshot?.code || "-"}</p>
+            </div>
+            <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Diskon display</p>
+              <p className="mt-3 text-xl font-semibold text-emerald-700">
+                -{formatPackageMoney(displayDiscountAmount, booking.display_currency || "IDR", locale)}
+              </p>
+              <p className="mt-2 text-xs text-slate-500">{formatMoney(booking.promo_discount_amount)}</p>
+            </div>
+            <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Subtotal sebelum promo</p>
+              <p className="mt-3 text-xl font-semibold text-slate-950">
+                {formatPackageMoney(displaySubtotalBeforeDiscount, booking.display_currency || "IDR", locale)}
+              </p>
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:rounded-[32px] sm:p-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Quick actions</p>

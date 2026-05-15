@@ -48,6 +48,18 @@ type BookingDetailRow = {
   merchant_arrived_at: string | null
   merchant_picked_up_at: string | null
   customer_picked_up_at: string | null
+  promo_code?: string | null
+  promo_discount_amount?: number | null
+  promo_snapshot?: Record<string, unknown> | null
+}
+
+type BookingPromoSnapshot = {
+  rule_name?: string | null
+  code?: string | null
+  source?: string | null
+  discount_amount?: number | null
+  display_discount_amount?: number | null
+  display_subtotal_before_discount?: number | null
 }
 
 type BookingParticipantRow = {
@@ -98,6 +110,18 @@ function titleCaseStatus(value: string | null) {
 
 function normalizeStatus(value: string | null) {
   return (value || "").trim().toLowerCase()
+}
+
+function parsePromoSnapshot(value: unknown): BookingPromoSnapshot | null {
+  if (!value) return null
+  if (typeof value === "object" && !Array.isArray(value)) return value as BookingPromoSnapshot
+  if (typeof value !== "string") return null
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as BookingPromoSnapshot) : null
+  } catch {
+    return null
+  }
 }
 
 function isTripCompletedStatus(status: string | null) {
@@ -509,7 +533,7 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
 
   const { data: booking, error } = await adminSupabase
     .from("bookings")
-    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at")
+    .select("id, booking_code, customer_name, customer_email, customer_phone, pickup_date, adult_count, child_count, payment_type, dp_amount, total_amount, subtotal_amount, customer_admin_fee_amount, customer_tax_amount, customer_admin_fee_percent, customer_tax_percent, final_payment_amount, display_currency, display_subtotal_amount, display_price_adult, display_price_child, exchange_rate_date, booking_status, payment_status, package_id, escrow_status, merchant_arrived_at, merchant_picked_up_at, customer_picked_up_at, promo_code, promo_discount_amount, promo_snapshot")
     .eq("id", id)
     .single<BookingDetailRow>()
 
@@ -561,6 +585,15 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   const displayFinalPaymentAmount = Math.max(displayTotal - displayDpAmount, 0)
   const displayAmountDueNow =
     normalizedPaymentType === "dp" ? displayDpAmount : displayTotal
+  const promoSnapshot = parsePromoSnapshot(booking.promo_snapshot)
+  const displayDiscountAmount = Math.max(
+    Number(promoSnapshot?.display_discount_amount ?? booking.promo_discount_amount ?? 0),
+    0,
+  )
+  const displaySubtotalBeforeDiscount = Math.max(
+    Number(promoSnapshot?.display_subtotal_before_discount ?? displaySubtotal + displayDiscountAmount),
+    displaySubtotal,
+  )
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
@@ -654,6 +687,41 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.final_payment_amount)}</p>
           </div>
         </section>
+
+        {(booking.promo_code || displayDiscountAmount > 0 || promoSnapshot?.rule_name) ? (
+          <section className="mt-6 rounded-[28px] border border-emerald-200 bg-emerald-50 p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">
+              {locale === "en" ? "Promo Applied" : locale === "zh" ? "已应用优惠" : "Promo Dipakai"}
+            </h2>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
+                <p className="text-sm text-slate-500">{locale === "en" ? "Promo" : locale === "zh" ? "优惠名称" : "Nama promo"}</p>
+                <p className="mt-2 text-lg font-semibold text-slate-900">{promoSnapshot?.rule_name || booking.promo_code || "-"}</p>
+              </div>
+              <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
+                <p className="text-sm text-slate-500">{locale === "en" ? "Code" : locale === "zh" ? "优惠码" : "Kode"}</p>
+                <p className="mt-2 text-lg font-semibold uppercase text-slate-900">{booking.promo_code || promoSnapshot?.code || "-"}</p>
+              </div>
+              <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
+                <p className="text-sm text-slate-500">{locale === "en" ? "Discount" : locale === "zh" ? "优惠金额" : "Potongan"}</p>
+                <p className="mt-2 text-lg font-semibold text-emerald-700">
+                  -{formatPackageMoney(displayDiscountAmount, displayCurrency, locale)}
+                </p>
+                <p className="mt-2 text-xs text-slate-500">{formatIdr(booking.promo_discount_amount)}</p>
+              </div>
+            </div>
+            <div className="mt-4 rounded-[20px] border border-emerald-100 bg-white p-4 text-sm text-slate-600">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span>{locale === "en" ? "Subtotal before promo" : locale === "zh" ? "优惠前小计" : "Subtotal sebelum promo"}</span>
+                <span className="font-semibold text-slate-900">{formatPackageMoney(displaySubtotalBeforeDiscount, displayCurrency, locale)}</span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <span>{locale === "en" ? "Subtotal after promo" : locale === "zh" ? "优惠后小计" : "Subtotal sesudah promo"}</span>
+                <span className="font-semibold text-slate-900">{formatPackageMoney(displaySubtotal, displayCurrency, locale)}</span>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         {booking.display_currency || booking.display_subtotal_amount || booking.exchange_rate_date ? (
           <section className="mt-6 rounded-[28px] border border-blue-100 bg-blue-50 p-6 shadow-sm">

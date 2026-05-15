@@ -4,6 +4,10 @@ export type TransactionPromoDiscountType = "percentage" | "fixed_amount"
 export type TransactionPromoStatus = "draft" | "approved" | "active" | "paused" | "expired"
 export type TransactionPromoChannel = "public_web" | "mobile_web" | "mobile_app" | "internal"
 
+export const transactionPromoStatuses: TransactionPromoStatus[] = ["draft", "approved", "active", "paused", "expired"]
+export const transactionPromoDiscountTypes: TransactionPromoDiscountType[] = ["percentage", "fixed_amount"]
+export const transactionPromoChannels: TransactionPromoChannel[] = ["public_web", "mobile_web", "mobile_app", "internal"]
+
 export type TransactionPromoRuleRecord = {
   id: string
   code?: string | null
@@ -121,6 +125,32 @@ export function isTransactionPromoStatus(value: string | null | undefined): valu
 export function isTransactionPromoChannel(value: string | null | undefined): value is TransactionPromoChannel {
   const normalized = normalizeString(value)
   return normalized === "public_web" || normalized === "mobile_web" || normalized === "mobile_app" || normalized === "internal"
+}
+
+export function getTransactionPromoStatusLabel(value: string | null | undefined) {
+  const normalized = normalizeString(value)
+  if (normalized === "draft") return "Draft"
+  if (normalized === "approved") return "Approved"
+  if (normalized === "active") return "Active"
+  if (normalized === "paused") return "Paused"
+  if (normalized === "expired") return "Expired"
+  return "Unknown"
+}
+
+export function getTransactionPromoDiscountTypeLabel(value: string | null | undefined) {
+  const normalized = normalizeString(value)
+  if (normalized === "percentage") return "Persentase"
+  if (normalized === "fixed_amount") return "Nominal tetap"
+  return "Unknown"
+}
+
+export function getTransactionPromoChannelLabel(value: string | null | undefined) {
+  const normalized = normalizeString(value)
+  if (normalized === "public_web") return "Public Web"
+  if (normalized === "mobile_web") return "Mobile Web"
+  if (normalized === "mobile_app") return "Mobile App"
+  if (normalized === "internal") return "Internal"
+  return "Unknown"
 }
 
 export function isTransactionPromoRuleCurrentlyLive(rule: TransactionPromoRuleRecord, nowIso = new Date().toISOString()) {
