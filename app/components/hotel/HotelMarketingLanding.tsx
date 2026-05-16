@@ -21,8 +21,8 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
   const copy = {
     id: {
       eyebrow: "HOTEL STAYS",
-      title: "Temukan hotel pilihan dengan ritme landing page yang sama seperti /packages",
-      body: "Halaman hotel sekarang memakai hero, floating search card, promo strip, dan section rekomendasi yang satu keluarga dengan landing page paket RedFeng.",
+      title: "Temukan hotel pilihan untuk stay yang lebih tenang dan terencana",
+      body: "Cari akomodasi, bandingkan properti populer, dan masuk ke promo stay terbaik dalam satu halaman yang rapi dan mudah dipindai.",
       searchButton: "Cari Hotel",
       benefitTitle: ["Harga transparan", "Booking aman", "Stay pilihan", "Siap ke live inventory"],
       benefitBody: [
@@ -43,8 +43,8 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
     },
     en: {
       eyebrow: "HOTEL STAYS",
-      title: "Discover selected hotels with the same landing rhythm as /packages",
-      body: "The hotel page now uses the same hero, floating search card, promo strip, and recommendation sections as the RedFeng package landing page.",
+      title: "Discover selected hotels for a calmer, better-planned stay",
+      body: "Search accommodations, compare popular properties, and move into the best stay promos in one clean page.",
       searchButton: "Search Hotels",
       benefitTitle: ["Transparent pricing", "Secure booking", "Selected stays", "Ready for live inventory"],
       benefitBody: [

@@ -21,8 +21,8 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
   const copy = {
     id: {
       eyebrow: "SEA ROUTES",
-      title: "Buat perjalanan laut tetap satu keluarga dengan landing page /packages",
-      body: "Halaman kapal kini mengikuti ritme /packages: hero penuh, search card floating, promo strip, rute laut populer, dan section rekomendasi yang lebih tenang.",
+      title: "Jelajahi rute kapal dan ferry untuk perjalanan laut yang lebih mudah",
+      body: "Cari tiket kapal, lihat promo rute laut favorit, dan susun perjalanan antar-pulau dari pelabuhan utama ke destinasi populer dalam satu alur.",
       searchButton: "Cari Kapal",
       benefitTitle: ["Pelabuhan utama", "Pelayaran aman", "Ferry cepat siap", "Mudah tumbuh ke jadwal live"],
       benefitBody: [
@@ -38,13 +38,13 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       popularTitle: "Rute Laut Populer",
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
-      recommendationTitle: "Pelabuhan & Rute Pilihan",
+      recommendationTitle: "Pilihan Rute Kapal RedFeng",
       stickyLabel: "Buka promo kapal",
     },
     en: {
       eyebrow: "SEA ROUTES",
-      title: "Keep sea travel in the same landing family as /packages",
-      body: "The ship page now follows the /packages rhythm: full hero, floating search card, promo strip, popular sea routes, and a calmer recommendation section.",
+      title: "Explore ship and ferry routes for easier sea travel",
+      body: "Search ship tickets, explore favorite sea route promos, and plan inter-island trips from key ports to popular destinations in one flow.",
       searchButton: "Search Ships",
       benefitTitle: ["Main ports", "Safe sailings", "Fast ferry ready", "Easy to grow into live schedules"],
       benefitBody: [
@@ -60,7 +60,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       popularTitle: "Popular Sea Routes",
       seeAll: "View all routes",
       fromLabel: "Starting from",
-      recommendationTitle: "Selected Ports & Routes",
+      recommendationTitle: "RedFeng Sea Route Picks",
       stickyLabel: "Open ship promos",
     },
     zh: {

@@ -21,8 +21,8 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
   const copy = {
     id: {
       eyebrow: "ACTIVITY PICKS",
-      title: "Buat halaman aktivitas tetap satu keluarga dengan /packages",
-      body: "Halaman aktivitas sekarang memakai hero, floating search card, promo strip, destinasi populer, dan rekomendasi yang seirama dengan keluarga landing page RedFeng.",
+      title: "Temukan aktivitas pilihan untuk melengkapi perjalananmu bersama RedFeng",
+      body: "Cari atraksi, tur, dan event favorit, lalu masuk ke promo aktivitas yang paling relevan untuk rencana perjalanan berikutnya.",
       searchButton: "Cari Aktivitas",
       benefitTitle: ["Atraksi favorit", "Voucher instan", "Event & tur siap", "Mudah tumbuh ke inventory live"],
       benefitBody: [
@@ -38,13 +38,13 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       popularTitle: "Destinasi Aktivitas Populer",
       seeAll: "Lihat semua destinasi",
       fromLabel: "Mulai dari",
-      recommendationTitle: "Pilihan Aktivitas RedFeng",
+      recommendationTitle: "Aktivitas Pilihan RedFeng",
       stickyLabel: "Buka promo aktivitas",
     },
     en: {
       eyebrow: "ACTIVITY PICKS",
-      title: "Keep the activities page in the same family as /packages",
-      body: "The activities page now uses the same hero, floating search card, promo strip, popular destinations, and recommendation rhythm as the RedFeng landing family.",
+      title: "Discover selected activities to complete your trip with RedFeng",
+      body: "Search favorite attractions, tours, and events, then move into the activity promos that best match your next plan.",
       searchButton: "Search Activities",
       benefitTitle: ["Favorite attractions", "Instant vouchers", "Events & tours ready", "Easy to grow into live inventory"],
       benefitBody: [

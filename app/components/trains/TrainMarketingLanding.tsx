@@ -21,8 +21,8 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
   const copy = {
     id: {
       eyebrow: "TRAIN ROUTES",
-      title: "Jelajahi perjalanan kereta dengan keluarga landing page yang sama seperti /packages",
-      body: "Halaman kereta kini mengikuti pola /packages: hero penuh, search card floating, promo strip, destinasi populer, dan area rekomendasi yang lebih rapi.",
+      title: "Jelajahi rute kereta favorit untuk perjalanan antarkota yang lebih nyaman",
+      body: "Cari perjalanan kereta, lihat promo rute populer, dan susun perjalanan cepat dari kota besar ke destinasi pilihan dalam satu alur.",
       searchButton: "Cari Kereta",
       benefitTitle: ["Rute populer", "Booking aman", "Kereta cepat siap", "Mudah tumbuh ke jadwal live"],
       benefitBody: [
@@ -35,16 +35,16 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       promoBody: "Dapatkan diskon hingga",
       promoAction: "Lihat Promo",
       offerLine: "untuk rute antarkota dan perjalanan whoosh yang paling diminati",
-      popularTitle: "Rute Populer",
+      popularTitle: "Rute Kereta Populer",
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
-      recommendationTitle: "Perjalanan Pilihan",
+      recommendationTitle: "Pilihan Rute Kereta RedFeng",
       stickyLabel: "Buka promo kereta",
     },
     en: {
       eyebrow: "TRAIN ROUTES",
-      title: "Explore train journeys with the same landing family as /packages",
-      body: "The train page now follows the /packages structure: full hero, floating search card, promo strip, popular destinations, and a cleaner recommendation zone.",
+      title: "Explore favorite train routes for more comfortable intercity travel",
+      body: "Search train journeys, browse popular route promos, and line up fast trips from major cities to top destinations in one flow.",
       searchButton: "Search Trains",
       benefitTitle: ["Popular routes", "Secure booking", "High-speed rail ready", "Easy to grow into live schedules"],
       benefitBody: [
@@ -57,10 +57,10 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       promoBody: "Get discounts up to",
       promoAction: "View Promos",
       offerLine: "for intercity and high-speed train routes customers care about most",
-      popularTitle: "Popular Routes",
+      popularTitle: "Popular Train Routes",
       seeAll: "View all routes",
       fromLabel: "Starting from",
-      recommendationTitle: "Selected Journeys",
+      recommendationTitle: "RedFeng Train Picks",
       stickyLabel: "Open train promos",
     },
     zh: {

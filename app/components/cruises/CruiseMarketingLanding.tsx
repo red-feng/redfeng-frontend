@@ -21,8 +21,8 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
   const copy = {
     id: {
       eyebrow: "CRUISE JOURNEYS",
-      title: "Samakan juga halaman kapal pesiar dengan keluarga landing page /packages",
-      body: "Halaman kapal pesiar sekarang mengikuti pola yang sama: hero penuh, floating search card, promo strip, rute populer, dan section rekomendasi yang lebih premium.",
+      title: "Temukan itinerary cruise pilihan untuk perjalanan laut yang lebih berkesan",
+      body: "Cari cruise, lihat promo itinerary premium, dan susun pelayaran keluarga atau luxury escape dalam satu pengalaman yang rapi.",
       searchButton: "Cari Cruise",
       benefitTitle: ["Itinerary premium", "Cabin terpercaya", "Family & luxury siap", "Mudah tumbuh ke inventory live"],
       benefitBody: [
@@ -43,8 +43,8 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
     },
     en: {
       eyebrow: "CRUISE JOURNEYS",
-      title: "Bring the cruise page into the same landing family as /packages",
-      body: "The cruise page now follows the same pattern: full hero, floating search card, promo strip, popular routes, and a more premium recommendation section.",
+      title: "Discover selected cruise itineraries for more memorable sea journeys",
+      body: "Search cruises, explore premium itinerary promos, and plan family sailings or luxury escapes in one polished experience.",
       searchButton: "Search Cruises",
       benefitTitle: ["Premium itineraries", "Trusted cabins", "Family & luxury ready", "Easy to grow into live inventory"],
       benefitBody: [

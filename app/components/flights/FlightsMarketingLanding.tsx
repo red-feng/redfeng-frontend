@@ -23,7 +23,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
     id: {
       eyebrow: "FLIGHT JOURNEYS",
       title: "Terbang ke destinasi impianmu bersama RedFeng",
-      body: "Pesan tiket pesawat dengan arah visual yang sama seperti landing page paket: hero besar, search card floating, promo rute, dan inspirasi destinasi dalam satu alur yang terasa utuh.",
+      body: "Cari tiket pesawat, lihat promo rute pilihan, dan susun perjalanan dari kota besar hingga destinasi liburan dalam satu alur yang ringan.",
       searchButton: "Cari Penerbangan",
       benefitTitle: ["Harga terbaik", "Pembayaran aman", "Maskapai partner", "Arah ke promo live"],
       benefitBody: [
@@ -45,7 +45,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
     en: {
       eyebrow: "FLIGHT JOURNEYS",
       title: "Fly to your dream destination with RedFeng",
-      body: "Book flights with the same visual direction as the package landing page: a large hero, floating search card, route promos, and destination inspiration in one cohesive flow.",
+      body: "Search flights, explore featured route promos, and plan trips from major cities to holiday escapes in one clean flow.",
       searchButton: "Search Flights",
       benefitTitle: ["Best fares", "Secure payments", "Airline partners", "Ready for live promos"],
       benefitBody: [

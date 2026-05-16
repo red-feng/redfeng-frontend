@@ -21,8 +21,8 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
   const copy = {
     id: {
       eyebrow: "BUS JOURNEYS",
-      title: "Rancang perjalanan bus dengan keluarga landing page yang sama seperti /packages",
-      body: "Halaman bus kini mengikuti ritme /packages: hero penuh, search card floating, promo strip, rute populer, dan rekomendasi perjalanan yang lebih konsisten.",
+      title: "Temukan rute bus favorit untuk perjalanan darat yang lebih praktis",
+      body: "Cari perjalanan bus, lihat promo rute antarkota, dan susun perjalanan darat dari kota besar hingga tujuan liburan dalam satu halaman.",
       searchButton: "Cari Bus",
       benefitTitle: ["Rute utama", "Booking aman", "Sleeper siap", "Mudah tumbuh ke operator live"],
       benefitBody: [
@@ -35,16 +35,16 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       promoBody: "Dapatkan diskon hingga",
       promoAction: "Lihat Promo",
       offerLine: "untuk rute darat favorit dan perjalanan sleeper yang paling dicari",
-      popularTitle: "Rute Populer",
+      popularTitle: "Rute Bus Populer",
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
-      recommendationTitle: "Perjalanan Darat Pilihan",
+      recommendationTitle: "Pilihan Rute Bus RedFeng",
       stickyLabel: "Buka promo bus",
     },
     en: {
       eyebrow: "BUS JOURNEYS",
-      title: "Shape bus travel with the same landing family as /packages",
-      body: "The bus page now follows the /packages rhythm: full hero, floating search card, promo strip, popular routes, and cleaner travel recommendations.",
+      title: "Find favorite bus routes for more practical overland travel",
+      body: "Search bus journeys, explore intercity route promos, and organize overland trips from major cities to getaway destinations in one page.",
       searchButton: "Search Buses",
       benefitTitle: ["Core routes", "Secure booking", "Sleeper ready", "Easy to grow into live operators"],
       benefitBody: [
@@ -57,10 +57,10 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       promoBody: "Get discounts up to",
       promoAction: "View Promos",
       offerLine: "for favorite overland routes and sleeper journeys people search most often",
-      popularTitle: "Popular Routes",
+      popularTitle: "Popular Bus Routes",
       seeAll: "View all routes",
       fromLabel: "Starting from",
-      recommendationTitle: "Selected Overland Trips",
+      recommendationTitle: "RedFeng Bus Picks",
       stickyLabel: "Open bus promos",
     },
     zh: {
