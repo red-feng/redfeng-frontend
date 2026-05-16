@@ -199,7 +199,7 @@ function HeroSearchPanel({
   )
 }
 
-function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
+export function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
   return {
     id: {
       one_way: "Sekali Jalan",
@@ -288,7 +288,7 @@ function getLocalizedOptionLabels(locale: Locale): Record<string, string> {
   }[locale]
 }
 
-function buildFormFields(
+export function buildFormFields(
   fields: HeroSearchFieldData[],
   activeTab: HeroTabKey,
   stateKey: string,
@@ -325,7 +325,7 @@ function buildFormFields(
   })
 }
 
-function updateFieldState(
+export function updateFieldState(
   current: Record<string, HeroSearchFieldData>,
   stateKey: string,
   activeTab: HeroTabKey,
