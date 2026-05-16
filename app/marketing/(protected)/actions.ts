@@ -146,6 +146,121 @@ function revalidateMarketingPromoPublicPaths() {
   revalidatePath("/aktivitas")
 }
 
+function getRecommendedMarketingPromoPlacementsByHref(targetHref?: string | null) {
+  const href = String(targetHref || "").trim().toLowerCase()
+
+  if (href.startsWith("/packages")) return ["packages_featured", "promo_listing"]
+  if (href.startsWith("/pesawat")) return ["flights_featured", "promo_listing"]
+  if (href.startsWith("/hotel")) return ["hotels_featured", "promo_listing"]
+  if (href.startsWith("/kereta")) return ["trains_featured", "promo_listing"]
+  if (href.startsWith("/bus")) return ["buses_featured", "promo_listing"]
+  if (href.startsWith("/kapal-pesiar")) return ["cruises_featured", "promo_listing"]
+  if (href.startsWith("/kapal")) return ["ships_featured", "promo_listing"]
+  if (href.startsWith("/aktivitas")) return ["activities_featured", "promo_listing"]
+  if (href.startsWith("/promo")) return ["promo_listing"]
+
+  return ["homepage_feed", "promo_listing"]
+}
+
+async function syncRecommendedMarketingPromoPlacementsForPromoIds(
+  promoIds: string[],
+  options: {
+    mode: "apply" | "keep"
+  },
+) {
+  const uniquePromoIds = Array.from(new Set(promoIds.map((value) => String(value || "").trim()).filter(Boolean)))
+  if (!uniquePromoIds.length) {
+    return {
+      processedCount: 0,
+      placementCount: 0,
+      promoSlugs: [] as string[],
+    }
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promos, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, slug, sort_order, target_href")
+    .in("id", uniquePromoIds)
+
+  if (promoError) {
+    return {
+      error: promoError.message,
+      processedCount: 0,
+      placementCount: 0,
+      promoSlugs: [] as string[],
+    }
+  }
+
+  const promoRecords = ((promos as Array<{ id: string | null; slug: string | null; sort_order: number | null; target_href: string | null }> | null) || []).filter(
+    (promo) => promo?.id,
+  )
+
+  if (!promoRecords.length) {
+    return {
+      processedCount: 0,
+      placementCount: 0,
+      promoSlugs: [] as string[],
+    }
+  }
+
+  const nowIso = new Date().toISOString()
+  let placementCount = 0
+
+  for (const promo of promoRecords) {
+    const promoId = String(promo.id || "")
+    const recommendedPlacements = getRecommendedMarketingPromoPlacementsByHref(promo.target_href).filter(isMarketingPromoPlacementKey)
+
+    if (!recommendedPlacements.length) continue
+
+    placementCount += recommendedPlacements.length
+
+    const rows = recommendedPlacements.map((placementKey) => ({
+      promo_id: promoId,
+      placement_key: placementKey,
+      sort_order: promo.sort_order || 0,
+      is_active: true,
+      updated_at: nowIso,
+    }))
+
+    const { error: upsertError } = await adminSupabase.from("marketing_promo_placements").upsert(rows, {
+      onConflict: "promo_id,placement_key",
+    })
+
+    if (upsertError) {
+      return {
+        error: upsertError.message,
+        processedCount: 0,
+        placementCount: 0,
+        promoSlugs: [],
+      }
+    }
+
+    if (options.mode === "keep") {
+      const { error: cleanupError } = await adminSupabase
+        .from("marketing_promo_placements")
+        .delete()
+        .eq("promo_id", promoId)
+        .filter("placement_key", "not.in", `(${recommendedPlacements.map((value) => `"${value}"`).join(",")})`)
+
+      if (cleanupError) {
+        return {
+          error: cleanupError.message,
+          processedCount: 0,
+          placementCount: 0,
+          promoSlugs: [],
+        }
+      }
+    }
+  }
+
+  return {
+    processedCount: promoRecords.length,
+    placementCount,
+    promoSlugs: promoRecords.map((promo) => String(promo.slug || promo.id || "")).filter(Boolean),
+  }
+}
+
 function getOptionalText(formData: FormData, key: string) {
   const value = getText(formData, key)
   return value || null
@@ -1109,6 +1224,356 @@ export async function toggleMarketingPromoPlacement(formData: FormData) {
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/promos")
   redirectWithMessage(returnTo, `Placement ${placementKey} berhasil ${mode === "enable" ? "diaktifkan" : "dinonaktifkan"}.`, "success")
+}
+
+export async function applyRecommendedMarketingPromoPlacements(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoId = getText(formData, "promo_id")
+  const slug = getText(formData, "slug")
+
+  if (!promoId) {
+    redirectWithMessage(returnTo, "Promo tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promo, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, sort_order, target_href")
+    .eq("id", promoId)
+    .maybeSingle()
+
+  if (promoError || !promo) {
+    redirectWithMessage(returnTo, promoError?.message || "Promo tidak ditemukan.", "error")
+  }
+
+  const recommendedPlacements = getRecommendedMarketingPromoPlacementsByHref(promo.target_href).filter(isMarketingPromoPlacementKey)
+
+  if (!recommendedPlacements.length) {
+    redirectWithMessage(returnTo, "Promo ini belum punya slot rekomendasi yang valid.", "error")
+  }
+
+  const nowIso = new Date().toISOString()
+  const rows = recommendedPlacements.map((placementKey) => ({
+    promo_id: promoId,
+    placement_key: placementKey,
+    sort_order: promo.sort_order || 0,
+    is_active: true,
+    updated_at: nowIso,
+  }))
+
+  const { error: placementError } = await adminSupabase.from("marketing_promo_placements").upsert(rows, {
+    onConflict: "promo_id,placement_key",
+  })
+
+  if (placementError) {
+    redirectWithMessage(returnTo, placementError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: promoId,
+    action: "apply_recommended_marketing_promo_placements",
+    summary: `Slot rekomendasi untuk promo ${slug || promoId} diaktifkan`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      slug,
+      placementKeys: recommendedPlacements,
+      targetHref: promo.target_href,
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, "Slot rekomendasi promo berhasil diaktifkan.", "success")
+}
+
+export async function applyRecommendedMarketingPromoPlacementsBulk(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoIds = formData.getAll("promo_ids").map((value) => String(value || ""))
+
+  const result = await syncRecommendedMarketingPromoPlacementsForPromoIds(promoIds, { mode: "apply" })
+
+  if ("error" in result && result.error) {
+    redirectWithMessage(returnTo, result.error, "error")
+  }
+
+  if (!result.processedCount) {
+    redirectWithMessage(returnTo, "Belum ada promo hasil filter yang bisa diproses.", "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: result.promoSlugs[0] || "marketing_promos_bulk",
+    action: "apply_recommended_marketing_promo_placements_bulk",
+    summary: `${result.processedCount} promo hasil filter diaktifkan ke slot rekomendasi`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      processedCount: result.processedCount,
+      placementCount: result.placementCount,
+      promoSlugs: result.promoSlugs,
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, `${result.processedCount} promo hasil filter berhasil diaktifkan ke slot rekomendasi.`, "success")
+}
+
+export async function bulkAssignMarketingPromoPlacement(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoIds = Array.from(new Set(formData.getAll("promo_ids").map((value) => String(value || "").trim()).filter(Boolean)))
+  const placementKey = getText(formData, "placement_key")
+
+  if (!promoIds.length) {
+    redirectWithMessage(returnTo, "Belum ada promo hasil filter yang bisa diproses.", "error")
+  }
+
+  if (!placementKey || !isMarketingPromoPlacementKey(placementKey)) {
+    redirectWithMessage(returnTo, "Placement bulk tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promos, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, slug, sort_order")
+    .in("id", promoIds)
+
+  if (promoError) {
+    redirectWithMessage(returnTo, promoError.message, "error")
+  }
+
+  const promoRecords = ((promos as Array<{ id: string | null; slug: string | null; sort_order: number | null }> | null) || []).filter((promo) => promo?.id)
+
+  if (!promoRecords.length) {
+    redirectWithMessage(returnTo, "Promo hasil filter tidak ditemukan.", "error")
+  }
+
+  const nowIso = new Date().toISOString()
+  const rows = promoRecords.map((promo) => ({
+    promo_id: String(promo.id),
+    placement_key: placementKey,
+    sort_order: promo.sort_order || 0,
+    is_active: true,
+    updated_at: nowIso,
+  }))
+
+  const { error: upsertError } = await adminSupabase.from("marketing_promo_placements").upsert(rows, {
+    onConflict: "promo_id,placement_key",
+  })
+
+  if (upsertError) {
+    redirectWithMessage(returnTo, upsertError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: promoRecords[0]?.id || "marketing_promos_bulk",
+    action: "bulk_assign_marketing_promo_placement",
+    summary: `${promoRecords.length} promo hasil filter dihubungkan ke placement ${placementKey}`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      placementKey,
+      processedCount: promoRecords.length,
+      promoSlugs: promoRecords.map((promo) => String(promo.slug || promo.id || "")).filter(Boolean),
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, `${promoRecords.length} promo hasil filter berhasil ditambahkan ke slot ${placementKey}.`, "success")
+}
+
+export async function bulkRemoveMarketingPromoPlacement(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoIds = Array.from(new Set(formData.getAll("promo_ids").map((value) => String(value || "").trim()).filter(Boolean)))
+  const placementKey = getText(formData, "placement_key")
+
+  if (!promoIds.length) {
+    redirectWithMessage(returnTo, "Belum ada promo hasil filter yang bisa diproses.", "error")
+  }
+
+  if (!placementKey || !isMarketingPromoPlacementKey(placementKey)) {
+    redirectWithMessage(returnTo, "Placement bulk tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promos, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, slug")
+    .in("id", promoIds)
+
+  if (promoError) {
+    redirectWithMessage(returnTo, promoError.message, "error")
+  }
+
+  const promoRecords = ((promos as Array<{ id: string | null; slug: string | null }> | null) || []).filter((promo) => promo?.id)
+
+  if (!promoRecords.length) {
+    redirectWithMessage(returnTo, "Promo hasil filter tidak ditemukan.", "error")
+  }
+
+  const promoIdSet = promoRecords.map((promo) => String(promo.id))
+  const { error: deleteError } = await adminSupabase
+    .from("marketing_promo_placements")
+    .delete()
+    .eq("placement_key", placementKey)
+    .in("promo_id", promoIdSet)
+
+  if (deleteError) {
+    redirectWithMessage(returnTo, deleteError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: promoRecords[0]?.id || "marketing_promos_bulk",
+    action: "bulk_remove_marketing_promo_placement",
+    summary: `${promoRecords.length} promo hasil filter dilepas dari placement ${placementKey}`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      placementKey,
+      processedCount: promoRecords.length,
+      promoSlugs: promoRecords.map((promo) => String(promo.slug || promo.id || "")).filter(Boolean),
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, `${promoRecords.length} promo hasil filter berhasil dilepas dari slot ${placementKey}.`, "success")
+}
+
+export async function keepOnlyRecommendedMarketingPromoPlacements(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoId = getText(formData, "promo_id")
+  const slug = getText(formData, "slug")
+
+  if (!promoId) {
+    redirectWithMessage(returnTo, "Promo tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promo, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, sort_order, target_href")
+    .eq("id", promoId)
+    .maybeSingle()
+
+  if (promoError || !promo) {
+    redirectWithMessage(returnTo, promoError?.message || "Promo tidak ditemukan.", "error")
+  }
+
+  const recommendedPlacements = getRecommendedMarketingPromoPlacementsByHref(promo.target_href).filter(isMarketingPromoPlacementKey)
+
+  if (!recommendedPlacements.length) {
+    redirectWithMessage(returnTo, "Promo ini belum punya slot rekomendasi yang valid.", "error")
+  }
+
+  const recommendedPlacementSet = new Set(recommendedPlacements)
+  const nowIso = new Date().toISOString()
+  const rows = recommendedPlacements.map((placementKey) => ({
+    promo_id: promoId,
+    placement_key: placementKey,
+    sort_order: promo.sort_order || 0,
+    is_active: true,
+    updated_at: nowIso,
+  }))
+
+  const { error: upsertError } = await adminSupabase.from("marketing_promo_placements").upsert(rows, {
+    onConflict: "promo_id,placement_key",
+  })
+
+  if (upsertError) {
+    redirectWithMessage(returnTo, upsertError.message, "error")
+  }
+
+  const { error: cleanupError } = await adminSupabase
+    .from("marketing_promo_placements")
+    .delete()
+    .eq("promo_id", promoId)
+    .filter("placement_key", "not.in", `(${recommendedPlacements.map((value) => `"${value}"`).join(",")})`)
+
+  if (cleanupError) {
+    redirectWithMessage(returnTo, cleanupError.message, "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: promoId,
+    action: "keep_only_recommended_marketing_promo_placements",
+    summary: `Promo ${slug || promoId} dirapikan agar hanya memakai slot rekomendasi`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      slug,
+      placementKeys: recommendedPlacements,
+      placementCount: recommendedPlacementSet.size,
+      targetHref: promo.target_href,
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, "Slot promo berhasil dirapikan ke rekomendasi saja.", "success")
+}
+
+export async function keepOnlyRecommendedMarketingPromoPlacementsBulk(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoIds = formData.getAll("promo_ids").map((value) => String(value || ""))
+
+  const result = await syncRecommendedMarketingPromoPlacementsForPromoIds(promoIds, { mode: "keep" })
+
+  if ("error" in result && result.error) {
+    redirectWithMessage(returnTo, result.error, "error")
+  }
+
+  if (!result.processedCount) {
+    redirectWithMessage(returnTo, "Belum ada promo hasil filter yang bisa diproses.", "error")
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: result.promoSlugs[0] || "marketing_promos_bulk",
+    action: "keep_only_recommended_marketing_promo_placements_bulk",
+    summary: `${result.processedCount} promo hasil filter dirapikan ke slot rekomendasi`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      processedCount: result.processedCount,
+      placementCount: result.placementCount,
+      promoSlugs: result.promoSlugs,
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, `${result.processedCount} promo hasil filter berhasil dirapikan ke slot rekomendasi.`, "success")
 }
 
 export async function upsertMarketingInspiration(formData: FormData) {

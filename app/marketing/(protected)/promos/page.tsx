@@ -1,5 +1,15 @@
 import type { ReactNode } from "react"
-import { deleteMarketingPromo, toggleMarketingPromoPlacement, upsertMarketingPromo } from "@/app/marketing/(protected)/actions"
+import {
+  applyRecommendedMarketingPromoPlacements,
+  applyRecommendedMarketingPromoPlacementsBulk,
+  bulkAssignMarketingPromoPlacement,
+  bulkRemoveMarketingPromoPlacement,
+  deleteMarketingPromo,
+  keepOnlyRecommendedMarketingPromoPlacements,
+  keepOnlyRecommendedMarketingPromoPlacementsBulk,
+  toggleMarketingPromoPlacement,
+  upsertMarketingPromo,
+} from "@/app/marketing/(protected)/actions"
 import { getMarketingPromoPlacementLabel, marketingPromoPlacements, type MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel, getMarketingPromoStatusLabel, marketingPromoStatuses } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -317,6 +327,109 @@ export default async function MarketingPromosPage({
           </form>
         </section>
 
+        {promos.length ? (
+          <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Bulk quick assign</p>
+                <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Jalankan aksi rekomendasi untuk hasil filter saat ini</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {promos.length.toLocaleString("id-ID")} promo sedang terlihat. Gunakan bulk action untuk mengaktifkan atau merapikan slot rekomendasi tanpa membuka kartu satu per satu.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <form action={applyRecommendedMarketingPromoPlacementsBulk}>
+                  {promos.map((promo) => (
+                    <input key={`${promo.id}-bulk-apply`} type="hidden" name="promo_ids" value={String(promo.id)} />
+                  ))}
+                  <input type="hidden" name="return_to" value={buildPromoFilterReturnTo(basePath, params)} />
+                  <button className="rounded-[18px] border border-orange-200 bg-white px-5 py-3 text-sm font-semibold text-orange-700 transition hover:bg-orange-50">
+                    Apply recommended for visible promos
+                  </button>
+                </form>
+                <form action={keepOnlyRecommendedMarketingPromoPlacementsBulk}>
+                  {promos.map((promo) => (
+                    <input key={`${promo.id}-bulk-keep`} type="hidden" name="promo_ids" value={String(promo.id)} />
+                  ))}
+                  <input type="hidden" name="return_to" value={buildPromoFilterReturnTo(basePath, params)} />
+                  <button className="rounded-[18px] border border-rose-200 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    Keep only recommended for visible promos
+                  </button>
+                </form>
+              </div>
+            </div>
+            <div className="mt-5 rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Bulk assign selected slot</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Hasil filter saat ini memuat{" "}
+                <span className="font-semibold text-slate-900">{promos.length.toLocaleString("id-ID")} promo</span>. Gunakan ringkasan di bawah untuk
+                membaca slot mana yang sudah banyak dipakai sebelum menjalankan aksi massal.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {marketingPromoPlacements.map((placement) => {
+                  const activeCount = promos.filter((promo) => (promo.placement_keys || []).includes(placement.key)).length
+                  return (
+                    <span
+                      key={`${placement.key}-bulk-summary`}
+                      className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600"
+                    >
+                      {placement.label}: {activeCount.toLocaleString("id-ID")}
+                    </span>
+                  )
+                })}
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                <form action={bulkAssignMarketingPromoPlacement} className="flex flex-col gap-3">
+                  <div className="min-w-0 flex-1">
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Placement tujuan</label>
+                    <select
+                      name="placement_key"
+                      defaultValue="homepage_feed"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    >
+                      {marketingPromoPlacements.map((placement) => (
+                        <option key={placement.key} value={placement.key}>
+                          {placement.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {promos.map((promo) => (
+                    <input key={`${promo.id}-bulk-selected-slot`} type="hidden" name="promo_ids" value={String(promo.id)} />
+                  ))}
+                  <input type="hidden" name="return_to" value={buildPromoFilterReturnTo(basePath, params)} />
+                  <button className="rounded-[18px] border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                    Assign selected slot for visible promos
+                  </button>
+                </form>
+                <form action={bulkRemoveMarketingPromoPlacement} className="flex flex-col gap-3">
+                  <div className="min-w-0 flex-1">
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Placement yang dilepas</label>
+                    <select
+                      name="placement_key"
+                      defaultValue="homepage_feed"
+                      className="w-full rounded-[18px] border border-[#e6d8c2] bg-white px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                    >
+                      {marketingPromoPlacements.map((placement) => (
+                        <option key={placement.key} value={placement.key}>
+                          {placement.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {promos.map((promo) => (
+                    <input key={`${promo.id}-bulk-remove-slot`} type="hidden" name="promo_ids" value={String(promo.id)} />
+                  ))}
+                  <input type="hidden" name="return_to" value={buildPromoFilterReturnTo(basePath, params)} />
+                  <button className="rounded-[18px] border border-rose-200 bg-white px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50">
+                    Remove selected slot for visible promos
+                  </button>
+                </form>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
             {isSuperadminPreview ? "Preview template promo" : "Buat promo"}
@@ -351,6 +464,52 @@ export default async function MarketingPromosPage({
                     Placements: {(promo.placement_keys || []).length ? (promo.placement_keys || []).map((value) => getMarketingPromoPlacementLabel(String(value))).join(", ") : "Belum dipilih"}
                   </p>
                     <div className="mt-4 space-y-3">
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recommended slots</p>
+                        <p className="text-xs leading-6 text-slate-500">
+                          Keep only recommended akan menyisakan:{" "}
+                          <span className="font-medium text-slate-700">
+                            {getRecommendedQuickAssignPlacements(promo.target_href)
+                              .map((placement) => placement.shortLabel)
+                              .join(", ")}
+                          </span>
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {getRecommendedQuickAssignPlacements(promo.target_href).map((placement) => {
+                            const enabled = (promo.placement_keys || []).includes(placement.key)
+                            return (
+                              <span
+                                key={`${promo.id}-${placement.key}-recommended`}
+                                className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                                  enabled
+                                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                                    : "border border-amber-200 bg-amber-50 text-amber-700"
+                                }`}
+                              >
+                                {placement.shortLabel} {enabled ? "Matched" : "Recommended"}
+                              </span>
+                            )
+                          })}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <form action={applyRecommendedMarketingPromoPlacements}>
+                            <input type="hidden" name="promo_id" value={String(promo.id)} />
+                            <input type="hidden" name="slug" value={String(promo.slug)} />
+                            <input type="hidden" name="return_to" value={basePath} />
+                            <button className="rounded-full border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-700 transition hover:bg-orange-50">
+                              Apply recommended slots
+                            </button>
+                          </form>
+                          <form action={keepOnlyRecommendedMarketingPromoPlacements}>
+                            <input type="hidden" name="promo_id" value={String(promo.id)} />
+                            <input type="hidden" name="slug" value={String(promo.slug)} />
+                            <input type="hidden" name="return_to" value={basePath} />
+                            <button className="rounded-full border border-rose-200 bg-white px-3 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50">
+                              Keep only recommended
+                            </button>
+                          </form>
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Core slot summary</p>
                         <div className="flex flex-wrap gap-2">
@@ -800,4 +959,23 @@ function getEnabledCoreQuickAssignPlacements(placementKeys: string[]) {
 function getEnabledServiceQuickAssignPlacements(placementKeys: string[]) {
   const enabledPlacementSet = new Set(placementKeys.map((value) => String(value)))
   return getQuickAssignableServicePlacements().filter((placement) => enabledPlacementSet.has(placement.key))
+}
+
+function getRecommendedQuickAssignPlacements(targetHref?: string | null) {
+  const recommended = new Set(getDefaultMarketingPromoPlacements(targetHref))
+  return [...getQuickAssignableCorePlacements(), ...getQuickAssignableServicePlacements()].filter((placement) => recommended.has(placement.key))
+}
+
+function buildPromoFilterReturnTo(basePath: string, params: MarketingPromoSearchParams) {
+  const searchParams = new URLSearchParams()
+  const q = String(params.q || "").trim()
+  const status = String(params.status || "").trim()
+  const workflow = String(params.workflow || "").trim()
+
+  if (q) searchParams.set("q", q)
+  if (status && status !== "all") searchParams.set("status", status)
+  if (workflow && workflow !== "all") searchParams.set("workflow", workflow)
+
+  const query = searchParams.toString()
+  return query ? `${basePath}?${query}` : basePath
 }
