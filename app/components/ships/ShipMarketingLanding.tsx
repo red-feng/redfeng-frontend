@@ -18,7 +18,7 @@ type ShipMarketingLandingProps = {
 export default async function ShipMarketingLanding({ searchParams }: ShipMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "SEA ROUTES",
       title: "Jelajahi rute kapal dan ferry untuk perjalanan laut yang lebih mudah",
@@ -86,6 +86,31 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       stickyLabel: "打开船票优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "探索船票与渡轮路线，让海上出行更轻松",
+          body: "搜索船票、查看热门海上路线优惠，并在一个顺畅页面中规划从主要港口到热门岛屿的旅程。",
+          searchButton: "搜索船票",
+          benefitTitle: ["主要港口", "航行更安心", "快速渡轮已准备好", "便于扩展到实时班次"],
+          benefitBody: [
+            "Merak、Bakauheni、Bali 与 Nusa Penida 等路线从首屏开始就更容易快速浏览。",
+            "CTA 方向与 section 结构保持一致，阅读与操作都更顺手。",
+            "普通船线与快速渡轮可以进入同一套视觉系统。",
+            "当实时班次准备好后，这个页面可以扩展到实时库存。",
+          ],
+          promoTitle: "海上路线优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最常打开的渡轮、快艇与热门海上路线",
+          popularTitle: "热门海上路线",
+          seeAll: "查看全部路线",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 精选海上路线",
+          stickyLabel: "打开船票优惠",
+        }
+      : baseCopy
 
   const routes = [
     { title: "Merak - Bakauheni", price: "IDR 85.000", image: "/home-assets/dest-bali.png" },

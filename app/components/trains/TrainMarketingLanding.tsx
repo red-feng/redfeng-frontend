@@ -18,7 +18,7 @@ type TrainMarketingLandingProps = {
 export default async function TrainMarketingLanding({ searchParams }: TrainMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "TRAIN ROUTES",
       title: "Jelajahi rute kereta favorit untuk perjalanan antarkota yang lebih nyaman",
@@ -86,6 +86,31 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       stickyLabel: "打开火车优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "探索热门火车路线，让城际出行更从容",
+          body: "搜索火车行程、查看热门线路优惠，并在一个清晰顺畅的页面中安排从大城市到重点目的地的旅程。",
+          searchButton: "搜索火车",
+          benefitTitle: ["热门线路", "预订更安心", "高铁已准备好", "便于扩展到实时班次"],
+          benefitBody: [
+            "主要路线与出行灵感从首屏开始就更容易快速浏览。",
+            "CTA 模式与卡片节奏保持一致，阅读和操作都更自然。",
+            "普通列车与高铁可以共存，而不需要更换视觉语言。",
+            "当实时班次准备好后，这个页面可以直接扩展到实时结果。",
+          ],
+          promoTitle: "火车线路优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最关注的城际与高铁路线",
+          popularTitle: "热门火车路线",
+          seeAll: "查看全部路线",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 精选火车路线",
+          stickyLabel: "打开火车优惠",
+        }
+      : baseCopy
 
   const routes = [
     { title: "Jakarta - Bandung", price: "IDR 250.000", image: "/home-assets/card-train.png" },

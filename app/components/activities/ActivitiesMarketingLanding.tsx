@@ -18,7 +18,7 @@ type ActivitiesMarketingLandingProps = {
 export default async function ActivitiesMarketingLanding({ searchParams }: ActivitiesMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "ACTIVITY PICKS",
       title: "Temukan aktivitas pilihan untuk melengkapi perjalananmu bersama RedFeng",
@@ -86,6 +86,31 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       stickyLabel: "打开活动优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "发现精选活动，让旅程体验更加完整",
+          body: "搜索热门景点、行程与活动，并进入最适合下一次出行计划的活动优惠。",
+          searchButton: "搜索活动",
+          benefitTitle: ["热门景点", "即时票券", "活动与行程已准备好", "便于扩展到实时库存"],
+          benefitBody: [
+            "热门活动从首屏开始就更容易被快速浏览。",
+            "CTA 与卡片结构保持一致，浏览体验更顺畅。",
+            "景点、行程与活动都能共用同一套视觉语言。",
+            "当实时库存准备好后，这个页面可以继续扩展到实时结果。",
+          ],
+          promoTitle: "活动优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最常打开的主题乐园、活动与行程",
+          popularTitle: "热门活动目的地",
+          seeAll: "查看全部目的地",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 精选活动",
+          stickyLabel: "打开活动优惠",
+        }
+      : baseCopy
 
   const destinations = [
     { title: "Shanghai", price: "IDR 480.000", image: "/home-assets/dest-jakarta.png" },

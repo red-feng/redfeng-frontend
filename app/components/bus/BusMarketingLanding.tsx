@@ -18,7 +18,7 @@ type BusMarketingLandingProps = {
 export default async function BusMarketingLanding({ searchParams }: BusMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "BUS JOURNEYS",
       title: "Temukan rute bus favorit untuk perjalanan darat yang lebih praktis",
@@ -86,6 +86,31 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       stickyLabel: "打开巴士优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "发现热门巴士路线，让陆路出行更高效",
+          body: "搜索巴士行程、查看城际路线优惠，并在一个清晰页面中安排从大城市到度假目的地的陆路旅程。",
+          searchButton: "搜索巴士",
+          benefitTitle: ["核心线路", "预订更安心", "卧铺已准备好", "便于扩展到实时运营商"],
+          benefitBody: [
+            "城际与热门路线从一开始就更容易被快速浏览。",
+            "CTA 方向与卡片节奏保持一致，操作路径更自然。",
+            "普通巴士与卧铺路线可以共用同一套视觉语言。",
+            "当实时运营商准备好后，这个页面可以直接接入实时结果。",
+          ],
+          promoTitle: "巴士路线优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最常搜索的热门陆路路线与卧铺路线",
+          popularTitle: "热门巴士路线",
+          seeAll: "查看全部路线",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 精选巴士路线",
+          stickyLabel: "打开巴士优惠",
+        }
+      : baseCopy
 
   const routes = [
     { title: "Jakarta - Yogyakarta", price: "IDR 320.000", image: "/home-assets/card-package.png" },

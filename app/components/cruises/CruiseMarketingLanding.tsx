@@ -18,7 +18,7 @@ type CruiseMarketingLandingProps = {
 export default async function CruiseMarketingLanding({ searchParams }: CruiseMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "CRUISE JOURNEYS",
       title: "Temukan itinerary cruise pilihan untuk perjalanan laut yang lebih berkesan",
@@ -86,6 +86,31 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
       stickyLabel: "打开邮轮优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "发现精选邮轮行程，让海上假期更难忘",
+          body: "搜索邮轮、查看高端行程优惠，并在一个精致页面中规划家庭航程或奢享海上假期。",
+          searchButton: "搜索邮轮",
+          benefitTitle: ["高端航线", "可信舱房", "家庭与豪华已准备好", "便于扩展到实时库存"],
+          benefitBody: [
+            "邮轮路线与 itinerary 类型从首屏开始就更清晰。",
+            "CTA 与卡片结构保持一致，浏览体验更完整。",
+            "标准、豪华与家庭邮轮都能共用同一套视觉语言。",
+            "当实时库存准备好后，这个页面可以扩展到实时结果。",
+          ],
+          promoTitle: "精选邮轮优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖高端 itinerary、家庭邮轮与客户偏爱的热门路线",
+          popularTitle: "热门邮轮路线",
+          seeAll: "查看全部路线",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 精选邮轮",
+          stickyLabel: "打开邮轮优惠",
+        }
+      : baseCopy
 
   const routes = [
     { title: "Singapore - Penang - Phuket", price: "IDR 3.850.000", image: "/home-assets/dest-singapore.png" },

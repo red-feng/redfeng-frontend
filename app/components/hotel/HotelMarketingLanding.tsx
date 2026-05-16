@@ -18,7 +18,7 @@ type HotelMarketingLandingProps = {
 export default async function HotelMarketingLanding({ searchParams }: HotelMarketingLandingProps) {
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "HOTEL STAYS",
       title: "Temukan hotel pilihan untuk stay yang lebih tenang dan terencana",
@@ -86,6 +86,31 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       stickyLabel: "打开酒店优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "发现精选酒店，让每次入住更从容",
+          body: "搜索住宿、比较热门酒店，并在一个清晰易读的页面中进入最合适的住宿优惠。",
+          searchButton: "搜索酒店",
+          benefitTitle: ["价格更透明", "预订更安心", "精选住宿", "已准备接入实时库存"],
+          benefitBody: [
+            "展示价格保持清楚，也方便后续扩展到实时房价。",
+            "CTA 方向与卡片节奏保持一致，浏览体验更顺手。",
+            "热门住宿目的地更有温度，不会显得像普通目录页。",
+            "当酒店实时库存准备好后，这个页面可以直接接入搜索流程。",
+          ],
+          promoTitle: "精选住宿优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最常浏览的酒店与住宿类型",
+          popularTitle: "热门住宿目的地",
+          seeAll: "查看全部目的地",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 推荐住宿",
+          stickyLabel: "打开酒店优惠",
+        }
+      : baseCopy
 
   const destinations = [
     { title: "Bali", price: "IDR 650.000", image: "/home-assets/dest-bali.png" },

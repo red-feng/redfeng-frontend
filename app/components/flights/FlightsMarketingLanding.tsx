@@ -19,7 +19,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
   const locale = await getCurrentLocale()
   const promos = await getMarketingPromos(locale, { limit: 4 })
 
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "FLIGHT JOURNEYS",
       title: "Terbang ke destinasi impianmu bersama RedFeng",
@@ -87,6 +87,31 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       newsletterCta: "打开机票优惠",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          title: "与 RedFeng 一起飞往理想目的地",
+          body: "搜索航班、查看精选航线优惠，并在一个清晰顺畅的页面中规划从大城市到度假目的地的旅程。",
+          searchButton: "搜索航班",
+          benefitTitle: ["更优票价", "支付更安心", "航空伙伴", "已准备接入实时优惠"],
+          benefitBody: [
+            "从起点开始就更轻松地浏览热门航线与出行灵感。",
+            "表单节奏与 CTA 保持清晰，便于快速进入下一步搜索。",
+            "合作航司区域更轻盈，也更符合 RedFeng 的整体视觉气质。",
+            "当实时航班引擎准备好后，这个页面可以直接接入而无需重做结构。",
+          ],
+          promoTitle: "精选航线优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          offerLine: "覆盖客户最常搜索的热门航线",
+          popularTitle: "热门目的地",
+          seeAll: "查看全部目的地",
+          fromLabel: "起价",
+          recommendationTitle: "RedFeng 航空伙伴",
+          newsletterCta: "打开机票优惠",
+        }
+      : baseCopy
 
   const destinations = [
     { title: "Bali", price: "IDR 950.000", image: "/home-assets/dest-bali.png" },
