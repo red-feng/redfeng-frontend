@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
-import { deleteMarketingPromo, upsertMarketingPromo } from "@/app/marketing/(protected)/actions"
-import { getMarketingPromoPlacementLabel, marketingPromoPlacementKeys, marketingPromoPlacements } from "@/lib/marketing-promo-placements"
+import { deleteMarketingPromo, toggleMarketingPromoPlacement, upsertMarketingPromo } from "@/app/marketing/(protected)/actions"
+import { getMarketingPromoPlacementLabel, marketingPromoPlacements, type MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel, getMarketingPromoStatusLabel, marketingPromoStatuses } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
 
@@ -350,6 +350,94 @@ export default async function MarketingPromosPage({
                   <p className="mt-2 text-sm text-slate-500">
                     Placements: {(promo.placement_keys || []).length ? (promo.placement_keys || []).map((value) => getMarketingPromoPlacementLabel(String(value))).join(", ") : "Belum dipilih"}
                   </p>
+                    <div className="mt-4 space-y-3">
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Core slot summary</p>
+                        <div className="flex flex-wrap gap-2">
+                          {getEnabledCoreQuickAssignPlacements(promo.placement_keys || []).length ? (
+                            getEnabledCoreQuickAssignPlacements(promo.placement_keys || []).map((placement) => (
+                              <span
+                                key={`${promo.id}-${placement.key}-summary`}
+                                className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-700"
+                              >
+                                {placement.shortLabel}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                              No core slot
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Service slot summary</p>
+                        <div className="flex flex-wrap gap-2">
+                          {getEnabledServiceQuickAssignPlacements(promo.placement_keys || []).length ? (
+                            getEnabledServiceQuickAssignPlacements(promo.placement_keys || []).map((placement) => (
+                              <span
+                                key={`${promo.id}-${placement.key}-summary`}
+                                className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-700"
+                              >
+                                {placement.shortLabel}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                              No service slot
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick assign core slots</p>
+                      <div className="flex flex-wrap gap-2">
+                        {getQuickAssignableCorePlacements().map((placement) => {
+                          const enabled = (promo.placement_keys || []).includes(placement.key)
+                          return (
+                            <form key={`${promo.id}-${placement.key}`} action={toggleMarketingPromoPlacement}>
+                              <input type="hidden" name="promo_id" value={String(promo.id)} />
+                              <input type="hidden" name="slug" value={String(promo.slug)} />
+                              <input type="hidden" name="placement_key" value={placement.key} />
+                              <input type="hidden" name="mode" value={enabled ? "disable" : "enable"} />
+                              <input type="hidden" name="return_to" value={basePath} />
+                              <button
+                                className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                                  enabled
+                                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                }`}
+                              >
+                                {placement.shortLabel}: {enabled ? "On" : "Off"}
+                              </button>
+                            </form>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick assign service slots</p>
+                      <div className="flex flex-wrap gap-2">
+                        {getQuickAssignableServicePlacements().map((placement) => {
+                          const enabled = (promo.placement_keys || []).includes(placement.key)
+                          return (
+                            <form key={`${promo.id}-${placement.key}`} action={toggleMarketingPromoPlacement}>
+                            <input type="hidden" name="promo_id" value={String(promo.id)} />
+                            <input type="hidden" name="slug" value={String(promo.slug)} />
+                            <input type="hidden" name="placement_key" value={placement.key} />
+                            <input type="hidden" name="mode" value={enabled ? "disable" : "enable"} />
+                            <input type="hidden" name="return_to" value={basePath} />
+                            <button
+                              className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                                enabled
+                                  ? "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              {placement.shortLabel}: {enabled ? "On" : "Off"}
+                            </button>
+                          </form>
+                        )
+                      })}
+                    </div>
+                  </div>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${getWorkflowBadgeClass(promo.workflowState)}`}>
                       {getWorkflowLabel(promo.workflowState)}
@@ -391,7 +479,8 @@ function PromoForm({
   portal: MarketingPromoPortal
 }) {
   const returnTo = portal === "superadmin" ? "/superadmin/marketing-promos" : "/marketing/promos"
-  const selectedPlacements = promo?.placement_keys?.length ? promo.placement_keys : [...marketingPromoPlacementKeys]
+  const selectedPlacements = promo?.placement_keys?.length ? promo.placement_keys : getDefaultMarketingPromoPlacements(promo?.target_href)
+  const recommendedPlacements = getDefaultMarketingPromoPlacements(promo?.target_href)
   const formTitle = promo ? "Edit promo" : "Buat promo"
   const formSubtitle = promo
     ? "Rapikan identitas, jadwal, placement, dan visual promo dari panel yang lebih terstruktur."
@@ -473,6 +562,12 @@ function PromoForm({
         </div>
         <div className="mt-4 space-y-3">
           <p className="text-sm font-medium text-slate-700">Placement publik</p>
+          <div className="rounded-[18px] border border-[#efe1cf] bg-[#fff7ef] px-4 py-4 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">Saran cepat berdasarkan target landing</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {recommendedPlacements.map((value) => getMarketingPromoPlacementLabel(String(value))).join(", ")}
+            </p>
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
             {marketingPromoPlacements.map((placement) => (
               <label key={placement.key} className="rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700">
@@ -652,4 +747,57 @@ function getWorkflowBadgeClass(value: ReturnType<typeof getPromoWorkflowState>) 
     default:
       return "bg-slate-100 text-slate-700"
   }
+}
+
+function getDefaultMarketingPromoPlacements(targetHref?: string | null) {
+  const href = String(targetHref || "").trim().toLowerCase()
+
+  if (href.startsWith("/packages")) return ["packages_featured", "promo_listing"]
+  if (href.startsWith("/pesawat")) return ["flights_featured", "promo_listing"]
+  if (href.startsWith("/hotel")) return ["hotels_featured", "promo_listing"]
+  if (href.startsWith("/kereta")) return ["trains_featured", "promo_listing"]
+  if (href.startsWith("/bus")) return ["buses_featured", "promo_listing"]
+  if (href.startsWith("/kapal-pesiar")) return ["cruises_featured", "promo_listing"]
+  if (href.startsWith("/kapal")) return ["ships_featured", "promo_listing"]
+  if (href.startsWith("/aktivitas")) return ["activities_featured", "promo_listing"]
+  if (href.startsWith("/promo")) return ["promo_listing"]
+
+  return ["homepage_feed", "promo_listing"]
+}
+
+function getQuickAssignableCorePlacements(): Array<{
+  key: MarketingPromoPlacementKey
+  shortLabel: string
+}> {
+  return [
+    { key: "homepage_feed", shortLabel: "Homepage" },
+    { key: "promo_listing", shortLabel: "Promo Listing" },
+    { key: "wishlist_suggestions", shortLabel: "Wishlist" },
+  ]
+}
+
+function getQuickAssignableServicePlacements(): Array<{
+  key: MarketingPromoPlacementKey
+  shortLabel: string
+}> {
+  return [
+    { key: "packages_featured", shortLabel: "Packages" },
+    { key: "flights_featured", shortLabel: "Flights" },
+    { key: "hotels_featured", shortLabel: "Hotels" },
+    { key: "trains_featured", shortLabel: "Trains" },
+    { key: "buses_featured", shortLabel: "Buses" },
+    { key: "ships_featured", shortLabel: "Ships" },
+    { key: "cruises_featured", shortLabel: "Cruises" },
+    { key: "activities_featured", shortLabel: "Activities" },
+  ]
+}
+
+function getEnabledCoreQuickAssignPlacements(placementKeys: string[]) {
+  const enabledPlacementSet = new Set(placementKeys.map((value) => String(value)))
+  return getQuickAssignableCorePlacements().filter((placement) => enabledPlacementSet.has(placement.key))
+}
+
+function getEnabledServiceQuickAssignPlacements(placementKeys: string[]) {
+  const enabledPlacementSet = new Set(placementKeys.map((value) => String(value)))
+  return getQuickAssignableServicePlacements().filter((placement) => enabledPlacementSet.has(placement.key))
 }

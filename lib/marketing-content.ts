@@ -86,7 +86,13 @@ export type MarketingPromo = {
 
 type MarketingPromosOptions = {
   placement?: MarketingPromoPlacementKey
+  fallbackPlacement?: MarketingPromoPlacementKey
   limit?: number
+}
+
+export type MarketingPromosResolved = {
+  promos: MarketingPromo[]
+  placementUsed?: MarketingPromoPlacementKey
 }
 
 export type MarketingInspirationArticle = {
@@ -273,16 +279,41 @@ async function fetchPromoRowsByPlacement(placement: MarketingPromoPlacementKey) 
   return promoIds.map((promoId) => promoMap.get(promoId)).filter((row) => Boolean(row) && isPromoCurrentlyVisible(row as PromoRow, nowIso)) as PromoRow[]
 }
 
-export async function getMarketingPromos(locale: Locale, options: MarketingPromosOptions = {}) {
-  const rowsFromPlacement = options.placement ? await fetchPromoRowsByPlacement(options.placement) : await fetchAllActivePromoRows()
-  const rows = rowsFromPlacement ?? buildFallbackPromos()
-  const localizedRows = rows.map((row) => mapPromoRow(row, locale))
+export async function getMarketingPromosResolved(locale: Locale, options: MarketingPromosOptions = {}): Promise<MarketingPromosResolved> {
+  let rows: PromoRow[] | null = null
+  let placementUsed: MarketingPromoPlacementKey | undefined
 
-  if (typeof options.limit === "number" && options.limit >= 0) {
-    return localizedRows.slice(0, options.limit)
+  if (options.placement) {
+    const primaryRows = await fetchPromoRowsByPlacement(options.placement)
+    if (primaryRows?.length) {
+      rows = primaryRows
+      placementUsed = options.placement
+    } else if (options.fallbackPlacement) {
+      const fallbackRows = await fetchPromoRowsByPlacement(options.fallbackPlacement)
+      if (fallbackRows?.length) {
+        rows = fallbackRows
+        placementUsed = options.fallbackPlacement
+      } else if (fallbackRows === null) {
+        rows = null
+      } else {
+        rows = primaryRows
+      }
+    } else {
+      rows = primaryRows
+    }
+  } else {
+    rows = await fetchAllActivePromoRows()
   }
 
-  return localizedRows
+  rows = rows ?? buildFallbackPromos()
+  const localizedRows = rows.map((row) => mapPromoRow(row, locale))
+  const promos = typeof options.limit === "number" && options.limit >= 0 ? localizedRows.slice(0, options.limit) : localizedRows
+  return { promos, placementUsed }
+}
+
+export async function getMarketingPromos(locale: Locale, options: MarketingPromosOptions = {}) {
+  const { promos } = await getMarketingPromosResolved(locale, options)
+  return promos
 }
 
 export async function getMarketingPromoBySlug(slug: string, locale: Locale) {

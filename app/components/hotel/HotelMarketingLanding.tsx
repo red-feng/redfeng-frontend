@@ -8,7 +8,7 @@ import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
 import HotelHeroSearchBar from "@/app/components/hotel/HotelHeroSearchBar"
-import { getMarketingPromos } from "@/lib/marketing-content"
+import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
 
 type HotelMarketingLandingProps = {
@@ -17,7 +17,11 @@ type HotelMarketingLandingProps = {
 
 export default async function HotelMarketingLanding({ searchParams }: HotelMarketingLandingProps) {
   const locale = await getCurrentLocale()
-  const promos = await getMarketingPromos(locale, { limit: 4 })
+  const { promos, placementUsed } = await getMarketingPromosResolved(locale, {
+    placement: "hotels_featured",
+    fallbackPlacement: "homepage_feed",
+    limit: 4,
+  })
   const baseCopy = {
     id: {
       eyebrow: "HOTEL STAYS",
@@ -173,7 +177,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
         </section>
 
         <section id="hotel-promo" className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.cardRadiusSmClass} mt-10 rounded-[28px] border border-[#efe2d8] bg-[linear-gradient(180deg,#fff7f3_0%,#fffdfa_100%)] p-4 shadow-[0_26px_70px_-44px_rgba(15,23,42,0.18)] sm:p-6`}>
-          <PromoPlacementImpressionBeacon placement="homepage_feed" sourcePath="/hotel" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
+          <PromoPlacementImpressionBeacon placement={placementUsed || "homepage_feed"} sourcePath="/hotel" promos={promos.map((promo) => ({ id: promo.id, slug: promo.slug }))} />
           <div className="grid gap-5 xl:grid-cols-[300px_repeat(4,minmax(0,1fr))]">
             <article className="rounded-[28px] bg-[linear-gradient(180deg,#fff5f2_0%,#fffaf8_100%)] p-5">
               <h2 className="text-[19px] font-bold leading-[1.1] tracking-[-0.035em] text-slate-950 sm:text-[24px]">{copy.promoTitle}</h2>

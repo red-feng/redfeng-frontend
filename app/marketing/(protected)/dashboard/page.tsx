@@ -176,6 +176,32 @@ export default async function MarketingDashboardPage({
       total: counts.live + counts.waiting + counts.expired + counts.hidden,
     }
   })
+  const groupedPlacementAnalytics = [
+    {
+      key: "core",
+      label: "Core placements",
+      description: "Slot utama yang dipakai lintas halaman publik dan funnel promo umum.",
+      items: placementAnalytics.filter((placement) =>
+        ["homepage_feed", "packages_featured", "promo_listing", "wishlist_suggestions"].includes(placement.key),
+      ),
+    },
+    {
+      key: "services",
+      label: "Service landing placements",
+      description: "Slot khusus untuk landing page layanan seperti pesawat, hotel, kereta, bus, kapal, cruise, dan aktivitas.",
+      items: placementAnalytics.filter((placement) =>
+        [
+          "flights_featured",
+          "hotels_featured",
+          "trains_featured",
+          "buses_featured",
+          "ships_featured",
+          "cruises_featured",
+          "activities_featured",
+        ].includes(placement.key),
+      ),
+    },
+  ].filter((group) => group.items.length > 0)
   const eventCounts = todayPromoEvents.reduce(
     (acc, event) => {
       if (event.event_type === "impression") acc.impressions += 1
@@ -413,32 +439,47 @@ export default async function MarketingDashboardPage({
             </div>
             {!isSuperadminPreview ? <Link href="/marketing/promos" className="text-sm font-semibold text-orange-600">Kelola placement</Link> : null}
           </div>
-          <div className="mt-5 grid gap-3 lg:grid-cols-2 2xl:grid-cols-4">
-            {placementAnalytics.map((placement) => (
-              <article key={placement.key} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{placement.label}</p>
-                <p className="mt-2 text-sm text-slate-500">{placement.description}</p>
-                <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{formatCompactCount(placement.counts.live)}</p>
-                <p className="mt-1 text-xs text-emerald-700">Live</p>
-                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-2 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">Waiting</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.waiting)}</p>
+          <div className="mt-5 space-y-5">
+            {groupedPlacementAnalytics.map((group) => (
+              <section key={group.key} className="space-y-3">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-orange-500">{group.label}</p>
+                    <p className="mt-1 text-sm text-slate-500">{group.description}</p>
                   </div>
-                  <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-2 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-700">Expired</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.expired)}</p>
-                  </div>
-                  <div className="rounded-[16px] border border-slate-200 bg-slate-100 px-2 py-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Hidden</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.hidden)}</p>
-                  </div>
+                  <p className="text-xs text-slate-500">
+                    {formatCompactCount(group.items.reduce((sum, placement) => sum + placement.total, 0))} mapping aktif
+                  </p>
                 </div>
-                <p className="mt-3 text-xs text-slate-500">Total mapping aktif: {formatCompactCount(placement.total)}</p>
-                <p className="mt-2 text-xs text-slate-500">
-                  Hari ini: {formatCompactCount(placementEventMap.get(placement.key)?.impressions || 0)} impresi / {formatCompactCount(placementEventMap.get(placement.key)?.clicks || 0)} klik
-                </p>
-              </article>
+                <div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4">
+                  {group.items.map((placement) => (
+                    <article key={placement.key} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-500">{placement.label}</p>
+                      <p className="mt-2 text-sm text-slate-500">{placement.description}</p>
+                      <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{formatCompactCount(placement.counts.live)}</p>
+                      <p className="mt-1 text-xs text-emerald-700">Live</p>
+                      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-[16px] border border-amber-200 bg-amber-50 px-2 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">Waiting</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.waiting)}</p>
+                        </div>
+                        <div className="rounded-[16px] border border-rose-200 bg-rose-50 px-2 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-rose-700">Expired</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.expired)}</p>
+                        </div>
+                        <div className="rounded-[16px] border border-slate-200 bg-slate-100 px-2 py-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">Hidden</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-900">{formatCompactCount(placement.counts.hidden)}</p>
+                        </div>
+                      </div>
+                      <p className="mt-3 text-xs text-slate-500">Total mapping aktif: {formatCompactCount(placement.total)}</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Hari ini: {formatCompactCount(placementEventMap.get(placement.key)?.impressions || 0)} impresi / {formatCompactCount(placementEventMap.get(placement.key)?.clicks || 0)} klik
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         </section>

@@ -132,6 +132,20 @@ function parseDateTimeValue(value: FormDataEntryValue | null) {
   return parsed.toISOString()
 }
 
+function revalidateMarketingPromoPublicPaths() {
+  revalidatePath("/")
+  revalidatePath("/packages")
+  revalidatePath("/promo")
+  revalidatePath("/wishlist")
+  revalidatePath("/pesawat")
+  revalidatePath("/hotel")
+  revalidatePath("/kereta")
+  revalidatePath("/bus")
+  revalidatePath("/kapal")
+  revalidatePath("/kapal-pesiar")
+  revalidatePath("/aktivitas")
+}
+
 function getOptionalText(formData: FormData, key: string) {
   const value = getText(formData, key)
   return value || null
@@ -661,10 +675,7 @@ export async function upsertMarketingPromo(formData: FormData) {
     },
   })
 
-  revalidatePath("/")
-  revalidatePath("/packages")
-  revalidatePath("/promo")
-  revalidatePath("/wishlist")
+  revalidateMarketingPromoPublicPaths()
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/promos")
   redirectWithMessage(returnTo, promoId ? "Promo berhasil diperbarui." : "Promo berhasil dibuat.", "success")
@@ -1018,13 +1029,86 @@ export async function deleteMarketingPromo(formData: FormData) {
     },
   })
 
-  revalidatePath("/")
-  revalidatePath("/packages")
-  revalidatePath("/promo")
-  revalidatePath("/wishlist")
+  revalidateMarketingPromoPublicPaths()
   revalidatePath("/marketing/dashboard")
   revalidatePath("/marketing/promos")
   redirectWithMessage(returnTo, "Promo berhasil dihapus.", "success")
+}
+
+export async function toggleMarketingPromoPlacement(formData: FormData) {
+  const returnTo = resolveReturnTo(formData, "/marketing/promos")
+  const actor = await ensureMarketingContentOperator(returnTo)
+  const promoId = getText(formData, "promo_id")
+  const placementKey = getText(formData, "placement_key")
+  const mode = getText(formData, "mode")
+  const slug = getText(formData, "slug")
+
+  if (!promoId || !placementKey || !isMarketingPromoPlacementKey(placementKey)) {
+    redirectWithMessage(returnTo, "Placement promo tidak valid.", "error")
+  }
+
+  if (!["enable", "disable"].includes(mode)) {
+    redirectWithMessage(returnTo, "Aksi placement tidak valid.", "error")
+  }
+
+  const adminSupabase = createAdminClient()
+  const { data: promo, error: promoError } = await adminSupabase
+    .from("marketing_promos")
+    .select("id, sort_order, is_active")
+    .eq("id", promoId)
+    .maybeSingle()
+
+  if (promoError || !promo) {
+    redirectWithMessage(returnTo, promoError?.message || "Promo tidak ditemukan.", "error")
+  }
+
+  if (mode === "enable") {
+    const { error: placementError } = await adminSupabase.from("marketing_promo_placements").upsert(
+      {
+        promo_id: promoId,
+        placement_key: placementKey,
+        sort_order: promo.sort_order || 0,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "promo_id,placement_key" },
+    )
+
+    if (placementError) {
+      redirectWithMessage(returnTo, placementError.message, "error")
+    }
+  } else {
+    const { error: placementError } = await adminSupabase
+      .from("marketing_promo_placements")
+      .delete()
+      .eq("promo_id", promoId)
+      .eq("placement_key", placementKey)
+
+    if (placementError) {
+      redirectWithMessage(returnTo, placementError.message, "error")
+    }
+  }
+
+  await createAdminAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    targetType: "internal_account",
+    targetId: promoId,
+    action: mode === "enable" ? "enable_marketing_promo_placement" : "disable_marketing_promo_placement",
+    summary: `Placement ${placementKey} untuk promo ${slug || promoId} ${mode === "enable" ? "diaktifkan" : "dinonaktifkan"}`,
+    metadata: {
+      scope: "marketing_content",
+      section: "promos",
+      slug,
+      placementKey,
+      mode,
+    },
+  })
+
+  revalidateMarketingPromoPublicPaths()
+  revalidatePath("/marketing/dashboard")
+  revalidatePath("/marketing/promos")
+  redirectWithMessage(returnTo, `Placement ${placementKey} berhasil ${mode === "enable" ? "diaktifkan" : "dinonaktifkan"}.`, "success")
 }
 
 export async function upsertMarketingInspiration(formData: FormData) {

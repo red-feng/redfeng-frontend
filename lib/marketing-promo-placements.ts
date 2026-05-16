@@ -10,6 +10,41 @@ export const marketingPromoPlacements = [
     description: "Blok promo utama di landing /packages.",
   },
   {
+    key: "flights_featured",
+    label: "Flights Featured",
+    description: "Blok promo utama di landing /pesawat.",
+  },
+  {
+    key: "hotels_featured",
+    label: "Hotels Featured",
+    description: "Blok promo utama di landing /hotel.",
+  },
+  {
+    key: "trains_featured",
+    label: "Trains Featured",
+    description: "Blok promo utama di landing /kereta.",
+  },
+  {
+    key: "buses_featured",
+    label: "Buses Featured",
+    description: "Blok promo utama di landing /bus.",
+  },
+  {
+    key: "ships_featured",
+    label: "Ships Featured",
+    description: "Blok promo utama di landing /kapal.",
+  },
+  {
+    key: "cruises_featured",
+    label: "Cruises Featured",
+    description: "Blok promo utama di landing /kapal-pesiar.",
+  },
+  {
+    key: "activities_featured",
+    label: "Activities Featured",
+    description: "Blok promo utama di landing /aktivitas.",
+  },
+  {
     key: "promo_listing",
     label: "Promo Listing",
     description: "Halaman /promo yang menampilkan semua campaign publik.",
