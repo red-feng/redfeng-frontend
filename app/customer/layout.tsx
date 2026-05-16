@@ -89,8 +89,8 @@ export default async function CustomerLayout({
   const accountLabel = locale === "en" ? "Account" : locale === "zh" ? "账户" : "Akun"
   const bookingsLabel = locale === "en" ? "Bookings" : locale === "zh" ? "订单" : "Booking"
   const backToSiteLabel = locale === "en" ? "Back to site" : locale === "zh" ? "返回网站" : "Kembali ke Situs"
-  const customerSpaceLabel = locale === "en" ? "Customer Space" : locale === "zh" ? "客户空间" : "Customer Space"
-  const customerHubTitle = locale === "en" ? "RedFeng customer hub" : locale === "zh" ? "RedFeng 客户中心" : "Hub customer RedFeng"
+  const customerSpaceLabel = locale === "en" ? "Customer Space" : locale === "zh" ? "客户空间" : "Ruang Customer"
+  const customerHubTitle = locale === "en" ? "RedFeng customer hub" : locale === "zh" ? "RedFeng 客户中心" : "Pusat customer RedFeng"
   const customerHubBody =
     locale === "en"
       ? "Account, bookings, and preferences in one place."

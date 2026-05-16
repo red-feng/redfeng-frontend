@@ -105,7 +105,27 @@ export default async function CheckoutPage({
   }
 
   if (!pkg) {
-    return <div className="p-10">{t.packageNotFound}</div>
+    return (
+      <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] px-4 py-10 sm:px-6 md:px-10">
+        <div className="mx-auto max-w-3xl">
+          <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[32px] sm:p-8">
+            <p className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-600">
+              {locale === "id" ? "Checkout" : locale === "en" ? "Checkout" : "结账"}
+            </p>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              {t.packageNotFound}
+            </h1>
+            <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+              {locale === "id"
+                ? "Paket yang ingin Anda booking tidak tersedia lagi atau tautannya sudah berubah."
+                : locale === "en"
+                  ? "The package you want to book is no longer available or the link has changed."
+                  : "您想预订的套餐已不可用，或链接已发生变化。"}
+            </p>
+          </section>
+        </div>
+      </main>
+    )
   }
 
   if (user?.id) {

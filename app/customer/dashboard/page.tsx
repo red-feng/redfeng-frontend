@@ -232,8 +232,9 @@ const dashboardCopy = {
     heroBody: "Pantau status transaksi, alur escrow RedFeng, progres pickup merchant, dan akses cepat ke detail trip tanpa perlu lompat antar halaman.",
     travelSnapshot: "Travel snapshot",
     travelSnapshotBody: "Total booking yang terhubung ke akun Anda, termasuk booking aktif dan histori transaksi.",
-    quickActions: "Quick actions",
+    quickActions: "Akses cepat",
     explorePackages: "Jelajahi Paket",
+    openBookings: "Buka Booking Center",
     backHome: "Kembali ke Beranda",
     bookingFeed: "Booking Feed",
     latestBookings: "Booking terbaru Anda",
@@ -323,8 +324,9 @@ const dashboardCopy = {
     heroBody: "Track transaction status, RedFeng escrow flow, merchant pickup progress, and quick access to trip details without jumping between pages.",
     travelSnapshot: "Travel snapshot",
     travelSnapshotBody: "Total bookings linked to your account, including active bookings and transaction history.",
-    quickActions: "Quick actions",
+    quickActions: "Quick access",
     explorePackages: "Explore Packages",
+    openBookings: "Open Bookings Center",
     backHome: "Back to Home",
     bookingFeed: "Booking Feed",
     latestBookings: "Your latest bookings",
@@ -416,6 +418,7 @@ const dashboardCopy = {
     travelSnapshotBody: "与您账号关联的订单总数，包括进行中的订单和交易历史。",
     quickActions: "快捷操作",
     explorePackages: "浏览套餐",
+    openBookings: "打开订单中心",
     backHome: "返回首页",
     bookingFeed: "订单动态",
     latestBookings: "您的最新订单",
@@ -759,8 +762,14 @@ export default async function CustomerDashboardPage() {
                 <p className="text-[11px] uppercase tracking-[0.32em] text-orange-100/80">{t.quickActions}</p>
                 <div className="mt-5 grid gap-3">
                   <Link
-                    href="https://redfeng.co/paket-tour/"
+                    href="/customer/bookings"
                     className="rounded-[18px] bg-white px-4 py-3 text-center text-sm font-semibold text-slate-900 transition hover:bg-orange-50"
+                  >
+                    {t.openBookings}
+                  </Link>
+                  <Link
+                    href="https://redfeng.co/paket-tour/"
+                    className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     {t.explorePackages}
                   </Link>

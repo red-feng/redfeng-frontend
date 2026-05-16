@@ -235,65 +235,73 @@ export default async function MerchantLayout({
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_38%,#f3eee7_100%)]">
       <MerchantNavSeenTracker />
-      <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-[#ecd9c2] bg-white/80 backdrop-blur-xl">
         <div className="mx-auto w-full max-w-[1480px] px-4 py-4 sm:px-6 md:px-8 xl:px-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <Link href="/merchant/dashboard" className="inline-flex items-center">
-                  <Image
-                    src="/home-assets/logo-redfeng-header.png"
-                    alt="Red Feng"
-                    width={1536}
-                    height={1024}
-                    priority
-                    className="h-10 w-auto sm:h-12 md:h-14"
+          <div className="rounded-[28px] border border-[#ecd9c2] bg-white/92 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.06)] backdrop-blur sm:rounded-[32px] sm:p-5">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-4">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <Link href="/merchant/dashboard" className="inline-flex items-center">
+                      <Image
+                        src="/home-assets/logo-redfeng-header.png"
+                        alt="Red Feng"
+                        width={1536}
+                        height={1024}
+                        priority
+                        className="h-10 w-auto sm:h-12 md:h-14"
+                      />
+                    </Link>
+
+                    <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
+                  </div>
+
+                  <div>
+                    <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+                      {t.suiteBadge}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                      <span className="font-semibold uppercase tracking-[0.22em] text-orange-600">{merchantCode}</span>
+                      <span className="text-slate-500">{locationLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <div className="rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
+                    {t.merchantBadge}
+                  </div>
+                  <MerchantLanguageSwitcher
+                    locale={locale}
+                    label={t.languageLabel}
+                    options={[
+                      { value: "id", label: "IDR/ID" },
+                      { value: "en", label: "USD/EN" },
+                      { value: "zh", label: "CNY/ZH" },
+                    ]}
                   />
-                </Link>
-
-                <div className="hidden h-10 w-px bg-[#ead8c0] lg:block" />
-
-                <div className="hidden lg:block">
-                  <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
-                    {t.suiteBadge}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">{merchantLabel}</p>
-                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-orange-600">{merchantCode}</p>
-                  <p className="text-xs text-slate-500">{locationLabel}</p>
+                  <Link
+                    href="/"
+                    className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
+                  >
+                    {t.viewSite}
+                  </Link>
+                  <SignOutButton
+                    portal="merchant"
+                    label={t.logout}
+                    redirectTo="https://app.redfeng.co/merchant/login"
+                    className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
+                  />
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <div className="rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  {t.merchantBadge}
-                </div>
-                <MerchantLanguageSwitcher
-                  locale={locale}
-                  label={t.languageLabel}
-                  options={[
-                    { value: "id", label: "IDR/ID" },
-                    { value: "en", label: "USD/EN" },
-                    { value: "zh", label: "CNY/ZH" },
-                  ]}
-                />
-                <Link
-                  href="/"
-                  className="rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:text-orange-600"
-                >
-                  {t.viewSite}
-                </Link>
-                <SignOutButton
-                  portal="merchant"
-                  label={t.logout}
-                  redirectTo="https://app.redfeng.co/merchant/login"
-                  className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
-                />
+              <div className="rounded-[22px] border border-[#efe1cf] bg-[linear-gradient(180deg,#fffdf9_0%,#fff7ef_100%)] px-3 py-3 sm:px-4">
+                <nav className="overflow-x-auto pb-1">
+                  <MerchantNavLinks items={merchantNav} statusText={merchantNavStatusText} />
+                </nav>
               </div>
             </div>
-
-            <nav className="overflow-x-auto pb-1">
-              <MerchantNavLinks items={merchantNav} statusText={merchantNavStatusText} />
-            </nav>
           </div>
         </div>
       </header>

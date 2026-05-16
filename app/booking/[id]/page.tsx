@@ -614,13 +614,33 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#eef2ff_100%)] p-6 md:p-10">
       <div className="mx-auto max-w-4xl">
-        <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">{openedFromCheckout ? t.bookingConfirmation : t.bookingSuccess}</h1>
-          <p className="mt-2 text-sm text-slate-500">
-            {openedFromCheckout
-              ? t.confirmationIntro
-              : t.successIntro}
-          </p>
+        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm sm:rounded-[32px] sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-2xl">
+              <p className="inline-flex rounded-full border border-orange-200 bg-orange-50 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-600">
+                {openedFromCheckout ? t.bookingConfirmation : t.bookingSuccess}
+              </p>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                {formatBookingCode(booking.booking_code, booking.id)}
+              </h1>
+              <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                {openedFromCheckout ? t.confirmationIntro : t.successIntro}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-slate-200 bg-slate-50/80 px-4 py-4 sm:min-w-[220px]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t.journeyPhase}</p>
+              <span className={`mt-3 inline-flex rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] ${phase.tone}`}>
+                {phase.label}
+              </span>
+              <p className="mt-3 text-xs leading-6 text-slate-500">
+                {locale === "en"
+                  ? "Customer funds remain in escrow until the trip checkpoints are fully completed."
+                  : locale === "zh"
+                    ? "在行程检查点全部完成之前，客户资金会继续保留在托管账户中。"
+                    : "Dana customer tetap berada di escrow sampai checkpoint perjalanan selesai sepenuhnya."}
+              </p>
+            </div>
+          </div>
         </section>
 
         {openedFromCheckout ? (
