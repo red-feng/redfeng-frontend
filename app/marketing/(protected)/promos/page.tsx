@@ -10,9 +10,11 @@ import {
   toggleMarketingPromoPlacement,
   upsertMarketingPromo,
 } from "@/app/marketing/(protected)/actions"
+import { getBookingProductLabel, normalizeBookingProductType, type BookingProductType } from "@/lib/booking-products"
 import { getMarketingPromoPlacementLabel, marketingPromoPlacements, type MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, getMarketingPromoEffectiveStateLabel, getMarketingPromoStatusLabel, marketingPromoStatuses } from "@/lib/marketing-promo-status"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getTransactionPromoModeLabel, getTransactionPromoStatusLabel } from "@/lib/transaction-promos"
 
 type MarketingPromoSearchParams = {
   success?: string
@@ -55,6 +57,16 @@ type PromoEditorRecord = {
   sort_order: number | null
   updated_at: string | null
   placement_keys: string[]
+  linked_transaction_promos: TransactionPromoPickerRecord[]
+}
+
+type TransactionPromoPickerRecord = {
+  id: string
+  name: string
+  code: string | null
+  status: string | null
+  is_auto_apply: boolean | null
+  product_types: BookingProductType[]
 }
 
 export default async function MarketingPromosPage({
@@ -87,7 +99,7 @@ export default async function MarketingPromosPage({
     promoQuery = promoQuery.eq("status", statusFilter)
   }
 
-  const [{ data }, { count: activeCount }, { count: draftCount }, { count: scheduledCount }, { count: pausedCount }, { data: placementRows }] = await Promise.all([
+  const [{ data }, { count: activeCount }, { count: draftCount }, { count: scheduledCount }, { count: pausedCount }, { data: placementRows }, { data: marketingPromoLinks }, { data: transactionPromoRules }] = await Promise.all([
     promoQuery,
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("status", "active"),
     adminSupabase.from("marketing_promos").select("id", { count: "exact", head: true }).eq("status", "draft"),
@@ -97,6 +109,13 @@ export default async function MarketingPromosPage({
       .from("marketing_promo_placements")
       .select("promo_id, placement_key")
       .eq("is_active", true),
+    adminSupabase
+      .from("marketing_promo_transaction_rules")
+      .select("marketing_promo_id, transaction_promo_rule_id"),
+    adminSupabase
+      .from("transaction_promo_rules")
+      .select("id, name, code, status, is_auto_apply, transaction_promo_rule_targets(product_type)")
+      .order("updated_at", { ascending: false }),
   ])
 
   const placementsByPromoId = new Map<string, string[]>()
@@ -109,10 +128,53 @@ export default async function MarketingPromosPage({
     placementsByPromoId.set(promoId, current)
   }
 
-  const promos = (((data as Array<Omit<PromoEditorRecord, "placement_keys">> | null) || [])
+  const promoRuleMap = new Map<string, TransactionPromoPickerRecord>()
+  for (const rule of ((transactionPromoRules as Array<{
+    id: string | null
+    name?: string | null
+    code?: string | null
+    status?: string | null
+    is_auto_apply?: boolean | null
+    transaction_promo_rule_targets?: Array<{ product_type?: string | null }> | null
+  }> | null) || [])) {
+    const ruleId = String(rule.id || "")
+    if (!ruleId) continue
+    const productTypes = Array.from(
+      new Set(
+        (rule.transaction_promo_rule_targets || [])
+          .map((target) => normalizeBookingProductType(target.product_type))
+          .filter((value): value is BookingProductType => Boolean(value)),
+      ),
+    )
+
+    promoRuleMap.set(ruleId, {
+      id: ruleId,
+      name: String(rule.name || "Promo transaksi tanpa nama"),
+      code: rule.code || null,
+      status: rule.status || null,
+      is_auto_apply: rule.is_auto_apply || false,
+      product_types: productTypes,
+    })
+  }
+
+  const linkedRulesByPromoId = new Map<string, TransactionPromoPickerRecord[]>()
+  for (const row of ((marketingPromoLinks as Array<{ marketing_promo_id?: string | null; transaction_promo_rule_id?: string | null }> | null) || [])) {
+    const promoId = String(row.marketing_promo_id || "")
+    const ruleId = String(row.transaction_promo_rule_id || "")
+    const rule = promoRuleMap.get(ruleId)
+    if (!promoId || !rule) continue
+    const current = linkedRulesByPromoId.get(promoId) || []
+    current.push(rule)
+    linkedRulesByPromoId.set(promoId, current)
+  }
+
+  const availableTransactionPromos = Array.from(promoRuleMap.values())
+
+  const promos = (((data as Array<Omit<PromoEditorRecord, "placement_keys" | "linked_transaction_promos">> | null) || [])
     .map((promo) => ({
       ...promo,
       placement_keys: placementsByPromoId.get(String(promo.id || "")) || [],
+      linked_transaction_promos: linkedRulesByPromoId.get(String(promo.id || "")) || [],
     }))
     .map((promo) => {
       const effectiveState = getMarketingPromoEffectiveState(promo, nowIso)
@@ -621,7 +683,7 @@ export default async function MarketingPromosPage({
                   </button>
                 </form>
               </div>
-              <PromoForm promo={promo} portal={portal} />
+              <PromoForm promo={promo} portal={portal} availableTransactionPromos={availableTransactionPromos} />
             </article>
           ))}
         </section>
@@ -633,13 +695,16 @@ export default async function MarketingPromosPage({
 function PromoForm({
   promo,
   portal,
+  availableTransactionPromos,
 }: {
   promo?: PromoEditorRecord
   portal: MarketingPromoPortal
+  availableTransactionPromos: TransactionPromoPickerRecord[]
 }) {
   const returnTo = portal === "superadmin" ? "/superadmin/marketing-promos" : "/marketing/promos"
   const selectedPlacements = promo?.placement_keys?.length ? promo.placement_keys : getDefaultMarketingPromoPlacements(promo?.target_href)
   const recommendedPlacements = getDefaultMarketingPromoPlacements(promo?.target_href)
+  const selectedTransactionPromoRuleIds = new Set((promo?.linked_transaction_promos || []).map((linkedPromo) => linkedPromo.id))
   const formTitle = promo ? "Edit promo" : "Buat promo"
   const formSubtitle = promo
     ? "Rapikan identitas, jadwal, placement, dan visual promo dari panel yang lebih terstruktur."
@@ -739,6 +804,53 @@ function PromoForm({
                 </span>
               </label>
             ))}
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
+        eyebrow="Checkout linkage"
+        title="Hubungkan campaign publik ke promo checkout"
+        description="Tautkan campaign ini ke kupon atau auto-apply promo transaksi agar campaign publik bisa dibaca sampai ke promo checkout."
+      >
+        <div className="space-y-3">
+          <div className="rounded-[18px] border border-[#efe1cf] bg-[#fff7ef] px-4 py-4 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">Link promo checkout</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {promo?.linked_transaction_promos?.length
+                ? promo.linked_transaction_promos.map((linkedPromo) => linkedPromo.name).join(", ")
+                : "Belum ada promo transaksi yang ditautkan ke campaign ini."}
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {availableTransactionPromos.length ? (
+              availableTransactionPromos.map((transactionPromo) => (
+                <label key={transactionPromo.id} className="rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm text-slate-700">
+                  <span className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      name="linked_transaction_promo_rule_ids"
+                      value={transactionPromo.id}
+                      defaultChecked={selectedTransactionPromoRuleIds.has(transactionPromo.id)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <span className="block font-semibold text-slate-900">{transactionPromo.name}</span>
+                      <span className="mt-1 block text-xs leading-6 text-slate-500">
+                        {getTransactionPromoModeLabel(transactionPromo.is_auto_apply, transactionPromo.code)} · {getTransactionPromoStatusLabel(transactionPromo.status)}
+                      </span>
+                      <span className="mt-1 block text-xs leading-6 text-slate-500">
+                        Target: {transactionPromo.product_types.length ? transactionPromo.product_types.map((productType) => getBookingProductLabel(productType)).join(", ") : "Target layanan belum ditentukan"}
+                      </span>
+                    </span>
+                  </span>
+                </label>
+              ))
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-[#e6d8c2] bg-[#fffdf9] px-4 py-4 text-sm text-slate-500">
+                Belum ada promo transaksi yang bisa ditautkan. Buat dulu draft atau promo aktif dari panel promo transaksi.
+              </div>
+            )}
           </div>
         </div>
       </FormSection>

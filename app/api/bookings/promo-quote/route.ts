@@ -2,12 +2,19 @@ import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { getRequiredEnv } from "@/lib/env"
 import { normalizeLocale } from "@/lib/i18n"
+import { logTransactionPromoEvent } from "@/lib/transaction-promo-events"
+import { createClient as createServerClient } from "@/lib/supabase/server"
 import { resolvePackageCheckoutPromoPricing } from "@/lib/transaction-promo-checkout"
 
 export async function POST(req: Request) {
   try {
+    const authSupabase = await createServerClient()
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser()
     const body = await req.json()
     const packageId = String(body.package_id || "").trim()
+    const normalizedLocale = normalizeLocale(body.locale)
     if (!packageId) {
       return NextResponse.json({ error: "Paket tidak valid" }, { status: 400 })
     }
@@ -20,12 +27,54 @@ export async function POST(req: Request) {
     const result = await resolvePackageCheckoutPromoPricing({
       supabase,
       packageId,
-      locale: normalizeLocale(body.locale),
+      locale: normalizedLocale,
       adultCount: Number(body.adult_count || 0),
       childCount: Number(body.child_count || 0),
       paymentMethod: body.payment_method,
       promoCode: body.promo_code,
+      customerId: user?.id || null,
+      customerEmail: user?.email || String(body.customer_email || "").trim() || null,
     })
+
+    if (result.promo.applied && result.promo.rule?.id) {
+      await logTransactionPromoEvent({
+        supabase,
+        ruleId: result.promo.rule.id,
+        customerId: user?.id || null,
+        eventType: "quoted",
+        metadata: {
+          source: "package_checkout_quote",
+          packageId,
+          locale: normalizedLocale,
+          adultCount: Number(body.adult_count || 0),
+          childCount: Number(body.child_count || 0),
+          paymentMethod: body.payment_method || null,
+          promoCode: result.promo.normalizedCode,
+          quoteSource: result.promo.source,
+          discountAmount:
+            result.paymentBreakdown.subtotalAmount < result.beforePromo.paymentSubtotalAmount
+              ? result.beforePromo.paymentSubtotalAmount - result.paymentBreakdown.subtotalAmount
+              : 0,
+        },
+      })
+    } else if (String(body.promo_code || "").trim()) {
+      await logTransactionPromoEvent({
+        supabase,
+        ruleId: result.promo.rule?.id || null,
+        customerId: user?.id || null,
+        eventType: "rejected",
+        reason: result.promo.message,
+        metadata: {
+          source: "package_checkout_quote",
+          packageId,
+          locale: normalizedLocale,
+          adultCount: Number(body.adult_count || 0),
+          childCount: Number(body.child_count || 0),
+          paymentMethod: body.payment_method || null,
+          promoCode: String(body.promo_code || "").trim() || null,
+        },
+      })
+    }
 
     return NextResponse.json({
       ok: true,

@@ -417,6 +417,7 @@ export default function CheckoutClient({
     let cancelled = false
 
     const quotePromo = async () => {
+      const quoteCustomerEmail = email.trim()
       if (adultCount + childCount <= 0) {
         setPromoState({
           loading: false,
@@ -444,6 +445,7 @@ export default function CheckoutClient({
             child_count: childCount,
             payment_method: resolveActiveCustomerPaymentMethod(paymentMethod),
             promo_code: trimmedPromoCode,
+            customer_email: quoteCustomerEmail,
           }),
         })
 
@@ -484,7 +486,7 @@ export default function CheckoutClient({
     return () => {
       cancelled = true
     }
-  }, [adultCount, childCount, data.id, locale, paymentMethod, trimmedPromoCode, ui.bookingCreationIssue])
+  }, [adultCount, childCount, data.id, email, locale, paymentMethod, trimmedPromoCode, ui.bookingCreationIssue])
 
   const effectivePickupDate = usesFixedDeparture ? fixedDepartureDate : pickupDate
   const fixedDepartureTooSoon = usesFixedDeparture && Boolean(fixedDepartureDate) && fixedDepartureDate < minimumBookingDate

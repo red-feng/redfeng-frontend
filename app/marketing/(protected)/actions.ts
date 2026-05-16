@@ -123,6 +123,17 @@ function getSelectedTransactionPromoProductTypes(formData: FormData) {
   )
 }
 
+function getSelectedLinkedTransactionPromoRuleIds(formData: FormData) {
+  return Array.from(
+    new Set(
+      formData
+        .getAll("linked_transaction_promo_rule_ids")
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  )
+}
+
 function parseDateTimeValue(value: FormDataEntryValue | null) {
   const raw = String(value || "").trim()
   if (!raw) return null
@@ -160,6 +171,22 @@ function getRecommendedMarketingPromoPlacementsByHref(targetHref?: string | null
   if (href.startsWith("/promo")) return ["promo_listing"]
 
   return ["homepage_feed", "promo_listing"]
+}
+
+function getRecommendedMarketingPromoProductTypesByHref(targetHref?: string | null) {
+  const href = String(targetHref || "").trim().toLowerCase()
+
+  if (href.startsWith("/packages")) return ["package_tour"]
+  if (href.startsWith("/pesawat")) return ["flight"]
+  if (href.startsWith("/hotel")) return ["hotel"]
+  if (href.startsWith("/kereta")) return ["train"]
+  if (href.startsWith("/bus")) return ["bus"]
+  if (href.startsWith("/kapal-pesiar")) return ["cruise"]
+  if (href.startsWith("/kapal")) return ["sea"]
+  if (href.startsWith("/aktivitas")) return []
+  if (href.startsWith("/promo")) return []
+
+  return []
 }
 
 async function syncRecommendedMarketingPromoPlacementsForPromoIds(
@@ -679,6 +706,7 @@ export async function upsertMarketingPromo(formData: FormData) {
   const actor = await ensureMarketingContentOperator(returnTo)
   const promoId = getText(formData, "promo_id")
   const selectedPlacements = getSelectedPromoPlacements(formData)
+  const linkedTransactionPromoRuleIds = getSelectedLinkedTransactionPromoRuleIds(formData)
   const status = getText(formData, "status").toLowerCase()
   const startsAt = parseDateTimeValue(formData.get("starts_at"))
   const endsAt = parseDateTimeValue(formData.get("ends_at"))
@@ -686,6 +714,7 @@ export async function upsertMarketingPromo(formData: FormData) {
   const titleId = getText(formData, "title_id")
   const titleEn = getText(formData, "title_en")
   const titleZh = getText(formData, "title_zh")
+  const targetHref = getText(formData, "target_href") || "/promo"
 
   if (!slug || !titleId || !titleEn || !titleZh) {
     redirectWithMessage(returnTo, "Slug dan seluruh judul promo wajib diisi.", "error")
@@ -704,6 +733,54 @@ export async function upsertMarketingPromo(formData: FormData) {
   }
 
   const shouldBeIndexable = shouldPromoBeIndexable(status)
+  const adminSupabase = createAdminClient()
+
+  if (linkedTransactionPromoRuleIds.length) {
+    const { data: linkedRules, error: linkedRulesError } = await adminSupabase
+      .from("transaction_promo_rules")
+      .select("id, name, transaction_promo_rule_targets(product_type)")
+      .in("id", linkedTransactionPromoRuleIds)
+
+    if (linkedRulesError) {
+      redirectWithMessage(returnTo, linkedRulesError.message, "error")
+    }
+
+    const loadedRules =
+      ((linkedRules as Array<{
+        id: string | null
+        name?: string | null
+        transaction_promo_rule_targets?: Array<{ product_type?: string | null }> | null
+      }> | null) || [])
+
+    if (loadedRules.length !== linkedTransactionPromoRuleIds.length) {
+      redirectWithMessage(returnTo, "Ada promo transaksi yang dipilih tetapi tidak ditemukan.", "error")
+    }
+
+    const requiredProductTypes = new Set(getRecommendedMarketingPromoProductTypesByHref(targetHref))
+    if (requiredProductTypes.size) {
+      const mismatchedRule = loadedRules.find((rule) => {
+        const targetProductTypes = new Set(
+          (rule.transaction_promo_rule_targets || [])
+            .map((target) => normalizeBookingProductType(target.product_type))
+            .filter(Boolean),
+        )
+
+        if (!targetProductTypes.size) return true
+
+        for (const productType of targetProductTypes) {
+          if (!requiredProductTypes.has(String(productType))) {
+            return true
+          }
+        }
+
+        return false
+      })
+
+      if (mismatchedRule) {
+        redirectWithMessage(returnTo, `Promo transaksi ${String(mismatchedRule.name || mismatchedRule.id)} tidak cocok dengan target landing campaign ini.`, "error")
+      }
+    }
+  }
 
   const payload = {
     ...(promoId ? { id: promoId } : {}),
@@ -728,7 +805,7 @@ export async function upsertMarketingPromo(formData: FormData) {
     image_class: getText(formData, "image_class"),
     overlay_class: getText(formData, "overlay_class"),
     glow_class: getText(formData, "glow_class"),
-    target_href: getText(formData, "target_href") || "/promo",
+    target_href: targetHref,
     is_active: shouldBeIndexable && String(formData.get("is_active") || "") === "on",
     status,
     starts_at: startsAt,
@@ -738,7 +815,6 @@ export async function upsertMarketingPromo(formData: FormData) {
     updated_at: new Date().toISOString(),
   }
 
-  const adminSupabase = createAdminClient()
   const { data, error } = await adminSupabase
     .from("marketing_promos")
     .upsert(
@@ -772,6 +848,29 @@ export async function upsertMarketingPromo(formData: FormData) {
     redirectWithMessage(returnTo, placementError.message, "error")
   }
 
+  const { error: deleteLinkError } = await adminSupabase
+    .from("marketing_promo_transaction_rules")
+    .delete()
+    .eq("marketing_promo_id", data.id)
+
+  if (deleteLinkError) {
+    redirectWithMessage(returnTo, deleteLinkError.message, "error")
+  }
+
+  if (linkedTransactionPromoRuleIds.length) {
+    const linkRows = linkedTransactionPromoRuleIds.map((transactionPromoRuleId) => ({
+      marketing_promo_id: data.id,
+      transaction_promo_rule_id: transactionPromoRuleId,
+      created_by: actor.id,
+      updated_by: actor.id,
+    }))
+
+    const { error: linkError } = await adminSupabase.from("marketing_promo_transaction_rules").insert(linkRows)
+    if (linkError) {
+      redirectWithMessage(returnTo, linkError.message, "error")
+    }
+  }
+
   await createAdminAuditLog({
     actorId: actor.id,
     actorRole: actor.role,
@@ -787,6 +886,7 @@ export async function upsertMarketingPromo(formData: FormData) {
       startsAt,
       endsAt,
       placements: selectedPlacements,
+      linkedTransactionPromoRuleIds,
     },
   })
 
@@ -809,6 +909,7 @@ export async function upsertTransactionPromoRule(formData: FormData) {
   const endsAt = parseDateTimeValue(formData.get("ends_at"))
   const productTypes = getSelectedTransactionPromoProductTypes(formData)
   const isAutoApply = String(formData.get("is_auto_apply") || "") === "on"
+  const newUserOnly = String(formData.get("new_user_only") || "") === "on"
   const discountValue = parseOptionalNonNegativeNumber(formData.get("discount_value"))
   const maxDiscountAmount = parseOptionalNonNegativeNumber(formData.get("max_discount_amount"))
   const minimumOrderAmount = parseOptionalNonNegativeNumber(formData.get("minimum_order_amount")) ?? 0
@@ -883,6 +984,7 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     ends_at: endsAt,
     status: "draft",
     is_auto_apply: isAutoApply,
+    new_user_only: newUserOnly,
     marketing_approved_by: null,
     marketing_approved_at: null,
     finance_approved_by: null,
@@ -936,11 +1038,12 @@ export async function upsertTransactionPromoRule(formData: FormData) {
       scope: "marketing_content",
       section: "transaction_promos",
       name,
-      status: "draft",
-      isAutoApply,
-      productTypes,
-      channel,
-      approvalReset: Boolean(ruleId),
+        status: "draft",
+        isAutoApply,
+        newUserOnly,
+        productTypes,
+        channel,
+        approvalReset: Boolean(ruleId),
     },
   })
 

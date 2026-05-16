@@ -6,6 +6,7 @@ import { createClient as createServerClient } from "@/lib/supabase/server"
 import { getRequiredEnv } from "@/lib/env"
 import { isQuotaTravelStyle } from "@/lib/travelStyles"
 import { normalizeLocale } from "@/lib/i18n"
+import { logTransactionPromoEvent } from "@/lib/transaction-promo-events"
 import { deleteDraftBooking, isDraftBookingDeletable } from "@/lib/bookings/draft-cleanup"
 import { resolveBookingProductType } from "@/lib/booking-products"
 import { resolvePackageCheckoutPromoPricing } from "@/lib/transaction-promo-checkout"
@@ -255,6 +256,26 @@ export async function POST(req: Request) {
           { status: 500 },
         )
       }
+
+      await logTransactionPromoEvent({
+        supabase,
+        ruleId: pricingWithPromo.promo.rule.id,
+        bookingId: booking.id,
+        customerId: user.id,
+        eventType: "reserved",
+        metadata: {
+          source: "package_booking_create",
+          promoCode: pricingWithPromo.promo.normalizedCode,
+          paymentMethod: normalizedPaymentMethod,
+          paymentType: normalizedPaymentType,
+          productType: bookingProductType,
+          productId: package_id,
+          subtotalBeforeDiscount: pricingWithPromo.beforePromo.paymentSubtotalAmount,
+          subtotalAfterDiscount: pricingWithPromo.paymentBreakdown.subtotalAmount,
+          discountAmount:
+            pricingWithPromo.beforePromo.paymentSubtotalAmount - pricingWithPromo.paymentBreakdown.subtotalAmount,
+        },
+      })
     }
 
     return NextResponse.json({

@@ -84,11 +84,55 @@ function getPromoErrorMessage(reason: string) {
   if (reason === "minimum_order_not_met") return "Nilai transaksi belum memenuhi minimum promo."
   if (reason === "quota_exhausted") return "Kuota promo ini sudah habis."
   if (reason === "user_quota_exhausted") return "Batas penggunaan promo untuk akun Anda sudah tercapai."
+  if (reason === "new_user_only") return "Promo ini khusus untuk customer baru."
   if (reason === "target_mismatch") return "Promo ini tidak berlaku untuk paket atau metode pembayaran yang dipilih."
   if (reason === "code_required" || reason === "code_mismatch") return "Kode promo tidak cocok."
   if (reason === "inactive_status") return "Promo ini sedang tidak aktif."
   if (reason === "discount_zero") return "Promo ini belum memberikan potongan pada transaksi ini."
   return "Promo tidak bisa dipakai untuk transaksi ini."
+}
+
+async function resolveIsNewPromoCustomer(params: {
+  supabase: SupabaseClient
+  customerId?: string | null
+  customerEmail?: string | null
+}) {
+  const normalizedCustomerId = String(params.customerId || "").trim()
+  const normalizedCustomerEmail = normalizeString(params.customerEmail)
+  if (!normalizedCustomerId && !normalizedCustomerEmail) {
+    return true
+  }
+
+  let bookingQuery = params.supabase
+    .from("bookings")
+    .select("id, booking_status, payment_status")
+    .limit(20)
+    .order("created_at", { ascending: false })
+
+  if (normalizedCustomerId && normalizedCustomerEmail) {
+    bookingQuery = bookingQuery.or(`user_id.eq.${normalizedCustomerId},customer_email.eq.${normalizedCustomerEmail}`)
+  } else if (normalizedCustomerId) {
+    bookingQuery = bookingQuery.eq("user_id", normalizedCustomerId)
+  } else {
+    bookingQuery = bookingQuery.eq("customer_email", normalizedCustomerEmail)
+  }
+
+  const { data: bookingRows } = await bookingQuery
+  const hasRealBooking = ((bookingRows as Array<{ booking_status?: string | null; payment_status?: string | null }> | null) || []).some((booking) => {
+    const bookingStatus = normalizeString(booking.booking_status)
+    const paymentStatus = normalizeString(booking.payment_status)
+    const isInactive =
+      bookingStatus === "draft" ||
+      bookingStatus === "cancelled" ||
+      bookingStatus === "rejected" ||
+      paymentStatus === "cancelled" ||
+      paymentStatus === "refund" ||
+      paymentStatus === "expired"
+
+    return !isInactive
+  })
+
+  return !hasRealBooking
 }
 
 async function resolveTransactionPromoApplicationFromDatabase(params: {
@@ -105,7 +149,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
   const normalizedPromoCode = normalizeTransactionPromoCode(params.promoCode)
   const { data: ruleRows } = await params.supabase
     .from("transaction_promo_rules")
-    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, approved_by, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at")
+    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, new_user_only, approved_by, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at")
     .eq("status", "active")
 
   const activeRules = ((ruleRows as TransactionPromoRuleRecord[] | null) || []).filter((rule) => rule.id)
@@ -159,6 +203,11 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
       userRedemptionsByRuleId.set(ruleId, (userRedemptionsByRuleId.get(ruleId) || 0) + 1)
     }
   }
+  const isNewCustomer = await resolveIsNewPromoCustomer({
+    supabase: params.supabase,
+    customerId: params.customerId,
+    customerEmail: params.customerEmail,
+  })
 
   const context = {
     subtotalAmount: params.subtotalAmount,
@@ -196,6 +245,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
         context,
         totalRedemptions: totalRedemptionsByRuleId.get(rule.id) || 0,
         userRedemptions: userRedemptionsByRuleId.get(rule.id) || 0,
+        isNewCustomer,
       }),
     }))
 
@@ -233,6 +283,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
     context,
     totalRedemptionsByRuleId,
     userRedemptionsByRuleId,
+    isNewCustomer,
   })
 
   if (!autoMatch) {

@@ -23,6 +23,7 @@ export type TransactionPromoRuleRecord = {
   ends_at?: string | null
   status?: string | null
   is_auto_apply?: boolean | null
+  new_user_only?: boolean | null
   approved_by?: string | null
   approved_at?: string | null
   marketing_approved_by?: string | null
@@ -79,6 +80,7 @@ export type TransactionPromoEvaluationResult =
         | "code_mismatch"
         | "quota_exhausted"
         | "user_quota_exhausted"
+        | "new_user_only"
         | "target_mismatch"
         | "discount_zero"
       discountAmount: 0
@@ -92,6 +94,7 @@ type EvaluateTransactionPromoRuleParams = {
   context: TransactionPromoContext
   totalRedemptions?: number
   userRedemptions?: number
+  isNewCustomer?: boolean
   nowIso?: string
 }
 
@@ -101,6 +104,7 @@ type SelectBestAutoPromoParams = {
   context: TransactionPromoContext
   totalRedemptionsByRuleId?: Map<string, number>
   userRedemptionsByRuleId?: Map<string, number>
+  isNewCustomer?: boolean
   nowIso?: string
 }
 
@@ -135,12 +139,12 @@ export function isTransactionPromoChannel(value: string | null | undefined): val
 
 export function getTransactionPromoStatusLabel(value: string | null | undefined) {
   const normalized = normalizeString(value)
-  if (normalized === "draft") return "Draft"
-  if (normalized === "approved") return "Approved"
-  if (normalized === "active") return "Active"
-  if (normalized === "paused") return "Paused"
-  if (normalized === "expired") return "Expired"
-  return "Unknown"
+  if (normalized === "draft") return "Draft / revisi"
+  if (normalized === "approved") return "Siap review finance"
+  if (normalized === "active") return "Live checkout"
+  if (normalized === "paused") return "Dijeda"
+  if (normalized === "expired") return "Berakhir"
+  return "Status tidak dikenal"
 }
 
 export function getTransactionPromoDiscountTypeLabel(value: string | null | undefined) {
@@ -157,6 +161,16 @@ export function getTransactionPromoChannelLabel(value: string | null | undefined
   if (normalized === "mobile_app") return "Mobile App"
   if (normalized === "internal") return "Internal"
   return "Unknown"
+}
+
+export function getTransactionPromoModeLabel(isAutoApply: boolean | null | undefined, code?: string | null) {
+  if (isAutoApply) return "Auto-apply"
+  const normalizedCode = String(code || "").trim()
+  return normalizedCode ? `Voucher / kupon: ${normalizedCode}` : "Voucher / kupon"
+}
+
+export function getTransactionPromoAudienceLabel(newUserOnly: boolean | null | undefined) {
+  return newUserOnly ? "Khusus customer baru" : "Semua customer"
 }
 
 export function isTransactionPromoRuleCurrentlyLive(rule: TransactionPromoRuleRecord, nowIso = new Date().toISOString()) {
@@ -213,6 +227,7 @@ export function evaluateTransactionPromoRule({
   context,
   totalRedemptions = 0,
   userRedemptions = 0,
+  isNewCustomer = true,
   nowIso = new Date().toISOString(),
 }: EvaluateTransactionPromoRuleParams): TransactionPromoEvaluationResult {
   const normalizedCode = normalizeTransactionPromoCode(rule.code)
@@ -260,6 +275,10 @@ export function evaluateTransactionPromoRule({
     return { valid: false, ruleId: rule.id, reason: "user_quota_exhausted", discountAmount: 0, normalizedCode, target: null }
   }
 
+   if (rule.new_user_only && !isNewCustomer) {
+    return { valid: false, ruleId: rule.id, reason: "new_user_only", discountAmount: 0, normalizedCode, target: null }
+  }
+
   const matchingTarget = targets.length ? targets.find((target) => doesTransactionPromoTargetMatch(context, target)) || null : null
   if (targets.length && !matchingTarget) {
     return { valid: false, ruleId: rule.id, reason: "target_mismatch", discountAmount: 0, normalizedCode, target: null }
@@ -285,6 +304,7 @@ export function selectBestAutoTransactionPromo({
   context,
   totalRedemptionsByRuleId = new Map<string, number>(),
   userRedemptionsByRuleId = new Map<string, number>(),
+  isNewCustomer = true,
   nowIso = new Date().toISOString(),
 }: SelectBestAutoPromoParams) {
   const candidates = rules
@@ -296,6 +316,7 @@ export function selectBestAutoTransactionPromo({
         context,
         totalRedemptions: totalRedemptionsByRuleId.get(rule.id) || 0,
         userRedemptions: userRedemptionsByRuleId.get(rule.id) || 0,
+        isNewCustomer,
         nowIso,
       }),
     )
