@@ -499,18 +499,3 @@ function shortId(value: string | null | undefined) {
   if (!normalized) return "-"
   return normalized.slice(0, 8)
 }
-
-function formatCompactCurrency(value: number) {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    notation: value >= 1000000 ? "compact" : "standard",
-    maximumFractionDigits: 1,
-  }).format(value)
-}
-
-function shortId(value: string | null | undefined) {
-  const normalized = String(value || "").trim()
-  if (!normalized) return "-"
-  return normalized.slice(0, 8)
-}
