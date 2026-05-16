@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { getFinalPaymentDueAt } from "@/lib/booking/final-payment-deadline"
+import { revertReservedTransactionPromoRedemptions } from "@/lib/transaction-promo-redemptions"
 
 function normalizeStatus(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase()
@@ -103,14 +104,7 @@ export async function deleteBookingWithRelations(
 ) {
   // Hard delete booking and all directly managed relations.
   // This is used for both unpaid H+1 cleanup and paid-booking retention cleanup.
-  await supabase
-    .from("transaction_promo_redemptions")
-    .update({
-      status: "cancelled",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("booking_id", bookingId)
-    .eq("status", "reserved")
+  await revertReservedTransactionPromoRedemptions(supabase, bookingId, "booking_deleted_or_expired")
   await supabase
     .from("package_chat_rooms")
     .update({ booking_id: null })

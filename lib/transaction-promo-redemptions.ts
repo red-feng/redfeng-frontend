@@ -1,15 +1,35 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import { logTransactionPromoEvent } from "@/lib/transaction-promo-events"
 
-export async function markTransactionPromoRedemptionsApplied(
+type TransactionPromoRedemptionLogRow = {
+  id: string
+  rule_id: string | null
+  booking_id: string | null
+  user_id: string | null
+  email: string | null
+  product_type: string | null
+  product_id: string | null
+  discount_amount: number | string | null
+  currency: string | null
+  metadata: unknown
+}
+
+async function getReservedTransactionPromoRedemptions(
   supabase: SupabaseClient,
   bookingId: string,
 ) {
-  const { data: reservedRows, error: selectError } = await supabase
+  return supabase
     .from("transaction_promo_redemptions")
     .select("id, rule_id, booking_id, user_id, email, product_type, product_id, discount_amount, currency, metadata")
     .eq("booking_id", bookingId)
     .eq("status", "reserved")
+}
+
+export async function markTransactionPromoRedemptionsApplied(
+  supabase: SupabaseClient,
+  bookingId: string,
+) {
+  const { data: reservedRows, error: selectError } = await getReservedTransactionPromoRedemptions(supabase, bookingId)
 
   if (selectError) {
     return { data: null, error: selectError }
@@ -33,7 +53,7 @@ export async function markTransactionPromoRedemptionsApplied(
   }
 
   await Promise.all(
-    reservedRows.map((row) =>
+    (reservedRows as TransactionPromoRedemptionLogRow[]).map((row) =>
       logTransactionPromoEvent({
         supabase,
         ruleId: row.rule_id,
@@ -42,6 +62,59 @@ export async function markTransactionPromoRedemptionsApplied(
         eventType: "applied",
         metadata: {
           source: "payment_settlement",
+          email: row.email || null,
+          productType: row.product_type || null,
+          productId: row.product_id || null,
+          discountAmount: Number(row.discount_amount || 0),
+          currency: row.currency || null,
+          redemptionMetadata: row.metadata || {},
+        },
+      }),
+    ),
+  )
+
+  return updateResult
+}
+
+export async function revertReservedTransactionPromoRedemptions(
+  supabase: SupabaseClient,
+  bookingId: string,
+  reason: string,
+) {
+  const { data: reservedRows, error: selectError } = await getReservedTransactionPromoRedemptions(supabase, bookingId)
+
+  if (selectError) {
+    return { data: null, error: selectError }
+  }
+
+  if (!reservedRows?.length) {
+    return { data: [], error: null }
+  }
+
+  const updateResult = await supabase
+    .from("transaction_promo_redemptions")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("booking_id", bookingId)
+    .eq("status", "reserved")
+
+  if (updateResult.error) {
+    return updateResult
+  }
+
+  await Promise.all(
+    (reservedRows as TransactionPromoRedemptionLogRow[]).map((row) =>
+      logTransactionPromoEvent({
+        supabase,
+        ruleId: row.rule_id,
+        bookingId: row.booking_id,
+        customerId: row.user_id,
+        eventType: "reverted",
+        reason,
+        metadata: {
+          source: "booking_cleanup",
           email: row.email || null,
           productType: row.product_type || null,
           productId: row.product_id || null,

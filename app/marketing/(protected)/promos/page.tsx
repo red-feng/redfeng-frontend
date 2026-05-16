@@ -497,7 +497,7 @@ export default async function MarketingPromosPage({
             {isSuperadminPreview ? "Preview template promo" : "Buat promo"}
           </p>
           <div className="mt-5">
-            <PromoForm portal={portal} />
+            <PromoForm portal={portal} availableTransactionPromos={availableTransactionPromos} />
           </div>
         </section>
 

@@ -45,6 +45,18 @@ type TransactionPromoRule = {
   finance_approved_by: string | null
   finance_approved_at: string | null
   transaction_promo_rule_targets: TransactionPromoTarget[] | null
+  marketing_promo_transaction_rules:
+    | Array<{
+        marketing_promos:
+          | {
+              id: string | null
+              slug: string | null
+              title_id: string | null
+              status: string | null
+            }
+          | null
+      }>
+    | null
 }
 
 export default async function FinanceTransactionPromosPage({
@@ -67,7 +79,7 @@ export default async function FinanceTransactionPromosPage({
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel)")
+    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -91,7 +103,12 @@ export default async function FinanceTransactionPromosPage({
             .filter((value): value is BookingProductType => Boolean(value)),
         ),
       )
-      return { ...rule, targets, productTypes }
+      const linkedCampaigns = (((rule.marketing_promo_transaction_rules || []) as Array<{
+        marketing_promos?: { id?: string | null; slug?: string | null; title_id?: string | null; status?: string | null } | null
+      }>)
+        .map((entry) => entry.marketing_promos || null)
+        .filter((campaign): campaign is { id: string | null; slug: string | null; title_id: string | null; status: string | null } => Boolean(campaign)))
+      return { ...rule, targets, productTypes, linkedCampaigns }
     })
     .filter((rule) => {
       if (paymentMethodFilter && !rule.targets.some((target) => String(target.payment_method || "").trim().toLowerCase().includes(paymentMethodFilter))) {
@@ -169,8 +186,20 @@ export default async function FinanceTransactionPromosPage({
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Applied" value={analytics.appliedRedemptions} />
+          <MetricCard label="Linked campaign" value={analytics.linkedCampaignCount} />
+          <MetricCard label="Impression" value={analytics.impressionEvents} />
+          <MetricCard label="Click" value={analytics.clickEvents} />
+          <MetricCard label="Quoted" value={analytics.quotedEvents} />
+        </section>
+
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Rejected" value={analytics.rejectedEvents} />
+          <MetricCard label="Reverted" value={analytics.revertedEvents} />
           <MetricCard label="Reserved" value={analytics.reservedRedemptions} />
+          <MetricCard label="Applied" value={analytics.appliedRedemptions} />
+        </section>
+
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="GMV impacted" value={analytics.appliedGmv} currency />
           <MetricCard label="Discount cost" value={analytics.appliedDiscountCost} currency />
         </section>
@@ -284,6 +313,11 @@ export default async function FinanceTransactionPromosPage({
                   <p className="mt-2 text-sm text-slate-500">
                     Target: {rule.productTypes.map((productType) => getBookingProductLabel(productType)).join(", ") || "Belum dipilih"}
                   </p>
+                  {rule.linkedCampaigns.length ? (
+                    <p className="mt-2 text-sm text-slate-500">
+                      Campaign: {rule.linkedCampaigns.map((campaign) => campaign.title_id || campaign.slug || campaign.id || "-").join(", ")}
+                    </p>
+                  ) : null}
                   <p className="mt-2 text-sm text-slate-500">
                     Window: {formatDateWindow(rule.starts_at, rule.ends_at)}
                   </p>
@@ -298,6 +332,11 @@ export default async function FinanceTransactionPromosPage({
                       : "belum"}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {rule.linkedCampaigns.length ? (
+                      <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-700">
+                        {rule.linkedCampaigns.length} linked campaign
+                      </span>
+                    ) : null}
                     {rule.targets[0]?.channel ? (
                       <span className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">
                         {getTransactionPromoChannelLabel(rule.targets[0].channel)}
@@ -346,6 +385,19 @@ export default async function FinanceTransactionPromosPage({
         </section>
 
         <section className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Funnel campaign to redemption</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Lihat alur campaign publik sampai promo applied</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-6">
+            <StatPill label="Campaign" value={analytics.linkedCampaignCount.toLocaleString("id-ID")} />
+            <StatPill label="Impression" value={analytics.impressionEvents.toLocaleString("id-ID")} />
+            <StatPill label="Click" value={analytics.clickEvents.toLocaleString("id-ID")} />
+            <StatPill label="Quoted" value={analytics.quotedEvents.toLocaleString("id-ID")} />
+            <StatPill label="Reserved" value={analytics.reservedRedemptions.toLocaleString("id-ID")} />
+            <StatPill label="Applied" value={analytics.appliedRedemptions.toLocaleString("id-ID")} />
+          </div>
+        </section>
+
+        <section className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analytics promo transaksi</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Top promo by redemption applied</h2>
           <div className="mt-5 space-y-3">
@@ -365,11 +417,21 @@ export default async function FinanceTransactionPromosPage({
                       </p>
                     </div>
                     <div className="grid min-w-[240px] grid-cols-4 gap-2 text-center">
-                      <StatPill label="Applied" value={promo.appliedRedemptions.toLocaleString("id-ID")} />
-                      <StatPill label="Reserved" value={promo.reservedRedemptions.toLocaleString("id-ID")} />
-                      <StatPill label="GMV" value={formatCompactCurrency(promo.appliedGmv)} />
-                      <StatPill label="Cost" value={formatCompactCurrency(promo.appliedDiscountCost)} />
+                      <StatPill label="Impression" value={promo.impressionEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Click" value={promo.clickEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Quoted" value={promo.quotedEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Campaign" value={promo.linkedCampaignCount.toLocaleString("id-ID")} />
                     </div>
+                  </div>
+                  <div className="mt-3 grid min-w-[240px] grid-cols-4 gap-2 text-center">
+                    <StatPill label="Reserved" value={promo.reservedRedemptions.toLocaleString("id-ID")} />
+                    <StatPill label="Applied" value={promo.appliedRedemptions.toLocaleString("id-ID")} />
+                    <StatPill label="Rejected" value={promo.rejectedEvents.toLocaleString("id-ID")} />
+                    <StatPill label="Reverted" value={promo.revertedEvents.toLocaleString("id-ID")} />
+                  </div>
+                  <div className="mt-3 grid min-w-[240px] grid-cols-2 gap-2 text-center">
+                    <StatPill label="GMV" value={formatCompactCurrency(promo.appliedGmv)} />
+                    <StatPill label="Cost" value={formatCompactCurrency(promo.appliedDiscountCost)} />
                   </div>
                 </article>
               ))

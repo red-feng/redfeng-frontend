@@ -9,7 +9,7 @@ import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
-import { markTransactionPromoRedemptionsApplied } from "@/lib/transaction-promo-redemptions"
+import { markTransactionPromoRedemptionsApplied, revertReservedTransactionPromoRedemptions } from "@/lib/transaction-promo-redemptions"
 
 type LocalizedPackageEmailRow = {
   title?: string | null
@@ -324,6 +324,7 @@ export async function POST(req: Request) {
       if (isDraftBookingDeletable(booking)) {
         await deleteDraftBooking(supabase, booking.id)
       } else {
+        await revertReservedTransactionPromoRedemptions(supabase, booking.id, "payment_expired_or_cancelled")
         await supabase
           .from("bookings")
           .update({ payment_status: "cancelled", booking_status: "cancelled" })
