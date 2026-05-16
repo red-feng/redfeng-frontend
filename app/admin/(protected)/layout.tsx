@@ -91,11 +91,11 @@ export default async function AdminProtectedLayout({
     },
     {
       href: "/admin/merchants/pending-approvals",
-      label: "Pending approvals",
+      label: "Pending Approval",
       badgeCount: pendingMerchantsBadgeCount,
       secondaryBadgeCount: pendingMerchantDeletionBadgeCount,
     },
-    { href: "/admin/packages", label: "Package Review", badgeCount: pendingPackagesBadgeCount },
+    { href: "/admin/packages", label: "Paket Review", badgeCount: pendingPackagesBadgeCount },
     { href: "/admin/merchants/anomalies", label: "Anomali", badgeCount: 0 },
   ]
   const productNavChildren = visibleProductTypes.map((productType) => ({

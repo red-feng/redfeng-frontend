@@ -93,27 +93,65 @@ export default async function AdminPackagesPage({
   )
 
   const pendingCount = packages.length
+  const merchantCount = merchantIds.length
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-[linear-gradient(135deg,#fff7ed_0%,#ffffff_45%,#f8fafc_100%)] px-5 py-6 sm:px-8 sm:py-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-orange-500">Admin Package Control</p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Global pending queue</h1>
-          </div>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Paket Review
+              </span>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
+                Pantau antrean paket merchant yang menunggu keputusan operasional.
+              </h1>
+              <p className="mt-4 text-base leading-8 text-orange-50/90">
+                Halaman ini dipakai untuk membaca paket yang masih pending dengan cepat, lalu meneruskan audit yang lebih
+                detail ke workspace merchant jika butuh konteks yang lebih lengkap.
+              </p>
+            </div>
 
-          <div className="grid gap-3 px-5 py-5 sm:grid-cols-2 sm:gap-4 sm:px-8">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Pending</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">{pendingCount}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Arah kerja</p>
-              <p className="mt-2 text-sm font-medium leading-6 text-slate-900">Review cepat di sini, audit lengkap per merchant di Merchant Directory.</p>
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Pulse review</p>
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <p className="text-sm text-orange-50/80">Pending paket</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{pendingCount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Merchant terkait</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{merchantCount}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Arah kerja</p>
+                  <p className="mt-1 text-sm font-medium leading-6 text-white/90">
+                    Review cepat di sini, audit lengkap per merchant di direktori merchant.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Pending paket</p>
+            <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{pendingCount}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Paket yang masih menunggu approve atau reject dari tim operasional.</p>
+          </div>
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Merchant terkait</p>
+            <p className="mt-3 text-3xl font-semibold tracking-[-0.03em] text-slate-950">{merchantCount}</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Jumlah merchant yang saat ini sedang punya paket pending di antrean review.</p>
+          </div>
+          <div className="rounded-[22px] border border-[#f0ddc7] bg-white px-4 py-4 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[26px] sm:px-5 sm:py-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Jalur kerja</p>
+            <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-slate-950">Review cepat</p>
+            <p className="mt-2 text-xs leading-6 text-slate-500">Putuskan paket di sini, lalu buka workspace merchant jika perlu audit konteks yang lebih luas.</p>
+          </div>
+        </section>
 
         {resolvedSearchParams.success ? (
           <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 sm:mt-6 sm:px-5 sm:py-4">
@@ -241,6 +279,6 @@ export default async function AdminPackagesPage({
           ))}
         </div>
       </div>
-    </div>
+    </main>
   )
 }
