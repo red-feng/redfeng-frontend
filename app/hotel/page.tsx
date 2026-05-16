@@ -1,10 +1,12 @@
-import ServiceLandingPage from "@/app/components/services/ServiceLandingPage"
-import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
-import { getCurrentLocale } from "@/lib/locale"
+import HotelMarketingLanding from "@/app/components/hotel/HotelMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
-export default async function HotelPage() {
-  const locale = await getCurrentLocale()
-  return <ServiceLandingPage locale={locale} service={servicePageConfigByLabel["Hotel"]} />
+type HotelPageProps = {
+  searchParams?: Promise<{ newsletter_success?: string; newsletter_error?: string }>
+}
+
+export default async function HotelPage({ searchParams }: HotelPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  return <HotelMarketingLanding searchParams={resolvedSearchParams} />
 }

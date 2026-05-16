@@ -1,10 +1,12 @@
-import ServiceLandingPage from "@/app/components/services/ServiceLandingPage"
-import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
-import { getCurrentLocale } from "@/lib/locale"
+import TrainMarketingLanding from "@/app/components/trains/TrainMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
-export default async function TrainPage() {
-  const locale = await getCurrentLocale()
-  return <ServiceLandingPage locale={locale} service={servicePageConfigByLabel["Kereta"]} />
+type TrainPageProps = {
+  searchParams?: Promise<{ newsletter_success?: string; newsletter_error?: string }>
+}
+
+export default async function TrainPage({ searchParams }: TrainPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  return <TrainMarketingLanding searchParams={resolvedSearchParams} />
 }

@@ -1,10 +1,12 @@
-import ServiceLandingPage from "@/app/components/services/ServiceLandingPage"
-import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
-import { getCurrentLocale } from "@/lib/locale"
+import ActivitiesMarketingLanding from "@/app/components/activities/ActivitiesMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
-export default async function ActivitiesPage() {
-  const locale = await getCurrentLocale()
-  return <ServiceLandingPage locale={locale} service={servicePageConfigByLabel["Aktivitas"]} />
+type ActivitiesPageProps = {
+  searchParams?: Promise<{ newsletter_success?: string; newsletter_error?: string }>
+}
+
+export default async function ActivitiesPage({ searchParams }: ActivitiesPageProps) {
+  const resolvedSearchParams = searchParams ? await searchParams : {}
+  return <ActivitiesMarketingLanding searchParams={resolvedSearchParams} />
 }
