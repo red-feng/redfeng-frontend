@@ -33,11 +33,11 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
   }))
 
   const t = dictionaries[locale]
-  const copy = {
+  const baseCopy = {
     id: {
       eyebrow: "PAKET WISATA TERBAIK",
-      title: "Jelajahi Dunia, Ciptakan Kenangan Terindah",
-      body: "Temukan ribuan paket wisata terbaik ke destinasi impianmu dengan harga terjangkau dan pengalaman tak terlupakan.",
+      title: "Temukan paket wisata pilihan untuk perjalanan yang lebih terarah",
+      body: "Cari paket ke destinasi populer, bandingkan gaya perjalanan, dan masuk ke promo terbaik dalam satu halaman yang rapi dan mudah dipindai.",
       heroSearch: "Cari destinasi atau paket wisata...",
       heroSearchButton: "Cari Paket",
       benefitTitle: ["Harga Terbaik", "Pembayaran Aman", "Dukungan 24/7", "Pesan Mudah"],
@@ -47,12 +47,12 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
         "Tim kami siap membantu kapan pun Anda butuh.",
         "Proses cepat, praktis, dan tanpa ribet.",
       ],
-      promoTitle: "Promo Spesial Untukmu",
+      promoTitle: "Promo Paket Pilihan",
       promoBody: "Dapatkan diskon hingga",
       promoAction: "Lihat Promo",
       popularTitle: "Destinasi Populer",
       seeAll: "Lihat semua",
-      recommendationTitle: "Rekomendasi Paket Wisata Untukmu",
+      recommendationTitle: "Paket Pilihan RedFeng",
       availableNow: "TERSEDIA SEKARANG",
       fromLabel: "Mulai dari",
       choosePackage: t.packageCard.choosePackage,
@@ -70,8 +70,8 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
     },
     en: {
       eyebrow: "BEST TOUR PACKAGES",
-      title: "Explore the World, Create Your Most Beautiful Memories",
-      body: "Discover curated travel packages to dream destinations with accessible pricing and unforgettable experiences.",
+      title: "Discover selected travel packages for better-planned journeys",
+      body: "Search packages to popular destinations, compare travel styles, and move into the best offers in one clean, easy-to-scan page.",
       heroSearch: "Search destination or travel package...",
       heroSearchButton: "Search Packages",
       benefitTitle: ["Best Prices", "Secure Payments", "24/7 Support", "Easy Booking"],
@@ -81,12 +81,12 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
         "Our team is ready to help whenever you need it.",
         "A faster, simpler, lower-friction booking flow.",
       ],
-      promoTitle: "Special Promotions For You",
+      promoTitle: "Featured Package Deals",
       promoBody: "Get discounts up to",
       promoAction: "View Promotions",
       popularTitle: "Popular Destinations",
       seeAll: "See all",
-      recommendationTitle: "Recommended Travel Packages For You",
+      recommendationTitle: "RedFeng Package Picks",
       availableNow: "AVAILABLE NOW",
       fromLabel: "Starting from",
       choosePackage: t.packageCard.choosePackage,
@@ -137,6 +137,43 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
       offerLine: "适用于精选目的地",
     },
   }[locale]
+  const copy =
+    locale === "zh"
+      ? {
+          ...baseCopy,
+          eyebrow: "精选旅游套餐",
+          title: "发现精选旅游套餐，让每次出发更有方向",
+          body: "搜索热门目的地套餐，比较旅行风格，并在一个清晰易读的页面中进入最合适的优惠。",
+          heroSearch: "搜索目的地或旅游套餐...",
+          heroSearchButton: "搜索套餐",
+          benefitTitle: ["优惠价格", "安全支付", "全天支持", "轻松预订"],
+          benefitBody: [
+            "我们每天都保持有竞争力的价格。",
+            "多种支付方式，结账更安心。",
+            "无论何时需要，我们的团队都能提供帮助。",
+            "更快、更简单、也更省心的预订流程。",
+          ],
+          promoTitle: "精选套餐优惠",
+          promoBody: "最高可享",
+          promoAction: "查看优惠",
+          popularTitle: "热门目的地",
+          seeAll: "查看全部",
+          recommendationTitle: "RedFeng 精选套餐",
+          availableNow: "当前可预订",
+          fromLabel: "起价",
+          newsletterTitle: "获取 RedFeng 最新优惠与资讯！",
+          newsletterBody: "订阅我们的 newsletter，每周获取新的旅行优惠信息。",
+          newsletterPlaceholder: "输入你的邮箱",
+          newsletterButton: "订阅",
+          countryLabel: "国家",
+          allCountries: "全部国家",
+          styleLabel: "旅行风格",
+          allStyles: "全部旅行风格",
+          durationLabel: "时长",
+          allDurations: "全部时长",
+          offerLine: "适用于精选目的地",
+        }
+      : baseCopy
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff8ef_0%,#fffdf9_36%,#f8fafc_72%,#eff5fb_100%)] pb-36 md:pb-0">

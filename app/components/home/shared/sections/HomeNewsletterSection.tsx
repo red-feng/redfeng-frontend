@@ -3,7 +3,7 @@ import { subscribeToNewsletter } from "./HomeNewsletterSection.actions"
 
 type HomeNewsletterSectionProps = {
   locale: Locale
-  redirectPath?: "/" | "/packages"
+  redirectPath?: "/" | "/packages" | "/pesawat" | "/hotel" | "/kereta" | "/bus" | "/kapal" | "/kapal-pesiar" | "/aktivitas"
   successMessage?: string
   errorMessage?: string
 }

@@ -244,10 +244,10 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       </main>
 
       <div className="mt-16">
-        <HomeNewsletterSection locale={locale} redirectPath="/" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
+        <HomeNewsletterSection locale={locale} redirectPath="/kereta" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/kereta#train-promo" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

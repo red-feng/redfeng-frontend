@@ -295,14 +295,14 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       <div className="mt-16">
         <HomeNewsletterSection
           locale={locale}
-          redirectPath="/"
+          redirectPath="/pesawat"
           successMessage={searchParams?.newsletter_success}
           errorMessage={searchParams?.newsletter_error}
         />
       </div>
       <HomeFooter locale={locale} />
 
-      <PublicStickyAction locale={locale} href="/promo" label={copy.newsletterCta} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/pesawat#flight-promo" label={copy.newsletterCta} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )
