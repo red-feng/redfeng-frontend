@@ -106,59 +106,124 @@ export default async function FinanceTransactionPromosPage({
       .map((profile) => [String(profile.id || "").trim(), String(profile.username || "").trim()] as const)
       .filter(([id]) => Boolean(id)),
   )
+  const pendingMarketingRules = rules.filter((rule) => !rule.marketing_approved_at)
+  const fullyApprovedRules = rules.filter((rule) => Boolean(rule.marketing_approved_at) && Boolean(rule.finance_approved_at))
 
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-8 sm:py-8 lg:px-10">
-      <div className="space-y-6">
-        <section className="rounded-[28px] border border-[#ecd9c2] bg-white px-5 py-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:px-8">
-          <p className="inline-flex rounded-full border border-[#ecd9c2] bg-[#fffaf3] px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">
-            Finance Approval
-          </p>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">Review angka promo transaksi sebelum rule hidup di checkout.</h1>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <MetricCard label="Ready for finance" value={readyFinanceCount || 0} />
-            <MetricCard label="Active rules" value={activeCount || 0} />
-            <MetricCard label="Filtered result" value={rules.length} />
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="overflow-hidden rounded-[28px] border border-orange-200/60 bg-[linear-gradient(135deg,#7c2d12_0%,#c2410c_38%,#f97316_72%,#fdba74_100%)] px-5 py-6 text-white shadow-[0_30px_100px_rgba(146,64,14,0.18)] sm:rounded-[32px] sm:px-8 sm:py-8 lg:px-10">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_340px]">
+            <div className="max-w-3xl">
+              <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.34em] text-orange-50">
+                Review Promo Transaksi
+              </span>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-5xl">
+                Tinjau angka promo transaksi sebelum rule aktif di checkout.
+              </h1>
+              <p className="mt-4 text-base leading-8 text-orange-50/90">
+                Workspace ini membantu finance manager membaca rule yang sudah lolos marketing, memeriksa dampak diskon
+                ke margin, lalu mengaktifkan promo transaksi hanya jika angkanya sudah aman.
+              </p>
+            </div>
+            <div className="rounded-[24px] border border-white/20 bg-white/10 px-4 py-4 backdrop-blur sm:px-5 sm:py-5">
+              <p className="text-[11px] uppercase tracking-[0.28em] text-orange-100/80">Pulse approval</p>
+              <div className="mt-5 grid gap-4">
+                <div>
+                  <p className="text-sm text-orange-50/80">Siap direview finance</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{readyFinanceCount || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Sudah aktif</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{activeCount || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-orange-50/80">Hasil filter</p>
+                  <p className="mt-1 text-3xl font-semibold text-white">{rules.length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <MetricCard label="Siap direview finance" value={readyFinanceCount || 0} />
+          <MetricCard label="Menunggu marketing" value={pendingMarketingRules.length} />
+          <MetricCard label="Sudah aktif" value={activeCount || 0} />
+          <MetricCard label="Lolos dua approval" value={fullyApprovedRules.length} />
+        </section>
+
+        <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter review</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Saring antrean approval promo transaksi</h2>
+            <form className="mt-5 grid gap-4 md:grid-cols-3">
+              <div className="md:col-span-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">Cari promo transaksi</label>
+                <input
+                  name="q"
+                  defaultValue={String(params.q || "")}
+                  placeholder="Cari nama, kode, status, atau jenis transaksi"
+                  className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+                <select
+                  name="status"
+                  defaultValue={statusFilter}
+                  className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                >
+                  <option value="all">Semua status</option>
+                  <option value="draft">Draft</option>
+                  <option value="approved">Approved</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+              <div className="flex gap-3 md:col-span-3">
+                <button className="rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+                  Terapkan filter
+                </button>
+                <a
+                  href="/finance/transaction-promos"
+                  className="rounded-[18px] border border-[#e6d8c2] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Reset
+                </a>
+              </div>
+            </form>
+          </div>
+
+          <div className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Jalur keputusan</p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Peran finance dalam approval promo</h2>
+            <div className="mt-5 grid gap-3">
+              <div className="rounded-[22px] border border-slate-950 bg-slate-950 px-5 py-4 text-sm font-semibold text-white">
+                <span className="block">Approved dari marketing</span>
+                <span className="mt-1 block text-xs leading-6 text-white/80">
+                  Hanya rule yang sudah lolos marketing yang masuk ke review finance.
+                </span>
+              </div>
+              <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900">
+                <span className="block">Review angka dan margin</span>
+                <span className="mt-1 block text-xs leading-6 text-slate-500">
+                  Cek minimum order, jenis diskon, cap diskon, dan target transaksi sebelum aktivasi.
+                </span>
+              </div>
+              <div className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4 text-sm font-semibold text-slate-900">
+                <span className="block">Aktifkan rule di checkout</span>
+                <span className="mt-1 block text-xs leading-6 text-slate-500">
+                  Setelah finance approve, rule baru boleh hidup di checkout package dan layanan lain yang nanti disambungkan.
+                </span>
+              </div>
+            </div>
           </div>
         </section>
 
         {params.success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{params.success}</div> : null}
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
-
-        <section className="rounded-[24px] border border-[#ecd9c2] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
-          <form className="grid gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <label className="mb-2 block text-sm font-medium text-slate-700">Cari promo transaksi</label>
-              <input
-                name="q"
-                defaultValue={String(params.q || "")}
-                placeholder="Cari nama, kode, status, atau jenis transaksi"
-                className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
-              <select
-                name="status"
-                defaultValue={statusFilter}
-                className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
-              >
-                <option value="all">Semua status</option>
-                <option value="draft">Draft</option>
-                <option value="approved">Approved</option>
-                <option value="active">Active</option>
-                <option value="paused">Paused</option>
-                <option value="expired">Expired</option>
-              </select>
-            </div>
-            <div className="flex gap-3 md:col-span-3">
-              <button className="rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Terapkan filter</button>
-              <a href="/finance/transaction-promos" className="rounded-[18px] border border-[#e6d8c2] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                Reset
-              </a>
-            </div>
-          </form>
-        </section>
 
         <section className="space-y-4">
           {!rules.length ? (
@@ -167,7 +232,7 @@ export default async function FinanceTransactionPromosPage({
             </div>
           ) : null}
           {rules.map((rule) => (
-            <article key={rule.id} className="rounded-[24px] border border-[#ecd9c2] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)]">
+            <article key={rule.id} className="rounded-[24px] border border-[#ecd9c2] bg-white px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] sm:rounded-[28px] sm:px-6 sm:py-6">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-orange-500">Finance review</p>
