@@ -11,6 +11,7 @@ import {
   evaluateTransactionPromoRule,
   normalizeTransactionPromoCode,
   selectBestAutoTransactionPromo,
+  type TransactionPromoFailureReason,
   type TransactionPromoRuleRecord,
   type TransactionPromoRuleTargetRecord,
 } from "@/lib/transaction-promos"
@@ -41,6 +42,7 @@ type TransactionPromoApplicationResult = {
   applied: boolean
   source: "code" | "auto" | "none"
   message: string | null
+  reason: TransactionPromoFailureReason | null
   discountAmount: number
   normalizedCode: string | null
   rule: TransactionPromoRuleRecord | null
@@ -158,6 +160,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
       applied: false,
       source: "none",
       message: normalizedPromoCode ? "Kode promo tidak ditemukan atau belum aktif." : null,
+      reason: normalizedPromoCode ? "code_mismatch" : null,
       discountAmount: 0,
       normalizedCode: normalizedPromoCode,
       rule: null,
@@ -230,6 +233,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
         applied: false,
         source: "code",
         message: "Kode promo tidak ditemukan atau belum aktif.",
+        reason: "code_mismatch",
         discountAmount: 0,
         normalizedCode: normalizedPromoCode,
         rule: null,
@@ -258,6 +262,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
         applied: true,
         source: "code",
         message: null,
+        reason: null,
         discountAmount: validMatch.result.discountAmount,
         normalizedCode: normalizedPromoCode,
         rule: validMatch.rule,
@@ -270,6 +275,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
       applied: false,
       source: "code",
       message: failure?.valid ? null : getPromoErrorMessage(failure?.reason || "target_mismatch"),
+      reason: failure?.valid ? null : failure?.reason || "target_mismatch",
       discountAmount: 0,
       normalizedCode: normalizedPromoCode,
       rule: evaluated[0]?.rule || null,
@@ -291,6 +297,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
       applied: false,
       source: "none",
       message: null,
+      reason: null,
       discountAmount: 0,
       normalizedCode: null,
       rule: null,
@@ -302,6 +309,7 @@ async function resolveTransactionPromoApplicationFromDatabase(params: {
     applied: true,
     source: "auto",
     message: null,
+    reason: null,
     discountAmount: autoMatch.discountAmount,
     normalizedCode: autoMatch.normalizedCode,
     rule: activeRules.find((rule) => rule.id === autoMatch.ruleId) || null,

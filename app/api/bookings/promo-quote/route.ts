@@ -72,6 +72,7 @@ export async function POST(req: Request) {
           childCount: Number(body.child_count || 0),
           paymentMethod: body.payment_method || null,
           promoCode: String(body.promo_code || "").trim() || null,
+          reasonCode: result.promo.reason,
         },
       })
     }
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
         applied: result.promo.applied,
         source: result.promo.source,
         message: result.promo.message,
+        reason: result.promo.reason,
         rule_id: result.promo.rule?.id || null,
         rule_name: result.promo.rule?.name || null,
         code: result.promo.normalizedCode,

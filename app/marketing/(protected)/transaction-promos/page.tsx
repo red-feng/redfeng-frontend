@@ -546,21 +546,21 @@ export default async function MarketingTransactionPromosPage({
         </section>
 
         <section className="rounded-[24px] border border-[#d7ece7] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Funnel campaign to redemption</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Baca perjalanan campaign publik sampai promo benar-benar applied</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Funnel campaign ke redemption</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Baca perjalanan campaign publik sampai voucher atau auto-apply benar-benar terpakai</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-6">
-            <LaneCard label="Linked campaign" value={analytics.linkedCampaignCount} note="Campaign publik yang sudah tersambung ke rule checkout." />
-            <LaneCard label="Impression" value={analytics.impressionEvents} note="View pada placement promo publik." />
+            <LaneCard label="Campaign terkait" value={analytics.linkedCampaignCount} note="Campaign publik yang sudah tersambung ke rule checkout." />
+            <LaneCard label="Impresi" value={analytics.impressionEvents} note="View pada placement promo publik." />
             <LaneCard label="Click" value={analytics.clickEvents} note="Klik yang mendorong user menuju landing promo." />
-            <LaneCard label="Quoted" value={analytics.quotedEvents} note="Quote promo yang berhasil tercatat saat checkout." />
-            <LaneCard label="Reserved" value={analytics.reservedRedemptions} note="Promo yang sempat mengunci kuota pada booking." />
-            <LaneCard label="Applied" value={analytics.appliedRedemptions} note="Promo yang berakhir sukses setelah payment settle." />
+            <LaneCard label="Quote lolos" value={analytics.quotedEvents} note="Quote promo yang berhasil tercatat saat checkout." />
+            <LaneCard label="Reserved quota" value={analytics.reservedRedemptions} note="Promo yang sempat mengunci kuota pada booking." />
+            <LaneCard label="Applied berbayar" value={analytics.appliedRedemptions} note="Promo yang berakhir sukses setelah payment settle." />
           </div>
         </section>
 
         <section className="rounded-[24px] border border-[#d7ece7] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Analytics promo transaksi</p>
-          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Promo paling sering dipakai di checkout</h2>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Promo yang paling sering terpakai di checkout</h2>
           <div className="mt-5 space-y-3">
             {!analytics.topPromosByApplied.length ? (
               <div className="rounded-[24px] border border-dashed border-[#d7ece7] bg-[#f7fcfa] px-5 py-6 text-sm text-slate-500">
@@ -574,25 +574,25 @@ export default async function MarketingTransactionPromosPage({
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-600">Rank #{index + 1}</p>
                       <p className="mt-2 text-sm font-semibold text-slate-950">{promo.name}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {promo.code ? `Kode ${promo.code.toUpperCase()}` : "Auto-apply"} | Status {promo.status || "draft"}
+                        {promo.code ? `Voucher / kupon ${promo.code.toUpperCase()}` : "Auto-apply"} | Status {promo.status || "draft"}
                       </p>
                     </div>
                     <div className="grid min-w-[240px] grid-cols-4 gap-2 text-center">
-                      <StatPill label="Impression" value={promo.impressionEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Impresi" value={promo.impressionEvents.toLocaleString("id-ID")} />
                       <StatPill label="Click" value={promo.clickEvents.toLocaleString("id-ID")} />
-                      <StatPill label="Quoted" value={promo.quotedEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Quote" value={promo.quotedEvents.toLocaleString("id-ID")} />
                       <StatPill label="Campaign" value={promo.linkedCampaignCount.toLocaleString("id-ID")} />
                     </div>
                   </div>
                   <div className="mt-3 grid min-w-[240px] grid-cols-4 gap-2 text-center">
                     <StatPill label="Reserved" value={promo.reservedRedemptions.toLocaleString("id-ID")} />
                     <StatPill label="Applied" value={promo.appliedRedemptions.toLocaleString("id-ID")} />
-                    <StatPill label="Rejected" value={promo.rejectedEvents.toLocaleString("id-ID")} />
-                    <StatPill label="Reverted" value={promo.revertedEvents.toLocaleString("id-ID")} />
+                    <StatPill label="Ditolak" value={promo.rejectedEvents.toLocaleString("id-ID")} />
+                    <StatPill label="Kembali" value={promo.revertedEvents.toLocaleString("id-ID")} />
                   </div>
                   <div className="mt-3 grid min-w-[240px] grid-cols-2 gap-2 text-center">
                     <StatPill label="GMV" value={formatCompactCurrency(promo.appliedGmv)} />
-                    <StatPill label="Cost" value={formatCompactCurrency(promo.appliedDiscountCost)} />
+                    <StatPill label="Biaya" value={formatCompactCurrency(promo.appliedDiscountCost)} />
                   </div>
                 </article>
               ))

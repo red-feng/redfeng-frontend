@@ -69,6 +69,14 @@ type BookingPromoSnapshot = {
   finance_approved_by_name?: string | null
 }
 
+function getPromoSourceLabel(snapshot: BookingPromoSnapshot | null, promoCode: string | null | undefined) {
+  const normalizedCode = String(promoCode || snapshot?.code || "").trim()
+  const normalizedSource = String(snapshot?.source || "").trim().toLowerCase()
+  if (normalizedSource === "auto") return "Auto-apply"
+  if (normalizedCode) return "Voucher / kupon"
+  return "Promo checkout"
+}
+
 type PackageRow = {
   id: string
   title: string | null
@@ -722,9 +730,10 @@ export default async function AdminBookingDetailPage({
             <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Promo</p>
               <p className="mt-3 text-xl font-semibold text-slate-950">{promoSnapshot?.rule_name || booking.promo_code || "-"}</p>
+              <p className="mt-2 text-xs text-slate-500">Mode: {getPromoSourceLabel(promoSnapshot, booking.promo_code)}</p>
             </div>
             <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Kode promo</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-600">Voucher / kupon</p>
               <p className="mt-3 text-xl font-semibold uppercase text-slate-950">{booking.promo_code || promoSnapshot?.code || "-"}</p>
             </div>
             <div className="rounded-[26px] border border-emerald-200 bg-emerald-50/80 px-5 py-5 shadow-[0_18px_44px_rgba(16,185,129,0.12)]">

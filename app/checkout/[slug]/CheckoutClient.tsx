@@ -240,11 +240,73 @@ type CheckoutPromoQuote = {
   applied: boolean
   source: "code" | "auto" | "none"
   message: string | null
+  reason:
+    | "invalid_discount_type"
+    | "inactive_status"
+    | "not_started"
+    | "ended"
+    | "minimum_order_not_met"
+    | "code_required"
+    | "code_mismatch"
+    | "quota_exhausted"
+    | "user_quota_exhausted"
+    | "new_user_only"
+    | "target_mismatch"
+    | "discount_zero"
+    | null
   rule_id: string | null
   rule_name: string | null
   code: string | null
   discount_amount: number
   display_discount_amount: number
+}
+
+function getPromoFeedbackMessage(
+  locale: Locale,
+  quote: CheckoutPromoQuote | null,
+  fallbackMessage?: string | null,
+) {
+  if (!quote || quote.applied) return ""
+  const reason = quote.reason
+  if (locale === "id") {
+    if (reason === "new_user_only") return "Promo ini khusus untuk customer baru yang belum punya booking aktif sebelumnya."
+    if (reason === "user_quota_exhausted") return "Voucher atau kupon ini sudah mencapai batas pemakaian untuk akun Anda."
+    if (reason === "quota_exhausted") return "Kuota voucher atau kupon ini sudah habis."
+    if (reason === "minimum_order_not_met") return "Subtotal transaksi ini belum memenuhi minimum order promo."
+    if (reason === "target_mismatch") return "Promo ini tidak berlaku untuk paket atau metode pembayaran yang sedang Anda pilih."
+    if (reason === "not_started") return "Promo ini sudah terdaftar, tetapi window tayangnya belum mulai."
+    if (reason === "ended") return "Promo ini pernah aktif, tetapi masa berlakunya sudah selesai."
+    if (reason === "inactive_status") return "Promo ini sedang tidak live di checkout."
+    if (reason === "code_required" || reason === "code_mismatch") return "Kode voucher atau kupon tidak cocok untuk transaksi ini."
+    if (reason === "discount_zero") return "Promo ini tidak memberi potongan untuk kombinasi transaksi yang sedang dipilih."
+    return fallbackMessage || "Voucher atau kupon belum bisa dipakai pada checkout ini."
+  }
+
+  if (locale === "en") {
+    if (reason === "new_user_only") return "This promo is only available for new customers without a previous active booking."
+    if (reason === "user_quota_exhausted") return "This voucher or coupon has already reached the usage limit for your account."
+    if (reason === "quota_exhausted") return "This voucher or coupon is already out of quota."
+    if (reason === "minimum_order_not_met") return "Your current subtotal does not meet the promo minimum order."
+    if (reason === "target_mismatch") return "This promo does not apply to the selected package or payment method."
+    if (reason === "not_started") return "This promo exists, but its live window has not started yet."
+    if (reason === "ended") return "This promo was active before, but its validity period has ended."
+    if (reason === "inactive_status") return "This promo is not currently live at checkout."
+    if (reason === "code_required" || reason === "code_mismatch") return "The voucher or coupon code does not match this checkout."
+    if (reason === "discount_zero") return "This promo does not produce a discount for the current checkout combination."
+    return fallbackMessage || "This voucher or coupon cannot be used for this checkout yet."
+  }
+
+  if (reason === "new_user_only") return "此优惠仅适用于之前没有有效订单的新客户。"
+  if (reason === "user_quota_exhausted") return "此优惠券已达到您账户的使用上限。"
+  if (reason === "quota_exhausted") return "此优惠券名额已用完。"
+  if (reason === "minimum_order_not_met") return "当前订单小计尚未满足优惠的最低消费条件。"
+  if (reason === "target_mismatch") return "此优惠不适用于当前选择的套餐或支付方式。"
+  if (reason === "not_started") return "此优惠已创建，但尚未进入生效时间。"
+  if (reason === "ended") return "此优惠曾经有效，但现在已经结束。"
+  if (reason === "inactive_status") return "此优惠目前未在结账页生效。"
+  if (reason === "code_required" || reason === "code_mismatch") return "优惠券代码与当前结账不匹配。"
+  if (reason === "discount_zero") return "此优惠不会对当前交易组合产生折扣。"
+  return fallbackMessage || "此优惠券暂时不能用于当前结账。"
 }
 
 type CheckoutPromoPricing = {
@@ -466,17 +528,23 @@ export default function CheckoutClient({
           loading: false,
           quote: payload.promo || null,
           pricing: payload.pricing || null,
-          error:
-            trimmedPromoCode && payload.promo && !payload.promo.applied
-              ? payload.promo.message || "Kode promo belum bisa dipakai."
-              : "",
+          error: trimmedPromoCode && payload.promo && !payload.promo.applied
+            ? getPromoFeedbackMessage(locale, payload.promo, payload.promo.message)
+            : "",
         })
       } catch {
         if (cancelled) return
         setPromoState((current) => ({
           ...current,
           loading: false,
-          error: trimmedPromoCode ? "Gagal memeriksa promo saat ini." : "",
+          error:
+            trimmedPromoCode
+              ? locale === "id"
+                ? "Gagal memeriksa voucher atau kupon saat ini."
+                : locale === "en"
+                  ? "We could not verify the voucher or coupon right now."
+                  : "目前无法验证此优惠券。"
+              : "",
         }))
       }
     }
@@ -872,7 +940,18 @@ export default function CheckoutClient({
             ) : promoState.quote?.applied ? (
               <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                 <p className="font-semibold">
-                  {promoState.quote.rule_name || (promoState.quote.source === "auto" ? "Auto promo" : "Promo aktif")}
+                  {promoState.quote.rule_name ||
+                    (promoState.quote.source === "auto"
+                      ? locale === "id"
+                        ? "Auto-apply aktif"
+                        : locale === "en"
+                          ? "Active auto-apply"
+                          : "自动优惠已生效"
+                      : locale === "id"
+                        ? "Voucher / kupon aktif"
+                        : locale === "en"
+                          ? "Active voucher / coupon"
+                          : "优惠券已生效")}
                 </p>
                 <p className="mt-1">
                   {locale === "id"
@@ -885,10 +964,10 @@ export default function CheckoutClient({
             ) : trimmedPromoCode ? (
               <p className="mt-3 text-xs text-slate-500">
                 {locale === "id"
-                  ? "Kode promo sudah dicek, tetapi belum memberi potongan untuk transaksi ini."
+                  ? "Voucher atau kupon sudah dicek, tetapi belum memberi potongan untuk transaksi ini."
                   : locale === "en"
-                    ? "The promo code has been checked, but it does not apply to this transaction."
-                    : "The promo code has been checked, but it does not apply to this transaction."}
+                    ? "The voucher or coupon was checked, but it does not apply to this transaction."
+                    : "优惠券已经检查过，但不适用于当前交易。"}
               </p>
             ) : null}
           </div>

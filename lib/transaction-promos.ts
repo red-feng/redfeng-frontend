@@ -88,6 +88,8 @@ export type TransactionPromoEvaluationResult =
       target: TransactionPromoRuleTargetRecord | null
     }
 
+export type TransactionPromoFailureReason = Extract<TransactionPromoEvaluationResult, { valid: false }>["reason"]
+
 type EvaluateTransactionPromoRuleParams = {
   rule: TransactionPromoRuleRecord
   targets?: TransactionPromoRuleTargetRecord[]
@@ -171,6 +173,23 @@ export function getTransactionPromoModeLabel(isAutoApply: boolean | null | undef
 
 export function getTransactionPromoAudienceLabel(newUserOnly: boolean | null | undefined) {
   return newUserOnly ? "Khusus customer baru" : "Semua customer"
+}
+
+export function getTransactionPromoReasonLabel(reason: TransactionPromoFailureReason | string | null | undefined) {
+  const normalized = normalizeString(reason)
+  if (normalized === "not_started") return "Belum mulai"
+  if (normalized === "ended") return "Sudah berakhir"
+  if (normalized === "minimum_order_not_met") return "Minimum order belum terpenuhi"
+  if (normalized === "quota_exhausted") return "Kuota total habis"
+  if (normalized === "user_quota_exhausted") return "Kuota akun habis"
+  if (normalized === "new_user_only") return "Khusus customer baru"
+  if (normalized === "target_mismatch") return "Target transaksi tidak cocok"
+  if (normalized === "code_required") return "Butuh voucher / kupon"
+  if (normalized === "code_mismatch") return "Kode tidak cocok"
+  if (normalized === "inactive_status") return "Belum live checkout"
+  if (normalized === "discount_zero") return "Potongan nol"
+  if (normalized === "invalid_discount_type") return "Tipe diskon tidak valid"
+  return "Promo tidak valid"
 }
 
 export function isTransactionPromoRuleCurrentlyLive(rule: TransactionPromoRuleRecord, nowIso = new Date().toISOString()) {

@@ -68,6 +68,24 @@ type BookingPromoSnapshot = {
   finance_approved_by_name?: string | null
 }
 
+function getPromoSourceLabel(locale: Locale, snapshot: BookingPromoSnapshot | null, bookingPromoCode: string | null | undefined) {
+  const normalizedCode = String(bookingPromoCode || snapshot?.code || "").trim()
+  const normalizedSource = String(snapshot?.source || "").trim().toLowerCase()
+  if (locale === "en") {
+    if (normalizedSource === "auto") return "Auto-apply"
+    if (normalizedCode) return "Voucher / coupon"
+    return "Checkout promo"
+  }
+  if (locale === "zh") {
+    if (normalizedSource === "auto") return "自动优惠"
+    if (normalizedCode) return "优惠券 / 代金码"
+    return "结账优惠"
+  }
+  if (normalizedSource === "auto") return "Auto-apply"
+  if (normalizedCode) return "Voucher / kupon"
+  return "Promo checkout"
+}
+
 type BookingParticipantRow = {
   id: string
   participant_type: "adult" | "child"
@@ -729,6 +747,13 @@ export default async function BookingPage({ params, searchParams }: BookingPageP
             <h2 className="text-xl font-semibold text-slate-900">
               {locale === "en" ? "Promo Applied" : locale === "zh" ? "已应用优惠" : "Promo Dipakai"}
             </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              {locale === "en"
+                ? `Mode: ${getPromoSourceLabel(locale, promoSnapshot, booking.promo_code)}`
+                : locale === "zh"
+                  ? `方式：${getPromoSourceLabel(locale, promoSnapshot, booking.promo_code)}`
+                  : `Mode: ${getPromoSourceLabel(locale, promoSnapshot, booking.promo_code)}`}
+            </p>
             <div className="mt-4 grid gap-4 md:grid-cols-3">
               <div className="rounded-[20px] border border-emerald-100 bg-white p-4">
                 <p className="text-sm text-slate-500">{locale === "en" ? "Promo" : locale === "zh" ? "优惠名称" : "Nama promo"}</p>

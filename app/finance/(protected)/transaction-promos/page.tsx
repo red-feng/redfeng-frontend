@@ -394,21 +394,21 @@ export default async function FinanceTransactionPromosPage({
         </section>
 
         <section className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Funnel campaign to redemption</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Lihat alur campaign publik sampai promo applied</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Funnel campaign ke redemption</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Lihat alur campaign publik sampai voucher atau auto-apply benar-benar terpakai</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-6">
             <StatPill label="Campaign" value={analytics.linkedCampaignCount.toLocaleString("id-ID")} />
             <StatPill label="Impresi" value={analytics.impressionEvents.toLocaleString("id-ID")} />
             <StatPill label="Click" value={analytics.clickEvents.toLocaleString("id-ID")} />
             <StatPill label="Quote" value={analytics.quotedEvents.toLocaleString("id-ID")} />
-            <StatPill label="Reserved" value={analytics.reservedRedemptions.toLocaleString("id-ID")} />
-            <StatPill label="Applied" value={analytics.appliedRedemptions.toLocaleString("id-ID")} />
+            <StatPill label="Reserved quota" value={analytics.reservedRedemptions.toLocaleString("id-ID")} />
+            <StatPill label="Applied berbayar" value={analytics.appliedRedemptions.toLocaleString("id-ID")} />
           </div>
         </section>
 
         <section className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analytics promo transaksi</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Top promo by redemption applied</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Promo yang paling sering terpakai di checkout</h2>
           <div className="mt-5 space-y-3">
             {!analytics.topPromosByApplied.length ? (
               <div className="rounded-[24px] border border-dashed border-[#ecd9c2] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
@@ -422,7 +422,7 @@ export default async function FinanceTransactionPromosPage({
                       <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">Rank #{index + 1}</p>
                       <p className="mt-2 text-sm font-semibold text-slate-950">{promo.name}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        {promo.code ? `Kode ${promo.code.toUpperCase()}` : "Auto-apply"} | Status {promo.status || "draft"}
+                        {promo.code ? `Voucher / kupon ${promo.code.toUpperCase()}` : "Auto-apply"} | Status {promo.status || "draft"}
                       </p>
                     </div>
                     <div className="grid min-w-[240px] grid-cols-4 gap-2 text-center">
@@ -440,7 +440,7 @@ export default async function FinanceTransactionPromosPage({
                   </div>
                   <div className="mt-3 grid min-w-[240px] grid-cols-2 gap-2 text-center">
                     <StatPill label="GMV" value={formatCompactCurrency(promo.appliedGmv)} />
-                    <StatPill label="Cost" value={formatCompactCurrency(promo.appliedDiscountCost)} />
+                    <StatPill label="Biaya" value={formatCompactCurrency(promo.appliedDiscountCost)} />
                   </div>
                 </article>
               ))
