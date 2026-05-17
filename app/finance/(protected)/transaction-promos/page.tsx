@@ -140,6 +140,9 @@ export default async function FinanceTransactionPromosPage({
   )
   const pendingMarketingRules = rules.filter((rule) => !rule.marketing_approved_at)
   const fullyApprovedRules = rules.filter((rule) => Boolean(rule.marketing_approved_at) && Boolean(rule.finance_approved_at))
+  const newUserOnlyCount = rules.filter((rule) => Boolean(rule.new_user_only)).length
+  const paymentMethodTargetCount = rules.filter((rule) => rule.targets.some((target) => Boolean(String(target.payment_method || "").trim()))).length
+  const merchantTargetCount = rules.filter((rule) => rule.targets.some((target) => Boolean(String(target.merchant_id || "").trim()))).length
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-6 sm:px-8 sm:py-8 lg:px-10">
@@ -186,22 +189,28 @@ export default async function FinanceTransactionPromosPage({
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Linked campaign" value={analytics.linkedCampaignCount} />
-          <MetricCard label="Impression" value={analytics.impressionEvents} />
+          <MetricCard label="Campaign terkait" value={analytics.linkedCampaignCount} />
+          <MetricCard label="Impresi" value={analytics.impressionEvents} />
           <MetricCard label="Click" value={analytics.clickEvents} />
-          <MetricCard label="Quoted" value={analytics.quotedEvents} />
+          <MetricCard label="Quote lolos" value={analytics.quotedEvents} />
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Rejected" value={analytics.rejectedEvents} />
-          <MetricCard label="Reverted" value={analytics.revertedEvents} />
+          <MetricCard label="Quote ditolak" value={analytics.rejectedEvents} />
+          <MetricCard label="Kuota dikembalikan" value={analytics.revertedEvents} />
           <MetricCard label="Reserved" value={analytics.reservedRedemptions} />
-          <MetricCard label="Applied" value={analytics.appliedRedemptions} />
+          <MetricCard label="Applied berbayar" value={analytics.appliedRedemptions} />
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="GMV impacted" value={analytics.appliedGmv} currency />
-          <MetricCard label="Discount cost" value={analytics.appliedDiscountCost} currency />
+          <MetricCard label="GMV terdampak" value={analytics.appliedGmv} currency />
+          <MetricCard label="Biaya diskon" value={analytics.appliedDiscountCost} currency />
+          <MetricCard label="Customer baru saja" value={newUserOnlyCount} />
+          <MetricCard label="Target metode bayar" value={paymentMethodTargetCount} />
+        </section>
+
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
+          <MetricCard label="Target merchant" value={merchantTargetCount} />
         </section>
 
         <section className="grid gap-4 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
@@ -234,7 +243,7 @@ export default async function FinanceTransactionPromosPage({
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Payment method</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Metode pembayaran</label>
                 <input
                   name="payment_method"
                   defaultValue={paymentMethodFilter}
@@ -334,7 +343,7 @@ export default async function FinanceTransactionPromosPage({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {rule.linkedCampaigns.length ? (
                       <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-orange-700">
-                        {rule.linkedCampaigns.length} linked campaign
+                        {rule.linkedCampaigns.length} campaign terkait
                       </span>
                     ) : null}
                     {rule.targets[0]?.channel ? (
@@ -350,7 +359,7 @@ export default async function FinanceTransactionPromosPage({
                     </span>
                     {rule.targets[0]?.payment_method ? (
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
-                        Pay {rule.targets[0].payment_method}
+                        Bayar {rule.targets[0].payment_method}
                       </span>
                     ) : null}
                     {rule.targets[0]?.merchant_id ? (
@@ -365,7 +374,7 @@ export default async function FinanceTransactionPromosPage({
                     ) : null}
                     {rule.new_user_only ? (
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-                        New user only
+                        Customer baru saja
                       </span>
                     ) : null}
                   </div>
@@ -389,9 +398,9 @@ export default async function FinanceTransactionPromosPage({
           <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Lihat alur campaign publik sampai promo applied</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-6">
             <StatPill label="Campaign" value={analytics.linkedCampaignCount.toLocaleString("id-ID")} />
-            <StatPill label="Impression" value={analytics.impressionEvents.toLocaleString("id-ID")} />
+            <StatPill label="Impresi" value={analytics.impressionEvents.toLocaleString("id-ID")} />
             <StatPill label="Click" value={analytics.clickEvents.toLocaleString("id-ID")} />
-            <StatPill label="Quoted" value={analytics.quotedEvents.toLocaleString("id-ID")} />
+            <StatPill label="Quote" value={analytics.quotedEvents.toLocaleString("id-ID")} />
             <StatPill label="Reserved" value={analytics.reservedRedemptions.toLocaleString("id-ID")} />
             <StatPill label="Applied" value={analytics.appliedRedemptions.toLocaleString("id-ID")} />
           </div>
@@ -419,15 +428,15 @@ export default async function FinanceTransactionPromosPage({
                     <div className="grid min-w-[240px] grid-cols-4 gap-2 text-center">
                       <StatPill label="Impression" value={promo.impressionEvents.toLocaleString("id-ID")} />
                       <StatPill label="Click" value={promo.clickEvents.toLocaleString("id-ID")} />
-                      <StatPill label="Quoted" value={promo.quotedEvents.toLocaleString("id-ID")} />
+                      <StatPill label="Quote" value={promo.quotedEvents.toLocaleString("id-ID")} />
                       <StatPill label="Campaign" value={promo.linkedCampaignCount.toLocaleString("id-ID")} />
                     </div>
                   </div>
                   <div className="mt-3 grid min-w-[240px] grid-cols-4 gap-2 text-center">
                     <StatPill label="Reserved" value={promo.reservedRedemptions.toLocaleString("id-ID")} />
                     <StatPill label="Applied" value={promo.appliedRedemptions.toLocaleString("id-ID")} />
-                    <StatPill label="Rejected" value={promo.rejectedEvents.toLocaleString("id-ID")} />
-                    <StatPill label="Reverted" value={promo.revertedEvents.toLocaleString("id-ID")} />
+                    <StatPill label="Ditolak" value={promo.rejectedEvents.toLocaleString("id-ID")} />
+                    <StatPill label="Kembali" value={promo.revertedEvents.toLocaleString("id-ID")} />
                   </div>
                   <div className="mt-3 grid min-w-[240px] grid-cols-2 gap-2 text-center">
                     <StatPill label="GMV" value={formatCompactCurrency(promo.appliedGmv)} />
@@ -441,7 +450,7 @@ export default async function FinanceTransactionPromosPage({
 
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-2">
           <article className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analytics by payment</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analitik per payment method</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Payment method dengan redemption tertinggi</h2>
             <div className="mt-5 space-y-3">
               {!analytics.topPaymentMethodsByApplied.length ? (
@@ -459,7 +468,7 @@ export default async function FinanceTransactionPromosPage({
                       <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
                         <StatPill label="Applied" value={item.appliedRedemptions.toLocaleString("id-ID")} />
                         <StatPill label="GMV" value={formatCompactCurrency(item.appliedGmv)} />
-                        <StatPill label="Cost" value={formatCompactCurrency(item.appliedDiscountCost)} />
+                        <StatPill label="Biaya" value={formatCompactCurrency(item.appliedDiscountCost)} />
                       </div>
                     </div>
                   </article>
@@ -469,7 +478,7 @@ export default async function FinanceTransactionPromosPage({
           </article>
 
           <article className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analytics by merchant</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Analitik per merchant</p>
             <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Merchant dengan dampak promo terbesar</h2>
             <div className="mt-5 space-y-3">
               {!analytics.topMerchantsByApplied.length ? (
@@ -488,7 +497,7 @@ export default async function FinanceTransactionPromosPage({
                       <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
                         <StatPill label="Applied" value={item.appliedRedemptions.toLocaleString("id-ID")} />
                         <StatPill label="GMV" value={formatCompactCurrency(item.appliedGmv)} />
-                        <StatPill label="Cost" value={formatCompactCurrency(item.appliedDiscountCost)} />
+                        <StatPill label="Biaya" value={formatCompactCurrency(item.appliedDiscountCost)} />
                       </div>
                     </div>
                   </article>

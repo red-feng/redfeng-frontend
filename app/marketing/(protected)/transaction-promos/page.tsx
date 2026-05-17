@@ -198,6 +198,10 @@ export default async function MarketingTransactionPromosPage({
   const needsCodeCount = rules.filter((rule) => !rule.is_auto_apply && !String(rule.code || "").trim()).length
   const needsWindowCount = rules.filter((rule) => String(rule.status || "").toLowerCase() === "active" && !rule.starts_at).length
   const launchReadyCount = rules.filter((rule) => rule.liveState === "live" || String(rule.status || "").toLowerCase() === "approved").length
+  const newUserOnlyCount = rules.filter((rule) => Boolean(rule.new_user_only)).length
+  const perUserQuotaCount = rules.filter((rule) => Number(rule.quota_per_user || 0) > 0).length
+  const paymentMethodTargetCount = rules.filter((rule) => rule.targets.some((target) => Boolean(String(target.payment_method || "").trim()))).length
+  const merchantTargetCount = rules.filter((rule) => rule.targets.some((target) => Boolean(String(target.merchant_id || "").trim()))).length
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#fff8f1_0%,#f7f1e8_100%)] px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 lg:px-10">
@@ -216,15 +220,15 @@ export default async function MarketingTransactionPromosPage({
               <p className="text-[11px] uppercase tracking-[0.28em] text-teal-100/80">Promo snapshot</p>
               <div className="mt-5 grid gap-4">
                 <div>
-                  <p className="text-sm text-teal-50/80">Promo active</p>
+                  <p className="text-sm text-teal-50/80">Promo aktif</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(activeCount || 0).toLocaleString("id-ID")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-teal-50/80">Promo approved</p>
+                  <p className="text-sm text-teal-50/80">Siap review finance</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{(approvedCount || 0).toLocaleString("id-ID")}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-teal-50/80">Filtered result</p>
+                  <p className="text-sm text-teal-50/80">Hasil filter</p>
                   <p className="mt-1 text-2xl font-semibold text-white sm:text-3xl">{rules.length.toLocaleString("id-ID")}</p>
                 </div>
               </div>
@@ -243,22 +247,29 @@ export default async function MarketingTransactionPromosPage({
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Linked campaign" value={analytics.linkedCampaignCount} note="Jumlah campaign publik yang sudah ditautkan ke rule promo checkout." />
-          <MetricCard label="Impression" value={analytics.impressionEvents} note="Tampilan campaign publik yang tercatat pada placement marketing." />
+          <MetricCard label="Campaign terkait" value={analytics.linkedCampaignCount} note="Jumlah campaign publik yang sudah ditautkan ke rule promo checkout." />
+          <MetricCard label="Impresi" value={analytics.impressionEvents} note="Tampilan campaign publik yang tercatat pada placement marketing." />
           <MetricCard label="Click" value={analytics.clickEvents} note="Klik dari campaign publik yang menuju landing target promo." />
-          <MetricCard label="Quoted" value={analytics.quotedEvents} note="Jumlah quote promo yang lolos dan tercatat dari checkout." />
+          <MetricCard label="Quote lolos" value={analytics.quotedEvents} note="Jumlah quote promo yang lolos dan tercatat dari checkout." />
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Rejected" value={analytics.rejectedEvents} note="Percobaan kode promo yang ditolak saat quote checkout." />
-          <MetricCard label="Reverted" value={analytics.revertedEvents} note="Reserved quota yang dilepas lagi karena booking expired, dihapus, atau dibatalkan." />
-          <MetricCard label="Reserved pending" value={analytics.reservedRedemptions} note="Kuota promo yang masih menunggu pembayaran." />
-          <MetricCard label="Applied" value={analytics.appliedRedemptions} note="Promo yang sudah benar-benar dipakai pada booking berbayar." />
+          <MetricCard label="Quote ditolak" value={analytics.rejectedEvents} note="Percobaan kode promo yang ditolak saat quote checkout." />
+          <MetricCard label="Kuota dikembalikan" value={analytics.revertedEvents} note="Reserved quota yang dilepas lagi karena booking expired, dihapus, atau dibatalkan." />
+          <MetricCard label="Reserved menunggu bayar" value={analytics.reservedRedemptions} note="Kuota promo yang masih menunggu pembayaran." />
+          <MetricCard label="Applied berbayar" value={analytics.appliedRedemptions} note="Promo yang sudah benar-benar dipakai pada booking berbayar." />
         </section>
 
         <section className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard label="GMV terdampak" value={analytics.appliedGmv} note="Nilai booking dari promo yang sudah applied." currency />
-          <MetricCard label="Discount cost" value={analytics.appliedDiscountCost} note="Total biaya diskon dari redemption applied." currency />
+          <MetricCard label="Biaya diskon" value={analytics.appliedDiscountCost} note="Total biaya diskon dari redemption applied." currency />
+          <MetricCard label="Customer baru saja" value={newUserOnlyCount} note="Promo yang hanya boleh dipakai customer baru." />
+          <MetricCard label="Kuota per user" value={perUserQuotaCount} note="Promo yang sudah membatasi pemakaian per customer." />
+        </section>
+
+        <section className="grid gap-3 sm:gap-4 md:grid-cols-2">
+          <MetricCard label="Target metode bayar" value={paymentMethodTargetCount} note="Rule yang menempel ke payment method tertentu." />
+          <MetricCard label="Target merchant" value={merchantTargetCount} note="Rule yang hanya hidup untuk merchant tertentu." />
         </section>
 
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -280,9 +291,9 @@ export default async function MarketingTransactionPromosPage({
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Titik kontrol yang paling sering dibutuhkan manager</h2>
             <div className="mt-5 space-y-3">
               <QueueCard title="Isu voucher / kupon" body={needsCodeCount ? `${needsCodeCount.toLocaleString("id-ID")} promo manual masih perlu kode voucher atau kupon yang akan diketik customer saat checkout.` : "Semua promo manual pada hasil filter ini sudah memiliki kode voucher atau kupon."} />
-              <QueueCard title="Window issues" body={needsWindowCount ? `${needsWindowCount.toLocaleString("id-ID")} promo active masih belum punya window mulai yang tegas.` : "Tidak ada promo active yang kehilangan window dasar."} />
-              <QueueCard title="Product coverage" body={summarizeProductCoverage(rules)} />
-              <QueueCard title="Targeting note" body="Satu rule bisa disiapkan untuk paket sekarang, lalu tinggal disambungkan ke flight, train, hotel, bus, sea, atau cruise saat katalog menyusul." />
+              <QueueCard title="Isu window" body={needsWindowCount ? `${needsWindowCount.toLocaleString("id-ID")} promo aktif masih belum punya window mulai yang tegas.` : "Tidak ada promo aktif yang kehilangan window dasar."} />
+              <QueueCard title="Cakupan layanan" body={summarizeProductCoverage(rules)} />
+              <QueueCard title="Catatan targeting" body="Satu rule bisa disiapkan untuk paket sekarang, lalu tinggal disambungkan ke pesawat, kereta, hotel, bus, laut, atau cruise saat katalog menyusul." />
             </div>
           </article>
         </section>
@@ -294,7 +305,7 @@ export default async function MarketingTransactionPromosPage({
               <input
                 name="q"
                 defaultValue={String(params.q || "")}
-                  placeholder="Cari berdasarkan nama promo, voucher, kupon, deskripsi, atau target"
+                placeholder="Cari berdasarkan nama promo, voucher, kupon, deskripsi, atau target"
                 className="w-full rounded-[18px] border border-[#d8e6e1] bg-[#fbfefc] px-4 py-3 text-sm outline-none ring-teal-500 transition focus:ring-2"
               />
             </div>
@@ -341,7 +352,7 @@ export default async function MarketingTransactionPromosPage({
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Payment method</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Metode pembayaran</label>
               <input
                 name="payment_method"
                 defaultValue={paymentMethodFilter}
@@ -381,8 +392,8 @@ export default async function MarketingTransactionPromosPage({
 
         <section className="grid gap-4 sm:gap-6 xl:grid-cols-2">
           <article className="rounded-[24px] border border-[#d7ece7] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Analytics by payment</p>
-            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Payment method paling efektif</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Analitik per payment method</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Metode pembayaran paling efektif</h2>
             <div className="mt-5 space-y-3">
               {!analytics.topPaymentMethodsByApplied.length ? (
                 <div className="rounded-[24px] border border-dashed border-[#d7ece7] bg-[#f7fcfa] px-5 py-6 text-sm text-slate-500">
@@ -399,7 +410,7 @@ export default async function MarketingTransactionPromosPage({
                       <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
                         <StatPill label="Applied" value={item.appliedRedemptions.toLocaleString("id-ID")} />
                         <StatPill label="GMV" value={formatCompactCurrency(item.appliedGmv)} />
-                        <StatPill label="Cost" value={formatCompactCurrency(item.appliedDiscountCost)} />
+                        <StatPill label="Biaya" value={formatCompactCurrency(item.appliedDiscountCost)} />
                       </div>
                     </div>
                   </article>
@@ -409,7 +420,7 @@ export default async function MarketingTransactionPromosPage({
           </article>
 
           <article className="rounded-[24px] border border-[#d7ece7] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Analytics by merchant</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Analitik per merchant</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Merchant paling terdampak promo</h2>
             <div className="mt-5 space-y-3">
               {!analytics.topMerchantsByApplied.length ? (
@@ -428,7 +439,7 @@ export default async function MarketingTransactionPromosPage({
                       <div className="grid min-w-[240px] grid-cols-3 gap-2 text-center">
                         <StatPill label="Applied" value={item.appliedRedemptions.toLocaleString("id-ID")} />
                         <StatPill label="GMV" value={formatCompactCurrency(item.appliedGmv)} />
-                        <StatPill label="Cost" value={formatCompactCurrency(item.appliedDiscountCost)} />
+                        <StatPill label="Biaya" value={formatCompactCurrency(item.appliedDiscountCost)} />
                       </div>
                     </div>
                   </article>
@@ -475,7 +486,7 @@ export default async function MarketingTransactionPromosPage({
                   <div className="mt-3 flex flex-wrap gap-2">
                     {rule.linkedCampaigns.length ? (
                       <span className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-teal-700">
-                        {rule.linkedCampaigns.length} linked campaign
+                        {rule.linkedCampaigns.length} campaign terkait
                       </span>
                     ) : null}
                     <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${getStateBadgeClass(rule.liveState)}`}>
@@ -486,7 +497,7 @@ export default async function MarketingTransactionPromosPage({
                     </span>
                     {rule.targets[0]?.payment_method ? (
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
-                        Pay {rule.targets[0].payment_method}
+                        Bayar {rule.targets[0].payment_method}
                       </span>
                     ) : null}
                     {rule.targets[0]?.merchant_id ? (
@@ -501,7 +512,7 @@ export default async function MarketingTransactionPromosPage({
                     ) : null}
                     {rule.new_user_only ? (
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-                        New user only
+                        Customer baru saja
                       </span>
                     ) : null}
                     {rule.targets[0]?.channel ? (
