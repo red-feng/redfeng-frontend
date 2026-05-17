@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { getTransactionPromoReasonLabel } from "@/lib/transaction-promos"
 
 type TransactionPromoRuleAnalyticsRow = {
   id: string
@@ -28,6 +29,7 @@ type TransactionPromoBookingAnalyticsRow = {
 type TransactionPromoEventAnalyticsRow = {
   rule_id: string | null
   event_type: string | null
+  reason: string | null
 }
 
 type TransactionPromoLinkAnalyticsRow = {
@@ -82,6 +84,11 @@ export type TransactionPromoAnalyticsSummary = {
     appliedDiscountCost: number
     appliedGmv: number
   }>
+  topRejectReasons: Array<{
+    reason: string
+    label: string
+    count: number
+  }>
 }
 
 function normalizeString(value: string | null | undefined) {
@@ -99,7 +106,7 @@ export async function getTransactionPromoAnalyticsSummary(
   const [{ data: rulesData }, { data: redemptionsData }, { data: eventsData }, { data: promoLinksData }, { data: marketingEventsData }] = await Promise.all([
     supabase.from("transaction_promo_rules").select("id, name, code, status, transaction_promo_rule_targets(merchant_id, payment_method)"),
     supabase.from("transaction_promo_redemptions").select("rule_id, booking_id, discount_amount, status"),
-    supabase.from("transaction_promo_events").select("rule_id, event_type"),
+    supabase.from("transaction_promo_events").select("rule_id, event_type, reason"),
     supabase.from("marketing_promo_transaction_rules").select("transaction_promo_rule_id, marketing_promo_id"),
     supabase.from("marketing_promo_events").select("promo_id, promo_slug, event_type"),
   ])
@@ -210,6 +217,7 @@ export async function getTransactionPromoAnalyticsSummary(
   let reservedGmv = 0
   const paymentMethodSummaryMap = new Map<string, { paymentMethod: string; appliedRedemptions: number; appliedDiscountCost: number; appliedGmv: number }>()
   const merchantSummaryMap = new Map<string, { merchantId: string; appliedRedemptions: number; appliedDiscountCost: number; appliedGmv: number }>()
+  const rejectReasonSummaryMap = new Map<string, number>()
 
   for (const row of redemptions) {
     const ruleId = normalizeString(row.rule_id)
@@ -351,6 +359,8 @@ export async function getTransactionPromoAnalyticsSummary(
     if (eventType === "rejected") {
       rejectedEvents += 1
       promoSummary.rejectedEvents += 1
+      const reasonKey = normalizeString(row.reason).toLowerCase() || "unknown"
+      rejectReasonSummaryMap.set(reasonKey, (rejectReasonSummaryMap.get(reasonKey) || 0) + 1)
     }
     if (eventType === "reverted") {
       revertedEvents += 1
@@ -384,6 +394,15 @@ export async function getTransactionPromoAnalyticsSummary(
     })
     .slice(0, 5)
 
+  const topRejectReasons = Array.from(rejectReasonSummaryMap.entries())
+    .map(([reason, count]) => ({
+      reason,
+      label: getTransactionPromoReasonLabel(reason),
+      count,
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+
   return {
     linkedCampaignCount,
     impressionEvents,
@@ -400,5 +419,6 @@ export async function getTransactionPromoAnalyticsSummary(
     topPromosByApplied,
     topPaymentMethodsByApplied,
     topMerchantsByApplied,
+    topRejectReasons,
   }
 }

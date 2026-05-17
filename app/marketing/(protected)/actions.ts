@@ -920,6 +920,15 @@ export async function upsertTransactionPromoRule(formData: FormData) {
   const merchantId = getOptionalText(formData, "merchant_id")
   const paymentMethod = getOptionalText(formData, "payment_method")
   const customerLocale = getOptionalText(formData, "customer_locale")
+  const originAirportCode = getOptionalText(formData, "origin_airport_code")
+  const destinationAirportCode = getOptionalText(formData, "destination_airport_code")
+  const airlineCode = getOptionalText(formData, "airline_code")
+  const cabinClass = getOptionalText(formData, "cabin_class")
+  const tripType = getOptionalText(formData, "trip_type")
+  const departureStartsAt = parseDateTimeValue(formData.get("departure_starts_at"))
+  const departureEndsAt = parseDateTimeValue(formData.get("departure_ends_at"))
+  const returnStartsAt = parseDateTimeValue(formData.get("return_starts_at"))
+  const returnEndsAt = parseDateTimeValue(formData.get("return_ends_at"))
 
   if (!name) {
     redirectWithMessage(returnTo, "Nama promo transaksi wajib diisi.", "error")
@@ -951,6 +960,37 @@ export async function upsertTransactionPromoRule(formData: FormData) {
 
   if (quotaTotal && quotaPerUser && quotaPerUser > quotaTotal) {
     redirectWithMessage(returnTo, "Kuota per user tidak boleh melebihi kuota total.", "error")
+  }
+
+  if (
+    departureStartsAt &&
+    departureEndsAt &&
+    new Date(departureEndsAt).getTime() < new Date(departureStartsAt).getTime()
+  ) {
+    redirectWithMessage(returnTo, "Window berangkat flight-ready tidak boleh berakhir lebih awal dari tanggal mulai.", "error")
+  }
+
+  if (
+    returnStartsAt &&
+    returnEndsAt &&
+    new Date(returnEndsAt).getTime() < new Date(returnStartsAt).getTime()
+  ) {
+    redirectWithMessage(returnTo, "Window pulang flight-ready tidak boleh berakhir lebih awal dari tanggal mulai.", "error")
+  }
+
+  const hasFlightTargeting =
+    Boolean(originAirportCode) ||
+    Boolean(destinationAirportCode) ||
+    Boolean(airlineCode) ||
+    Boolean(cabinClass) ||
+    Boolean(tripType) ||
+    Boolean(departureStartsAt) ||
+    Boolean(departureEndsAt) ||
+    Boolean(returnStartsAt) ||
+    Boolean(returnEndsAt)
+
+  if (hasFlightTargeting && !productTypes.includes("flight")) {
+    redirectWithMessage(returnTo, "Target flight-ready hanya boleh dipakai jika jenis transaksi mencakup pesawat.", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -1019,6 +1059,15 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     payment_method: paymentMethod,
     customer_locale: customerLocale,
     channel,
+    origin_airport_code: originAirportCode,
+    destination_airport_code: destinationAirportCode,
+    airline_code: airlineCode,
+    cabin_class: cabinClass,
+    trip_type: tripType,
+    departure_starts_at: departureStartsAt,
+    departure_ends_at: departureEndsAt,
+    return_starts_at: returnStartsAt,
+    return_ends_at: returnEndsAt,
     updated_at: nowIso,
   }))
 
@@ -1043,6 +1092,7 @@ export async function upsertTransactionPromoRule(formData: FormData) {
         newUserOnly,
         productTypes,
         channel,
+        flightReady: hasFlightTargeting,
         approvalReset: Boolean(ruleId),
     },
   })

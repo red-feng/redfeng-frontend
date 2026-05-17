@@ -283,6 +283,18 @@ export default async function AdminCreateFlightBookingPage({
                   </select>
                 </div>
                 <div>
+                  <FieldLabel>Tipe perjalanan</FieldLabel>
+                  <select
+                    name="trip_type"
+                    defaultValue="one_way"
+                    className="w-full rounded-[18px] border border-[#e6d8c2] bg-[#fffdf9] px-4 py-3 text-sm outline-none ring-orange-500 transition focus:ring-2"
+                  >
+                    <option value="one_way">Sekali jalan</option>
+                    <option value="round_trip">Pulang-pergi</option>
+                    <option value="multi_city">Multi-city</option>
+                  </select>
+                </div>
+                <div>
                   <FieldLabel>Kode origin airport</FieldLabel>
                   <TextInput name="origin_airport_code" required placeholder="Mis. CGK" />
                 </div>
@@ -305,6 +317,11 @@ export default async function AdminCreateFlightBookingPage({
                 <div>
                   <FieldLabel>Jadwal tiba</FieldLabel>
                   <TextInput name="arrival_at" type="datetime-local" />
+                </div>
+                <div>
+                  <FieldLabel>Jadwal pulang</FieldLabel>
+                  <TextInput name="return_at" type="datetime-local" />
+                  <p className="mt-2 text-xs text-slate-500">Isi jika trip pulang-pergi atau multi-city sudah punya tanggal pulang awal.</p>
                 </div>
               </section>
 
@@ -394,7 +411,7 @@ export default async function AdminCreateFlightBookingPage({
                 {[
                   "Tabel bookings untuk master transaksi Red Feng.",
                   "Tabel supplier_orders untuk referensi order ke partner reservasi dan biaya supplier.",
-                  "Tabel flight_booking_details untuk data rute, jadwal, dan status issue tiket.",
+                  "Tabel flight_booking_details untuk data rute, cabin, trip type, jadwal, dan status issue tiket.",
                 ].map((item) => (
                   <div key={item} className="rounded-[18px] border border-[#f1e6dc] bg-[#fffdfa] px-4 py-3 text-sm leading-6 text-slate-600">
                     {item}

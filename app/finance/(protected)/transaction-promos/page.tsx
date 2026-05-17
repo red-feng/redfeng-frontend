@@ -25,6 +25,15 @@ type TransactionPromoTarget = {
   payment_method: string | null
   customer_locale: string | null
   channel: string | null
+  origin_airport_code: string | null
+  destination_airport_code: string | null
+  airline_code: string | null
+  cabin_class: string | null
+  trip_type: string | null
+  departure_starts_at: string | null
+  departure_ends_at: string | null
+  return_starts_at: string | null
+  return_ends_at: string | null
 }
 
 type TransactionPromoRule = {
@@ -79,7 +88,7 @@ export default async function FinanceTransactionPromosPage({
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
+    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -303,6 +312,31 @@ export default async function FinanceTransactionPromosPage({
         {params.success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-700">{params.success}</div> : null}
         {params.error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700">{params.error}</div> : null}
 
+        <section className="rounded-[24px] border border-[#ecd9c2] bg-white/90 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] backdrop-blur-sm sm:rounded-[32px] sm:px-6 sm:py-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Alasan reject checkout</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em] text-slate-950">Lihat sumber penolakan promo yang paling sering terjadi</h2>
+          <div className="mt-5 space-y-3">
+            {!analytics.topRejectReasons.length ? (
+              <div className="rounded-[24px] border border-dashed border-[#ecd9c2] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
+                Belum ada data reject yang cukup untuk dibaca.
+              </div>
+            ) : (
+              analytics.topRejectReasons.map((item, index) => (
+                <article key={`reject-${item.reason}`} className="rounded-[22px] border border-[#efe1cf] bg-[#fffaf3] px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-orange-500">Rank #{index + 1}</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">{item.label}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.reason}</p>
+                    </div>
+                    <StatPill label="Reject" value={item.count.toLocaleString("id-ID")} />
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
         <section className="space-y-4">
           {!rules.length ? (
             <div className="rounded-[24px] border border-dashed border-[#ecd9c2] bg-[#fffaf3] px-5 py-6 text-sm text-slate-500">
@@ -360,6 +394,26 @@ export default async function FinanceTransactionPromosPage({
                     {rule.targets[0]?.payment_method ? (
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
                         Bayar {rule.targets[0].payment_method}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.origin_airport_code || rule.targets[0]?.destination_airport_code ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Route {(rule.targets[0]?.origin_airport_code || "ANY").toUpperCase()}-{(rule.targets[0]?.destination_airport_code || "ANY").toUpperCase()}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.airline_code ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Airline {rule.targets[0].airline_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.cabin_class ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Cabin {rule.targets[0].cabin_class}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.trip_type ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Trip {rule.targets[0].trip_type}
                       </span>
                     ) : null}
                     {rule.targets[0]?.merchant_id ? (

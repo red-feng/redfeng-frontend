@@ -42,6 +42,15 @@ export type TransactionPromoRuleTargetRecord = {
   payment_method?: string | null
   customer_locale?: string | null
   channel?: string | null
+  origin_airport_code?: string | null
+  destination_airport_code?: string | null
+  airline_code?: string | null
+  cabin_class?: string | null
+  trip_type?: string | null
+  departure_starts_at?: string | null
+  departure_ends_at?: string | null
+  return_starts_at?: string | null
+  return_ends_at?: string | null
 }
 
 export type TransactionPromoContext = {
@@ -57,6 +66,13 @@ export type TransactionPromoContext = {
   customerId?: string | null
   customerEmail?: string | null
   promoCode?: string | null
+  flightOriginCode?: string | null
+  flightDestinationCode?: string | null
+  flightAirlineCode?: string | null
+  flightCabinClass?: string | null
+  flightTripType?: string | null
+  flightDepartureAt?: string | null
+  flightReturnAt?: string | null
 }
 
 export type TransactionPromoEvaluationResult =
@@ -236,6 +252,23 @@ export function doesTransactionPromoTargetMatch(context: TransactionPromoContext
   if (normalizeString(target.payment_method) && normalizeString(target.payment_method) !== normalizeString(context.paymentMethod)) return false
   if (normalizeString(target.customer_locale) && normalizeString(target.customer_locale) !== normalizeString(context.customerLocale)) return false
   if (normalizeString(target.channel) && normalizeString(target.channel) !== normalizeString(context.channel)) return false
+  if (normalizeString(target.origin_airport_code) && normalizeString(target.origin_airport_code) !== normalizeString(context.flightOriginCode)) return false
+  if (normalizeString(target.destination_airport_code) && normalizeString(target.destination_airport_code) !== normalizeString(context.flightDestinationCode)) return false
+  if (normalizeString(target.airline_code) && normalizeString(target.airline_code) !== normalizeString(context.flightAirlineCode)) return false
+  if (normalizeString(target.cabin_class) && normalizeString(target.cabin_class) !== normalizeString(context.flightCabinClass)) return false
+  if (normalizeString(target.trip_type) && normalizeString(target.trip_type) !== normalizeString(context.flightTripType)) return false
+
+  const departureStartsAt = target.departure_starts_at ? new Date(target.departure_starts_at) : null
+  const departureEndsAt = target.departure_ends_at ? new Date(target.departure_ends_at) : null
+  const returnStartsAt = target.return_starts_at ? new Date(target.return_starts_at) : null
+  const returnEndsAt = target.return_ends_at ? new Date(target.return_ends_at) : null
+  const departureAt = context.flightDepartureAt ? new Date(context.flightDepartureAt) : null
+  const returnAt = context.flightReturnAt ? new Date(context.flightReturnAt) : null
+
+  if (departureStartsAt && (!departureAt || departureAt.getTime() < departureStartsAt.getTime())) return false
+  if (departureEndsAt && (!departureAt || departureAt.getTime() > departureEndsAt.getTime())) return false
+  if (returnStartsAt && (!returnAt || returnAt.getTime() < returnStartsAt.getTime())) return false
+  if (returnEndsAt && (!returnAt || returnAt.getTime() > returnEndsAt.getTime())) return false
 
   return true
 }

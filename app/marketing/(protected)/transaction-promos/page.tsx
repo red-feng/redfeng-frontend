@@ -33,6 +33,15 @@ type TransactionPromoTarget = {
   payment_method: string | null
   customer_locale: string | null
   channel: string | null
+  origin_airport_code: string | null
+  destination_airport_code: string | null
+  airline_code: string | null
+  cabin_class: string | null
+  trip_type: string | null
+  departure_starts_at: string | null
+  departure_ends_at: string | null
+  return_starts_at: string | null
+  return_ends_at: string | null
 }
 
 type TransactionPromoRule = {
@@ -100,7 +109,7 @@ export default async function MarketingTransactionPromosPage({
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, new_user_only, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
+    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, new_user_only, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -449,6 +458,31 @@ export default async function MarketingTransactionPromosPage({
           </article>
         </section>
 
+        <section className="rounded-[24px] border border-[#d7ece7] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-teal-600">Alasan reject checkout</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Penyebab voucher, kupon, atau auto-apply paling sering gagal</h2>
+          <div className="mt-5 space-y-3">
+            {!analytics.topRejectReasons.length ? (
+              <div className="rounded-[24px] border border-dashed border-[#d7ece7] bg-[#f7fcfa] px-5 py-6 text-sm text-slate-500">
+                Belum ada data reject yang cukup untuk dibaca.
+              </div>
+            ) : (
+              analytics.topRejectReasons.map((item, index) => (
+                <article key={`reject-${item.reason}`} className="rounded-[22px] border border-[#d7ece7] bg-[#f7fcfa] px-5 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-teal-600">Rank #{index + 1}</p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">{item.label}</p>
+                      <p className="mt-1 text-xs text-slate-500">{item.reason}</p>
+                    </div>
+                    <StatPill label="Reject" value={item.count.toLocaleString("id-ID")} />
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
         <section className="space-y-4">
           {!rules.length ? (
             <div className="rounded-[24px] border border-dashed border-[#d7ece7] bg-[#f7fcfa] px-5 py-6 text-sm text-slate-500">
@@ -498,6 +532,26 @@ export default async function MarketingTransactionPromosPage({
                     {rule.targets[0]?.payment_method ? (
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
                         Bayar {rule.targets[0].payment_method}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.origin_airport_code || rule.targets[0]?.destination_airport_code ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Route {(rule.targets[0]?.origin_airport_code || "ANY").toUpperCase()}-{(rule.targets[0]?.destination_airport_code || "ANY").toUpperCase()}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.airline_code ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Airline {rule.targets[0].airline_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.cabin_class ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Cabin {rule.targets[0].cabin_class}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.trip_type ? (
+                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                        Trip {rule.targets[0].trip_type}
                       </span>
                     ) : null}
                     {rule.targets[0]?.merchant_id ? (
@@ -695,6 +749,34 @@ function TransactionPromoForm({
           <Field label="Payment method" name="payment_method" defaultValue={String(primaryTarget?.payment_method || "")} required={false} />
           <Field label="Customer locale" name="customer_locale" defaultValue={String(primaryTarget?.customer_locale || "")} required={false} />
         </div>
+        <div className="mt-5 rounded-[20px] border border-cyan-200 bg-cyan-50/80 p-4">
+          <p className="text-sm font-semibold text-slate-900">Flight-ready contract</p>
+          <p className="mt-1 text-xs leading-6 text-slate-600">
+            Isi bagian ini bila rule sudah ingin disiapkan untuk katalog pesawat nanti. Belum membuat promo flight live, tetapi kontraknya akan siap saat checkout flight disambungkan.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Field label="Origin airport code" name="origin_airport_code" defaultValue={String(primaryTarget?.origin_airport_code || "")} required={false} />
+            <Field label="Destination airport code" name="destination_airport_code" defaultValue={String(primaryTarget?.destination_airport_code || "")} required={false} />
+            <Field label="Airline code" name="airline_code" defaultValue={String(primaryTarget?.airline_code || "")} required={false} />
+            <Field label="Cabin class" name="cabin_class" defaultValue={String(primaryTarget?.cabin_class || "")} required={false} />
+            <SelectField
+              label="Trip type"
+              name="trip_type"
+              defaultValue={String(primaryTarget?.trip_type || "")}
+              options={[
+                { value: "", label: "Semua trip type" },
+                { value: "one_way", label: "One way" },
+                { value: "round_trip", label: "Round trip" },
+                { value: "multi_city", label: "Multi-city" },
+              ]}
+            />
+            <div />
+            <Field label="Departure window start" name="departure_starts_at" type="date" defaultValue={toDateInput(primaryTarget?.departure_starts_at)} required={false} />
+            <Field label="Departure window end" name="departure_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.departure_ends_at)} required={false} />
+            <Field label="Return window start" name="return_starts_at" type="date" defaultValue={toDateInput(primaryTarget?.return_starts_at)} required={false} />
+            <Field label="Return window end" name="return_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.return_ends_at)} required={false} />
+          </div>
+        </div>
       </FormSection>
 
       <button className="w-fit rounded-[18px] bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
@@ -863,6 +945,16 @@ function toDateTimeLocalInput(value: string | null | undefined) {
   const hours = String(parsed.getHours()).padStart(2, "0")
   const minutes = String(parsed.getMinutes()).padStart(2, "0")
   return `${year}-${month}-${day}T${hours}:${minutes}`
+}
+
+function toDateInput(value: string | null | undefined) {
+  if (!value) return ""
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return ""
+  const year = parsed.getFullYear()
+  const month = String(parsed.getMonth() + 1).padStart(2, "0")
+  const day = String(parsed.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
 }
 
 function formatDateWindow(startsAt: string | null, endsAt: string | null) {

@@ -27,6 +27,14 @@ function normalizeCabinClass(value: string | null | undefined) {
   return "economy"
 }
 
+function normalizeTripType(value: string | null | undefined) {
+  const normalized = String(value || "").trim().toLowerCase()
+  if (normalized === "round_trip" || normalized === "multi_city") {
+    return normalized
+  }
+  return "one_way"
+}
+
 async function ensureFlightAdmin() {
   const supabase = await createClient("admin")
   const adminSupabase = createAdminClient()
@@ -70,6 +78,8 @@ export async function createFlightBooking(formData: FormData) {
   const destinationAirportName = String(formData.get("destination_airport_name") || "").trim()
   const departureAt = String(formData.get("departure_at") || "").trim()
   const arrivalAt = String(formData.get("arrival_at") || "").trim()
+  const returnAt = String(formData.get("return_at") || "").trim()
+  const tripType = normalizeTripType(String(formData.get("trip_type") || (returnAt ? "round_trip" : "one_way")))
   const supplierId = String(formData.get("supplier_id") || "").trim()
   const supplierOrderId = String(formData.get("supplier_order_id") || "").trim()
   const supplierReference = String(formData.get("supplier_reference") || "").trim()
@@ -89,6 +99,10 @@ export async function createFlightBooking(formData: FormData) {
 
   if (!airlineName || !flightNumber || !originAirportCode || !destinationAirportCode || !departureAt) {
     backToFlightCreate("Maskapai, nomor penerbangan, origin, destination, dan jadwal berangkat wajib diisi.", "error")
+  }
+
+  if (tripType === "round_trip" && !returnAt) {
+    backToFlightCreate("Tanggal pulang wajib diisi untuk trip tipe pulang-pergi.", "error")
   }
 
   if (!supplierId) {
@@ -228,7 +242,9 @@ export async function createFlightBooking(formData: FormData) {
     destination_airport_name: destinationAirportName || null,
     departure_at: departureAt,
     arrival_at: arrivalAt || null,
+    return_at: returnAt || null,
     cabin_class: cabinClass,
+    trip_type: tripType,
     passenger_count: passengerCount,
     pnr_code: pnrCode || null,
     issue_status: issueStatus,
@@ -257,13 +273,15 @@ export async function createFlightBooking(formData: FormData) {
       supplierOrderStatus,
       customerEmail,
       airlineName,
-      airlineCode,
-      flightNumber,
-      originAirportCode,
-      destinationAirportCode,
-      passengerCount,
-      subtotalAmount: priceBreakdown.subtotalAmount,
-      supplierCostAmount,
+        airlineCode,
+        flightNumber,
+        originAirportCode,
+        destinationAirportCode,
+        tripType,
+        returnAt: returnAt || null,
+        passengerCount,
+        subtotalAmount: priceBreakdown.subtotalAmount,
+        supplierCostAmount,
       recordedSpreadAmount,
       totalAmount: priceBreakdown.totalAmount,
     },
