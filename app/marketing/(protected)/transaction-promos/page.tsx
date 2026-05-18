@@ -42,6 +42,15 @@ type TransactionPromoTarget = {
   departure_ends_at: string | null
   return_starts_at: string | null
   return_ends_at: string | null
+  hotel_city_code: string | null
+  hotel_country_code: string | null
+  hotel_star_rating: number | string | null
+  hotel_checkin_starts_at: string | null
+  hotel_checkin_ends_at: string | null
+  hotel_checkout_starts_at: string | null
+  hotel_checkout_ends_at: string | null
+  hotel_min_night_count: number | string | null
+  hotel_max_night_count: number | string | null
 }
 
 type TransactionPromoRule = {
@@ -109,7 +118,7 @@ export default async function MarketingTransactionPromosPage({
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, new_user_only, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
+    .select("id, code, name, description, discount_type, discount_value, max_discount_amount, minimum_order_amount, quota_total, quota_per_user, starts_at, ends_at, status, is_auto_apply, new_user_only, approved_at, marketing_approved_by, marketing_approved_at, finance_approved_by, finance_approved_at, updated_at, created_at, transaction_promo_rule_targets(product_type, product_id, product_reference, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at, hotel_city_code, hotel_country_code, hotel_star_rating, hotel_checkin_starts_at, hotel_checkin_ends_at, hotel_checkout_starts_at, hotel_checkout_ends_at, hotel_min_night_count, hotel_max_night_count), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -554,6 +563,26 @@ export default async function MarketingTransactionPromosPage({
                         Trip {rule.targets[0].trip_type}
                       </span>
                     ) : null}
+                    {rule.targets[0]?.hotel_city_code ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        City {rule.targets[0].hotel_city_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_country_code ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Country {rule.targets[0].hotel_country_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_star_rating ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Star {rule.targets[0].hotel_star_rating}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_min_night_count || rule.targets[0]?.hotel_max_night_count ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Night {(rule.targets[0]?.hotel_min_night_count || "1")}-{rule.targets[0]?.hotel_max_night_count || "ANY"}
+                      </span>
+                    ) : null}
                     {rule.targets[0]?.merchant_id ? (
                       <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
                         Merchant {shortId(rule.targets[0].merchant_id)}
@@ -775,6 +804,25 @@ function TransactionPromoForm({
             <Field label="Departure window end" name="departure_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.departure_ends_at)} required={false} />
             <Field label="Return window start" name="return_starts_at" type="date" defaultValue={toDateInput(primaryTarget?.return_starts_at)} required={false} />
             <Field label="Return window end" name="return_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.return_ends_at)} required={false} />
+          </div>
+        </div>
+        <div className="mt-5 rounded-[20px] border border-emerald-200 bg-emerald-50/80 p-4">
+          <p className="text-sm font-semibold text-slate-900">Hotel-ready contract</p>
+          <p className="mt-1 text-xs leading-6 text-slate-600">
+            Isi bagian ini bila rule sudah ingin disiapkan untuk katalog hotel nanti. Belum membuat promo hotel live, tetapi kontraknya akan siap saat result page dan checkout hotel disambungkan.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Field label="Hotel city code" name="hotel_city_code" defaultValue={String(primaryTarget?.hotel_city_code || "")} required={false} />
+            <Field label="Hotel country code" name="hotel_country_code" defaultValue={String(primaryTarget?.hotel_country_code || "")} required={false} />
+            <Field label="Hotel star rating" name="hotel_star_rating" type="number" defaultValue={String(primaryTarget?.hotel_star_rating || "")} required={false} />
+            <Field label="Check-in window start" name="hotel_checkin_starts_at" type="date" defaultValue={toDateInput(primaryTarget?.hotel_checkin_starts_at)} required={false} />
+            <Field label="Check-in window end" name="hotel_checkin_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.hotel_checkin_ends_at)} required={false} />
+            <div />
+            <Field label="Check-out window start" name="hotel_checkout_starts_at" type="date" defaultValue={toDateInput(primaryTarget?.hotel_checkout_starts_at)} required={false} />
+            <Field label="Check-out window end" name="hotel_checkout_ends_at" type="date" defaultValue={toDateInput(primaryTarget?.hotel_checkout_ends_at)} required={false} />
+            <div />
+            <Field label="Minimum night count" name="hotel_min_night_count" type="number" defaultValue={String(primaryTarget?.hotel_min_night_count || "")} required={false} />
+            <Field label="Maximum night count" name="hotel_max_night_count" type="number" defaultValue={String(primaryTarget?.hotel_max_night_count || "")} required={false} />
           </div>
         </div>
       </FormSection>

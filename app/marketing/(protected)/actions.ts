@@ -929,6 +929,15 @@ export async function upsertTransactionPromoRule(formData: FormData) {
   const departureEndsAt = parseDateTimeValue(formData.get("departure_ends_at"))
   const returnStartsAt = parseDateTimeValue(formData.get("return_starts_at"))
   const returnEndsAt = parseDateTimeValue(formData.get("return_ends_at"))
+  const hotelCityCode = getOptionalText(formData, "hotel_city_code")
+  const hotelCountryCode = getOptionalText(formData, "hotel_country_code")
+  const hotelStarRating = parseOptionalPositiveInteger(formData.get("hotel_star_rating"))
+  const hotelCheckinStartsAt = parseDateTimeValue(formData.get("hotel_checkin_starts_at"))
+  const hotelCheckinEndsAt = parseDateTimeValue(formData.get("hotel_checkin_ends_at"))
+  const hotelCheckoutStartsAt = parseDateTimeValue(formData.get("hotel_checkout_starts_at"))
+  const hotelCheckoutEndsAt = parseDateTimeValue(formData.get("hotel_checkout_ends_at"))
+  const hotelMinNightCount = parseOptionalPositiveInteger(formData.get("hotel_min_night_count"))
+  const hotelMaxNightCount = parseOptionalPositiveInteger(formData.get("hotel_max_night_count"))
 
   if (!name) {
     redirectWithMessage(returnTo, "Nama promo transaksi wajib diisi.", "error")
@@ -978,6 +987,30 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     redirectWithMessage(returnTo, "Window pulang flight-ready tidak boleh berakhir lebih awal dari tanggal mulai.", "error")
   }
 
+  if (hotelStarRating && (hotelStarRating < 1 || hotelStarRating > 5)) {
+    redirectWithMessage(returnTo, "Star rating hotel-ready harus berada di rentang 1 sampai 5.", "error")
+  }
+
+  if (
+    hotelCheckinStartsAt &&
+    hotelCheckinEndsAt &&
+    new Date(hotelCheckinEndsAt).getTime() < new Date(hotelCheckinStartsAt).getTime()
+  ) {
+    redirectWithMessage(returnTo, "Window check-in hotel-ready tidak boleh berakhir lebih awal dari tanggal mulai.", "error")
+  }
+
+  if (
+    hotelCheckoutStartsAt &&
+    hotelCheckoutEndsAt &&
+    new Date(hotelCheckoutEndsAt).getTime() < new Date(hotelCheckoutStartsAt).getTime()
+  ) {
+    redirectWithMessage(returnTo, "Window check-out hotel-ready tidak boleh berakhir lebih awal dari tanggal mulai.", "error")
+  }
+
+  if (hotelMinNightCount && hotelMaxNightCount && hotelMaxNightCount < hotelMinNightCount) {
+    redirectWithMessage(returnTo, "Maksimal malam hotel-ready tidak boleh lebih kecil dari minimal malam.", "error")
+  }
+
   const hasFlightTargeting =
     Boolean(originAirportCode) ||
     Boolean(destinationAirportCode) ||
@@ -989,8 +1022,23 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     Boolean(returnStartsAt) ||
     Boolean(returnEndsAt)
 
+  const hasHotelTargeting =
+    Boolean(hotelCityCode) ||
+    Boolean(hotelCountryCode) ||
+    Boolean(hotelStarRating) ||
+    Boolean(hotelCheckinStartsAt) ||
+    Boolean(hotelCheckinEndsAt) ||
+    Boolean(hotelCheckoutStartsAt) ||
+    Boolean(hotelCheckoutEndsAt) ||
+    Boolean(hotelMinNightCount) ||
+    Boolean(hotelMaxNightCount)
+
   if (hasFlightTargeting && !productTypes.includes("flight")) {
     redirectWithMessage(returnTo, "Target flight-ready hanya boleh dipakai jika jenis transaksi mencakup pesawat.", "error")
+  }
+
+  if (hasHotelTargeting && !productTypes.includes("hotel")) {
+    redirectWithMessage(returnTo, "Target hotel-ready hanya boleh dipakai jika jenis transaksi mencakup hotel.", "error")
   }
 
   const adminSupabase = createAdminClient()
@@ -1068,6 +1116,15 @@ export async function upsertTransactionPromoRule(formData: FormData) {
     departure_ends_at: departureEndsAt,
     return_starts_at: returnStartsAt,
     return_ends_at: returnEndsAt,
+    hotel_city_code: hotelCityCode,
+    hotel_country_code: hotelCountryCode,
+    hotel_star_rating: hotelStarRating,
+    hotel_checkin_starts_at: hotelCheckinStartsAt,
+    hotel_checkin_ends_at: hotelCheckinEndsAt,
+    hotel_checkout_starts_at: hotelCheckoutStartsAt,
+    hotel_checkout_ends_at: hotelCheckoutEndsAt,
+    hotel_min_night_count: hotelMinNightCount,
+    hotel_max_night_count: hotelMaxNightCount,
     updated_at: nowIso,
   }))
 
@@ -1093,6 +1150,7 @@ export async function upsertTransactionPromoRule(formData: FormData) {
         productTypes,
         channel,
         flightReady: hasFlightTargeting,
+        hotelReady: hasHotelTargeting,
         approvalReset: Boolean(ruleId),
     },
   })

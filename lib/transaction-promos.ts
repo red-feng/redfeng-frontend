@@ -51,6 +51,15 @@ export type TransactionPromoRuleTargetRecord = {
   departure_ends_at?: string | null
   return_starts_at?: string | null
   return_ends_at?: string | null
+  hotel_city_code?: string | null
+  hotel_country_code?: string | null
+  hotel_star_rating?: number | string | null
+  hotel_checkin_starts_at?: string | null
+  hotel_checkin_ends_at?: string | null
+  hotel_checkout_starts_at?: string | null
+  hotel_checkout_ends_at?: string | null
+  hotel_min_night_count?: number | string | null
+  hotel_max_night_count?: number | string | null
 }
 
 export type TransactionPromoContext = {
@@ -73,6 +82,12 @@ export type TransactionPromoContext = {
   flightTripType?: string | null
   flightDepartureAt?: string | null
   flightReturnAt?: string | null
+  hotelCityCode?: string | null
+  hotelCountryCode?: string | null
+  hotelStarRating?: number | null
+  hotelCheckinAt?: string | null
+  hotelCheckoutAt?: string | null
+  hotelNightCount?: number | null
 }
 
 export type TransactionPromoEvaluationResult =
@@ -129,6 +144,11 @@ type SelectBestAutoPromoParams = {
 function toNumber(value: number | string | null | undefined) {
   const numeric = Number(value || 0)
   return Number.isFinite(numeric) ? numeric : 0
+}
+
+function toNullableNumber(value: number | string | null | undefined) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : null
 }
 
 function normalizeString(value: string | null | undefined) {
@@ -257,18 +277,39 @@ export function doesTransactionPromoTargetMatch(context: TransactionPromoContext
   if (normalizeString(target.airline_code) && normalizeString(target.airline_code) !== normalizeString(context.flightAirlineCode)) return false
   if (normalizeString(target.cabin_class) && normalizeString(target.cabin_class) !== normalizeString(context.flightCabinClass)) return false
   if (normalizeString(target.trip_type) && normalizeString(target.trip_type) !== normalizeString(context.flightTripType)) return false
+  if (normalizeString(target.hotel_city_code) && normalizeString(target.hotel_city_code) !== normalizeString(context.hotelCityCode)) return false
+  if (normalizeString(target.hotel_country_code) && normalizeString(target.hotel_country_code) !== normalizeString(context.hotelCountryCode)) return false
+
+  const targetHotelStarRating = toNullableNumber(target.hotel_star_rating)
+  const contextHotelStarRating = toNullableNumber(context.hotelStarRating)
+  if (targetHotelStarRating !== null && targetHotelStarRating !== contextHotelStarRating) return false
 
   const departureStartsAt = target.departure_starts_at ? new Date(target.departure_starts_at) : null
   const departureEndsAt = target.departure_ends_at ? new Date(target.departure_ends_at) : null
   const returnStartsAt = target.return_starts_at ? new Date(target.return_starts_at) : null
   const returnEndsAt = target.return_ends_at ? new Date(target.return_ends_at) : null
+  const hotelCheckinStartsAt = target.hotel_checkin_starts_at ? new Date(target.hotel_checkin_starts_at) : null
+  const hotelCheckinEndsAt = target.hotel_checkin_ends_at ? new Date(target.hotel_checkin_ends_at) : null
+  const hotelCheckoutStartsAt = target.hotel_checkout_starts_at ? new Date(target.hotel_checkout_starts_at) : null
+  const hotelCheckoutEndsAt = target.hotel_checkout_ends_at ? new Date(target.hotel_checkout_ends_at) : null
   const departureAt = context.flightDepartureAt ? new Date(context.flightDepartureAt) : null
   const returnAt = context.flightReturnAt ? new Date(context.flightReturnAt) : null
+  const hotelCheckinAt = context.hotelCheckinAt ? new Date(context.hotelCheckinAt) : null
+  const hotelCheckoutAt = context.hotelCheckoutAt ? new Date(context.hotelCheckoutAt) : null
+  const hotelNightCount = toNullableNumber(context.hotelNightCount)
+  const hotelMinNightCount = toNullableNumber(target.hotel_min_night_count)
+  const hotelMaxNightCount = toNullableNumber(target.hotel_max_night_count)
 
   if (departureStartsAt && (!departureAt || departureAt.getTime() < departureStartsAt.getTime())) return false
   if (departureEndsAt && (!departureAt || departureAt.getTime() > departureEndsAt.getTime())) return false
   if (returnStartsAt && (!returnAt || returnAt.getTime() < returnStartsAt.getTime())) return false
   if (returnEndsAt && (!returnAt || returnAt.getTime() > returnEndsAt.getTime())) return false
+  if (hotelCheckinStartsAt && (!hotelCheckinAt || hotelCheckinAt.getTime() < hotelCheckinStartsAt.getTime())) return false
+  if (hotelCheckinEndsAt && (!hotelCheckinAt || hotelCheckinAt.getTime() > hotelCheckinEndsAt.getTime())) return false
+  if (hotelCheckoutStartsAt && (!hotelCheckoutAt || hotelCheckoutAt.getTime() < hotelCheckoutStartsAt.getTime())) return false
+  if (hotelCheckoutEndsAt && (!hotelCheckoutAt || hotelCheckoutAt.getTime() > hotelCheckoutEndsAt.getTime())) return false
+  if (hotelMinNightCount !== null && (hotelNightCount === null || hotelNightCount < hotelMinNightCount)) return false
+  if (hotelMaxNightCount !== null && (hotelNightCount === null || hotelNightCount > hotelMaxNightCount)) return false
 
   return true
 }

@@ -34,6 +34,15 @@ type TransactionPromoTarget = {
   departure_ends_at: string | null
   return_starts_at: string | null
   return_ends_at: string | null
+  hotel_city_code: string | null
+  hotel_country_code: string | null
+  hotel_star_rating: number | string | null
+  hotel_checkin_starts_at: string | null
+  hotel_checkin_ends_at: string | null
+  hotel_checkout_starts_at: string | null
+  hotel_checkout_ends_at: string | null
+  hotel_min_night_count: number | string | null
+  hotel_max_night_count: number | string | null
 }
 
 type TransactionPromoRule = {
@@ -88,7 +97,7 @@ export default async function FinanceTransactionPromosPage({
 
   let rulesQuery = adminSupabase
     .from("transaction_promo_rules")
-    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
+    .select("id, code, name, discount_type, discount_value, minimum_order_amount, max_discount_amount, status, is_auto_apply, new_user_only, marketing_approved_by, starts_at, ends_at, marketing_approved_at, finance_approved_by, finance_approved_at, transaction_promo_rule_targets(product_type, merchant_id, payment_method, customer_locale, channel, origin_airport_code, destination_airport_code, airline_code, cabin_class, trip_type, departure_starts_at, departure_ends_at, return_starts_at, return_ends_at, hotel_city_code, hotel_country_code, hotel_star_rating, hotel_checkin_starts_at, hotel_checkin_ends_at, hotel_checkout_starts_at, hotel_checkout_ends_at, hotel_min_night_count, hotel_max_night_count), marketing_promo_transaction_rules(marketing_promos(id, slug, title_id, status))")
     .order("updated_at", { ascending: false })
 
   if (statusFilter !== "all") {
@@ -414,6 +423,26 @@ export default async function FinanceTransactionPromosPage({
                     {rule.targets[0]?.trip_type ? (
                       <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
                         Trip {rule.targets[0].trip_type}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_city_code ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        City {rule.targets[0].hotel_city_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_country_code ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Country {rule.targets[0].hotel_country_code}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_star_rating ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Star {rule.targets[0].hotel_star_rating}
+                      </span>
+                    ) : null}
+                    {rule.targets[0]?.hotel_min_night_count || rule.targets[0]?.hotel_max_night_count ? (
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Night {(rule.targets[0]?.hotel_min_night_count || "1")}-{rule.targets[0]?.hotel_max_night_count || "ANY"}
                       </span>
                     ) : null}
                     {rule.targets[0]?.merchant_id ? (
