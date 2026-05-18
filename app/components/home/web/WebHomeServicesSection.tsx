@@ -1,6 +1,10 @@
 import Link from "next/link"
 import { serviceCards } from "@/app/components/home/shared/homeContent"
-import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
+import {
+  getServiceAvailabilityLabel,
+  getServiceAvailabilityTone,
+  servicePageConfigByLabel,
+} from "@/app/components/services/serviceCatalog"
 import type { Locale } from "@/lib/i18n"
 
 export default function WebHomeServicesSection({ locale }: { locale: Locale }) {
@@ -34,9 +38,10 @@ export default function WebHomeServicesSection({ locale }: { locale: Locale }) {
         {localizedCards.map((card, index) => {
           const Icon = card.icon
           const sourceCard = serviceCards[index]
+          const serviceConfig = servicePageConfigByLabel[sourceCard.label]
           return (
             <Link
-              href={servicePageConfigByLabel[sourceCard.label]?.href || "/packages"}
+              href={serviceConfig?.href || "/packages"}
               className="home-services-card group rounded-[20px] border border-[#dbe5f1] bg-white px-3 py-4 text-center shadow-[0_10px_22px_-26px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-1 hover:border-[#cbd8e8] hover:shadow-[0_20px_38px_-24px_rgba(15,23,42,0.14)] lg:rounded-[24px] lg:border-[#d7e2ee] lg:py-6 lg:shadow-[0_14px_30px_-26px_rgba(15,23,42,0.1)]"
               key={`${sourceCard.label}-${locale}`}
             >
@@ -44,6 +49,13 @@ export default function WebHomeServicesSection({ locale }: { locale: Locale }) {
                 <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
               </div>
               <h3 className="home-services-title mx-auto mt-3 max-w-[86px] text-[12px] font-bold sm:mt-4 sm:text-[16px]">{card.label}</h3>
+              {serviceConfig ? (
+                <p
+                  className={`mt-2 inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold leading-none ${getServiceAvailabilityTone(serviceConfig.availability)}`}
+                >
+                  {getServiceAvailabilityLabel(serviceConfig.availability, locale)}
+                </p>
+              ) : null}
               <p className="home-services-copy mt-1 hidden text-[12px] leading-5 text-slate-400 lg:block">{card.desc}</p>
             </Link>
           )

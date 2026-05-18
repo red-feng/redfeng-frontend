@@ -4,7 +4,11 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import type { Locale } from "@/lib/i18n"
-import type { ServicePageConfig } from "@/app/components/services/serviceCatalog"
+import {
+  getServiceAvailabilityLabel,
+  getServiceAvailabilityTone,
+  type ServicePageConfig,
+} from "@/app/components/services/serviceCatalog"
 
 type ServiceLandingPageProps = {
   locale: Locale
@@ -57,6 +61,13 @@ export default function ServiceLandingPage({ locale, service }: ServiceLandingPa
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-white/75">Status layanan</p>
                       <p className="mt-2 text-lg font-semibold text-white">{service.label}</p>
+                      <p className="mt-3">
+                        <span
+                          className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${getServiceAvailabilityTone(service.availability)}`}
+                        >
+                          {getServiceAvailabilityLabel(service.availability, locale)}
+                        </span>
+                      </p>
                     </div>
                   </div>
                   <p className="mt-4 text-sm leading-7 text-white/88">{service.status}</p>

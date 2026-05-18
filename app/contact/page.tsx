@@ -7,7 +7,7 @@ import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { getCurrentLocale } from "@/lib/locale"
 
 export const metadata: Metadata = {
-  title: "Contact | Red Feng",
+  title: "Bantuan & Kontak | Red Feng",
   description: "Hubungi tim Red Feng untuk bantuan akun, booking, promo, dan pertanyaan umum.",
   alternates: {
     canonical: "/contact",
@@ -47,7 +47,7 @@ export default async function ContactPage() {
           <section className="rounded-[30px] border border-orange-100 bg-[linear-gradient(135deg,#fff8ef_0%,#ffffff_44%,#fff3e3_100%)] p-5 shadow-[0_24px_70px_-42px_rgba(249,115,22,0.38)] sm:p-6 lg:p-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">Hubungi RedFeng</p>
             <h1 className="mt-3 max-w-3xl text-[28px] font-semibold tracking-[-0.03em] text-slate-950 sm:text-[36px]">
-              Bantuan akun, booking, dan pertanyaan umum dalam satu halaman.
+              Pusat bantuan akun, booking, dan pertanyaan umum dalam satu halaman.
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">
               Gunakan kontak di bawah ini untuk bantuan customer, verifikasi informasi, kebutuhan privasi, atau koordinasi umum dengan tim RedFeng.

@@ -158,7 +158,7 @@ export default async function CustomerAccountHubPage() {
     {
       title: copy.supportTitle,
       body: copy.supportBody,
-      href: "/contact",
+      href: "/bantuan",
       action: copy.supportAction,
       tone: "bg-[linear-gradient(135deg,#f3fff4_0%,#fafff7_100%)]",
       iconTone: "bg-[#eefdf1] text-[#16a34a]",

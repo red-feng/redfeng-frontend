@@ -132,7 +132,7 @@ export default async function PublicHeader({
 
               <div className="flex items-center gap-3">
                 {renderPublicHeaderLink({
-                  href: "/contact",
+                  href: "/bantuan",
                   className: navLinkClass,
                   label: t.help,
                 })}
@@ -228,7 +228,7 @@ export default async function PublicHeader({
 
               <div className="flex items-center gap-3">
                 {renderPublicHeaderLink({
-                  href: "/contact",
+                  href: "/bantuan",
                   className: navLinkClass,
                   label: t.help,
                 })}

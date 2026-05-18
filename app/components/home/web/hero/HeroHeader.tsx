@@ -61,7 +61,7 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link href="/contact" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
+            <Link href="/bantuan" className="whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]">
               {t.help}
             </Link>
             <PublicHeaderLocaleSelect

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import BookingPaymentButton from "@/app/components/BookingPaymentButton"
 import { confirmCustomerPickedUp } from "@/app/booking/[id]/actions"
 import {
@@ -395,7 +396,9 @@ export default async function CustomerBookingsPage() {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user?.email) return null
+  if (!user?.email) {
+    redirect(`/login?next=${encodeURIComponent("/customer/bookings")}`)
+  }
 
   let bookings: BookingRow[] | null = null
   let error: { message?: string } | null = null

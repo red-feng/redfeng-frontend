@@ -12,7 +12,7 @@ export const publicHeaderTopNavItems: HeaderNavItem[] = [
   { key: "orders", href: "/customer/bookings" },
   { key: "partnerTour", href: "https://redfeng.co/kemitraan_tour/", external: true },
   { key: "verifyInvoice", href: "/verifikasi-invoice" },
-  { key: "help", href: "/contact" },
+  { key: "help", href: "/bantuan" },
 ]
 
 export const publicHeaderProductNavItems: HeaderNavItem[] = [

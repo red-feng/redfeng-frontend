@@ -1,4 +1,7 @@
 import type { ReactNode } from "react"
+import type { Locale } from "@/lib/i18n"
+
+export type ServiceAvailability = "live_booking" | "landing_foundation"
 
 export type ServicePageConfig = {
   slug: string
@@ -17,6 +20,7 @@ export type ServicePageConfig = {
     label: string
     href: string
   }
+  availability: ServiceAvailability
   status: string
   accent: string
   cardTone: string
@@ -35,6 +39,7 @@ export const servicePageConfigs: ServicePageConfig[] = [
     highlights: ["Rute domestik & internasional", "Harga promo maskapai favorit", "Siap disambungkan ke search live berikutnya"],
     primaryCta: { label: "Lihat promo pesawat", href: "/promo" },
     secondaryCta: { label: "Cari paket terkait", href: "/search?style=family" },
+    availability: "landing_foundation",
     status: "Landing page aktif, engine pencarian live menyusul.",
     accent: "from-sky-500 via-cyan-400 to-blue-600",
     cardTone: "border-sky-100 bg-sky-50/70 text-sky-900",
@@ -51,6 +56,7 @@ export const servicePageConfigs: ServicePageConfig[] = [
     highlights: ["Properti pilihan di destinasi favorit", "Bisa ditingkatkan ke availability live", "Satu route yang dipakai app dan website"],
     primaryCta: { label: "Lihat promo hotel", href: "/promo" },
     secondaryCta: { label: "Buka hasil pencarian", href: "/search?country=Indonesia" },
+    availability: "landing_foundation",
     status: "Landing page aktif, inventory hotel live menyusul.",
     accent: "from-indigo-500 via-blue-500 to-sky-500",
     cardTone: "border-indigo-100 bg-indigo-50/70 text-indigo-900",
@@ -67,6 +73,7 @@ export const servicePageConfigs: ServicePageConfig[] = [
     highlights: ["Rute antarkota populer", "Cocok untuk promo WHOOSH dan reguler", "Siap diperluas ke jadwal langsung"],
     primaryCta: { label: "Lihat promo kereta", href: "/promo" },
     secondaryCta: { label: "Cari perjalanan", href: "/search?style=adventure" },
+    availability: "landing_foundation",
     status: "Landing page aktif, jadwal live dan seat availability menyusul.",
     accent: "from-violet-500 via-indigo-500 to-blue-500",
     cardTone: "border-violet-100 bg-violet-50/70 text-violet-900",
@@ -81,8 +88,9 @@ export const servicePageConfigs: ServicePageConfig[] = [
     title: "Layanan Bus sekarang punya landing page lokal yang sama-sama bisa dipakai dari homepage app maupun website.",
     body: "Ini menjadi fondasi untuk operator bus, jadwal keberangkatan, dan promo lintas kota. Tahap ini dibuat ringan dulu supaya user tidak menemukan tombol yang buntu.",
     highlights: ["Bus antar kota & travel pilihan", "Template siap untuk jadwal dan operator", "CTA sudah terhubung ke alur internal"],
-    primaryCta: { label: "Hubungi tim kami", href: "/contact" },
+    primaryCta: { label: "Hubungi tim kami", href: "/bantuan" },
     secondaryCta: { label: "Lihat promo aktif", href: "/promo" },
+    availability: "landing_foundation",
     status: "Landing page aktif, data operator live menyusul.",
     accent: "from-emerald-500 via-green-500 to-lime-500",
     cardTone: "border-emerald-100 bg-emerald-50/70 text-emerald-900",
@@ -98,7 +106,8 @@ export const servicePageConfigs: ServicePageConfig[] = [
     body: "Halaman ini menjadi tempat yang pas untuk menampung pelayaran reguler, jadwal pelabuhan, dan promo kapal resmi. Untuk sekarang, tujuannya adalah memberi tujuan lokal yang rapi.",
     highlights: ["Tiket kapal laut resmi", "Siap untuk jadwal dan pelabuhan utama", "Route tunggal untuk app dan website"],
     primaryCta: { label: "Lihat promo perjalanan", href: "/promo" },
-    secondaryCta: { label: "Butuh bantuan?", href: "/contact" },
+    secondaryCta: { label: "Butuh bantuan?", href: "/bantuan" },
+    availability: "landing_foundation",
     status: "Landing page aktif, jadwal pelayaran live menyusul.",
     accent: "from-blue-600 via-sky-500 to-cyan-400",
     cardTone: "border-blue-100 bg-blue-50/70 text-blue-900",
@@ -114,7 +123,8 @@ export const servicePageConfigs: ServicePageConfig[] = [
     body: "Halaman ini cocok untuk itinerary cruise, cabin highlights, dan promo musim tertentu. Di tahap awal, kita pakai sebagai landing page presentasi sambil menunggu backend cruise.",
     highlights: ["Itinerary premium & seasonal offer", "Bisa ditingkatkan ke detail cabin dan deck", "Tetap sinkron antara app dan website"],
     primaryCta: { label: "Lihat promo cruise", href: "/promo" },
-    secondaryCta: { label: "Konsultasi perjalanan", href: "/contact" },
+    secondaryCta: { label: "Konsultasi perjalanan", href: "/bantuan" },
+    availability: "landing_foundation",
     status: "Landing page aktif, katalog cruise detail menyusul.",
     accent: "from-pink-500 via-rose-500 to-fuchsia-500",
     cardTone: "border-pink-100 bg-pink-50/70 text-pink-900",
@@ -131,6 +141,7 @@ export const servicePageConfigs: ServicePageConfig[] = [
     highlights: ["Atraksi dan tiket wisata lokal", "Cocok untuk expand ke voucher instan", "Satu tujuan yang sama untuk web dan app"],
     primaryCta: { label: "Lihat promo aktivitas", href: "/promo" },
     secondaryCta: { label: "Cari destinasi", href: "/search" },
+    availability: "landing_foundation",
     status: "Landing page aktif, katalog aktivitas live menyusul.",
     accent: "from-orange-500 via-amber-500 to-yellow-400",
     cardTone: "border-orange-100 bg-orange-50/70 text-orange-900",
@@ -147,6 +158,7 @@ export const servicePageConfigs: ServicePageConfig[] = [
     highlights: ["Landing marketing aktif", "Katalog penuh tetap tersedia", "Detail paket dan checkout tetap memakai data live yang sama"],
     primaryCta: { label: "Buka landing paket", href: "/packages" },
     secondaryCta: { label: "Masuk ke katalog penuh", href: "/packages/catalog" },
+    availability: "live_booking",
     status: "Landing marketing dan katalog live sama-sama aktif.",
     accent: "from-rose-500 via-orange-500 to-amber-400",
     cardTone: "border-rose-100 bg-rose-50/70 text-rose-900",
@@ -159,6 +171,24 @@ export const servicePageConfigByLabel = Object.fromEntries(
 ) as Record<string, ServicePageConfig>
 
 export const lightweightServicePageConfigs = servicePageConfigs.filter((item) => item.slug !== "packages")
+
+export function getServiceAvailabilityLabel(availability: ServiceAvailability, locale: Locale) {
+  if (availability === "live_booking") {
+    if (locale === "en") return "Live booking"
+    if (locale === "zh") return "可直接预订"
+    return "Live booking"
+  }
+
+  if (locale === "en") return "Landing / foundation"
+  if (locale === "zh") return "展示页 / 基础阶段"
+  return "Landing / foundation"
+}
+
+export function getServiceAvailabilityTone(availability: ServiceAvailability) {
+  return availability === "live_booking"
+    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+    : "bg-amber-50 text-amber-700 border-amber-200"
+}
 
 function PlaneServiceIcon({ className }: { className?: string }) {
   return <svg viewBox="0 0 24 24" fill="none" className={className}><path d="M3 13.5l7-1.7 6.8-7.2 2.2 2.2-5.6 8 4.6 3.1-1.8 1.8-5.8-2-2.2 2.7H5.6l1.9-4.6-4.5-2.2Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>

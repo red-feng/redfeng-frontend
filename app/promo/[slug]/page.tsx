@@ -86,7 +86,7 @@ export default async function PromoDetailPage({ params }: PromoDetailPageProps) 
                     {promo.cta}
                   </Link>
                   <Link
-                    href="/contact"
+                    href="/bantuan"
                     className="inline-flex items-center justify-center rounded-full border border-white/22 bg-white/10 px-5 py-3 text-[14px] font-semibold text-white backdrop-blur-sm"
                   >
                     Butuh bantuan promo?
