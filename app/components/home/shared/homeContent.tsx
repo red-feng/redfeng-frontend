@@ -58,9 +58,9 @@ export const promoCards = [
   {
     title: "Terbang Hemat\nke Banyak Destinasi",
     badge: "Promo Terbatas",
-    eyebrow: "Diskon hingga",
-    price: "Rp 500.000*",
-    cta: "Pesan Sekarang",
+    eyebrow: "Contoh promo",
+    price: "Dummy campaign",
+    cta: "Lihat Katalog",
     image: "/home-assets/promo-flight.png",
     gradient: "from-[#ad718b] via-[#a76681] to-[#f1a38d]",
     imageClass: "bg-[length:162%] bg-[position:8%_65%] opacity-36",
@@ -69,9 +69,9 @@ export const promoCards = [
   },
   {
     title: "Hotel Pilihan\nHarga Terbaik",
-    eyebrow: "Diskon hingga",
-    price: "40%*",
-    cta: "Booking Sekarang",
+    eyebrow: "Contoh promo",
+    price: "Dummy campaign",
+    cta: "Lihat Katalog",
     image: "/home-assets/promo-hotel.png",
     gradient: "from-[#2874d8] via-[#327ee1] to-[#175ec3]",
     imageClass: "bg-cover bg-[position:66%_center] opacity-34",
@@ -91,9 +91,9 @@ export const promoCards = [
   },
   {
     title: "Promo Kereta\nAntarkota Favorit",
-    eyebrow: "Mulai dari",
-    price: "Rp 150.000*",
-    cta: "Pesan Kereta",
+    eyebrow: "Contoh katalog",
+    price: "Dummy route",
+    cta: "Lihat Katalog",
     image: "/home-assets/card-train.png",
     gradient: "from-[#5a63d8] via-[#5d71e6] to-[#8b74f7]",
     imageClass: "bg-cover bg-[position:center_center] opacity-32",
@@ -108,8 +108,8 @@ export const popularBookings = [
   {
     category: "Pesawat",
     title: "Jakarta -> Bali",
-    subtitle: "Sekali Jalan",
-    price: "Rp 690.000",
+    subtitle: "Contoh rute katalog",
+    price: "Dummy fare",
     rating: "4.8",
     image: "/home-assets/card-flight.png",
     tone: "bg-[#ebf4ff] text-[#4a8dff]",
@@ -117,8 +117,8 @@ export const popularBookings = [
   {
     category: "Hotel",
     title: "The Trans Resort Bali",
-    subtitle: "Kuta, Bali",
-    price: "Rp 850.000",
+    subtitle: "Contoh properti katalog",
+    price: "Dummy stay",
     suffix: "/malam",
     rating: "4.7",
     image: "/home-assets/card-hotel-1.png",
@@ -136,8 +136,8 @@ export const popularBookings = [
   {
     category: "Kereta",
     title: "Jakarta -> Bandung",
-    subtitle: "Kereta Cepat WHOOSH",
-    price: "Rp 150.000",
+    subtitle: "Contoh rute katalog",
+    price: "Dummy fare",
     rating: "4.8",
     image: "/home-assets/card-train.png",
     tone: "bg-[#f1efff] text-[#8b6bff]",
@@ -145,8 +145,8 @@ export const popularBookings = [
   {
     category: "Hotel",
     title: "AYANA Resort Bali",
-    subtitle: "Jimbaran, Bali",
-    price: "Rp 2.350.000",
+    subtitle: "Contoh properti katalog",
+    price: "Dummy stay",
     suffix: "/malam",
     rating: "4.9",
     image: "/home-assets/card-hotel-2.png",
@@ -155,12 +155,12 @@ export const popularBookings = [
 ]
 
 export const destinations = [
-  { name: "Bali", country: "Indonesia", teaser: "Mulai dari Rp 1,2 Jt", image: "/home-assets/dest-bali.png" },
-  { name: "Jakarta", country: "Indonesia", teaser: "Mulai dari Rp 600 rb", image: "/home-assets/dest-jakarta.png" },
-  { name: "Tokyo", country: "Jepang", teaser: "Mulai dari Rp 3,5 Jt", image: "/home-assets/dest-tokyo.png" },
-  { name: "Singapore", country: "Singapura", teaser: "Mulai dari Rp 2,1 Jt", image: "/home-assets/dest-singapore.png" },
-  { name: "Bangkok", country: "Thailand", teaser: "Mulai dari Rp 1,8 Jt", image: "/home-assets/dest-bangkok.png" },
-  { name: "Labuan Bajo", country: "Indonesia", teaser: "Mulai dari Rp 1,3 Jt", image: "/home-assets/dest-labuanbajo.png" },
+  { name: "Bali", country: "Indonesia", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-bali.png" },
+  { name: "Jakarta", country: "Indonesia", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-jakarta.png" },
+  { name: "Tokyo", country: "Jepang", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-tokyo.png" },
+  { name: "Singapore", country: "Singapura", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-singapore.png" },
+  { name: "Bangkok", country: "Thailand", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-bangkok.png" },
+  { name: "Labuan Bajo", country: "Indonesia", teaser: "Contoh destinasi katalog", image: "/home-assets/dest-labuanbajo.png" },
 ]
 
 export const inspirationArticles: HomeArticleCard[] = [

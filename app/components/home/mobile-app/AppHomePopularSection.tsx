@@ -11,7 +11,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
     id: {
       eyebrow: "Paling laris",
       title: "Paling Banyak Dipesan",
-      from: "Mulai dari",
+      from: "Contoh katalog",
       perNight: "/malam",
       favoriteSeparator: "•",
       tabs: ["Semua", "Pesawat", "Hotel", "Paket Wisata", "Kereta"],
@@ -19,7 +19,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
     en: {
       eyebrow: "Best sellers",
       title: "Most Booked",
-      from: "Starting from",
+      from: "Sample catalog",
       perNight: "/night",
       favoriteSeparator: "•",
       tabs: ["All", "Flights", "Hotels", "Tour Packages", "Train"],
@@ -36,18 +36,18 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
 
   const localizedItems = {
     id: [
-      { category: "Pesawat", title: "Jakarta -> Bali", subtitle: "Sekali Jalan" },
-      { category: "Hotel", title: "The Trans Resort Bali", subtitle: "Kuta, Bali" },
+      { category: "Pesawat", title: "Jakarta -> Bali", subtitle: "Contoh rute katalog" },
+      { category: "Hotel", title: "The Trans Resort Bali", subtitle: "Contoh properti katalog" },
       { category: "Paket Wisata", title: "Bali 3 Hari 2 Malam", subtitle: "Termasuk Hotel & Tour" },
-      { category: "Kereta", title: "Jakarta -> Bandung", subtitle: "Kereta Cepat WHOOSH" },
-      { category: "Hotel", title: "AYANA Resort Bali", subtitle: "Jimbaran, Bali" },
+      { category: "Kereta", title: "Jakarta -> Bandung", subtitle: "Contoh rute katalog" },
+      { category: "Hotel", title: "AYANA Resort Bali", subtitle: "Contoh properti katalog" },
     ],
     en: [
-      { category: "Flights", title: "Jakarta -> Bali", subtitle: "One Way" },
-      { category: "Hotel", title: "The Trans Resort Bali", subtitle: "Kuta, Bali" },
+      { category: "Flights", title: "Jakarta -> Bali", subtitle: "Sample catalog route" },
+      { category: "Hotel", title: "The Trans Resort Bali", subtitle: "Sample catalog property" },
       { category: "Tour Packages", title: "Bali 3 Days 2 Nights", subtitle: "Hotel & Tour Included" },
-      { category: "Train", title: "Jakarta -> Bandung", subtitle: "WHOOSH High-Speed Rail" },
-      { category: "Hotel", title: "AYANA Resort Bali", subtitle: "Jimbaran, Bali" },
+      { category: "Train", title: "Jakarta -> Bandung", subtitle: "Sample catalog route" },
+      { category: "Hotel", title: "AYANA Resort Bali", subtitle: "Sample catalog property" },
     ],
     zh: [
       { category: "机票", title: "雅加达 -> 巴厘岛", subtitle: "单程" },
@@ -57,7 +57,7 @@ export default function AppHomePopularSection({ locale }: { locale: Locale }) {
       { category: "酒店", title: "AYANA Resort Bali", subtitle: "金巴兰，巴厘岛" },
     ],
   }[locale]
-  const localizedPrices = [690000, 850000, 1990000, 150000, 2350000]
+  const localizedPrices = [0, 0, 1990000, 0, 0]
 
   return (
     <section className="rounded-[28px] bg-[linear-gradient(180deg,#ffffff_0%,#fffdfb_100%)] px-4 py-4 shadow-[0_24px_42px_-34px_rgba(15,23,42,0.18)] ring-1 ring-[#edf1f6]">

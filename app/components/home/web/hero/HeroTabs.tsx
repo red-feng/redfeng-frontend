@@ -20,6 +20,10 @@ export default function HeroTabs({ activeTab, onChange, locale }: HeroTabsProps)
       {heroTabs.map((tab, index) => {
         const Icon = tab.icon
         const isActive = tab.key === activeTab
+        const activeBadge =
+          tab.key === "package"
+            ? { label: locale === "id" ? "Live" : locale === "en" ? "Live" : "可订", className: "bg-emerald-50 text-emerald-700" }
+            : { label: locale === "id" ? "Dummy" : locale === "en" ? "Dummy" : "示例", className: "bg-amber-50 text-amber-700" }
 
         return (
           <button
@@ -34,7 +38,15 @@ export default function HeroTabs({ activeTab, onChange, locale }: HeroTabsProps)
           >
             <Icon className="h-4 w-4 lg:h-[15px] lg:w-[15px]" />
             {labels[index] || tab.label}
-            {tab.badge ? <span className="rounded-full bg-[#ff3b30] px-1.5 py-0.5 text-[10px] text-white lg:hidden">{locale === "id" ? "Baru" : locale === "en" ? "New" : "新"}</span> : null}
+            {isActive ? (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold lg:hidden ${activeBadge.className}`}>
+                {activeBadge.label}
+              </span>
+            ) : tab.badge ? (
+              <span className="rounded-full bg-[#ff3b30] px-1.5 py-0.5 text-[10px] text-white lg:hidden">
+                {locale === "id" ? "Baru" : locale === "en" ? "New" : "新"}
+              </span>
+            ) : null}
           </button>
         )
       })}

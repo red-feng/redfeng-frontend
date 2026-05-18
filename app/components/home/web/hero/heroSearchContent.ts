@@ -66,7 +66,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       one_way: {
         ctaHref: serviceHref.flight,
-        ctaLabel: "Cari Tiket",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-5 lg:mt-6 lg:grid lg:grid-cols-[1.34fr_56px_1.34fr_1.2fr_1.28fr_84px] lg:items-start",
         showDesktopSwap: true,
         desktopFields: [
@@ -85,7 +85,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       round_trip: {
         ctaHref: serviceHref.flight,
-        ctaLabel: "Cari Tiket",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.22fr_44px_1.22fr_0.86fr_0.86fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -106,7 +106,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       multi_city: {
         ctaHref: serviceHref.flight,
-        ctaLabel: "Cari Rute",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.08fr_1.08fr_1.08fr_0.9fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Kota Asal", value: "Jakarta", sublabel: "CGK" },
@@ -135,7 +135,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       hotel: {
         ctaHref: serviceHref.hotel,
-        ctaLabel: "Cari Hotel",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_0.92fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Destinasi", value: "Bali", sublabel: "Indonesia" },
@@ -153,7 +153,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       villa: {
         ctaHref: serviceHref.hotel,
-        ctaLabel: "Cari Villa",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.45fr_0.9fr_0.9fr_1.08fr_56px] lg:items-center",
         desktopFields: [
           { label: "Area Villa", value: "Ubud", sublabel: "Bali" },
@@ -171,7 +171,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       resort: {
         ctaHref: serviceHref.hotel,
-        ctaLabel: "Cari Resort",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.5fr_0.95fr_0.95fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Destinasi Resort", value: "Labuan Bajo", sublabel: "Nusa Tenggara Timur" },
@@ -200,7 +200,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       one_way: {
         ctaHref: serviceHref.train,
-        ctaLabel: "Cari Kereta",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.28fr_44px_1.28fr_1fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -219,7 +219,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       round_trip: {
         ctaHref: serviceHref.train,
-        ctaLabel: "Cari Kereta",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.9fr_0.9fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -240,7 +240,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       fast_train: {
         ctaHref: serviceHref.train,
-        ctaLabel: "Cari Whoosh",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.95fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -270,7 +270,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       one_way: {
         ctaHref: serviceHref.bus,
-        ctaLabel: "Cari Bus",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.22fr_1.22fr_0.92fr_0.9fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Kota Asal", value: "Jakarta", sublabel: "Pulo Gebang" },
@@ -290,7 +290,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       round_trip: {
         ctaHref: serviceHref.bus,
-        ctaLabel: "Cari Bus",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.14fr_1.14fr_0.88fr_0.88fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Kota Asal", value: "Jakarta", sublabel: "Pulo Gebang" },
@@ -310,7 +310,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       sleeper: {
         ctaHref: serviceHref.bus,
-        ctaLabel: "Cari Sleeper",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.2fr_1.2fr_0.9fr_0.95fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Kota Asal", value: "Jakarta", sublabel: "Pulo Gebang" },
@@ -341,7 +341,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       one_way: {
         ctaHref: serviceHref.ship,
-        ctaLabel: "Cari Kapal",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.28fr_44px_1.28fr_1fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -360,7 +360,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       round_trip: {
         ctaHref: serviceHref.ship,
-        ctaLabel: "Cari Kapal",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.18fr_44px_1.18fr_0.9fr_0.9fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -381,7 +381,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       fast_ferry: {
         ctaHref: serviceHref.ship,
-        ctaLabel: "Cari Ferry",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.2fr_44px_1.2fr_0.9fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
         desktopFields: [
@@ -411,7 +411,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       regular_cruise: {
         ctaHref: serviceHref.cruise,
-        ctaLabel: "Cari Cruise",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.4fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Rute Cruise", value: "Singapore - Penang - Phuket", sublabel: "3 malam" },
@@ -429,7 +429,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       luxury_cruise: {
         ctaHref: serviceHref.cruise,
-        ctaLabel: "Cari Luxury Cruise",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Rute Cruise", value: "Shanghai - Jeju - Fukuoka", sublabel: "5 malam" },
@@ -447,7 +447,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       family_cruise: {
         ctaHref: serviceHref.cruise,
-        ctaLabel: "Cari Family Cruise",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.42fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Rute Cruise", value: "Singapore - Port Klang", sublabel: "Weekend cruise" },
@@ -476,7 +476,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     variants: {
       attraction: {
         ctaHref: serviceHref.activity,
-        ctaLabel: "Cari Aktivitas",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Destinasi", value: "Shanghai Disneyland", sublabel: "Shanghai, China" },
@@ -494,7 +494,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       tour: {
         ctaHref: serviceHref.activity,
-        ctaLabel: "Cari Tur",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.52fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Destinasi", value: "Great Wall Day Tour", sublabel: "Beijing, China" },
@@ -512,7 +512,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
       },
       event: {
         ctaHref: serviceHref.activity,
-        ctaLabel: "Cari Event",
+        ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.55fr_1fr_0.92fr_1fr_56px] lg:items-center",
         desktopFields: [
           { label: "Event", value: "Universal Beijing Night Show", sublabel: "Beijing" },

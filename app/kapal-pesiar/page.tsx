@@ -1,4 +1,4 @@
-import CruiseMarketingLanding from "@/app/components/cruises/CruiseMarketingLanding"
+import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
 
 export const dynamic = "force-dynamic"
 
@@ -7,6 +7,5 @@ type CruisePageProps = {
 }
 
 export default async function CruisePage({ searchParams }: CruisePageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : {}
-  return <CruiseMarketingLanding searchParams={resolvedSearchParams} />
+  return <ServiceDummyCatalogPage slug="kapal-pesiar" searchParams={searchParams} />
 }

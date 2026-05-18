@@ -3,17 +3,48 @@ import Link from "next/link"
 import { ChevronDownIcon, payments } from "@/app/components/home/shared/homeContent"
 import type { Locale } from "@/lib/i18n"
 
+type FooterLinkItem = {
+  label: string
+  href: string
+}
+
+type FooterCopy = {
+  company: string
+  help: string
+  partner: string
+  paymentMethods: string
+  companyItems: FooterLinkItem[]
+  helpItems: FooterLinkItem[]
+  partnerItems: FooterLinkItem[]
+  rights: string
+  terms: string
+  privacy: string
+}
+
 export default function HomeFooter({ locale }: { locale: Locale }) {
-  const copy = {
+  const copy: FooterCopy = {
     id: {
       company: "Perusahaan",
       help: "Bantuan",
       partner: "Partner",
       paymentMethods: "Metode Pembayaran",
-      companyItems: ["Tentang Kami", "Karir", "Blog", "Kontak Kami"],
-      helpItems: ["Pusat Bantuan", "Cara Pemesanan", "Pembayaran", "Kebijakan & Privasi"],
-      partnerItems: ["Jadi Partner", "Affiliate", "Kerja Sama Korporat"],
-      rights: "© 2026 RedFeng. All rights reserved.",
+      companyItems: [
+        { label: "Promo", href: "/promo" },
+        { label: "Paket Wisata", href: "/packages" },
+        { label: "Bantuan", href: "/bantuan" },
+      ],
+      helpItems: [
+        { label: "Pusat Bantuan", href: "/bantuan" },
+        { label: "Cara Pemesanan", href: "/bantuan" },
+        { label: "Pembayaran", href: "/bantuan" },
+        { label: "Kebijakan & Privasi", href: "/privacy" },
+      ],
+      partnerItems: [
+        { label: "Jadi Partner", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Affiliate", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Kerja Sama Korporat", href: "https://redfeng.co/kemitraan_tour/" },
+      ],
+      rights: "(c) 2026 RedFeng. All rights reserved.",
       terms: "Syarat & Ketentuan",
       privacy: "Kebijakan Privasi",
     },
@@ -22,10 +53,23 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
       help: "Help",
       partner: "Partner",
       paymentMethods: "Payment Methods",
-      companyItems: ["About Us", "Careers", "Blog", "Contact Us"],
-      helpItems: ["Help Center", "How to Book", "Payments", "Privacy Policy"],
-      partnerItems: ["Become a Partner", "Affiliate", "Corporate Partnership"],
-      rights: "© 2026 RedFeng. All rights reserved.",
+      companyItems: [
+        { label: "Promotions", href: "/promo" },
+        { label: "Tour Packages", href: "/packages" },
+        { label: "Help", href: "/bantuan" },
+      ],
+      helpItems: [
+        { label: "Help Center", href: "/bantuan" },
+        { label: "How to Book", href: "/bantuan" },
+        { label: "Payments", href: "/bantuan" },
+        { label: "Privacy Policy", href: "/privacy" },
+      ],
+      partnerItems: [
+        { label: "Become a Partner", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Affiliate", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Corporate Partnership", href: "https://redfeng.co/kemitraan_tour/" },
+      ],
+      rights: "(c) 2026 RedFeng. All rights reserved.",
       terms: "Terms & Conditions",
       privacy: "Privacy Policy",
     },
@@ -34,10 +78,23 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
       help: "帮助",
       partner: "合作伙伴",
       paymentMethods: "支付方式",
-      companyItems: ["关于我们", "招聘", "博客", "联系我们"],
-      helpItems: ["帮助中心", "预订方式", "支付", "隐私政策"],
-      partnerItems: ["加入合作", "联盟合作", "企业合作"],
-      rights: "© 2026 RedFeng. 版权所有。",
+      companyItems: [
+        { label: "优惠活动", href: "/promo" },
+        { label: "旅游套餐", href: "/packages" },
+        { label: "帮助中心", href: "/bantuan" },
+      ],
+      helpItems: [
+        { label: "帮助中心", href: "/bantuan" },
+        { label: "预订方式", href: "/bantuan" },
+        { label: "支付说明", href: "/bantuan" },
+        { label: "隐私政策", href: "/privacy" },
+      ],
+      partnerItems: [
+        { label: "加入合作", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "联盟合作", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "企业合作", href: "https://redfeng.co/kemitraan_tour/" },
+      ],
+      rights: "(c) 2026 RedFeng. 版权所有。",
       terms: "条款与条件",
       privacy: "隐私政策",
     },
@@ -103,8 +160,12 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
         <div className="home-footer-legal mt-8 flex flex-col gap-3 border-t border-slate-200 pt-5 text-center text-[12px] text-slate-400 md:flex-row md:items-center md:justify-between md:text-left">
           <p>{copy.rights}</p>
           <div className="hidden gap-5 md:flex">
-            <a href="/terms" className="hover:text-slate-700">{copy.terms}</a>
-            <a href="/privacy" className="hover:text-slate-700">{copy.privacy}</a>
+            <Link href="/terms" className="hover:text-slate-700">
+              {copy.terms}
+            </Link>
+            <Link href="/privacy" className="hover:text-slate-700">
+              {copy.privacy}
+            </Link>
           </div>
         </div>
       </div>
@@ -132,9 +193,7 @@ function PaymentBadge({
   desktopScale?: number
 }) {
   return (
-    <span
-      className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]"
-    >
+    <span className="inline-flex h-11 w-full items-center justify-center rounded-[10px] border border-slate-200/90 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-700 shadow-[0_8px_18px_-16px_rgba(15,23,42,0.28)]">
       {src ? (
         <>
           <span className="flex h-3.5 items-center justify-center lg:hidden" style={{ width: `${mobileRenderWidth}px` }}>
@@ -174,14 +233,16 @@ function FooterAccordionRow({ title }: { title: string }) {
   )
 }
 
-function FooterColumn({ title, items }: { title: string; items: string[] }) {
+function FooterColumn({ title, items }: { title: string; items: FooterLinkItem[] }) {
   return (
     <div>
       <h3 className="text-[15px] font-bold">{title}</h3>
       <ul className="mt-4 space-y-2.5 text-[13px] text-slate-500">
         {items.map((item) => (
-          <li key={item}>
-            <a href="#" className="hover:text-slate-800">{item}</a>
+          <li key={`${title}-${item.label}`}>
+            <Link href={item.href} className="hover:text-slate-800">
+              {item.label}
+            </Link>
           </li>
         ))}
       </ul>

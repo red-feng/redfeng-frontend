@@ -138,7 +138,7 @@ export default function HotelHeroSearchBar({ locale, buttonLabel }: { locale: Lo
       <StaticField icon={<UsersIcon />} label={copy.guests} value={copy.guestsValue} sublabel={copy.guestsSub} withLeftBorder />
 
       <a
-        href="#hotel-promo"
+        href="/hotel#service-filter"
         aria-label={buttonLabel}
         className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center xl:px-0 xl:py-0"
       >

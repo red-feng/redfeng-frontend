@@ -17,6 +17,7 @@ import {
 } from "@/app/components/home/web/hero"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
+import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 
 export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
   const [activeTab, setActiveTab] = useState<HeroTabKey>("flight")
@@ -129,9 +130,16 @@ function HeroSearchPanel({
     mobileFields,
   }
   const localizedOptionLabels = getLocalizedOptionLabels(locale)
+  const statusCopy = getHeroStatusCopy(activeTab, locale)
 
   return (
     <div className="relative overflow-visible px-5 py-5 lg:px-8 lg:py-[1.65rem]">
+      <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-5">
+        <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${statusCopy.tone}`}>
+          {statusCopy.label}
+        </span>
+        <p className="text-[12px] leading-6 text-slate-500 lg:text-[13px]">{statusCopy.body}</p>
+      </div>
       <div className="hidden flex-wrap gap-11 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
@@ -197,6 +205,43 @@ function HeroSearchPanel({
       <HeroBenefits activeTab={activeTab} locale={locale} />
     </div>
   )
+}
+
+function getHeroStatusCopy(activeTab: HeroTabKey, locale: Locale) {
+  if (activeTab === "package") {
+    return {
+      label: locale === "en" ? "Live booking" : locale === "zh" ? "可直接预订" : "Live booking",
+      body:
+        locale === "en"
+          ? "This tab already leads to the live package catalog and booking flow."
+          : locale === "zh"
+            ? "这个标签页已经连接到真实的套餐目录与预订流程。"
+            : "Tab ini sudah masuk ke katalog paket dan alur booking live.",
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    }
+  }
+
+  const serviceLabelByTab: Record<Exclude<HeroTabKey, "package">, string> = {
+    flight: "Pesawat",
+    hotel: "Hotel",
+    train: "Kereta",
+    bus: "Bus",
+    ship: "Kapal",
+    cruise: "Kapal Pesiar",
+    activity: "Aktivitas",
+  }
+  const service = servicePageConfigByLabel[serviceLabelByTab[activeTab]]
+
+  return {
+    label: locale === "en" ? "Dummy catalog" : locale === "zh" ? "示例目录" : "Katalog dummy",
+    body:
+      locale === "en"
+        ? service?.status || "This tab currently opens a sample catalog foundation."
+        : locale === "zh"
+          ? "这个标签页目前打开的是示例目录基础页。"
+          : service?.status || "Tab ini saat ini membuka fondasi katalog contoh.",
+    tone: "border-amber-200 bg-amber-50 text-amber-700",
+  }
 }
 
 export function getLocalizedOptionLabels(locale: Locale): Record<string, string> {

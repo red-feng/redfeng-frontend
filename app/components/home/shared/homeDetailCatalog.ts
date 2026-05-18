@@ -44,7 +44,9 @@ export const popularBookingCatalog = popularBookings.map((item) => ({
   highlights: [
     `Kategori utama: ${item.category}`,
     `Rating visual saat ini: ${item.rating}`,
-    `Harga tampil mulai dari ${item.price}${item.suffix || ""}`,
+    item.category === "Paket Wisata"
+      ? `Harga tampil mulai dari ${item.price}${item.suffix || ""}`
+      : `Label harga saat ini masih contoh katalog: ${item.price}${item.suffix || ""}`,
   ],
 }))
 
@@ -105,7 +107,7 @@ export const destinationCatalog = destinations.map((destination) => ({
       : `${destination.name} termasuk destinasi favorit yang sering masuk wishlist traveler RedFeng karena daya tarik visual dan itinerary-nya kuat.`,
   highlights: [
     `Negara tujuan: ${destination.country}`,
-    `Teaser harga saat ini: ${destination.teaser}`,
+    `Teaser saat ini: ${destination.teaser}`,
     `Cocok dipakai sebagai titik mulai pencarian berikutnya`,
   ],
 }))

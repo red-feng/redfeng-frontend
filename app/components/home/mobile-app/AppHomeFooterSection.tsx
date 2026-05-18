@@ -10,7 +10,7 @@ import {
 } from "@/app/components/home/shared/homeContent"
 
 const appFooterLinks = [
-  { title: "Perusahaan", items: ["Tentang Kami", "Karir", "Kontak Kami"] },
+  { title: "Perusahaan", items: ["Promo", "Paket Wisata", "Bantuan"] },
   { title: "Bantuan", items: ["Pusat Bantuan", "Cara Pemesanan", "Kebijakan Privasi"] },
   { title: "Partner", items: ["Jadi Partner", "Affiliate", "Kerja Sama Korporat"] },
 ]
@@ -72,7 +72,7 @@ export default function AppHomeFooterSection() {
               href="/bantuan"
               className="inline-flex items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,#ff6a45_0%,#ef5b2a_100%)] px-3.5 py-3 text-[12px] font-semibold text-white shadow-[0_18px_30px_-22px_rgba(239,91,42,0.52)]"
             >
-              Hubungi Kami
+              Buka Bantuan
             </Link>
             <Link
               href="/privacy"

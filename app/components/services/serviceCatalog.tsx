@@ -170,6 +170,10 @@ export const servicePageConfigByLabel = Object.fromEntries(
   servicePageConfigs.map((item) => [item.label, item]),
 ) as Record<string, ServicePageConfig>
 
+export const servicePageConfigBySlug = Object.fromEntries(
+  servicePageConfigs.map((item) => [item.slug, item]),
+) as Record<string, ServicePageConfig>
+
 export const lightweightServicePageConfigs = servicePageConfigs.filter((item) => item.slug !== "packages")
 
 export function getServiceAvailabilityLabel(availability: ServiceAvailability, locale: Locale) {

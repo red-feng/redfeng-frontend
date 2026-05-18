@@ -1,4 +1,4 @@
-import TrainMarketingLanding from "@/app/components/trains/TrainMarketingLanding"
+import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
 
 export const dynamic = "force-dynamic"
 
@@ -7,6 +7,5 @@ type TrainPageProps = {
 }
 
 export default async function TrainPage({ searchParams }: TrainPageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : {}
-  return <TrainMarketingLanding searchParams={resolvedSearchParams} />
+  return <ServiceDummyCatalogPage slug="kereta" searchParams={searchParams} />
 }

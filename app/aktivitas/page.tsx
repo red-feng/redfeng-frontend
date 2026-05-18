@@ -1,4 +1,4 @@
-import ActivitiesMarketingLanding from "@/app/components/activities/ActivitiesMarketingLanding"
+import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
 
 export const dynamic = "force-dynamic"
 
@@ -7,6 +7,5 @@ type ActivitiesPageProps = {
 }
 
 export default async function ActivitiesPage({ searchParams }: ActivitiesPageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : {}
-  return <ActivitiesMarketingLanding searchParams={resolvedSearchParams} />
+  return <ServiceDummyCatalogPage slug="aktivitas" searchParams={searchParams} />
 }
