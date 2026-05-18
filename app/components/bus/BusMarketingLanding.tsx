@@ -132,11 +132,25 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       <main className={`${homeLayoutLock.pageXClass} pb-14 pt-2 md:pt-3`}>
         <section className={`${homeLayoutLock.contentWidthClass} relative overflow-visible ${homeLayoutLock.cardRadiusClass} bg-[#fff7ef] shadow-[0_40px_100px_-54px_rgba(249,115,22,0.34)]`}>
           <div className="relative min-h-[500px] px-4 pb-20 pt-[100px] sm:px-6 sm:pb-24 md:pt-[112px] lg:min-h-[560px] lg:px-8 xl:min-h-[600px]">
-            <Image src="/home-assets/background-package-mobile.png" alt="Bus hero" fill priority sizes="100vw" className="object-cover object-center sm:hidden" />
-            <Image src="/home-assets/background-package-web.png" alt="Bus hero" fill priority sizes="(max-width: 1440px) 100vw, 1280px" className="hidden object-cover object-center sm:block" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,241,0.98)_0%,rgba(255,248,241,0.9)_24%,rgba(255,240,231,0.58)_50%,rgba(255,247,243,0.12)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_22%_62%,rgba(255,210,178,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
-            <div className="relative z-10 max-w-[600px] pt-10 sm:pt-11 lg:pt-14">
+            <Image
+              src="/home-assets/hero-bus.png"
+              alt="Bus hero"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-[70%_center] sm:hidden"
+            />
+            <Image
+              src="/home-assets/hero-bus.png"
+              alt="Bus hero"
+              fill
+              priority
+              sizes="(max-width: 1440px) 100vw, 1280px"
+              className="hidden object-cover object-[74%_center] sm:block"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(248,250,252,0.985)_0%,rgba(239,246,255,0.94)_24%,rgba(219,234,254,0.5)_50%,rgba(255,255,255,0.12)_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_16%,rgba(255,255,255,0.82),transparent_24%),radial-gradient(circle_at_24%_60%,rgba(125,211,252,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.18),transparent_30%)]" />
+            <div className="relative z-10 max-w-[600px] pt-12 sm:pt-12 lg:max-w-[560px] lg:pt-16">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
               <h1 className="mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]">
                 {copy.title}
