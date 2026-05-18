@@ -28,7 +28,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       eyebrow: "FLIGHT JOURNEYS",
       title: "Terbang ke destinasi impianmu bersama RedFeng",
       body: "Cari tiket pesawat, lihat promo rute pilihan, dan susun perjalanan dari kota besar hingga destinasi liburan dalam satu alur yang ringan.",
-      searchButton: "Cari Penerbangan",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Harga terbaik", "Pembayaran aman", "Maskapai partner", "Arah ke promo live"],
       benefitBody: [
         "Susun pengalaman pencarian yang siap ditautkan ke harga real-time berikutnya.",
@@ -44,13 +44,13 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       seeAll: "Lihat semua destinasi",
       fromLabel: "Mulai dari",
       recommendationTitle: "Maskapai Partner RedFeng",
-      newsletterCta: "Buka promo penerbangan",
+      newsletterCta: "Buka katalog penerbangan",
     },
     en: {
       eyebrow: "FLIGHT JOURNEYS",
       title: "Fly to your dream destination with RedFeng",
       body: "Search flights, explore featured route promos, and plan trips from major cities to holiday escapes in one clean flow.",
-      searchButton: "Search Flights",
+      searchButton: "View Catalog",
       benefitTitle: ["Best fares", "Secure payments", "Airline partners", "Ready for live promos"],
       benefitBody: [
         "Shape a flight search experience that can connect to real-time fares later.",
@@ -66,13 +66,13 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       seeAll: "View all destinations",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Airline Partners",
-      newsletterCta: "Open flight promos",
+      newsletterCta: "Open flight catalog",
     },
     zh: {
       eyebrow: "FLIGHT JOURNEYS",
       title: "与 RedFeng 一起飞往理想目的地",
       body: "机票页继续沿用套餐落地页的视觉方向：大幅 hero、浮动搜索卡、航线优惠与目的地灵感都放在同一条完整动线上。",
-      searchButton: "搜索航班",
+      searchButton: "查看目录",
       benefitTitle: ["更优票价", "支付更安心", "航空伙伴", "已准备接入 live promo"],
       benefitBody: [
         "先建立适合后续接入实时票价的航班搜索体验。",
@@ -88,7 +88,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       seeAll: "查看全部目的地",
       fromLabel: "起价",
       recommendationTitle: "RedFeng 航空伙伴",
-      newsletterCta: "打开机票优惠",
+      newsletterCta: "打开航班目录",
     },
   }[locale]
   const copy =
@@ -97,7 +97,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
           ...baseCopy,
           title: "与 RedFeng 一起飞往理想目的地",
           body: "搜索航班、查看精选航线优惠，并在一个清晰顺畅的页面中规划从大城市到度假目的地的旅程。",
-          searchButton: "搜索航班",
+          searchButton: "查看目录",
           benefitTitle: ["更优票价", "支付更安心", "航空伙伴", "已准备接入实时优惠"],
           benefitBody: [
             "从起点开始就更轻松地浏览热门航线与出行灵感。",
@@ -113,7 +113,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
           seeAll: "查看全部目的地",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 航空伙伴",
-          newsletterCta: "打开机票优惠",
+          newsletterCta: "打开航班目录",
         }
       : baseCopy
 
@@ -306,7 +306,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
       </div>
       <HomeFooter locale={locale} />
 
-      <PublicStickyAction locale={locale} href="/pesawat#flight-promo" label={copy.newsletterCta} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/pesawat/catalog" label={copy.newsletterCta} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

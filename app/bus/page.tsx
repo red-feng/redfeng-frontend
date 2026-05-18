@@ -1,4 +1,4 @@
-import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
+import BusMarketingLanding from "@/app/components/bus/BusMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
@@ -7,5 +7,5 @@ type BusPageProps = {
 }
 
 export default async function BusPage({ searchParams }: BusPageProps) {
-  return <ServiceDummyCatalogPage slug="bus" searchParams={searchParams} />
+  return <BusMarketingLanding searchParams={searchParams ? await searchParams : undefined} />
 }

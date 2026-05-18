@@ -27,7 +27,7 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       eyebrow: "ACTIVITY PICKS",
       title: "Temukan aktivitas pilihan untuk melengkapi perjalananmu bersama RedFeng",
       body: "Cari atraksi, tur, dan event favorit, lalu masuk ke promo aktivitas yang paling relevan untuk rencana perjalanan berikutnya.",
-      searchButton: "Cari Aktivitas",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Atraksi favorit", "Voucher instan", "Event & tur siap", "Mudah tumbuh ke inventory live"],
       benefitBody: [
         "Aktivitas populer lebih mudah dibaca dari fold pertama.",
@@ -43,13 +43,13 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       seeAll: "Lihat semua destinasi",
       fromLabel: "Mulai dari",
       recommendationTitle: "Aktivitas Pilihan RedFeng",
-      stickyLabel: "Buka promo aktivitas",
+      stickyLabel: "Buka katalog aktivitas",
     },
     en: {
       eyebrow: "ACTIVITY PICKS",
       title: "Discover selected activities to complete your trip with RedFeng",
       body: "Search favorite attractions, tours, and events, then move into the activity promos that best match your next plan.",
-      searchButton: "Search Activities",
+      searchButton: "View Catalog",
       benefitTitle: ["Favorite attractions", "Instant vouchers", "Events & tours ready", "Easy to grow into live inventory"],
       benefitBody: [
         "Popular activities are easier to read from the first fold.",
@@ -65,13 +65,13 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       seeAll: "View all destinations",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Activity Picks",
-      stickyLabel: "Open activity promos",
+      stickyLabel: "Open activity catalog",
     },
     zh: {
       eyebrow: "ACTIVITY PICKS",
       title: "让活动页继续沿用与 /packages 相同的家族语言",
       body: "活动页现在继续使用 RedFeng 落地页家族的 hero、浮动搜索卡、优惠区、热门目的地与推荐节奏。",
-      searchButton: "搜索活动",
+      searchButton: "查看目录",
       benefitTitle: ["热门景点", "即时票券", "活动与行程已准备好", "方便扩展到实时库存"],
       benefitBody: [
         "热门活动从首屏开始就更容易被快速浏览。",
@@ -87,7 +87,7 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
       seeAll: "查看全部目的地",
       fromLabel: "起价",
       recommendationTitle: "RedFeng 精选活动",
-      stickyLabel: "打开活动优惠",
+      stickyLabel: "打开活动目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
           ...baseCopy,
           title: "发现精选活动，让旅程体验更加完整",
           body: "搜索热门景点、行程与活动，并进入最适合下一次出行计划的活动优惠。",
-          searchButton: "搜索活动",
+          searchButton: "查看目录",
           benefitTitle: ["热门景点", "即时票券", "活动与行程已准备好", "便于扩展到实时库存"],
           benefitBody: [
             "热门活动从首屏开始就更容易被快速浏览。",
@@ -112,7 +112,7 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
           seeAll: "查看全部目的地",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 精选活动",
-          stickyLabel: "打开活动优惠",
+          stickyLabel: "打开活动目录",
         }
       : baseCopy
 
@@ -229,7 +229,7 @@ export default async function ActivitiesMarketingLanding({ searchParams }: Activ
         <HomeNewsletterSection locale={locale} redirectPath="/aktivitas" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/aktivitas#activity-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/aktivitas/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

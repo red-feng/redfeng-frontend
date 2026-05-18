@@ -27,7 +27,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       eyebrow: "SEA ROUTES",
       title: "Jelajahi rute kapal dan ferry untuk perjalanan laut yang lebih mudah",
       body: "Cari tiket kapal, lihat promo rute laut favorit, dan susun perjalanan antar-pulau dari pelabuhan utama ke destinasi populer dalam satu alur.",
-      searchButton: "Cari Kapal",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Pelabuhan utama", "Pelayaran aman", "Ferry cepat siap", "Mudah tumbuh ke jadwal live"],
       benefitBody: [
         "Rute Merak, Bakauheni, Bali, dan Nusa Penida lebih mudah dibaca sejak awal.",
@@ -43,13 +43,13 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
       recommendationTitle: "Pilihan Rute Kapal RedFeng",
-      stickyLabel: "Buka promo kapal",
+      stickyLabel: "Buka katalog kapal",
     },
     en: {
       eyebrow: "SEA ROUTES",
       title: "Explore ship and ferry routes for easier sea travel",
       body: "Search ship tickets, explore favorite sea route promos, and plan inter-island trips from key ports to popular destinations in one flow.",
-      searchButton: "Search Ships",
+      searchButton: "View Catalog",
       benefitTitle: ["Main ports", "Safe sailings", "Fast ferry ready", "Easy to grow into live schedules"],
       benefitBody: [
         "Merak, Bakauheni, Bali, and Nusa Penida routes are easier to scan from the start.",
@@ -65,13 +65,13 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       seeAll: "View all routes",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Sea Route Picks",
-      stickyLabel: "Open ship promos",
+      stickyLabel: "Open ship catalog",
     },
     zh: {
       eyebrow: "SEA ROUTES",
       title: "让海运页继续沿用与 /packages 相同的落地页家族",
       body: "船票页现在继续使用 /packages 的节奏：完整 hero、浮动搜索卡、优惠区、热门海上线路与更安静的推荐 section。",
-      searchButton: "搜索船票",
+      searchButton: "查看目录",
       benefitTitle: ["主要港口", "航行更安心", "快速渡轮已准备好", "方便扩展到实时班次"],
       benefitBody: [
         "Merak、Bakauheni、Bali 与 Nusa Penida 路线从一开始就更容易被快速扫描。",
@@ -87,7 +87,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
       seeAll: "查看全部路线",
       fromLabel: "起价",
       recommendationTitle: "精选港口与路线",
-      stickyLabel: "打开船票优惠",
+      stickyLabel: "打开船票目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
           ...baseCopy,
           title: "探索船票与渡轮路线，让海上出行更轻松",
           body: "搜索船票、查看热门海上路线优惠，并在一个顺畅页面中规划从主要港口到热门岛屿的旅程。",
-          searchButton: "搜索船票",
+          searchButton: "查看目录",
           benefitTitle: ["主要港口", "航行更安心", "快速渡轮已准备好", "便于扩展到实时班次"],
           benefitBody: [
             "Merak、Bakauheni、Bali 与 Nusa Penida 等路线从首屏开始就更容易快速浏览。",
@@ -112,7 +112,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
           seeAll: "查看全部路线",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 精选海上路线",
-          stickyLabel: "打开船票优惠",
+          stickyLabel: "打开船票目录",
         }
       : baseCopy
 
@@ -229,7 +229,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
         <HomeNewsletterSection locale={locale} redirectPath="/kapal" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/kapal#ship-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/kapal/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

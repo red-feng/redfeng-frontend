@@ -2,13 +2,13 @@ import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import type { HeroSearchProviderKey } from "@/app/components/home/web/hero/heroSearchProviders"
 
 const serviceHref = {
-  flight: "/pesawat",
-  hotel: "/hotel",
-  train: "/kereta",
-  bus: "/bus",
-  ship: "/kapal",
-  cruise: "/kapal-pesiar",
-  activity: "/aktivitas",
+  flight: "/pesawat/catalog",
+  hotel: "/hotel/catalog",
+  train: "/kereta/catalog",
+  bus: "/bus/catalog",
+  ship: "/kapal/catalog",
+  cruise: "/kapal-pesiar/catalog",
+  activity: "/aktivitas/catalog",
 } as const
 
 export type HeroSearchFieldData = {

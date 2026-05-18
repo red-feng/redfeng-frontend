@@ -27,7 +27,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       eyebrow: "HOTEL STAYS",
       title: "Temukan hotel pilihan untuk stay yang lebih tenang dan terencana",
       body: "Cari akomodasi, bandingkan properti populer, dan masuk ke promo stay terbaik dalam satu halaman yang rapi dan mudah dipindai.",
-      searchButton: "Cari Hotel",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Harga transparan", "Booking aman", "Stay pilihan", "Siap ke live inventory"],
       benefitBody: [
         "Harga display tetap rapi dan mudah berkembang ke nightly rate real-time.",
@@ -43,13 +43,13 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       seeAll: "Lihat semua destinasi",
       fromLabel: "Mulai dari",
       recommendationTitle: "Properti Favorit RedFeng",
-      stickyLabel: "Buka promo hotel",
+      stickyLabel: "Buka katalog hotel",
     },
     en: {
       eyebrow: "HOTEL STAYS",
       title: "Discover selected hotels for a calmer, better-planned stay",
       body: "Search accommodations, compare popular properties, and move into the best stay promos in one clean page.",
-      searchButton: "Search Hotels",
+      searchButton: "View Catalog",
       benefitTitle: ["Transparent pricing", "Secure booking", "Selected stays", "Ready for live inventory"],
       benefitBody: [
         "Display pricing stays clean and can grow into real-time nightly rates.",
@@ -65,13 +65,13 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       seeAll: "View all destinations",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Favorite Properties",
-      stickyLabel: "Open hotel promos",
+      stickyLabel: "Open hotel catalog",
     },
     zh: {
       eyebrow: "HOTEL STAYS",
       title: "让酒店落地页与 /packages 采用同一家族的节奏",
       body: "酒店页现在继续沿用 RedFeng 套餐落地页的 hero、浮动搜索卡、优惠区与推荐 section。",
-      searchButton: "搜索酒店",
+      searchButton: "查看目录",
       benefitTitle: ["价格更透明", "预订更安心", "精选住宿", "已准备接入 live inventory"],
       benefitBody: [
         "展示价格保持清晰，也方便后续继续扩展到实时房价。",
@@ -87,7 +87,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
       seeAll: "查看全部目的地",
       fromLabel: "起价",
       recommendationTitle: "RedFeng 推荐住宿",
-      stickyLabel: "打开酒店优惠",
+      stickyLabel: "打开酒店目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
           ...baseCopy,
           title: "发现精选酒店，让每次入住更从容",
           body: "搜索住宿、比较热门酒店，并在一个清晰易读的页面中进入最合适的住宿优惠。",
-          searchButton: "搜索酒店",
+          searchButton: "查看目录",
           benefitTitle: ["价格更透明", "预订更安心", "精选住宿", "已准备接入实时库存"],
           benefitBody: [
             "展示价格保持清楚，也方便后续扩展到实时房价。",
@@ -112,7 +112,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
           seeAll: "查看全部目的地",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 推荐住宿",
-          stickyLabel: "打开酒店优惠",
+          stickyLabel: "打开酒店目录",
         }
       : baseCopy
 
@@ -257,7 +257,7 @@ export default async function HotelMarketingLanding({ searchParams }: HotelMarke
         <HomeNewsletterSection locale={locale} redirectPath="/hotel" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/hotel#hotel-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/hotel/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

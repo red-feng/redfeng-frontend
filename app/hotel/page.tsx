@@ -1,4 +1,4 @@
-import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
+import HotelMarketingLanding from "@/app/components/hotel/HotelMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
@@ -7,5 +7,5 @@ type HotelPageProps = {
 }
 
 export default async function HotelPage({ searchParams }: HotelPageProps) {
-  return <ServiceDummyCatalogPage slug="hotel" searchParams={searchParams} />
+  return <HotelMarketingLanding searchParams={searchParams ? await searchParams : undefined} />
 }

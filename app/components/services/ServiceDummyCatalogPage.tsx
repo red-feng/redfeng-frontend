@@ -49,18 +49,19 @@ export default async function ServiceDummyCatalogPage({
   const filteredItems = filterItems(catalog.items, keyword, selectedRegion, selectedGroup)
   const availableRegions = [...new Set(catalog.items.map((item) => item.region))]
   const availableGroups = [...new Set(catalog.items.map((item) => item.group))]
+  const catalogUiCopy = locale === "en" ? catalog.uiCopy.en : catalog.uiCopy.id
 
   const copy = {
     id: {
       eyebrow: `Katalog ${service.shortLabel}`,
       title: `Jelajahi katalog dummy ${service.shortLabel.toLowerCase()} dengan struktur yang siap disambungkan nanti.`,
       body: `Halaman ini sengaja dibuat sebagai katalog dummy, bukan fitur live palsu. Tim bisa memakai fondasi ini untuk menata inventory, filter, dan promosi ${service.shortLabel.toLowerCase()} sebelum checkout customer benar-benar aktif.`,
-      searchTitle: `Cari kebutuhan ${service.shortLabel.toLowerCase()} contoh`,
-      searchBody: `Gunakan kata kunci, region, atau tipe katalog untuk melihat bentuk hasil yang nanti bisa dihubungkan ke data live.`,
+      searchTitle: `Cari ${catalogUiCopy.searchNoun}`,
+      searchBody: `Gunakan kata kunci, region, atau tipe katalog untuk melihat bentuk hasil ${catalogUiCopy.resultNoun} yang nanti bisa dihubungkan ke data live.`,
       searchButton: "Lihat hasil contoh",
       resetButton: "Reset",
-      resultTitle: "Hasil katalog dummy",
-      resultCount: `${filteredItems.length} hasil contoh`,
+      resultTitle: catalogUiCopy.resultTitle,
+      resultCount: `${filteredItems.length} ${catalogUiCopy.resultNoun}`,
       dummyBadge: "Katalog dummy",
       emptyTitle: "Belum ada hasil yang cocok",
       emptyBody: "Coba ganti kata kunci atau reset filter untuk melihat contoh katalog lainnya.",
@@ -71,25 +72,27 @@ export default async function ServiceDummyCatalogPage({
       stickyLabel: "Buka filter",
       supportCta: "Butuh bantuan?",
       promoCta: "Lihat promo",
-      filterRegion: "Region",
-      filterGroup: "Tipe katalog",
-      filterKeyword: "Kata kunci",
+      landingCta: `Kembali ke landing ${service.shortLabel.toLowerCase()}`,
+      filterRegion: catalogUiCopy.regionLabel,
+      filterGroup: catalogUiCopy.groupLabel,
+      filterKeyword: catalogUiCopy.keywordLabel,
       rightTitle: "Status fondasi",
       rightBody: service.status,
       chipTarget: "Siap sambung",
       chipStatus: "Dummy inventory",
       highlightsTitle: "Fokus tahap ini",
+      locationLabel: catalogUiCopy.locationLabel,
     },
     en: {
       eyebrow: `${service.shortLabel} Catalog`,
       title: `Explore a dummy ${service.shortLabel.toLowerCase()} catalog built for future integration.`,
       body: `This page is intentionally a dummy catalog, not a fake live feature. The team can use it to shape ${service.shortLabel.toLowerCase()} inventory, filters, and promotions before customer checkout is truly enabled.`,
-      searchTitle: `Search sample ${service.shortLabel.toLowerCase()} needs`,
-      searchBody: "Use keyword, region, or catalog type to preview how this catalog family will behave once live data is connected.",
+      searchTitle: `Search ${catalogUiCopy.searchNoun}`,
+      searchBody: `Use keyword, region, or catalog type to preview how these ${catalogUiCopy.resultNoun} will behave once live data is connected.`,
       searchButton: "View sample results",
       resetButton: "Reset",
-      resultTitle: "Dummy catalog results",
-      resultCount: `${filteredItems.length} sample results`,
+      resultTitle: catalogUiCopy.resultTitle,
+      resultCount: `${filteredItems.length} ${catalogUiCopy.resultNoun}`,
       dummyBadge: "Dummy catalog",
       emptyTitle: "No matching sample found",
       emptyBody: "Try another keyword or reset filters to see more sample catalog entries.",
@@ -100,14 +103,16 @@ export default async function ServiceDummyCatalogPage({
       stickyLabel: "Open filters",
       supportCta: "Need help?",
       promoCta: "View promos",
-      filterRegion: "Region",
-      filterGroup: "Catalog type",
-      filterKeyword: "Keyword",
+      landingCta: `Back to ${service.shortLabel.toLowerCase()} landing`,
+      filterRegion: catalogUiCopy.regionLabel,
+      filterGroup: catalogUiCopy.groupLabel,
+      filterKeyword: catalogUiCopy.keywordLabel,
       rightTitle: "Foundation status",
       rightBody: service.status,
       chipTarget: "Ready to connect",
       chipStatus: "Dummy inventory",
       highlightsTitle: "Current focus",
+      locationLabel: catalogUiCopy.locationLabel,
     },
     zh: {
       eyebrow: `${service.shortLabel} 目录`,
@@ -129,6 +134,7 @@ export default async function ServiceDummyCatalogPage({
       stickyLabel: "打开筛选",
       supportCta: "需要帮助？",
       promoCta: "查看促销",
+      landingCta: `返回 ${service.shortLabel} 落地页`,
       filterRegion: "区域",
       filterGroup: "目录类型",
       filterKeyword: "关键词",
@@ -137,6 +143,7 @@ export default async function ServiceDummyCatalogPage({
       chipTarget: "待接入",
       chipStatus: "示例 inventory",
       highlightsTitle: "当前重点",
+      locationLabel: "位置",
     },
   }[locale]
 
@@ -218,7 +225,7 @@ export default async function ServiceDummyCatalogPage({
 
       <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-1 lg:-mt-12`}>
         <div id="service-filter" className={homeLayoutLock.contentWidthClass}>
-          <form method="get" action={service.href} className="rounded-[30px] border border-[#f0d8c9] bg-white/96 p-4 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.22)] backdrop-blur sm:p-5 lg:p-6">
+          <form method="get" action={service.catalogHref} className="rounded-[30px] border border-[#f0d8c9] bg-white/96 p-4 shadow-[0_22px_60px_-38px_rgba(15,23,42,0.22)] backdrop-blur sm:p-5 lg:p-6">
             <div className="grid gap-4 lg:grid-cols-[1.25fr_0.8fr_0.8fr_auto] lg:items-end">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">{copy.searchTitle}</p>
@@ -275,7 +282,7 @@ export default async function ServiceDummyCatalogPage({
                   {copy.searchButton}
                 </button>
                 <Link
-                  href={service.href}
+                  href={service.catalogHref}
                   className="inline-flex items-center justify-center rounded-[22px] border border-[#ead8cb] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   {copy.resetButton}
@@ -307,6 +314,12 @@ export default async function ServiceDummyCatalogPage({
               </div>
               <div className="mt-5 grid gap-2">
                 <Link
+                  href={service.href}
+                  className="inline-flex items-center justify-center rounded-[18px] border border-current/15 bg-transparent px-4 py-3 text-sm font-semibold transition hover:bg-white/65"
+                >
+                  {copy.landingCta}
+                </Link>
+                <Link
                   href={catalog.supportHref}
                   className="inline-flex items-center justify-center rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
                 >
@@ -329,7 +342,7 @@ export default async function ServiceDummyCatalogPage({
                 <h2 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{copy.emptyTitle}</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{copy.emptyBody}</p>
                 <Link
-                  href={service.href}
+                  href={service.catalogHref}
                   className="mt-5 inline-flex rounded-[18px] bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                 >
                   {copy.emptyAction}
@@ -358,7 +371,8 @@ export default async function ServiceDummyCatalogPage({
                     <h2 className="line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.03em] text-slate-950 md:text-[28px]">
                       {item.title}
                     </h2>
-                    <p className="mt-2 text-[12px] text-slate-500 sm:text-sm">{item.location}</p>
+                    <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{copy.locationLabel}</p>
+                    <p className="mt-1 text-[12px] text-slate-500 sm:text-sm">{item.location}</p>
 
                     <div className="mt-4 flex flex-wrap gap-2 text-[10px] sm:text-xs">
                       <span className="rounded-full bg-orange-50 px-3 py-1.5 font-medium text-orange-700">{item.region}</span>

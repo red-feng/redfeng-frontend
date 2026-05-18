@@ -27,7 +27,7 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       eyebrow: "BUS JOURNEYS",
       title: "Temukan rute bus favorit untuk perjalanan darat yang lebih praktis",
       body: "Cari perjalanan bus, lihat promo rute antarkota, dan susun perjalanan darat dari kota besar hingga tujuan liburan dalam satu halaman.",
-      searchButton: "Cari Bus",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Rute utama", "Booking aman", "Sleeper siap", "Mudah tumbuh ke operator live"],
       benefitBody: [
         "Rute antarkota dan travel favorit lebih mudah dipindai sejak awal.",
@@ -43,13 +43,13 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
       recommendationTitle: "Pilihan Rute Bus RedFeng",
-      stickyLabel: "Buka promo bus",
+      stickyLabel: "Buka katalog bus",
     },
     en: {
       eyebrow: "BUS JOURNEYS",
       title: "Find favorite bus routes for more practical overland travel",
       body: "Search bus journeys, explore intercity route promos, and organize overland trips from major cities to getaway destinations in one page.",
-      searchButton: "Search Buses",
+      searchButton: "View Catalog",
       benefitTitle: ["Core routes", "Secure booking", "Sleeper ready", "Easy to grow into live operators"],
       benefitBody: [
         "Intercity and favorite travel routes are easier to scan from the start.",
@@ -65,13 +65,13 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       seeAll: "View all routes",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Bus Picks",
-      stickyLabel: "Open bus promos",
+      stickyLabel: "Open bus catalog",
     },
     zh: {
       eyebrow: "BUS JOURNEYS",
       title: "让巴士页继续沿用与 /packages 相同的落地页家族",
       body: "巴士页现在继续使用 /packages 的节奏：完整 hero、浮动搜索卡、优惠区、热门路线与更清晰的出行推荐。",
-      searchButton: "搜索巴士",
+      searchButton: "查看目录",
       benefitTitle: ["核心路线", "预订更安心", "卧铺已准备好", "方便扩展到实时运营商"],
       benefitBody: [
         "城际与热门线路从一开始就更容易被快速扫描。",
@@ -87,7 +87,7 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
       seeAll: "查看全部路线",
       fromLabel: "起价",
       recommendationTitle: "精选陆路行程",
-      stickyLabel: "打开巴士优惠",
+      stickyLabel: "打开巴士目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
           ...baseCopy,
           title: "发现热门巴士路线，让陆路出行更高效",
           body: "搜索巴士行程、查看城际路线优惠，并在一个清晰页面中安排从大城市到度假目的地的陆路旅程。",
-          searchButton: "搜索巴士",
+          searchButton: "查看目录",
           benefitTitle: ["核心线路", "预订更安心", "卧铺已准备好", "便于扩展到实时运营商"],
           benefitBody: [
             "城际与热门路线从一开始就更容易被快速浏览。",
@@ -112,7 +112,7 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
           seeAll: "查看全部路线",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 精选巴士路线",
-          stickyLabel: "打开巴士优惠",
+          stickyLabel: "打开巴士目录",
         }
       : baseCopy
 
@@ -229,7 +229,7 @@ export default async function BusMarketingLanding({ searchParams }: BusMarketing
         <HomeNewsletterSection locale={locale} redirectPath="/bus" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/bus#bus-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/bus/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

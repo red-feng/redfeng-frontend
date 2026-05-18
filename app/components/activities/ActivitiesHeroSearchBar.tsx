@@ -175,7 +175,7 @@ export default function ActivitiesHeroSearchBar({ locale, buttonLabel }: { local
         <StaticField icon={<CalendarIcon />} label={copy.date} value={copy.dateValue} sublabel={copy.dateSub} withLeftBorder />
         <StaticField icon={<UsersIcon />} label={copy.tickets} value={copy.ticketsValue} sublabel={copy.ticketsSub} withLeftBorder />
         <a
-          href="/aktivitas#service-filter"
+          href="/aktivitas/catalog#service-filter"
           aria-label={buttonLabel}
           className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center xl:px-0 xl:py-0"
         >

@@ -1,4 +1,4 @@
-import ServiceDummyCatalogPage from "@/app/components/services/ServiceDummyCatalogPage"
+import ShipMarketingLanding from "@/app/components/ships/ShipMarketingLanding"
 
 export const dynamic = "force-dynamic"
 
@@ -7,5 +7,5 @@ type ShipPageProps = {
 }
 
 export default async function ShipPage({ searchParams }: ShipPageProps) {
-  return <ServiceDummyCatalogPage slug="kapal" searchParams={searchParams} />
+  return <ShipMarketingLanding searchParams={searchParams ? await searchParams : undefined} />
 }

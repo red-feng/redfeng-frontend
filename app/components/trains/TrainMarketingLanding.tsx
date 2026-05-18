@@ -27,7 +27,7 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       eyebrow: "TRAIN ROUTES",
       title: "Jelajahi rute kereta favorit untuk perjalanan antarkota yang lebih nyaman",
       body: "Cari perjalanan kereta, lihat promo rute populer, dan susun perjalanan cepat dari kota besar ke destinasi pilihan dalam satu alur.",
-      searchButton: "Cari Kereta",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Rute populer", "Booking aman", "Kereta cepat siap", "Mudah tumbuh ke jadwal live"],
       benefitBody: [
         "Rute utama dan ide perjalanan dibuat lebih mudah dipindai sejak fold pertama.",
@@ -43,13 +43,13 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
       recommendationTitle: "Pilihan Rute Kereta RedFeng",
-      stickyLabel: "Buka promo kereta",
+      stickyLabel: "Buka katalog kereta",
     },
     en: {
       eyebrow: "TRAIN ROUTES",
       title: "Explore favorite train routes for more comfortable intercity travel",
       body: "Search train journeys, browse popular route promos, and line up fast trips from major cities to top destinations in one flow.",
-      searchButton: "Search Trains",
+      searchButton: "View Catalog",
       benefitTitle: ["Popular routes", "Secure booking", "High-speed rail ready", "Easy to grow into live schedules"],
       benefitBody: [
         "Main routes and travel ideas are easier to scan from the first fold.",
@@ -65,13 +65,13 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       seeAll: "View all routes",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Train Picks",
-      stickyLabel: "Open train promos",
+      stickyLabel: "Open train catalog",
     },
     zh: {
       eyebrow: "TRAIN ROUTES",
       title: "让火车页继续沿用与 /packages 相同的落地页家族",
       body: "火车页现在继续使用 /packages 的结构：完整 hero、浮动搜索卡、优惠区、热门线路与更清晰的推荐区域。",
-      searchButton: "搜索火车",
+      searchButton: "查看目录",
       benefitTitle: ["热门线路", "预订更安心", "高铁已准备好", "方便扩展到实时班次"],
       benefitBody: [
         "主要线路与出行灵感在首屏就更容易被快速扫描。",
@@ -87,7 +87,7 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
       seeAll: "查看全部线路",
       fromLabel: "起价",
       recommendationTitle: "精选旅程",
-      stickyLabel: "打开火车优惠",
+      stickyLabel: "打开火车目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
           ...baseCopy,
           title: "探索热门火车路线，让城际出行更从容",
           body: "搜索火车行程、查看热门线路优惠，并在一个清晰顺畅的页面中安排从大城市到重点目的地的旅程。",
-          searchButton: "搜索火车",
+          searchButton: "查看目录",
           benefitTitle: ["热门线路", "预订更安心", "高铁已准备好", "便于扩展到实时班次"],
           benefitBody: [
             "主要路线与出行灵感从首屏开始就更容易快速浏览。",
@@ -112,7 +112,7 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
           seeAll: "查看全部路线",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 精选火车路线",
-          stickyLabel: "打开火车优惠",
+          stickyLabel: "打开火车目录",
         }
       : baseCopy
 
@@ -251,7 +251,7 @@ export default async function TrainMarketingLanding({ searchParams }: TrainMarke
         <HomeNewsletterSection locale={locale} redirectPath="/kereta" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/kereta#train-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/kereta/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )

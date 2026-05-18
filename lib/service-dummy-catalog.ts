@@ -25,6 +25,26 @@ export type DummyServiceCatalog = {
   searchPlaceholder: string
   supportHref: string
   promoHref: string
+  uiCopy: {
+    id: {
+      searchNoun: string
+      resultTitle: string
+      resultNoun: string
+      keywordLabel: string
+      regionLabel: string
+      groupLabel: string
+      locationLabel: string
+    }
+    en: {
+      searchNoun: string
+      resultTitle: string
+      resultNoun: string
+      keywordLabel: string
+      regionLabel: string
+      groupLabel: string
+      locationLabel: string
+    }
+  }
   items: DummyCatalogItem[]
 }
 
@@ -35,6 +55,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute, kota, atau maskapai dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "rute dan maskapai contoh",
+        resultTitle: "Hasil katalog rute",
+        resultNoun: "rute contoh",
+        keywordLabel: "Rute / maskapai",
+        regionLabel: "Region terbang",
+        groupLabel: "Tipe perjalanan",
+        locationLabel: "Kode rute",
+      },
+      en: {
+        searchNoun: "sample routes and airlines",
+        resultTitle: "Route catalog results",
+        resultNoun: "sample routes",
+        keywordLabel: "Route / airline",
+        regionLabel: "Flight region",
+        groupLabel: "Trip type",
+        locationLabel: "Route code",
+      },
+    },
     items: [
       {
         id: "flight-cgk-dps",
@@ -88,6 +128,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari kota, area, atau hotel dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "properti dan area contoh",
+        resultTitle: "Hasil katalog properti",
+        resultNoun: "properti contoh",
+        keywordLabel: "Kota / properti",
+        regionLabel: "Region menginap",
+        groupLabel: "Tipe properti",
+        locationLabel: "Area properti",
+      },
+      en: {
+        searchNoun: "sample properties and areas",
+        resultTitle: "Property catalog results",
+        resultNoun: "sample properties",
+        keywordLabel: "City / property",
+        regionLabel: "Stay region",
+        groupLabel: "Property type",
+        locationLabel: "Property area",
+      },
+    },
     items: [
       {
         id: "hotel-bali-resort",
@@ -141,6 +201,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute atau layanan kereta dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "jalur dan layanan kereta contoh",
+        resultTitle: "Hasil katalog jalur",
+        resultNoun: "jalur contoh",
+        keywordLabel: "Rute / layanan",
+        regionLabel: "Koridor kereta",
+        groupLabel: "Jenis layanan",
+        locationLabel: "Koridor stasiun",
+      },
+      en: {
+        searchNoun: "sample rail lines and services",
+        resultTitle: "Rail catalog results",
+        resultNoun: "sample rail lines",
+        keywordLabel: "Route / service",
+        regionLabel: "Rail corridor",
+        groupLabel: "Service type",
+        locationLabel: "Station corridor",
+      },
+    },
     items: [
       {
         id: "train-whoosh-jkt-bdg",
@@ -194,6 +274,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute atau operator bus dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "operator dan koridor bus contoh",
+        resultTitle: "Hasil katalog operator",
+        resultNoun: "operator contoh",
+        keywordLabel: "Rute / operator",
+        regionLabel: "Region darat",
+        groupLabel: "Tipe layanan",
+        locationLabel: "Koridor perjalanan",
+      },
+      en: {
+        searchNoun: "sample bus operators and corridors",
+        resultTitle: "Operator catalog results",
+        resultNoun: "sample operators",
+        keywordLabel: "Route / operator",
+        regionLabel: "Ground region",
+        groupLabel: "Service type",
+        locationLabel: "Travel corridor",
+      },
+    },
     items: [
       {
         id: "bus-jkt-bdg",
@@ -247,6 +347,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari pelabuhan atau rute kapal dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "pelabuhan dan rute laut contoh",
+        resultTitle: "Hasil katalog pelayaran",
+        resultNoun: "pelayaran contoh",
+        keywordLabel: "Pelabuhan / rute",
+        regionLabel: "Region laut",
+        groupLabel: "Tipe pelayaran",
+        locationLabel: "Koridor pelabuhan",
+      },
+      en: {
+        searchNoun: "sample ports and sea routes",
+        resultTitle: "Sailing catalog results",
+        resultNoun: "sample sailings",
+        keywordLabel: "Port / route",
+        regionLabel: "Sea region",
+        groupLabel: "Sailing type",
+        locationLabel: "Port corridor",
+      },
+    },
     items: [
       {
         id: "ship-merak-bakauheni",
@@ -300,6 +420,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari itinerary cruise dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "itinerary dan cabin cruise contoh",
+        resultTitle: "Hasil katalog itinerary",
+        resultNoun: "itinerary contoh",
+        keywordLabel: "Itinerary / cruise",
+        regionLabel: "Region pelayaran",
+        groupLabel: "Tipe cruise",
+        locationLabel: "Jalur itinerary",
+      },
+      en: {
+        searchNoun: "sample cruise itineraries and cabins",
+        resultTitle: "Itinerary catalog results",
+        resultNoun: "sample itineraries",
+        keywordLabel: "Itinerary / cruise",
+        regionLabel: "Sailing region",
+        groupLabel: "Cruise type",
+        locationLabel: "Itinerary route",
+      },
+    },
     items: [
       {
         id: "cruise-singapore-penang",
@@ -353,6 +493,26 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari aktivitas dummy atau destinasi",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    uiCopy: {
+      id: {
+        searchNoun: "atraksi dan aktivitas contoh",
+        resultTitle: "Hasil katalog aktivitas",
+        resultNoun: "aktivitas contoh",
+        keywordLabel: "Aktivitas / destinasi",
+        regionLabel: "Region pengalaman",
+        groupLabel: "Tipe aktivitas",
+        locationLabel: "Lokasi aktivitas",
+      },
+      en: {
+        searchNoun: "sample attractions and activities",
+        resultTitle: "Activity catalog results",
+        resultNoun: "sample activities",
+        keywordLabel: "Activity / destination",
+        regionLabel: "Experience region",
+        groupLabel: "Activity type",
+        locationLabel: "Activity location",
+      },
+    },
     items: [
       {
         id: "activity-bali-atv",

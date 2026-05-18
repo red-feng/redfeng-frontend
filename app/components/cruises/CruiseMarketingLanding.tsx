@@ -27,7 +27,7 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
       eyebrow: "CRUISE JOURNEYS",
       title: "Temukan itinerary cruise pilihan untuk perjalanan laut yang lebih berkesan",
       body: "Cari cruise, lihat promo itinerary premium, dan susun pelayaran keluarga atau luxury escape dalam satu pengalaman yang rapi.",
-      searchButton: "Cari Cruise",
+      searchButton: "Lihat Katalog",
       benefitTitle: ["Itinerary premium", "Cabin terpercaya", "Family & luxury siap", "Mudah tumbuh ke inventory live"],
       benefitBody: [
         "Rute cruise dan jenis itinerary terasa lebih terarah sejak fold pertama.",
@@ -43,13 +43,13 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
       seeAll: "Lihat semua rute",
       fromLabel: "Mulai dari",
       recommendationTitle: "Pilihan Cruise RedFeng",
-      stickyLabel: "Buka promo cruise",
+      stickyLabel: "Buka katalog cruise",
     },
     en: {
       eyebrow: "CRUISE JOURNEYS",
       title: "Discover selected cruise itineraries for more memorable sea journeys",
       body: "Search cruises, explore premium itinerary promos, and plan family sailings or luxury escapes in one polished experience.",
-      searchButton: "Search Cruises",
+      searchButton: "View Catalog",
       benefitTitle: ["Premium itineraries", "Trusted cabins", "Family & luxury ready", "Easy to grow into live inventory"],
       benefitBody: [
         "Cruise routes and itinerary types feel clearer from the first fold.",
@@ -65,13 +65,13 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
       seeAll: "View all routes",
       fromLabel: "Starting from",
       recommendationTitle: "RedFeng Cruise Picks",
-      stickyLabel: "Open cruise promos",
+      stickyLabel: "Open cruise catalog",
     },
     zh: {
       eyebrow: "CRUISE JOURNEYS",
       title: "让邮轮页也进入与 /packages 相同的落地页家族",
       body: "邮轮页现在继续使用同样的结构：完整 hero、浮动搜索卡、优惠区、热门路线与更高级的推荐 section。",
-      searchButton: "搜索邮轮",
+      searchButton: "查看目录",
       benefitTitle: ["高端航线", "可信舱房", "家庭与豪华已准备好", "方便扩展到实时库存"],
       benefitBody: [
         "邮轮路线与 itinerary 类型从首屏开始就更清晰。",
@@ -87,7 +87,7 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
       seeAll: "查看全部路线",
       fromLabel: "起价",
       recommendationTitle: "RedFeng 精选邮轮",
-      stickyLabel: "打开邮轮优惠",
+      stickyLabel: "打开邮轮目录",
     },
   }[locale]
   const copy =
@@ -96,7 +96,7 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
           ...baseCopy,
           title: "发现精选邮轮行程，让海上假期更难忘",
           body: "搜索邮轮、查看高端行程优惠，并在一个精致页面中规划家庭航程或奢享海上假期。",
-          searchButton: "搜索邮轮",
+          searchButton: "查看目录",
           benefitTitle: ["高端航线", "可信舱房", "家庭与豪华已准备好", "便于扩展到实时库存"],
           benefitBody: [
             "邮轮路线与 itinerary 类型从首屏开始就更清晰。",
@@ -112,7 +112,7 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
           seeAll: "查看全部路线",
           fromLabel: "起价",
           recommendationTitle: "RedFeng 精选邮轮",
-          stickyLabel: "打开邮轮优惠",
+          stickyLabel: "打开邮轮目录",
         }
       : baseCopy
 
@@ -229,7 +229,7 @@ export default async function CruiseMarketingLanding({ searchParams }: CruiseMar
         <HomeNewsletterSection locale={locale} redirectPath="/kapal-pesiar" successMessage={searchParams?.newsletter_success} errorMessage={searchParams?.newsletter_error} />
       </div>
       <HomeFooter locale={locale} />
-      <PublicStickyAction locale={locale} href="/kapal-pesiar#cruise-promo" label={copy.stickyLabel} summary={copy.title} />
+      <PublicStickyAction locale={locale} href="/kapal-pesiar/catalog" label={copy.stickyLabel} summary={copy.title} />
       <PublicMobileNav locale={locale} />
     </div>
   )
