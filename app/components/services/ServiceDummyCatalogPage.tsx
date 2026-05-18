@@ -156,7 +156,7 @@ export default async function ServiceDummyCatalogPage({
         <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
           <div className="relative min-h-[430px] px-5 pb-6 pt-[104px] sm:min-h-[480px] sm:px-6 sm:pb-7 sm:pt-[118px] lg:min-h-[530px] lg:px-8 lg:pb-8 lg:pt-[130px]">
             <Image
-              src="/home-assets/background-package-mobile.png"
+              src={catalog.visualTheme.heroMobileImage}
               alt={`${service.shortLabel} dummy catalog hero`}
               fill
               priority
@@ -164,14 +164,14 @@ export default async function ServiceDummyCatalogPage({
               className="object-cover object-center sm:hidden"
             />
             <Image
-              src="/home-assets/background-package-web.png"
+              src={catalog.visualTheme.heroDesktopImage}
               alt={`${service.shortLabel} dummy catalog hero`}
               fill
               priority
               sizes="(max-width: 1440px) 100vw, 1280px"
               className="hidden object-cover object-center sm:block"
             />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.97)_0%,rgba(255,248,241,0.88)_30%,rgba(255,244,235,0.54)_58%,rgba(255,243,236,0.14)_100%)]" />
+            <div className={`absolute inset-0 ${catalog.visualTheme.heroOverlayClass}`} />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/20 to-transparent" />
 
             <div className="relative grid h-full gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
@@ -187,7 +187,7 @@ export default async function ServiceDummyCatalogPage({
                   <span className={`inline-flex rounded-full border px-3 py-1.5 font-semibold ${getServiceAvailabilityTone(service.availability)}`}>
                     {getServiceAvailabilityLabel(service.availability, locale)}
                   </span>
-                  <span className="inline-flex rounded-full border border-orange-200 bg-white/85 px-3 py-1.5 font-semibold text-orange-600">
+                  <span className={`inline-flex rounded-full border px-3 py-1.5 font-semibold ${catalog.visualTheme.accentBadgeClass}`}>
                     {copy.dummyBadge}
                   </span>
                 </div>
@@ -296,7 +296,7 @@ export default async function ServiceDummyCatalogPage({
       <section className={`${homeLayoutLock.pageXClass} pb-10 pt-6 md:pb-14`}>
         <div className={`${homeLayoutLock.contentWidthClass} grid gap-6 lg:grid-cols-[300px_1fr]`}>
           <aside className="space-y-4">
-            <div className="rounded-[28px] border border-[#f0dfd2] bg-[linear-gradient(180deg,#fffdfb_0%,#fff7ef_100%)] p-5 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.16)]">
+            <div className={`rounded-[28px] border p-5 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.16)] ${catalog.visualTheme.resultPanelClass}`}>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">{copy.resultTitle}</p>
               <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">{copy.resultCount}</p>
               <p className="mt-2 text-sm leading-7 text-slate-600">{copy.supportBody}</p>
@@ -362,7 +362,7 @@ export default async function ServiceDummyCatalogPage({
                       sizes="(max-width: 767px) 100vw, 280px"
                       className="object-cover"
                     />
-                    <div className="absolute left-3 top-3 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-orange-600 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:text-[11px]">
+                    <div className={`absolute left-3 top-3 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:text-[11px] ${catalog.visualTheme.accentBadgeClass}`}>
                       {copy.dummyBadge}
                     </div>
                   </div>
@@ -374,12 +374,17 @@ export default async function ServiceDummyCatalogPage({
                     <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{copy.locationLabel}</p>
                     <p className="mt-1 text-[12px] text-slate-500 sm:text-sm">{item.location}</p>
 
-                    <div className="mt-4 flex flex-wrap gap-2 text-[10px] sm:text-xs">
-                      <span className="rounded-full bg-orange-50 px-3 py-1.5 font-medium text-orange-700">{item.region}</span>
-                      <span className="rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700">{item.group}</span>
-                      {item.highlights.slice(0, 2).map((highlight) => (
-                        <span key={highlight} className="rounded-full bg-amber-50 px-3 py-1.5 font-medium text-amber-700">
-                          {highlight}
+                     <div className="mt-4 flex flex-wrap gap-2 text-[10px] sm:text-xs">
+                       <span className="rounded-full bg-orange-50 px-3 py-1.5 font-medium text-orange-700">{item.region}</span>
+                       <span className="rounded-full bg-slate-100 px-3 py-1.5 font-medium text-slate-700">{item.group}</span>
+                       {item.facts.slice(0, 2).map((fact) => (
+                         <span key={`${item.id}-${fact.label}`} className="rounded-full bg-white px-3 py-1.5 font-medium text-slate-700 ring-1 ring-slate-200">
+                           {fact.label}: {fact.value}
+                         </span>
+                       ))}
+                       {item.highlights.slice(0, 2).map((highlight) => (
+                         <span key={highlight} className="rounded-full bg-amber-50 px-3 py-1.5 font-medium text-amber-700">
+                           {highlight}
                         </span>
                       ))}
                     </div>
@@ -393,6 +398,14 @@ export default async function ServiceDummyCatalogPage({
                       <p className="text-sm text-slate-500">{copy.rightTitle}</p>
                       <p className="mt-2 text-lg font-semibold text-slate-950">{copy.dummyBadge}</p>
                       <p className="mt-2 text-sm leading-7 text-slate-500">{item.group}</p>
+                      <div className="mt-4 space-y-2">
+                        {item.facts.map((fact) => (
+                          <div key={`${item.id}-side-${fact.label}`} className="rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2 text-left text-sm text-slate-600 md:text-right">
+                            <span className="font-semibold text-slate-900">{fact.value}</span>
+                            <span className="ml-2 text-slate-500">{fact.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="mt-4 space-y-3 md:mt-6">

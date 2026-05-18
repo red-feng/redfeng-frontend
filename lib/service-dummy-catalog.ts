@@ -17,6 +17,10 @@ export type DummyCatalogItem = {
   availabilityNote: string
   statusNote: string
   highlights: string[]
+  facts: {
+    label: string
+    value: string
+  }[]
 }
 
 export type DummyServiceCatalog = {
@@ -25,6 +29,13 @@ export type DummyServiceCatalog = {
   searchPlaceholder: string
   supportHref: string
   promoHref: string
+  visualTheme: {
+    heroMobileImage: string
+    heroDesktopImage: string
+    heroOverlayClass: string
+    accentBadgeClass: string
+    resultPanelClass: string
+  }
   uiCopy: {
     id: {
       searchNoun: string
@@ -55,6 +66,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute, kota, atau maskapai dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/hero-bg.png",
+      heroDesktopImage: "/home-assets/promo-flight.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(240,248,255,0.96)_0%,rgba(239,246,255,0.88)_30%,rgba(219,234,254,0.45)_60%,rgba(239,246,255,0.1)_100%)]",
+      accentBadgeClass: "border-sky-200 bg-sky-50/92 text-sky-700",
+      resultPanelClass: "border-sky-100 bg-[linear-gradient(180deg,#f6fbff_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "rute dan maskapai contoh",
@@ -86,6 +105,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog rute populer untuk fondasi flight-ready.",
         statusNote: "Belum checkout live, siap dipakai untuk validasi route dan promo checkout nanti.",
         highlights: ["Garuda / Citilink mix", "Pagi - siang", "Economy focus"],
+        facts: [
+          { label: "Route code", value: "CGK-DPS" },
+          { label: "Cabin", value: "Economy" },
+          { label: "Window", value: "Morning" },
+        ],
       },
       {
         id: "flight-cgk-sin",
@@ -97,6 +121,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy inventory untuk contoh city pair internasional.",
         statusNote: "Cocok untuk sambungan fare class, airline targeting, dan promo regional.",
         highlights: ["Business cabin", "Weekday demand", "Regional traffic"],
+        facts: [
+          { label: "Route code", value: "CGK-SIN" },
+          { label: "Cabin", value: "Business" },
+          { label: "Pattern", value: "Weekday" },
+        ],
       },
       {
         id: "flight-sub-bpn",
@@ -108,6 +137,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh rute operasional dengan pola corporate.",
         statusNote: "Bisa dipakai untuk menguji trip type, return date, dan quota user.",
         highlights: ["Round-trip", "Corporate need", "Short stay"],
+        facts: [
+          { label: "Route code", value: "SUB-BPN" },
+          { label: "Trip type", value: "Round-trip" },
+          { label: "Use case", value: "Corporate" },
+        ],
       },
       {
         id: "flight-dps-kul",
@@ -119,6 +153,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy route untuk promo lintas destinasi favorit.",
         statusNote: "Belum live, tapi sudah cocok untuk rule airline, cabin, dan departure window.",
         highlights: ["Weekend peak", "Leisure demand", "Promo-friendly"],
+        facts: [
+          { label: "Route code", value: "DPS-KUL" },
+          { label: "Cabin", value: "Economy" },
+          { label: "Demand", value: "Leisure" },
+        ],
       },
     ],
   },
@@ -128,6 +167,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari kota, area, atau hotel dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/card-hotel-1.png",
+      heroDesktopImage: "/home-assets/promo-hotel.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(255,249,245,0.97)_0%,rgba(255,247,237,0.9)_30%,rgba(254,215,170,0.34)_60%,rgba(255,247,237,0.1)_100%)]",
+      accentBadgeClass: "border-amber-200 bg-amber-50/92 text-amber-700",
+      resultPanelClass: "border-amber-100 bg-[linear-gradient(180deg,#fffaf2_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "properti dan area contoh",
@@ -159,6 +206,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog hotel leisure dengan city targeting.",
         statusNote: "Belum inventory live, tapi siap untuk city, star rating, check-in, dan durasi inap.",
         highlights: ["4 star", "Family stay", "Beach corridor"],
+        facts: [
+          { label: "Star", value: "4 star" },
+          { label: "Stay cue", value: "Family" },
+          { label: "Area", value: "Beach" },
+        ],
       },
       {
         id: "hotel-jakarta-business",
@@ -170,6 +222,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy properti untuk kebutuhan weekday dan corporate stay.",
         statusNote: "Bisa dipakai untuk menguji nightly stay, payment method targeting, dan hotel city code.",
         highlights: ["Weekday booking", "Business area", "Breakfast included"],
+        facts: [
+          { label: "Star", value: "4 star" },
+          { label: "Stay cue", value: "Business" },
+          { label: "Meal", value: "Breakfast" },
+        ],
       },
       {
         id: "hotel-singapore-city",
@@ -181,6 +238,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog internasional dengan positioning urban stay.",
         statusNote: "Fondasi hotel-ready untuk country targeting dan stay window lintas negara.",
         highlights: ["5 star", "Urban trip", "Short break"],
+        facts: [
+          { label: "Star", value: "5 star" },
+          { label: "Stay cue", value: "Urban" },
+          { label: "Trip", value: "Short break" },
+        ],
       },
       {
         id: "hotel-tokyo-compact",
@@ -192,6 +254,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy unit untuk kebutuhan short stay dan city explorer.",
         statusNote: "Belum live, tetapi struktur checkout hotel nanti bisa memakai shape data yang sama.",
         highlights: ["3 star", "Transit stay", "Metro access"],
+        facts: [
+          { label: "Star", value: "3 star" },
+          { label: "Stay cue", value: "Transit" },
+          { label: "Access", value: "Metro" },
+        ],
       },
     ],
   },
@@ -201,6 +268,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute atau layanan kereta dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/card-train.png",
+      heroDesktopImage: "/home-assets/card-train.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(248,250,252,0.97)_0%,rgba(241,245,249,0.9)_30%,rgba(191,219,254,0.32)_60%,rgba(241,245,249,0.1)_100%)]",
+      accentBadgeClass: "border-indigo-200 bg-indigo-50/92 text-indigo-700",
+      resultPanelClass: "border-indigo-100 bg-[linear-gradient(180deg,#f8faff_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "jalur dan layanan kereta contoh",
@@ -232,6 +307,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog cepat untuk rute high-demand.",
         statusNote: "Belum seat live, cocok untuk fondasi jadwal, kelas, dan promo jalur populer.",
         highlights: ["WHOOSH", "Premium economy", "Same-day trip"],
+        facts: [
+          { label: "Service", value: "WHOOSH" },
+          { label: "Class", value: "Premium" },
+          { label: "Pattern", value: "Same-day" },
+        ],
       },
       {
         id: "train-gambir-yogya",
@@ -243,6 +323,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy rute klasik untuk long-distance train catalog.",
         statusNote: "Bisa dipakai untuk menyusun layer operator, class targeting, dan departure timing.",
         highlights: ["Night route", "Executive focus", "Leisure mix"],
+        facts: [
+          { label: "Service", value: "Executive" },
+          { label: "Timing", value: "Night" },
+          { label: "Use case", value: "Leisure" },
+        ],
       },
       {
         id: "train-sby-mlg",
@@ -254,6 +339,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh layanan pendek untuk komuter dan keluarga.",
         statusNote: "Fondasi dummy untuk route regional dan volume transaksi kecil-menengah.",
         highlights: ["Short hop", "Daily repeat", "Budget-friendly"],
+        facts: [
+          { label: "Service", value: "Commuter" },
+          { label: "Pattern", value: "Daily" },
+          { label: "Fare cue", value: "Budget" },
+        ],
       },
       {
         id: "train-jkt-solo",
@@ -265,6 +355,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy jalur keluarga dengan pola liburan.",
         statusNote: "Belum live, namun siap menjadi anchor untuk promo seasonal kereta.",
         highlights: ["Holiday demand", "Family cabin", "Weekend heavy"],
+        facts: [
+          { label: "Service", value: "Family" },
+          { label: "Demand", value: "Holiday" },
+          { label: "Pattern", value: "Weekend" },
+        ],
       },
     ],
   },
@@ -274,6 +369,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari rute atau operator bus dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/hero-reference.png",
+      heroDesktopImage: "/home-assets/hero-bg.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(247,254,231,0.97)_0%,rgba(236,253,245,0.88)_30%,rgba(134,239,172,0.28)_60%,rgba(236,253,245,0.08)_100%)]",
+      accentBadgeClass: "border-emerald-200 bg-emerald-50/92 text-emerald-700",
+      resultPanelClass: "border-emerald-100 bg-[linear-gradient(180deg,#f3fff8_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "operator dan koridor bus contoh",
@@ -305,6 +408,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog sleeper dan premium coach.",
         statusNote: "Belum operator live, siap untuk fondasi jadwal, operator, dan rute.",
         highlights: ["Sleeper seat", "Night route", "High frequency"],
+        facts: [
+          { label: "Operator cue", value: "Sleeper" },
+          { label: "Timing", value: "Night" },
+          { label: "Pattern", value: "Frequent" },
+        ],
       },
       {
         id: "bus-sby-yk",
@@ -316,6 +424,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy operator antarkota untuk contoh route map.",
         statusNote: "Cocok untuk pengujian harga operator, pickup point, dan waktu berangkat.",
         highlights: ["Pickup point", "Mid-tier fare", "Student demand"],
+        facts: [
+          { label: "Operator cue", value: "Intercity" },
+          { label: "Fare cue", value: "Mid-tier" },
+          { label: "Audience", value: "Student" },
+        ],
       },
       {
         id: "bus-medan-aceh",
@@ -327,6 +440,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh lintas provinsi untuk ekspansi beyond Jawa.",
         statusNote: "Belum live, tetapi struktur katalog dummy ini siap untuk operator regional.",
         highlights: ["Long haul", "Regional operator", "Overnight"],
+        facts: [
+          { label: "Operator cue", value: "Regional" },
+          { label: "Trip", value: "Long haul" },
+          { label: "Pattern", value: "Overnight" },
+        ],
       },
       {
         id: "bus-bali-labuanbajo",
@@ -338,6 +456,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy travel combo untuk rute wisata.",
         statusNote: "Berguna untuk menguji packaging bus + aktivitas pada tahap berikutnya.",
         highlights: ["Travel combo", "Leisure route", "Seasonal"],
+        facts: [
+          { label: "Operator cue", value: "Travel combo" },
+          { label: "Route style", value: "Leisure" },
+          { label: "Season", value: "Peak" },
+        ],
       },
     ],
   },
@@ -347,6 +470,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari pelabuhan atau rute kapal dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/hero-reference.png",
+      heroDesktopImage: "/home-assets/dest-singapore.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(239,248,255,0.97)_0%,rgba(224,242,254,0.9)_30%,rgba(125,211,252,0.3)_60%,rgba(224,242,254,0.08)_100%)]",
+      accentBadgeClass: "border-cyan-200 bg-cyan-50/92 text-cyan-700",
+      resultPanelClass: "border-cyan-100 bg-[linear-gradient(180deg,#f2fcff_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "pelabuhan dan rute laut contoh",
@@ -378,6 +509,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog penyeberangan ramai dengan pola harian.",
         statusNote: "Belum live, tapi siap untuk struktur pelabuhan, trip window, dan operator.",
         highlights: ["Daily crossing", "Vehicle-ready", "Peak holiday"],
+        facts: [
+          { label: "Port mode", value: "Fast ferry" },
+          { label: "Vehicle", value: "Ready" },
+          { label: "Pattern", value: "Daily" },
+        ],
       },
       {
         id: "ship-bali-lombok",
@@ -389,6 +525,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy rute wisata bahari untuk perjalanan pendek.",
         statusNote: "Cocok menjadi dasar promo regional dan penargetan musim liburan.",
         highlights: ["Short crossing", "Tourist route", "Weekend demand"],
+        facts: [
+          { label: "Port mode", value: "Leisure ferry" },
+          { label: "Trip", value: "Short" },
+          { label: "Demand", value: "Weekend" },
+        ],
       },
       {
         id: "ship-surabaya-makassar",
@@ -400,6 +541,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh rute jarak jauh untuk katalog antarpulau.",
         statusNote: "Belum ticketing live, siap untuk fondasi jadwal multi-day dan cabin basic.",
         highlights: ["Long haul", "Cabin mix", "Logistics corridor"],
+        facts: [
+          { label: "Port mode", value: "Sea route" },
+          { label: "Cabin", value: "Basic mix" },
+          { label: "Trip", value: "Multi-day" },
+        ],
       },
       {
         id: "ship-batam-bintan",
@@ -411,6 +557,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy island shuttle untuk kebutuhan short transfer.",
         statusNote: "Berguna untuk fondasi transfer harbor dan opsi multi-operator.",
         highlights: ["Short transfer", "Island hop", "Frequent departure"],
+        facts: [
+          { label: "Port mode", value: "Island shuttle" },
+          { label: "Transfer", value: "Short" },
+          { label: "Pattern", value: "Frequent" },
+        ],
       },
     ],
   },
@@ -420,6 +571,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari itinerary cruise dummy",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/hero-header-background-1.jpg",
+      heroDesktopImage: "/home-assets/hero-header-background-1.jpg",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(255,247,250,0.96)_0%,rgba(253,242,248,0.88)_30%,rgba(244,114,182,0.22)_60%,rgba(253,242,248,0.08)_100%)]",
+      accentBadgeClass: "border-rose-200 bg-rose-50/92 text-rose-700",
+      resultPanelClass: "border-rose-100 bg-[linear-gradient(180deg,#fff5f9_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "itinerary dan cabin cruise contoh",
@@ -451,6 +610,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh itinerary pendek untuk premium leisure.",
         statusNote: "Belum live, tetapi siap untuk cabin class, sail date, dan promo seasonal.",
         highlights: ["3D2N", "Balcony mix", "Weekend getaway"],
+        facts: [
+          { label: "Nights", value: "3D2N" },
+          { label: "Cabin", value: "Balcony" },
+          { label: "Style", value: "Weekend" },
+        ],
       },
       {
         id: "cruise-bali-komodo",
@@ -462,6 +626,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy itinerary premium untuk jalur wisata unggulan.",
         statusNote: "Bisa jadi fondasi paket hybrid cruise + aktivitas pada fase berikutnya.",
         highlights: ["Luxury route", "Island view", "Premium cabin"],
+        facts: [
+          { label: "Nights", value: "4D3N" },
+          { label: "Cabin", value: "Premium" },
+          { label: "Style", value: "Scenic" },
+        ],
       },
       {
         id: "cruise-shanghai-okinawa",
@@ -473,6 +642,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh itinerary lintas negara untuk cruise seasonal.",
         statusNote: "Belum live, cocok untuk promosi window-based dan cabin targeting.",
         highlights: ["Seasonal run", "International", "Family cruise"],
+        facts: [
+          { label: "Nights", value: "5D4N" },
+          { label: "Cabin", value: "Family" },
+          { label: "Style", value: "Seasonal" },
+        ],
       },
       {
         id: "cruise-japan-spring",
@@ -484,6 +658,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy thematic sailing untuk promosi kalender musiman.",
         statusNote: "Berguna untuk menguji landing premium dan summary itinerary multi-stop.",
         highlights: ["Cherry season", "Multi-stop", "Premium positioning"],
+        facts: [
+          { label: "Nights", value: "6D5N" },
+          { label: "Cabin", value: "Premium" },
+          { label: "Style", value: "Theme" },
+        ],
       },
     ],
   },
@@ -493,6 +672,14 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
     searchPlaceholder: "Cari aktivitas dummy atau destinasi",
     supportHref: "/bantuan",
     promoHref: "/promo",
+    visualTheme: {
+      heroMobileImage: "/home-assets/dest-bali.png",
+      heroDesktopImage: "/home-assets/dest-bangkok.png",
+      heroOverlayClass:
+        "bg-[linear-gradient(90deg,rgba(255,251,235,0.97)_0%,rgba(255,247,237,0.88)_30%,rgba(251,191,36,0.26)_60%,rgba(255,247,237,0.08)_100%)]",
+      accentBadgeClass: "border-orange-200 bg-orange-50/92 text-orange-700",
+      resultPanelClass: "border-orange-100 bg-[linear-gradient(180deg,#fff8f1_0%,#ffffff_100%)]",
+    },
     uiCopy: {
       id: {
         searchNoun: "atraksi dan aktivitas contoh",
@@ -524,6 +711,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh katalog atraksi luar ruang dengan voucher flow.",
         statusNote: "Belum voucher live, siap untuk fondasi instant redeem dan date window.",
         highlights: ["Outdoor", "Voucher-ready", "Half-day"],
+        facts: [
+          { label: "Voucher", value: "Ready" },
+          { label: "Duration", value: "Half-day" },
+          { label: "Mode", value: "Outdoor" },
+        ],
       },
       {
         id: "activity-jakarta-observatory",
@@ -535,6 +727,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy tiket atraksi urban untuk city break.",
         statusNote: "Cocok untuk penargetan date slot, quota per user, dan promo kode.",
         highlights: ["Urban attraction", "Timed entry", "Family-friendly"],
+        facts: [
+          { label: "Voucher", value: "Timed entry" },
+          { label: "Audience", value: "Family" },
+          { label: "Mode", value: "City" },
+        ],
       },
       {
         id: "activity-bangkok-food-tour",
@@ -546,6 +743,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Contoh aktivitas terkurasi untuk short guided tour.",
         statusNote: "Belum live, tetapi shape data dummy ini siap untuk supplier aktivitas nanti.",
         highlights: ["Night tour", "Guide included", "Small group"],
+        facts: [
+          { label: "Voucher", value: "Guide-included" },
+          { label: "Duration", value: "Evening" },
+          { label: "Mode", value: "Small group" },
+        ],
       },
       {
         id: "activity-tokyo-pass",
@@ -557,6 +759,11 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         availabilityNote: "Dummy city pass untuk use case voucher multi-visit.",
         statusNote: "Siap menjadi dasar katalog aktivitas instan setelah supplier live disambungkan.",
         highlights: ["City pass", "Multi-entry", "Traveler favorite"],
+        facts: [
+          { label: "Voucher", value: "Multi-entry" },
+          { label: "Duration", value: "Flexible" },
+          { label: "Mode", value: "City pass" },
+        ],
       },
     ],
   },
