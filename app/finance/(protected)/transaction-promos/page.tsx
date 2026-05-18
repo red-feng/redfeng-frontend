@@ -6,6 +6,7 @@ import {
   getTransactionPromoModeLabel,
   getTransactionPromoStatusLabel,
 } from "@/lib/transaction-promos"
+import { getTransactionPromoTargetBadgeClass, getTransactionPromoTargetBadges } from "@/lib/transaction-promo-targeting"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { getTransactionPromoAnalyticsSummary } from "@/lib/transaction-promo-analytics"
@@ -114,6 +115,7 @@ export default async function FinanceTransactionPromosPage({
   const rules = ((ruleData as TransactionPromoRule[] | null) || [])
     .map((rule) => {
       const targets = Array.isArray(rule.transaction_promo_rule_targets) ? rule.transaction_promo_rule_targets : []
+      const primaryTarget = targets[0] || null
       const productTypes = Array.from(
         new Set(
           targets
@@ -126,7 +128,12 @@ export default async function FinanceTransactionPromosPage({
       }>)
         .map((entry) => entry.marketing_promos || null)
         .filter((campaign): campaign is { id: string | null; slug: string | null; title_id: string | null; status: string | null } => Boolean(campaign)))
-      return { ...rule, targets, productTypes, linkedCampaigns }
+      const targetBadges = getTransactionPromoTargetBadges(primaryTarget, {
+        includePaymentMethod: true,
+        includeMerchant: true,
+        includeLocale: true,
+      })
+      return { ...rule, targets, primaryTarget, productTypes, linkedCampaigns, targetBadges }
     })
     .filter((rule) => {
       if (paymentMethodFilter && !rule.targets.some((target) => String(target.payment_method || "").trim().toLowerCase().includes(paymentMethodFilter))) {
@@ -389,9 +396,9 @@ export default async function FinanceTransactionPromosPage({
                         {rule.linkedCampaigns.length} campaign terkait
                       </span>
                     ) : null}
-                    {rule.targets[0]?.channel ? (
+                    {rule.primaryTarget?.channel ? (
                       <span className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">
-                        {getTransactionPromoChannelLabel(rule.targets[0].channel)}
+                        {getTransactionPromoChannelLabel(rule.primaryTarget.channel)}
                       </span>
                     ) : null}
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
@@ -400,61 +407,14 @@ export default async function FinanceTransactionPromosPage({
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
                       Diskon {formatDiscount(rule.discount_type, rule.discount_value, rule.max_discount_amount)}
                     </span>
-                    {rule.targets[0]?.payment_method ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
-                        Bayar {rule.targets[0].payment_method}
+                    {rule.targetBadges.map((badge) => (
+                      <span
+                        key={badge.key}
+                        className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${getTransactionPromoTargetBadgeClass(badge.tone)}`}
+                      >
+                        {badge.label}
                       </span>
-                    ) : null}
-                    {rule.targets[0]?.origin_airport_code || rule.targets[0]?.destination_airport_code ? (
-                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                        Route {(rule.targets[0]?.origin_airport_code || "ANY").toUpperCase()}-{(rule.targets[0]?.destination_airport_code || "ANY").toUpperCase()}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.airline_code ? (
-                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                        Airline {rule.targets[0].airline_code}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.cabin_class ? (
-                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                        Cabin {rule.targets[0].cabin_class}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.trip_type ? (
-                      <span className="rounded-full bg-cyan-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
-                        Trip {rule.targets[0].trip_type}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.hotel_city_code ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        City {rule.targets[0].hotel_city_code}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.hotel_country_code ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        Country {rule.targets[0].hotel_country_code}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.hotel_star_rating ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        Star {rule.targets[0].hotel_star_rating}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.hotel_min_night_count || rule.targets[0]?.hotel_max_night_count ? (
-                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
-                        Night {(rule.targets[0]?.hotel_min_night_count || "1")}-{rule.targets[0]?.hotel_max_night_count || "ANY"}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.merchant_id ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
-                        Merchant {shortId(rule.targets[0].merchant_id)}
-                      </span>
-                    ) : null}
-                    {rule.targets[0]?.customer_locale ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-700">
-                        Locale {rule.targets[0].customer_locale}
-                      </span>
-                    ) : null}
+                    ))}
                     {rule.new_user_only ? (
                       <span className="rounded-full bg-amber-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
                         Customer baru saja

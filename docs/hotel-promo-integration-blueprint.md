@@ -1,4 +1,4 @@
-# Hotel Promo Integration Blueprint
+saya# Hotel Promo Integration Blueprint
 
 Dokumen ini menjelaskan jalur sambungan promo transaksi RedFeng untuk produk `hotel` sebelum katalog dan checkout customer live penuh.
 
