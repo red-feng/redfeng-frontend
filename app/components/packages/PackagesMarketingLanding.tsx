@@ -205,7 +205,7 @@ export default async function PackagesMarketingLanding({ searchParams }: Package
 
             <div className="relative z-10 max-w-[600px] pt-10 sm:pt-11 lg:pt-14">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
-              <h1 className="mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]">
+              <h1 className={homeLayoutLock.marketingHeroTitleClass}>
                 {copy.title}
               </h1>
               <p className="mt-4 max-w-[500px] text-[13px] leading-6 text-slate-700 sm:mt-4 sm:text-[14px] sm:leading-7 lg:max-w-[520px] lg:text-[15px] lg:leading-7">

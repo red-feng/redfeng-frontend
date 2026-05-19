@@ -138,7 +138,7 @@ export default async function ShipMarketingLanding({ searchParams }: ShipMarketi
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_20%_62%,rgba(103,232,249,0.2),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.16),transparent_30%)]" />
             <div className="relative z-10 max-w-[600px] pt-12 sm:pt-12 lg:max-w-[560px] lg:pt-16">
               <p className="text-[12px] font-bold uppercase tracking-[0.32em] text-[#ef4423]">{copy.eyebrow}</p>
-              <h1 className="mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]">
+              <h1 className={homeLayoutLock.marketingHeroTitleClass}>
                 {copy.title}
               </h1>
               <p className="mt-4 max-w-[500px] text-[13px] leading-6 text-slate-700 sm:text-[14px] sm:leading-7 lg:max-w-[520px] lg:text-[15px] lg:leading-7">

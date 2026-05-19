@@ -99,7 +99,7 @@ function HeroIntro({ locale }: { locale: Locale }) {
   return (
     <div className="home-hero-intro relative z-10 flex justify-center pt-6 text-center lg:pt-1">
       <div className="home-hero-intro-shell max-w-[860px] pb-32 lg:min-h-[260px] lg:pb-0">
-        <h1 className="home-hero-title mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]">
+        <h1 className={`home-hero-title ${homeLayoutLock.homepageHeroTitleClass}`}>
           {copy.titleA}
           <span className="mt-2 block text-[#ff5a43]">{copy.titleB}</span>
         </h1>

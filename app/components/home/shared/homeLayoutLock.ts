@@ -8,4 +8,8 @@ export const homeLayoutLock = {
   cardRadiusClass: "rounded-[32px]",
   cardRadiusSmClass: "sm:rounded-[32px]",
   heroBackdropRadiusClass: "rounded-[40px] sm:rounded-[48px]",
+  marketingHeroTitleClass:
+    "mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[50px]",
+  homepageHeroTitleClass:
+    "mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[50px]",
 } as const
