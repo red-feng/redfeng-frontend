@@ -31,6 +31,52 @@ function filterItems(items: DummyCatalogItem[], keyword: string, region: string,
   })
 }
 
+function getHotelStayNights(checkin: string, checkout: string) {
+  const start = new Date(`${checkin}T00:00:00`)
+  const end = new Date(`${checkout}T00:00:00`)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000))
+}
+
+function filterHotelItems(
+  items: DummyCatalogItem[],
+  params: {
+    keyword: string
+    checkin: string
+    checkout: string
+    adults: string
+    children: string
+    rooms: string
+  },
+) {
+  const adults = Number(params.adults || "0")
+  const children = Number(params.children || "0")
+  const rooms = Math.max(1, Number(params.rooms || "1"))
+  const guests = adults + children
+  const nights = getHotelStayNights(params.checkin, params.checkout)
+  const hasStaySignal = Boolean(params.keyword || params.checkin || params.checkout || params.adults || params.children || params.rooms)
+  if (!hasStaySignal) return items
+
+  return items.filter((item) => {
+    const text = `${item.title} ${item.location} ${item.group} ${item.highlights.join(" ")} ${item.facts.map((fact) => `${fact.label} ${fact.value}`).join(" ")}`.toLowerCase()
+    const isCompact = item.id.includes("compact") || item.group.toLowerCase().includes("compact") || text.includes("transit")
+    const isBusiness = item.id.includes("business") || item.group.toLowerCase().includes("business") || text.includes("weekday")
+    const isFamily = text.includes("family") || text.includes("resort") || text.includes("beach")
+    const isUrban = text.includes("urban") || text.includes("city")
+
+    if (guests >= 4 && isCompact) return false
+    if (children > 0 && isCompact) return false
+    if (rooms >= 2 && isCompact) return false
+    if (nights >= 4 && (isCompact || isBusiness)) return false
+    if (nights >= 3 && isUrban && children > 0 && !isFamily) return false
+    if (guests <= 2 && nights <= 2) return true
+    if (children > 0) return isFamily || !isCompact
+    if (guests >= 3) return isFamily || isBusiness || isUrban
+    if (nights >= 3) return isFamily || isUrban
+    return true
+  })
+}
+
 function formatHotelStaySummary(params: {
   locale: string
   checkin: string
@@ -68,10 +114,7 @@ function formatHotelStaySummary(params: {
 }
 
 function getNightCount(checkin: string, checkout: string) {
-  const start = new Date(`${checkin}T00:00:00`)
-  const end = new Date(`${checkout}T00:00:00`)
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
-  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000))
+  return getHotelStayNights(checkin, checkout)
 }
 
 export default async function ServiceDummyCatalogPage({
@@ -94,7 +137,18 @@ export default async function ServiceDummyCatalogPage({
   const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
   const hotelChildren = firstQueryValue(resolvedSearchParams.children)
   const hotelRooms = firstQueryValue(resolvedSearchParams.rooms)
-  const filteredItems = filterItems(catalog.items, keyword, selectedRegion, selectedGroup)
+  const baseFilteredItems = filterItems(catalog.items, keyword, selectedRegion, selectedGroup)
+  const filteredItems =
+    slug === "hotel"
+      ? filterHotelItems(baseFilteredItems, {
+          keyword,
+          checkin: hotelCheckin,
+          checkout: hotelCheckout,
+          adults: hotelAdults,
+          children: hotelChildren,
+          rooms: hotelRooms,
+        })
+      : baseFilteredItems
   const availableRegions = [...new Set(catalog.items.map((item) => item.region))]
   const availableGroups = [...new Set(catalog.items.map((item) => item.group))]
   const catalogUiCopy = locale === "en" ? catalog.uiCopy.en : catalog.uiCopy.id
