@@ -60,7 +60,7 @@ export default async function SearchResultsPage({
       <SimplePublicLogoHeader />
 
       <section className={`${homeLayoutLock.pageXClass} pb-5 pt-5 md:pb-6 md:pt-7`}>
-        <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
+        <div className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.heroBackdropRadiusClass} overflow-hidden border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
           <div className="relative min-h-[360px] px-5 pb-3 pt-8 sm:min-h-[410px] sm:px-6 sm:pb-4 sm:pt-9 lg:min-h-[470px] lg:px-8 lg:pb-5 lg:pt-10">
             <Image
               src="/home-assets/background-hero-tour-package.png"

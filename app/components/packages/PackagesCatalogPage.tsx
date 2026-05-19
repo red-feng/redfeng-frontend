@@ -49,7 +49,7 @@ export default async function PackagesCatalogPage({
       <PublicHeader locale={locale} variant="overlay" />
 
       <section className={`${homeLayoutLock.pageXClass} pb-5 pt-2 md:pb-6 md:pt-3`}>
-        <div className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[32px] border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
+        <div className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.heroBackdropRadiusClass} overflow-hidden border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
           <div className="relative min-h-[420px] px-5 pb-3 pt-[104px] sm:min-h-[470px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[520px] lg:px-8 lg:pb-5 lg:pt-[130px]">
             <Image
               src="/home-assets/background-package-mobile.png"
