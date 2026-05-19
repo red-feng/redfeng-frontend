@@ -2,7 +2,7 @@ import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import type { HeroSearchProviderKey } from "@/app/components/home/web/hero/heroSearchProviders"
 
 const serviceHref = {
-  flight: "/pesawat/catalog",
+  flight: "/pesawat",
   hotel: "/hotel/catalog",
   train: "/kereta/catalog",
   bus: "/bus/catalog",
