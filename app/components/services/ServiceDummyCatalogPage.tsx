@@ -31,6 +31,49 @@ function filterItems(items: DummyCatalogItem[], keyword: string, region: string,
   })
 }
 
+function formatHotelStaySummary(params: {
+  locale: string
+  checkin: string
+  checkout: string
+  adults: string
+  children: string
+  rooms: string
+}) {
+  const adults = Number(params.adults || "0")
+  const children = Number(params.children || "0")
+  const rooms = Number(params.rooms || "0")
+  const nights = getNightCount(params.checkin, params.checkout)
+
+  if (params.locale === "en") {
+    return [
+      params.checkin && params.checkout ? `${params.checkin} to ${params.checkout}` : "",
+      adults || children || rooms ? `${adults} adults, ${children} children, ${rooms} rooms` : "",
+      nights > 0 ? `${nights} night${nights === 1 ? "" : "s"}` : "",
+    ].filter(Boolean)
+  }
+
+  if (params.locale === "zh") {
+    return [
+      params.checkin && params.checkout ? `${params.checkin} 至 ${params.checkout}` : "",
+      adults || children || rooms ? `${adults}位成人，${children}位儿童，${rooms}间房` : "",
+      nights > 0 ? `${nights}晚` : "",
+    ].filter(Boolean)
+  }
+
+  return [
+    params.checkin && params.checkout ? `${params.checkin} sampai ${params.checkout}` : "",
+    adults || children || rooms ? `${adults} dewasa, ${children} anak, ${rooms} kamar` : "",
+    nights > 0 ? `${nights} malam` : "",
+  ].filter(Boolean)
+}
+
+function getNightCount(checkin: string, checkout: string) {
+  const start = new Date(`${checkin}T00:00:00`)
+  const end = new Date(`${checkout}T00:00:00`)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86400000))
+}
+
 export default async function ServiceDummyCatalogPage({
   slug,
   searchParams,
@@ -46,10 +89,26 @@ export default async function ServiceDummyCatalogPage({
   const keyword = firstQueryValue(resolvedSearchParams.q)
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
+  const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
+  const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
+  const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
+  const hotelChildren = firstQueryValue(resolvedSearchParams.children)
+  const hotelRooms = firstQueryValue(resolvedSearchParams.rooms)
   const filteredItems = filterItems(catalog.items, keyword, selectedRegion, selectedGroup)
   const availableRegions = [...new Set(catalog.items.map((item) => item.region))]
   const availableGroups = [...new Set(catalog.items.map((item) => item.group))]
   const catalogUiCopy = locale === "en" ? catalog.uiCopy.en : catalog.uiCopy.id
+  const hotelSummaryLines =
+    slug === "hotel"
+      ? formatHotelStaySummary({
+          locale,
+          checkin: hotelCheckin,
+          checkout: hotelCheckout,
+          adults: hotelAdults,
+          children: hotelChildren,
+          rooms: hotelRooms,
+        })
+      : []
 
   const copy = {
     id: {
@@ -336,6 +395,25 @@ export default async function ServiceDummyCatalogPage({
           </aside>
 
           <div className="space-y-5">
+            {slug === "hotel" && (keyword || hotelSummaryLines.length > 0) ? (
+              <div className="rounded-[28px] border border-[#efe3d8] bg-[linear-gradient(180deg,#fffdfb_0%,#fff8f2_100%)] p-5 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.14)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">
+                  {locale === "en" ? "Stay search summary" : locale === "zh" ? "住宿搜索摘要" : "Ringkasan pencarian stay"}
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  {keyword ? (
+                    <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200">
+                      {locale === "en" ? "Destination" : locale === "zh" ? "目的地" : "Destinasi"}: {keyword}
+                    </span>
+                  ) : null}
+                  {hotelSummaryLines.map((line) => (
+                    <span key={line} className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700">
+                      {line}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {filteredItems.length === 0 ? (
               <div className="rounded-[30px] border border-[#f0dfd2] bg-white p-8 shadow-[0_22px_52px_-40px_rgba(15,23,42,0.18)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-orange-500">{copy.dummyBadge}</p>
