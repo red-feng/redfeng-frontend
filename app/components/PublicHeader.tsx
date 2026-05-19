@@ -102,9 +102,9 @@ export default async function PublicHeader({
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
-          <div className="hidden flex-col items-center lg:flex">
+          <div className="relative z-10 hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className={`public-header-logo-link ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
+              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -198,9 +198,9 @@ export default async function PublicHeader({
     <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
       <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopDefaultPaddingClass}`}>
         <div className="flex flex-col gap-4 lg:gap-5">
-          <div className="hidden flex-col items-center lg:flex">
+          <div className="relative z-10 hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className={`public-header-logo-link ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
+              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
