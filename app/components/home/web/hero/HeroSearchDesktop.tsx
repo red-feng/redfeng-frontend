@@ -21,7 +21,7 @@ type HeroSearchDesktopProps = {
 export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap, locale }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
-  const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 5
+  const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
   const layout = getDesktopPatternLayout(showDesktopSwap, desktopFields.length)
 
   if (isDedicatedFlightOneWay) {
@@ -296,13 +296,13 @@ type FlightOneWayDesktopSearchProps = {
 }
 
 function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, onSwap, locale }: FlightOneWayDesktopSearchProps) {
-  const [originField, destinationField, departureField, passengerField, cabinField] = fields
+  const [originField, destinationField, departureField, passengerField] = fields
   const originDisplay = splitAirportValue(originField.value)
   const destinationDisplay = splitAirportValue(destinationField.value)
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-6 grid grid-cols-[248px_36px_248px_188px_208px_188px_60px] items-end gap-x-[11px]">
+      <div className="mt-6 grid grid-cols-[248px_36px_248px_300px_286px_74px] items-end gap-x-[11px]">
         <DesktopFieldShell label={originField.displayLabel || originField.label}>
           <HeroSearchField
             label={originField.label}
@@ -410,39 +410,10 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           />
         </DesktopFieldShell>
 
-        <DesktopFieldShell label={cabinField.displayLabel || cabinField.label}>
-          <HeroSearchField
-            label={cabinField.label}
-            displayLabel={cabinField.displayLabel}
-            value={cabinField.value}
-            displayValue={cabinField.displayValue}
-            sublabel={cabinField.sublabel ?? ""}
-            displaySublabel={cabinField.displaySublabel}
-            hideLabel
-            hideSublabel
-            withChevron={cabinField.withChevron}
-            variant="searchbox-desktop"
-            inputType={cabinField.inputType}
-            options={cabinField.options}
-            passengerState={cabinField.passengerState}
-            cabinOptions={cabinField.cabinOptions}
-            onValueChange={(value) => onFieldChange?.(4, value)}
-            locale={locale}
-            className="rounded-[999px] px-6 py-[15px]"
-            renderValue={
-              <SingleLineValue
-                value={cabinField.displayValue || cabinField.value}
-                icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
-                iconTone="text-[#7385a0]"
-              />
-            }
-          />
-        </DesktopFieldShell>
-
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[6px] inline-flex h-[60px] w-[60px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[6px] inline-flex h-[60px] w-[74px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
