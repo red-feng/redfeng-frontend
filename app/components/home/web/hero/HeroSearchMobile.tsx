@@ -20,7 +20,7 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
   const mobileFields = fields ?? config.mobileFields
   const primaryFields = mobileFields.slice(0, config.mobilePrimaryCount)
   const compactFields = mobileFields.slice(config.mobilePrimaryCount)
-  const compactGridClass = compactFields.length === 2 ? "grid-cols-2" : "grid-cols-3"
+  const compactGridClass = compactFields.length === 2 || compactFields.length === 4 ? "grid-cols-2" : "grid-cols-3"
 
   return (
     <div className="lg:hidden">
@@ -37,6 +37,8 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
           withSwap={field.withSwap}
           inputType={field.inputType}
           options={field.options}
+          passengerState={field.passengerState}
+          cabinOptions={field.cabinOptions}
           onValueChange={(value) => onFieldChange?.(index, value)}
           onSwap={field.withSwap ? onSwap : undefined}
           locale={locale}
@@ -59,6 +61,8 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
               compact
               inputType={field.inputType}
               options={field.options}
+              passengerState={field.passengerState}
+              cabinOptions={field.cabinOptions}
               onValueChange={(value) => onFieldChange?.(index + config.mobilePrimaryCount, value)}
               locale={locale}
               className="rounded-[20px] border border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"

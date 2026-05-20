@@ -420,12 +420,52 @@ export function updateFieldState(
         value: buildPassengerPrimaryValue(nextPassengerState),
         sublabel: nextPassengerState.cabin,
       },
+      ...(activeTab === "flight"
+        ? {
+            [`${stateKey}:cabin`]: {
+              ...(current[`${stateKey}:cabin`] ?? {
+                label: "Kelas Kabin",
+                value: nextPassengerState.cabin,
+                sublabel: "Pilihan kabin",
+                withChevron: true,
+              }),
+              label: (current[`${stateKey}:cabin`]?.label || "Kelas Kabin"),
+              value: nextPassengerState.cabin,
+              sublabel: current[`${stateKey}:cabin`]?.sublabel || "Pilihan kabin",
+              withChevron: true,
+            },
+          }
+        : {}),
     }
   }
 
   if (field.inputType === "select" || field.inputType === "autocomplete") {
     const providerKey = heroSearchConfigs[activeTab].dataProvider
     const matchedChoice = getFieldChoicesForProvider(activeTab, field, providerKey).find((choice) => choice.value.toLowerCase() === nextValue.toLowerCase())
+
+    if (activeTab === "flight" && getFieldSemanticKey(field.label) === "cabin") {
+      const passengerKey = `${stateKey}:passenger`
+      const currentPassengerField = current[passengerKey]
+      const nextPassengerState = currentPassengerField?.passengerState
+        ? { ...currentPassengerField.passengerState, cabin: nextValue }
+        : undefined
+
+      return {
+        ...current,
+        [fieldKey]: matchedChoice
+          ? { ...field, value: matchedChoice.value, sublabel: matchedChoice.sublabel ?? field.sublabel }
+          : { ...field, value: nextValue, sublabel: field.sublabel },
+        ...(currentPassengerField && nextPassengerState
+          ? {
+              [passengerKey]: {
+                ...currentPassengerField,
+                passengerState: nextPassengerState,
+                sublabel: nextValue,
+              },
+            }
+          : {}),
+      }
+    }
 
     return {
       ...current,
@@ -466,6 +506,7 @@ function getFieldSemanticKey(label: string) {
   if (isOriginLabel(normalized)) return "origin"
   if (isDestinationLabel(normalized)) return "destination"
   if (normalized.includes("transit")) return "transit"
+  if (normalized.includes("kabin") || normalized.includes("cabin")) return "cabin"
   if (normalized.includes("check-in")) return "checkin"
   if (normalized.includes("check-out")) return "checkout"
   if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("keberangkatan")) return "departure"
@@ -734,6 +775,15 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
       { label: field.label, value: "15:30", sublabel: "Sore" },
       { label: field.label, value: "23:00", sublabel: "Larut malam" },
     ]
+  } else if (label.includes("kelas kabin") && activeTab === "flight") {
+    choices = [
+      ...(field.cabinOptions?.map((option) => ({
+        label: field.label,
+        value: option,
+        sublabel: option === "Ekonomi" ? "Pilihan paling hemat" : option === "Premium Economy" ? "Kursi lebih lega" : option === "Business" ? "Layanan premium" : "Perjalanan paling nyaman",
+        withChevron: field.withChevron,
+      })) ?? current),
+    ]
   } else if (label.includes("cabin")) {
     choices = [
       ...current,
@@ -791,15 +841,7 @@ function getFallbackFieldChoices(activeTab: HeroTabKey, field: HeroSearchFieldDa
   } else if (label.includes("penumpang")) {
     choices =
       activeTab === "flight"
-        ? [
-            ...current,
-            { label: field.label, value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-            { label: field.label, value: "1 Dewasa, Premium Economy", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-            { label: field.label, value: "1 Dewasa, Business", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-            { label: field.label, value: "1 Dewasa, First Class", sublabel: "Kelas Kabin", withChevron: field.withChevron },
-            { label: field.label, value: "2 Dewasa, Ekonomi", sublabel: "Paling populer", withChevron: field.withChevron },
-            { label: field.label, value: "2 Dewasa, 1 Anak", sublabel: "Family saver", withChevron: field.withChevron },
-          ]
+        ? current
         : activeTab === "cruise"
           ? [
               ...current,

@@ -69,6 +69,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               variant="searchbox-desktop"
               inputType={desktopFields[0].inputType}
               options={desktopFields[0].options}
+              passengerState={desktopFields[0].passengerState}
+              cabinOptions={desktopFields[0].cabinOptions}
               onValueChange={(value) => onFieldChange?.(0, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -92,6 +94,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               variant="searchbox-desktop"
               inputType={desktopFields[1].inputType}
               options={desktopFields[1].options}
+              passengerState={desktopFields[1].passengerState}
+              cabinOptions={desktopFields[1].cabinOptions}
               onValueChange={(value) => onFieldChange?.(1, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -112,6 +116,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
                 variant="searchbox-desktop"
                 inputType={field.inputType}
                 options={field.options}
+                passengerState={field.passengerState}
+                cabinOptions={field.cabinOptions}
                 onValueChange={(value) => onFieldChange?.(index + 2, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[17px]"
@@ -135,6 +141,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
               variant="searchbox-desktop"
               inputType={field.inputType}
               options={field.options}
+              passengerState={field.passengerState}
+              cabinOptions={field.cabinOptions}
               onValueChange={(value) => onFieldChange?.(index, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -203,6 +211,8 @@ function PatternedDesktopSearch({
                 variant="searchbox-desktop"
                 inputType={leadingFields[0].inputType}
                 options={leadingFields[0].options}
+                passengerState={leadingFields[0].passengerState}
+                cabinOptions={leadingFields[0].cabinOptions}
                 onValueChange={(value) => onFieldChange?.(0, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -226,6 +236,8 @@ function PatternedDesktopSearch({
                 variant="searchbox-desktop"
                 inputType={leadingFields[1].inputType}
                 options={leadingFields[1].options}
+                passengerState={leadingFields[1].passengerState}
+                cabinOptions={leadingFields[1].cabinOptions}
                 onValueChange={(value) => onFieldChange?.(1, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -251,6 +263,8 @@ function PatternedDesktopSearch({
                 variant="searchbox-desktop"
                 inputType={field.inputType}
                 options={field.options}
+                passengerState={field.passengerState}
+                cabinOptions={field.cabinOptions}
                 onValueChange={(value) => onFieldChange?.(actualIndex, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -282,13 +296,13 @@ type FlightOneWayDesktopSearchProps = {
 }
 
 function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, onSwap, locale }: FlightOneWayDesktopSearchProps) {
-  const [originField, destinationField, departureField, passengerField] = fields
+  const [originField, destinationField, departureField, passengerField, cabinField] = fields
   const originDisplay = splitAirportValue(originField.value)
   const destinationDisplay = splitAirportValue(destinationField.value)
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-6 grid grid-cols-[258px_36px_258px_208px_228px_60px] items-end gap-x-[11px]">
+      <div className="mt-6 grid grid-cols-[248px_36px_248px_188px_208px_188px_60px] items-end gap-x-[11px]">
         <DesktopFieldShell label={originField.displayLabel || originField.label}>
           <HeroSearchField
             label={originField.label}
@@ -381,12 +395,43 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             variant="searchbox-desktop"
             inputType={passengerField.inputType}
             options={passengerField.options}
+            passengerState={passengerField.passengerState}
+            cabinOptions={passengerField.cabinOptions}
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <SingleLineValue
-                value={[passengerField.displayValue || passengerField.value, passengerField.displaySublabel || passengerField.sublabel].filter(Boolean).join(" • ")}
+                value={passengerField.displayValue || passengerField.value}
+                icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
+                iconTone="text-[#7385a0]"
+              />
+            }
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={cabinField.displayLabel || cabinField.label}>
+          <HeroSearchField
+            label={cabinField.label}
+            displayLabel={cabinField.displayLabel}
+            value={cabinField.value}
+            displayValue={cabinField.displayValue}
+            sublabel={cabinField.sublabel ?? ""}
+            displaySublabel={cabinField.displaySublabel}
+            hideLabel
+            hideSublabel
+            withChevron={cabinField.withChevron}
+            variant="searchbox-desktop"
+            inputType={cabinField.inputType}
+            options={cabinField.options}
+            passengerState={cabinField.passengerState}
+            cabinOptions={cabinField.cabinOptions}
+            onValueChange={(value) => onFieldChange?.(4, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={
+              <SingleLineValue
+                value={cabinField.displayValue || cabinField.value}
                 icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
                 iconTone="text-[#7385a0]"
               />
@@ -483,7 +528,15 @@ function getDesktopPatternLayout(showDesktopSwap: boolean, fieldCount: number): 
 
   if (showDesktopSwap && fieldCount === 5) {
     return {
-      columns: "minmax(0,1.1fr) 36px minmax(0,1.1fr) minmax(0,0.78fr) minmax(0,0.78fr) minmax(0,0.98fr) 56px",
+      columns: "minmax(0,1.02fr) 36px minmax(0,1.02fr) minmax(0,0.74fr) minmax(0,0.74fr) minmax(0,0.92fr) minmax(0,0.92fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-[36px]",
+    }
+  }
+
+  if (showDesktopSwap && fieldCount === 6) {
+    return {
+      columns: "minmax(0,0.98fr) 36px minmax(0,0.98fr) minmax(0,0.72fr) minmax(0,0.72fr) minmax(0,0.88fr) minmax(0,0.88fr) 56px",
       gapClass: "gap-x-3",
       swapWidth: "w-[36px]",
     }
@@ -500,6 +553,14 @@ function getDesktopPatternLayout(showDesktopSwap: boolean, fieldCount: number): 
   if (!showDesktopSwap && fieldCount === 5) {
     return {
       columns: "minmax(0,1.08fr) minmax(0,1.08fr) minmax(0,0.82fr) minmax(0,0.82fr) minmax(0,0.98fr) 56px",
+      gapClass: "gap-x-3",
+      swapWidth: "w-0",
+    }
+  }
+
+  if (!showDesktopSwap && fieldCount === 6) {
+    return {
+      columns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,0.82fr) minmax(0,0.9fr) minmax(0,0.9fr) 56px",
       gapClass: "gap-x-3",
       swapWidth: "w-0",
     }

@@ -66,8 +66,8 @@ export default function HeroSearchField({
   const [draftValue, setDraftValue] = useState(value)
   const [draftPassengerState, setDraftPassengerState] = useState<HeroPassengerState | null>(passengerState ?? null)
   const fieldRef = useRef<HTMLDivElement | null>(null)
-  const hasDropdown = inputType !== "date" && options.length > 0
   const isPassengerField = inputType === "passenger" && Boolean(passengerState)
+  const hasDropdown = !isPassengerField && inputType !== "date" && options.length > 0
   const isSearchboxDesktop = variant === "searchbox-desktop"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shouldShowDefaultAdornment = !renderValue
@@ -316,7 +316,7 @@ export default function HeroSearchField({
                 <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                   {locale === "en" ? "Cabin class" : locale === "zh" ? "舱位等级" : "Kelas kabin"}
                 </p>
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {cabinOptions.map((option) => {
                     const isActive = draftPassengerState.cabin === option
                     return (
