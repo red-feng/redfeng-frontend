@@ -302,7 +302,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
 
   return (
     <div className="relative hidden overflow-visible lg:block">
-      <div className="mt-6 grid grid-cols-[248px_36px_248px_300px_286px_74px] items-end gap-x-[11px]">
+      <div className="mt-6 grid grid-cols-[248px_36px_248px_376px_320px_76px] items-end gap-x-4">
         <DesktopFieldShell label={originField.displayLabel || originField.label}>
           <HeroSearchField
             label={originField.label}
@@ -318,7 +318,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={originField.options}
             onValueChange={(value) => onFieldChange?.(0, value)}
             locale={locale}
-            className="rounded-[999px] px-6 py-[15px]"
+            className="rounded-[999px] px-7 py-[15px]"
             renderValue={
               <AirportValue
                 code={originDisplay.code}
@@ -350,7 +350,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={destinationField.options}
             onValueChange={(value) => onFieldChange?.(1, value)}
             locale={locale}
-            className="rounded-[999px] px-6 py-[15px]"
+            className="rounded-[999px] px-7 py-[15px]"
             renderValue={
               <AirportValue
                 code={destinationDisplay.code}
@@ -376,7 +376,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={departureField.options}
             onValueChange={(value) => onFieldChange?.(2, value)}
             locale={locale}
-            className="rounded-[999px] px-6 py-[15px]"
+            className="rounded-[999px] px-7 py-[15px]"
             renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
           />
         </DesktopFieldShell>
@@ -399,7 +399,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             cabinOptions={passengerField.cabinOptions}
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
-            className="rounded-[999px] px-6 py-[15px]"
+            className="rounded-[999px] px-7 py-[15px]"
             renderValue={
               <SingleLineValue
                 value={passengerField.displayValue || passengerField.value}
@@ -413,7 +413,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
         <Link
           href={ctaHref}
           aria-label={ctaLabel}
-          className="mb-[6px] inline-flex h-[60px] w-[74px] items-center justify-center rounded-[18px] bg-[#ff6624] text-white transition hover:opacity-95"
+          className="mb-[6px] inline-flex h-[60px] w-[76px] items-center justify-center rounded-[20px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>
