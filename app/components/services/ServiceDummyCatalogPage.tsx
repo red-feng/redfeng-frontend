@@ -117,6 +117,86 @@ function getNightCount(checkin: string, checkout: string) {
   return getHotelStayNights(checkin, checkout)
 }
 
+function buildCatalogHref(
+  baseHref: string,
+  params: Record<string, string | undefined>,
+) {
+  const searchParams = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    const normalized = String(value || "").trim()
+    if (normalized) searchParams.set(key, normalized)
+  })
+  const query = searchParams.toString()
+  return query ? `${baseHref}?${query}` : baseHref
+}
+
+function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string) {
+  const preset = [
+    {
+      airline: "Garuda Indonesia",
+      departure: "05:45",
+      arrival: "08:40",
+      duration: "1j 55m",
+      transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+      price: "IDR 1.248.000",
+      seatNote: locale === "en" ? "Last 6 seats at this fare" : locale === "zh" ? "该票价仅剩 6 个座位" : "Sisa 6 kursi di harga ini",
+    },
+    {
+      airline: "Singapore Airlines",
+      departure: "08:20",
+      arrival: "11:05",
+      duration: "1j 45m",
+      transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+      price: "IDR 4.860.000",
+      seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "灵活商务舱位" : "Kabin business lebih fleksibel",
+    },
+    {
+      airline: "Batik Air",
+      departure: "09:10",
+      arrival: "10:25",
+      duration: "1j 15m",
+      transit: locale === "en" ? "Round-trip ready" : locale === "zh" ? "适合往返" : "Siap untuk pulang-pergi",
+      price: "IDR 1.032.000",
+      seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
+    },
+    {
+      airline: "AirAsia",
+      departure: "13:35",
+      arrival: "16:20",
+      duration: "2j 45m",
+      transit: locale === "en" ? "Promo route" : locale === "zh" ? "促销航线" : "Rute promo",
+      price: "IDR 1.786.000",
+      seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
+    },
+  ][index % 4]
+
+  const routeParts = item.location.split("-").map((part) => part.trim())
+  const origin = routeParts[0] || item.location
+  const destination = routeParts[1] || item.location
+  const highlightBadges = item.highlights.slice(0, 3)
+  const factMap = new Map(item.facts.map((fact) => [fact.label.toLowerCase(), fact.value]))
+
+  return {
+    ...preset,
+    origin,
+    destination,
+    routeCode: factMap.get("route code") || item.location.replace(/\s+/g, ""),
+    cabin: factMap.get("cabin") || (item.group.toLowerCase().includes("business") ? "Business" : "Economy"),
+    tripLabel: item.group,
+    highlightBadges,
+  }
+}
+
+function parseFlightPrice(value: string) {
+  const digits = value.replace(/[^\d]/g, "")
+  return Number(digits || "0")
+}
+
+function parseFlightTime(value: string) {
+  const [hour, minute] = value.split(":").map((part) => Number(part || "0"))
+  return hour * 60 + minute
+}
+
 export default async function ServiceDummyCatalogPage({
   slug,
   searchParams,
@@ -132,6 +212,13 @@ export default async function ServiceDummyCatalogPage({
   const keyword = firstQueryValue(resolvedSearchParams.q)
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
+  const flightFrom = firstQueryValue(resolvedSearchParams.from) || "Jakarta (CGK)"
+  const flightTo = firstQueryValue(resolvedSearchParams.to) || "Singapore (SIN)"
+  const flightDepart = firstQueryValue(resolvedSearchParams.depart) || "2026-05-21"
+  const flightReturn = firstQueryValue(resolvedSearchParams.return) || "2026-05-23"
+  const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
+  const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
+  const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"
   const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
   const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
   const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
@@ -162,6 +249,23 @@ export default async function ServiceDummyCatalogPage({
           children: hotelChildren,
           rooms: hotelRooms,
         })
+      : []
+  const flightItems =
+    slug === "pesawat"
+      ? filteredItems
+          .map((item, index) => ({
+            item,
+            meta: getFlightCardMeta(item, index, locale),
+          }))
+          .sort((left, right) => {
+            if (flightSort === "price") {
+              return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
+            }
+            if (flightSort === "early") {
+              return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+            }
+            return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+          })
       : []
 
   const copy = {
@@ -259,6 +363,512 @@ export default async function ServiceDummyCatalogPage({
       locationLabel: "位置",
     },
   }[locale]
+
+  if (slug === "pesawat") {
+    const flightCopy = {
+      id: {
+        topLabel: "Flight search mock",
+        topTitle: "Katalog pesawat RedFeng dengan alur OTA yang lebih fokus",
+        topBody: "Kami ambil pola layout OTA: ringkasan pencarian di atas, filter di kiri, hasil di tengah, lalu harga dan aksi yang sangat jelas. Visualnya tetap dibuat lebih hangat dan lapang agar terasa RedFeng.",
+        searchSummary: "Ringkasan pencarian",
+        refineSearch: "Ubah pencarian",
+        fromLabel: "Dari",
+        toLabel: "Ke",
+        departLabel: "Berangkat",
+        returnLabel: "Pulang",
+        passengerLabel: "Penumpang",
+        cabinLabel: "Kabin",
+        allRegions: "Semua region",
+        allGroups: "Semua tipe",
+        flightsFound: "opsi penerbangan contoh",
+        sortLabel: "Urutkan",
+        sortBest: "Pilihan terbaik",
+        sortPrice: "Harga terendah",
+        sortEarly: "Berangkat paling pagi",
+        refundTag: "Bisa reschedule",
+        baggageTag: "Bagasi kabin",
+        perksTitle: "Termasuk",
+        activeFilters: "Filter aktif",
+        leftTitle: "Saring hasil",
+        leftBody: "Panel kiri dibuat seperti OTA, tetapi lebih bersih supaya user cepat scan tanpa merasa sesak.",
+        regionBlock: "Region",
+        tripBlock: "Tipe perjalanan",
+        resetFilters: "Reset semua",
+        resultIntro: "Hasil contoh",
+        priceLabel: "Mulai dari",
+        chooseLabel: "Pilih",
+        fareLabel: "Fare dummy",
+        supportHint: "Belum checkout live. Tata letak ini dipakai untuk menguji ritme hasil, filter, dan prioritas CTA.",
+        emptyTitle: "Belum ada penerbangan dummy yang cocok",
+        emptyBody: "Coba longgarkan region atau tipe perjalanan agar daftar hasil muncul lagi.",
+      },
+      en: {
+        topLabel: "Flight search mock",
+        topTitle: "A RedFeng flight catalog with a sharper OTA-style flow",
+        topBody: "We borrow the OTA layout logic: search summary on top, filters on the left, results in the middle, and very clear pricing actions. The visual system stays warmer and calmer so it still feels like RedFeng.",
+        searchSummary: "Search summary",
+        refineSearch: "Refine search",
+        fromLabel: "From",
+        toLabel: "To",
+        departLabel: "Depart",
+        returnLabel: "Return",
+        passengerLabel: "Passengers",
+        cabinLabel: "Cabin",
+        allRegions: "All regions",
+        allGroups: "All trip types",
+        flightsFound: "sample flight options",
+        sortLabel: "Sort by",
+        sortBest: "Best choice",
+        sortPrice: "Lowest price",
+        sortEarly: "Earliest departure",
+        refundTag: "Reschedule ready",
+        baggageTag: "Cabin baggage",
+        perksTitle: "Includes",
+        activeFilters: "Active filters",
+        leftTitle: "Filter results",
+        leftBody: "The left rail follows OTA behavior, but stays cleaner so users can scan quickly without feeling crowded.",
+        regionBlock: "Region",
+        tripBlock: "Trip type",
+        resetFilters: "Reset all",
+        resultIntro: "Sample results",
+        priceLabel: "Starting from",
+        chooseLabel: "Choose",
+        fareLabel: "Dummy fare",
+        supportHint: "Live checkout is not active yet. This layout is here to test result rhythm, filter behavior, and CTA priority.",
+        emptyTitle: "No matching dummy flights found",
+        emptyBody: "Try widening the region or trip type to bring results back.",
+      },
+      zh: {
+        topLabel: "Flight search mock",
+        topTitle: "更聚焦 OTA 节奏的 RedFeng 航班目录",
+        topBody: "我们借鉴 OTA 的结构逻辑：顶部搜索摘要、左侧筛选、中间结果，以及非常清晰的价格与行动区，同时保留更温暖、更从容的 RedFeng 视觉气质。",
+        searchSummary: "搜索摘要",
+        refineSearch: "调整搜索",
+        fromLabel: "出发地",
+        toLabel: "目的地",
+        departLabel: "出发",
+        returnLabel: "返程",
+        passengerLabel: "乘客",
+        cabinLabel: "舱位",
+        allRegions: "全部区域",
+        allGroups: "全部行程类型",
+        flightsFound: "个示例航班",
+        sortLabel: "排序",
+        sortBest: "推荐优先",
+        sortPrice: "最低价格",
+        sortEarly: "最早出发",
+        refundTag: "可改期",
+        baggageTag: "含手提行李",
+        perksTitle: "包含",
+        activeFilters: "当前筛选",
+        leftTitle: "筛选结果",
+        leftBody: "左侧筛选区沿用 OTA 习惯，但保持更清爽的节奏，方便快速浏览。",
+        regionBlock: "区域",
+        tripBlock: "行程类型",
+        resetFilters: "重置全部",
+        resultIntro: "示例结果",
+        priceLabel: "起价",
+        chooseLabel: "选择",
+        fareLabel: "示例票价",
+        supportHint: "暂未开放实时下单。这个版面主要用于验证结果节奏、筛选行为与 CTA 优先级。",
+        emptyTitle: "没有匹配的示例航班",
+        emptyBody: "请放宽区域或行程类型后再试一次。",
+      },
+    }[locale]
+
+    const topSummaryChips = [
+      keyword || catalog.emptyKeyword,
+      selectedRegion || flightCopy.allRegions,
+      selectedGroup || flightCopy.allGroups,
+    ]
+    const topDetailChips = [
+      { label: flightCopy.fromLabel, value: flightFrom },
+      { label: flightCopy.toLabel, value: flightTo },
+      { label: flightCopy.departLabel, value: flightDepart },
+      { label: flightCopy.returnLabel, value: flightReturn },
+      { label: flightCopy.passengerLabel, value: flightPassengers },
+      { label: flightCopy.cabinLabel, value: flightCabin },
+    ]
+
+    return (
+      <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#f9fbff_16%,#fffdfa_48%,#f3f6fb_100%)] pb-36 md:pb-0">
+        <PublicInstallPrompt locale={locale} />
+        <PublicHeader locale={locale} variant="default" />
+
+        <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
+          <section className={homeLayoutLock.contentWidthClass}>
+            <div className="rounded-[32px] border border-[#dcecfb] bg-[linear-gradient(135deg,#edf7ff_0%,#f8fbff_38%,#fffaf6_100%)] p-5 shadow-[0_28px_72px_-44px_rgba(15,23,42,0.24)] sm:p-6 lg:p-7">
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-[760px]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">{flightCopy.topLabel}</p>
+                  <h1 className="mt-3 text-[30px] font-semibold leading-[1.02] tracking-[-0.045em] text-slate-950 sm:text-[38px] lg:text-[48px]">
+                    {flightCopy.topTitle}
+                  </h1>
+                  <p className="mt-4 max-w-[700px] text-sm leading-7 text-slate-600 sm:text-[15px]">
+                    {flightCopy.topBody}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 rounded-[28px] border border-white/70 bg-white/86 p-4 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.2)] backdrop-blur sm:p-5 lg:min-w-[360px]">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.searchSummary}</p>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {topDetailChips.map((chip) => (
+                      <div key={chip.label} className="rounded-[18px] border border-sky-100 bg-sky-50/75 px-3 py-2">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">{chip.label}</p>
+                        <p className="mt-1 text-sm font-medium text-slate-900">{chip.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    <span className="font-semibold text-slate-900">{filteredItems.length}</span> {flightCopy.flightsFound}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-5`}>
+            <form method="get" action={service.catalogHref} className="rounded-[28px] border border-[#d9e8f6] bg-white/95 p-4 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.18)] backdrop-blur">
+              <div className="grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.78fr_0.78fr_0.75fr_0.7fr_auto] lg:items-end">
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.fromLabel}</span>
+                  <input
+                    type="text"
+                    name="from"
+                    defaultValue={flightFrom}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.toLabel}</span>
+                  <input
+                    type="text"
+                    name="to"
+                    defaultValue={flightTo}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.departLabel}</span>
+                  <input
+                    type="date"
+                    name="depart"
+                    defaultValue={flightDepart}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.returnLabel}</span>
+                  <input
+                    type="date"
+                    name="return"
+                    defaultValue={flightReturn}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.passengerLabel}</span>
+                  <input
+                    type="text"
+                    name="passengers"
+                    defaultValue={flightPassengers}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.cabinLabel}</span>
+                  <input
+                    type="text"
+                    name="cabin"
+                    defaultValue={flightCabin}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block lg:col-span-2">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterKeyword}</span>
+                  <input
+                    type="text"
+                    name="q"
+                    defaultValue={keyword}
+                    placeholder={catalog.searchPlaceholder}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterRegion}</span>
+                  <select
+                    name="region"
+                    defaultValue={selectedRegion}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  >
+                    <option value="">{flightCopy.allRegions}</option>
+                    {availableRegions.map((region) => (
+                      <option key={region} value={region}>
+                        {region}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterGroup}</span>
+                  <select
+                    name="group"
+                    defaultValue={selectedGroup}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  >
+                    <option value="">{flightCopy.allGroups}</option>
+                    {availableGroups.map((group) => (
+                      <option key={group} value={group}>
+                        {group}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.sortLabel}</span>
+                  <select
+                    name="sort"
+                    defaultValue={flightSort}
+                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                  >
+                    <option value="best">{flightCopy.sortBest}</option>
+                    <option value="price">{flightCopy.sortPrice}</option>
+                    <option value="early">{flightCopy.sortEarly}</option>
+                  </select>
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#1e88e5_0%,#1273d8_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(30,136,229,0.58)] transition hover:brightness-105"
+                  >
+                    {flightCopy.refineSearch}
+                  </button>
+                  <Link
+                    href={service.catalogHref}
+                    className="inline-flex items-center justify-center rounded-[20px] border border-[#dbe8f5] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    {flightCopy.resetFilters}
+                  </Link>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <section className={`${homeLayoutLock.contentWidthClass} mt-6 grid gap-6 lg:grid-cols-[292px_minmax(0,1fr)]`}>
+            <aside className="space-y-4 lg:sticky lg:top-[8.6rem] lg:self-start">
+              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.leftTitle}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{flightCopy.leftBody}</p>
+              </div>
+
+              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
+                <p className="text-sm font-semibold text-slate-900">{flightCopy.regionBlock}</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <Link
+                    href={buildCatalogHref(service.catalogHref, { q: keyword, group: selectedGroup })}
+                    className={`rounded-[16px] border px-4 py-3 text-sm transition ${selectedRegion ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
+                  >
+                    {flightCopy.allRegions}
+                  </Link>
+                  {availableRegions.map((region) => (
+                    <Link
+                      key={region}
+                      href={buildCatalogHref(service.catalogHref, { q: keyword, region, group: selectedGroup })}
+                      className={`rounded-[16px] border px-4 py-3 text-sm transition ${
+                        selectedRegion === region
+                          ? "border-sky-200 bg-sky-50 text-sky-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {region}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
+                <p className="text-sm font-semibold text-slate-900">{flightCopy.tripBlock}</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <Link
+                    href={buildCatalogHref(service.catalogHref, { q: keyword, region: selectedRegion })}
+                    className={`rounded-[16px] border px-4 py-3 text-sm transition ${selectedGroup ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
+                  >
+                    {flightCopy.allGroups}
+                  </Link>
+                  {availableGroups.map((group) => (
+                    <Link
+                      key={group}
+                      href={buildCatalogHref(service.catalogHref, { q: keyword, region: selectedRegion, group })}
+                      className={`rounded-[16px] border px-4 py-3 text-sm transition ${
+                        selectedGroup === group
+                          ? "border-sky-200 bg-sky-50 text-sky-700"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {group}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            <div className="space-y-4">
+              <div className="rounded-[26px] border border-[#dce8f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.14)] sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.resultIntro}</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">
+                      {filteredItems.length} {flightCopy.flightsFound}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="mr-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.sortLabel}</span>
+                    {[flightCopy.sortBest, flightCopy.sortPrice, flightCopy.sortEarly].map((item, index) => (
+                      <span
+                        key={item}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium ${index === 0 ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600"}`}
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+                      {flightCopy.activeFilters}
+                    </span>
+                    {topSummaryChips.map((chip) => (
+                    <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700">
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {filteredItems.length === 0 ? (
+                <div className="rounded-[30px] border border-[#dce8f6] bg-white p-8 shadow-[0_22px_52px_-40px_rgba(15,23,42,0.18)]">
+                  <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{flightCopy.emptyTitle}</h2>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{flightCopy.emptyBody}</p>
+                  <Link
+                    href={service.catalogHref}
+                    className="mt-5 inline-flex rounded-[18px] bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                  >
+                    {flightCopy.resetFilters}
+                  </Link>
+                </div>
+              ) : (
+                flightItems.map(({ item, meta }) => {
+
+                  return (
+                    <article
+                      key={item.id}
+                      className="overflow-hidden rounded-[28px] border border-[#dce8f6] bg-white shadow-[0_22px_52px_-38px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_62px_-36px_rgba(15,23,42,0.2)]"
+                    >
+                      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_248px]">
+                        <div className="p-5 sm:p-6">
+                          <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                            <div className="flex min-w-0 items-center gap-4">
+                              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] border border-sky-100 bg-sky-50">
+                                <Image src={item.image} alt={item.title} fill sizes="64px" className="object-cover" />
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-base font-semibold text-slate-950">{meta.airline}</p>
+                                <p className="mt-1 text-xs text-slate-500">{meta.cabin} • {meta.tripLabel}</p>
+                              </div>
+                            </div>
+
+                            <div className="grid flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
+                              <div>
+                                <p className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{meta.departure}</p>
+                                <p className="mt-1 text-sm text-slate-500">{meta.origin}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="text-sm font-medium text-slate-500">{meta.duration}</p>
+                                <div className="mt-2 h-px bg-slate-200" />
+                                <p className="mt-2 text-xs text-sky-700">{meta.transit}</p>
+                              </div>
+                              <div className="md:text-right">
+                                <p className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{meta.arrival}</p>
+                                <p className="mt-1 text-sm text-slate-500">{meta.destination}</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex flex-wrap gap-2">
+                            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{meta.routeCode}</span>
+                            <span className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700">{flightCopy.baggageTag}</span>
+                            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">{flightCopy.refundTag}</span>
+                            {meta.highlightBadges.map((badge) => (
+                              <span key={badge} className="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700">
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
+
+                          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                            {item.facts.map((fact) => (
+                              <div key={`${item.id}-${fact.label}`} className="rounded-[18px] border border-[#e8f0f8] bg-[linear-gradient(180deg,#fbfdff_0%,#f7fbff_100%)] px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{fact.label}</p>
+                                <p className="mt-2 text-sm font-semibold text-slate-900">{fact.value}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="mt-5 rounded-[20px] border border-[#e8f0f8] bg-[#fbfdff] px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.perksTitle}</p>
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {[flightCopy.baggageTag, flightCopy.refundTag, meta.cabin].map((perk) => (
+                                <span key={perk} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">
+                                  {perk}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <p className="mt-5 text-sm leading-7 text-slate-600">{item.availabilityNote}</p>
+                          <p className="mt-2 text-sm leading-7 text-slate-500">{item.statusNote}</p>
+                        </div>
+
+                        <div className="flex flex-col justify-between border-t border-[#dce8f6] bg-[linear-gradient(180deg,#f8fbff_0%,#fffaf6_100%)] p-5 lg:border-l lg:border-t-0 lg:p-6">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{flightCopy.fareLabel}</p>
+                            <p className="mt-3 text-sm text-slate-500">{flightCopy.priceLabel}</p>
+                            <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef4423]">{meta.price}</p>
+                            <p className="mt-3 text-sm leading-6 text-slate-500">{meta.seatNote}</p>
+                          </div>
+
+                          <div className="mt-6 space-y-3">
+                            <Link
+                              href={catalog.supportHref}
+                              className="block rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-3 text-center text-sm font-semibold text-white shadow-[0_18px_34px_-20px_rgba(239,68,35,0.58)] transition hover:brightness-105"
+                            >
+                              {flightCopy.chooseLabel}
+                            </Link>
+                            <p className="text-xs leading-6 text-slate-500">{flightCopy.supportHint}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })
+              )}
+            </div>
+          </section>
+        </main>
+
+        <PublicStickyAction
+          locale={locale}
+          href="#top"
+          label={flightCopy.refineSearch}
+          summary={flightCopy.topTitle}
+          secondaryHref={catalog.promoHref}
+          secondaryLabel={copy.promoCta}
+        />
+        <PublicMobileNav locale={locale} />
+      </div>
+    )
+  }
 
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
