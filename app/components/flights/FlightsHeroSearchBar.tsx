@@ -9,7 +9,7 @@ import {
   PlaneIcon,
   SearchIcon,
   UsersIcon,
-} from "@/app/components/flights/FlightSearchShared"
+} from "@/app/components/flights/FlightSearchHomepageBaseline"
 
 export default function FlightsHeroSearchBar({
   locale,

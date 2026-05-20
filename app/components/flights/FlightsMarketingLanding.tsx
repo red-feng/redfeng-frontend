@@ -174,8 +174,8 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
           </div>
         </section>
 
-        <section className={`${homeLayoutLock.contentWidthClass} relative z-[210] -mt-20 sm:-mt-24 lg:-mt-28`}>
-          <div className={`${homeLayoutLock.wideContentWidthClass} ${homeLayoutLock.cardRadiusClass} border border-[#f0e4da] bg-white p-3 shadow-[0_28px_56px_-26px_rgba(15,23,42,0.22)] md:p-4`}>
+        <section className={`relative z-[220] ${homeLayoutLock.floatingSearchShellClass}`}>
+          <div className={`${homeLayoutLock.wideContentWidthClass} home-hero-search-card relative z-[220] overflow-visible ${homeLayoutLock.cardRadiusClass} border border-[#edf1f5] bg-white p-3 shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)] md:p-4`}>
             <FlightsHeroSearchBar locale={locale} buttonLabel={copy.searchButton} />
           </div>
 
