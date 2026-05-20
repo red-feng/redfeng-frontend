@@ -104,7 +104,10 @@ export default async function PublicHeader({
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
           <div className="relative z-10 hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
+              <a
+                href="https://redfeng.co/"
+                className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopOverlayLogoLiftClass}`}
+              >
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
