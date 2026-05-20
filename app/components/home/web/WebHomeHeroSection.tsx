@@ -113,11 +113,15 @@ export function HeroSearchPanel({
   activeOption,
   locale,
   onOptionChange,
+  showStatus = true,
+  showBenefits = true,
 }: {
   activeTab: HeroTabKey
   activeOption: string
   locale: Locale
   onOptionChange: (optionKey: string) => void
+  showStatus?: boolean
+  showBenefits?: boolean
 }) {
   const baseConfig = getHeroSearchConfig(activeTab, activeOption)
   const stateKey = `${activeTab}:${activeOption}`
@@ -134,12 +138,14 @@ export function HeroSearchPanel({
 
   return (
     <div className="relative overflow-visible px-5 py-5 lg:px-8 lg:py-[1.65rem]">
-      <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-5">
-        <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${statusCopy.tone}`}>
-          {statusCopy.label}
-        </span>
-        <p className="text-[12px] leading-6 text-slate-500 lg:text-[13px]">{statusCopy.body}</p>
-      </div>
+      {showStatus ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2 lg:mb-5">
+          <span className={`inline-flex rounded-full border px-3 py-1 text-[11px] font-semibold ${statusCopy.tone}`}>
+            {statusCopy.label}
+          </span>
+          <p className="text-[12px] leading-6 text-slate-500 lg:text-[13px]">{statusCopy.body}</p>
+        </div>
+      ) : null}
       <div className="hidden flex-wrap gap-11 text-[13px] font-semibold text-slate-700 lg:flex">
         {config.options.map((option) => (
           <button
@@ -202,7 +208,7 @@ export function HeroSearchPanel({
           setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopFields[index], value))
         }
       />
-      <HeroBenefits activeTab={activeTab} locale={locale} />
+      {showBenefits ? <HeroBenefits activeTab={activeTab} locale={locale} /> : null}
     </div>
   )
 }
