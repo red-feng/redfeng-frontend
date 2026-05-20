@@ -157,13 +157,14 @@ export default function FlightsHeroSearchBar({
     { key: "multi_city" as const, label: copy.multiCity },
   ]
   const tripGroupValue =
-    tripType === "round_trip" ? "Pulang pergi" : tripType === "one_way" ? "Sekali jalan" : "Business"
+    tripType === "round_trip" ? "Pulang pergi" : tripType === "one_way" ? "Sekali jalan" : "Multi-city"
   const queryValue = `${copy.fromValue} ${copy.toValue}`
 
   return (
     <form method="get" action="/pesawat/catalog" className="space-y-3">
       <input type="hidden" name="from" value={copy.fromValue} />
       <input type="hidden" name="to" value={copy.toValue} />
+      <input type="hidden" name="trip" value={tripType} />
       <input type="hidden" name="depart" value="2026-05-25" />
       <input type="hidden" name="return" value={tripType === "one_way" ? "" : "2026-05-29"} />
       <input type="hidden" name="passengers" value={copy.passengersValue.split(",")[0] || copy.passengersValue} />

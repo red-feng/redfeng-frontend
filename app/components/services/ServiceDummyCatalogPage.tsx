@@ -265,6 +265,7 @@ export default async function ServiceDummyCatalogPage({
   const keyword = firstQueryValue(resolvedSearchParams.q)
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
+  const flightTrip = firstQueryValue(resolvedSearchParams.trip) || "round_trip"
   const flightFrom = firstQueryValue(resolvedSearchParams.from) || "Jakarta (CGK)"
   const flightTo = firstQueryValue(resolvedSearchParams.to) || "Singapore (SIN)"
   const flightDepart = firstQueryValue(resolvedSearchParams.depart) || "2026-05-21"
@@ -441,11 +442,15 @@ export default async function ServiceDummyCatalogPage({
             topTitle: "A RedFeng flight catalog with a sharper OTA-style flow",
             topBody: "We borrow the OTA layout logic: search summary on top, filters on the left, results in the middle, and very clear pricing actions. The visual system stays warmer and calmer so it still feels like RedFeng.",
             refineSearch: "Refine search",
+            roundTrip: "Round Trip",
+            oneWay: "One Way",
+            multiCity: "Multi-city",
             fromLabel: "From",
             toLabel: "To",
             departLabel: "Depart",
             returnLabel: "Return",
             passengerLabel: "Passengers",
+            passengerClassLabel: "Passengers & Class",
             cabinLabel: "Cabin",
             allRegions: "All regions",
             allGroups: "All trip types",
@@ -491,11 +496,15 @@ export default async function ServiceDummyCatalogPage({
               topTitle: "更聚焦 OTA 节奏的 RedFeng 航班目录",
               topBody: "我们借鉴 OTA 的结构逻辑：顶部搜索摘要、左侧筛选、中间结果，以及非常清晰的价格与行动区，同时保留更温暖、更从容的 RedFeng 视觉气质。",
               refineSearch: "调整搜索",
+              roundTrip: "往返",
+              oneWay: "单程",
+              multiCity: "多城市",
               fromLabel: "出发地",
               toLabel: "目的地",
               departLabel: "出发",
               returnLabel: "返程",
               passengerLabel: "乘客",
+              passengerClassLabel: "乘客与舱位",
               cabinLabel: "舱位",
               allRegions: "全部区域",
               allGroups: "全部行程类型",
@@ -540,11 +549,15 @@ export default async function ServiceDummyCatalogPage({
               topTitle: "Katalog pesawat RedFeng dengan alur OTA yang lebih fokus",
               topBody: "Kami ambil pola layout OTA: ringkasan pencarian di atas, filter di kiri, hasil di tengah, lalu harga dan aksi yang sangat jelas. Visualnya tetap dibuat lebih hangat dan lapang agar terasa RedFeng.",
               refineSearch: "Ubah pencarian",
+              roundTrip: "Pulang Pergi",
+              oneWay: "Sekali Jalan",
+              multiCity: "Multi-city",
               fromLabel: "Dari",
               toLabel: "Ke",
               departLabel: "Berangkat",
               returnLabel: "Pulang",
               passengerLabel: "Penumpang",
+              passengerClassLabel: "Penumpang & Kelas",
               cabinLabel: "Kabin",
               allRegions: "Semua region",
               allGroups: "Semua tipe",
@@ -601,13 +614,15 @@ export default async function ServiceDummyCatalogPage({
           copy={flightCopy}
           filterKeywordLabel={copy.filterKeyword}
           initialState={{
+            tripMode:
+              flightTrip === "one_way" || flightTrip === "multi_city" ? flightTrip : "round_trip",
             q: keyword,
             region: selectedRegion,
             group: selectedGroup,
             from: flightFrom,
             to: flightTo,
             depart: flightDepart,
-            returnDate: flightReturn,
+            returnDate: flightTrip === "one_way" ? "" : flightReturn,
             passengers: flightPassengers,
             cabin: flightCabin,
             sort: flightSort,

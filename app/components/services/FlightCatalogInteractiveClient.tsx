@@ -44,6 +44,7 @@ type FlightItem = {
 }
 
 type FlightFilterState = {
+  tripMode: "round_trip" | "one_way" | "multi_city"
   q: string
   region: string
   group: string
@@ -65,11 +66,15 @@ type FlightCopy = {
   topTitle: string
   topBody: string
   refineSearch: string
+  roundTrip: string
+  oneWay: string
+  multiCity: string
   fromLabel: string
   toLabel: string
   departLabel: string
   returnLabel: string
   passengerLabel: string
+  passengerClassLabel: string
   cabinLabel: string
   allRegions: string
   allGroups: string
@@ -205,6 +210,7 @@ function buildQuery(state: FlightFilterState) {
     if (value.trim()) params.set(key, value.trim())
   }
 
+  setIfValue("trip", state.tripMode)
   setIfValue("q", state.q)
   setIfValue("region", state.region)
   setIfValue("group", state.group)
@@ -272,6 +278,11 @@ export default function FlightCatalogInteractiveClient({
   const availableRegions = [...new Set(items.map((item) => item.region))]
   const availableGroups = [...new Set(items.map((item) => item.group))]
   const availableAirlines = [...new Set(items.map((item) => item.meta.airline))]
+  const tripTabs = [
+    { key: "round_trip" as const, label: copy.roundTrip },
+    { key: "one_way" as const, label: copy.oneWay },
+    { key: "multi_city" as const, label: copy.multiCity },
+  ]
 
   const filteredItems = items
     .filter((item) => {
@@ -338,9 +349,8 @@ export default function FlightCatalogInteractiveClient({
     { label: copy.fromLabel, value: state.from },
     { label: copy.toLabel, value: state.to },
     { label: copy.departLabel, value: state.depart },
-    { label: copy.returnLabel, value: state.returnDate },
-    { label: copy.passengerLabel, value: state.passengers },
-    { label: copy.cabinLabel, value: state.cabin },
+    ...(state.tripMode === "one_way" ? [] : [{ label: copy.returnLabel, value: state.returnDate }]),
+    { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
   ]
 
   const applyDraft = () => {
@@ -407,6 +417,31 @@ export default function FlightCatalogInteractiveClient({
             isScrolled ? "p-2.5 shadow-[0_20px_44px_-26px_rgba(15,23,42,0.24)]" : "p-3"
           }`}
         >
+          <div className="mb-3 flex gap-2 overflow-x-auto text-sm font-medium text-white/92 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tripTabs.map((tab) => {
+              const active = draft.tripMode === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      tripMode: tab.key,
+                      returnDate: tab.key === "one_way" ? "" : current.returnDate || initialState.returnDate,
+                    }))
+                  }
+                  className={`shrink-0 rounded-full border px-3 py-2 text-[12px] transition ${
+                    active
+                      ? "border-white/40 bg-white text-sky-700"
+                      : "border-transparent bg-white/8 text-white/88 hover:bg-white/12"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
           <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.05fr_1.05fr_0.78fr_0.78fr_0.85fr_0.72fr_0.9fr_auto] xl:items-end ${isScrolled ? "xl:gap-1.5" : ""}`}>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.fromLabel}</span>
@@ -422,7 +457,7 @@ export default function FlightCatalogInteractiveClient({
             </label>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.returnLabel}</span>
-              <input type="date" value={draft.returnDate} onChange={(event) => setDraft((current) => ({ ...current, returnDate: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
+              <input type="date" value={draft.returnDate} disabled={draft.tripMode === "one_way"} onChange={(event) => setDraft((current) => ({ ...current, returnDate: event.target.value }))} className={`w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25 ${draft.tripMode === "one_way" ? "cursor-not-allowed opacity-50" : ""}`} />
             </label>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.passengerLabel}</span>
