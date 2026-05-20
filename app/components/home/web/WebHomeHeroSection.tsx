@@ -164,8 +164,8 @@ export function HeroSearchPanel({
           ))}
         </div>
         {desktopCabinField ? (
-          <div className="ml-auto w-[478px] shrink-0">
-            <div className="grid grid-cols-[164px_300px] items-center gap-[14px]">
+          <div className="ml-auto w-[406px] shrink-0 pt-[2px]">
+            <div className="grid grid-cols-[104px_286px] items-center gap-4">
               <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
                 {desktopCabinField.displayLabel || desktopCabinField.label}
               </p>
@@ -186,7 +186,7 @@ export function HeroSearchPanel({
                 cabinOptions={desktopCabinField.cabinOptions}
                 onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
                 locale={locale}
-                className="rounded-[16px] px-4 py-[11px]"
+                className="min-h-[38px] rounded-[14px] px-4 py-[7px]"
               />
             </div>
           </div>
