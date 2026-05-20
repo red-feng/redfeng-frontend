@@ -57,7 +57,6 @@ export default function HeroSearchField({
   inputType = "text",
   options = [],
   passengerState,
-  cabinOptions = [],
   onValueChange,
   onSwap,
   locale = "id",

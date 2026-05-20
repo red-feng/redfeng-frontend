@@ -12,6 +12,7 @@ import {
   HeroBenefits,
   HeroHeader,
   HeroSearchDesktop,
+  HeroSearchField,
   HeroSearchMobile,
   HeroTabs,
 } from "@/app/components/home/web/hero"
@@ -128,9 +129,11 @@ export function HeroSearchPanel({
   const [fieldStates, setFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
   const desktopFields = buildFormFields(baseConfig.desktopFields, activeTab, stateKey, fieldStates, locale)
   const mobileFields = buildFormFields(baseConfig.mobileFields, activeTab, stateKey, fieldStates, locale)
+  const desktopCabinField = activeTab === "flight" ? desktopFields.find((field) => getFieldSemanticKey(field.label) === "cabin") : undefined
+  const desktopSearchFields = desktopCabinField ? desktopFields.filter((field) => field !== desktopCabinField) : desktopFields
   const config = {
     ...baseConfig,
-    desktopFields,
+    desktopFields: desktopSearchFields,
     mobileFields,
   }
   const localizedOptionLabels = getLocalizedOptionLabels(locale)
@@ -146,18 +149,48 @@ export function HeroSearchPanel({
           <p className="text-[12px] leading-6 text-slate-500 lg:text-[13px]">{statusCopy.body}</p>
         </div>
       ) : null}
-      <div className="hidden flex-wrap gap-11 text-[13px] font-semibold text-slate-700 lg:flex">
-        {config.options.map((option) => (
-          <button
-            key={option.key}
-            type="button"
-            onClick={() => onOptionChange(option.key)}
-            className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
-          >
-            <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
-            {localizedOptionLabels[option.key] ?? localizeHeroText(option.label, locale)}
-          </button>
-        ))}
+      <div className="hidden items-start justify-between gap-8 lg:flex">
+        <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
+          {config.options.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => onOptionChange(option.key)}
+              className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
+            >
+              <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
+              {localizedOptionLabels[option.key] ?? localizeHeroText(option.label, locale)}
+            </button>
+          ))}
+        </div>
+        {desktopCabinField ? (
+          <div className="w-[346px] shrink-0">
+            <div className="grid grid-cols-[96px_minmax(0,1fr)] items-center gap-3">
+              <p className="text-right text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
+                {desktopCabinField.displayLabel || desktopCabinField.label}
+              </p>
+              <HeroSearchField
+                label={desktopCabinField.label}
+                displayLabel={desktopCabinField.displayLabel}
+                value={desktopCabinField.value}
+                displayValue={desktopCabinField.displayValue}
+                sublabel={desktopCabinField.sublabel ?? ""}
+                displaySublabel={desktopCabinField.displaySublabel}
+                hideLabel
+                hideSublabel
+                withChevron={desktopCabinField.withChevron}
+                variant="searchbox-desktop"
+                inputType={desktopCabinField.inputType}
+                options={desktopCabinField.options}
+                passengerState={desktopCabinField.passengerState}
+                cabinOptions={desktopCabinField.cabinOptions}
+                onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
+                locale={locale}
+                className="rounded-[16px] px-4 py-[11px]"
+              />
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <HeroSearchMobile
@@ -187,7 +220,7 @@ export function HeroSearchPanel({
       <HeroSearchDesktop
         config={config}
         locale={locale}
-        fields={desktopFields}
+        fields={desktopSearchFields}
         onSwap={() => {
           const firstField = baseConfig.desktopFields[0]
           const secondField = baseConfig.desktopFields[1]
