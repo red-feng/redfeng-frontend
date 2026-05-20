@@ -217,7 +217,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px] pt-[3px] pb-[1px]" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px] pt-[5px] pb-0" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="min-w-0">
             <span className="block truncate">{visibleValue}</span>
@@ -228,9 +228,9 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px] pt-[3px] pb-[1px]" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px] pt-[5px] pb-0" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
-          <span className={`truncate ${isCompactDesktopField ? "relative top-[2px]" : ""}`}>{visibleValue}</span>
+          <span className={`truncate ${isCompactDesktopField ? "relative top-[3px]" : ""}`}>{visibleValue}</span>
         </button>
       ) : (
         <input
