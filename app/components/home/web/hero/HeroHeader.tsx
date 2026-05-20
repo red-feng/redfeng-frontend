@@ -29,7 +29,7 @@ export default function HeroHeader({ locale }: { locale: Locale }) {
 
   return (
     <header className="home-hero-header relative z-10 min-h-[158px]">
-      <Link href="/" className="home-hero-logo-link absolute left-0 top-2 z-0 flex translate-y-[20%] items-center gap-2">
+      <Link href="/" className="home-hero-logo-link absolute left-0 top-2 z-0 flex translate-y-[10%] items-center gap-2">
         <Image
           src="/home-assets/logo-redfeng-header.png"
           alt="RedFeng"
