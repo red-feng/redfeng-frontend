@@ -65,7 +65,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
     ],
     variants: {
       one_way: {
-        ctaHref: serviceHref.flight,
+        ctaHref: `${serviceHref.flight}/catalog`,
         ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-5 lg:mt-6 lg:grid lg:grid-cols-[1.34fr_56px_1.34fr_1.2fr_1.28fr_84px] lg:items-start",
         showDesktopSwap: true,
@@ -84,7 +84,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       round_trip: {
-        ctaHref: serviceHref.flight,
+        ctaHref: `${serviceHref.flight}/catalog`,
         ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.22fr_44px_1.22fr_0.86fr_0.86fr_1fr_56px] lg:items-center",
         showDesktopSwap: true,
@@ -105,7 +105,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
         ],
       },
       multi_city: {
-        ctaHref: serviceHref.flight,
+        ctaHref: `${serviceHref.flight}/catalog`,
         ctaLabel: "Lihat Katalog",
         desktopGridClass: "hidden gap-3 lg:mt-6 lg:grid lg:grid-cols-[1.08fr_1.08fr_1.08fr_0.9fr_1fr_56px] lg:items-center",
         desktopFields: [
