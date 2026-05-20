@@ -226,7 +226,7 @@ export default function HeroSearchField({
           onClick={() => setIsOpen((current) => !current)}
           className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
-          <span className="truncate">{visibleValue}</span>
+          <span className={`truncate ${isCompactDesktopField ? "relative top-[1px]" : ""}`}>{visibleValue}</span>
         </button>
       ) : (
         <input
