@@ -17,6 +17,12 @@ function firstQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] || "" : value || ""
 }
 
+function allQueryValues(value: string | string[] | undefined) {
+  if (Array.isArray(value)) return value.map((entry) => String(entry || "").trim()).filter(Boolean)
+  const normalized = String(value || "").trim()
+  return normalized ? [normalized] : []
+}
+
 function filterItems(items: DummyCatalogItem[], keyword: string, region: string, group: string) {
   const normalizedKeyword = keyword.trim().toLowerCase()
   return items.filter((item) => {
@@ -119,15 +125,22 @@ function getNightCount(checkin: string, checkout: string) {
 
 function buildCatalogHref(
   baseHref: string,
-  params: Record<string, string | undefined>,
+  params: Record<string, string | string[] | undefined>,
 ) {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
-    const normalized = String(value || "").trim()
-    if (normalized) searchParams.set(key, normalized)
+    const values = Array.isArray(value) ? value : [value]
+    values.forEach((entry) => {
+      const normalized = String(entry || "").trim()
+      if (normalized) searchParams.append(key, normalized)
+    })
   })
   const query = searchParams.toString()
   return query ? `${baseHref}?${query}` : baseHref
+}
+
+function toggleFilterValue(values: string[], value: string) {
+  return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value]
 }
 
 function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string) {
@@ -235,9 +248,9 @@ export default async function ServiceDummyCatalogPage({
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
   const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
   const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"
-  const flightAirline = firstQueryValue(resolvedSearchParams.airline)
+  const flightAirlines = allQueryValues(resolvedSearchParams.airline)
   const flightDepartWindow = firstQueryValue(resolvedSearchParams.depart_window)
-  const flightTransitType = firstQueryValue(resolvedSearchParams.transit_type)
+  const flightTransitTypes = allQueryValues(resolvedSearchParams.transit_type)
   const flightPriceBand = firstQueryValue(resolvedSearchParams.price_band)
   const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
   const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
@@ -281,9 +294,11 @@ export default async function ServiceDummyCatalogPage({
             const departureMinutes = parseFlightTime(meta.departure)
             const priceValue = parseFlightPrice(meta.price)
             const isDirect = String(meta.transit).toLowerCase().includes("direct") || String(meta.transit).toLowerCase().includes("langsung") || String(meta.transit).includes("直飞")
-            const matchesAirline = !flightAirline || meta.airline === flightAirline
+            const matchesAirline = flightAirlines.length === 0 || flightAirlines.includes(meta.airline)
             const matchesDepartWindow = matchFlightWindow(departureMinutes, flightDepartWindow)
-            const matchesTransit = !flightTransitType || (flightTransitType === "direct" ? isDirect : !isDirect)
+            const matchesTransit =
+              flightTransitTypes.length === 0 ||
+              flightTransitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
             const matchesPriceBand = matchFlightPriceBand(priceValue, flightPriceBand)
             return matchesAirline && matchesDepartWindow && matchesTransit && matchesPriceBand
           })
@@ -558,7 +573,7 @@ export default async function ServiceDummyCatalogPage({
       keyword || catalog.emptyKeyword,
       selectedRegion || flightCopy.allRegions,
       selectedGroup || flightCopy.allGroups,
-      flightAirline || flightCopy.allAirlines,
+      flightAirlines.length === 0 ? flightCopy.allAirlines : flightAirlines.length === 1 ? flightAirlines[0] : `${flightAirlines.length} ${flightCopy.airlineBlock.toLowerCase()}`,
       flightDepartWindow
         ? flightDepartWindow === "morning"
           ? flightCopy.departMorning
@@ -566,6 +581,7 @@ export default async function ServiceDummyCatalogPage({
             ? flightCopy.departAfternoon
             : flightCopy.departEvening
         : flightCopy.allDepartWindows,
+      flightTransitTypes.length === 0 ? flightCopy.allTransitTypes : flightTransitTypes.length === 1 ? (flightTransitTypes[0] === "direct" ? flightCopy.directOnly : flightCopy.transitAllowed) : `${flightTransitTypes.length} ${flightCopy.transitBlock.toLowerCase()}`,
     ]
     const topDetailChips = [
       { label: flightCopy.fromLabel, value: flightFrom },
@@ -586,9 +602,9 @@ export default async function ServiceDummyCatalogPage({
       passengers: flightPassengers,
       cabin: flightCabin,
       sort: flightSort,
-      airline: flightAirline,
+      airline: flightAirlines,
       depart_window: flightDepartWindow,
-      transit_type: flightTransitType,
+      transit_type: flightTransitTypes,
       price_band: flightPriceBand,
     }
     const availableAirlines = [...new Set(flightItems.map(({ meta }) => meta.airline))]
@@ -813,15 +829,15 @@ export default async function ServiceDummyCatalogPage({
               <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.airlineBlock}</p>
                 <div className="mt-3 flex flex-col gap-1.5">
-                  <Link href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: "" })} className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${flightAirline ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}>
+                  <Link href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: [] })} className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${flightAirlines.length > 0 ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}>
                     {flightCopy.allAirlines}
                   </Link>
                   {availableAirlines.map((airline) => (
                     <Link
                       key={airline}
-                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline })}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: toggleFilterValue(flightAirlines, airline) })}
                       className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        flightAirline === airline ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                        flightAirlines.includes(airline) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
                       }`}
                     >
                       {airline}
@@ -862,9 +878,9 @@ export default async function ServiceDummyCatalogPage({
                   ].map(([value, label]) => (
                     <Link
                       key={value || "all"}
-                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, transit_type: value })}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, transit_type: value ? toggleFilterValue(flightTransitTypes, value) : [] })}
                       className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        flightTransitType === value || (!flightTransitType && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                        (value ? flightTransitTypes.includes(value) : flightTransitTypes.length === 0) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
                       }`}
                     >
                       {label}
