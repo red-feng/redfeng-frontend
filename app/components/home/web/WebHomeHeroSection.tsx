@@ -16,7 +16,7 @@ import {
   HeroTabs,
 } from "@/app/components/home/web/hero"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
-import type { HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
+import type { HeroPassengerState, HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
 
 export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
@@ -351,12 +351,14 @@ export function buildFormFields(
   return fields.map((field) => {
     const stateField = fieldStates[getFieldStateKey(stateKey, field.label)] ?? field
     const choices = getFieldChoicesForProvider(activeTab, field, providerKey)
-    const inputType = getFieldInputType(field, choices)
+    const inputType = getFieldInputType(activeTab, field, choices)
 
     return {
       ...stateField,
       displayLabel: localizeHeroText(field.label, locale),
       inputType,
+      passengerState: stateField.passengerState,
+      cabinOptions: stateField.cabinOptions,
       options:
         inputType === "date"
           ? undefined
@@ -369,9 +371,20 @@ export function buildFormFields(
               displaySublabel: localizeHeroText(formatOptionSecondaryLabel(activeTab, field, choice), locale),
               displayGroup: localizeHeroText(inferOptionGroup(activeTab, field, choice), locale),
             })),
-      value: inputType === "date" ? formatDisplayDateToIso(stateField.value) : stateField.value,
-      displayValue: localizeHeroFieldValue(inputType === "date" ? stateField.value : stateField.value, locale),
-      displaySublabel: localizeHeroFieldValue(stateField.sublabel ?? "", locale),
+      value:
+        inputType === "date"
+          ? formatDisplayDateToIso(stateField.value)
+          : inputType === "passenger"
+            ? buildPassengerPrimaryValue(stateField.passengerState ?? getDefaultPassengerState(stateField))
+            : stateField.value,
+      displayValue:
+        inputType === "passenger"
+          ? localizePassengerPrimaryValue(stateField.passengerState ?? getDefaultPassengerState(stateField), locale)
+          : localizeHeroFieldValue(inputType === "date" ? stateField.value : stateField.value, locale),
+      displaySublabel:
+        inputType === "passenger"
+          ? localizeHeroFieldValue((stateField.passengerState ?? getDefaultPassengerState(stateField)).cabin, locale)
+          : localizeHeroFieldValue(stateField.sublabel ?? "", locale),
     }
   })
 }
@@ -380,7 +393,7 @@ export function updateFieldState(
   current: Record<string, HeroSearchFieldData>,
   stateKey: string,
   activeTab: HeroTabKey,
-  field: HeroSearchFieldData & { inputType?: "text" | "date" | "select" | "autocomplete" },
+  field: HeroSearchFieldData & { inputType?: "text" | "date" | "select" | "autocomplete" | "passenger" },
   nextValue: string,
 ) {
   const fieldKey = getFieldStateKey(stateKey, field.label)
@@ -392,6 +405,20 @@ export function updateFieldState(
         ...field,
         value: formatIsoDateToDisplay(nextValue),
         sublabel: formatIsoDateToWeekday(nextValue),
+      },
+    }
+  }
+
+  if (field.inputType === "passenger") {
+    const nextPassengerState = parsePassengerPayload(nextValue) ?? field.passengerState ?? getDefaultPassengerState(field)
+
+    return {
+      ...current,
+      [fieldKey]: {
+        ...field,
+        passengerState: nextPassengerState,
+        value: buildPassengerPrimaryValue(nextPassengerState),
+        sublabel: nextPassengerState.cabin,
       },
     }
   }
@@ -453,8 +480,15 @@ function getFieldSemanticKey(label: string) {
   return normalized.replace(/\s+/g, "_")
 }
 
-function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldData[]) {
+function getFieldInputType(activeTab: HeroTabKey, field: HeroSearchFieldData, choices: HeroSearchFieldData[]) {
   const normalized = field.label.toLowerCase()
+  if (
+    field.passengerState ||
+    (activeTab === "flight" && (normalized.includes("penumpang") || normalized.includes("penumpang & kelas")))
+  ) {
+    return "passenger" as const
+  }
+
   if (
     normalized.includes("berangkat") ||
     normalized.includes("pulang") ||
@@ -484,6 +518,50 @@ function getFieldInputType(field: HeroSearchFieldData, choices: HeroSearchFieldD
   }
 
   return "text" as const
+}
+
+function getDefaultPassengerState(field: Pick<HeroSearchFieldData, "passengerState" | "value" | "sublabel">): HeroPassengerState {
+  if (field.passengerState) return field.passengerState
+  return {
+    adults: extractPassengerCount(field.value, "dewasa") || 1,
+    children: extractPassengerCount(field.value, "anak"),
+    infants: extractPassengerCount(field.value, "bayi"),
+    cabin: field.sublabel || "Ekonomi",
+  }
+}
+
+function extractPassengerCount(value: string, keyword: string) {
+  const match = value.toLowerCase().match(new RegExp(`(\\d+)\\s+${keyword}`))
+  return match ? Number.parseInt(match[1], 10) : 0
+}
+
+function buildPassengerPrimaryValue(state: HeroPassengerState) {
+  const parts = [`${state.adults} Dewasa`]
+  if (state.children > 0) parts.push(`${state.children} Anak`)
+  if (state.infants > 0) parts.push(`${state.infants} Bayi`)
+  return parts.join(", ")
+}
+
+function localizePassengerPrimaryValue(state: HeroPassengerState, locale: Locale) {
+  return localizeHeroFieldValue(buildPassengerPrimaryValue(state), locale)
+}
+
+function parsePassengerPayload(input: string): HeroPassengerState | null {
+  try {
+    const parsed = JSON.parse(input) as Partial<HeroPassengerState>
+    if (typeof parsed.adults !== "number" || typeof parsed.children !== "number" || typeof parsed.infants !== "number" || typeof parsed.cabin !== "string") {
+      return null
+    }
+
+    return {
+      adults: Math.max(1, parsed.adults),
+      children: Math.max(0, parsed.children),
+      infants: Math.max(0, Math.min(parsed.infants, Math.max(1, parsed.adults))),
+      cabin: parsed.cabin,
+    }
+  } catch {
+    return null
+  }
 }
 
 function getFieldChoicesForProvider(activeTab: HeroTabKey, field: HeroSearchFieldData, providerKey: HeroSearchProviderKey) {

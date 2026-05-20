@@ -8,6 +8,7 @@ export { getHeroSearchConfig, heroSearchConfigs } from "./heroSearchContent"
 export { getHeroSearchProviderAdapter } from "./heroSearchProviders"
 export type { HeroSearchProviderKey } from "./heroSearchProviders"
 export type {
+  HeroPassengerState,
   HeroSearchConfig,
   HeroSearchFieldData,
   HeroSearchOption,

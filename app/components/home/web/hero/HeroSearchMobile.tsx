@@ -4,7 +4,7 @@ import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearch
 import type { Locale } from "@/lib/i18n"
 
 type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
-  inputType: "text" | "date" | "select" | "autocomplete"
+  inputType: "text" | "date" | "select" | "autocomplete" | "passenger"
   options?: { label: string; value: string; sublabel?: string }[]
 }
 

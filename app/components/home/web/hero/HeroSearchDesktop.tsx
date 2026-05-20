@@ -6,7 +6,7 @@ import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearch
 import type { Locale } from "@/lib/i18n"
 
 type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
-  inputType: "text" | "date" | "select" | "autocomplete"
+  inputType: "text" | "date" | "select" | "autocomplete" | "passenger"
   options?: { label: string; value: string; sublabel?: string }[]
 }
 
@@ -386,7 +386,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             className="rounded-[999px] px-6 py-[15px]"
             renderValue={
               <SingleLineValue
-                value={passengerField.displayValue || passengerField.value}
+                value={[passengerField.displayValue || passengerField.value, passengerField.displaySublabel || passengerField.sublabel].filter(Boolean).join(" • ")}
                 icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
                 iconTone="text-[#7385a0]"
               />

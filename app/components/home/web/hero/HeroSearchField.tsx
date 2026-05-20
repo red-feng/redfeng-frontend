@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { ChevronDownIcon, SwapIcon } from "@/app/components/home/shared/homeContent"
+import type { HeroPassengerState } from "@/app/components/home/web/hero/heroSearchContent"
 
 type HeroSearchFieldOption = {
   label: string
@@ -29,8 +30,10 @@ type HeroSearchFieldProps = {
   withChevron?: boolean
   compact?: boolean
   variant?: "default" | "searchbox-desktop"
-  inputType?: "text" | "date" | "select" | "autocomplete"
+  inputType?: "text" | "date" | "select" | "autocomplete" | "passenger"
   options?: HeroSearchFieldOption[]
+  passengerState?: HeroPassengerState
+  cabinOptions?: string[]
   onValueChange?: (value: string) => void
   onSwap?: () => void
   locale?: "id" | "en" | "zh"
@@ -53,14 +56,18 @@ export default function HeroSearchField({
   variant = "default",
   inputType = "text",
   options = [],
+  passengerState,
+  cabinOptions = [],
   onValueChange,
   onSwap,
   locale = "id",
 }: HeroSearchFieldProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [draftValue, setDraftValue] = useState(value)
+  const [draftPassengerState, setDraftPassengerState] = useState<HeroPassengerState | null>(passengerState ?? null)
   const fieldRef = useRef<HTMLDivElement | null>(null)
   const hasDropdown = inputType !== "date" && options.length > 0
+  const isPassengerField = inputType === "passenger" && Boolean(passengerState)
   const isSearchboxDesktop = variant === "searchbox-desktop"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shouldShowDefaultAdornment = !renderValue
@@ -110,6 +117,10 @@ export default function HeroSearchField({
   }, [value])
 
   useEffect(() => {
+    setDraftPassengerState(passengerState ?? null)
+  }, [passengerState])
+
+  useEffect(() => {
     if (!isOpen) return
 
     const handlePointerDown = (event: MouseEvent) => {
@@ -146,7 +157,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => {
-            if (hasDropdown || withChevron) {
+            if (hasDropdown || withChevron || isPassengerField) {
               setIsOpen((current) => !current)
             }
           }}
@@ -196,6 +207,17 @@ export default function HeroSearchField({
           }
           className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
+      ) : isPassengerField && draftPassengerState ? (
+        <button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+        >
+          <span className="min-w-0">
+            <span className="block truncate">{visibleValue}</span>
+            {hideSublabel ? null : visibleSublabel ? <span className={`mt-1 block ${sublabelClassName}`}>{visibleSublabel}</span> : null}
+          </span>
+        </button>
       ) : hasDropdown ? (
         <button
           type="button"
@@ -212,9 +234,123 @@ export default function HeroSearchField({
           className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none placeholder:text-slate-300`}
         />
       )}
-          {hideSublabel ? null : visibleSublabel ? <p className={`mt-1 ${sublabelClassName}`}>{visibleSublabel}</p> : <p className={`mt-1 ${sublabelClassName} text-transparent`}>.</p>}
+          {isPassengerField ? null : hideSublabel ? null : visibleSublabel ? <p className={`mt-1 ${sublabelClassName}`}>{visibleSublabel}</p> : <p className={`mt-1 ${sublabelClassName} text-transparent`}>.</p>}
         </div>
       </div>
+      {isPassengerField && isOpen && draftPassengerState ? (
+        <div className="absolute left-0 top-[calc(100%+10px)] z-[280] w-full min-w-[320px] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.38)]">
+          <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                {locale === "en" ? "Passengers" : locale === "zh" ? "乘客" : "Penumpang"}
+              </p>
+              <p className="mt-1 text-[15px] font-semibold text-slate-900">
+                {locale === "en" ? "Passenger & cabin setup" : locale === "zh" ? "乘客与舱位设置" : "Atur penumpang dan kabin"}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDraftPassengerState(passengerState ?? null)
+                setIsOpen(false)
+              }}
+              className="text-slate-400 transition hover:text-slate-700"
+            >
+              <CloseMiniIcon className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="space-y-5 px-5 py-5">
+            {([
+              ["adults", locale === "en" ? "Adult" : locale === "zh" ? "成人" : "Dewasa", locale === "en" ? "Age 12 and above" : locale === "zh" ? "12 岁及以上" : "Usia 12 tahun ke atas"],
+              ["children", locale === "en" ? "Child" : locale === "zh" ? "儿童" : "Anak", locale === "en" ? "Age 2 - 11" : locale === "zh" ? "2 - 11 岁" : "Usia 2 - 11 tahun"],
+              ["infants", locale === "en" ? "Infant" : locale === "zh" ? "婴儿" : "Bayi", locale === "en" ? "Below age 2" : locale === "zh" ? "2 岁以下" : "Di bawah 2 tahun"],
+            ] as const).map(([key, title, subtitle]) => {
+              const currentValue = draftPassengerState[key]
+              const minimum = key === "adults" ? 1 : 0
+              const maximum = key === "infants" ? draftPassengerState.adults : 9
+
+              return (
+                <div key={key} className="flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-slate-900">{title}</p>
+                    <p className="mt-1 text-[13px] text-slate-500">{subtitle}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <PassengerCounterButton
+                      label="-"
+                      disabled={currentValue <= minimum}
+                      onClick={() =>
+                        setDraftPassengerState((current) => {
+                          if (!current) return current
+                          const nextValue = Math.max(minimum, current[key] - 1)
+                          const nextAdults = key === "adults" ? nextValue : current.adults
+                          return {
+                            ...current,
+                            [key]: nextValue,
+                            infants: key === "adults" ? Math.min(current.infants, nextAdults) : current.infants,
+                          }
+                        })
+                      }
+                    />
+                    <span className="flex min-w-[48px] justify-center border-b border-slate-200 pb-1 text-[24px] font-semibold leading-none text-slate-900">
+                      {currentValue}
+                    </span>
+                    <PassengerCounterButton
+                      label="+"
+                      disabled={currentValue >= maximum}
+                      onClick={() =>
+                        setDraftPassengerState((current) => {
+                          if (!current) return current
+                          const nextValue = Math.min(maximum, current[key] + 1)
+                          return { ...current, [key]: nextValue }
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              )
+            })}
+
+            {cabinOptions.length > 0 ? (
+              <div className="border-t border-slate-100 pt-5">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                  {locale === "en" ? "Cabin class" : locale === "zh" ? "舱位等级" : "Kelas kabin"}
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {cabinOptions.map((option) => {
+                    const isActive = draftPassengerState.cabin === option
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setDraftPassengerState((current) => (current ? { ...current, cabin: option } : current))}
+                        className={`rounded-[16px] border px-3 py-3 text-[13px] font-semibold transition ${
+                          isActive ? "border-[#ffb4a3] bg-[#fff4f1] text-[#ef4423]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="px-5 pb-5">
+            <button
+              type="button"
+              onClick={() => {
+                if (!draftPassengerState) return
+                onValueChange?.(JSON.stringify(draftPassengerState))
+                setIsOpen(false)
+              }}
+              className="inline-flex h-12 w-full items-center justify-center rounded-[16px] bg-[#ff6624] text-[15px] font-semibold text-white transition hover:opacity-95"
+            >
+              {locale === "en" ? "Done" : locale === "zh" ? "完成" : "Selesai"}
+            </button>
+          </div>
+        </div>
+      ) : null}
       {hasDropdown && isOpen ? (
         <div className="absolute left-0 top-[calc(100%+10px)] z-[280] w-full min-w-[260px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.38)]">
           <div className="border-b border-slate-100 px-4 py-3">
@@ -327,6 +463,35 @@ export default function HeroSearchField({
         </span>
       ) : null}
     </div>
+  )
+}
+
+function PassengerCounterButton({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string
+  disabled: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] bg-slate-100 text-[24px] leading-none text-[#2291ff] transition enabled:hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-300"
+    >
+      {label}
+    </button>
+  )
+}
+
+function CloseMiniIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden="true">
+      <path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" />
+    </svg>
   )
 }
 

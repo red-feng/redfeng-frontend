@@ -21,8 +21,17 @@ export type HeroSearchFieldData = {
   group?: string
   withChevron?: boolean
   withSwap?: boolean
-  inputType?: "text" | "date" | "select" | "autocomplete"
+  inputType?: "text" | "date" | "select" | "autocomplete" | "passenger"
   options?: { label: string; value: string; sublabel?: string; group?: string; displayValue?: string; displaySublabel?: string; displayGroup?: string }[]
+  passengerState?: HeroPassengerState
+  cabinOptions?: string[]
+}
+
+export type HeroPassengerState = {
+  adults: number
+  children: number
+  infants: number
+  cabin: string
 }
 
 export type HeroSearchOption = {
@@ -73,14 +82,14 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
           { label: "Dari", value: "CGK   Jakarta", sublabel: "Semua Bandara" },
           { label: "Ke", value: "DPS   Denpasar", sublabel: "Bali" },
           { label: "Tanggal Pergi", value: "25 Mei 2026", sublabel: "Minggu" },
-          { label: "Penumpang", value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: true },
+          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
         mobilePrimaryCount: 2,
         mobileFields: [
           { label: "Dari", value: "Jakarta (CGK)", sublabel: "Soekarno Hatta", withSwap: true },
           { label: "Ke", value: "Denpasar (DPS)", sublabel: "Ngurah Rai" },
           { label: "Berangkat", value: "25 Mei 2026", sublabel: "Minggu" },
-          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true },
+          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
       },
       round_trip: {
@@ -93,7 +102,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
           { label: "Ke", value: "DPS   Denpasar", sublabel: "Bali" },
           { label: "Berangkat", value: "25 Mei 2026", sublabel: "Minggu" },
           { label: "Pulang", value: "28 Mei 2026", sublabel: "Rabu" },
-          { label: "Penumpang", value: "1 Dewasa, Ekonomi", sublabel: "Kelas Kabin", withChevron: true },
+          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
         mobilePrimaryCount: 2,
         mobileFields: [
@@ -101,7 +110,7 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
           { label: "Ke", value: "Denpasar (DPS)", sublabel: "Ngurah Rai" },
           { label: "Berangkat", value: "25 Mei 2026", sublabel: "Minggu" },
           { label: "Pulang", value: "28 Mei 2026", sublabel: "Rabu" },
-          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true },
+          { label: "Penumpang", value: "1 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 1, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
       },
       multi_city: {
@@ -113,13 +122,13 @@ export const heroSearchConfigs: Record<HeroTabKey, HeroSearchTabConfig> = {
           { label: "Transit", value: "Singapore", sublabel: "SIN" },
           { label: "Kota Tujuan", value: "Tokyo", sublabel: "HND" },
           { label: "Berangkat", value: "4 Juni 2026", sublabel: "Kamis" },
-          { label: "Penumpang", value: "2 Dewasa", sublabel: "Ekonomi", withChevron: true },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 2, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
         mobilePrimaryCount: 1,
         mobileFields: [
           { label: "Rute", value: "Jakarta - Singapore - Tokyo", sublabel: "3 kota" },
           { label: "Berangkat", value: "4 Juni 2026", sublabel: "Kamis" },
-          { label: "Penumpang", value: "2 Dewasa", sublabel: "Ekonomi", withChevron: true },
+          { label: "Penumpang", value: "2 Dewasa", sublabel: "Ekonomi", withChevron: true, passengerState: { adults: 2, children: 0, infants: 0, cabin: "Ekonomi" }, cabinOptions: ["Ekonomi", "Premium Economy", "Business"] },
         ],
       },
     },
