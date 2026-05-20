@@ -164,8 +164,8 @@ export function HeroSearchPanel({
           ))}
         </div>
         {desktopCabinField ? (
-          <div className="ml-auto w-[640px] shrink-0">
-            <div className="grid grid-cols-[1fr_300px] items-center gap-4">
+          <div className="ml-auto w-[462px] shrink-0">
+            <div className="grid grid-cols-[150px_300px] items-center gap-3">
               <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
                 {desktopCabinField.displayLabel || desktopCabinField.label}
               </p>
