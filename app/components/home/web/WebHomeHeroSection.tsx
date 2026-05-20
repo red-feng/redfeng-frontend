@@ -151,7 +151,10 @@ export function HeroSearchPanel({
         </div>
       ) : null}
       {isFlightOneWayDesktop && desktopCabinField ? (
-        <div className="hidden items-center justify-between gap-8 lg:flex">
+        <div
+          className="hidden items-center gap-x-6 lg:grid"
+          style={{ gridTemplateColumns: "1fr 352px 1fr" }}
+        >
           <div className="flex flex-wrap items-center gap-11 text-[13px] font-semibold text-slate-700">
             {config.options.map((option) => (
               <button
@@ -165,7 +168,7 @@ export function HeroSearchPanel({
               </button>
             ))}
           </div>
-          <div className="grid w-[352px] shrink-0 grid-cols-[96px_244px] items-center gap-3">
+          <div className="grid w-[352px] shrink-0 grid-cols-[96px_244px] items-center gap-3 justify-self-start">
             <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
               {desktopCabinField.displayLabel || desktopCabinField.label}
             </p>
@@ -190,6 +193,7 @@ export function HeroSearchPanel({
               className="w-[244px] rounded-[14px] px-[14px] py-0"
             />
           </div>
+          <div />
         </div>
       ) : (
         <div className="hidden items-start justify-between gap-8 lg:flex">
