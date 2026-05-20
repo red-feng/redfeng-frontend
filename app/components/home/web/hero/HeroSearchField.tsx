@@ -245,7 +245,7 @@ export default function HeroSearchField({
                 {locale === "en" ? "Passengers" : locale === "zh" ? "乘客" : "Penumpang"}
               </p>
               <p className="mt-1 text-[15px] font-semibold text-slate-900">
-                {locale === "en" ? "Passenger & cabin setup" : locale === "zh" ? "乘客与舱位设置" : "Atur penumpang dan kabin"}
+                {locale === "en" ? "Set passenger counts" : locale === "zh" ? "设置乘客数量" : "Atur jumlah penumpang"}
               </p>
             </div>
             <button
@@ -310,31 +310,6 @@ export default function HeroSearchField({
                 </div>
               )
             })}
-
-            {cabinOptions.length > 0 ? (
-              <div className="border-t border-slate-100 pt-5">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  {locale === "en" ? "Cabin class" : locale === "zh" ? "舱位等级" : "Kelas kabin"}
-                </p>
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {cabinOptions.map((option) => {
-                    const isActive = draftPassengerState.cabin === option
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setDraftPassengerState((current) => (current ? { ...current, cabin: option } : current))}
-                        className={`rounded-[16px] border px-3 py-3 text-[13px] font-semibold transition ${
-                          isActive ? "border-[#ffb4a3] bg-[#fff4f1] text-[#ef4423]" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
           </div>
           <div className="px-5 pb-5">
             <button
