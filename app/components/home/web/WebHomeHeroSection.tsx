@@ -168,7 +168,7 @@ export function HeroSearchPanel({
               </button>
             ))}
           </div>
-          <div className="grid w-[352px] shrink-0 translate-x-[49%] grid-cols-[96px_244px] items-center gap-3 justify-self-start">
+          <div className="grid w-[352px] shrink-0 translate-x-[34%] grid-cols-[96px_244px] items-center gap-3 justify-self-start">
             <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
               {desktopCabinField.displayLabel || desktopCabinField.label}
             </p>
