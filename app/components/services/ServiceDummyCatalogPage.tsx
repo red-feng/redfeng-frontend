@@ -5,6 +5,7 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
+import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,
@@ -143,6 +144,29 @@ function toggleFilterValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value]
 }
 
+function getFlightFilterLinkClass(active: boolean) {
+  return `flex items-center gap-3 rounded-[14px] border px-3 py-2.5 text-sm transition ${
+    active
+      ? "border-sky-200 bg-sky-50 text-sky-700"
+      : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+  }`
+}
+
+function FilterCheck({ active }: { active: boolean }) {
+  return (
+    <span
+      className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+        active ? "border-sky-500 bg-sky-500 text-white" : "border-slate-300 bg-white text-transparent"
+      }`}
+      aria-hidden="true"
+    >
+      <svg viewBox="0 0 16 16" className="h-3 w-3 fill-none stroke-current stroke-[2.2]">
+        <path d="m3.5 8 2.5 2.5L12.5 4.5" />
+      </svg>
+    </span>
+  )
+}
+
 function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string) {
   const preset = [
     {
@@ -249,9 +273,9 @@ export default async function ServiceDummyCatalogPage({
   const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
   const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"
   const flightAirlines = allQueryValues(resolvedSearchParams.airline)
-  const flightDepartWindow = firstQueryValue(resolvedSearchParams.depart_window)
+  const flightDepartWindows = allQueryValues(resolvedSearchParams.depart_window)
   const flightTransitTypes = allQueryValues(resolvedSearchParams.transit_type)
-  const flightPriceBand = firstQueryValue(resolvedSearchParams.price_band)
+  const flightPriceBands = allQueryValues(resolvedSearchParams.price_band)
   const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
   const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
   const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
@@ -295,11 +319,11 @@ export default async function ServiceDummyCatalogPage({
             const priceValue = parseFlightPrice(meta.price)
             const isDirect = String(meta.transit).toLowerCase().includes("direct") || String(meta.transit).toLowerCase().includes("langsung") || String(meta.transit).includes("直飞")
             const matchesAirline = flightAirlines.length === 0 || flightAirlines.includes(meta.airline)
-            const matchesDepartWindow = matchFlightWindow(departureMinutes, flightDepartWindow)
+            const matchesDepartWindow = flightDepartWindows.length === 0 || flightDepartWindows.some((window) => matchFlightWindow(departureMinutes, window))
             const matchesTransit =
               flightTransitTypes.length === 0 ||
               flightTransitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
-            const matchesPriceBand = matchFlightPriceBand(priceValue, flightPriceBand)
+            const matchesPriceBand = flightPriceBands.length === 0 || flightPriceBands.some((band) => matchFlightPriceBand(priceValue, band))
             return matchesAirline && matchesDepartWindow && matchesTransit && matchesPriceBand
           })
           .sort((left, right) => {
@@ -408,6 +432,203 @@ export default async function ServiceDummyCatalogPage({
       locationLabel: "位置",
     },
   }[locale]
+
+  if (slug === "pesawat" && resolvedSearchParams.interactive !== "legacy") {
+    const flightCopy =
+      locale === "en"
+        ? {
+            searchSummary: "Search summary",
+            topTitle: "A RedFeng flight catalog with a sharper OTA-style flow",
+            topBody: "We borrow the OTA layout logic: search summary on top, filters on the left, results in the middle, and very clear pricing actions. The visual system stays warmer and calmer so it still feels like RedFeng.",
+            refineSearch: "Refine search",
+            fromLabel: "From",
+            toLabel: "To",
+            departLabel: "Depart",
+            returnLabel: "Return",
+            passengerLabel: "Passengers",
+            cabinLabel: "Cabin",
+            allRegions: "All regions",
+            allGroups: "All trip types",
+            allAirlines: "All airlines",
+            allDepartWindows: "All times",
+            allTransitTypes: "All transit options",
+            allPriceBands: "All prices",
+            flightsFound: "sample flight options",
+            sortLabel: "Sort by",
+            sortBest: "Best choice",
+            sortPrice: "Lowest price",
+            sortEarly: "Earliest departure",
+            refundTag: "Reschedule ready",
+            baggageTag: "Cabin baggage",
+            activeFilters: "Active filters",
+            leftTitle: "Filter results",
+            leftBody: "The left rail follows OTA behavior, but stays cleaner so users can scan quickly without feeling crowded.",
+            regionBlock: "Region",
+            tripBlock: "Trip type",
+            airlineBlock: "Airline",
+            departWindowBlock: "Departure time",
+            transitBlock: "Transit",
+            priceBlock: "Price range",
+            departMorning: "Morning to noon",
+            departAfternoon: "Noon to evening",
+            departEvening: "Evening",
+            directOnly: "Direct only",
+            transitAllowed: "Transit / mixed",
+            priceBudget: "Below 1.5m",
+            priceMid: "1.5m - 3m",
+            pricePremium: "Above 3m",
+            resetFilters: "Reset all",
+            priceLabel: "Starting from",
+            chooseLabel: "Choose",
+            fareLabel: "Dummy fare",
+            supportHint: "Live checkout is not active yet. This layout is here to test result rhythm, filter behavior, and CTA priority.",
+            emptyTitle: "No matching dummy flights found",
+            emptyBody: "Try widening the region or trip type to bring results back.",
+          }
+        : locale === "zh"
+          ? {
+              searchSummary: "搜索摘要",
+              topTitle: "更聚焦 OTA 节奏的 RedFeng 航班目录",
+              topBody: "我们借鉴 OTA 的结构逻辑：顶部搜索摘要、左侧筛选、中间结果，以及非常清晰的价格与行动区，同时保留更温暖、更从容的 RedFeng 视觉气质。",
+              refineSearch: "调整搜索",
+              fromLabel: "出发地",
+              toLabel: "目的地",
+              departLabel: "出发",
+              returnLabel: "返程",
+              passengerLabel: "乘客",
+              cabinLabel: "舱位",
+              allRegions: "全部区域",
+              allGroups: "全部行程类型",
+              allAirlines: "全部航司",
+              allDepartWindows: "全部时间",
+              allTransitTypes: "全部中转",
+              allPriceBands: "全部价格",
+              flightsFound: "个示例航班",
+              sortLabel: "排序",
+              sortBest: "推荐优先",
+              sortPrice: "最低价格",
+              sortEarly: "最早出发",
+              refundTag: "可改期",
+              baggageTag: "含手提行李",
+              activeFilters: "当前筛选",
+              leftTitle: "筛选结果",
+              leftBody: "左侧筛选区沿用 OTA 习惯，但保持更清爽的节奏，方便快速浏览。",
+              regionBlock: "区域",
+              tripBlock: "行程类型",
+              airlineBlock: "航空公司",
+              departWindowBlock: "出发时间",
+              transitBlock: "中转",
+              priceBlock: "价格范围",
+              departMorning: "上午至中午",
+              departAfternoon: "中午至傍晚",
+              departEvening: "晚上",
+              directOnly: "仅直飞",
+              transitAllowed: "中转 / 混合",
+              priceBudget: "低于 150 万",
+              priceMid: "150 万 - 300 万",
+              pricePremium: "高于 300 万",
+              resetFilters: "重置全部",
+              priceLabel: "起价",
+              chooseLabel: "选择",
+              fareLabel: "示例票价",
+              supportHint: "暂未开放实时下单。这个版面主要用于验证结果节奏、筛选行为与 CTA 优先级。",
+              emptyTitle: "没有匹配的示例航班",
+              emptyBody: "请放宽区域或行程类型后再试一次。",
+            }
+          : {
+              searchSummary: "Ringkasan pencarian",
+              topTitle: "Katalog pesawat RedFeng dengan alur OTA yang lebih fokus",
+              topBody: "Kami ambil pola layout OTA: ringkasan pencarian di atas, filter di kiri, hasil di tengah, lalu harga dan aksi yang sangat jelas. Visualnya tetap dibuat lebih hangat dan lapang agar terasa RedFeng.",
+              refineSearch: "Ubah pencarian",
+              fromLabel: "Dari",
+              toLabel: "Ke",
+              departLabel: "Berangkat",
+              returnLabel: "Pulang",
+              passengerLabel: "Penumpang",
+              cabinLabel: "Kabin",
+              allRegions: "Semua region",
+              allGroups: "Semua tipe",
+              allAirlines: "Semua maskapai",
+              allDepartWindows: "Semua jam",
+              allTransitTypes: "Semua transit",
+              allPriceBands: "Semua harga",
+              flightsFound: "opsi penerbangan contoh",
+              sortLabel: "Urutkan",
+              sortBest: "Pilihan terbaik",
+              sortPrice: "Harga terendah",
+              sortEarly: "Berangkat paling pagi",
+              refundTag: "Bisa reschedule",
+              baggageTag: "Bagasi kabin",
+              activeFilters: "Filter aktif",
+              leftTitle: "Saring hasil",
+              leftBody: "Panel kiri dibuat seperti OTA, tetapi lebih bersih supaya user cepat scan tanpa merasa sesak.",
+              regionBlock: "Region",
+              tripBlock: "Tipe perjalanan",
+              airlineBlock: "Maskapai",
+              departWindowBlock: "Jam berangkat",
+              transitBlock: "Transit",
+              priceBlock: "Rentang harga",
+              departMorning: "Pagi - siang",
+              departAfternoon: "Siang - sore",
+              departEvening: "Malam",
+              directOnly: "Langsung",
+              transitAllowed: "Transit / mixed",
+              priceBudget: "Di bawah 1.5 jt",
+              priceMid: "1.5 jt - 3 jt",
+              pricePremium: "Di atas 3 jt",
+              resetFilters: "Reset semua",
+              priceLabel: "Mulai dari",
+              chooseLabel: "Pilih",
+              fareLabel: "Fare dummy",
+              supportHint: "Belum checkout live. Tata letak ini dipakai untuk menguji ritme hasil, filter, dan prioritas CTA.",
+              emptyTitle: "Belum ada penerbangan dummy yang cocok",
+              emptyBody: "Coba longgarkan region atau tipe perjalanan agar daftar hasil muncul lagi.",
+            }
+
+    return (
+      <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#f9fbff_16%,#fffdfa_48%,#f3f6fb_100%)] pb-36 md:pb-0">
+        <PublicInstallPrompt locale={locale} />
+        <PublicHeader locale={locale} variant="default" />
+        <FlightCatalogInteractiveClient
+          items={flightItems.map(({ item, meta }) => ({
+            ...item,
+            meta,
+          }))}
+          emptyKeyword={catalog.emptyKeyword}
+          searchPlaceholder={catalog.searchPlaceholder}
+          serviceCatalogHref={service.catalogHref}
+          supportHref={catalog.supportHref}
+          copy={flightCopy}
+          filterKeywordLabel={copy.filterKeyword}
+          initialState={{
+            q: keyword,
+            region: selectedRegion,
+            group: selectedGroup,
+            from: flightFrom,
+            to: flightTo,
+            depart: flightDepart,
+            returnDate: flightReturn,
+            passengers: flightPassengers,
+            cabin: flightCabin,
+            sort: flightSort,
+            airlines: flightAirlines,
+            departWindows: flightDepartWindows,
+            transitTypes: flightTransitTypes,
+            priceBands: flightPriceBands,
+          }}
+        />
+        <PublicStickyAction
+          locale={locale}
+          href="#top"
+          label={flightCopy.refineSearch}
+          summary={flightCopy.topTitle}
+          secondaryHref={catalog.promoHref}
+          secondaryLabel={copy.promoCta}
+        />
+        <PublicMobileNav locale={locale} />
+      </div>
+    )
+  }
 
   if (slug === "pesawat") {
     const flightCopy = {
@@ -574,14 +795,25 @@ export default async function ServiceDummyCatalogPage({
       selectedRegion || flightCopy.allRegions,
       selectedGroup || flightCopy.allGroups,
       flightAirlines.length === 0 ? flightCopy.allAirlines : flightAirlines.length === 1 ? flightAirlines[0] : `${flightAirlines.length} ${flightCopy.airlineBlock.toLowerCase()}`,
-      flightDepartWindow
-        ? flightDepartWindow === "morning"
-          ? flightCopy.departMorning
-          : flightDepartWindow === "afternoon"
-            ? flightCopy.departAfternoon
-            : flightCopy.departEvening
-        : flightCopy.allDepartWindows,
+      flightDepartWindows.length === 0
+        ? flightCopy.allDepartWindows
+        : flightDepartWindows.length === 1
+          ? flightDepartWindows[0] === "morning"
+            ? flightCopy.departMorning
+            : flightDepartWindows[0] === "afternoon"
+              ? flightCopy.departAfternoon
+              : flightCopy.departEvening
+          : `${flightDepartWindows.length} ${flightCopy.departWindowBlock.toLowerCase()}`,
       flightTransitTypes.length === 0 ? flightCopy.allTransitTypes : flightTransitTypes.length === 1 ? (flightTransitTypes[0] === "direct" ? flightCopy.directOnly : flightCopy.transitAllowed) : `${flightTransitTypes.length} ${flightCopy.transitBlock.toLowerCase()}`,
+      flightPriceBands.length === 0
+        ? flightCopy.allPriceBands
+        : flightPriceBands.length === 1
+          ? flightPriceBands[0] === "budget"
+            ? flightCopy.priceBudget
+            : flightPriceBands[0] === "mid"
+              ? flightCopy.priceMid
+              : flightCopy.pricePremium
+          : `${flightPriceBands.length} ${flightCopy.priceBlock.toLowerCase()}`,
     ]
     const topDetailChips = [
       { label: flightCopy.fromLabel, value: flightFrom },
@@ -603,9 +835,9 @@ export default async function ServiceDummyCatalogPage({
       cabin: flightCabin,
       sort: flightSort,
       airline: flightAirlines,
-      depart_window: flightDepartWindow,
+      depart_window: flightDepartWindows,
       transit_type: flightTransitTypes,
-      price_band: flightPriceBand,
+      price_band: flightPriceBands,
     }
     const availableAirlines = [...new Set(flightItems.map(({ meta }) => meta.airline))]
 
@@ -829,18 +1061,18 @@ export default async function ServiceDummyCatalogPage({
               <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.airlineBlock}</p>
                 <div className="mt-3 flex flex-col gap-1.5">
-                  <Link href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: [] })} className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${flightAirlines.length > 0 ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}>
-                    {flightCopy.allAirlines}
+                  <Link href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: [] })} className={getFlightFilterLinkClass(flightAirlines.length === 0)}>
+                    <FilterCheck active={flightAirlines.length === 0} />
+                    <span>{flightCopy.allAirlines}</span>
                   </Link>
                   {availableAirlines.map((airline) => (
                     <Link
                       key={airline}
                       href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: toggleFilterValue(flightAirlines, airline) })}
-                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        flightAirlines.includes(airline) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
-                      }`}
+                      className={getFlightFilterLinkClass(flightAirlines.includes(airline))}
                     >
-                      {airline}
+                      <FilterCheck active={flightAirlines.includes(airline)} />
+                      <span>{airline}</span>
                     </Link>
                   ))}
                 </div>
@@ -857,12 +1089,11 @@ export default async function ServiceDummyCatalogPage({
                   ].map(([value, label]) => (
                     <Link
                       key={value || "all"}
-                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, depart_window: value })}
-                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        flightDepartWindow === value || (!flightDepartWindow && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
-                      }`}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, depart_window: value ? toggleFilterValue(flightDepartWindows, value) : [] })}
+                      className={getFlightFilterLinkClass(value ? flightDepartWindows.includes(value) : flightDepartWindows.length === 0)}
                     >
-                      {label}
+                      <FilterCheck active={value ? flightDepartWindows.includes(value) : flightDepartWindows.length === 0} />
+                      <span>{label}</span>
                     </Link>
                   ))}
                 </div>
@@ -879,11 +1110,10 @@ export default async function ServiceDummyCatalogPage({
                     <Link
                       key={value || "all"}
                       href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, transit_type: value ? toggleFilterValue(flightTransitTypes, value) : [] })}
-                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        (value ? flightTransitTypes.includes(value) : flightTransitTypes.length === 0) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
-                      }`}
+                      className={getFlightFilterLinkClass(value ? flightTransitTypes.includes(value) : flightTransitTypes.length === 0)}
                     >
-                      {label}
+                      <FilterCheck active={value ? flightTransitTypes.includes(value) : flightTransitTypes.length === 0} />
+                      <span>{label}</span>
                     </Link>
                   ))}
                 </div>
@@ -900,12 +1130,11 @@ export default async function ServiceDummyCatalogPage({
                   ].map(([value, label]) => (
                     <Link
                       key={value || "all"}
-                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, price_band: value })}
-                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
-                        flightPriceBand === value || (!flightPriceBand && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
-                      }`}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, price_band: value ? toggleFilterValue(flightPriceBands, value) : [] })}
+                      className={getFlightFilterLinkClass(value ? flightPriceBands.includes(value) : flightPriceBands.length === 0)}
                     >
-                      {label}
+                      <FilterCheck active={value ? flightPriceBands.includes(value) : flightPriceBands.length === 0} />
+                      <span>{label}</span>
                     </Link>
                   ))}
                 </div>
