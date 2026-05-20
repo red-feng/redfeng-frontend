@@ -21,7 +21,7 @@ type HeroSearchDesktopProps = {
 export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap, locale }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
-  const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
+  const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 5
   const layout = getDesktopPatternLayout(showDesktopSwap, desktopFields.length)
 
   if (isDedicatedFlightOneWay) {
