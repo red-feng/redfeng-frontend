@@ -616,7 +616,9 @@ export default function FlightCatalogInteractiveClient({
               </button>
             </div>
           ) : (
-            filteredItems.map(({ item, meta }) => (
+            filteredItems.map((item) => {
+              const { meta } = item
+              return (
               <article key={item.id} className="overflow-hidden rounded-[20px] border border-[#dce8f6] bg-white shadow-[0_14px_32px_-26px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.2)]">
                 <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_220px]">
                   <div className="p-4">
@@ -686,7 +688,8 @@ export default function FlightCatalogInteractiveClient({
                   </div>
                 </div>
               </article>
-            ))
+              )
+            })
           )}
         </div>
       </section>
