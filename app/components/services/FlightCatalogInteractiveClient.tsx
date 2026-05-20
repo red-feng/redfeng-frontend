@@ -3,7 +3,10 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import type { ReactNode } from "react"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+
+type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
 
 type FlightFact = {
   label: string
@@ -154,6 +157,44 @@ function FilterCheck({ active }: { active: boolean }) {
   )
 }
 
+function FilterSection({
+  title,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  open: boolean
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-3 text-left"
+        aria-expanded={open}
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{title}</p>
+        <span
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition ${
+            open ? "bg-sky-50 text-sky-700" : "bg-white"
+          }`}
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 16 16" className={`h-3.5 w-3.5 fill-none stroke-current stroke-[2] transition ${open ? "rotate-180" : ""}`}>
+            <path d="M3.5 6.5 8 11l4.5-4.5" />
+          </svg>
+        </span>
+      </button>
+      <div className={`grid transition-[grid-template-rows,opacity,margin] duration-200 ${open ? "mt-3 grid-rows-[1fr] opacity-100" : "mt-0 grid-rows-[0fr] opacity-0"}`}>
+        <div className="overflow-hidden">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 function toggleValue(values: string[], value: string) {
   return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value]
 }
@@ -202,12 +243,31 @@ export default function FlightCatalogInteractiveClient({
 }) {
   const [state, setState] = useState(initialState)
   const [draft, setDraft] = useState(initialState)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
+    region: true,
+    group: false,
+    airline: true,
+    departWindow: false,
+    transit: false,
+    price: false,
+  })
 
   useEffect(() => {
     const query = buildQuery(state)
     const nextUrl = query ? `${serviceCatalogHref}?${query}` : serviceCatalogHref
     window.history.replaceState(null, "", nextUrl)
   }, [serviceCatalogHref, state])
+
+  useEffect(() => {
+    const syncScrollState = () => {
+      setIsScrolled(window.scrollY > 180)
+    }
+
+    syncScrollState()
+    window.addEventListener("scroll", syncScrollState, { passive: true })
+    return () => window.removeEventListener("scroll", syncScrollState)
+  }, [])
 
   const availableRegions = [...new Set(items.map((item) => item.region))]
   const availableGroups = [...new Set(items.map((item) => item.group))]
@@ -305,6 +365,10 @@ export default function FlightCatalogInteractiveClient({
     setState((current) => ({ ...current, ...patch }))
   }
 
+  const toggleSection = (section: FilterSectionKey) => {
+    setOpenSections((current) => ({ ...current, [section]: !current[section] }))
+  }
+
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
       <section className={homeLayoutLock.contentWidthClass}>
@@ -333,15 +397,17 @@ export default function FlightCatalogInteractiveClient({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4`}>
+      <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.992]" : ""}`}>
         <form
           onSubmit={(event) => {
             event.preventDefault()
             applyDraft()
           }}
-          className="rounded-[20px] border border-[#d9e8f6] bg-[#1687e0] p-3 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)]"
+          className={`rounded-[20px] border border-[#d9e8f6] bg-[#1687e0] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)] transition-all duration-200 ${
+            isScrolled ? "p-2.5 shadow-[0_20px_44px_-26px_rgba(15,23,42,0.24)]" : "p-3"
+          }`}
         >
-          <div className="grid gap-2 xl:grid-cols-[1.05fr_1.05fr_0.78fr_0.78fr_0.85fr_0.72fr_0.9fr_auto] xl:items-end">
+          <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.05fr_1.05fr_0.78fr_0.78fr_0.85fr_0.72fr_0.9fr_auto] xl:items-end ${isScrolled ? "xl:gap-1.5" : ""}`}>
             <label className="block">
               <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.fromLabel}</span>
               <input value={draft.from} onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
@@ -379,6 +445,15 @@ export default function FlightCatalogInteractiveClient({
               </button>
             </div>
           </div>
+          <div className={`overflow-hidden transition-[max-height,opacity,margin] duration-200 ${isScrolled ? "mt-2 max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
+            <div className="flex flex-wrap gap-1.5">
+              {topSummaryChips.slice(0, 4).map((chip) => (
+                <span key={`sticky-${chip}`} className="rounded-full border border-white/30 bg-white/12 px-2.5 py-1 text-[11px] font-medium text-white">
+                  {chip}
+                </span>
+              ))}
+            </div>
+          </div>
         </form>
       </section>
 
@@ -392,9 +467,8 @@ export default function FlightCatalogInteractiveClient({
             <p className="mt-2 text-xs leading-6 text-slate-500">{copy.leftBody}</p>
           </div>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.regionBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.regionBlock} open={openSections.region} onToggle={() => toggleSection("region")}>
+            <div className="flex flex-col gap-1.5">
               <button type="button" onClick={() => updateState({ region: "" })} className={filterLinkClass(state.region === "")}>
                 <FilterCheck active={state.region === ""} />
                 <span>{copy.allRegions}</span>
@@ -406,11 +480,10 @@ export default function FlightCatalogInteractiveClient({
                 </button>
               ))}
             </div>
-          </div>
+          </FilterSection>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.tripBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.tripBlock} open={openSections.group} onToggle={() => toggleSection("group")}>
+            <div className="flex flex-col gap-1.5">
               <button type="button" onClick={() => updateState({ group: "" })} className={filterLinkClass(state.group === "")}>
                 <FilterCheck active={state.group === ""} />
                 <span>{copy.allGroups}</span>
@@ -422,11 +495,10 @@ export default function FlightCatalogInteractiveClient({
                 </button>
               ))}
             </div>
-          </div>
+          </FilterSection>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.airlineBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.airlineBlock} open={openSections.airline} onToggle={() => toggleSection("airline")}>
+            <div className="flex flex-col gap-1.5">
               <button type="button" onClick={() => updateState({ airlines: [] })} className={filterLinkClass(state.airlines.length === 0)}>
                 <FilterCheck active={state.airlines.length === 0} />
                 <span>{copy.allAirlines}</span>
@@ -441,11 +513,10 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-          </div>
+          </FilterSection>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.departWindowBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.departWindowBlock} open={openSections.departWindow} onToggle={() => toggleSection("departWindow")}>
+            <div className="flex flex-col gap-1.5">
               {[
                 ["", copy.allDepartWindows],
                 ["morning", copy.departMorning],
@@ -466,11 +537,10 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-          </div>
+          </FilterSection>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.transitBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.transitBlock} open={openSections.transit} onToggle={() => toggleSection("transit")}>
+            <div className="flex flex-col gap-1.5">
               {[
                 ["", copy.allTransitTypes],
                 ["direct", copy.directOnly],
@@ -490,11 +560,10 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-          </div>
+          </FilterSection>
 
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.priceBlock}</p>
-            <div className="mt-3 flex flex-col gap-1.5">
+          <FilterSection title={copy.priceBlock} open={openSections.price} onToggle={() => toggleSection("price")}>
+            <div className="flex flex-col gap-1.5">
               {[
                 ["", copy.allPriceBands],
                 ["budget", copy.priceBudget],
@@ -515,7 +584,7 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-          </div>
+          </FilterSection>
         </aside>
 
         <div className="space-y-3">
