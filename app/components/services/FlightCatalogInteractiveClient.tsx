@@ -4,6 +4,14 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
+import {
+  CalendarIcon as CalendarFieldIcon,
+  FlightSearchInteractiveField,
+  FlightSearchTripTab,
+  PlaneIcon as PlaneFieldIcon,
+  SearchIcon,
+  UsersIcon as UsersFieldIcon,
+} from "@/app/components/flights/FlightSearchShared"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 
 type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
@@ -421,9 +429,11 @@ export default function FlightCatalogInteractiveClient({
             {tripTabs.map((tab) => {
               const active = draft.tripMode === tab.key
               return (
-                <button
+                <FlightSearchTripTab
                   key={tab.key}
-                  type="button"
+                  active={active}
+                  label={tab.label}
+                  tone="inverse"
                   onClick={() =>
                     setDraft((current) => ({
                       ...current,
@@ -431,51 +441,43 @@ export default function FlightCatalogInteractiveClient({
                       returnDate: tab.key === "one_way" ? "" : current.returnDate || initialState.returnDate,
                     }))
                   }
-                  className={`shrink-0 rounded-full border px-3 py-2 text-[12px] transition ${
-                    active
-                      ? "border-white/40 bg-white text-sky-700"
-                      : "border-transparent bg-white/8 text-white/88 hover:bg-white/12"
-                  }`}
-                >
-                  {tab.label}
-                </button>
+                />
               )
             })}
           </div>
-          <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.05fr_1.05fr_0.78fr_0.78fr_0.85fr_0.72fr_0.9fr_auto] xl:items-end ${isScrolled ? "xl:gap-1.5" : ""}`}>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.fromLabel}</span>
-              <input value={draft.from} onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.toLabel}</span>
-              <input value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.departLabel}</span>
-              <input type="date" value={draft.depart} onChange={(event) => setDraft((current) => ({ ...current, depart: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.returnLabel}</span>
-              <input type="date" value={draft.returnDate} disabled={draft.tripMode === "one_way"} onChange={(event) => setDraft((current) => ({ ...current, returnDate: event.target.value }))} className={`w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25 ${draft.tripMode === "one_way" ? "cursor-not-allowed opacity-50" : ""}`} />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.passengerLabel}</span>
-              <input value={draft.passengers} onChange={(event) => setDraft((current) => ({ ...current, passengers: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.cabinLabel}</span>
-              <input value={draft.cabin} onChange={(event) => setDraft((current) => ({ ...current, cabin: event.target.value }))} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{filterKeywordLabel}</span>
-              <input value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25" />
-            </label>
-            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
-              <button type="submit" className="inline-flex items-center justify-center rounded-[14px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
+            <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : ""}`}>
+              <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px] ${isScrolled ? "xl:gap-1.5" : ""}`}>
+              <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.fromLabel} withChevron>
+                <input value={draft.from} onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+              </FlightSearchInteractiveField>
+              <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.toLabel} withChevron>
+                <input value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+              </FlightSearchInteractiveField>
+              <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.departLabel} withChevron>
+                <input type="date" value={draft.depart} onChange={(event) => setDraft((current) => ({ ...current, depart: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
+              </FlightSearchInteractiveField>
+              <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.returnLabel} withChevron>
+                <input type="date" value={draft.returnDate} disabled={draft.tripMode === "one_way"} onChange={(event) => setDraft((current) => ({ ...current, returnDate: event.target.value }))} className={`w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none ${draft.tripMode === "one_way" ? "cursor-not-allowed opacity-50" : ""}`} />
+              </FlightSearchInteractiveField>
+              <FlightSearchInteractiveField icon={<UsersFieldIcon />} label={copy.passengerClassLabel} withChevron>
+                <div className="grid gap-2 sm:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">
+                  <input value={draft.passengers} onChange={(event) => setDraft((current) => ({ ...current, passengers: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+                  <input value={draft.cabin} onChange={(event) => setDraft((current) => ({ ...current, cabin: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400 sm:border-l sm:border-slate-200 sm:pl-2.5" />
+                </div>
+              </FlightSearchInteractiveField>
+              <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center">
+                <SearchIcon />
+              </button>
+            </div>
+            <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+              <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5">
+                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{filterKeywordLabel}</span>
+                <input value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/60" />
+              </label>
+              <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
                 {copy.refineSearch}
               </button>
-              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[14px] border border-white/45 bg-[#0e74c8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]">
+              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/35 bg-[#0e74c8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]">
                 {copy.resetFilters}
               </button>
             </div>
