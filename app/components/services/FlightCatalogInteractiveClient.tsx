@@ -425,7 +425,7 @@ export default function FlightCatalogInteractiveClient({
             isScrolled ? "p-2.5 shadow-[0_20px_44px_-26px_rgba(15,23,42,0.24)]" : "p-3"
           }`}
         >
-          <div className="mb-3 flex gap-2 overflow-x-auto text-sm font-medium text-white/92 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mb-3 flex gap-2 overflow-x-auto border-b border-white/14 px-1 pb-2 text-sm font-medium text-white/92 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tripTabs.map((tab) => {
               const active = draft.tripMode === tab.key
               return (
@@ -445,8 +445,8 @@ export default function FlightCatalogInteractiveClient({
               )
             })}
           </div>
-            <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : ""}`}>
-              <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px] ${isScrolled ? "xl:gap-1.5" : ""}`}>
+          <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
+            <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px] ${isScrolled ? "xl:gap-1.5" : ""}`}>
               <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.fromLabel} withChevron>
                 <input value={draft.from} onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
               </FlightSearchInteractiveField>
@@ -470,14 +470,14 @@ export default function FlightCatalogInteractiveClient({
               </button>
             </div>
             <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
-              <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5">
-                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{filterKeywordLabel}</span>
-                <input value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/60" />
+              <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.28)]">
+                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/72">{filterKeywordLabel}</span>
+                <input value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/55" />
               </label>
-              <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50">
+              <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
                 {copy.refineSearch}
               </button>
-              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/35 bg-[#0e74c8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]">
+              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/30 bg-[#0f72c0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]">
                 {copy.resetFilters}
               </button>
             </div>
