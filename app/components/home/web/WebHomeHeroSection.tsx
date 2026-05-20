@@ -3,7 +3,6 @@
 import Image from "next/image"
 import { useState } from "react"
 import type { Locale } from "@/lib/i18n"
-import FlightHomepageHeroPanel from "@/app/components/flights/FlightHomepageHeroPanel"
 
 import type { HeroTabKey } from "@/app/components/home/shared/homeContent"
 import {
@@ -49,21 +48,17 @@ export default function WebHomeHeroSection({ locale }: { locale: Locale }) {
       <div className={`home-hero-search-wrap ${homeLayoutLock.floatingSearchShellClass}`}>
         <div className={`home-hero-search-card relative z-[220] overflow-visible ${homeLayoutLock.cardRadiusClass} border border-[#edf1f5] bg-white shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)]`}>
           <HeroTabs activeTab={activeTab} onChange={setActiveTab} locale={locale} />
-          {activeTab === "flight" ? (
-            <FlightHomepageHeroPanel locale={locale} />
-          ) : (
-            <HeroSearchPanel
-              activeTab={activeTab}
-              activeOption={activeOptions[activeTab]}
-              locale={locale}
-              onOptionChange={(optionKey) =>
-                setActiveOptions((current) => ({
-                  ...current,
-                  [activeTab]: optionKey,
-                }))
-              }
-            />
-          )}
+          <HeroSearchPanel
+            activeTab={activeTab}
+            activeOption={activeOptions[activeTab]}
+            locale={locale}
+            onOptionChange={(optionKey) =>
+              setActiveOptions((current) => ({
+                ...current,
+                [activeTab]: optionKey,
+              }))
+            }
+          />
         </div>
       </div>
     </div>
