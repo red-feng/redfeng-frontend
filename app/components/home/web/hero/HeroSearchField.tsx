@@ -31,6 +31,7 @@ type HeroSearchFieldProps = {
   compact?: boolean
   variant?: "default" | "searchbox-desktop"
   inputType?: "text" | "date" | "select" | "autocomplete" | "passenger"
+  desktopDensity?: "default" | "compact"
   options?: HeroSearchFieldOption[]
   passengerState?: HeroPassengerState
   cabinOptions?: string[]
@@ -55,6 +56,7 @@ export default function HeroSearchField({
   compact = false,
   variant = "default",
   inputType = "text",
+  desktopDensity = "default",
   options = [],
   passengerState,
   onValueChange,
@@ -68,10 +70,11 @@ export default function HeroSearchField({
   const isPassengerField = inputType === "passenger" && Boolean(passengerState)
   const hasDropdown = !isPassengerField && inputType !== "date" && options.length > 0
   const isSearchboxDesktop = variant === "searchbox-desktop"
+  const isCompactDesktopField = isSearchboxDesktop && desktopDensity === "compact"
   const isDesktopPill = className.includes("rounded-[28px]") || isSearchboxDesktop
   const shouldShowDefaultAdornment = !renderValue
   const shellBaseClass = isSearchboxDesktop
-    ? "min-h-[62px] border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+    ? `${isCompactDesktopField ? "min-h-[38px]" : "min-h-[62px]"} border border-[#dbe4ee] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]`
     : isDesktopPill
     ? "min-h-[68px] border bg-white"
     : compact
@@ -144,13 +147,13 @@ export default function HeroSearchField({
 
   return (
     <div ref={fieldRef} className={fieldShellClass}>
-      <div className={isSearchboxDesktop ? "flex min-h-inherit items-center" : isDesktopPill ? "flex items-center gap-3" : ""}>
+      <div className={isSearchboxDesktop ? "flex h-full min-h-full items-center" : isDesktopPill ? "flex items-center gap-3" : ""}>
         {isDesktopPill && !isSearchboxDesktop ? (
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f6f9fc] text-[#8fa0b7]">
             <FieldIcon icon={fieldIcon} className={iconClassName} />
           </span>
         ) : null}
-        <div className={`min-w-0 flex-1 ${isSearchboxDesktop ? "flex items-center" : ""}`}>
+        <div className={`min-w-0 flex-1 ${isSearchboxDesktop ? "flex h-full items-center" : ""}`}>
           {hideLabel ? null : <p className={labelClassName}>{visibleLabel}</p>}
       {renderValue ? (
         <button
@@ -160,7 +163,7 @@ export default function HeroSearchField({
               setIsOpen((current) => !current)
             }
           }}
-          className={`${hideLabel ? "" : "mt-[6px]"} ${isSearchboxDesktop ? "flex min-h-[24px] items-center" : ""} w-full bg-transparent text-left outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} ${isSearchboxDesktop ? `flex ${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} items-center` : ""} w-full bg-transparent text-left outline-none`}
         >
           {renderValue}
         </button>
@@ -210,7 +213,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "min-h-[24px] pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="min-w-0">
             <span className="block truncate">{visibleValue}</span>
@@ -221,7 +224,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "min-h-[24px] pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? `${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="truncate">{visibleValue}</span>
         </button>

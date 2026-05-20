@@ -165,7 +165,7 @@ export function HeroSearchPanel({
               </button>
             ))}
           </div>
-          <div className="ml-auto flex w-[320px] shrink-0 items-center justify-end gap-4">
+          <div className="ml-auto grid w-[352px] shrink-0 grid-cols-[96px_244px] items-center gap-3">
             <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
               {desktopCabinField.displayLabel || desktopCabinField.label}
             </p>
@@ -179,6 +179,7 @@ export function HeroSearchPanel({
               hideLabel
               hideSublabel
               withChevron={desktopCabinField.withChevron}
+              desktopDensity="compact"
               variant="searchbox-desktop"
               inputType={desktopCabinField.inputType}
               options={desktopCabinField.options}
@@ -186,7 +187,7 @@ export function HeroSearchPanel({
               cabinOptions={desktopCabinField.cabinOptions}
               onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
               locale={locale}
-              className="min-h-[30px] min-w-0 flex-1 rounded-[14px] px-4 py-[3px]"
+              className="w-[244px] rounded-[14px] px-[14px] py-0"
             />
           </div>
         </div>
