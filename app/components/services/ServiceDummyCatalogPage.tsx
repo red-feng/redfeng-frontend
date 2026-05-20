@@ -197,6 +197,22 @@ function parseFlightTime(value: string) {
   return hour * 60 + minute
 }
 
+function matchFlightWindow(minutes: number, window: string) {
+  if (!window) return true
+  if (window === "morning") return minutes >= 0 && minutes < 720
+  if (window === "afternoon") return minutes >= 720 && minutes < 1080
+  if (window === "evening") return minutes >= 1080
+  return true
+}
+
+function matchFlightPriceBand(price: number, band: string) {
+  if (!band) return true
+  if (band === "budget") return price < 1500000
+  if (band === "mid") return price >= 1500000 && price < 3000000
+  if (band === "premium") return price >= 3000000
+  return true
+}
+
 export default async function ServiceDummyCatalogPage({
   slug,
   searchParams,
@@ -219,6 +235,10 @@ export default async function ServiceDummyCatalogPage({
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
   const flightCabin = firstQueryValue(resolvedSearchParams.cabin) || "Economy"
   const flightSort = firstQueryValue(resolvedSearchParams.sort) || "best"
+  const flightAirline = firstQueryValue(resolvedSearchParams.airline)
+  const flightDepartWindow = firstQueryValue(resolvedSearchParams.depart_window)
+  const flightTransitType = firstQueryValue(resolvedSearchParams.transit_type)
+  const flightPriceBand = firstQueryValue(resolvedSearchParams.price_band)
   const hotelCheckin = firstQueryValue(resolvedSearchParams.checkin)
   const hotelCheckout = firstQueryValue(resolvedSearchParams.checkout)
   const hotelAdults = firstQueryValue(resolvedSearchParams.adults)
@@ -257,6 +277,16 @@ export default async function ServiceDummyCatalogPage({
             item,
             meta: getFlightCardMeta(item, index, locale),
           }))
+          .filter(({ meta }) => {
+            const departureMinutes = parseFlightTime(meta.departure)
+            const priceValue = parseFlightPrice(meta.price)
+            const isDirect = String(meta.transit).toLowerCase().includes("direct") || String(meta.transit).toLowerCase().includes("langsung") || String(meta.transit).includes("直飞")
+            const matchesAirline = !flightAirline || meta.airline === flightAirline
+            const matchesDepartWindow = matchFlightWindow(departureMinutes, flightDepartWindow)
+            const matchesTransit = !flightTransitType || (flightTransitType === "direct" ? isDirect : !isDirect)
+            const matchesPriceBand = matchFlightPriceBand(priceValue, flightPriceBand)
+            return matchesAirline && matchesDepartWindow && matchesTransit && matchesPriceBand
+          })
           .sort((left, right) => {
             if (flightSort === "price") {
               return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
@@ -393,6 +423,22 @@ export default async function ServiceDummyCatalogPage({
         leftBody: "Panel kiri dibuat seperti OTA, tetapi lebih bersih supaya user cepat scan tanpa merasa sesak.",
         regionBlock: "Region",
         tripBlock: "Tipe perjalanan",
+        airlineBlock: "Maskapai",
+        departWindowBlock: "Jam berangkat",
+        transitBlock: "Transit",
+        priceBlock: "Rentang harga",
+        allAirlines: "Semua maskapai",
+        allDepartWindows: "Semua jam",
+        allTransitTypes: "Semua transit",
+        allPriceBands: "Semua harga",
+        departMorning: "Pagi - siang",
+        departAfternoon: "Siang - sore",
+        departEvening: "Malam",
+        directOnly: "Langsung",
+        transitAllowed: "Transit / mixed",
+        priceBudget: "Di bawah 1.5 jt",
+        priceMid: "1.5 jt - 3 jt",
+        pricePremium: "Di atas 3 jt",
         resetFilters: "Reset semua",
         resultIntro: "Hasil contoh",
         priceLabel: "Mulai dari",
@@ -429,6 +475,22 @@ export default async function ServiceDummyCatalogPage({
         leftBody: "The left rail follows OTA behavior, but stays cleaner so users can scan quickly without feeling crowded.",
         regionBlock: "Region",
         tripBlock: "Trip type",
+        airlineBlock: "Airline",
+        departWindowBlock: "Departure time",
+        transitBlock: "Transit",
+        priceBlock: "Price range",
+        allAirlines: "All airlines",
+        allDepartWindows: "All times",
+        allTransitTypes: "All transit options",
+        allPriceBands: "All prices",
+        departMorning: "Morning to noon",
+        departAfternoon: "Noon to evening",
+        departEvening: "Evening",
+        directOnly: "Direct only",
+        transitAllowed: "Transit / mixed",
+        priceBudget: "Below 1.5m",
+        priceMid: "1.5m - 3m",
+        pricePremium: "Above 3m",
         resetFilters: "Reset all",
         resultIntro: "Sample results",
         priceLabel: "Starting from",
@@ -465,6 +527,22 @@ export default async function ServiceDummyCatalogPage({
         leftBody: "左侧筛选区沿用 OTA 习惯，但保持更清爽的节奏，方便快速浏览。",
         regionBlock: "区域",
         tripBlock: "行程类型",
+        airlineBlock: "航空公司",
+        departWindowBlock: "出发时间",
+        transitBlock: "中转",
+        priceBlock: "价格范围",
+        allAirlines: "全部航司",
+        allDepartWindows: "全部时间",
+        allTransitTypes: "全部中转",
+        allPriceBands: "全部价格",
+        departMorning: "早上到中午",
+        departAfternoon: "中午到傍晚",
+        departEvening: "晚上",
+        directOnly: "仅直飞",
+        transitAllowed: "中转 / 混合",
+        priceBudget: "低于 150 万",
+        priceMid: "150 万 - 300 万",
+        pricePremium: "高于 300 万",
         resetFilters: "重置全部",
         resultIntro: "示例结果",
         priceLabel: "起价",
@@ -480,6 +558,14 @@ export default async function ServiceDummyCatalogPage({
       keyword || catalog.emptyKeyword,
       selectedRegion || flightCopy.allRegions,
       selectedGroup || flightCopy.allGroups,
+      flightAirline || flightCopy.allAirlines,
+      flightDepartWindow
+        ? flightDepartWindow === "morning"
+          ? flightCopy.departMorning
+          : flightDepartWindow === "afternoon"
+            ? flightCopy.departAfternoon
+            : flightCopy.departEvening
+        : flightCopy.allDepartWindows,
     ]
     const topDetailChips = [
       { label: flightCopy.fromLabel, value: flightFrom },
@@ -489,6 +575,23 @@ export default async function ServiceDummyCatalogPage({
       { label: flightCopy.passengerLabel, value: flightPassengers },
       { label: flightCopy.cabinLabel, value: flightCabin },
     ]
+    const flightFilterBaseParams = {
+      q: keyword,
+      region: selectedRegion,
+      group: selectedGroup,
+      from: flightFrom,
+      to: flightTo,
+      depart: flightDepart,
+      return: flightReturn,
+      passengers: flightPassengers,
+      cabin: flightCabin,
+      sort: flightSort,
+      airline: flightAirline,
+      depart_window: flightDepartWindow,
+      transit_type: flightTransitType,
+      price_band: flightPriceBand,
+    }
+    const availableAirlines = [...new Set(flightItems.map(({ meta }) => meta.airline))]
 
     return (
       <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#f6fbff_0%,#f9fbff_16%,#fffdfa_48%,#f3f6fb_100%)] pb-36 md:pb-0">
@@ -497,155 +600,148 @@ export default async function ServiceDummyCatalogPage({
 
         <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
           <section className={homeLayoutLock.contentWidthClass}>
-            <div className="rounded-[32px] border border-[#dcecfb] bg-[linear-gradient(135deg,#edf7ff_0%,#f8fbff_38%,#fffaf6_100%)] p-5 shadow-[0_28px_72px_-44px_rgba(15,23,42,0.24)] sm:p-6 lg:p-7">
-              <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                <div className="max-w-[760px]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-sky-700">{flightCopy.topLabel}</p>
-                  <h1 className="mt-3 text-[30px] font-semibold leading-[1.02] tracking-[-0.045em] text-slate-950 sm:text-[38px] lg:text-[48px]">
-                    {flightCopy.topTitle}
-                  </h1>
-                  <p className="mt-4 max-w-[700px] text-sm leading-7 text-slate-600 sm:text-[15px]">
-                    {flightCopy.topBody}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 rounded-[28px] border border-white/70 bg-white/86 p-4 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.2)] backdrop-blur sm:p-5 lg:min-w-[360px]">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.searchSummary}</p>
-                  <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-[24px] border border-[#d8e9f7] bg-[linear-gradient(180deg,#f2f9ff_0%,#fbfdff_68%,#ffffff_100%)] px-4 py-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.14)] sm:px-5">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-700">{flightCopy.searchSummary}</p>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
+                      {flightItems.length} {flightCopy.flightsFound}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {topDetailChips.map((chip) => (
-                      <div key={chip.label} className="rounded-[18px] border border-sky-100 bg-sky-50/75 px-3 py-2">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700">{chip.label}</p>
-                        <p className="mt-1 text-sm font-medium text-slate-900">{chip.value}</p>
+                      <div key={chip.label} className="rounded-[14px] border border-sky-100 bg-white px-3 py-2 shadow-sm">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700">{chip.label}</p>
+                        <p className="mt-0.5 text-sm font-medium text-slate-900">{chip.value}</p>
                       </div>
                     ))}
                   </div>
-                  <p className="text-sm text-slate-500">
-                    <span className="font-semibold text-slate-900">{filteredItems.length}</span> {flightCopy.flightsFound}
-                  </p>
+                </div>
+                <div className="max-w-[420px] rounded-[18px] border border-sky-100 bg-white/90 px-4 py-3 text-xs leading-6 text-slate-500">
+                  <span className="font-semibold text-slate-900">{flightCopy.topTitle}.</span> {flightCopy.topBody}
                 </div>
               </div>
             </div>
           </section>
 
-          <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-5`}>
-            <form method="get" action={service.catalogHref} className="rounded-[28px] border border-[#d9e8f6] bg-white/95 p-4 shadow-[0_20px_50px_-34px_rgba(15,23,42,0.18)] backdrop-blur">
-              <div className="grid gap-3 lg:grid-cols-[1.15fr_1.15fr_0.78fr_0.78fr_0.75fr_0.7fr_auto] lg:items-end">
+          <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4`}>
+            <form method="get" action={service.catalogHref} className="rounded-[20px] border border-[#d9e8f6] bg-[#1687e0] p-3 shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)]">
+              <div className="grid gap-2 xl:grid-cols-[1.05fr_1.05fr_0.78fr_0.78fr_0.85fr_0.72fr_0.9fr_auto] xl:items-end">
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.fromLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.fromLabel}</span>
                   <input
                     type="text"
                     name="from"
                     defaultValue={flightFrom}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.toLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.toLabel}</span>
                   <input
                     type="text"
                     name="to"
                     defaultValue={flightTo}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.departLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.departLabel}</span>
                   <input
                     type="date"
                     name="depart"
                     defaultValue={flightDepart}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.returnLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.returnLabel}</span>
                   <input
                     type="date"
                     name="return"
                     defaultValue={flightReturn}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.passengerLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.passengerLabel}</span>
                   <input
                     type="text"
                     name="passengers"
                     defaultValue={flightPassengers}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.cabinLabel}</span>
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{flightCopy.cabinLabel}</span>
                   <input
                     type="text"
                     name="cabin"
                     defaultValue={flightCabin}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
-                <label className="block lg:col-span-2">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterKeyword}</span>
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">{copy.filterKeyword}</span>
                   <input
                     type="text"
                     name="q"
                     defaultValue={keyword}
                     placeholder={catalog.searchPlaceholder}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
+                    className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-white focus:ring-4 focus:ring-white/25"
                   />
                 </label>
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterRegion}</span>
-                  <select
-                    name="region"
-                    defaultValue={selectedRegion}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                  >
-                    <option value="">{flightCopy.allRegions}</option>
-                    {availableRegions.map((region) => (
-                      <option key={region} value={region}>
-                        {region}
-                      </option>
-                    ))}
-                  </select>
+                <label className="block xl:col-span-2">
+                  <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/75">
+                    {copy.filterRegion} / {copy.filterGroup} / {flightCopy.sortLabel}
+                  </span>
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <select
+                      name="region"
+                      defaultValue={selectedRegion}
+                      className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25"
+                    >
+                      <option value="">{flightCopy.allRegions}</option>
+                      {availableRegions.map((region) => (
+                        <option key={region} value={region}>
+                          {region}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      name="group"
+                      defaultValue={selectedGroup}
+                      className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25"
+                    >
+                      <option value="">{flightCopy.allGroups}</option>
+                      {availableGroups.map((group) => (
+                        <option key={group} value={group}>
+                          {group}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      name="sort"
+                      defaultValue={flightSort}
+                      className="w-full rounded-[14px] border border-white/40 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-white focus:ring-4 focus:ring-white/25"
+                    >
+                      <option value="best">{flightCopy.sortBest}</option>
+                      <option value="price">{flightCopy.sortPrice}</option>
+                      <option value="early">{flightCopy.sortEarly}</option>
+                    </select>
+                  </div>
                 </label>
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.filterGroup}</span>
-                  <select
-                    name="group"
-                    defaultValue={selectedGroup}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                  >
-                    <option value="">{flightCopy.allGroups}</option>
-                    {availableGroups.map((group) => (
-                      <option key={group} value={group}>
-                        {group}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">{flightCopy.sortLabel}</span>
-                  <select
-                    name="sort"
-                    defaultValue={flightSort}
-                    className="w-full rounded-[20px] border border-[#dbe8f5] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-sky-300 focus:ring-4 focus:ring-sky-100"
-                  >
-                    <option value="best">{flightCopy.sortBest}</option>
-                    <option value="price">{flightCopy.sortPrice}</option>
-                    <option value="early">{flightCopy.sortEarly}</option>
-                  </select>
-                </label>
-                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center rounded-[20px] bg-[linear-gradient(135deg,#1e88e5_0%,#1273d8_100%)] px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(30,136,229,0.58)] transition hover:brightness-105"
+                    className="inline-flex items-center justify-center rounded-[14px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 transition hover:bg-sky-50"
                   >
                     {flightCopy.refineSearch}
                   </button>
                   <Link
                     href={service.catalogHref}
-                    className="inline-flex items-center justify-center rounded-[20px] border border-[#dbe8f5] bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    className="inline-flex items-center justify-center rounded-[14px] border border-white/45 bg-[#0e74c8] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]"
                   >
                     {flightCopy.resetFilters}
                   </Link>
@@ -654,27 +750,30 @@ export default async function ServiceDummyCatalogPage({
             </form>
           </section>
 
-          <section className={`${homeLayoutLock.contentWidthClass} mt-6 grid gap-6 lg:grid-cols-[292px_minmax(0,1fr)]`}>
-            <aside className="space-y-4 lg:sticky lg:top-[8.6rem] lg:self-start">
-              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.leftTitle}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{flightCopy.leftBody}</p>
+          <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid gap-4 lg:grid-cols-[272px_minmax(0,1fr)]`}>
+            <aside className="space-y-3 lg:sticky lg:top-[8.2rem] lg:self-start">
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-900">{flightCopy.leftTitle}</p>
+                  <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">{flightItems.length}</span>
+                </div>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{flightCopy.leftBody}</p>
               </div>
 
-              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
-                <p className="text-sm font-semibold text-slate-900">{flightCopy.regionBlock}</p>
-                <div className="mt-4 flex flex-col gap-2">
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.regionBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
                   <Link
-                    href={buildCatalogHref(service.catalogHref, { q: keyword, group: selectedGroup })}
-                    className={`rounded-[16px] border px-4 py-3 text-sm transition ${selectedRegion ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
+                    href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, region: "" })}
+                    className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${selectedRegion ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
                   >
                     {flightCopy.allRegions}
                   </Link>
                   {availableRegions.map((region) => (
                     <Link
                       key={region}
-                      href={buildCatalogHref(service.catalogHref, { q: keyword, region, group: selectedGroup })}
-                      className={`rounded-[16px] border px-4 py-3 text-sm transition ${
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, region })}
+                        className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
                         selectedRegion === region
                           ? "border-sky-200 bg-sky-50 text-sky-700"
                           : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
@@ -686,20 +785,20 @@ export default async function ServiceDummyCatalogPage({
                 </div>
               </div>
 
-              <div className="rounded-[28px] border border-[#dce8f6] bg-white p-5 shadow-[0_18px_44px_-36px_rgba(15,23,42,0.16)]">
-                <p className="text-sm font-semibold text-slate-900">{flightCopy.tripBlock}</p>
-                <div className="mt-4 flex flex-col gap-2">
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.tripBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
                   <Link
-                    href={buildCatalogHref(service.catalogHref, { q: keyword, region: selectedRegion })}
-                    className={`rounded-[16px] border px-4 py-3 text-sm transition ${selectedGroup ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
+                    href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, group: "" })}
+                    className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${selectedGroup ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}
                   >
                     {flightCopy.allGroups}
                   </Link>
                   {availableGroups.map((group) => (
                     <Link
                       key={group}
-                      href={buildCatalogHref(service.catalogHref, { q: keyword, region: selectedRegion, group })}
-                      className={`rounded-[16px] border px-4 py-3 text-sm transition ${
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, group })}
+                        className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
                         selectedGroup === group
                           ? "border-sky-200 bg-sky-50 text-sky-700"
                           : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
@@ -710,49 +809,120 @@ export default async function ServiceDummyCatalogPage({
                   ))}
                 </div>
               </div>
-            </aside>
 
-            <div className="space-y-4">
-              <div className="rounded-[26px] border border-[#dce8f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.14)] sm:p-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-700">{flightCopy.resultIntro}</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-950">
-                      {filteredItems.length} {flightCopy.flightsFound}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="mr-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.sortLabel}</span>
-                    {[flightCopy.sortBest, flightCopy.sortPrice, flightCopy.sortEarly].map((item, index) => (
-                      <span
-                        key={item}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium ${index === 0 ? "bg-sky-600 text-white" : "bg-slate-100 text-slate-600"}`}
-                      >
-                        {item}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
-                      {flightCopy.activeFilters}
-                    </span>
-                    {topSummaryChips.map((chip) => (
-                    <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700">
-                      {chip}
-                    </span>
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.airlineBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  <Link href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline: "" })} className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${flightAirline ? "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700" : "border-sky-200 bg-sky-50 text-sky-700"}`}>
+                    {flightCopy.allAirlines}
+                  </Link>
+                  {availableAirlines.map((airline) => (
+                    <Link
+                      key={airline}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, airline })}
+                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
+                        flightAirline === airline ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {airline}
+                    </Link>
                   ))}
                 </div>
               </div>
 
-              {filteredItems.length === 0 ? (
-                <div className="rounded-[30px] border border-[#dce8f6] bg-white p-8 shadow-[0_22px_52px_-40px_rgba(15,23,42,0.18)]">
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.departWindowBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {[
+                    ["", flightCopy.allDepartWindows],
+                    ["morning", flightCopy.departMorning],
+                    ["afternoon", flightCopy.departAfternoon],
+                    ["evening", flightCopy.departEvening],
+                  ].map(([value, label]) => (
+                    <Link
+                      key={value || "all"}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, depart_window: value })}
+                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
+                        flightDepartWindow === value || (!flightDepartWindow && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.transitBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {[
+                    ["", flightCopy.allTransitTypes],
+                    ["direct", flightCopy.directOnly],
+                    ["mixed", flightCopy.transitAllowed],
+                  ].map(([value, label]) => (
+                    <Link
+                      key={value || "all"}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, transit_type: value })}
+                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
+                        flightTransitType === value || (!flightTransitType && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.priceBlock}</p>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {[
+                    ["", flightCopy.allPriceBands],
+                    ["budget", flightCopy.priceBudget],
+                    ["mid", flightCopy.priceMid],
+                    ["premium", flightCopy.pricePremium],
+                  ].map(([value, label]) => (
+                    <Link
+                      key={value || "all"}
+                      href={buildCatalogHref(service.catalogHref, { ...flightFilterBaseParams, price_band: value })}
+                      className={`rounded-[14px] border px-3 py-2.5 text-sm transition ${
+                        flightPriceBand === value || (!flightPriceBand && !value) ? "border-sky-200 bg-sky-50 text-sky-700" : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </aside>
+
+            <div className="space-y-3">
+              <div className="rounded-[20px] border border-[#dce8f6] bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.14)]">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-900">{flightItems.length} {flightCopy.flightsFound}</p>
+                    <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                      {flightCopy.sortLabel}: {flightSort === "price" ? flightCopy.sortPrice : flightSort === "early" ? flightCopy.sortEarly : flightCopy.sortBest}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500">{flightCopy.activeFilters}</span>
+                    {topSummaryChips.map((chip) => (
+                      <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {flightItems.length === 0 ? (
+                <div className="rounded-[24px] border border-[#dce8f6] bg-white p-8 shadow-[0_22px_52px_-40px_rgba(15,23,42,0.18)]">
                   <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{flightCopy.emptyTitle}</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">{flightCopy.emptyBody}</p>
                   <Link
                     href={service.catalogHref}
-                    className="mt-5 inline-flex rounded-[18px] bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-700"
+                    className="mt-5 inline-flex rounded-[14px] bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700"
                   >
                     {flightCopy.resetFilters}
                   </Link>
@@ -763,89 +933,81 @@ export default async function ServiceDummyCatalogPage({
                   return (
                     <article
                       key={item.id}
-                      className="overflow-hidden rounded-[28px] border border-[#dce8f6] bg-white shadow-[0_22px_52px_-38px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_62px_-36px_rgba(15,23,42,0.2)]"
+                      className="overflow-hidden rounded-[20px] border border-[#dce8f6] bg-white shadow-[0_14px_32px_-26px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.2)]"
                     >
-                      <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_248px]">
-                        <div className="p-5 sm:p-6">
-                          <div className="flex flex-col gap-4 md:flex-row md:items-start">
-                            <div className="flex min-w-0 items-center gap-4">
-                              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[18px] border border-sky-100 bg-sky-50">
-                                <Image src={item.image} alt={item.title} fill sizes="64px" className="object-cover" />
+                      <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_220px]">
+                        <div className="p-4">
+                          <div className="grid gap-4 xl:grid-cols-[180px_minmax(0,1fr)] xl:items-center">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px] border border-sky-100 bg-sky-50">
+                                <Image src={item.image} alt={item.title} fill sizes="48px" className="object-cover" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-base font-semibold text-slate-950">{meta.airline}</p>
+                                <p className="truncate text-sm font-semibold text-slate-950">{meta.airline}</p>
                                 <p className="mt-1 text-xs text-slate-500">{meta.cabin} • {meta.tripLabel}</p>
                               </div>
                             </div>
 
-                            <div className="grid flex-1 gap-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center">
+                            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)_auto] md:items-center">
                               <div>
-                                <p className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{meta.departure}</p>
-                                <p className="mt-1 text-sm text-slate-500">{meta.origin}</p>
+                                <p className="text-xl font-semibold tracking-[-0.03em] text-slate-950">{meta.departure}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{meta.origin}</p>
                               </div>
                               <div className="text-center">
-                                <p className="text-sm font-medium text-slate-500">{meta.duration}</p>
-                                <div className="mt-2 h-px bg-slate-200" />
-                                <p className="mt-2 text-xs text-sky-700">{meta.transit}</p>
+                                <p className="text-xs font-medium text-slate-500">{meta.duration}</p>
+                                <div className="mt-1.5 h-px bg-slate-200" />
+                                <p className="mt-1.5 text-[11px] text-sky-700">{meta.transit}</p>
                               </div>
-                              <div className="md:text-right">
-                                <p className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{meta.arrival}</p>
-                                <p className="mt-1 text-sm text-slate-500">{meta.destination}</p>
+                              <div>
+                                <p className="text-xl font-semibold tracking-[-0.03em] text-slate-950">{meta.arrival}</p>
+                                <p className="mt-0.5 text-xs text-slate-500">{meta.destination}</p>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 md:justify-end">
+                                <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">{meta.routeCode}</span>
+                                <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-medium text-orange-700">{flightCopy.baggageTag}</span>
+                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">{flightCopy.refundTag}</span>
                               </div>
                             </div>
                           </div>
 
-                          <div className="mt-5 flex flex-wrap gap-2">
-                            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">{meta.routeCode}</span>
-                            <span className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700">{flightCopy.baggageTag}</span>
-                            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700">{flightCopy.refundTag}</span>
+                          <div className="mt-3 flex flex-wrap gap-2">
                             {meta.highlightBadges.map((badge) => (
-                              <span key={badge} className="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700">
+                              <span key={badge} className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
                                 {badge}
                               </span>
                             ))}
                           </div>
 
-                          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="mt-3 flex flex-wrap gap-2">
                             {item.facts.map((fact) => (
-                              <div key={`${item.id}-${fact.label}`} className="rounded-[18px] border border-[#e8f0f8] bg-[linear-gradient(180deg,#fbfdff_0%,#f7fbff_100%)] px-4 py-3">
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">{fact.label}</p>
-                                <p className="mt-2 text-sm font-semibold text-slate-900">{fact.value}</p>
-                              </div>
+                              <span key={`${item.id}-${fact.label}`} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                                {fact.label}: {fact.value}
+                              </span>
                             ))}
                           </div>
 
-                          <div className="mt-5 rounded-[20px] border border-[#e8f0f8] bg-[#fbfdff] px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.perksTitle}</p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {[flightCopy.baggageTag, flightCopy.refundTag, meta.cabin].map((perk) => (
-                                <span key={perk} className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600">
-                                  {perk}
-                                </span>
-                              ))}
-                            </div>
+                          <div className="mt-3 flex flex-col gap-1.5 text-xs leading-6 text-slate-500">
+                            <p>{item.availabilityNote}</p>
+                            <p>{item.statusNote}</p>
                           </div>
-
-                          <p className="mt-5 text-sm leading-7 text-slate-600">{item.availabilityNote}</p>
-                          <p className="mt-2 text-sm leading-7 text-slate-500">{item.statusNote}</p>
                         </div>
 
-                        <div className="flex flex-col justify-between border-t border-[#dce8f6] bg-[linear-gradient(180deg,#f8fbff_0%,#fffaf6_100%)] p-5 lg:border-l lg:border-t-0 lg:p-6">
+                        <div className="flex flex-col justify-center border-t border-[#dce8f6] bg-[linear-gradient(180deg,#f8fbff_0%,#fffaf6_100%)] p-4 xl:border-l xl:border-t-0">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{flightCopy.fareLabel}</p>
-                            <p className="mt-3 text-sm text-slate-500">{flightCopy.priceLabel}</p>
-                            <p className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef4423]">{meta.price}</p>
-                            <p className="mt-3 text-sm leading-6 text-slate-500">{meta.seatNote}</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{flightCopy.fareLabel}</p>
+                            <p className="mt-1 text-xs text-slate-500">{flightCopy.priceLabel}</p>
+                            <p className="mt-1 text-[24px] font-semibold leading-none tracking-[-0.04em] text-[#ef4423]">{meta.price}</p>
+                            <p className="mt-2 text-[11px] leading-5 text-slate-500">{meta.seatNote}</p>
                           </div>
 
-                          <div className="mt-6 space-y-3">
+                          <div className="mt-4 space-y-2">
                             <Link
                               href={catalog.supportHref}
-                              className="block rounded-[18px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-3 text-center text-sm font-semibold text-white shadow-[0_18px_34px_-20px_rgba(239,68,35,0.58)] transition hover:brightness-105"
+                              className="block rounded-[14px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-sm font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105"
                             >
                               {flightCopy.chooseLabel}
                             </Link>
-                            <p className="text-xs leading-6 text-slate-500">{flightCopy.supportHint}</p>
+                            <p className="text-[11px] leading-5 text-slate-500">{flightCopy.supportHint}</p>
                           </div>
                         </div>
                       </div>

@@ -156,9 +156,22 @@ export default function FlightsHeroSearchBar({
     { key: "one_way" as const, label: copy.oneWay },
     { key: "multi_city" as const, label: copy.multiCity },
   ]
+  const tripGroupValue =
+    tripType === "round_trip" ? "Pulang pergi" : tripType === "one_way" ? "Sekali jalan" : "Business"
+  const queryValue = `${copy.fromValue} ${copy.toValue}`
 
   return (
-    <div className="space-y-3">
+    <form method="get" action="/pesawat/catalog" className="space-y-3">
+      <input type="hidden" name="from" value={copy.fromValue} />
+      <input type="hidden" name="to" value={copy.toValue} />
+      <input type="hidden" name="depart" value="2026-05-25" />
+      <input type="hidden" name="return" value={tripType === "one_way" ? "" : "2026-05-29"} />
+      <input type="hidden" name="passengers" value={copy.passengersValue.split(",")[0] || copy.passengersValue} />
+      <input type="hidden" name="cabin" value={locale === "en" ? "Economy" : locale === "zh" ? "经济舱" : "Economy"} />
+      <input type="hidden" name="group" value={tripGroupValue} />
+      <input type="hidden" name="q" value={queryValue} />
+      <input type="hidden" name="sort" value="best" />
+
       <div className="flex gap-2 overflow-x-auto border-b border-[#edf1f5] px-2 py-1 text-sm font-medium text-slate-700 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const isActive = tripType === tab.key
@@ -192,14 +205,14 @@ export default function FlightsHeroSearchBar({
         />
         <StaticField icon={<UsersIcon />} label={copy.passengers} value={copy.passengersValue} sublabel={copy.passengersSub} withLeftBorder />
 
-        <a
-          href="/pesawat/catalog#service-filter"
+        <button
+          type="submit"
           aria-label={buttonLabel}
           className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center xl:px-0 xl:py-0"
         >
           <SearchIcon />
-        </a>
+        </button>
       </div>
-    </div>
+    </form>
   )
 }
