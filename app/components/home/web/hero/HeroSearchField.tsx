@@ -144,13 +144,13 @@ export default function HeroSearchField({
 
   return (
     <div ref={fieldRef} className={fieldShellClass}>
-      <div className={isSearchboxDesktop ? "" : isDesktopPill ? "flex items-center gap-3" : ""}>
+      <div className={isSearchboxDesktop ? "flex min-h-inherit items-center" : isDesktopPill ? "flex items-center gap-3" : ""}>
         {isDesktopPill && !isSearchboxDesktop ? (
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f6f9fc] text-[#8fa0b7]">
             <FieldIcon icon={fieldIcon} className={iconClassName} />
           </span>
         ) : null}
-        <div className="min-w-0 flex-1">
+        <div className={`min-w-0 flex-1 ${isSearchboxDesktop ? "flex items-center" : ""}`}>
           {hideLabel ? null : <p className={labelClassName}>{visibleLabel}</p>}
       {renderValue ? (
         <button
@@ -160,7 +160,7 @@ export default function HeroSearchField({
               setIsOpen((current) => !current)
             }
           }}
-          className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent text-left outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} ${isSearchboxDesktop ? "flex min-h-[24px] items-center" : ""} w-full bg-transparent text-left outline-none`}
         >
           {renderValue}
         </button>
@@ -210,7 +210,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "min-h-[24px] pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="min-w-0">
             <span className="block truncate">{visibleValue}</span>
@@ -221,7 +221,7 @@ export default function HeroSearchField({
         <button
           type="button"
           onClick={() => setIsOpen((current) => !current)}
-          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center justify-between gap-3 bg-transparent ${isSearchboxDesktop ? "min-h-[24px] pr-[40px]" : isDesktopPill ? "pr-10" : "pr-8"} text-left ${valueClassName} outline-none`}
         >
           <span className="truncate">{visibleValue}</span>
         </button>

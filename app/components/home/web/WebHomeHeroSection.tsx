@@ -186,7 +186,7 @@ export function HeroSearchPanel({
               cabinOptions={desktopCabinField.cabinOptions}
               onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
               locale={locale}
-              className="min-h-[38px] min-w-0 flex-1 rounded-[14px] px-4 py-[7px]"
+              className="min-h-[30px] min-w-0 flex-1 rounded-[14px] px-4 py-[3px]"
             />
           </div>
         </div>
