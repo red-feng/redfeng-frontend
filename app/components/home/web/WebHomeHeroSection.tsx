@@ -108,7 +108,7 @@ function HeroIntro({ locale }: { locale: Locale }) {
   )
 }
 
-function HeroSearchPanel({
+export function HeroSearchPanel({
   activeTab,
   activeOption,
   locale,

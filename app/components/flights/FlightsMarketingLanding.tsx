@@ -7,7 +7,7 @@ import PublicStickyAction from "@/app/components/PublicStickyAction"
 import { HomeFooter, HomeNewsletterSection } from "@/app/components/home/shared/sections"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PromoPlacementImpressionBeacon from "@/app/components/promo/PromoPlacementImpressionBeacon"
-import FlightsHeroSearchBar from "@/app/components/flights/FlightsHeroSearchBar"
+import FlightsLandingHeroSearchCard from "@/app/components/flights/FlightsLandingHeroSearchCard"
 import { getMarketingPromosResolved } from "@/lib/marketing-content"
 import { getCurrentLocale } from "@/lib/locale"
 
@@ -175,11 +175,11 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
         </section>
 
         <section className={`relative z-[220] ${homeLayoutLock.floatingSearchShellClass}`}>
-          <div className={`${homeLayoutLock.wideContentWidthClass} home-hero-search-card relative z-[220] overflow-visible ${homeLayoutLock.cardRadiusClass} border border-[#edf1f5] bg-white p-3 shadow-[0_28px_60px_-34px_rgba(15,23,42,0.28)] md:p-4`}>
-            <FlightsHeroSearchBar locale={locale} buttonLabel={copy.searchButton} />
+          <div className={homeLayoutLock.wideContentWidthClass}>
+            <FlightsLandingHeroSearchCard locale={locale} />
           </div>
 
-          <div className="mt-6 grid gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-4">
+          <div className="mt-8 grid gap-3 sm:mt-10 sm:gap-4 lg:grid-cols-4">
             {copy.benefitTitle.map((title, index) => (
               <article key={title} className="rounded-[24px] border border-white/85 bg-white/78 p-4 shadow-[0_22px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur sm:rounded-[26px] sm:p-5">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fff3ee] text-[#ef4423]">
