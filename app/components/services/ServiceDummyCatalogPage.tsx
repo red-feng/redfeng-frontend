@@ -6,7 +6,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
-import { isFlightTripMode, normalizeFlightLocationLabel } from "@/app/components/flights/flightSearchParams"
+import { isFlightTripMode, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,
@@ -168,8 +168,29 @@ function FilterCheck({ active }: { active: boolean }) {
   )
 }
 
-function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string) {
-  const preset = [
+type FlightCatalogCardMeta = {
+  airline: string
+  departure: string
+  arrival: string
+  duration: string
+  transit: string
+  price: string
+  seatNote: string
+  origin: string
+  destination: string
+  routeCode: string
+  cabin: string
+  tripLabel: string
+  highlightBadges: string[]
+  maxPassengers: number
+  tripSupport: FlightTripMode[]
+  availableDates: string[]
+}
+
+type FlightCatalogPresetMeta = Omit<FlightCatalogCardMeta, "origin" | "destination" | "routeCode" | "cabin" | "tripLabel" | "highlightBadges">
+
+function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string): FlightCatalogCardMeta {
+  const presetList: FlightCatalogPresetMeta[] = [
     {
       airline: "Garuda Indonesia",
       departure: "05:45",
@@ -178,6 +199,9 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
       transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
       price: "IDR 1.248.000",
       seatNote: locale === "en" ? "Last 6 seats at this fare" : locale === "zh" ? "该票价仅剩 6 个座位" : "Sisa 6 kursi di harga ini",
+      maxPassengers: 1,
+      tripSupport: ["one_way"],
+      availableDates: ["2026-05-25", "2026-05-26", "2026-05-27"],
     },
     {
       airline: "Singapore Airlines",
@@ -187,6 +211,9 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
       transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
       price: "IDR 4.860.000",
       seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "灵活商务舱位" : "Kabin business lebih fleksibel",
+      maxPassengers: 2,
+      tripSupport: ["one_way", "round_trip"],
+      availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
     },
     {
       airline: "Batik Air",
@@ -196,6 +223,9 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
       transit: locale === "en" ? "Round-trip ready" : locale === "zh" ? "适合往返" : "Siap untuk pulang-pergi",
       price: "IDR 1.032.000",
       seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
+      maxPassengers: 3,
+      tripSupport: ["round_trip"],
+      availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
     },
     {
       airline: "AirAsia",
@@ -205,8 +235,12 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
       transit: locale === "en" ? "Promo route" : locale === "zh" ? "促销航线" : "Rute promo",
       price: "IDR 1.786.000",
       seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
+      maxPassengers: 4,
+      tripSupport: ["one_way", "multi_city"],
+      availableDates: ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"],
     },
-  ][index % 4]
+  ]
+  const preset = presetList[index % 4] as FlightCatalogPresetMeta
 
   const routeParts = item.location.split("-").map((part) => part.trim())
   const origin = routeParts[0] || item.location

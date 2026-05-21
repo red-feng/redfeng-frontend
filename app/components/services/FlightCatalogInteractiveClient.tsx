@@ -36,6 +36,9 @@ type FlightMeta = {
   cabin: string
   tripLabel: string
   highlightBadges: string[]
+  maxPassengers: number
+  tripSupport: FlightTripMode[]
+  availableDates: string[]
 }
 
 type FlightItem = {
@@ -148,6 +151,60 @@ function matchesPriceBand(price: number, band: string) {
   if (band === "mid") return price >= 1500000 && price < 3000000
   if (band === "premium") return price >= 3000000
   return true
+}
+
+function normalizeFlightSearchTerm(value: string) {
+  return value.toLowerCase().replace(/[()]/g, " ").replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, " ").trim()
+}
+
+function buildFlightMatchTokens(value: string) {
+  return normalizeFlightSearchTerm(value)
+    .split(/[\s-]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+}
+
+function matchesFlightField(query: string, ...candidates: string[]) {
+  const tokens = buildFlightMatchTokens(query)
+  if (tokens.length === 0) return true
+  const haystack = normalizeFlightSearchTerm(candidates.filter(Boolean).join(" "))
+  return tokens.every((token) => haystack.includes(token))
+}
+
+function matchesFlightTripMode(tripMode: FlightTripMode, item: FlightItem) {
+  if (tripMode === "multi_city") {
+    return item.meta.tripSupport.includes("multi_city")
+  }
+  return item.meta.tripSupport.includes(tripMode)
+}
+
+function parsePassengerCount(value: string) {
+  const matches = value.match(/\d+/g)
+  if (!matches) return 1
+  return matches.reduce((total, current) => total + Number(current || "0"), 0) || 1
+}
+
+function matchesFlightDate(date: string, item: FlightItem) {
+  if (!date.trim()) return true
+  return item.meta.availableDates.includes(date)
+}
+
+function matchesFlightReturnDate(depart: string, returnDate: string, item: FlightItem) {
+  if (!returnDate.trim()) return true
+  if (!item.meta.availableDates.includes(returnDate)) return false
+  if (!depart.trim()) return true
+  return returnDate >= depart
+}
+
+function matchesFlightCabin(cabin: string, item: FlightItem) {
+  if (!cabin.trim()) return true
+  return matchesFlightField(cabin, item.meta.cabin, item.group, item.title, item.statusNote, item.availabilityNote, item.highlights.join(" "))
+}
+
+function matchesFlightVia(via: string, tripMode: FlightTripMode, item: FlightItem) {
+  if (tripMode !== "multi_city") return true
+  if (!via.trim()) return true
+  return matchesFlightField(via, item.title, item.location, item.meta.transit, item.statusNote, item.availabilityNote, item.highlights.join(" "))
 }
 
 function filterLinkClass(active: boolean) {
@@ -318,7 +375,16 @@ export default function FlightCatalogInteractiveClient({
         state.transitTypes.length === 0 ||
         state.transitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
       const matchesPrice = state.priceBands.length === 0 || state.priceBands.some((band) => matchesPriceBand(parseFlightPrice(item.meta.price), band))
-      return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice
+      const matchesFrom = matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
+      const matchesTo = matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
+      const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
+      const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
+      const matchesDepartDate = matchesFlightDate(state.depart, item)
+      const matchesReturnDate = state.tripMode === "round_trip" ? matchesFlightReturnDate(state.depart, state.returnDate, item) : true
+      const matchesCabin = matchesFlightCabin(state.cabin, item)
+      const requestedPassengers = parsePassengerCount(state.passengers)
+      const matchesPassengers = requestedPassengers <= item.meta.maxPassengers
+      return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice && matchesFrom && matchesTo && matchesVia && matchesTripMode && matchesDepartDate && matchesReturnDate && matchesCabin && matchesPassengers
     })
     .sort((left, right) => {
       if (state.sort === "price") return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
