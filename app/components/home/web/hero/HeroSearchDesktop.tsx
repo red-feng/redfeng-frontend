@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import { ChevronDownIcon, SwapIcon } from "@/app/components/home/shared/homeContent"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { HeroSearchConfig } from "@/app/components/home/web/hero/heroSearchContent"
 import type { Locale } from "@/lib/i18n"
 
@@ -22,6 +23,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
   const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
+  const isDedicatedFlightRoundTrip = config.ctaHref === "/pesawat/catalog" && config.activeOption === "round_trip" && showDesktopSwap && desktopFields.length === 5
+  const isDedicatedFlightMultiCity = config.ctaHref === "/pesawat/catalog" && config.activeOption === "multi_city" && !showDesktopSwap && desktopFields.length === 5
   const layout = getDesktopPatternLayout(showDesktopSwap, desktopFields.length)
 
   if (isDedicatedFlightOneWay) {
@@ -32,6 +35,31 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
         fields={desktopFields}
         onFieldChange={onFieldChange}
         onSwap={onSwap}
+        locale={locale}
+      />
+    )
+  }
+
+  if (isDedicatedFlightRoundTrip) {
+    return (
+      <FlightRoundTripDesktopSearch
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        fields={desktopFields}
+        onFieldChange={onFieldChange}
+        onSwap={onSwap}
+        locale={locale}
+      />
+    )
+  }
+
+  if (isDedicatedFlightMultiCity) {
+    return (
+      <FlightMultiCityDesktopSearch
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        fields={desktopFields}
+        onFieldChange={onFieldChange}
         locale={locale}
       />
     )
@@ -304,7 +332,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
     <div className="relative hidden overflow-visible lg:block">
       <div
         className="mt-6 grid w-full items-end gap-x-4"
-        style={{ gridTemplateColumns: "minmax(0,1.02fr) 36px minmax(0,1.02fr) minmax(220px,1.28fr) minmax(220px,1.18fr) 84px" }}
+        style={{ gridTemplateColumns: homeLayoutLock.flightOneWayDesktopSearchColumns }}
       >
         <DesktopFieldShell label={originField.displayLabel || originField.label}>
           <HeroSearchField
@@ -417,6 +445,293 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
           href={ctaHref}
           aria-label={ctaLabel}
           className="mb-[6px] inline-flex h-[60px] w-[84px] items-center justify-center rounded-[20px] bg-[#ff6624] text-white transition hover:opacity-95"
+        >
+          <SearchActionIcon className="h-5 w-5" />
+          <span className="sr-only">{ctaLabel}</span>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+type FlightRoundTripDesktopSearchProps = {
+  ctaHref: string
+  ctaLabel: string
+  fields: HeroRenderedField[]
+  onFieldChange?: (index: number, value: string) => void
+  onSwap?: () => void
+  locale: Locale
+}
+
+function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, onSwap, locale }: FlightRoundTripDesktopSearchProps) {
+  const [originField, destinationField, departureField, returnField, passengerField] = fields
+  const originDisplay = splitAirportValue(originField.value)
+  const destinationDisplay = splitAirportValue(destinationField.value)
+
+  return (
+    <div className="relative hidden overflow-visible lg:block">
+      <div
+        className="mt-6 grid w-full items-end gap-x-4"
+        style={{ gridTemplateColumns: homeLayoutLock.flightRoundTripDesktopSearchColumns }}
+      >
+        <DesktopFieldShell label={originField.displayLabel || originField.label}>
+          <HeroSearchField
+            label={originField.label}
+            displayLabel={originField.displayLabel}
+            value={originField.value}
+            displayValue={originField.displayValue}
+            sublabel={originField.sublabel ?? ""}
+            displaySublabel={originField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={originField.inputType}
+            options={originField.options}
+            onValueChange={(value) => onFieldChange?.(0, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<AirportValue code={originDisplay.code} city={originDisplay.city} icon={<SearchMiniIcon className="h-[18px] w-[18px]" />} />}
+          />
+        </DesktopFieldShell>
+
+        <button type="button" onClick={onSwap} className="relative mb-[6px] flex h-[56px] w-[36px] items-center justify-center text-[#ff5a43]">
+          <span className="absolute left-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+          <SwapIcon className="h-[16px] w-[16px]" />
+          <span className="absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-[#dfe7f1]" />
+        </button>
+
+        <DesktopFieldShell label={destinationField.displayLabel || destinationField.label}>
+          <HeroSearchField
+            label={destinationField.label}
+            displayLabel={destinationField.displayLabel}
+            value={destinationField.value}
+            displayValue={destinationField.displayValue}
+            sublabel={destinationField.sublabel ?? ""}
+            displaySublabel={destinationField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={destinationField.inputType}
+            options={destinationField.options}
+            onValueChange={(value) => onFieldChange?.(1, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<AirportValue code={destinationDisplay.code} city={destinationDisplay.city} icon={<SearchMiniIcon className="h-[18px] w-[18px]" />} />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={departureField.displayLabel || departureField.label}>
+          <HeroSearchField
+            label={departureField.label}
+            displayLabel={departureField.displayLabel}
+            value={departureField.value}
+            displayValue={departureField.displayValue}
+            sublabel={departureField.sublabel ?? ""}
+            displaySublabel={departureField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={departureField.inputType}
+            options={departureField.options}
+            onValueChange={(value) => onFieldChange?.(2, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={returnField.displayLabel || returnField.label}>
+          <HeroSearchField
+            label={returnField.label}
+            displayLabel={returnField.displayLabel}
+            value={returnField.value}
+            displayValue={returnField.displayValue}
+            sublabel={returnField.sublabel ?? ""}
+            displaySublabel={returnField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={returnField.inputType}
+            options={returnField.options}
+            onValueChange={(value) => onFieldChange?.(3, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(returnField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={passengerField.displayLabel || passengerField.label}>
+          <HeroSearchField
+            label={passengerField.label}
+            displayLabel={passengerField.displayLabel}
+            value={passengerField.value}
+            displayValue={passengerField.displayValue}
+            sublabel={passengerField.sublabel ?? ""}
+            displaySublabel={passengerField.displaySublabel}
+            hideLabel
+            hideSublabel
+            withChevron={passengerField.withChevron}
+            variant="searchbox-desktop"
+            inputType={passengerField.inputType}
+            options={passengerField.options}
+            passengerState={passengerField.passengerState}
+            cabinOptions={passengerField.cabinOptions}
+            onValueChange={(value) => onFieldChange?.(4, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={
+              <SingleLineValue
+                value={passengerField.displayValue || passengerField.value}
+                icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
+                iconTone="text-[#7385a0]"
+              />
+            }
+          />
+        </DesktopFieldShell>
+
+        <Link
+          href={ctaHref}
+          aria-label={ctaLabel}
+          className="mb-[6px] inline-flex h-[60px] w-[76px] items-center justify-center rounded-[20px] bg-[#ff6624] text-white transition hover:opacity-95"
+        >
+          <SearchActionIcon className="h-5 w-5" />
+          <span className="sr-only">{ctaLabel}</span>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+type FlightMultiCityDesktopSearchProps = {
+  ctaHref: string
+  ctaLabel: string
+  fields: HeroRenderedField[]
+  onFieldChange?: (index: number, value: string) => void
+  locale: Locale
+}
+
+function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, locale }: FlightMultiCityDesktopSearchProps) {
+  const [originField, transitField, destinationField, departureField, passengerField] = fields
+
+  return (
+    <div className="relative hidden overflow-visible lg:block">
+      <div
+        className="mt-6 grid w-full items-end gap-x-4"
+        style={{ gridTemplateColumns: homeLayoutLock.flightMultiCityDesktopSearchColumns }}
+      >
+        <DesktopFieldShell label={originField.displayLabel || originField.label}>
+          <HeroSearchField
+            label={originField.label}
+            displayLabel={originField.displayLabel}
+            value={originField.value}
+            displayValue={originField.displayValue}
+            sublabel={originField.sublabel ?? ""}
+            displaySublabel={originField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={originField.inputType}
+            options={originField.options}
+            onValueChange={(value) => onFieldChange?.(0, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={originField.displayValue || originField.value} icon={<SearchMiniIcon className="h-[18px] w-[18px]" />} iconTone="text-[#90a2b9]" />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={transitField.displayLabel || transitField.label}>
+          <HeroSearchField
+            label={transitField.label}
+            displayLabel={transitField.displayLabel}
+            value={transitField.value}
+            displayValue={transitField.displayValue}
+            sublabel={transitField.sublabel ?? ""}
+            displaySublabel={transitField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={transitField.inputType}
+            options={transitField.options}
+            onValueChange={(value) => onFieldChange?.(1, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={transitField.displayValue || transitField.value} icon={<SearchMiniIcon className="h-[18px] w-[18px]" />} iconTone="text-[#90a2b9]" />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={destinationField.displayLabel || destinationField.label}>
+          <HeroSearchField
+            label={destinationField.label}
+            displayLabel={destinationField.displayLabel}
+            value={destinationField.value}
+            displayValue={destinationField.displayValue}
+            sublabel={destinationField.sublabel ?? ""}
+            displaySublabel={destinationField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={destinationField.inputType}
+            options={destinationField.options}
+            onValueChange={(value) => onFieldChange?.(2, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={destinationField.displayValue || destinationField.value} icon={<SearchMiniIcon className="h-[18px] w-[18px]" />} iconTone="text-[#90a2b9]" />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={departureField.displayLabel || departureField.label}>
+          <HeroSearchField
+            label={departureField.label}
+            displayLabel={departureField.displayLabel}
+            value={departureField.value}
+            displayValue={departureField.displayValue}
+            sublabel={departureField.sublabel ?? ""}
+            displaySublabel={departureField.displaySublabel}
+            hideLabel
+            hideSublabel
+            variant="searchbox-desktop"
+            inputType={departureField.inputType}
+            options={departureField.options}
+            onValueChange={(value) => onFieldChange?.(3, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={<SingleLineValue value={formatIsoToSlashDateSafe(departureField.value)} icon={<CalendarMiniIcon className="h-[18px] w-[18px]" />} />}
+          />
+        </DesktopFieldShell>
+
+        <DesktopFieldShell label={passengerField.displayLabel || passengerField.label}>
+          <HeroSearchField
+            label={passengerField.label}
+            displayLabel={passengerField.displayLabel}
+            value={passengerField.value}
+            displayValue={passengerField.displayValue}
+            sublabel={passengerField.sublabel ?? ""}
+            displaySublabel={passengerField.displaySublabel}
+            hideLabel
+            hideSublabel
+            withChevron={passengerField.withChevron}
+            variant="searchbox-desktop"
+            inputType={passengerField.inputType}
+            options={passengerField.options}
+            passengerState={passengerField.passengerState}
+            cabinOptions={passengerField.cabinOptions}
+            onValueChange={(value) => onFieldChange?.(4, value)}
+            locale={locale}
+            className="rounded-[999px] px-6 py-[15px]"
+            renderValue={
+              <SingleLineValue
+                value={passengerField.displayValue || passengerField.value}
+                icon={<ChevronDownIcon className="h-[18px] w-[18px]" />}
+                iconTone="text-[#7385a0]"
+              />
+            }
+          />
+        </DesktopFieldShell>
+
+        <Link
+          href={ctaHref}
+          aria-label={ctaLabel}
+          className="mb-[6px] inline-flex h-[60px] w-[76px] items-center justify-center rounded-[20px] bg-[#ff6624] text-white transition hover:opacity-95"
         >
           <SearchActionIcon className="h-5 w-5" />
           <span className="sr-only">{ctaLabel}</span>

@@ -12,4 +12,19 @@ export const homeLayoutLock = {
     "mt-4 max-w-[580px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-slate-950 sm:max-w-[620px] sm:text-[23px] lg:max-w-[680px] lg:text-[37px]",
   homepageHeroTitleClass:
     "mx-auto max-w-[320px] text-[23px] font-bold leading-[1.06] tracking-[-0.045em] text-white sm:max-w-[660px] sm:text-[23px] lg:max-w-[760px] lg:text-[37px]",
+  flightOneWayDesktopOptionColumns: "1fr 352px 1fr",
+  flightOneWayDesktopCabinShellWidth: "352px",
+  flightOneWayDesktopCabinLabelWidth: "96px",
+  flightOneWayDesktopCabinFieldWidth: "244px",
+  flightOneWayDesktopCabinOffsetClass: "translate-x-[39%]",
+  flightOneWayDesktopSearchColumns:
+    "minmax(0,1.02fr) 36px minmax(0,1.02fr) minmax(220px,1.28fr) minmax(220px,1.18fr) 84px",
+  flightSharedDesktopOptionColumns: "1fr 406px",
+  flightSharedDesktopCabinShellWidth: "406px",
+  flightSharedDesktopCabinLabelWidth: "104px",
+  flightSharedDesktopCabinFieldWidth: "286px",
+  flightRoundTripDesktopSearchColumns:
+    "minmax(0,1.08fr) 36px minmax(0,1.08fr) minmax(180px,0.8fr) minmax(180px,0.8fr) minmax(220px,0.98fr) 76px",
+  flightMultiCityDesktopSearchColumns:
+    "minmax(0,1.04fr) minmax(0,1.04fr) minmax(0,1.04fr) minmax(190px,0.84fr) minmax(220px,0.96fr) 76px",
 } as const

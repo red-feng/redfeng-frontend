@@ -153,7 +153,7 @@ export function HeroSearchPanel({
       {isFlightOneWayDesktop && desktopCabinField ? (
         <div
           className="hidden items-center gap-x-6 lg:grid"
-          style={{ gridTemplateColumns: "1fr 352px 1fr" }}
+          style={{ gridTemplateColumns: homeLayoutLock.flightOneWayDesktopOptionColumns }}
         >
           <div className="flex flex-wrap items-center gap-11 text-[13px] font-semibold text-slate-700">
             {config.options.map((option) => (
@@ -168,7 +168,13 @@ export function HeroSearchPanel({
               </button>
             ))}
           </div>
-          <div className="grid w-[352px] shrink-0 translate-x-[39%] grid-cols-[96px_244px] items-center gap-3 justify-self-start">
+          <div
+            className={`grid shrink-0 ${homeLayoutLock.flightOneWayDesktopCabinOffsetClass} items-center gap-3 justify-self-start`}
+            style={{
+              width: homeLayoutLock.flightOneWayDesktopCabinShellWidth,
+              gridTemplateColumns: `${homeLayoutLock.flightOneWayDesktopCabinLabelWidth} ${homeLayoutLock.flightOneWayDesktopCabinFieldWidth}`,
+            }}
+          >
             <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
               {desktopCabinField.displayLabel || desktopCabinField.label}
             </p>
@@ -190,10 +196,61 @@ export function HeroSearchPanel({
               cabinOptions={desktopCabinField.cabinOptions}
               onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
               locale={locale}
-              className="w-[244px] rounded-[14px] px-[14px] py-0"
+              className="rounded-[14px] px-[14px] py-0"
+              style={{ width: homeLayoutLock.flightOneWayDesktopCabinFieldWidth }}
             />
           </div>
           <div />
+        </div>
+      ) : activeTab === "flight" && desktopCabinField ? (
+        <div
+          className="hidden items-start gap-8 lg:grid"
+          style={{ gridTemplateColumns: homeLayoutLock.flightSharedDesktopOptionColumns }}
+        >
+          <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
+            {config.options.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => onOptionChange(option.key)}
+                className={`inline-flex items-center gap-3 transition ${config.activeOption === option.key ? "text-[#314865]" : "text-[#7587a0] hover:text-slate-800"}`}
+              >
+                <span className={`h-3 w-3 rounded-full ${config.activeOption === option.key ? "bg-[#ff5a43]" : "border border-[#cfd8e4] bg-white"}`} />
+                {localizedOptionLabels[option.key] ?? localizeHeroText(option.label, locale)}
+              </button>
+            ))}
+          </div>
+          <div
+            className="ml-auto grid shrink-0 items-center gap-4"
+            style={{
+              width: homeLayoutLock.flightSharedDesktopCabinShellWidth,
+              gridTemplateColumns: `${homeLayoutLock.flightSharedDesktopCabinLabelWidth} ${homeLayoutLock.flightSharedDesktopCabinFieldWidth}`,
+            }}
+          >
+            <p className="text-left text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">
+              {desktopCabinField.displayLabel || desktopCabinField.label}
+            </p>
+            <HeroSearchField
+              label={desktopCabinField.label}
+              displayLabel={desktopCabinField.displayLabel}
+              value={desktopCabinField.value}
+              displayValue={desktopCabinField.displayValue}
+              sublabel={desktopCabinField.sublabel ?? ""}
+              displaySublabel={desktopCabinField.displaySublabel}
+              hideLabel
+              hideSublabel
+              withChevron={desktopCabinField.withChevron}
+              variant="searchbox-desktop"
+              inputType={desktopCabinField.inputType}
+              options={desktopCabinField.options}
+              passengerState={desktopCabinField.passengerState}
+              cabinOptions={desktopCabinField.cabinOptions}
+              onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
+              locale={locale}
+              className="min-h-[38px] rounded-[14px] px-4 py-[7px]"
+              style={{ width: homeLayoutLock.flightSharedDesktopCabinFieldWidth }}
+            />
+          </div>
         </div>
       ) : (
         <div className="hidden items-start justify-between gap-8 lg:flex">
