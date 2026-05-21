@@ -152,7 +152,7 @@ export function HeroSearchPanel({
       ) : null}
       {isFlightOneWayDesktop && desktopCabinField ? (
         <div
-          className="hidden items-center gap-x-6 lg:grid"
+          className="relative z-[240] hidden items-center gap-x-6 lg:grid"
           style={{ gridTemplateColumns: homeLayoutLock.flightOneWayDesktopOptionColumns }}
         >
           <div className="flex flex-wrap items-center gap-11 text-[13px] font-semibold text-slate-700">
@@ -204,7 +204,7 @@ export function HeroSearchPanel({
         </div>
       ) : activeTab === "flight" && desktopCabinField ? (
         <div
-          className="hidden items-center gap-x-6 lg:grid"
+          className="relative z-[240] hidden items-center gap-x-6 lg:grid"
           style={{ gridTemplateColumns: homeLayoutLock.flightSharedDesktopOptionColumns }}
         >
           <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
@@ -255,7 +255,7 @@ export function HeroSearchPanel({
           <div />
         </div>
       ) : (
-        <div className="hidden items-start justify-between gap-8 lg:flex">
+        <div className="relative z-[240] hidden items-start justify-between gap-8 lg:flex">
           <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
             {config.options.map((option) => (
               <button
