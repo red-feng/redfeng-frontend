@@ -19,10 +19,11 @@ export const homeLayoutLock = {
   flightOneWayDesktopCabinOffsetClass: "translate-x-[39%]",
   flightOneWayDesktopSearchColumns:
     "minmax(0,1.02fr) 36px minmax(0,1.02fr) minmax(220px,1.28fr) minmax(220px,1.18fr) 84px",
-  flightSharedDesktopOptionColumns: "1fr 406px",
-  flightSharedDesktopCabinShellWidth: "406px",
-  flightSharedDesktopCabinLabelWidth: "104px",
-  flightSharedDesktopCabinFieldWidth: "286px",
+  flightSharedDesktopOptionColumns: "1fr 352px 1fr",
+  flightSharedDesktopCabinShellWidth: "352px",
+  flightSharedDesktopCabinLabelWidth: "96px",
+  flightSharedDesktopCabinFieldWidth: "244px",
+  flightSharedDesktopCabinOffsetClass: "translate-x-[39%]",
   flightRoundTripDesktopSearchColumns:
     "minmax(0,1.08fr) 36px minmax(0,1.08fr) minmax(180px,0.8fr) minmax(180px,0.8fr) minmax(220px,0.98fr) 76px",
   flightMultiCityDesktopSearchColumns:

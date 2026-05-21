@@ -204,7 +204,7 @@ export function HeroSearchPanel({
         </div>
       ) : activeTab === "flight" && desktopCabinField ? (
         <div
-          className="hidden items-start gap-8 lg:grid"
+          className="hidden items-center gap-x-6 lg:grid"
           style={{ gridTemplateColumns: homeLayoutLock.flightSharedDesktopOptionColumns }}
         >
           <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
@@ -221,7 +221,7 @@ export function HeroSearchPanel({
             ))}
           </div>
           <div
-            className="ml-auto grid shrink-0 items-center gap-4"
+            className={`grid shrink-0 ${homeLayoutLock.flightSharedDesktopCabinOffsetClass} items-center gap-3 justify-self-start`}
             style={{
               width: homeLayoutLock.flightSharedDesktopCabinShellWidth,
               gridTemplateColumns: `${homeLayoutLock.flightSharedDesktopCabinLabelWidth} ${homeLayoutLock.flightSharedDesktopCabinFieldWidth}`,
@@ -240,6 +240,7 @@ export function HeroSearchPanel({
               hideLabel
               hideSublabel
               withChevron={desktopCabinField.withChevron}
+              desktopDensity="compact"
               variant="searchbox-desktop"
               inputType={desktopCabinField.inputType}
               options={desktopCabinField.options}
@@ -247,10 +248,11 @@ export function HeroSearchPanel({
               cabinOptions={desktopCabinField.cabinOptions}
               onValueChange={(value) => setFieldStates((current) => updateFieldState(current, stateKey, activeTab, desktopCabinField, value))}
               locale={locale}
-              className="min-h-[38px] rounded-[14px] px-4 py-[7px]"
+              className="rounded-[14px] px-[14px] py-0"
               style={{ width: homeLayoutLock.flightSharedDesktopCabinFieldWidth }}
             />
           </div>
+          <div />
         </div>
       ) : (
         <div className="hidden items-start justify-between gap-8 lg:flex">
