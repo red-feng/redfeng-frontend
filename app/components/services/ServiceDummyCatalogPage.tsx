@@ -6,6 +6,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
+import { isFlightTripMode, normalizeFlightLocationLabel } from "@/app/components/flights/flightSearchParams"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,
@@ -266,8 +267,9 @@ export default async function ServiceDummyCatalogPage({
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
   const flightTrip = firstQueryValue(resolvedSearchParams.trip) || "round_trip"
-  const flightFrom = firstQueryValue(resolvedSearchParams.from) || "Jakarta (CGK)"
-  const flightTo = firstQueryValue(resolvedSearchParams.to) || "Singapore (SIN)"
+  const flightFrom = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.from) || "CGK Jakarta")
+  const flightVia = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.via) || "Singapore")
+  const flightTo = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.to) || "DPS Denpasar")
   const flightDepart = firstQueryValue(resolvedSearchParams.depart) || "2026-05-21"
   const flightReturn = firstQueryValue(resolvedSearchParams.return) || "2026-05-23"
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
@@ -444,9 +446,10 @@ export default async function ServiceDummyCatalogPage({
             refineSearch: "Refine search",
             roundTrip: "Round Trip",
             oneWay: "One Way",
-            multiCity: "Multi-city",
-            fromLabel: "From",
-            toLabel: "To",
+              multiCity: "Multi City",
+              fromLabel: "From",
+              viaLabel: "Transit",
+              toLabel: "To",
             departLabel: "Depart",
             returnLabel: "Return",
             passengerLabel: "Passengers",
@@ -500,6 +503,7 @@ export default async function ServiceDummyCatalogPage({
               oneWay: "单程",
               multiCity: "多城市",
               fromLabel: "出发地",
+              viaLabel: "中转",
               toLabel: "目的地",
               departLabel: "出发",
               returnLabel: "返程",
@@ -549,10 +553,11 @@ export default async function ServiceDummyCatalogPage({
               topTitle: "Katalog pesawat RedFeng dengan alur OTA yang lebih fokus",
               topBody: "Kami ambil pola layout OTA: ringkasan pencarian di atas, filter di kiri, hasil di tengah, lalu harga dan aksi yang sangat jelas. Visualnya tetap dibuat lebih hangat dan lapang agar terasa RedFeng.",
               refineSearch: "Ubah pencarian",
-              roundTrip: "Pulang Pergi",
+              roundTrip: "Pulang - Pergi",
               oneWay: "Sekali Jalan",
-              multiCity: "Multi-city",
+              multiCity: "Multi Kota",
               fromLabel: "Dari",
+              viaLabel: "Transit",
               toLabel: "Ke",
               departLabel: "Berangkat",
               returnLabel: "Pulang",
@@ -615,14 +620,15 @@ export default async function ServiceDummyCatalogPage({
           filterKeywordLabel={copy.filterKeyword}
           initialState={{
             tripMode:
-              flightTrip === "one_way" || flightTrip === "multi_city" ? flightTrip : "round_trip",
+              isFlightTripMode(flightTrip) ? flightTrip : "round_trip",
             q: keyword,
             region: selectedRegion,
             group: selectedGroup,
             from: flightFrom,
+            via: flightTrip === "multi_city" ? flightVia : "",
             to: flightTo,
             depart: flightDepart,
-            returnDate: flightTrip === "one_way" ? "" : flightReturn,
+            returnDate: flightTrip === "round_trip" ? flightReturn : "",
             passengers: flightPassengers,
             cabin: flightCabin,
             sort: flightSort,

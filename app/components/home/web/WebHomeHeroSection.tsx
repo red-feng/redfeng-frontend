@@ -16,6 +16,7 @@ import {
   HeroSearchMobile,
   HeroTabs,
 } from "@/app/components/home/web/hero"
+import { buildFlightCatalogHref, isFlightTripMode, type FlightBaseSearchState, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { HeroPassengerState, HeroSearchFieldData, HeroSearchProviderKey } from "@/app/components/home/web/hero"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
@@ -132,6 +133,7 @@ export function HeroSearchPanel({
   const desktopCabinField = activeTab === "flight" ? desktopFields.find((field) => getFieldSemanticKey(field.label) === "cabin") : undefined
   const desktopSearchFields = desktopCabinField ? desktopFields.filter((field) => field !== desktopCabinField) : desktopFields
   const isFlightOneWayDesktop = activeTab === "flight" && activeOption === "one_way" && Boolean(desktopCabinField)
+  const flightSearchHref = activeTab === "flight" ? buildFlightHomepageCatalogHref(activeOption, desktopFields) : undefined
   const config = {
     ...baseConfig,
     desktopFields: desktopSearchFields,
@@ -302,6 +304,7 @@ export function HeroSearchPanel({
 
       <HeroSearchMobile
         config={config}
+        searchHref={flightSearchHref}
         locale={locale}
         fields={mobileFields}
         onSwap={() => {
@@ -326,6 +329,7 @@ export function HeroSearchPanel({
       />
       <HeroSearchDesktop
         config={config}
+        searchHref={flightSearchHref}
         locale={locale}
         fields={desktopSearchFields}
         onSwap={() => {
@@ -699,6 +703,27 @@ function getFieldInputType(activeTab: HeroTabKey, field: HeroSearchFieldData, ch
   }
 
   return "text" as const
+}
+
+function buildFlightHomepageCatalogHref(activeOption: string, fields: HeroSearchFieldData[]) {
+  if (!isFlightTripMode(activeOption)) return "/pesawat/catalog"
+
+  const getFieldValue = (semanticKey: string) => fields.find((field) => getFieldSemanticKey(field.label) === semanticKey)
+  const passengerField = getFieldValue("passenger")
+  const cabinField = getFieldValue("cabin")
+
+  const state: FlightBaseSearchState = {
+    tripMode: activeOption as FlightTripMode,
+    from: getFieldValue("origin")?.value || "",
+    via: getFieldValue("transit")?.value || "",
+    to: getFieldValue("destination")?.value || "",
+    depart: getFieldValue("departure")?.value || "",
+    returnDate: activeOption === "round_trip" ? getFieldValue("return")?.value || "" : "",
+    passengers: passengerField?.displayValue || passengerField?.value || "",
+    cabin: cabinField?.displayValue || cabinField?.value || passengerField?.displaySublabel || passengerField?.sublabel || "",
+  }
+
+  return buildFlightCatalogHref("/pesawat/catalog", state)
 }
 
 function getDefaultPassengerState(field: Pick<HeroSearchFieldData, "passengerState" | "value" | "sublabel">): HeroPassengerState {

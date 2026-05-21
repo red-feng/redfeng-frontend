@@ -13,14 +13,16 @@ type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
 
 type HeroSearchDesktopProps = {
   config: HeroSearchConfig
+  searchHref?: string
   fields?: HeroRenderedField[]
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
   locale: Locale
 }
 
-export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwap, locale }: HeroSearchDesktopProps) {
+export default function HeroSearchDesktop({ config, searchHref, fields, onFieldChange, onSwap, locale }: HeroSearchDesktopProps) {
   const { ctaHref, ctaLabel, desktopGridClass, showDesktopSwap = false } = config
+  const resolvedHref = searchHref ?? ctaHref
   const desktopFields = (fields ?? config.desktopFields) as HeroRenderedField[]
   const isDedicatedFlightOneWay = config.ctaHref === "/pesawat/catalog" && config.activeOption === "one_way" && showDesktopSwap && desktopFields.length === 4
   const isDedicatedFlightRoundTrip = config.ctaHref === "/pesawat/catalog" && config.activeOption === "round_trip" && showDesktopSwap && desktopFields.length === 5
@@ -29,9 +31,9 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
 
   if (isDedicatedFlightOneWay) {
     return (
-      <FlightOneWayDesktopSearch
-        ctaHref={ctaHref}
-        ctaLabel={ctaLabel}
+        <FlightOneWayDesktopSearch
+          ctaHref={resolvedHref}
+          ctaLabel={ctaLabel}
         fields={desktopFields}
         onFieldChange={onFieldChange}
         onSwap={onSwap}
@@ -42,8 +44,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
 
   if (isDedicatedFlightRoundTrip) {
     return (
-      <FlightRoundTripDesktopSearch
-        ctaHref={ctaHref}
+        <FlightRoundTripDesktopSearch
+        ctaHref={resolvedHref}
         ctaLabel={ctaLabel}
         fields={desktopFields}
         onFieldChange={onFieldChange}
@@ -55,8 +57,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
 
   if (isDedicatedFlightMultiCity) {
     return (
-      <FlightMultiCityDesktopSearch
-        ctaHref={ctaHref}
+        <FlightMultiCityDesktopSearch
+        ctaHref={resolvedHref}
         ctaLabel={ctaLabel}
         fields={desktopFields}
         onFieldChange={onFieldChange}
@@ -67,8 +69,8 @@ export default function HeroSearchDesktop({ config, fields, onFieldChange, onSwa
 
   if (layout) {
     return (
-      <PatternedDesktopSearch
-        ctaHref={ctaHref}
+        <PatternedDesktopSearch
+        ctaHref={resolvedHref}
         ctaLabel={ctaLabel}
         fields={desktopFields}
         showDesktopSwap={showDesktopSwap}

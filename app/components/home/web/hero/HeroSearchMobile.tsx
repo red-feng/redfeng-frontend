@@ -10,13 +10,14 @@ type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
 
 type HeroSearchMobileProps = {
   config: HeroSearchConfig
+  searchHref?: string
   fields?: HeroRenderedField[]
   onFieldChange?: (index: number, value: string) => void
   onSwap?: () => void
   locale: Locale
 }
 
-export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap, locale }: HeroSearchMobileProps) {
+export default function HeroSearchMobile({ config, searchHref, fields, onFieldChange, onSwap, locale }: HeroSearchMobileProps) {
   const mobileFields = fields ?? config.mobileFields
   const primaryFields = mobileFields.slice(0, config.mobilePrimaryCount)
   const compactFields = mobileFields.slice(config.mobilePrimaryCount)
@@ -72,7 +73,7 @@ export default function HeroSearchMobile({ config, fields, onFieldChange, onSwap
       ) : null}
 
       <Link
-        href={config.ctaHref}
+        href={searchHref ?? config.ctaHref}
         aria-label={config.ctaLabel}
         className="mt-5 inline-flex h-[60px] w-[60px] items-center justify-center rounded-[20px] bg-[#ff6624] text-white shadow-[0_10px_0_0_rgba(11,31,62,0.38)] transition hover:translate-y-[1px] hover:shadow-[0_8px_0_0_rgba(11,31,62,0.34)]"
       >

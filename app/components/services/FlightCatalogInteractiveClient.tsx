@@ -12,6 +12,7 @@ import {
   SearchIcon,
   UsersIcon as UsersFieldIcon,
 } from "@/app/components/flights/FlightSearchShared"
+import { buildFlightCatalogQuery, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 
 type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
@@ -52,11 +53,12 @@ type FlightItem = {
 }
 
 type FlightFilterState = {
-  tripMode: "round_trip" | "one_way" | "multi_city"
+  tripMode: FlightTripMode
   q: string
   region: string
   group: string
   from: string
+  via: string
   to: string
   depart: string
   returnDate: string
@@ -78,6 +80,7 @@ type FlightCopy = {
   oneWay: string
   multiCity: string
   fromLabel: string
+  viaLabel: string
   toLabel: string
   departLabel: string
   returnLabel: string
@@ -213,21 +216,23 @@ function toggleValue(values: string[], value: string) {
 }
 
 function buildQuery(state: FlightFilterState) {
-  const params = new URLSearchParams()
+  const params = buildFlightCatalogQuery({
+    tripMode: state.tripMode,
+    from: state.from,
+    via: state.via,
+    to: state.to,
+    depart: state.depart,
+    returnDate: state.returnDate,
+    passengers: state.passengers,
+    cabin: state.cabin,
+  })
   const setIfValue = (key: string, value: string) => {
     if (value.trim()) params.set(key, value.trim())
   }
 
-  setIfValue("trip", state.tripMode)
   setIfValue("q", state.q)
   setIfValue("region", state.region)
   setIfValue("group", state.group)
-  setIfValue("from", state.from)
-  setIfValue("to", state.to)
-  setIfValue("depart", state.depart)
-  setIfValue("return", state.returnDate)
-  setIfValue("passengers", state.passengers)
-  setIfValue("cabin", state.cabin)
   setIfValue("sort", state.sort)
   state.airlines.forEach((value) => params.append("airline", value))
   state.departWindows.forEach((value) => params.append("depart_window", value))
@@ -355,14 +360,23 @@ export default function FlightCatalogInteractiveClient({
 
   const topDetailChips = [
     { label: copy.fromLabel, value: state.from },
+    ...(state.tripMode === "multi_city" ? [{ label: copy.viaLabel, value: state.via }] : []),
     { label: copy.toLabel, value: state.to },
     { label: copy.departLabel, value: state.depart },
-    ...(state.tripMode === "one_way" ? [] : [{ label: copy.returnLabel, value: state.returnDate }]),
+    ...(state.tripMode === "round_trip" ? [{ label: copy.returnLabel, value: state.returnDate }] : []),
     { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
   ]
 
   const applyDraft = () => {
     setState(draft)
+  }
+
+  const syncDraftAndState = (updater: (current: FlightFilterState) => FlightFilterState) => {
+    setDraft((current) => {
+      const next = updater(current)
+      setState(next)
+      return next
+    })
   }
 
   const resetAll = () => {
@@ -381,6 +395,7 @@ export default function FlightCatalogInteractiveClient({
 
   const updateState = (patch: Partial<FlightFilterState>) => {
     setState((current) => ({ ...current, ...patch }))
+    setDraft((current) => ({ ...current, ...patch }))
   }
 
   const toggleSection = (section: FilterSectionKey) => {
@@ -435,10 +450,11 @@ export default function FlightCatalogInteractiveClient({
                   label={tab.label}
                   tone="inverse"
                   onClick={() =>
-                    setDraft((current) => ({
+                    syncDraftAndState((current) => ({
                       ...current,
                       tripMode: tab.key,
-                      returnDate: tab.key === "one_way" ? "" : current.returnDate || initialState.returnDate,
+                      via: tab.key === "multi_city" ? current.via || initialState.via : "",
+                      returnDate: tab.key === "round_trip" ? current.returnDate || initialState.returnDate : "",
                     }))
                   }
                 />
@@ -446,23 +462,38 @@ export default function FlightCatalogInteractiveClient({
             })}
           </div>
           <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
-            <div className={`grid gap-2 transition-all duration-200 xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px] ${isScrolled ? "xl:gap-1.5" : ""}`}>
+            <div
+              className={`grid gap-2 transition-all duration-200 ${
+                draft.tripMode === "one_way"
+                  ? "xl:grid-cols-[1.15fr_1.15fr_0.9fr_1.25fr_64px]"
+                  : draft.tripMode === "multi_city"
+                    ? "xl:grid-cols-[1.05fr_1.05fr_1.05fr_0.9fr_1.25fr_64px]"
+                    : "xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px]"
+              } ${isScrolled ? "xl:gap-1.5" : ""}`}
+            >
               <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.fromLabel} withChevron>
-                <input value={draft.from} onChange={(event) => setDraft((current) => ({ ...current, from: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+                <input value={draft.from} onChange={(event) => syncDraftAndState((current) => ({ ...current, from: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
               </FlightSearchInteractiveField>
+              {draft.tripMode === "multi_city" ? (
+                <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.viaLabel} withChevron>
+                  <input value={draft.via} onChange={(event) => syncDraftAndState((current) => ({ ...current, via: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+                </FlightSearchInteractiveField>
+              ) : null}
               <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.toLabel} withChevron>
-                <input value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+                <input value={draft.to} onChange={(event) => syncDraftAndState((current) => ({ ...current, to: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
               </FlightSearchInteractiveField>
               <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.departLabel} withChevron>
-                <input type="date" value={draft.depart} onChange={(event) => setDraft((current) => ({ ...current, depart: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
+                <input type="date" value={draft.depart} onChange={(event) => syncDraftAndState((current) => ({ ...current, depart: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
               </FlightSearchInteractiveField>
-              <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.returnLabel} withChevron>
-                <input type="date" value={draft.returnDate} disabled={draft.tripMode === "one_way"} onChange={(event) => setDraft((current) => ({ ...current, returnDate: event.target.value }))} className={`w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none ${draft.tripMode === "one_way" ? "cursor-not-allowed opacity-50" : ""}`} />
-              </FlightSearchInteractiveField>
+              {draft.tripMode === "round_trip" ? (
+                <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.returnLabel} withChevron>
+                  <input type="date" value={draft.returnDate} onChange={(event) => syncDraftAndState((current) => ({ ...current, returnDate: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
+                </FlightSearchInteractiveField>
+              ) : null}
               <FlightSearchInteractiveField icon={<UsersFieldIcon />} label={copy.passengerClassLabel} withChevron>
                 <div className="grid gap-2 sm:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">
-                  <input value={draft.passengers} onChange={(event) => setDraft((current) => ({ ...current, passengers: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
-                  <input value={draft.cabin} onChange={(event) => setDraft((current) => ({ ...current, cabin: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400 sm:border-l sm:border-slate-200 sm:pl-2.5" />
+                  <input value={draft.passengers} onChange={(event) => syncDraftAndState((current) => ({ ...current, passengers: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
+                  <input value={draft.cabin} onChange={(event) => syncDraftAndState((current) => ({ ...current, cabin: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400 sm:border-l sm:border-slate-200 sm:pl-2.5" />
                 </div>
               </FlightSearchInteractiveField>
               <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center">
@@ -472,7 +503,7 @@ export default function FlightCatalogInteractiveClient({
             <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
               <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.28)]">
                 <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/72">{filterKeywordLabel}</span>
-                <input value={draft.q} onChange={(event) => setDraft((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/55" />
+                <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/55" />
               </label>
               <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
                 {copy.refineSearch}
