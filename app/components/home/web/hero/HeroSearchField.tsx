@@ -17,6 +17,7 @@ type HeroSearchFieldOption = {
 
 type HeroSearchFieldProps = {
   className?: string
+  style?: React.CSSProperties
   label: string
   displayLabel?: string
   value: string
@@ -42,6 +43,7 @@ type HeroSearchFieldProps = {
 
 export default function HeroSearchField({
   className = "",
+  style,
   label,
   displayLabel,
   value,
@@ -150,7 +152,7 @@ export default function HeroSearchField({
   }, [isOpen])
 
   return (
-    <div ref={fieldRef} className={fieldShellClass}>
+    <div ref={fieldRef} className={fieldShellClass} style={style}>
       <div className={isSearchboxDesktop ? "flex h-full min-h-full items-center" : isDesktopPill ? "flex items-center gap-3" : ""}>
         {isDesktopPill && !isSearchboxDesktop ? (
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f6f9fc] text-[#8fa0b7]">
