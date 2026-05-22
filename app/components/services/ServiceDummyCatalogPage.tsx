@@ -247,9 +247,88 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
   const destination = routeParts[1] || item.location
   const highlightBadges = item.highlights.slice(0, 3)
   const factMap = new Map(item.facts.map((fact) => [fact.label.toLowerCase(), fact.value]))
+  const routeOverrides: Partial<FlightCatalogCardMeta> = (() => {
+    if (item.id === "flight-cgk-dps") {
+      return {
+        airline: "Garuda Indonesia",
+        departure: "05:45",
+        arrival: "08:40",
+        duration: "1j 55m",
+        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+        price: "IDR 1.248.000",
+        seatNote: locale === "en" ? "Strong for one-way and round-trip Bali traffic" : locale === "zh" ? "适合巴厘岛单程与往返需求" : "Kuat untuk trafik Bali sekali jalan maupun pulang-pergi",
+        maxPassengers: 4,
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
+      }
+    }
+
+    if (item.id === "flight-cgk-sin") {
+      return {
+        airline: "Singapore Airlines",
+        departure: "08:20",
+        arrival: "11:05",
+        duration: "1j 45m",
+        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
+        price: "IDR 4.860.000",
+        seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "灵活商务舱位" : "Kabin business lebih fleksibel",
+        maxPassengers: 2,
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
+      }
+    }
+
+    if (item.id === "flight-cgk-nrt-via-sin") {
+      return {
+        airline: "Singapore Airlines",
+        departure: "00:40",
+        arrival: "15:10",
+        duration: "11j 30m",
+        transit: locale === "en" ? "Transit via Singapore" : locale === "zh" ? "经新加坡中转" : "Transit via Singapore",
+        price: "IDR 6.420.000",
+        seatNote: locale === "en" ? "Best dummy route for CGK - SIN - NRT flow" : locale === "zh" ? "最适合 CGK - SIN - NRT 流程的示例航线" : "Rute dummy terbaik untuk flow CGK - SIN - NRT",
+        maxPassengers: 2,
+        tripSupport: ["multi_city", "one_way"],
+        availableDates: ["2026-06-04", "2026-06-07", "2026-06-10"],
+      }
+    }
+
+    if (item.id === "flight-sub-bpn") {
+      return {
+        airline: "Batik Air",
+        departure: "09:10",
+        arrival: "10:25",
+        duration: "1j 15m",
+        transit: locale === "en" ? "Round-trip ready" : locale === "zh" ? "适合往返" : "Siap untuk pulang-pergi",
+        price: "IDR 1.032.000",
+        seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
+        maxPassengers: 3,
+        tripSupport: ["round_trip"],
+        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
+      }
+    }
+
+    if (item.id === "flight-dps-kul") {
+      return {
+        airline: "AirAsia",
+        departure: "13:35",
+        arrival: "16:20",
+        duration: "2j 45m",
+        transit: locale === "en" ? "Promo route" : locale === "zh" ? "促销航线" : "Rute promo",
+        price: "IDR 1.786.000",
+        seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
+        maxPassengers: 4,
+        tripSupport: ["one_way", "multi_city"],
+        availableDates: ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"],
+      }
+    }
+
+    return {}
+  })()
 
   return {
     ...preset,
+    ...routeOverrides,
     origin,
     destination,
     routeCode: factMap.get("route code") || item.location.replace(/\s+/g, ""),

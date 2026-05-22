@@ -128,6 +128,22 @@ const dummyCatalogs: Record<DummyServiceSlug, DummyServiceCatalog> = {
         ],
       },
       {
+        id: "flight-cgk-nrt-via-sin",
+        title: "Jakarta - Tokyo Multi City Connector",
+        location: "CGK - NRT",
+        region: "Internasional",
+        group: "Multi kota",
+        image: "/home-assets/promo-flight.png",
+        availabilityNote: "Dummy itinerary untuk menguji alur multi kota dengan transit Singapore ke Tokyo.",
+        statusNote: "Cocok untuk validasi query via, rute internasional panjang, dan sinkronisasi hero ke katalog.",
+        highlights: ["Via Singapore", "Tokyo access", "Multi-city ready"],
+        facts: [
+          { label: "Route code", value: "CGK-SIN-NRT" },
+          { label: "Cabin", value: "Economy" },
+          { label: "Transit", value: "Singapore" },
+        ],
+      },
+      {
         id: "flight-sub-bpn",
         title: "Surabaya - Balikpapan Project Route",
         location: "SUB - BPN",
