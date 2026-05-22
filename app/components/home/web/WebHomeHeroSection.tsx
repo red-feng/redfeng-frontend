@@ -719,8 +719,8 @@ function buildFlightHomepageCatalogHref(activeOption: string, fields: HeroSearch
     to: getFieldValue("destination")?.value || "",
     depart: getFieldValue("departure")?.value || "",
     returnDate: activeOption === "round_trip" ? getFieldValue("return")?.value || "" : "",
-    passengers: passengerField?.displayValue || passengerField?.value || "",
-    cabin: cabinField?.displayValue || cabinField?.value || passengerField?.displaySublabel || passengerField?.sublabel || "",
+    passengers: passengerField?.value || "",
+    cabin: cabinField?.value || passengerField?.sublabel || "",
   }
 
   return buildFlightCatalogHref("/pesawat/catalog", state)
