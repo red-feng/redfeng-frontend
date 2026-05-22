@@ -185,33 +185,25 @@ export default function HeroSearchField({
         </button>
       ) : inputType === "date" ? (
         isSearchboxDesktop ? (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                const input = dateInputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null
-                if (!input) return
-                input.focus()
-                if (typeof input.showPicker === "function") {
-                  input.showPicker()
-                  return
-                }
-                input.click()
-              }}
-              className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center bg-transparent pr-[40px] ${valueClassName} outline-none`}
-            >
+          <div className={`${hideLabel ? "" : "mt-[6px]"} relative w-full`}>
+            <span className={`flex w-full items-center bg-transparent pr-[40px] ${valueClassName}`}>
               <span className="truncate">{formatIsoToSlashDate(value)}</span>
-            </button>
+            </span>
             <input
               ref={dateInputRef}
               type="date"
               value={value}
               onChange={(event) => onValueChange?.(event.target.value)}
-              className="pointer-events-none absolute inset-0 opacity-0"
-              tabIndex={-1}
-              aria-hidden="true"
+              onFocus={(event) => {
+                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                if (typeof input.showPicker === "function") {
+                  input.showPicker()
+                }
+              }}
+              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+              aria-label={visibleLabel}
             />
-          </>
+          </div>
         ) : (
           <input
             type="date"
