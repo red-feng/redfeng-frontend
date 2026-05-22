@@ -2,18 +2,18 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import {
-  CalendarIcon as CalendarFieldIcon,
-  FlightSearchInteractiveField,
   FlightSearchTripTab,
-  PlaneIcon as PlaneFieldIcon,
   SearchIcon,
-  UsersIcon as UsersFieldIcon,
 } from "@/app/components/flights/FlightSearchShared"
-import { buildFlightCatalogQuery, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
+import { buildFlightCatalogQuery, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import { buildFormFields, updateFieldState } from "@/app/components/home/web/WebHomeHeroSection"
+import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
+import type { HeroPassengerState, HeroSearchFieldData } from "@/app/components/home/web/hero/heroSearchContent"
+import type { Locale } from "@/lib/i18n"
 
 type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
 
@@ -128,6 +128,29 @@ type FlightCopy = {
   emptyTitle: string
   emptyBody: string
 }
+
+type HeroFieldInputType = "text" | "date" | "select" | "autocomplete" | "passenger"
+
+type CatalogHeroRenderedField = HeroSearchFieldData & {
+  displayLabel?: string
+  displayValue?: string
+  displaySublabel?: string
+  inputType: HeroFieldInputType
+  options?: {
+    label: string
+    value: string
+    sublabel?: string
+    group?: string
+    displayValue?: string
+    displaySublabel?: string
+    displayGroup?: string
+  }[]
+}
+
+const FLIGHT_HERO_STATE_KEY = "catalog-flight"
+const FLIGHT_CABIN_OPTIONS = ["Ekonomi", "Premium Economy", "Business", "First Class"]
+const INDONESIAN_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+const INDONESIAN_WEEKDAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
 
 function parseFlightPrice(value: string) {
   const digits = value.replace(/[^\d]/g, "")
@@ -320,6 +343,199 @@ function buildQuery(state: FlightFilterState) {
   return params.toString()
 }
 
+function hasStandaloneWord(input: string, word: string) {
+  return new RegExp(`(^|\\s)${word}(\\s|$)`).test(input)
+}
+
+function isOriginLabel(normalized: string) {
+  return hasStandaloneWord(normalized, "dari") || normalized.includes("asal")
+}
+
+function isDestinationLabel(normalized: string) {
+  return hasStandaloneWord(normalized, "ke") || normalized.includes("tujuan")
+}
+
+function getCatalogFieldSemanticKey(label: string) {
+  const normalized = label.toLowerCase()
+
+  if (isOriginLabel(normalized)) return "origin"
+  if (isDestinationLabel(normalized)) return "destination"
+  if (normalized.includes("transit")) return "transit"
+  if (normalized.includes("kabin") || normalized.includes("cabin")) return "cabin"
+  if (normalized.includes("berangkat") || normalized.includes("pergi") || normalized.includes("keberangkatan")) return "departure"
+  if (normalized.includes("pulang")) return "return"
+  if (normalized.includes("penumpang")) return "passenger"
+
+  return normalized.replace(/\s+/g, "_")
+}
+
+function getCatalogHeroFieldStateKey(label: string) {
+  return `${FLIGHT_HERO_STATE_KEY}:${getCatalogFieldSemanticKey(label)}`
+}
+
+function parseHeroDisplayDateToIso(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  const match = normalized.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/)
+  if (!match) return ""
+
+  const [, dayPart, monthLabel, yearPart] = match
+  const monthIndex = INDONESIAN_MONTHS.findIndex((month) => month.toLowerCase() === monthLabel.toLowerCase())
+  if (monthIndex < 0) return ""
+
+  const day = Number(dayPart)
+  const year = Number(yearPart)
+  if (!Number.isFinite(day) || !Number.isFinite(year)) return ""
+
+  return `${year.toString().padStart(4, "0")}-${(monthIndex + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`
+}
+
+function formatIsoToHeroDisplayDate(value: string) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return ""
+
+  const [, yearPart, monthPart, dayPart] = match
+  const monthIndex = Number(monthPart) - 1
+  if (monthIndex < 0 || monthIndex >= INDONESIAN_MONTHS.length) return ""
+
+  return `${Number(dayPart)} ${INDONESIAN_MONTHS[monthIndex]} ${yearPart}`
+}
+
+function formatIsoToHeroWeekday(value: string) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return ""
+
+  const [, yearPart, monthPart, dayPart] = match
+  const date = new Date(Number(yearPart), Number(monthPart) - 1, Number(dayPart))
+  return INDONESIAN_WEEKDAYS[date.getDay()] ?? ""
+}
+
+function extractPassengerCountByKeyword(value: string, keyword: string) {
+  const match = value.toLowerCase().match(new RegExp(`(\\d+)\\s+${keyword}`))
+  return match ? Number.parseInt(match[1], 10) : 0
+}
+
+function buildFallbackPassengerState(passengers: string, cabin: string): HeroPassengerState {
+  return {
+    adults: extractPassengerCountByKeyword(passengers, "dewasa") || 1,
+    children: extractPassengerCountByKeyword(passengers, "anak"),
+    infants: extractPassengerCountByKeyword(passengers, "bayi"),
+    cabin: cabin.trim() || "Ekonomi",
+  }
+}
+
+function formatLocationForHeroField(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim()
+  const match = normalized.match(/^(.*)\(([A-Z]{3})\)$/)
+  if (!match) return normalized
+
+  const [, cityPart, codePart] = match
+  return `${codePart}   ${cityPart.trim()}`
+}
+
+function normalizeLocationFromHeroField(value: string) {
+  return normalizeFlightLocationLabel(value.replace(/\s+/g, " ").trim())
+}
+
+function buildCatalogHeroBaseFields(state: FlightFilterState): HeroSearchFieldData[] {
+  const passengerState = buildFallbackPassengerState(state.passengers, state.cabin)
+  const passengerValue = state.passengers.trim() || `${passengerState.adults} Dewasa`
+  const cabinValue = state.cabin.trim() || passengerState.cabin
+  const passengerField: HeroSearchFieldData = {
+    label: "Penumpang",
+    value: passengerValue,
+    sublabel: cabinValue,
+    withChevron: true,
+    passengerState,
+    cabinOptions: FLIGHT_CABIN_OPTIONS,
+  }
+  const cabinField: HeroSearchFieldData = {
+    label: "Kelas Kabin",
+    value: cabinValue,
+    sublabel: "Pilihan kabin",
+    withChevron: true,
+    cabinOptions: FLIGHT_CABIN_OPTIONS,
+  }
+
+  if (state.tripMode === "multi_city") {
+    return [
+      { label: "Kota Asal", value: formatLocationForHeroField(state.from), sublabel: "" },
+      { label: "Transit", value: formatLocationForHeroField(state.via), sublabel: "" },
+      { label: "Kota Tujuan", value: formatLocationForHeroField(state.to), sublabel: "" },
+      { label: "Berangkat", value: formatIsoToHeroDisplayDate(state.depart), sublabel: formatIsoToHeroWeekday(state.depart) },
+      passengerField,
+      cabinField,
+    ]
+  }
+
+  const baseFields: HeroSearchFieldData[] = [
+    { label: "Dari", value: formatLocationForHeroField(state.from), sublabel: "" },
+    { label: "Ke", value: formatLocationForHeroField(state.to), sublabel: "" },
+    { label: "Berangkat", value: formatIsoToHeroDisplayDate(state.depart), sublabel: formatIsoToHeroWeekday(state.depart) },
+  ]
+
+  if (state.tripMode === "round_trip") {
+    baseFields.push({ label: "Pulang", value: formatIsoToHeroDisplayDate(state.returnDate), sublabel: formatIsoToHeroWeekday(state.returnDate) })
+  }
+
+  baseFields.push(passengerField, cabinField)
+  return baseFields
+}
+
+function resolveCatalogHeroFields(baseFields: HeroSearchFieldData[], fieldStates: Record<string, HeroSearchFieldData>) {
+  return baseFields.map((field) => fieldStates[getCatalogHeroFieldStateKey(field.label)] ?? field)
+}
+
+function applyCatalogHeroFieldsToDraft(current: FlightFilterState, fields: HeroSearchFieldData[]) {
+  const getFieldValue = (semanticKey: string) => fields.find((field) => getCatalogFieldSemanticKey(field.label) === semanticKey)
+  const passengerField = getFieldValue("passenger")
+  const cabinField = getFieldValue("cabin")
+
+  return {
+    ...current,
+    from: normalizeLocationFromHeroField(getFieldValue("origin")?.value || ""),
+    via: current.tripMode === "multi_city" ? normalizeLocationFromHeroField(getFieldValue("transit")?.value || "") : "",
+    to: normalizeLocationFromHeroField(getFieldValue("destination")?.value || ""),
+    depart: parseHeroDisplayDateToIso(getFieldValue("departure")?.value || ""),
+    returnDate: current.tripMode === "round_trip" ? parseHeroDisplayDateToIso(getFieldValue("return")?.value || "") : "",
+    passengers: passengerField?.value || current.passengers,
+    cabin: cabinField?.value || passengerField?.sublabel || current.cabin,
+  }
+}
+
+function getCalendarReferenceValue(fields: CatalogHeroRenderedField[], field: CatalogHeroRenderedField) {
+  const normalized = field.label.toLowerCase()
+  if (!normalized.includes("pulang")) return undefined
+
+  return fields.find((candidate) => candidate.label.toLowerCase().includes("berangkat"))?.value
+}
+
+function getCatalogGridClass(tripMode: FlightTripMode) {
+  if (tripMode === "one_way") {
+    return "xl:grid-cols-[1.12fr_1.12fr_0.92fr_1fr_0.92fr_64px]"
+  }
+
+  if (tripMode === "multi_city") {
+    return "xl:grid-cols-[1fr_1fr_1fr_0.9fr_1fr_0.92fr_64px]"
+  }
+
+  return "xl:grid-cols-[1.08fr_1.08fr_0.86fr_0.86fr_0.95fr_0.92fr_64px]"
+}
+
+function getSwapRouteLabel(locale: Locale) {
+  if (locale === "en") return "Swap route"
+  if (locale === "zh") return "切换航线"
+  return "Tukar rute"
+}
+
+function CatalogDesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-[7px]">
+      <p className="pl-4 text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-white/92">{label}</p>
+      {children}
+    </div>
+  )
+}
+
 export default function FlightCatalogInteractiveClient({
   items,
   emptyKeyword,
@@ -328,6 +544,7 @@ export default function FlightCatalogInteractiveClient({
   supportHref,
   copy,
   filterKeywordLabel,
+  locale,
   initialState,
 }: {
   items: FlightItem[]
@@ -337,10 +554,12 @@ export default function FlightCatalogInteractiveClient({
   supportHref: string
   copy: FlightCopy
   filterKeywordLabel: string
+  locale: Locale
   initialState: FlightFilterState
 }) {
   const [state, setState] = useState(initialState)
   const [draft, setDraft] = useState(initialState)
+  const [heroFieldStates, setHeroFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
   const [isScrolled, setIsScrolled] = useState(false)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
@@ -375,6 +594,11 @@ export default function FlightCatalogInteractiveClient({
     { key: "one_way" as const, label: copy.oneWay },
     { key: "multi_city" as const, label: copy.multiCity },
   ]
+  const heroBaseFields = useMemo(() => buildCatalogHeroBaseFields(draft), [draft])
+  const heroFields = useMemo(
+    () => buildFormFields(heroBaseFields, "flight", FLIGHT_HERO_STATE_KEY, heroFieldStates, locale) as CatalogHeroRenderedField[],
+    [heroBaseFields, heroFieldStates, locale],
+  )
 
   const filteredItems = items
     .filter((item) => {
@@ -486,8 +710,35 @@ export default function FlightCatalogInteractiveClient({
     })
   }
 
+  const syncHeroFieldsToCatalogState = (nextFieldStates: Record<string, HeroSearchFieldData>, baseFields: HeroSearchFieldData[], currentDraft: FlightFilterState) => {
+    const nextDraft = applyCatalogHeroFieldsToDraft(currentDraft, resolveCatalogHeroFields(baseFields, nextFieldStates))
+    setDraft(nextDraft)
+    setState(nextDraft)
+  }
+
+  const handleHeroFieldChange = (index: number, nextValue: string) => {
+    const targetField = heroFields[index]
+    if (!targetField) return
+
+    setHeroFieldStates((current) => {
+      const nextFieldStates = updateFieldState(current, FLIGHT_HERO_STATE_KEY, "flight", targetField, nextValue)
+      syncHeroFieldsToCatalogState(nextFieldStates, heroBaseFields, draft)
+      return nextFieldStates
+    })
+  }
+
+  const handleHeroSwap = () => {
+    setHeroFieldStates({})
+    syncDraftAndState((current) => ({
+      ...current,
+      from: current.to,
+      to: current.from,
+    }))
+  }
+
   const resetAll = () => {
     const clearedState = buildResetState(state.tripMode)
+    setHeroFieldStates({})
     setDraft(clearedState)
     setState(clearedState)
   }
@@ -548,58 +799,62 @@ export default function FlightCatalogInteractiveClient({
                   active={active}
                   label={tab.label}
                   tone="inverse"
-                  onClick={() =>
+                  onClick={() => {
+                    setHeroFieldStates({})
                     syncDraftAndState((current) => ({
                       ...current,
                       tripMode: tab.key,
                       via: tab.key === "multi_city" ? current.via || initialState.via : "",
                       returnDate: tab.key === "round_trip" ? current.returnDate || initialState.returnDate : "",
                     }))
-                  }
+                  }}
                 />
               )
             })}
           </div>
           <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
             <div
-              className={`grid gap-2 transition-all duration-200 ${
-                draft.tripMode === "one_way"
-                  ? "xl:grid-cols-[1.15fr_1.15fr_0.9fr_1.25fr_64px]"
-                  : draft.tripMode === "multi_city"
-                    ? "xl:grid-cols-[1.05fr_1.05fr_1.05fr_0.9fr_1.25fr_64px]"
-                    : "xl:grid-cols-[1.15fr_1.15fr_0.9fr_0.9fr_1.25fr_64px]"
-              } ${isScrolled ? "xl:gap-1.5" : ""}`}
+              className={`grid gap-2 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-1.5" : ""}`}
             >
-              <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.fromLabel} withChevron>
-                <input value={draft.from} onChange={(event) => syncDraftAndState((current) => ({ ...current, from: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
-              </FlightSearchInteractiveField>
-              {draft.tripMode === "multi_city" ? (
-                <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.viaLabel} withChevron>
-                  <input value={draft.via} onChange={(event) => syncDraftAndState((current) => ({ ...current, via: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
-                </FlightSearchInteractiveField>
-              ) : null}
-              <FlightSearchInteractiveField icon={<PlaneFieldIcon />} label={copy.toLabel} withChevron>
-                <input value={draft.to} onChange={(event) => syncDraftAndState((current) => ({ ...current, to: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
-              </FlightSearchInteractiveField>
-              <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.departLabel} withChevron>
-                <input type="date" value={draft.depart} onChange={(event) => syncDraftAndState((current) => ({ ...current, depart: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
-              </FlightSearchInteractiveField>
-              {draft.tripMode === "round_trip" ? (
-                <FlightSearchInteractiveField icon={<CalendarFieldIcon />} label={copy.returnLabel} withChevron>
-                  <input type="date" value={draft.returnDate} onChange={(event) => syncDraftAndState((current) => ({ ...current, returnDate: event.target.value }))} className="w-full bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none" />
-                </FlightSearchInteractiveField>
-              ) : null}
-              <FlightSearchInteractiveField icon={<UsersFieldIcon />} label={copy.passengerClassLabel} withChevron>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">
-                  <input value={draft.passengers} onChange={(event) => syncDraftAndState((current) => ({ ...current, passengers: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400" />
-                  <input value={draft.cabin} onChange={(event) => syncDraftAndState((current) => ({ ...current, cabin: event.target.value }))} className="min-w-0 bg-transparent text-[15px] font-semibold leading-6 text-slate-950 outline-none placeholder:text-slate-400 sm:border-l sm:border-slate-200 sm:pl-2.5" />
-                </div>
-              </FlightSearchInteractiveField>
+              {heroFields.map((field, index) => (
+                <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
+                  <HeroSearchField
+                    label={field.label}
+                    displayLabel={field.displayLabel}
+                    value={field.value}
+                    displayValue={field.displayValue}
+                    sublabel={field.sublabel ?? ""}
+                    displaySublabel={field.displaySublabel}
+                    hideLabel
+                    hideSublabel
+                    withChevron={field.withChevron}
+                    variant="searchbox-desktop"
+                    desktopDensity="compact"
+                    inputType={field.inputType}
+                    options={field.options}
+                    passengerState={field.passengerState}
+                    cabinOptions={field.cabinOptions}
+                    calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
+                    onValueChange={(value) => handleHeroFieldChange(index, value)}
+                    locale={locale}
+                    className="rounded-[22px] px-4 py-[12px]"
+                  />
+                </CatalogDesktopFieldShell>
+              ))}
               <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center">
                 <SearchIcon />
               </button>
             </div>
-            <div className="mt-2 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+            <div className={`mt-2 grid gap-2 ${draft.tripMode === "multi_city" ? "xl:grid-cols-[minmax(0,1fr)_auto_auto]" : "xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]"} xl:items-center`}>
+              {draft.tripMode !== "multi_city" ? (
+                <button
+                  type="button"
+                  onClick={handleHeroSwap}
+                  className="inline-flex items-center justify-center rounded-[16px] border border-white/30 bg-white/12 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/18"
+                >
+                  {getSwapRouteLabel(locale)}
+                </button>
+              ) : null}
               <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.28)]">
                 <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/72">{filterKeywordLabel}</span>
                 <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/55" />

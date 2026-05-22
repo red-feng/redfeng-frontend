@@ -786,6 +786,7 @@ export default async function ServiceDummyCatalogPage({
           supportHref={catalog.supportHref}
           copy={flightCopy}
           filterKeywordLabel={copy.filterKeyword}
+          locale={locale}
           initialState={{
             tripMode:
               isFlightTripMode(flightTrip) ? flightTrip : "round_trip",
