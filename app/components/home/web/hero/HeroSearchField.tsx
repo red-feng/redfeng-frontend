@@ -460,19 +460,19 @@ export default function HeroSearchField({
         </button>
       ) : null}
       {shouldShowDefaultAdornment && withChevron ? (
-        <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#7f90a8]" : isDesktopPill ? "text-[#7b8aa1]" : "text-slate-500"}`}>
+        <span className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#7f90a8]" : isDesktopPill ? "text-[#7b8aa1]" : "text-slate-500"}`}>
           <ChevronDownIcon className="h-4 w-4" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "autocomplete" && !isDesktopPill ? (
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">
           <SearchMiniIcon className="h-4 w-4" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "autocomplete" && isSearchboxDesktop ? (
-        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#97a8bc]">
+        <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#97a8bc]">
           <SearchMiniIcon className="h-[18px] w-[18px]" />
         </span>
       ) : shouldShowDefaultAdornment && inputType === "date" && isDesktopPill ? (
-        <span className={`absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#111111]" : "text-[#7b8aa1]"}`}>
+        <span className={`pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 ${isSearchboxDesktop ? "text-[#111111]" : "text-[#7b8aa1]"}`}>
           <CalendarMiniIcon className="h-[18px] w-[18px]" />
         </span>
       ) : null}
