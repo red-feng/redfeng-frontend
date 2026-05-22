@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import {
-  FlightSearchTripTab,
   SearchIcon,
 } from "@/app/components/flights/FlightSearchShared"
 import { buildFlightCatalogQuery, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
@@ -530,7 +529,7 @@ function getSwapRouteLabel(locale: Locale) {
 function CatalogDesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-[7px]">
-      <p className="pl-4 text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-white/92">{label}</p>
+      <p className="pl-4 text-[13px] font-semibold leading-[1.2] tracking-[-0.01em] text-[#42526b]">{label}</p>
       {children}
     </div>
   )
@@ -780,25 +779,23 @@ export default function FlightCatalogInteractiveClient({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.992]" : ""}`}>
+      <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.994]" : ""}`}>
         <form
           onSubmit={(event) => {
             event.preventDefault()
             applyDraft()
           }}
-          className={`rounded-[20px] border border-[#d9e8f6] bg-[#1687e0] shadow-[0_18px_40px_-28px_rgba(15,23,42,0.18)] transition-all duration-200 ${
-            isScrolled ? "p-2.5 shadow-[0_20px_44px_-26px_rgba(15,23,42,0.24)]" : "p-3"
+          className={`rounded-[28px] border border-[#d8e7f6] bg-[linear-gradient(180deg,#2d8edf_0%,#2093ee_22%,#43a4ef_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.24)] transition-all duration-200 ${
+            isScrolled ? "p-3 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-4"
           }`}
         >
-          <div className="mb-3 flex gap-2 overflow-x-auto border-b border-white/14 px-1 pb-2 text-sm font-medium text-white/92 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="mb-4 flex gap-5 overflow-x-auto border-b border-white/20 px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {tripTabs.map((tab) => {
               const active = draft.tripMode === tab.key
               return (
-                <FlightSearchTripTab
+                <button
                   key={tab.key}
-                  active={active}
-                  label={tab.label}
-                  tone="inverse"
+                  type="button"
                   onClick={() => {
                     setHeroFieldStates({})
                     syncDraftAndState((current) => ({
@@ -808,13 +805,18 @@ export default function FlightCatalogInteractiveClient({
                       returnDate: tab.key === "round_trip" ? current.returnDate || initialState.returnDate : "",
                     }))
                   }}
-                />
+                  className={`inline-flex shrink-0 items-center border-b-[2px] pb-[0.72rem] transition ${
+                    active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-white/88 hover:text-white"
+                  }`}
+                >
+                  {tab.label}
+                </button>
               )
             })}
           </div>
-          <div className={`rounded-[24px] bg-white/10 p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
+          <div className={`rounded-[26px] border border-white/16 bg-white/14 p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
             <div
-              className={`grid gap-2 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-1.5" : ""}`}
+              className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
             >
               {heroFields.map((field, index) => (
                 <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
@@ -837,32 +839,32 @@ export default function FlightCatalogInteractiveClient({
                     calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
                     onValueChange={(value) => handleHeroFieldChange(index, value)}
                     locale={locale}
-                    className="rounded-[22px] px-4 py-[12px]"
+                    className="rounded-[999px] px-5 py-[14px]"
                   />
                 </CatalogDesktopFieldShell>
               ))}
-              <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-1 xl:h-[56px] xl:w-[56px] xl:self-center">
+              <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[29px] xl:h-[56px] xl:w-[56px] xl:self-start">
                 <SearchIcon />
               </button>
             </div>
-            <div className={`mt-2 grid gap-2 ${draft.tripMode === "multi_city" ? "xl:grid-cols-[minmax(0,1fr)_auto_auto]" : "xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]"} xl:items-center`}>
+            <div className={`mt-3 grid gap-2.5 ${draft.tripMode === "multi_city" ? "xl:grid-cols-[minmax(0,1fr)_auto_auto]" : "xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]"} xl:items-center`}>
               {draft.tripMode !== "multi_city" ? (
                 <button
                   type="button"
                   onClick={handleHeroSwap}
-                  className="inline-flex items-center justify-center rounded-[16px] border border-white/30 bg-white/12 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/18"
+                  className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-white px-4 py-2.5 text-sm font-semibold text-[#35516d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.75)] transition hover:bg-sky-50"
                 >
                   {getSwapRouteLabel(locale)}
                 </button>
               ) : null}
-              <label className="block rounded-[18px] border border-white/20 bg-white/12 px-3 py-2.5 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.28)]">
-                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-white/72">{filterKeywordLabel}</span>
-                <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-white outline-none placeholder:text-white/55" />
+              <label className="block rounded-[18px] border border-white/45 bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)]">
+                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
+                <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
               </label>
               <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
                 {copy.refineSearch}
               </button>
-              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/30 bg-[#0f72c0] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0c6ab8]">
+              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-[#1d78c7] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#176ab0]">
                 {copy.resetFilters}
               </button>
             </div>
