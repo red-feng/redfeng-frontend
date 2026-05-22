@@ -157,6 +157,18 @@ function normalizeFlightSearchTerm(value: string) {
   return value.toLowerCase().replace(/[()]/g, " ").replace(/[^a-z0-9\s-]/g, " ").replace(/\s+/g, " ").trim()
 }
 
+function normalizeCabinTerm(value: string) {
+  const normalized = normalizeFlightSearchTerm(value)
+  if (!normalized) return normalized
+
+  return normalized
+    .replace(/\bpremium ekonomi\b/g, "premium economy")
+    .replace(/\bekonomi premium\b/g, "premium economy")
+    .replace(/\bekonomi\b/g, "economy")
+    .replace(/\bbisnis\b/g, "business")
+    .replace(/\bkelas satu\b/g, "first class")
+}
+
 function buildFlightMatchTokens(value: string) {
   return normalizeFlightSearchTerm(value)
     .split(/[\s-]+/)
@@ -198,7 +210,17 @@ function matchesFlightReturnDate(depart: string, returnDate: string, item: Fligh
 
 function matchesFlightCabin(cabin: string, item: FlightItem) {
   if (!cabin.trim()) return true
-  return matchesFlightField(cabin, item.meta.cabin, item.group, item.title, item.statusNote, item.availabilityNote, item.highlights.join(" "))
+  const queryTokens = normalizeCabinTerm(cabin)
+    .split(/[\s-]+/)
+    .map((token) => token.trim())
+    .filter(Boolean)
+  if (queryTokens.length === 0) return true
+
+  const haystack = normalizeCabinTerm(
+    [item.meta.cabin, item.group, item.title, item.statusNote, item.availabilityNote, item.highlights.join(" ")].filter(Boolean).join(" "),
+  )
+
+  return queryTokens.every((token) => haystack.includes(token))
 }
 
 function matchesFlightVia(via: string, tripMode: FlightTripMode, item: FlightItem) {
