@@ -61,6 +61,22 @@ export type DummyServiceCatalog = {
 
 const extraDummyFlightItems: DummyCatalogItem[] = [
   {
+    id: "flight-hlp-dps",
+    title: "Jakarta Halim - Denpasar Direct Test Route",
+    location: "HLP - DPS",
+    region: "Domestik",
+    group: "Sekali jalan",
+    image: "/home-assets/card-flight.png",
+    availabilityNote: "Dummy route khusus untuk memastikan hero homepage ke katalog pesawat tersambung.",
+    statusNote: "Dipertahankan sebagai anchor test untuk pencarian default Jakarta Halim ke Denpasar.",
+    highlights: ["Halim departure", "Direct test route", "Homepage anchor"],
+    facts: [
+      { label: "Route code", value: "HLP-DPS" },
+      { label: "Cabin", value: "Economy" },
+      { label: "Window", value: "Morning" },
+    ],
+  },
+  {
     id: "flight-cgk-sub",
     title: "Jakarta - Surabaya Early Shuttle",
     location: "CGK - SUB",
