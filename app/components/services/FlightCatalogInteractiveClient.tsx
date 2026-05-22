@@ -446,8 +446,7 @@ export default function FlightCatalogInteractiveClient({
   }
 
   const resetAll = () => {
-    setDraft(initialState)
-    setState({
+    const clearedState = {
       ...initialState,
       q: "",
       region: "",
@@ -456,7 +455,9 @@ export default function FlightCatalogInteractiveClient({
       departWindows: [],
       transitTypes: [],
       priceBands: [],
-    })
+    }
+    setDraft(clearedState)
+    setState(clearedState)
   }
 
   const updateState = (patch: Partial<FlightFilterState>) => {
