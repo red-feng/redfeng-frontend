@@ -69,7 +69,6 @@ export default function HeroSearchField({
   const [draftValue, setDraftValue] = useState(value)
   const [draftPassengerState, setDraftPassengerState] = useState<HeroPassengerState | null>(passengerState ?? null)
   const fieldRef = useRef<HTMLDivElement | null>(null)
-  const dateInputRef = useRef<HTMLInputElement | null>(null)
   const isPassengerField = inputType === "passenger" && Boolean(passengerState)
   const hasDropdown = !isPassengerField && inputType !== "date" && options.length > 0
   const isSearchboxDesktop = variant === "searchbox-desktop"
@@ -97,6 +96,8 @@ export default function HeroSearchField({
   const visibleValue = displayValue ?? value
   const visibleSublabel = displaySublabel ?? sublabel
   const normalizedSelectedValue = value.trim().toLowerCase()
+  const selectedDate = useMemo(() => (inputType === "date" ? parseIsoDate(value) : null), [inputType, value])
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(selectedDate ?? new Date()))
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
 
@@ -129,6 +130,7 @@ export default function HeroSearchField({
 
     return Array.from(groups.entries())
   }, [filteredOptions])
+  const calendarWeeks = useMemo(() => (inputType === "date" ? buildCalendarWeeks(visibleMonth) : []), [inputType, visibleMonth])
 
   useEffect(() => {
     setDraftValue(value)
@@ -137,6 +139,11 @@ export default function HeroSearchField({
   useEffect(() => {
     setDraftPassengerState(passengerState ?? null)
   }, [passengerState])
+
+  useEffect(() => {
+    if (inputType !== "date") return
+    setVisibleMonth(startOfMonth(selectedDate ?? new Date()))
+  }, [inputType, selectedDate])
 
   useEffect(() => {
     if (!isOpen) return
@@ -177,13 +184,7 @@ export default function HeroSearchField({
             type="button"
             onClick={() => {
               if (inputType === "date") {
-                const input = dateInputRef.current as HTMLInputElement & { showPicker?: () => void }
-                if (typeof input?.showPicker === "function") {
-                  input.showPicker()
-                  return
-                }
-                input?.focus()
-                input?.click()
+                setIsOpen((current) => !current)
                 return
               }
 
@@ -195,64 +196,16 @@ export default function HeroSearchField({
           >
             {renderValue}
           </button>
-          {inputType === "date" ? (
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={value}
-              onChange={(event) => onValueChange?.(event.target.value)}
-              onClick={(event) => {
-                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
-                if (typeof input.showPicker === "function") {
-                  input.showPicker()
-                }
-              }}
-              onFocus={(event) => {
-                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
-                if (typeof input.showPicker === "function") {
-                  input.showPicker()
-                }
-              }}
-              className="absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none border-0 bg-transparent text-transparent opacity-0 caret-transparent outline-none [-webkit-text-fill-color:transparent] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
-              aria-label={visibleLabel}
-            />
-          ) : null}
         </div>
       ) : inputType === "date" ? (
-        isSearchboxDesktop ? (
-          <div className={`${hideLabel ? "" : "mt-[6px]"} relative w-full`}>
-            <span className={`pointer-events-none flex w-full items-center bg-transparent pr-[40px] ${valueClassName}`}>
-              <span className="truncate">{formatIsoToSlashDate(value)}</span>
-            </span>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={value}
-              onChange={(event) => onValueChange?.(event.target.value)}
-              onClick={(event) => {
-                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
-                if (typeof input.showPicker === "function") {
-                  input.showPicker()
-                }
-              }}
-              onFocus={(event) => {
-                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
-                if (typeof input.showPicker === "function") {
-                  input.showPicker()
-                }
-              }}
-              className={`absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none border-0 bg-transparent pr-[40px] text-transparent opacity-100 caret-transparent outline-none [-webkit-text-fill-color:transparent] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0`}
-              aria-label={visibleLabel}
-            />
-          </div>
-        ) : (
-          <input
-            type="date"
-            value={value}
-            onChange={(event) => onValueChange?.(event.target.value)}
-            className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent ${isDesktopPill ? "pr-10" : "pr-8"} ${valueClassName} outline-none`}
-          />
-        )
+        <button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
+          className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center bg-transparent ${isSearchboxDesktop ? `min-h-[24px] pr-[40px]` : isDesktopPill ? "pr-10" : "pr-8"} text-left outline-none`}
+          aria-label={visibleLabel}
+        >
+          <span className={`truncate ${valueClassName}`}>{formatIsoToSlashDate(value)}</span>
+        </button>
       ) : inputType === "autocomplete" ? (
         <input
           type="text"
@@ -483,6 +436,66 @@ export default function HeroSearchField({
           </div>
         </div>
       ) : null}
+      {inputType === "date" && isOpen ? (
+        <div className="absolute left-0 top-[calc(100%+10px)] z-[280] w-full min-w-[312px] max-w-[340px] overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_60px_-28px_rgba(15,23,42,0.38)]">
+          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => setVisibleMonth((current) => addMonths(current, -1))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              aria-label={locale === "en" ? "Previous month" : locale === "zh" ? "上个月" : "Bulan sebelumnya"}
+            >
+              <CalendarChevron direction="left" />
+            </button>
+            <p className="text-[14px] font-semibold text-slate-900">{formatCalendarMonthLabel(visibleMonth, locale)}</p>
+            <button
+              type="button"
+              onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+              aria-label={locale === "en" ? "Next month" : locale === "zh" ? "下个月" : "Bulan berikutnya"}
+            >
+              <CalendarChevron direction="right" />
+            </button>
+          </div>
+          <div className="px-4 pb-4 pt-3">
+            <div className="mb-2 grid grid-cols-7 gap-1">
+              {getCalendarWeekdayLabels(locale).map((weekday) => (
+                <span key={weekday} className="flex h-8 items-center justify-center text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  {weekday}
+                </span>
+              ))}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {calendarWeeks.flat().map((day) => {
+                const isSelected = selectedDate ? isSameDay(day.date, selectedDate) : false
+                const isToday = isSameDay(day.date, new Date())
+                return (
+                  <button
+                    key={day.iso}
+                    type="button"
+                    onClick={() => {
+                      onValueChange?.(day.iso)
+                      setIsOpen(false)
+                    }}
+                    className={`flex h-10 items-center justify-center rounded-full text-[13px] font-medium transition ${
+                      isSelected
+                        ? "bg-[#ff6624] text-white shadow-[0_10px_20px_-14px_rgba(255,102,36,0.9)]"
+                        : day.isCurrentMonth
+                          ? isToday
+                            ? "border border-[#ffd6c8] bg-[#fff4ef] text-[#ef4423] hover:bg-[#ffe8df]"
+                            : "text-slate-700 hover:bg-slate-100"
+                          : "text-slate-300 hover:bg-slate-50"
+                    }`}
+                    aria-pressed={isSelected}
+                  >
+                    {day.date.getDate()}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {withSwap ? (
         <button
           type="button"
@@ -538,6 +551,14 @@ function CloseMiniIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className={className} aria-hidden="true">
       <path strokeLinecap="round" d="M6 6l12 12M18 6 6 18" />
+    </svg>
+  )
+}
+
+function CalendarChevron({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-4 w-4" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d={direction === "left" ? "m14 6-6 6 6 6" : "m10 6 6 6-6 6"} />
     </svg>
   )
 }
@@ -655,6 +676,70 @@ function formatIsoToSlashDate(input: string) {
   const [year, month, day] = input.split("-")
   if (!year || !month || !day) return input
   return `${day}/${month}/${year}`
+}
+
+function parseIsoDate(input: string) {
+  const [year, month, day] = input.split("-").map(Number)
+  if (!year || !month || !day) return null
+  const date = new Date(year, month - 1, day)
+  if (Number.isNaN(date.getTime())) return null
+  return date
+}
+
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function addMonths(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth() + amount, 1)
+}
+
+function toIsoDate(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
+function isSameDay(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth() &&
+    left.getDate() === right.getDate()
+  )
+}
+
+function buildCalendarWeeks(month: Date) {
+  const firstDay = startOfMonth(month)
+  const startOffset = firstDay.getDay()
+  const gridStart = new Date(firstDay)
+  gridStart.setDate(firstDay.getDate() - startOffset)
+
+  return Array.from({ length: 6 }, (_, weekIndex) =>
+    Array.from({ length: 7 }, (_, dayIndex) => {
+      const date = new Date(gridStart)
+      date.setDate(gridStart.getDate() + weekIndex * 7 + dayIndex)
+      return {
+        date,
+        iso: toIsoDate(date),
+        isCurrentMonth: date.getMonth() === month.getMonth(),
+      }
+    }),
+  )
+}
+
+function getCalendarWeekdayLabels(locale: "id" | "en" | "zh") {
+  if (locale === "en") return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  if (locale === "zh") return ["日", "一", "二", "三", "四", "五", "六"]
+  return ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
+}
+
+function formatCalendarMonthLabel(date: Date, locale: "id" | "en" | "zh") {
+  const monthLabels =
+    locale === "en"
+      ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+      : locale === "zh"
+        ? ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+        : ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+
+  return `${monthLabels[date.getMonth()]} ${date.getFullYear()}`
 }
 
 function getAirportOptionMeta(option: HeroSearchFieldOption) {
