@@ -189,6 +189,22 @@ type FlightCatalogCardMeta = {
 
 type FlightCatalogPresetMeta = Omit<FlightCatalogCardMeta, "origin" | "destination" | "routeCode" | "cabin" | "tripLabel" | "highlightBadges">
 
+function inferFlightTripSupport(item: DummyCatalogItem, routeCode: string, factMap: Map<string, string>) {
+  const normalizedGroup = item.group.toLowerCase()
+  const transitFact = (factMap.get("transit") || "").trim()
+  const routeSegments = routeCode
+    .split("-")
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  const isMultiCityRoute =
+    normalizedGroup.includes("multi kota") ||
+    routeSegments.length > 2 ||
+    transitFact.length > 0
+
+  return isMultiCityRoute ? (["one_way", "multi_city"] as FlightTripMode[]) : (["one_way", "round_trip"] as FlightTripMode[])
+}
+
 function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string): FlightCatalogCardMeta {
   const presetList: FlightCatalogPresetMeta[] = [
     {
@@ -200,7 +216,7 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
       price: "IDR 1.248.000",
       seatNote: locale === "en" ? "Last 6 seats at this fare" : locale === "zh" ? "该票价仅剩 6 个座位" : "Sisa 6 kursi di harga ini",
       maxPassengers: 1,
-      tripSupport: ["one_way"],
+        tripSupport: ["one_way", "round_trip"],
       availableDates: ["2026-05-25", "2026-05-26", "2026-05-27"],
     },
     {
@@ -247,6 +263,7 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
   const destination = routeParts[1] || item.location
   const highlightBadges = item.highlights.slice(0, 3)
   const factMap = new Map(item.facts.map((fact) => [fact.label.toLowerCase(), fact.value]))
+  const routeCode = factMap.get("route code") || item.location.replace(/\s+/g, "")
   const routeOverrides: Partial<FlightCatalogCardMeta> = (() => {
     if (item.id === "flight-cgk-dps") {
       return {
@@ -303,7 +320,7 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
         price: "IDR 1.032.000",
         seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
         maxPassengers: 3,
-        tripSupport: ["round_trip"],
+        tripSupport: ["one_way", "round_trip"],
         availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
       }
     }
@@ -331,10 +348,11 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
     ...routeOverrides,
     origin,
     destination,
-    routeCode: factMap.get("route code") || item.location.replace(/\s+/g, ""),
+    routeCode,
     cabin: factMap.get("cabin") || (item.group.toLowerCase().includes("business") ? "Business" : "Economy"),
     tripLabel: item.group,
     highlightBadges,
+    tripSupport: routeOverrides.tripSupport ?? inferFlightTripSupport(item, routeCode, factMap),
   }
 }
 
