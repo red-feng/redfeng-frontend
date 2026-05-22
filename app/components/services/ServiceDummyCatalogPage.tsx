@@ -205,6 +205,39 @@ function inferFlightTripSupport(item: DummyCatalogItem, routeCode: string, factM
   return isMultiCityRoute ? (["one_way", "multi_city"] as FlightTripMode[]) : (["one_way", "round_trip"] as FlightTripMode[])
 }
 
+function inferFlightTransitLabel(routeCode: string, factMap: Map<string, string>, locale: string) {
+  const transitFact = (factMap.get("transit") || "").trim()
+  const routeSegments = routeCode
+    .split("-")
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  if (transitFact) {
+    return locale === "en" ? `Transit via ${transitFact}` : locale === "zh" ? `经${transitFact}中转` : `Transit via ${transitFact}`
+  }
+
+  if (routeSegments.length > 2) {
+    const transitStop = routeSegments[1]
+    return locale === "en" ? `Transit via ${transitStop}` : locale === "zh" ? `经${transitStop}中转` : `Transit via ${transitStop}`
+  }
+
+  return locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung"
+}
+
+function inferFlightAvailableDates(routeCode: string, factMap: Map<string, string>) {
+  const transitFact = (factMap.get("transit") || "").trim()
+  const routeSegments = routeCode
+    .split("-")
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  if (transitFact || routeSegments.length > 2) {
+    return ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"]
+  }
+
+  return ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"]
+}
+
 function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string): FlightCatalogCardMeta {
   const presetList: FlightCatalogPresetMeta[] = [
     {
@@ -264,6 +297,8 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
   const highlightBadges = item.highlights.slice(0, 3)
   const factMap = new Map(item.facts.map((fact) => [fact.label.toLowerCase(), fact.value]))
   const routeCode = factMap.get("route code") || item.location.replace(/\s+/g, "")
+  const inferredTransit = inferFlightTransitLabel(routeCode, factMap, locale)
+  const inferredAvailableDates = inferFlightAvailableDates(routeCode, factMap)
   const routeOverrides: Partial<FlightCatalogCardMeta> = (() => {
     if (item.id === "flight-cgk-dps") {
       return {
@@ -335,8 +370,8 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
         price: "IDR 1.786.000",
         seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
         maxPassengers: 4,
-        tripSupport: ["one_way", "multi_city"],
-        availableDates: ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"],
+        tripSupport: ["one_way", "round_trip"],
+        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
       }
     }
 
@@ -349,10 +384,12 @@ function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string
     origin,
     destination,
     routeCode,
+    transit: item.id === "flight-dps-kul" ? inferredTransit : routeOverrides.transit ?? inferredTransit,
     cabin: factMap.get("cabin") || (item.group.toLowerCase().includes("business") ? "Business" : "Economy"),
     tripLabel: item.group,
     highlightBadges,
     tripSupport: routeOverrides.tripSupport ?? inferFlightTripSupport(item, routeCode, factMap),
+    availableDates: routeOverrides.availableDates ?? inferredAvailableDates,
   }
 }
 
