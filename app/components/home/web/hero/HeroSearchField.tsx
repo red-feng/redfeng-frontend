@@ -172,17 +172,52 @@ export default function HeroSearchField({
         <div className={`min-w-0 flex-1 ${isSearchboxDesktop ? "flex h-full items-center" : ""}`}>
           {hideLabel ? null : <p className={labelClassName}>{visibleLabel}</p>}
       {renderValue ? (
-        <button
-          type="button"
-          onClick={() => {
-            if (hasDropdown || withChevron || isPassengerField) {
-              setIsOpen((current) => !current)
-            }
-          }}
-          className={`${hideLabel ? "" : "mt-[6px]"} ${isSearchboxDesktop ? `flex ${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} items-center` : ""} w-full bg-transparent text-left outline-none`}
-        >
-          {renderValue}
-        </button>
+        <div className={`${hideLabel ? "" : "mt-[6px]"} relative w-full`}>
+          <button
+            type="button"
+            onClick={() => {
+              if (inputType === "date") {
+                const input = dateInputRef.current as HTMLInputElement & { showPicker?: () => void }
+                if (typeof input?.showPicker === "function") {
+                  input.showPicker()
+                  return
+                }
+                input?.focus()
+                input?.click()
+                return
+              }
+
+              if (hasDropdown || withChevron || isPassengerField) {
+                setIsOpen((current) => !current)
+              }
+            }}
+            className={`${isSearchboxDesktop ? `flex ${isCompactDesktopField ? "min-h-[20px]" : "min-h-[24px]"} items-center` : ""} w-full bg-transparent text-left outline-none`}
+          >
+            {renderValue}
+          </button>
+          {inputType === "date" ? (
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={value}
+              onChange={(event) => onValueChange?.(event.target.value)}
+              onClick={(event) => {
+                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                if (typeof input.showPicker === "function") {
+                  input.showPicker()
+                }
+              }}
+              onFocus={(event) => {
+                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                if (typeof input.showPicker === "function") {
+                  input.showPicker()
+                }
+              }}
+              className="absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none border-0 bg-transparent text-transparent opacity-0 caret-transparent outline-none [-webkit-text-fill-color:transparent] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+              aria-label={visibleLabel}
+            />
+          ) : null}
+        </div>
       ) : inputType === "date" ? (
         isSearchboxDesktop ? (
           <div className={`${hideLabel ? "" : "mt-[6px]"} relative w-full`}>
