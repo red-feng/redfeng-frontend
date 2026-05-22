@@ -36,6 +36,7 @@ type HeroSearchFieldProps = {
   options?: HeroSearchFieldOption[]
   passengerState?: HeroPassengerState
   cabinOptions?: string[]
+  calendarReferenceValue?: string
   onValueChange?: (value: string) => void
   onSwap?: () => void
   locale?: "id" | "en" | "zh"
@@ -61,6 +62,7 @@ export default function HeroSearchField({
   desktopDensity = "default",
   options = [],
   passengerState,
+  calendarReferenceValue,
   onValueChange,
   onSwap,
   locale = "id",
@@ -97,6 +99,7 @@ export default function HeroSearchField({
   const visibleSublabel = displaySublabel ?? sublabel
   const normalizedSelectedValue = value.trim().toLowerCase()
   const selectedDate = useMemo(() => (inputType === "date" ? parseIsoDate(value) : null), [inputType, value])
+  const referenceDate = useMemo(() => (inputType === "date" ? parseIsoDate(calendarReferenceValue ?? "") : null), [calendarReferenceValue, inputType])
   const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(selectedDate ?? new Date()))
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
@@ -130,6 +133,7 @@ export default function HeroSearchField({
 
     return Array.from(groups.entries())
   }, [filteredOptions])
+  const todayDate = useMemo(() => startOfDay(new Date()), [])
   const calendarWeeks = useMemo(() => (inputType === "date" ? buildCalendarWeeks(visibleMonth) : []), [inputType, visibleMonth])
 
   useEffect(() => {
@@ -144,6 +148,11 @@ export default function HeroSearchField({
     if (inputType !== "date") return
     setVisibleMonth(startOfMonth(selectedDate ?? new Date()))
   }, [inputType, selectedDate])
+
+  useEffect(() => {
+    if (!isOpen || inputType !== "date") return
+    setVisibleMonth(startOfMonth(selectedDate ?? referenceDate ?? new Date()))
+  }, [inputType, isOpen, referenceDate, selectedDate])
 
   useEffect(() => {
     if (!isOpen) return
@@ -468,18 +477,23 @@ export default function HeroSearchField({
             <div className="grid grid-cols-7 gap-1">
               {calendarWeeks.flat().map((day) => {
                 const isSelected = selectedDate ? isSameDay(day.date, selectedDate) : false
-                const isToday = isSameDay(day.date, new Date())
+                const isToday = isSameDay(day.date, todayDate)
+                const isDisabled = day.date < todayDate
                 return (
                   <button
                     key={day.iso}
                     type="button"
                     onClick={() => {
+                      if (isDisabled) return
                       onValueChange?.(day.iso)
                       setIsOpen(false)
                     }}
+                    disabled={isDisabled}
                     className={`flex h-10 items-center justify-center rounded-full text-[13px] font-medium transition ${
                       isSelected
                         ? "bg-[#ff6624] text-white shadow-[0_10px_20px_-14px_rgba(255,102,36,0.9)]"
+                        : isDisabled
+                          ? "cursor-not-allowed text-slate-200"
                         : day.isCurrentMonth
                           ? isToday
                             ? "border border-[#ffd6c8] bg-[#fff4ef] text-[#ef4423] hover:bg-[#ffe8df]"
@@ -688,6 +702,10 @@ function parseIsoDate(input: string) {
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
 function addMonths(date: Date, amount: number) {

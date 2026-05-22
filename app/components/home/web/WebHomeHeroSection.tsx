@@ -556,13 +556,34 @@ export function updateFieldState(
   const fieldKey = getFieldStateKey(stateKey, field.label)
 
   if (field.inputType === "date") {
+    const semanticKey = getFieldSemanticKey(field.label)
+    const nextFieldState = {
+      ...field,
+      value: formatIsoDateToDisplay(nextValue),
+      sublabel: formatIsoDateToWeekday(nextValue),
+    }
+
+    if (activeTab === "flight" && semanticKey === "departure") {
+      const returnKey = `${stateKey}:return`
+      const currentReturnField = current[returnKey]
+      const currentReturnIso = currentReturnField ? formatDisplayDateToIso(currentReturnField.value) : ""
+
+      if (currentReturnField && currentReturnIso && nextValue > currentReturnIso) {
+        return {
+          ...current,
+          [fieldKey]: nextFieldState,
+          [returnKey]: {
+            ...currentReturnField,
+            value: formatIsoDateToDisplay(nextValue),
+            sublabel: formatIsoDateToWeekday(nextValue),
+          },
+        }
+      }
+    }
+
     return {
       ...current,
-      [fieldKey]: {
-        ...field,
-        value: formatIsoDateToDisplay(nextValue),
-        sublabel: formatIsoDateToWeekday(nextValue),
-      },
+      [fieldKey]: nextFieldState,
     }
   }
 

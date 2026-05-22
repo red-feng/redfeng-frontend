@@ -8,6 +8,15 @@ type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
   options?: { label: string; value: string; sublabel?: string }[]
 }
 
+function getCalendarReferenceValue(fields: HeroRenderedField[], field: HeroRenderedField) {
+  const normalized = field.label.toLowerCase()
+  if (!normalized.includes("pulang") && !normalized.includes("check-out")) return undefined
+  return fields.find((candidate) => {
+    const candidateLabel = candidate.label.toLowerCase()
+    return candidateLabel.includes("berangkat") || candidateLabel.includes("pergi") || candidateLabel.includes("check-in")
+  })?.value
+}
+
 type HeroSearchMobileProps = {
   config: HeroSearchConfig
   searchHref?: string
@@ -40,6 +49,7 @@ export default function HeroSearchMobile({ config, searchHref, fields, onFieldCh
           options={field.options}
           passengerState={field.passengerState}
           cabinOptions={field.cabinOptions}
+          calendarReferenceValue={getCalendarReferenceValue(mobileFields, field)}
           onValueChange={(value) => onFieldChange?.(index, value)}
           onSwap={field.withSwap ? onSwap : undefined}
           locale={locale}
@@ -64,6 +74,7 @@ export default function HeroSearchMobile({ config, searchHref, fields, onFieldCh
               options={field.options}
               passengerState={field.passengerState}
               cabinOptions={field.cabinOptions}
+              calendarReferenceValue={getCalendarReferenceValue(mobileFields, field)}
               onValueChange={(value) => onFieldChange?.(index + config.mobilePrimaryCount, value)}
               locale={locale}
               className="rounded-[20px] border border-[#dce5f0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"

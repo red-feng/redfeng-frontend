@@ -11,6 +11,15 @@ type HeroRenderedField = HeroSearchConfig["desktopFields"][number] & {
   options?: { label: string; value: string; sublabel?: string }[]
 }
 
+function getCalendarReferenceValue(fields: HeroRenderedField[], field: HeroRenderedField) {
+  const normalized = field.label.toLowerCase()
+  if (!normalized.includes("pulang") && !normalized.includes("check-out")) return undefined
+  return fields.find((candidate) => {
+    const candidateLabel = candidate.label.toLowerCase()
+    return candidateLabel.includes("berangkat") || candidateLabel.includes("pergi") || candidateLabel.includes("check-in")
+  })?.value
+}
+
 type HeroSearchDesktopProps = {
   config: HeroSearchConfig
   searchHref?: string
@@ -101,6 +110,7 @@ export default function HeroSearchDesktop({ config, searchHref, fields, onFieldC
               options={desktopFields[0].options}
               passengerState={desktopFields[0].passengerState}
               cabinOptions={desktopFields[0].cabinOptions}
+              calendarReferenceValue={getCalendarReferenceValue(desktopFields, desktopFields[0])}
               onValueChange={(value) => onFieldChange?.(0, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -126,6 +136,7 @@ export default function HeroSearchDesktop({ config, searchHref, fields, onFieldC
               options={desktopFields[1].options}
               passengerState={desktopFields[1].passengerState}
               cabinOptions={desktopFields[1].cabinOptions}
+              calendarReferenceValue={getCalendarReferenceValue(desktopFields, desktopFields[1])}
               onValueChange={(value) => onFieldChange?.(1, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -148,6 +159,7 @@ export default function HeroSearchDesktop({ config, searchHref, fields, onFieldC
                 options={field.options}
                 passengerState={field.passengerState}
                 cabinOptions={field.cabinOptions}
+                calendarReferenceValue={getCalendarReferenceValue(desktopFields, field)}
                 onValueChange={(value) => onFieldChange?.(index + 2, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[17px]"
@@ -173,6 +185,7 @@ export default function HeroSearchDesktop({ config, searchHref, fields, onFieldC
               options={field.options}
               passengerState={field.passengerState}
               cabinOptions={field.cabinOptions}
+              calendarReferenceValue={getCalendarReferenceValue(desktopFields, field)}
               onValueChange={(value) => onFieldChange?.(index, value)}
               locale={locale}
               className="rounded-[999px] px-6 py-[17px]"
@@ -243,6 +256,7 @@ function PatternedDesktopSearch({
                 options={leadingFields[0].options}
                 passengerState={leadingFields[0].passengerState}
                 cabinOptions={leadingFields[0].cabinOptions}
+                calendarReferenceValue={getCalendarReferenceValue(fields, leadingFields[0])}
                 onValueChange={(value) => onFieldChange?.(0, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -268,6 +282,7 @@ function PatternedDesktopSearch({
                 options={leadingFields[1].options}
                 passengerState={leadingFields[1].passengerState}
                 cabinOptions={leadingFields[1].cabinOptions}
+                calendarReferenceValue={getCalendarReferenceValue(fields, leadingFields[1])}
                 onValueChange={(value) => onFieldChange?.(1, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -295,6 +310,7 @@ function PatternedDesktopSearch({
                 options={field.options}
                 passengerState={field.passengerState}
                 cabinOptions={field.cabinOptions}
+                calendarReferenceValue={getCalendarReferenceValue(fields, field)}
                 onValueChange={(value) => onFieldChange?.(actualIndex, value)}
                 locale={locale}
                 className="rounded-[999px] px-6 py-[15px]"
@@ -349,6 +365,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             variant="searchbox-desktop"
             inputType={originField.inputType}
             options={originField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, originField)}
             onValueChange={(value) => onFieldChange?.(0, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -381,6 +398,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             variant="searchbox-desktop"
             inputType={destinationField.inputType}
             options={destinationField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, destinationField)}
             onValueChange={(value) => onFieldChange?.(1, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -407,6 +425,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             variant="searchbox-desktop"
             inputType={departureField.inputType}
             options={departureField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, departureField)}
             onValueChange={(value) => onFieldChange?.(2, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -430,6 +449,7 @@ function FlightOneWayDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange, o
             options={passengerField.options}
             passengerState={passengerField.passengerState}
             cabinOptions={passengerField.cabinOptions}
+            calendarReferenceValue={getCalendarReferenceValue(fields, passengerField)}
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -489,6 +509,7 @@ function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={originField.inputType}
             options={originField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, originField)}
             onValueChange={(value) => onFieldChange?.(0, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -515,6 +536,7 @@ function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={destinationField.inputType}
             options={destinationField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, destinationField)}
             onValueChange={(value) => onFieldChange?.(1, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -535,6 +557,7 @@ function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={departureField.inputType}
             options={departureField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, departureField)}
             onValueChange={(value) => onFieldChange?.(2, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -555,6 +578,7 @@ function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={returnField.inputType}
             options={returnField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, returnField)}
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -578,6 +602,7 @@ function FlightRoundTripDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             options={passengerField.options}
             passengerState={passengerField.passengerState}
             cabinOptions={passengerField.cabinOptions}
+            calendarReferenceValue={getCalendarReferenceValue(fields, passengerField)}
             onValueChange={(value) => onFieldChange?.(4, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -634,6 +659,7 @@ function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={originField.inputType}
             options={originField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, originField)}
             onValueChange={(value) => onFieldChange?.(0, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -654,6 +680,7 @@ function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={transitField.inputType}
             options={transitField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, transitField)}
             onValueChange={(value) => onFieldChange?.(1, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -674,6 +701,7 @@ function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={destinationField.inputType}
             options={destinationField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, destinationField)}
             onValueChange={(value) => onFieldChange?.(2, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -694,6 +722,7 @@ function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             variant="searchbox-desktop"
             inputType={departureField.inputType}
             options={departureField.options}
+            calendarReferenceValue={getCalendarReferenceValue(fields, departureField)}
             onValueChange={(value) => onFieldChange?.(3, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
@@ -717,6 +746,7 @@ function FlightMultiCityDesktopSearch({ ctaHref, ctaLabel, fields, onFieldChange
             options={passengerField.options}
             passengerState={passengerField.passengerState}
             cabinOptions={passengerField.cabinOptions}
+            calendarReferenceValue={getCalendarReferenceValue(fields, passengerField)}
             onValueChange={(value) => onFieldChange?.(4, value)}
             locale={locale}
             className="rounded-[999px] px-6 py-[15px]"
