@@ -491,9 +491,18 @@ export function buildFormFields(
   locale: Locale,
 ) {
   const providerKey = heroSearchConfigs[activeTab].dataProvider
+  const passengerFieldWithCabinOptions =
+    activeTab === "flight"
+      ? fields.find((candidate) => candidate.cabinOptions && candidate.cabinOptions.length > 0)
+      : undefined
 
   return fields.map((field) => {
     const stateField = fieldStates[getFieldStateKey(stateKey, field.label)] ?? field
+    const semanticKey = getFieldSemanticKey(field.label)
+    const sharedFlightCabinOptions =
+      activeTab === "flight" && semanticKey === "cabin"
+        ? stateField.cabinOptions ?? passengerFieldWithCabinOptions?.cabinOptions
+        : stateField.cabinOptions
     const choices = getFieldChoicesForProvider(activeTab, field, providerKey)
     const inputType = getFieldInputType(activeTab, field, choices)
 
@@ -502,7 +511,7 @@ export function buildFormFields(
       displayLabel: localizeHeroText(field.label, locale),
       inputType,
       passengerState: stateField.passengerState,
-      cabinOptions: stateField.cabinOptions,
+      cabinOptions: sharedFlightCabinOptions,
       options:
         inputType === "date"
           ? undefined
