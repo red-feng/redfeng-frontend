@@ -8,7 +8,12 @@ type HeroRenderedField = HeroSearchConfig["mobileFields"][number] & {
   options?: { label: string; value: string; sublabel?: string }[]
 }
 
-function getCalendarReferenceValue(fields: HeroRenderedField[], field: HeroRenderedField) {
+type CalendarReferenceField = {
+  label: string
+  value: string
+}
+
+function getCalendarReferenceValue(fields: CalendarReferenceField[], field: CalendarReferenceField) {
   const normalized = field.label.toLowerCase()
   if (!normalized.includes("pulang") && !normalized.includes("check-out")) return undefined
   return fields.find((candidate) => {
