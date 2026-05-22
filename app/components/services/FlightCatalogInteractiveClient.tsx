@@ -455,6 +455,25 @@ export default function FlightCatalogInteractiveClient({
     { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
   ]
 
+  const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
+    tripMode,
+    q: "",
+    region: "",
+    group: "",
+    from: "",
+    via: "",
+    to: "",
+    depart: "",
+    returnDate: "",
+    passengers: "",
+    cabin: "",
+    sort: "best",
+    airlines: [],
+    departWindows: [],
+    transitTypes: [],
+    priceBands: [],
+  })
+
   const applyDraft = () => {
     setState(draft)
   }
@@ -468,16 +487,7 @@ export default function FlightCatalogInteractiveClient({
   }
 
   const resetAll = () => {
-    const clearedState = {
-      ...initialState,
-      q: "",
-      region: "",
-      group: "",
-      airlines: [],
-      departWindows: [],
-      transitTypes: [],
-      priceBands: [],
-    }
+    const clearedState = buildResetState(state.tripMode)
     setDraft(clearedState)
     setState(clearedState)
   }
