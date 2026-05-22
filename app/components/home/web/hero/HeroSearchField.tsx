@@ -186,7 +186,7 @@ export default function HeroSearchField({
       ) : inputType === "date" ? (
         isSearchboxDesktop ? (
           <div className={`${hideLabel ? "" : "mt-[6px]"} relative w-full`}>
-            <span className={`flex w-full items-center bg-transparent pr-[40px] ${valueClassName}`}>
+            <span className={`pointer-events-none flex w-full items-center bg-transparent pr-[40px] ${valueClassName}`}>
               <span className="truncate">{formatIsoToSlashDate(value)}</span>
             </span>
             <input
@@ -194,13 +194,19 @@ export default function HeroSearchField({
               type="date"
               value={value}
               onChange={(event) => onValueChange?.(event.target.value)}
+              onClick={(event) => {
+                const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
+                if (typeof input.showPicker === "function") {
+                  input.showPicker()
+                }
+              }}
               onFocus={(event) => {
                 const input = event.currentTarget as HTMLInputElement & { showPicker?: () => void }
                 if (typeof input.showPicker === "function") {
                   input.showPicker()
                 }
               }}
-              className="absolute inset-0 z-10 cursor-pointer opacity-0"
+              className={`absolute inset-0 z-10 h-full w-full cursor-pointer appearance-none border-0 bg-transparent pr-[40px] text-transparent opacity-100 caret-transparent outline-none [-webkit-text-fill-color:transparent] [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0`}
               aria-label={visibleLabel}
             />
           </div>
