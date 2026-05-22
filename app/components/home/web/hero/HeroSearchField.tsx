@@ -69,6 +69,7 @@ export default function HeroSearchField({
   const [draftValue, setDraftValue] = useState(value)
   const [draftPassengerState, setDraftPassengerState] = useState<HeroPassengerState | null>(passengerState ?? null)
   const fieldRef = useRef<HTMLDivElement | null>(null)
+  const dateInputRef = useRef<HTMLInputElement | null>(null)
   const isPassengerField = inputType === "passenger" && Boolean(passengerState)
   const hasDropdown = !isPassengerField && inputType !== "date" && options.length > 0
   const isSearchboxDesktop = variant === "searchbox-desktop"
@@ -95,10 +96,19 @@ export default function HeroSearchField({
   const visibleLabel = displayLabel ?? label
   const visibleValue = displayValue ?? value
   const visibleSublabel = displaySublabel ?? sublabel
+  const normalizedSelectedValue = value.trim().toLowerCase()
   const filteredOptions = useMemo(() => {
     if (!hasDropdown) return []
 
-    const keyword = (inputType === "autocomplete" ? draftValue : value).trim().toLowerCase()
+    if (inputType !== "autocomplete") {
+      return options
+    }
+
+    const keyword = draftValue.trim().toLowerCase()
+    if (keyword === normalizedSelectedValue) {
+      return options
+    }
+
     if (!keyword) return options
 
     return options.filter((option) =>
@@ -106,7 +116,7 @@ export default function HeroSearchField({
         .toLowerCase()
         .includes(keyword),
     )
-  }, [draftValue, hasDropdown, inputType, options, value])
+  }, [draftValue, hasDropdown, inputType, normalizedSelectedValue, options])
   const groupedOptions = useMemo(() => {
     const groups = new Map<string, HeroSearchFieldOption[]>()
 
@@ -175,12 +185,33 @@ export default function HeroSearchField({
         </button>
       ) : inputType === "date" ? (
         isSearchboxDesktop ? (
-          <input
-            type="text"
-          value={formatIsoToSlashDate(value)}
-            readOnly
-            className={`${hideLabel ? "" : "mt-[6px]"} w-full bg-transparent pr-[40px] ${valueClassName} outline-none`}
-          />
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                const input = dateInputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null
+                if (!input) return
+                input.focus()
+                if (typeof input.showPicker === "function") {
+                  input.showPicker()
+                  return
+                }
+                input.click()
+              }}
+              className={`${hideLabel ? "" : "mt-[6px]"} flex w-full items-center bg-transparent pr-[40px] ${valueClassName} outline-none`}
+            >
+              <span className="truncate">{formatIsoToSlashDate(value)}</span>
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={value}
+              onChange={(event) => onValueChange?.(event.target.value)}
+              className="pointer-events-none absolute inset-0 opacity-0"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          </>
         ) : (
           <input
             type="date"
