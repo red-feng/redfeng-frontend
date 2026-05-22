@@ -503,14 +503,18 @@ export function buildFormFields(
       activeTab === "flight" && semanticKey === "cabin"
         ? stateField.cabinOptions ?? passengerFieldWithCabinOptions?.cabinOptions
         : stateField.cabinOptions
-    const choices = getFieldChoicesForProvider(activeTab, field, providerKey)
+    const resolvedField = {
+      ...stateField,
+      cabinOptions: sharedFlightCabinOptions,
+    }
+    const choices = getFieldChoicesForProvider(activeTab, resolvedField, providerKey)
     const inputType = getFieldInputType(activeTab, field, choices)
 
     return {
-      ...stateField,
+      ...resolvedField,
       displayLabel: localizeHeroText(field.label, locale),
       inputType,
-      passengerState: stateField.passengerState,
+      passengerState: resolvedField.passengerState,
       cabinOptions: sharedFlightCabinOptions,
       options:
         inputType === "date"
@@ -528,16 +532,16 @@ export function buildFormFields(
         inputType === "date"
           ? formatDisplayDateToIso(stateField.value)
           : inputType === "passenger"
-            ? buildPassengerPrimaryValue(stateField.passengerState ?? getDefaultPassengerState(stateField))
-            : stateField.value,
+            ? buildPassengerPrimaryValue(resolvedField.passengerState ?? getDefaultPassengerState(resolvedField))
+            : resolvedField.value,
       displayValue:
         inputType === "passenger"
-          ? localizePassengerPrimaryValue(stateField.passengerState ?? getDefaultPassengerState(stateField), locale)
-          : localizeHeroFieldValue(inputType === "date" ? stateField.value : stateField.value, locale),
+          ? localizePassengerPrimaryValue(resolvedField.passengerState ?? getDefaultPassengerState(resolvedField), locale)
+          : localizeHeroFieldValue(inputType === "date" ? resolvedField.value : resolvedField.value, locale),
       displaySublabel:
         inputType === "passenger"
-          ? localizeHeroFieldValue((stateField.passengerState ?? getDefaultPassengerState(stateField)).cabin, locale)
-          : localizeHeroFieldValue(stateField.sublabel ?? "", locale),
+          ? localizeHeroFieldValue((resolvedField.passengerState ?? getDefaultPassengerState(resolvedField)).cabin, locale)
+          : localizeHeroFieldValue(resolvedField.sublabel ?? "", locale),
     }
   })
 }
