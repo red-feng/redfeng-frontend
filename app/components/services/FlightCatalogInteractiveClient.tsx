@@ -3,12 +3,13 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
-import type { ReactNode } from "react"
+import { Fragment, type ReactNode } from "react"
 import {
   SearchIcon,
 } from "@/app/components/flights/FlightSearchShared"
 import { buildFlightCatalogQuery, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import { SwapIcon } from "@/app/components/home/shared/homeContent"
 import { buildFormFields, updateFieldState } from "@/app/components/home/web/WebHomeHeroSection"
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import type { HeroPassengerState, HeroSearchFieldData } from "@/app/components/home/web/hero/heroSearchContent"
@@ -510,20 +511,14 @@ function getCalendarReferenceValue(fields: CatalogHeroRenderedField[], field: Ca
 
 function getCatalogGridClass(tripMode: FlightTripMode) {
   if (tripMode === "one_way") {
-    return "xl:grid-cols-[1.12fr_1.12fr_0.92fr_1fr_0.92fr_64px]"
+    return "xl:grid-cols-[1.12fr_44px_1.12fr_0.92fr_1fr_0.92fr_64px]"
   }
 
   if (tripMode === "multi_city") {
     return "xl:grid-cols-[1fr_1fr_1fr_0.9fr_1fr_0.92fr_64px]"
   }
 
-  return "xl:grid-cols-[1.08fr_1.08fr_0.86fr_0.86fr_0.95fr_0.92fr_64px]"
-}
-
-function getSwapRouteLabel(locale: Locale) {
-  if (locale === "en") return "Swap route"
-  if (locale === "zh") return "切换航线"
-  return "Tukar rute"
+  return "xl:grid-cols-[1.08fr_44px_1.08fr_0.86fr_0.86fr_0.95fr_0.92fr_64px]"
 }
 
 function CatalogDesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
@@ -819,44 +814,50 @@ export default function FlightCatalogInteractiveClient({
               className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
             >
               {heroFields.map((field, index) => (
-                <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
-                  <HeroSearchField
-                    label={field.label}
-                    displayLabel={field.displayLabel}
-                    value={field.value}
-                    displayValue={field.displayValue}
-                    sublabel={field.sublabel ?? ""}
-                    displaySublabel={field.displaySublabel}
-                    hideLabel
-                    hideSublabel
-                    withChevron={field.withChevron}
-                    variant="searchbox-desktop"
-                    desktopDensity="compact"
-                    inputType={field.inputType}
-                    options={field.options}
-                    passengerState={field.passengerState}
-                    cabinOptions={field.cabinOptions}
-                    calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
-                    onValueChange={(value) => handleHeroFieldChange(index, value)}
-                    locale={locale}
-                    className="rounded-[999px] px-5 py-[14px]"
-                  />
-                </CatalogDesktopFieldShell>
+                <Fragment key={field.label}>
+                  <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
+                    <HeroSearchField
+                      label={field.label}
+                      displayLabel={field.displayLabel}
+                      value={field.value}
+                      displayValue={field.displayValue}
+                      sublabel={field.sublabel ?? ""}
+                      displaySublabel={field.displaySublabel}
+                      hideLabel
+                      hideSublabel
+                      withChevron={field.withChevron}
+                      variant="searchbox-desktop"
+                      desktopDensity="compact"
+                      inputType={field.inputType}
+                      options={field.options}
+                      passengerState={field.passengerState}
+                      cabinOptions={field.cabinOptions}
+                      calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
+                      onValueChange={(value) => handleHeroFieldChange(index, value)}
+                      locale={locale}
+                      className="rounded-[999px] px-5 py-[14px]"
+                    />
+                  </CatalogDesktopFieldShell>
+                  {draft.tripMode !== "multi_city" && index === 0 ? (
+                    <button
+                      key="catalog-swap-route"
+                      type="button"
+                      onClick={handleHeroSwap}
+                      aria-label="Swap route"
+                      className="relative mx-auto hidden h-[66px] w-[44px] items-center justify-center self-end text-[#ff5a43] xl:flex"
+                    >
+                      <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                      <SwapIcon className="h-[15px] w-[15px]" />
+                      <span className="absolute right-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                    </button>
+                  ) : null}
+                </Fragment>
               ))}
               <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[29px] xl:h-[56px] xl:w-[56px] xl:self-start">
                 <SearchIcon />
               </button>
             </div>
-            <div className={`mt-3 grid gap-2.5 ${draft.tripMode === "multi_city" ? "xl:grid-cols-[minmax(0,1fr)_auto_auto]" : "xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]"} xl:items-center`}>
-              {draft.tripMode !== "multi_city" ? (
-                <button
-                  type="button"
-                  onClick={handleHeroSwap}
-                  className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-white px-4 py-2.5 text-sm font-semibold text-[#35516d] shadow-[0_10px_22px_-18px_rgba(255,255,255,0.75)] transition hover:bg-sky-50"
-                >
-                  {getSwapRouteLabel(locale)}
-                </button>
-              ) : null}
+            <div className="mt-3 grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
               <label className="block rounded-[18px] border border-white/45 bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)]">
                 <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
                 <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
