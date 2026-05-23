@@ -929,7 +929,7 @@ export default function FlightCatalogInteractiveClient({
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-3 z-30 px-4 sm:px-6 lg:top-[8.2rem] lg:px-8">
+        <div className="fixed inset-x-0 top-0 z-30 px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pt-0">
           <div className={homeLayoutLock.contentWidthClass}>
             <div className="scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200">
               <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
