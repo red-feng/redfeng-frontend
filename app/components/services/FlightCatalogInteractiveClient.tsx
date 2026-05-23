@@ -134,11 +134,6 @@ type FlightMatchOptions = {
   skipReturnDate?: boolean
 }
 
-type FlightDatePriceOption = {
-  date: string
-  price: number
-}
-
 type HeroFieldInputType = "text" | "date" | "select" | "autocomplete" | "passenger"
 
 type CatalogHeroRenderedField = HeroSearchFieldData & {
@@ -593,6 +588,58 @@ function formatCompactPrice(value: number, locale: Locale) {
   return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`
 }
 
+function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy, "fromLabel" | "viaLabel" | "toLabel">) {
+  const from = state.from.trim() || copy.fromLabel
+  const to = state.to.trim() || copy.toLabel
+  if (state.tripMode === "multi_city" && state.via.trim()) {
+    return `${from} → ${state.via.trim()} → ${to}`
+  }
+
+  return `${from} → ${to}`
+}
+
+function buildStickyMetaSummary(state: FlightFilterState, locale: Locale, copy: Pick<FlightCopy, "passengerLabel" | "cabinLabel">) {
+  const parts = [formatCompactDateLabel(state.depart, locale)]
+
+  if (state.tripMode === "round_trip" && state.returnDate.trim()) {
+    parts.push(formatCompactDateLabel(state.returnDate, locale))
+  }
+
+  parts.push(state.passengers.trim() || copy.passengerLabel)
+  parts.push(state.cabin.trim() || copy.cabinLabel)
+  return parts.join(" • ")
+}
+
+function getStickyCompactCopy(locale: Locale) {
+  if (locale === "en") {
+    return {
+      priceTable: "Price table",
+      cheapest: "Cheapest",
+      selected: "Selected",
+      selectedCheapest: "Selected • Cheapest",
+      best: "Best",
+    }
+  }
+
+  if (locale === "zh") {
+    return {
+      priceTable: "价格表",
+      cheapest: "最低价",
+      selected: "已选择",
+      selectedCheapest: "已选 • 最低价",
+      best: "最佳",
+    }
+  }
+
+  return {
+    priceTable: "Tabel harga",
+    cheapest: "Termurah",
+    selected: "Dipilih",
+    selectedCheapest: "Dipilih • Termurah",
+    best: "Terbaik",
+  }
+}
+
 function CatalogDesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-[7px]">
@@ -628,6 +675,7 @@ export default function FlightCatalogInteractiveClient({
   const [heroFieldStates, setHeroFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
+  const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
     group: false,
@@ -728,16 +776,16 @@ export default function FlightCatalogInteractiveClient({
       .sort(([left], [right]) => left.localeCompare(right))
       .map(([date, price]) => ({ date, price }))
 
-    if (sortedDates.length === 0) return [] as FlightDatePriceOption[]
-
-    const selectedIndex = sortedDates.findIndex((entry) => entry.date === state.depart)
-    if (selectedIndex === -1) return sortedDates.slice(0, 4)
-
-    const start = Math.max(0, Math.min(selectedIndex - 1, sortedDates.length - 4))
-    return sortedDates.slice(start, start + 4)
+    return sortedDates
   }, [items, state])
 
+  const cheapestQuickDatePrice = useMemo(() => {
+    if (quickDateOptions.length === 0) return null
+    return Math.min(...quickDateOptions.map((entry) => entry.price))
+  }, [quickDateOptions])
+
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
+  const stickyCompactCopy = getStickyCompactCopy(locale)
 
   const topSummaryChips = [
     state.q || emptyKeyword,
@@ -801,6 +849,7 @@ export default function FlightCatalogInteractiveClient({
 
   const applyDraft = () => {
     setIsStickySearchExpanded(false)
+    setIsPriceTableOpen(false)
     setState(draft)
   }
 
@@ -852,6 +901,7 @@ export default function FlightCatalogInteractiveClient({
     const clearedState = buildResetState(state.tripMode)
     setHeroFieldStates({})
     setIsStickySearchExpanded(false)
+    setIsPriceTableOpen(false)
     setDraft(clearedState)
     setState(clearedState)
   }
@@ -895,59 +945,105 @@ export default function FlightCatalogInteractiveClient({
 
       <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.994]" : ""}`}>
         {shouldShowCompactStickyBar ? (
-          <div className="rounded-[26px] border border-[#d8e7f6] bg-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.24)]">
-            <div className="grid gap-3 border-b border-slate-100 px-5 py-4 xl:grid-cols-[minmax(0,1.35fr)_auto_minmax(0,1.2fr)_72px] xl:items-center">
+          <div className="rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+            <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
               <button
                 type="button"
                 onClick={() => setIsStickySearchExpanded(true)}
                 className="min-w-0 text-left"
               >
-                <p className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#1167c4]">
-                  {state.from || copy.fromLabel} {state.tripMode === "multi_city" && state.via ? `→ ${state.via}` : "→"} {state.to || copy.toLabel}
+                <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1167c4]">
+                  {buildStickyRouteSummary(state, copy)}
                 </p>
-                <p className="mt-1 truncate text-sm text-slate-500">
-                  {formatCompactDateLabel(state.depart, locale)}{state.tripMode === "round_trip" && state.returnDate ? ` • ${formatCompactDateLabel(state.returnDate, locale)}` : ""} • {state.passengers || copy.passengerLabel} • {state.cabin || copy.cabinLabel}
+                <p className="mt-1 truncate text-[13px] text-slate-500">
+                  {buildStickyMetaSummary(state, locale, copy)}
                 </p>
               </button>
               <button
                 type="button"
                 onClick={() => setIsStickySearchExpanded(true)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 text-[#1390ee] transition hover:bg-sky-50"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-slate-200 bg-slate-50 text-[#1390ee] transition hover:bg-sky-50"
                 aria-label={copy.refineSearch}
               >
                 <SearchIcon />
               </button>
-              <div className="grid gap-2 sm:grid-cols-4">
+              <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-2">
                 {quickDateOptions.map((entry) => {
                   const active = entry.date === state.depart
+                  const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
                   return (
                     <button
                       key={entry.date}
                       type="button"
                       onClick={() => handleQuickDateSelect(entry.date)}
-                      className={`rounded-[16px] border px-3 py-2 text-left transition ${
+                      className={`min-w-[124px] rounded-[14px] border px-3 py-2 text-left transition ${
                         active
-                          ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.9)]"
-                          : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                          ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                          : isCheapest
+                            ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
+                            : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
                       }`}
                     >
-                      <p className="truncate text-sm font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                      <p className={`mt-1 text-sm font-semibold ${active ? "text-[#11a36a]" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                      <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
+                      <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                      {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
+                      {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
                     </button>
                   )
                 })}
+                </div>
               </div>
               <button
                 type="button"
+                onClick={() => setIsPriceTableOpen((current) => !current)}
+                className={`inline-flex h-[52px] items-center justify-center rounded-[16px] border px-4 text-sm font-semibold transition ${
+                  isPriceTableOpen ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb]" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {stickyCompactCopy.priceTable}
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsStickySearchExpanded(true)}
-                className="inline-flex h-[68px] items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#1e88e5_0%,#156fd1_100%)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_-22px_rgba(21,111,209,0.88)] transition hover:brightness-105"
+                className="inline-flex h-[52px] items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e88e5_0%,#156fd1_100%)] px-4 text-sm font-semibold text-white shadow-[0_14px_26px_-20px_rgba(21,111,209,0.72)] transition hover:brightness-105"
               >
                 {copy.refineSearch}
               </button>
             </div>
-            <div className="flex flex-wrap gap-2 px-5 py-3">
-              {topSummaryChips.slice(0, 3).map((chip) => (
-                <span key={`compact-${chip}`} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-600">
+            {isPriceTableOpen ? (
+              <div className="border-t border-slate-100 px-4 py-3">
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                  {quickDateOptions.map((entry) => {
+                    const active = entry.date === state.depart
+                    const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
+                    return (
+                      <button
+                        key={`table-${entry.date}`}
+                        type="button"
+                        onClick={() => handleQuickDateSelect(entry.date)}
+                        className={`rounded-[14px] border px-3 py-2.5 text-left transition ${
+                          active
+                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb]"
+                            : isCheapest
+                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700"
+                              : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
+                          {isCheapest ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{stickyCompactCopy.best}</span> : null}
+                        </div>
+                        <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 py-2.5">
+              {topSummaryChips.slice(0, 2).map((chip) => (
+                <span key={`compact-${chip}`} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-600">
                   {chip}
                 </span>
               ))}
