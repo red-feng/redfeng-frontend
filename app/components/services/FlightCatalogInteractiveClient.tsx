@@ -917,32 +917,6 @@ export default function FlightCatalogInteractiveClient({
 
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
-      <section className={homeLayoutLock.contentWidthClass}>
-        <div className="rounded-[24px] border border-[#d8e9f7] bg-[linear-gradient(180deg,#f2f9ff_0%,#fbfdff_68%,#ffffff_100%)] px-4 py-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.14)] sm:px-5">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-700">{copy.searchSummary}</p>
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
-                  {filteredItems.length} {copy.flightsFound}
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {topDetailChips.map((chip) => (
-                  <div key={chip.label} className="rounded-[14px] border border-sky-100 bg-white px-3 py-2 shadow-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700">{chip.label}</p>
-                    <p className="mt-0.5 text-sm font-medium text-slate-900">{chip.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="max-w-[420px] rounded-[18px] border border-sky-100 bg-white/90 px-4 py-3 text-xs leading-6 text-slate-500">
-              <span className="font-semibold text-slate-900">{copy.topTitle}.</span> {copy.topBody}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.994]" : ""}`}>
         {shouldShowCompactStickyBar ? (
           <div className="rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
@@ -1158,6 +1132,32 @@ export default function FlightCatalogInteractiveClient({
           </div>
         </form>
         ) : null}
+      </section>
+
+      <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
+        <div className="rounded-[24px] border border-[#d8e9f7] bg-[linear-gradient(180deg,#f2f9ff_0%,#fbfdff_68%,#ffffff_100%)] px-4 py-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.14)] sm:px-5">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-700">{copy.searchSummary}</p>
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
+                  {filteredItems.length} {copy.flightsFound}
+                </span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {topDetailChips.map((chip) => (
+                  <div key={chip.label} className="rounded-[14px] border border-sky-100 bg-white px-3 py-2 shadow-sm">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700">{chip.label}</p>
+                    <p className="mt-0.5 text-sm font-medium text-slate-900">{chip.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="max-w-[420px] rounded-[18px] border border-sky-100 bg-white/90 px-4 py-3 text-xs leading-6 text-slate-500">
+              <span className="font-semibold text-slate-900">{copy.topTitle}.</span> {copy.topBody}
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid gap-4 lg:grid-cols-[272px_minmax(0,1fr)]`}>
