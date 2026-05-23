@@ -928,9 +928,9 @@ export default function FlightCatalogInteractiveClient({
 
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
-      <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.994]" : ""}`}>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
         {shouldShowCompactStickyBar ? (
-          <div className="rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+          <div className="sticky top-4 z-20 scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200">
             <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
               <button
                 type="button"
@@ -1037,111 +1037,111 @@ export default function FlightCatalogInteractiveClient({
         ) : null}
 
         {!shouldShowCompactStickyBar ? (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            applyDraft()
-          }}
-          className={`rounded-[28px] border border-[#d8e7f6] bg-[linear-gradient(180deg,#2d8edf_0%,#2093ee_22%,#43a4ef_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.24)] transition-all duration-200 ${
-            isScrolled ? "p-3 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-4"
-          }`}
-        >
-          <div className="mb-4 flex gap-5 overflow-x-auto border-b border-white/20 px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {tripTabs.map((tab) => {
-              const active = draft.tripMode === tab.key
-              return (
-                <button
-                  key={tab.key}
-                  type="button"
-                  onClick={() => {
-                    setHeroFieldStates({})
-                    syncDraftAndState((current) => ({
-                      ...current,
-                      tripMode: tab.key,
-                      via: tab.key === "multi_city" ? current.via || initialState.via : "",
-                      returnDate: tab.key === "round_trip" ? current.returnDate || initialState.returnDate : "",
-                    }))
-                  }}
-                  className={`inline-flex shrink-0 items-center border-b-[2px] pb-[0.72rem] transition ${
-                    active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-white/88 hover:text-white"
-                  }`}
-                >
-                  {tab.label}
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              applyDraft()
+            }}
+            className={`rounded-[28px] border border-[#d8e7f6] bg-[linear-gradient(180deg,#2d8edf_0%,#2093ee_22%,#43a4ef_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.24)] transition-all duration-200 ${
+              isScrolled ? "p-3 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-4"
+            }`}
+          >
+            <div className="mb-4 flex gap-5 overflow-x-auto border-b border-white/20 px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tripTabs.map((tab) => {
+                const active = draft.tripMode === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => {
+                      setHeroFieldStates({})
+                      syncDraftAndState((current) => ({
+                        ...current,
+                        tripMode: tab.key,
+                        via: tab.key === "multi_city" ? current.via || initialState.via : "",
+                        returnDate: tab.key === "round_trip" ? current.returnDate || initialState.returnDate : "",
+                      }))
+                    }}
+                    className={`inline-flex shrink-0 items-center border-b-[2px] pb-[0.72rem] transition ${
+                      active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-white/88 hover:text-white"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className={`rounded-[26px] border border-white/16 bg-white/14 p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
+              <div
+                className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
+              >
+                {heroFields.map((field, index) => (
+                  <Fragment key={field.label}>
+                    <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
+                      <HeroSearchField
+                        label={field.label}
+                        displayLabel={field.displayLabel}
+                        value={field.value}
+                        displayValue={field.displayValue}
+                        sublabel={field.sublabel ?? ""}
+                        displaySublabel={field.displaySublabel}
+                        hideLabel
+                        hideSublabel
+                        withChevron={field.withChevron}
+                        variant="searchbox-desktop"
+                        desktopDensity="compact"
+                        inputType={field.inputType}
+                        options={field.options}
+                        passengerState={field.passengerState}
+                        cabinOptions={field.cabinOptions}
+                        calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
+                        onValueChange={(value) => handleHeroFieldChange(index, value)}
+                        locale={locale}
+                        className="rounded-[999px] px-5 py-[14px]"
+                      />
+                    </CatalogDesktopFieldShell>
+                    {draft.tripMode !== "multi_city" && index === 0 ? (
+                      <button
+                        key="catalog-swap-route"
+                        type="button"
+                        onClick={handleHeroSwap}
+                        aria-label="Swap route"
+                        className="relative mx-auto hidden h-[66px] w-[44px] items-center justify-center self-end text-[#ff5a43] xl:flex"
+                      >
+                        <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                        <SwapIcon className="h-[15px] w-[15px]" />
+                        <span className="absolute right-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                      </button>
+                    ) : null}
+                  </Fragment>
+                ))}
+                <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[29px] xl:h-[56px] xl:w-[56px] xl:self-start">
+                  <SearchIcon />
                 </button>
-              )
-            })}
-          </div>
-          <div className={`rounded-[26px] border border-white/16 bg-white/14 p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
-            <div
-              className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
-            >
-              {heroFields.map((field, index) => (
-                <Fragment key={field.label}>
-                  <CatalogDesktopFieldShell key={field.label} label={field.displayLabel || field.label}>
-                    <HeroSearchField
-                      label={field.label}
-                      displayLabel={field.displayLabel}
-                      value={field.value}
-                      displayValue={field.displayValue}
-                      sublabel={field.sublabel ?? ""}
-                      displaySublabel={field.displaySublabel}
-                      hideLabel
-                      hideSublabel
-                      withChevron={field.withChevron}
-                      variant="searchbox-desktop"
-                      desktopDensity="compact"
-                      inputType={field.inputType}
-                      options={field.options}
-                      passengerState={field.passengerState}
-                      cabinOptions={field.cabinOptions}
-                      calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
-                      onValueChange={(value) => handleHeroFieldChange(index, value)}
-                      locale={locale}
-                      className="rounded-[999px] px-5 py-[14px]"
-                    />
-                  </CatalogDesktopFieldShell>
-                  {draft.tripMode !== "multi_city" && index === 0 ? (
-                    <button
-                      key="catalog-swap-route"
-                      type="button"
-                      onClick={handleHeroSwap}
-                      aria-label="Swap route"
-                      className="relative mx-auto hidden h-[66px] w-[44px] items-center justify-center self-end text-[#ff5a43] xl:flex"
-                    >
-                      <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
-                      <SwapIcon className="h-[15px] w-[15px]" />
-                      <span className="absolute right-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
-                    </button>
-                  ) : null}
-                </Fragment>
-              ))}
-              <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[29px] xl:h-[56px] xl:w-[56px] xl:self-start">
-                <SearchIcon />
-              </button>
+              </div>
+              <div className="mt-3 grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+                <label className="block rounded-[18px] border border-white/45 bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)]">
+                  <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
+                  <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
+                </label>
+                <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
+                  {copy.refineSearch}
+                </button>
+                <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-[#1d78c7] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#176ab0]">
+                  {copy.resetFilters}
+                </button>
+              </div>
             </div>
-            <div className="mt-3 grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
-              <label className="block rounded-[18px] border border-white/45 bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)]">
-                <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
-                <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
-              </label>
-              <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
-                {copy.refineSearch}
-              </button>
-              <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-[#1d78c7] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#176ab0]">
-                {copy.resetFilters}
-              </button>
+            <div className={`overflow-hidden transition-[max-height,opacity,margin] duration-200 ${isScrolled ? "mt-2 max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
+              <div className="flex flex-wrap gap-1.5">
+                {topSummaryChips.slice(0, 4).map((chip) => (
+                  <span key={`sticky-${chip}`} className="rounded-full border border-white/30 bg-white/12 px-2.5 py-1 text-[11px] font-medium text-white">
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className={`overflow-hidden transition-[max-height,opacity,margin] duration-200 ${isScrolled ? "mt-2 max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
-            <div className="flex flex-wrap gap-1.5">
-              {topSummaryChips.slice(0, 4).map((chip) => (
-                <span key={`sticky-${chip}`} className="rounded-full border border-white/30 bg-white/12 px-2.5 py-1 text-[11px] font-medium text-white">
-                  {chip}
-                </span>
-              ))}
-            </div>
-          </div>
-        </form>
+          </form>
         ) : null}
       </section>
 
