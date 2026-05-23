@@ -928,9 +928,9 @@ export default function FlightCatalogInteractiveClient({
 
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
-      <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
+      <section className={`${homeLayoutLock.contentWidthClass} sticky top-3 z-20 mt-4 lg:top-[8.2rem]`}>
         {shouldShowCompactStickyBar ? (
-          <div className="sticky top-4 z-20 scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200">
+          <div className="scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200">
             <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
               <button
                 type="button"
