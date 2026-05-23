@@ -129,6 +129,16 @@ type FlightCopy = {
   emptyBody: string
 }
 
+type FlightMatchOptions = {
+  skipDepartDate?: boolean
+  skipReturnDate?: boolean
+}
+
+type FlightDatePriceOption = {
+  date: string
+  price: number
+}
+
 type HeroFieldInputType = "text" | "date" | "select" | "autocomplete" | "passenger"
 
 type CatalogHeroRenderedField = HeroSearchFieldData & {
@@ -250,6 +260,39 @@ function matchesFlightVia(via: string, tripMode: FlightTripMode, item: FlightIte
   if (tripMode !== "multi_city") return true
   if (!via.trim()) return true
   return matchesFlightField(via, item.title, item.location, item.meta.transit, item.statusNote, item.availabilityNote, item.highlights.join(" "))
+}
+
+function matchesFlightItem(item: FlightItem, state: FlightFilterState, options: FlightMatchOptions = {}) {
+  const keyword = state.q.trim().toLowerCase()
+  const matchesKeyword =
+    keyword.length === 0 ||
+    item.title.toLowerCase().includes(keyword) ||
+    item.location.toLowerCase().includes(keyword) ||
+    item.highlights.some((highlight) => highlight.toLowerCase().includes(keyword))
+  const matchesRegion = !state.region || item.region === state.region
+  const matchesGroup = !state.group || item.group === state.group
+  const matchesAirline = state.airlines.length === 0 || state.airlines.includes(item.meta.airline)
+  const matchesDepartWindow =
+    state.departWindows.length === 0 || state.departWindows.some((window) => matchesWindow(parseFlightTime(item.meta.departure), window))
+  const isDirect =
+    item.meta.transit.toLowerCase().includes("direct") ||
+    item.meta.transit.toLowerCase().includes("langsung") ||
+    item.meta.transit.includes("ç›´é£ž")
+  const matchesTransit =
+    state.transitTypes.length === 0 ||
+    state.transitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
+  const matchesPrice = state.priceBands.length === 0 || state.priceBands.some((band) => matchesPriceBand(parseFlightPrice(item.meta.price), band))
+  const matchesFrom = matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
+  const matchesTo = matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
+  const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
+  const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
+  const matchesDepartDate = options.skipDepartDate ? true : matchesFlightDate(state.depart, item)
+  const matchesReturnDate = options.skipReturnDate || state.tripMode !== "round_trip" ? true : matchesFlightReturnDate(state.depart, state.returnDate, item)
+  const matchesCabin = matchesFlightCabin(state.cabin, item)
+  const requestedPassengers = parsePassengerCount(state.passengers)
+  const matchesPassengers = requestedPassengers <= item.meta.maxPassengers
+
+  return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice && matchesFrom && matchesTo && matchesVia && matchesTripMode && matchesDepartDate && matchesReturnDate && matchesCabin && matchesPassengers
 }
 
 function filterLinkClass(active: boolean) {
@@ -521,6 +564,35 @@ function getCatalogGridClass(tripMode: FlightTripMode) {
   return "xl:grid-cols-[1.08fr_44px_1.08fr_0.86fr_0.86fr_0.95fr_0.92fr_64px]"
 }
 
+function formatCompactDateLabel(value: string, locale: Locale) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return value
+
+  const [, yearPart, monthPart, dayPart] = match
+  const date = new Date(Number(yearPart), Number(monthPart) - 1, Number(dayPart))
+  const formatter = new Intl.DateTimeFormat(locale === "id" ? "id-ID" : locale === "zh" ? "zh-CN" : "en-US", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  })
+
+  return formatter.format(date)
+}
+
+function formatCompactPrice(value: number, locale: Locale) {
+  if (!Number.isFinite(value) || value <= 0) return "-"
+
+  if (locale === "en") {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value)
+  }
+
+  if (locale === "zh") {
+    return `Rp ${new Intl.NumberFormat("zh-CN").format(value)}`
+  }
+
+  return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`
+}
+
 function CatalogDesktopFieldShell({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-[7px]">
@@ -555,6 +627,7 @@ export default function FlightCatalogInteractiveClient({
   const [draft, setDraft] = useState(initialState)
   const [heroFieldStates, setHeroFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
     group: false,
@@ -572,7 +645,11 @@ export default function FlightCatalogInteractiveClient({
 
   useEffect(() => {
     const syncScrollState = () => {
-      setIsScrolled(window.scrollY > 180)
+      const nextScrolled = window.scrollY > 180
+      setIsScrolled(nextScrolled)
+      if (!nextScrolled) {
+        setIsStickySearchExpanded(false)
+      }
     }
 
     syncScrollState()
@@ -631,6 +708,36 @@ export default function FlightCatalogInteractiveClient({
       if (state.sort === "early") return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
       return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
     })
+
+  const quickDateOptions = useMemo(() => {
+    const lowestPriceByDate = new Map<string, number>()
+
+    items
+      .filter((item) => matchesFlightItem(item, state, { skipDepartDate: true, skipReturnDate: true }))
+      .forEach((item) => {
+        item.meta.availableDates.forEach((date) => {
+          const price = parseFlightPrice(item.meta.price)
+          const currentLowest = lowestPriceByDate.get(date)
+          if (currentLowest === undefined || price < currentLowest) {
+            lowestPriceByDate.set(date, price)
+          }
+        })
+      })
+
+    const sortedDates = Array.from(lowestPriceByDate.entries())
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([date, price]) => ({ date, price }))
+
+    if (sortedDates.length === 0) return [] as FlightDatePriceOption[]
+
+    const selectedIndex = sortedDates.findIndex((entry) => entry.date === state.depart)
+    if (selectedIndex === -1) return sortedDates.slice(0, 4)
+
+    const start = Math.max(0, Math.min(selectedIndex - 1, sortedDates.length - 4))
+    return sortedDates.slice(start, start + 4)
+  }, [items, state])
+
+  const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
 
   const topSummaryChips = [
     state.q || emptyKeyword,
@@ -693,6 +800,7 @@ export default function FlightCatalogInteractiveClient({
   })
 
   const applyDraft = () => {
+    setIsStickySearchExpanded(false)
     setState(draft)
   }
 
@@ -730,9 +838,20 @@ export default function FlightCatalogInteractiveClient({
     }))
   }
 
+  const handleQuickDateSelect = (nextDate: string) => {
+    setHeroFieldStates({})
+    syncDraftAndState((current) => ({
+      ...current,
+      depart: nextDate,
+      returnDate:
+        current.tripMode === "round_trip" && current.returnDate && current.returnDate < nextDate ? nextDate : current.returnDate,
+    }))
+  }
+
   const resetAll = () => {
     const clearedState = buildResetState(state.tripMode)
     setHeroFieldStates({})
+    setIsStickySearchExpanded(false)
     setDraft(clearedState)
     setState(clearedState)
   }
@@ -775,6 +894,68 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} sticky top-4 z-20 mt-4 transition-all duration-200 ${isScrolled ? "scale-[0.994]" : ""}`}>
+        {shouldShowCompactStickyBar ? (
+          <div className="rounded-[26px] border border-[#d8e7f6] bg-white shadow-[0_20px_46px_-28px_rgba(15,23,42,0.24)]">
+            <div className="grid gap-3 border-b border-slate-100 px-5 py-4 xl:grid-cols-[minmax(0,1.35fr)_auto_minmax(0,1.2fr)_72px] xl:items-center">
+              <button
+                type="button"
+                onClick={() => setIsStickySearchExpanded(true)}
+                className="min-w-0 text-left"
+              >
+                <p className="truncate text-[15px] font-semibold tracking-[-0.02em] text-[#1167c4]">
+                  {state.from || copy.fromLabel} {state.tripMode === "multi_city" && state.via ? `→ ${state.via}` : "→"} {state.to || copy.toLabel}
+                </p>
+                <p className="mt-1 truncate text-sm text-slate-500">
+                  {formatCompactDateLabel(state.depart, locale)}{state.tripMode === "round_trip" && state.returnDate ? ` • ${formatCompactDateLabel(state.returnDate, locale)}` : ""} • {state.passengers || copy.passengerLabel} • {state.cabin || copy.cabinLabel}
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsStickySearchExpanded(true)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-slate-200 bg-slate-50 text-[#1390ee] transition hover:bg-sky-50"
+                aria-label={copy.refineSearch}
+              >
+                <SearchIcon />
+              </button>
+              <div className="grid gap-2 sm:grid-cols-4">
+                {quickDateOptions.map((entry) => {
+                  const active = entry.date === state.depart
+                  return (
+                    <button
+                      key={entry.date}
+                      type="button"
+                      onClick={() => handleQuickDateSelect(entry.date)}
+                      className={`rounded-[16px] border px-3 py-2 text-left transition ${
+                        active
+                          ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.9)]"
+                          : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                      }`}
+                    >
+                      <p className="truncate text-sm font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
+                      <p className={`mt-1 text-sm font-semibold ${active ? "text-[#11a36a]" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                    </button>
+                  )
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsStickySearchExpanded(true)}
+                className="inline-flex h-[68px] items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#1e88e5_0%,#156fd1_100%)] px-4 text-sm font-semibold text-white shadow-[0_16px_30px_-22px_rgba(21,111,209,0.88)] transition hover:brightness-105"
+              >
+                {copy.refineSearch}
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2 px-5 py-3">
+              {topSummaryChips.slice(0, 3).map((chip) => (
+                <span key={`compact-${chip}`} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-medium text-slate-600">
+                  {chip}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {!shouldShowCompactStickyBar ? (
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -880,6 +1061,7 @@ export default function FlightCatalogInteractiveClient({
             </div>
           </div>
         </form>
+        ) : null}
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid gap-4 lg:grid-cols-[272px_minmax(0,1fr)]`}>
