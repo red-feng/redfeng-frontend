@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Fragment, type ReactNode } from "react"
 import {
   SearchIcon,
@@ -156,6 +156,8 @@ const FLIGHT_HERO_STATE_KEY = "catalog-flight"
 const FLIGHT_CABIN_OPTIONS = ["Ekonomi", "Premium Economy", "Business", "First Class"]
 const INDONESIAN_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
 const INDONESIAN_WEEKDAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"]
+const STICKY_SCROLL_ENTER_Y = 220
+const STICKY_SCROLL_EXIT_Y = 140
 
 function parseFlightPrice(value: string) {
   const digits = value.replace(/[^\d]/g, "")
@@ -676,6 +678,7 @@ export default function FlightCatalogInteractiveClient({
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
+  const isScrolledRef = useRef(false)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
     group: false,
@@ -693,7 +696,15 @@ export default function FlightCatalogInteractiveClient({
 
   useEffect(() => {
     const syncScrollState = () => {
-      const nextScrolled = window.scrollY > 180
+      const nextScrolled = isScrolledRef.current
+        ? window.scrollY > STICKY_SCROLL_EXIT_Y
+        : window.scrollY > STICKY_SCROLL_ENTER_Y
+
+      if (nextScrolled === isScrolledRef.current) {
+        return
+      }
+
+      isScrolledRef.current = nextScrolled
       setIsScrolled(nextScrolled)
       if (!nextScrolled) {
         setIsStickySearchExpanded(false)
