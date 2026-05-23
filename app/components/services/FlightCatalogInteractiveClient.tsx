@@ -929,10 +929,11 @@ export default function FlightCatalogInteractiveClient({
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-0 z-30 px-4 pt-2 sm:px-6 sm:pt-3 lg:px-8 lg:pt-0">
-          <div className={homeLayoutLock.contentWidthClass}>
-            <div className="scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200">
-              <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
+        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#dce7f5] bg-white/96 shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] backdrop-blur">
+          <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
+            <div className={homeLayoutLock.contentWidthClass}>
+              <div className="scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white transition-all duration-200 lg:border-transparent lg:bg-transparent">
+                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
                 <button
                   type="button"
                   onClick={() => setIsStickySearchExpanded(true)}
@@ -955,29 +956,29 @@ export default function FlightCatalogInteractiveClient({
                 </button>
                 <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="flex min-w-max gap-2">
-                  {quickDateOptions.map((entry) => {
-                    const active = entry.date === state.depart
-                    const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
-                    return (
-                      <button
-                        key={entry.date}
-                        type="button"
-                        onClick={() => handleQuickDateSelect(entry.date)}
-                        className={`min-w-[124px] rounded-[14px] border px-3 py-2 text-left transition ${
-                          active
-                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
-                            : isCheapest
-                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
-                        }`}
-                      >
-                        <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
-                        {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
-                        {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
-                      </button>
-                    )
-                  })}
+                    {quickDateOptions.map((entry) => {
+                      const active = entry.date === state.depart
+                      const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
+                      return (
+                        <button
+                          key={entry.date}
+                          type="button"
+                          onClick={() => handleQuickDateSelect(entry.date)}
+                          className={`min-w-[124px] rounded-[14px] border px-3 py-2 text-left transition ${
+                            active
+                              ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                              : isCheapest
+                                ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                          }`}
+                        >
+                          <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
+                          <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                          {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
+                          {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
                 <button
@@ -1034,6 +1035,7 @@ export default function FlightCatalogInteractiveClient({
                   </span>
                 ))}
               </div>
+            </div>
             </div>
           </div>
         </div>
