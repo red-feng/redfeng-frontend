@@ -678,7 +678,10 @@ export default function FlightCatalogInteractiveClient({
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
+  const [canScrollPriceLeft, setCanScrollPriceLeft] = useState(false)
+  const [canScrollPriceRight, setCanScrollPriceRight] = useState(false)
   const isScrolledRef = useRef(false)
+  const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
     group: false,
@@ -926,6 +929,42 @@ export default function FlightCatalogInteractiveClient({
     setOpenSections((current) => ({ ...current, [section]: !current[section] }))
   }
 
+  const scrollPriceTable = (direction: "left" | "right") => {
+    const container = priceTableScrollRef.current
+    if (!container) return
+    const step = 280
+    container.scrollBy({
+      left: direction === "right" ? step : -step,
+      behavior: "smooth",
+    })
+  }
+
+  useEffect(() => {
+    if (!shouldShowCompactStickyBar) {
+      setCanScrollPriceLeft(false)
+      setCanScrollPriceRight(false)
+      return
+    }
+
+    const container = priceTableScrollRef.current
+    if (!container) return
+
+    const syncPriceTableScrollState = () => {
+      const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+      setCanScrollPriceLeft(container.scrollLeft > 8)
+      setCanScrollPriceRight(container.scrollLeft < maxScrollLeft - 8)
+    }
+
+    syncPriceTableScrollState()
+    container.addEventListener("scroll", syncPriceTableScrollState, { passive: true })
+    window.addEventListener("resize", syncPriceTableScrollState)
+
+    return () => {
+      container.removeEventListener("scroll", syncPriceTableScrollState)
+      window.removeEventListener("resize", syncPriceTableScrollState)
+    }
+  }, [quickDateOptions, shouldShowCompactStickyBar])
+
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
@@ -954,8 +993,30 @@ export default function FlightCatalogInteractiveClient({
                 >
                   <SearchIcon />
                 </button>
-                <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex min-w-max gap-2">
+                <div className="relative">
+                  {canScrollPriceLeft ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => scrollPriceTable("left")}
+                        className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                        aria-label="Scroll price table left"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                          <path d="M9.5 3.5 5 8l4.5 4.5" />
+                        </svg>
+                      </button>
+                      <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
+                    </>
+                  ) : null}
+                  {canScrollPriceRight ? (
+                    <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
+                  ) : null}
+                  <div
+                    ref={priceTableScrollRef}
+                    className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+                  >
+                    <div className="flex min-w-max gap-2 pr-1">
                     {quickDateOptions.map((entry) => {
                       const active = entry.date === state.depart
                       const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
@@ -964,7 +1025,7 @@ export default function FlightCatalogInteractiveClient({
                           key={entry.date}
                           type="button"
                           onClick={() => handleQuickDateSelect(entry.date)}
-                          className={`min-w-[124px] rounded-[14px] border px-3 py-2 text-left transition ${
+                          className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                             active
                               ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
                               : isCheapest
@@ -979,7 +1040,20 @@ export default function FlightCatalogInteractiveClient({
                         </button>
                       )
                     })}
+                    </div>
                   </div>
+                  {canScrollPriceRight ? (
+                    <button
+                      type="button"
+                      onClick={() => scrollPriceTable("right")}
+                      className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                      aria-label="Scroll price table right"
+                    >
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                        <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                      </svg>
+                    </button>
+                  ) : null}
                 </div>
                 <button
                   type="button"
@@ -1028,13 +1102,6 @@ export default function FlightCatalogInteractiveClient({
                   </div>
                 </div>
               ) : null}
-              <div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 py-2.5">
-                {topSummaryChips.slice(0, 2).map((chip) => (
-                  <span key={`compact-${chip}`} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-600">
-                    {chip}
-                  </span>
-                ))}
-              </div>
             </div>
             </div>
           </div>
