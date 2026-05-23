@@ -1135,8 +1135,8 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
-        <div className="rounded-[24px] border border-[#d8e9f7] bg-[linear-gradient(180deg,#f2f9ff_0%,#fbfdff_68%,#ffffff_100%)] px-4 py-4 shadow-[0_18px_42px_-30px_rgba(15,23,42,0.14)] sm:px-5">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="rounded-[20px] border border-[#dce7f4] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] px-4 py-3 shadow-[0_14px_30px_-28px_rgba(15,23,42,0.14)] sm:px-5">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-700">{copy.searchSummary}</p>
@@ -1144,16 +1144,16 @@ export default function FlightCatalogInteractiveClient({
                   {filteredItems.length} {copy.flightsFound}
                 </span>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {topDetailChips.map((chip) => (
-                  <div key={chip.label} className="rounded-[14px] border border-sky-100 bg-white px-3 py-2 shadow-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-700">{chip.label}</p>
-                    <p className="mt-0.5 text-sm font-medium text-slate-900">{chip.value}</p>
+                  <div key={chip.label} className="rounded-full border border-sky-100 bg-white px-3 py-1.5 text-[12px] shadow-sm">
+                    <span className="font-semibold text-sky-700">{chip.label}:</span>{" "}
+                    <span className="font-medium text-slate-700">{chip.value}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="max-w-[420px] rounded-[18px] border border-sky-100 bg-white/90 px-4 py-3 text-xs leading-6 text-slate-500">
+            <div className="max-w-[360px] rounded-[16px] border border-sky-100/80 bg-white/90 px-3.5 py-2.5 text-[11px] leading-5 text-slate-500">
               <span className="font-semibold text-slate-900">{copy.topTitle}.</span> {copy.topBody}
             </div>
           </div>
