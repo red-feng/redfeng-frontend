@@ -1410,8 +1410,9 @@ export default function FlightCatalogInteractiveClient({
                   {copy.sortLabel}: {state.sort === "price" ? copy.sortPrice : state.sort === "early" ? copy.sortEarly : copy.sortBest}
                 </span>
               </div>
-              <div className="overflow-hidden rounded-[22px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
-                <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px] xl:items-stretch">
+              <div className="relative overflow-visible rounded-[22px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
+                <div className="overflow-hidden rounded-[22px]">
+                  <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px] xl:items-stretch">
                 <button
                   type="button"
                   onClick={() => updateState({ sort: "price" })}
@@ -1536,6 +1537,7 @@ export default function FlightCatalogInteractiveClient({
                     </div>
                   ) : null}
                 </div>
+                  </div>
                 </div>
               </div>
             </div>
