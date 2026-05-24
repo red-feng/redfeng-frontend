@@ -135,6 +135,8 @@ type FlightCopy = {
 type FlightMatchOptions = {
   skipDepartDate?: boolean
   skipReturnDate?: boolean
+  skipFrom?: boolean
+  skipTo?: boolean
 }
 
 type HeroFieldInputType = "text" | "date" | "select" | "autocomplete" | "passenger"
@@ -290,8 +292,8 @@ function matchesFlightItem(item: FlightItem, state: FlightFilterState, options: 
     state.transitTypes.length === 0 ||
     state.transitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
   const matchesPrice = state.priceBands.length === 0 || state.priceBands.some((band) => matchesPriceBand(parseFlightPrice(item.meta.price), band))
-  const matchesFrom = matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
-  const matchesTo = matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
+  const matchesFrom = options.skipFrom ? true : matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
+  const matchesTo = options.skipTo ? true : matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
   const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
   const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
   const matchesDepartDate = options.skipDepartDate ? true : matchesFlightDate(state.depart, item)
@@ -749,7 +751,18 @@ export default function FlightCatalogInteractiveClient({
     [heroBaseFields, heroFieldStates, locale],
   )
 
-  const filteredItems = items
+  const sortFlightResults = (entries: FlightItem[]) =>
+    [...entries].sort((left, right) => {
+      if (state.sort === "price") return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
+      if (state.sort === "early") return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+      if (state.sort === "duration") return parseFlightDuration(left.meta.duration) - parseFlightDuration(right.meta.duration)
+      if (state.sort === "depart_late") return parseFlightTime(right.meta.departure) - parseFlightTime(left.meta.departure)
+      if (state.sort === "arrive_early") return parseFlightTime(left.meta.arrival) - parseFlightTime(right.meta.arrival)
+      if (state.sort === "arrive_late") return parseFlightTime(right.meta.arrival) - parseFlightTime(left.meta.arrival)
+      return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+    })
+
+  const filteredItems = sortFlightResults(items
     .filter((item) => {
       const keyword = state.q.trim().toLowerCase()
       const matchesKeyword =
@@ -780,16 +793,7 @@ export default function FlightCatalogInteractiveClient({
       const requestedPassengers = parsePassengerCount(state.passengers)
       const matchesPassengers = requestedPassengers <= item.meta.maxPassengers
       return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice && matchesFrom && matchesTo && matchesVia && matchesTripMode && matchesDepartDate && matchesReturnDate && matchesCabin && matchesPassengers
-    })
-    .sort((left, right) => {
-      if (state.sort === "price") return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
-      if (state.sort === "early") return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
-      if (state.sort === "duration") return parseFlightDuration(left.meta.duration) - parseFlightDuration(right.meta.duration)
-      if (state.sort === "depart_late") return parseFlightTime(right.meta.departure) - parseFlightTime(left.meta.departure)
-      if (state.sort === "arrive_early") return parseFlightTime(left.meta.arrival) - parseFlightTime(right.meta.arrival)
-      if (state.sort === "arrive_late") return parseFlightTime(right.meta.arrival) - parseFlightTime(left.meta.arrival)
-      return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
-    })
+    }))
 
   const quickDateOptions = useMemo(() => {
     const lowestPriceByDate = new Map<string, number>()
@@ -912,7 +916,8 @@ export default function FlightCatalogInteractiveClient({
     if (!earliest) return item
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
-  const recommendationCards = filteredItems.slice(0, 4)
+  const recommendationItems = sortFlightResults(items.filter((item) => matchesFlightItem(item, state, { skipFrom: true, skipTo: true })))
+  const recommendationCards = recommendationItems.slice(0, 4)
   const cheapestRecommendationPrice =
     recommendationCards.length > 0 ? Math.min(...recommendationCards.map((item) => parseFlightPrice(item.meta.price))) : null
 
