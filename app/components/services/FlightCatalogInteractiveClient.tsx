@@ -1221,11 +1221,11 @@ export default function FlightCatalogInteractiveClient({
               event.preventDefault()
               applyDraft()
             }}
-            className={`rounded-[28px] border border-[#d8e7f6] bg-[linear-gradient(180deg,#2d8edf_0%,#2093ee_22%,#43a4ef_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.24)] transition-all duration-200 ${
+            className={`rounded-[28px] border border-[#f2d6c8] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.18)] transition-all duration-200 ${
               isScrolled ? "p-3 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-4"
             }`}
           >
-            <div className="mb-4 flex gap-5 overflow-x-auto border-b border-white/20 px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[#f3dfd3] px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {tripTabs.map((tab) => {
                 const active = draft.tripMode === tab.key
                 return (
@@ -1242,7 +1242,7 @@ export default function FlightCatalogInteractiveClient({
                       }))
                     }}
                     className={`inline-flex shrink-0 items-center border-b-[2px] pb-[0.72rem] transition ${
-                      active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-white/88 hover:text-white"
+                      active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-600 hover:text-[#ef4423]"
                     }`}
                   >
                     {tab.label}
@@ -1250,7 +1250,7 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-            <div className={`rounded-[26px] border border-white/16 bg-white/14 p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
+            <div className={`rounded-[26px] border border-[#f2ddd1] bg-[#fff6ef] p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
               <div
                 className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
               >
@@ -1287,9 +1287,9 @@ export default function FlightCatalogInteractiveClient({
                         aria-label="Swap route"
                         className="relative mx-auto hidden h-[66px] w-[44px] items-center justify-center self-end text-[#ff5a43] xl:flex"
                       >
-                        <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                        <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#f3d7c8]" />
                         <SwapIcon className="h-[15px] w-[15px]" />
-                        <span className="absolute right-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-white/35" />
+                        <span className="absolute right-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#f3d7c8]" />
                       </button>
                     ) : null}
                   </Fragment>
@@ -1299,14 +1299,14 @@ export default function FlightCatalogInteractiveClient({
                 </button>
               </div>
               <div className="mt-3 grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
-                <label className="block rounded-[18px] border border-white/45 bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.18)]">
+                <label className="block rounded-[18px] border border-[#f1dbce] bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.12)]">
                   <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
                   <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
                 </label>
-                <button type="submit" className="inline-flex items-center justify-center rounded-[16px] bg-white px-4 py-2.5 text-sm font-semibold text-sky-700 shadow-[0_10px_24px_-18px_rgba(255,255,255,0.62)] transition hover:bg-sky-50">
+                <button type="submit" className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-white px-4 py-2.5 text-sm font-semibold text-[#ef4423] shadow-[0_10px_24px_-18px_rgba(15,23,42,0.12)] transition hover:bg-[#fff4ec]">
                   {copy.refineSearch}
                 </button>
-                <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-white/45 bg-[#1d78c7] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#176ab0]">
+                <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-[#fff1e7] px-4 py-2.5 text-sm font-semibold text-[#b85a2c] transition hover:bg-[#ffe7d8]">
                   {copy.resetFilters}
                 </button>
               </div>
@@ -1314,7 +1314,7 @@ export default function FlightCatalogInteractiveClient({
             <div className={`overflow-hidden transition-[max-height,opacity,margin] duration-200 ${isScrolled ? "mt-2 max-h-16 opacity-100" : "max-h-0 opacity-0"}`}>
               <div className="flex flex-wrap gap-1.5">
                 {topSummaryChips.slice(0, 4).map((chip) => (
-                  <span key={`sticky-${chip}`} className="rounded-full border border-white/30 bg-white/12 px-2.5 py-1 text-[11px] font-medium text-white">
+                  <span key={`sticky-${chip}`} className="rounded-full border border-[#f0d4c4] bg-[#fff3ea] px-2.5 py-1 text-[11px] font-medium text-[#b85a2c]">
                     {chip}
                   </span>
                 ))}
@@ -1325,25 +1325,25 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
-        <div className="rounded-[20px] border border-[#dce7f4] bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] px-4 py-3 shadow-[0_14px_30px_-28px_rgba(15,23,42,0.14)] sm:px-5">
+        <div className="rounded-[20px] border border-[#f0b89a] bg-[linear-gradient(180deg,#ff8f5e_0%,#f26a3d_58%,#ea5528_100%)] px-4 py-3 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.44)] sm:px-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-sky-700">{copy.searchSummary}</p>
-                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/90">{copy.searchSummary}</p>
+                <span className="rounded-full bg-white/16 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/20">
                   {filteredItems.length} {copy.flightsFound}
                 </span>
               </div>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {topDetailChips.map((chip) => (
-                  <div key={chip.label} className="rounded-full border border-sky-100 bg-white px-3 py-1.5 text-[12px] shadow-sm">
-                    <span className="font-semibold text-sky-700">{chip.label}:</span>{" "}
-                    <span className="font-medium text-slate-700">{chip.value}</span>
+                  <div key={chip.label} className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-[12px] shadow-sm backdrop-blur-sm">
+                    <span className="font-semibold text-white">{chip.label}:</span>{" "}
+                    <span className="font-medium text-white/90">{chip.value}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-sky-100/80 bg-white/95 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.16)]">
+            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/20 bg-white/12 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.25)] backdrop-blur-sm">
               <div className="relative">
                 {canScrollSummaryPriceLeft ? (
                   <>
