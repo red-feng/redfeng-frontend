@@ -875,6 +875,15 @@ export default function FlightCatalogInteractiveClient({
     if (!latest) return item
     return parseFlightTime(item.meta.arrival) > parseFlightTime(latest.meta.arrival) ? item : latest
   }, null)
+  const bestHighlightedItem = filteredItems[0] || null
+  const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
+    if (!lowest) return item
+    return parseFlightPrice(item.meta.price) < parseFlightPrice(lowest.meta.price) ? item : lowest
+  }, null)
+  const earliestHighlightedItem = filteredItems.reduce<FlightItem | null>((earliest, item) => {
+    if (!earliest) return item
+    return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
+  }, null)
   const additionalSortLabel =
     state.sort === "depart_late"
       ? copy.sortDepartLate
@@ -891,15 +900,6 @@ export default function FlightCatalogInteractiveClient({
         : state.sort === "arrive_late"
           ? latestArrivalItem?.meta.arrival || "-"
           : earliestHighlightedItem?.meta.departure || "-"
-  const bestHighlightedItem = filteredItems[0] || null
-  const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
-    if (!lowest) return item
-    return parseFlightPrice(item.meta.price) < parseFlightPrice(lowest.meta.price) ? item : lowest
-  }, null)
-  const earliestHighlightedItem = filteredItems.reduce<FlightItem | null>((earliest, item) => {
-    if (!earliest) return item
-    return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
-  }, null)
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
     tripMode,
