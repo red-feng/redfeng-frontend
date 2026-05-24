@@ -1325,7 +1325,7 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
-        <div className="rounded-[20px] border border-[#f0b89a] bg-[linear-gradient(180deg,#ff8f5e_0%,#f26a3d_58%,#ea5528_100%)] px-4 py-3 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.44)] sm:px-5">
+        <div className="rounded-[20px] border border-[#f1c5ab] bg-[linear-gradient(180deg,#ffb184_0%,#f98a57_48%,#ee6b37_100%)] px-4 py-3 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.32)] sm:px-5">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -1343,7 +1343,7 @@ export default function FlightCatalogInteractiveClient({
                 ))}
               </div>
             </div>
-            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/20 bg-white/12 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.25)] backdrop-blur-sm">
+            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/24 bg-white/16 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.18)] backdrop-blur-sm">
               <div className="relative">
                 {canScrollSummaryPriceLeft ? (
                   <>
