@@ -820,6 +820,7 @@ export default function FlightCatalogInteractiveClient({
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
+  const durationSortLabel = locale === "en" ? "Shortest duration" : locale === "id" ? "Durasi tersingkat" : "最短时长"
   const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
   const currentSortLabel =
     state.sort === "price"
@@ -827,7 +828,7 @@ export default function FlightCatalogInteractiveClient({
       : state.sort === "early"
         ? copy.sortEarly
         : state.sort === "duration"
-          ? shortestDurationLabel
+          ? durationSortLabel
         : state.sort === "depart_late"
           ? copy.sortDepartLate
           : state.sort === "arrive_early"
