@@ -863,6 +863,34 @@ export default function FlightCatalogInteractiveClient({
     ...(state.tripMode === "round_trip" ? [{ label: copy.returnLabel, value: state.returnDate }] : []),
     { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
   ]
+  const latestDepartureItem = filteredItems.reduce<FlightItem | null>((latest, item) => {
+    if (!latest) return item
+    return parseFlightTime(item.meta.departure) > parseFlightTime(latest.meta.departure) ? item : latest
+  }, null)
+  const earliestArrivalItem = filteredItems.reduce<FlightItem | null>((earliest, item) => {
+    if (!earliest) return item
+    return parseFlightTime(item.meta.arrival) < parseFlightTime(earliest.meta.arrival) ? item : earliest
+  }, null)
+  const latestArrivalItem = filteredItems.reduce<FlightItem | null>((latest, item) => {
+    if (!latest) return item
+    return parseFlightTime(item.meta.arrival) > parseFlightTime(latest.meta.arrival) ? item : latest
+  }, null)
+  const additionalSortLabel =
+    state.sort === "depart_late"
+      ? copy.sortDepartLate
+      : state.sort === "arrive_early"
+        ? copy.sortArriveEarly
+        : state.sort === "arrive_late"
+          ? copy.sortArriveLate
+          : copy.sortEarly
+  const additionalSortValue =
+    state.sort === "depart_late"
+      ? latestDepartureItem?.meta.departure || "-"
+      : state.sort === "arrive_early"
+        ? earliestArrivalItem?.meta.arrival || "-"
+        : state.sort === "arrive_late"
+          ? latestArrivalItem?.meta.arrival || "-"
+          : earliestHighlightedItem?.meta.departure || "-"
   const bestHighlightedItem = filteredItems[0] || null
   const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
     if (!lowest) return item
@@ -1486,8 +1514,8 @@ export default function FlightCatalogInteractiveClient({
                         </svg>
                       </span>
                       <p className="mt-3 text-[15px] font-semibold text-slate-500">{sortMenuLabel}</p>
-                      <p className="mt-3 text-[16px] font-semibold text-slate-900">{copy.sortEarly}</p>
-                      <p className="mt-1 text-sm font-medium text-slate-500">{earliestHighlightedItem?.meta.departure || "-"}</p>
+                      <p className="mt-3 text-[16px] font-semibold text-slate-900">{additionalSortLabel}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">{additionalSortValue}</p>
                     </div>
                     <div className="flex items-center gap-3 text-slate-500">
                       <svg viewBox="0 0 16 16" className={`h-4 w-4 fill-none stroke-current stroke-[2] transition ${isResultSortMenuOpen ? "rotate-180" : ""}`}>
@@ -1523,7 +1551,7 @@ export default function FlightCatalogInteractiveClient({
                       >
                         <div>
                           <p className="text-[15px] font-semibold">{copy.sortDepartLate}</p>
-                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((latest, item) => !latest || parseFlightTime(item.meta.departure) > parseFlightTime(latest.meta.departure) ? item : latest, null)?.meta.departure || "-"}</p>
+                          <p className="mt-1 text-sm text-slate-500">{latestDepartureItem?.meta.departure || "-"}</p>
                         </div>
                         {state.sort === "depart_late" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
                       </button>
@@ -1538,7 +1566,7 @@ export default function FlightCatalogInteractiveClient({
                       >
                         <div>
                           <p className="text-[15px] font-semibold">{copy.sortArriveEarly}</p>
-                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((earliest, item) => !earliest || parseFlightTime(item.meta.arrival) < parseFlightTime(earliest.meta.arrival) ? item : earliest, null)?.meta.arrival || "-"}</p>
+                          <p className="mt-1 text-sm text-slate-500">{earliestArrivalItem?.meta.arrival || "-"}</p>
                         </div>
                         {state.sort === "arrive_early" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
                       </button>
@@ -1553,7 +1581,7 @@ export default function FlightCatalogInteractiveClient({
                       >
                         <div>
                           <p className="text-[15px] font-semibold">{copy.sortArriveLate}</p>
-                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((latest, item) => !latest || parseFlightTime(item.meta.arrival) > parseFlightTime(latest.meta.arrival) ? item : latest, null)?.meta.arrival || "-"}</p>
+                          <p className="mt-1 text-sm text-slate-500">{latestArrivalItem?.meta.arrival || "-"}</p>
                         </div>
                         {state.sort === "arrive_late" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
                       </button>
