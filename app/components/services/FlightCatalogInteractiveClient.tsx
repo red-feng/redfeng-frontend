@@ -913,6 +913,8 @@ export default function FlightCatalogInteractiveClient({
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
   const recommendationCards = filteredItems.slice(0, 4)
+  const cheapestRecommendationPrice =
+    recommendationCards.length > 0 ? Math.min(...recommendationCards.map((item) => parseFlightPrice(item.meta.price))) : null
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
     tripMode,
@@ -1390,18 +1392,31 @@ export default function FlightCatalogInteractiveClient({
                 className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
               >
                 <div className="flex min-w-max items-stretch gap-2 pr-1">
-                  {recommendationCards.map((item) => (
-                    <button
-                      key={`recommendation-${item.id}`}
-                      type="button"
-                      onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
-                      className="min-w-[124px] snap-start rounded-[14px] border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-left text-emerald-700 transition hover:border-emerald-300"
-                    >
-                      <p className="text-[13px] font-semibold text-emerald-700">{item.meta.origin} → {item.meta.destination}</p>
-                      <p className="mt-0.5 text-[11px] text-slate-500">{copy.priceLabel}</p>
-                      <p className="mt-0.5 text-[12px] font-semibold text-emerald-700">{item.meta.price}</p>
-                    </button>
-                  ))}
+                  {recommendationCards.map((item) => {
+                    const active = item.meta.origin === state.from && item.meta.destination === state.to
+                    const isCheapest = cheapestRecommendationPrice !== null && parseFlightPrice(item.meta.price) === cheapestRecommendationPrice
+
+                    return (
+                      <button
+                        key={`recommendation-${item.id}`}
+                        type="button"
+                        onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
+                        className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
+                          active
+                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                            : isCheapest
+                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                        }`}
+                      >
+                        <p className="truncate text-[12px] font-semibold">{item.meta.origin} → {item.meta.destination}</p>
+                        <p className="mt-0.5 text-[11px] text-slate-500">{copy.priceLabel}</p>
+                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{item.meta.price}</p>
+                        {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
+                        {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
+                      </button>
+                    )
+                  })}
                   <Link
                     href={serviceCatalogHref}
                     className="flex min-w-[124px] snap-start items-center justify-center rounded-[14px] border border-white/45 bg-white/14 px-3 py-2 text-center text-[12px] font-semibold text-white transition hover:bg-white/22"
