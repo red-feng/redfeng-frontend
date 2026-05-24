@@ -1080,7 +1080,7 @@ export default function FlightCatalogInteractiveClient({
       container.removeEventListener("scroll", syncSummaryPriceTableScrollState)
       window.removeEventListener("resize", syncSummaryPriceTableScrollState)
     }
-  }, [quickDateOptions])
+  }, [recommendationCards])
 
   useEffect(() => {
     if (!isResultSortMenuOpen) return
@@ -1375,18 +1375,18 @@ export default function FlightCatalogInteractiveClient({
                   <button
                     type="button"
                     onClick={() => scrollSummaryPriceTable("left")}
-                    className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#ef6a38] shadow-sm transition hover:bg-white xl:inline-flex"
+                    className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
                     aria-label="Scroll recommendation cards left"
                   >
                     <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
                       <path d="M9.5 3.5 5 8l4.5 4.5" />
                     </svg>
                   </button>
-                  <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-[#ff9467] via-[#ff9b6d]/90 to-transparent xl:block" />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
                 </>
               ) : null}
               {canScrollSummaryPriceRight ? (
-                <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-[#ffb67d] via-[#ffb67d]/90 to-transparent xl:block" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
               ) : null}
               <div
                 ref={summaryPriceTableScrollRef}
@@ -1424,7 +1424,7 @@ export default function FlightCatalogInteractiveClient({
                 <button
                   type="button"
                   onClick={() => scrollSummaryPriceTable("right")}
-                  className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#ef6a38] shadow-sm transition hover:bg-white xl:inline-flex"
+                  className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
                   aria-label="Scroll recommendation cards right"
                 >
                   <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
