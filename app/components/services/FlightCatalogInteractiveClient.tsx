@@ -157,6 +157,13 @@ type CatalogHeroRenderedField = HeroSearchFieldData & {
   }[]
 }
 
+type PriceCalendarCell = {
+  date: string
+  day: number
+  price: number | null
+  isCurrentMonth: boolean
+}
+
 const FLIGHT_HERO_STATE_KEY = "catalog-flight"
 const FLIGHT_CABIN_OPTIONS = ["Ekonomi", "Premium Economy", "Business", "First Class"]
 const INDONESIAN_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
@@ -603,6 +610,64 @@ function formatCompactPrice(value: number, locale: Locale) {
   return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`
 }
 
+function getLocaleTag(locale: Locale) {
+  if (locale === "id") return "id-ID"
+  if (locale === "zh") return "zh-CN"
+  return "en-US"
+}
+
+function parseIsoDateValue(value: string) {
+  const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return null
+  const [, yearPart, monthPart, dayPart] = match
+  return new Date(Number(yearPart), Number(monthPart) - 1, Number(dayPart))
+}
+
+function formatCalendarMonthLabel(date: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(getLocaleTag(locale), { month: "long", year: "numeric" }).format(date)
+}
+
+function formatCalendarInputValue(value: string, locale: Locale) {
+  const date = parseIsoDateValue(value)
+  if (!date) return locale === "id" ? "Pilih tanggal" : locale === "zh" ? "选择日期" : "Select date"
+  return new Intl.DateTimeFormat(getLocaleTag(locale), { day: "numeric", month: "short", year: "numeric" }).format(date)
+}
+
+function formatCalendarDayHeader(locale: Locale) {
+  const formatter = new Intl.DateTimeFormat(getLocaleTag(locale), { weekday: "short" })
+  const baseSunday = new Date(2026, 5, 7)
+  return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(baseSunday.getFullYear(), baseSunday.getMonth(), baseSunday.getDate() + index)))
+}
+
+function buildPriceCalendarCells(monthDate: Date, pricesByDate: Map<string, number>) {
+  const year = monthDate.getFullYear()
+  const month = monthDate.getMonth()
+  const firstDay = new Date(year, month, 1)
+  const firstWeekday = firstDay.getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: PriceCalendarCell[] = []
+
+  for (let index = 0; index < firstWeekday; index += 1) {
+    const date = new Date(year, month, index - firstWeekday + 1)
+    const iso = `${date.getFullYear().toString().padStart(4, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`
+    cells.push({ date: iso, day: date.getDate(), price: pricesByDate.get(iso) ?? null, isCurrentMonth: false })
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const iso = `${year.toString().padStart(4, "0")}-${(month + 1).toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`
+    cells.push({ date: iso, day, price: pricesByDate.get(iso) ?? null, isCurrentMonth: true })
+  }
+
+  while (cells.length % 7 !== 0) {
+    const offset = cells.length - (firstWeekday + daysInMonth) + 1
+    const date = new Date(year, month + 1, offset)
+    const iso = `${date.getFullYear().toString().padStart(4, "0")}-${(date.getMonth() + 1).toString().padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`
+    cells.push({ date: iso, day: date.getDate(), price: pricesByDate.get(iso) ?? null, isCurrentMonth: false })
+  }
+
+  return cells
+}
+
 function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy, "fromLabel" | "viaLabel" | "toLabel">) {
   const from = state.from.trim() || copy.fromLabel
   const to = state.to.trim() || copy.toLabel
@@ -692,11 +757,17 @@ export default function FlightCatalogInteractiveClient({
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
   const [isResultSortMenuOpen, setIsResultSortMenuOpen] = useState(false)
+  const [isRecommendationCalendarOpen, setIsRecommendationCalendarOpen] = useState(false)
+  const [recommendationCalendarTarget, setRecommendationCalendarTarget] = useState<"depart" | "return">("depart")
   const [canScrollPriceLeft, setCanScrollPriceLeft] = useState(false)
   const [canScrollPriceRight, setCanScrollPriceRight] = useState(false)
   const [canScrollSummaryPriceLeft, setCanScrollSummaryPriceLeft] = useState(false)
   const [canScrollSummaryPriceRight, setCanScrollSummaryPriceRight] = useState(false)
   const [recommendationCardLimit, setRecommendationCardLimit] = useState(8)
+  const [recommendationCalendarMonth, setRecommendationCalendarMonth] = useState(() => {
+    const current = parseIsoDateValue(initialState.depart)
+    return current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date()
+  })
   const isScrolledRef = useRef(false)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const summaryPriceTableScrollRef = useRef<HTMLDivElement | null>(null)
@@ -760,6 +831,25 @@ export default function FlightCatalogInteractiveClient({
     window.addEventListener("resize", syncRecommendationCardLimit)
     return () => window.removeEventListener("resize", syncRecommendationCardLimit)
   }, [])
+
+  useEffect(() => {
+    if (!isRecommendationCalendarOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsRecommendationCalendarOpen(false)
+      }
+    }
+
+    document.body.style.overflow = "hidden"
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isRecommendationCalendarOpen])
 
   const availableRegions = [...new Set(items.map((item) => item.region))]
   const availableGroups = [...new Set(items.map((item) => item.group))]
@@ -845,6 +935,19 @@ export default function FlightCatalogInteractiveClient({
     if (quickDateOptions.length === 0) return null
     return Math.min(...quickDateOptions.map((entry) => entry.price))
   }, [quickDateOptions])
+  const quickDatePriceMap = useMemo(() => new Map(quickDateOptions.map((entry) => [entry.date, entry.price])), [quickDateOptions])
+  const calendarDayHeaders = useMemo(() => formatCalendarDayHeader(locale), [locale])
+  const selectedCalendarDate = recommendationCalendarTarget === "return" ? state.returnDate : state.depart
+  const recommendationCalendarMonths = useMemo(() => {
+    return [0, 1].map((offset) => {
+      const monthDate = new Date(recommendationCalendarMonth.getFullYear(), recommendationCalendarMonth.getMonth() + offset, 1)
+      return {
+        key: `${monthDate.getFullYear()}-${monthDate.getMonth()}`,
+        label: formatCalendarMonthLabel(monthDate, locale),
+        cells: buildPriceCalendarCells(monthDate, quickDatePriceMap),
+      }
+    })
+  }, [locale, quickDatePriceMap, recommendationCalendarMonth])
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
@@ -1012,6 +1115,33 @@ export default function FlightCatalogInteractiveClient({
       returnDate:
         current.tripMode === "round_trip" && current.returnDate && current.returnDate < nextDate ? nextDate : current.returnDate,
     }))
+  }
+
+  const openRecommendationCalendar = () => {
+    const referenceDate = parseIsoDateValue(state.depart) ?? parseIsoDateValue(quickDateOptions[0]?.date || "") ?? new Date()
+    setRecommendationCalendarMonth(new Date(referenceDate.getFullYear(), referenceDate.getMonth(), 1))
+    setRecommendationCalendarTarget("depart")
+    setIsRecommendationCalendarOpen(true)
+  }
+
+  const handleRecommendationCalendarDateSelect = (nextDate: string) => {
+    setHeroFieldStates({})
+    syncDraftAndState((current) => {
+      if (recommendationCalendarTarget === "return" && current.tripMode === "round_trip") {
+        return {
+          ...current,
+          returnDate: !current.depart || nextDate >= current.depart ? nextDate : current.depart,
+        }
+      }
+
+      return {
+        ...current,
+        depart: nextDate,
+        returnDate:
+          current.tripMode === "round_trip" && current.returnDate && current.returnDate < nextDate ? nextDate : current.returnDate,
+      }
+    })
+    setIsRecommendationCalendarOpen(false)
   }
 
   const resetAll = () => {
@@ -1466,18 +1596,161 @@ export default function FlightCatalogInteractiveClient({
                 </button>
               ) : null}
                   </div>
-                  <Link
-                    href={serviceCatalogHref}
+                  <button
+                    type="button"
+                    onClick={openRecommendationCalendar}
                     className="inline-flex shrink-0 items-center justify-center rounded-[14px] border border-white/45 bg-white/14 px-4 py-3 text-center text-[12px] font-semibold text-white transition hover:bg-white/22 xl:min-w-[136px]"
                   >
                     {moreRoutesLabel}
-                  </Link>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {isRecommendationCalendarOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6 backdrop-blur-[2px]"
+          onClick={() => setIsRecommendationCalendarOpen(false)}
+        >
+          <div
+            className="w-full max-w-[980px] overflow-hidden rounded-[26px] border border-[#e7edf5] bg-white shadow-[0_36px_90px_-42px_rgba(15,23,42,0.45)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+              <div className="min-w-0">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500">Price calendar</p>
+                <p className="mt-2 text-[18px] font-semibold tracking-[-0.02em] text-slate-950">{buildStickyRouteSummary(state, copy)}</p>
+                <p className="mt-1 text-sm text-slate-500">{buildStickyMetaSummary(state, locale, copy)}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRecommendationCalendarOpen(false)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                aria-label="Close calendar"
+              >
+                <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                  <path d="M4 4 12 12M12 4 4 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-5 py-4 sm:px-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className={`grid gap-3 ${state.tripMode === "round_trip" ? "sm:grid-cols-2" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => setRecommendationCalendarTarget("depart")}
+                    className={`rounded-[16px] border px-4 py-3 text-left shadow-[0_12px_24px_-20px_rgba(15,23,42,0.16)] transition ${
+                      recommendationCalendarTarget === "depart" ? "border-[#1795f1] bg-[#edf7ff]" : "border-slate-200 bg-white hover:border-sky-200"
+                    }`}
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{copy.departLabel}</p>
+                    <p className="mt-1 text-[18px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</p>
+                  </button>
+                  {state.tripMode === "round_trip" ? (
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationCalendarTarget("return")}
+                      className={`rounded-[16px] border px-4 py-3 text-left shadow-[0_12px_24px_-20px_rgba(15,23,42,0.16)] transition ${
+                        recommendationCalendarTarget === "return" ? "border-[#1795f1] bg-[#edf7ff]" : "border-slate-200 bg-white hover:border-sky-200"
+                      }`}
+                    >
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{copy.returnLabel}</p>
+                      <p className="mt-1 text-[18px] font-semibold text-slate-950">{formatCalendarInputValue(state.returnDate, locale)}</p>
+                    </button>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-sky-200 hover:text-sky-700"
+                    aria-label="Previous month"
+                  >
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                      <path d="M9.5 3.5 5 8l4.5 4.5" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:border-sky-200 hover:text-sky-700"
+                    aria-label="Next month"
+                  >
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 xl:grid-cols-2">
+                {recommendationCalendarMonths.map((month) => (
+                  <section key={month.key} className="rounded-[22px] border border-slate-100 bg-slate-50/55 p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <h3 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">{month.label}</h3>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2">
+                      {calendarDayHeaders.map((label) => (
+                        <div key={`${month.key}-${label}`} className="pb-1 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                          {label}
+                        </div>
+                      ))}
+                      {month.cells.map((cell) => {
+                        const active = cell.date === selectedCalendarDate
+                        const isCheapest = cheapestQuickDatePrice !== null && cell.price === cheapestQuickDatePrice && cell.price !== null
+                        const blockedByReturnRule = recommendationCalendarTarget === "return" && Boolean(state.depart) && cell.date < state.depart
+                        const disabled = cell.price === null || blockedByReturnRule
+
+                        return (
+                          <button
+                            key={`${month.key}-${cell.date}`}
+                            type="button"
+                            onClick={() => {
+                              if (disabled) return
+                              handleRecommendationCalendarDateSelect(cell.date)
+                            }}
+                            disabled={disabled}
+                            className={`min-h-[88px] rounded-[18px] border px-2 py-3 text-center transition ${
+                              active
+                                ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.8)]"
+                                : disabled
+                                  ? "border-transparent bg-transparent text-slate-300"
+                                  : isCheapest
+                                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300"
+                                    : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+                            }`}
+                          >
+                            <p className={`text-[22px] font-semibold leading-none ${cell.isCurrentMonth ? "" : "opacity-45"}`}>{cell.day}</p>
+                            <p className={`mt-2 text-[11px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-500"}`}>
+                              {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale)}
+                            </p>
+                            {active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : !active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4 text-[12px] text-slate-500">
+                <div className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-emerald-500" />
+                  <span>{stickyCompactCopy.cheapest}</span>
+                </div>
+                <div className="inline-flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-[#1795f1]" />
+                  <span>{stickyCompactCopy.selected}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:min-h-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start`}>
         <aside className="space-y-3 lg:sticky lg:top-[8.2rem] lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden">
