@@ -1310,8 +1310,37 @@ export default function FlightCatalogInteractiveClient({
                 ))}
               </div>
             </div>
-            <div className="max-w-[360px] rounded-[16px] border border-sky-100/80 bg-white/90 px-3.5 py-2.5 text-[11px] leading-5 text-slate-500">
-              <span className="font-semibold text-slate-900">{copy.topTitle}.</span> {copy.topBody}
+            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-sky-100/80 bg-white/95 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.16)]">
+              <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-2 pr-1">
+                  {quickDateOptions.map((entry) => {
+                    const active = entry.date === state.depart
+                    const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
+                    return (
+                      <button
+                        key={`summary-price-${entry.date}`}
+                        type="button"
+                        onClick={() => handleQuickDateSelect(entry.date)}
+                        className={`min-w-[132px] snap-start rounded-[16px] border px-3 py-2.5 text-left transition ${
+                          active
+                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.55)]"
+                            : isCheapest
+                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
+                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                        }`}
+                      >
+                        <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
+                        <p className={`mt-1 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-800"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                        {active ? (
+                          <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p>
+                        ) : isCheapest ? (
+                          <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p>
+                        ) : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         </div>
