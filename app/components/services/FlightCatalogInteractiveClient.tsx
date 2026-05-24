@@ -678,10 +678,12 @@ export default function FlightCatalogInteractiveClient({
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
+  const [isResultSortMenuOpen, setIsResultSortMenuOpen] = useState(false)
   const [canScrollPriceLeft, setCanScrollPriceLeft] = useState(false)
   const [canScrollPriceRight, setCanScrollPriceRight] = useState(false)
   const isScrolledRef = useRef(false)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
+  const resultSortMenuRef = useRef<HTMLDivElement | null>(null)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
     group: false,
@@ -800,6 +802,8 @@ export default function FlightCatalogInteractiveClient({
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
+  const sortMenuLabel = locale === "en" ? "More" : locale === "zh" ? "更多" : "Lainnya"
+  const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
 
   const topSummaryChips = [
     state.q || emptyKeyword,
@@ -841,6 +845,15 @@ export default function FlightCatalogInteractiveClient({
     ...(state.tripMode === "round_trip" ? [{ label: copy.returnLabel, value: state.returnDate }] : []),
     { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
   ]
+  const bestHighlightedItem = filteredItems[0] || null
+  const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
+    if (!lowest) return item
+    return parseFlightPrice(item.meta.price) < parseFlightPrice(lowest.meta.price) ? item : lowest
+  }, null)
+  const earliestHighlightedItem = filteredItems.reduce<FlightItem | null>((earliest, item) => {
+    if (!earliest) return item
+    return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
+  }, null)
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
     tripMode,
@@ -964,6 +977,20 @@ export default function FlightCatalogInteractiveClient({
       window.removeEventListener("resize", syncPriceTableScrollState)
     }
   }, [quickDateOptions, shouldShowCompactStickyBar])
+
+  useEffect(() => {
+    if (!isResultSortMenuOpen) return
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (resultSortMenuRef.current?.contains(target)) return
+      setIsResultSortMenuOpen(false)
+    }
+
+    document.addEventListener("mousedown", handlePointerDown)
+    return () => document.removeEventListener("mousedown", handlePointerDown)
+  }, [isResultSortMenuOpen])
 
   return (
     <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
@@ -1376,20 +1403,140 @@ export default function FlightCatalogInteractiveClient({
 
         <div className="space-y-3">
           <div className="rounded-[20px] border border-[#dce8f6] bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.14)]">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-slate-900">{filteredItems.length} {copy.flightsFound}</p>
                 <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
                   {copy.sortLabel}: {state.sort === "price" ? copy.sortPrice : state.sort === "early" ? copy.sortEarly : copy.sortBest}
                 </span>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500">{copy.activeFilters}</span>
-                {topSummaryChips.map((chip) => (
-                  <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
-                    {chip}
+              <div className="overflow-hidden rounded-[22px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
+                <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px] xl:items-stretch">
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "price" })}
+                  className={`px-5 py-5 text-left transition xl:min-h-[132px] ${
+                    state.sort === "price"
+                      ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
+                      : "bg-white hover:bg-sky-50/40"
+                  }`}
+                >
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] ${state.sort === "price" ? "bg-white text-[#0f6fcb] shadow-[0_10px_18px_-14px_rgba(23,149,241,0.65)]" : "bg-slate-100 text-slate-500"}`}>
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                      <path d="M3 5.5h10" />
+                      <path d="M3 8h7" />
+                      <path d="M3 10.5h5" />
+                    </svg>
                   </span>
-                ))}
+                  <p className={`mt-4 text-[15px] font-semibold ${state.sort === "price" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortPrice}</p>
+                  <p className={`mt-3 text-[18px] font-semibold ${state.sort === "price" ? "text-[#0b62b4]" : "text-slate-600"}`}>{cheapestHighlightedItem?.meta.price || "-"}</p>
+                  <p className={`mt-1 text-sm font-medium ${state.sort === "price" ? "text-sky-700/80" : "text-slate-500"}`}>{cheapestHighlightedItem?.meta.duration || "-"}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "best" })}
+                  className={`border-t border-[#e4edf8] px-5 py-5 text-left transition xl:min-h-[132px] xl:border-l xl:border-t-0 ${
+                    state.sort === "best"
+                      ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
+                      : "bg-white hover:bg-sky-50/40"
+                  }`}
+                >
+                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] ${state.sort === "best" ? "bg-white text-[#0f6fcb] shadow-[0_10px_18px_-14px_rgba(23,149,241,0.65)]" : "bg-slate-100 text-slate-500"}`}>
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                      <path d="m8 2.5 1.6 3.24 3.58.52-2.59 2.52.61 3.56L8 10.66 4.8 12.34l.61-3.56L2.82 6.26l3.58-.52L8 2.5Z" />
+                    </svg>
+                  </span>
+                  <p className={`mt-4 text-[15px] font-semibold ${state.sort === "best" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortBest}</p>
+                  <p className={`mt-3 text-[18px] font-semibold ${state.sort === "best" ? "text-[#0b62b4]" : "text-slate-600"}`}>{bestHighlightedItem?.meta.price || "-"}</p>
+                  <p className={`mt-1 text-sm font-medium ${state.sort === "best" ? "text-sky-700/80" : "text-slate-500"}`}>{bestHighlightedItem?.meta.duration || "-"}</p>
+                </button>
+                <div ref={resultSortMenuRef} className="relative border-t border-[#e4edf8] bg-white xl:border-l xl:border-t-0">
+                  <button
+                    type="button"
+                    onClick={() => setIsResultSortMenuOpen((current) => !current)}
+                    className="flex h-full w-full items-center justify-between px-5 py-5 text-left transition hover:bg-sky-50/40 xl:min-h-[132px]"
+                    aria-expanded={isResultSortMenuOpen}
+                    aria-haspopup="menu"
+                  >
+                    <div>
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] bg-slate-100 text-slate-500">
+                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                          <path d="M2.5 4.5h11" />
+                          <path d="M2.5 8h7.5" />
+                          <path d="M2.5 11.5h4.5" />
+                        </svg>
+                      </span>
+                      <p className="mt-3 text-[15px] font-semibold text-slate-500">{sortMenuLabel}</p>
+                      <p className="mt-3 text-[16px] font-semibold text-slate-900">{copy.sortEarly}</p>
+                      <p className="mt-1 text-sm font-medium text-slate-500">{earliestHighlightedItem?.meta.departure || "-"}</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-slate-500">
+                      <svg viewBox="0 0 16 16" className={`h-4 w-4 fill-none stroke-current stroke-[2] transition ${isResultSortMenuOpen ? "rotate-180" : ""}`}>
+                        <path d="M3.5 6.5 8 11l4.5-4.5" />
+                      </svg>
+                    </div>
+                  </button>
+                  {isResultSortMenuOpen ? (
+                    <div className="absolute right-0 top-[calc(100%+0.6rem)] z-20 w-full min-w-[260px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.24)]" role="menu">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "price" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between px-5 py-5 text-left transition ${state.sort === "price" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortPrice}</p>
+                          <p className="mt-1 text-sm text-slate-500">{cheapestHighlightedItem?.meta.price || "-"}</p>
+                        </div>
+                        {state.sort === "price" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "best" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "best" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortBest}</p>
+                          <p className="mt-1 text-sm text-slate-500">{bestHighlightedItem?.meta.price || "-"}</p>
+                        </div>
+                        {state.sort === "best" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "early" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "early" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortEarly}</p>
+                          <p className="mt-1 text-sm text-slate-500">{earliestHighlightedItem?.meta.departure || "-"}</p>
+                        </div>
+                        {state.sort === "early" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
+                      <div className="border-t border-slate-100 px-5 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.activeFilters}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {topSummaryChips.slice(0, 4).map((chip) => (
+                            <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                              {chip}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                </div>
               </div>
             </div>
           </div>
