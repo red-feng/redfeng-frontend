@@ -101,6 +101,9 @@ type FlightCopy = {
   sortBest: string
   sortPrice: string
   sortEarly: string
+  sortDepartLate: string
+  sortArriveEarly: string
+  sortArriveLate: string
   refundTag: string
   baggageTag: string
   activeFilters: string
@@ -770,6 +773,9 @@ export default function FlightCatalogInteractiveClient({
     .sort((left, right) => {
       if (state.sort === "price") return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
       if (state.sort === "early") return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+      if (state.sort === "depart_late") return parseFlightTime(right.meta.departure) - parseFlightTime(left.meta.departure)
+      if (state.sort === "arrive_early") return parseFlightTime(left.meta.arrival) - parseFlightTime(right.meta.arrival)
+      if (state.sort === "arrive_late") return parseFlightTime(right.meta.arrival) - parseFlightTime(left.meta.arrival)
       return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
     })
 
@@ -804,6 +810,18 @@ export default function FlightCatalogInteractiveClient({
   const stickyCompactCopy = getStickyCompactCopy(locale)
   const sortMenuLabel = locale === "en" ? "More" : locale === "zh" ? "更多" : "Lainnya"
   const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
+  const currentSortLabel =
+    state.sort === "price"
+      ? copy.sortPrice
+      : state.sort === "early"
+        ? copy.sortEarly
+        : state.sort === "depart_late"
+          ? copy.sortDepartLate
+          : state.sort === "arrive_early"
+            ? copy.sortArriveEarly
+            : state.sort === "arrive_late"
+              ? copy.sortArriveLate
+              : copy.sortBest
 
   const topSummaryChips = [
     state.q || emptyKeyword,
@@ -1407,7 +1425,7 @@ export default function FlightCatalogInteractiveClient({
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-slate-900">{filteredItems.length} {copy.flightsFound}</p>
                 <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
-                  {copy.sortLabel}: {state.sort === "price" ? copy.sortPrice : state.sort === "early" ? copy.sortEarly : copy.sortBest}
+                  {copy.sortLabel}: {currentSortLabel}
                 </span>
               </div>
               <div className="relative overflow-visible rounded-[22px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
@@ -1482,40 +1500,10 @@ export default function FlightCatalogInteractiveClient({
                       <button
                         type="button"
                         onClick={() => {
-                          updateState({ sort: "price" })
-                          setIsResultSortMenuOpen(false)
-                        }}
-                        className={`flex w-full items-start justify-between px-5 py-5 text-left transition ${state.sort === "price" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
-                        role="menuitem"
-                      >
-                        <div>
-                          <p className="text-[15px] font-semibold">{copy.sortPrice}</p>
-                          <p className="mt-1 text-sm text-slate-500">{cheapestHighlightedItem?.meta.price || "-"}</p>
-                        </div>
-                        {state.sort === "price" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateState({ sort: "best" })
-                          setIsResultSortMenuOpen(false)
-                        }}
-                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "best" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
-                        role="menuitem"
-                      >
-                        <div>
-                          <p className="text-[15px] font-semibold">{copy.sortBest}</p>
-                          <p className="mt-1 text-sm text-slate-500">{bestHighlightedItem?.meta.price || "-"}</p>
-                        </div>
-                        {state.sort === "best" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
                           updateState({ sort: "early" })
                           setIsResultSortMenuOpen(false)
                         }}
-                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "early" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        className={`flex w-full items-start justify-between px-5 py-5 text-left transition ${state.sort === "early" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
                         role="menuitem"
                       >
                         <div>
@@ -1524,16 +1512,51 @@ export default function FlightCatalogInteractiveClient({
                         </div>
                         {state.sort === "early" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
                       </button>
-                      <div className="border-t border-slate-100 px-5 py-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.activeFilters}</p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {topSummaryChips.slice(0, 4).map((chip) => (
-                            <span key={`active-${chip}`} className="rounded-full border border-sky-100 bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
-                              {chip}
-                            </span>
-                          ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "depart_late" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "depart_late" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortDepartLate}</p>
+                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((latest, item) => !latest || parseFlightTime(item.meta.departure) > parseFlightTime(latest.meta.departure) ? item : latest, null)?.meta.departure || "-"}</p>
                         </div>
-                      </div>
+                        {state.sort === "depart_late" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "arrive_early" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "arrive_early" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortArriveEarly}</p>
+                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((earliest, item) => !earliest || parseFlightTime(item.meta.arrival) < parseFlightTime(earliest.meta.arrival) ? item : earliest, null)?.meta.arrival || "-"}</p>
+                        </div>
+                        {state.sort === "arrive_early" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateState({ sort: "arrive_late" })
+                          setIsResultSortMenuOpen(false)
+                        }}
+                        className={`flex w-full items-start justify-between border-t border-slate-100 px-5 py-5 text-left transition ${state.sort === "arrive_late" ? "bg-sky-50 text-sky-700" : "text-slate-900 hover:bg-slate-50"}`}
+                        role="menuitem"
+                      >
+                        <div>
+                          <p className="text-[15px] font-semibold">{copy.sortArriveLate}</p>
+                          <p className="mt-1 text-sm text-slate-500">{filteredItems.reduce<FlightItem | null>((latest, item) => !latest || parseFlightTime(item.meta.arrival) > parseFlightTime(latest.meta.arrival) ? item : latest, null)?.meta.arrival || "-"}</p>
+                        </div>
+                        {state.sort === "arrive_late" ? <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">{activeLabel}</span> : null}
+                      </button>
                     </div>
                   ) : null}
                 </div>
