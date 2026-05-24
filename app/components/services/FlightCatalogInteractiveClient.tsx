@@ -1012,26 +1012,29 @@ export default function FlightCatalogInteractiveClient({
   }
 
   useEffect(() => {
-    if (!shouldShowCompactStickyBar) {
-      setCanScrollPriceLeft(false)
-      setCanScrollPriceRight(false)
-      return
-    }
-
     const container = priceTableScrollRef.current
-    if (!container) return
-
     const syncPriceTableScrollState = () => {
+      if (!shouldShowCompactStickyBar || !container) {
+        setCanScrollPriceLeft(false)
+        setCanScrollPriceRight(false)
+        return
+      }
+
       const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
       setCanScrollPriceLeft(container.scrollLeft > 8)
       setCanScrollPriceRight(container.scrollLeft < maxScrollLeft - 8)
     }
 
-    syncPriceTableScrollState()
+    const frameId = window.requestAnimationFrame(syncPriceTableScrollState)
+    if (!container) {
+      return () => window.cancelAnimationFrame(frameId)
+    }
+
     container.addEventListener("scroll", syncPriceTableScrollState, { passive: true })
     window.addEventListener("resize", syncPriceTableScrollState)
 
     return () => {
+      window.cancelAnimationFrame(frameId)
       container.removeEventListener("scroll", syncPriceTableScrollState)
       window.removeEventListener("resize", syncPriceTableScrollState)
     }
@@ -1039,19 +1042,29 @@ export default function FlightCatalogInteractiveClient({
 
   useEffect(() => {
     const container = summaryPriceTableScrollRef.current
-    if (!container) return
 
     const syncSummaryPriceTableScrollState = () => {
+      if (!container) {
+        setCanScrollSummaryPriceLeft(false)
+        setCanScrollSummaryPriceRight(false)
+        return
+      }
+
       const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
       setCanScrollSummaryPriceLeft(container.scrollLeft > 8)
       setCanScrollSummaryPriceRight(container.scrollLeft < maxScrollLeft - 8)
     }
 
-    syncSummaryPriceTableScrollState()
+    const frameId = window.requestAnimationFrame(syncSummaryPriceTableScrollState)
+    if (!container) {
+      return () => window.cancelAnimationFrame(frameId)
+    }
+
     container.addEventListener("scroll", syncSummaryPriceTableScrollState, { passive: true })
     window.addEventListener("resize", syncSummaryPriceTableScrollState)
 
     return () => {
+      window.cancelAnimationFrame(frameId)
       container.removeEventListener("scroll", syncSummaryPriceTableScrollState)
       window.removeEventListener("resize", syncSummaryPriceTableScrollState)
     }
@@ -1222,10 +1235,10 @@ export default function FlightCatalogInteractiveClient({
               applyDraft()
             }}
             className={`rounded-[28px] border border-[#f2d6c8] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.18)] transition-all duration-200 ${
-              isScrolled ? "p-3 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-4"
+              isScrolled ? "p-2.5 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-3"
             }`}
           >
-            <div className="mb-4 flex gap-5 overflow-x-auto border-b border-[#f3dfd3] px-2 pb-3 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mb-3 flex gap-4 overflow-x-auto border-b border-[#f3dfd3] px-2 pb-2.5 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {tripTabs.map((tab) => {
                 const active = draft.tripMode === tab.key
                 return (
@@ -1250,7 +1263,7 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-            <div className={`rounded-[26px] border border-[#f2ddd1] bg-[#fff6ef] p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
+            <div className={`rounded-[24px] border border-[#f2ddd1] bg-[#fff6ef] p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
               <div
                 className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
               >
@@ -1276,7 +1289,7 @@ export default function FlightCatalogInteractiveClient({
                         calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
                         onValueChange={(value) => handleHeroFieldChange(index, value)}
                         locale={locale}
-                        className="rounded-[999px] px-5 py-[14px]"
+                        className="rounded-[999px] px-5 py-3"
                       />
                     </CatalogDesktopFieldShell>
                     {draft.tripMode !== "multi_city" && index === 0 ? (
@@ -1285,7 +1298,7 @@ export default function FlightCatalogInteractiveClient({
                         type="button"
                         onClick={handleHeroSwap}
                         aria-label="Swap route"
-                        className="relative mx-auto hidden h-[66px] w-[44px] items-center justify-center self-end text-[#ff5a43] xl:flex"
+                        className="relative mx-auto hidden h-[58px] w-[40px] items-center justify-center self-end text-[#ff5a43] xl:flex"
                       >
                         <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#f3d7c8]" />
                         <SwapIcon className="h-[15px] w-[15px]" />
@@ -1294,19 +1307,19 @@ export default function FlightCatalogInteractiveClient({
                     ) : null}
                   </Fragment>
                 ))}
-                <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[29px] xl:h-[56px] xl:w-[56px] xl:self-start">
+                <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[26px] xl:h-[52px] xl:w-[52px] xl:self-start">
                   <SearchIcon />
                 </button>
               </div>
-              <div className="mt-3 grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
-                <label className="block rounded-[18px] border border-[#f1dbce] bg-white px-3.5 py-2.5 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.12)]">
+              <div className="mt-2.5 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+                <label className="block rounded-[16px] border border-[#f1dbce] bg-white px-3.5 py-2 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.12)]">
                   <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
                   <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
                 </label>
-                <button type="submit" className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-white px-4 py-2.5 text-sm font-semibold text-[#ef4423] shadow-[0_10px_24px_-18px_rgba(15,23,42,0.12)] transition hover:bg-[#fff4ec]">
+                <button type="submit" className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-white px-4 py-2 text-sm font-semibold text-[#ef4423] shadow-[0_10px_24px_-18px_rgba(15,23,42,0.12)] transition hover:bg-[#fff4ec]">
                   {copy.refineSearch}
                 </button>
-                <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-[#fff1e7] px-4 py-2.5 text-sm font-semibold text-[#b85a2c] transition hover:bg-[#ffe7d8]">
+                <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-[16px] border border-[#f1dbce] bg-[#fff1e7] px-4 py-2 text-sm font-semibold text-[#b85a2c] transition hover:bg-[#ffe7d8]">
                   {copy.resetFilters}
                 </button>
               </div>
@@ -1325,8 +1338,8 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
-        <div className="rounded-[20px] border border-[#f1c5ab] bg-[linear-gradient(180deg,#ffb184_0%,#f98a57_48%,#ee6b37_100%)] px-4 py-3 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.32)] sm:px-5">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="rounded-[20px] border border-[#f3ccb4] bg-[linear-gradient(180deg,#ffba90_0%,#f99a68_48%,#ef7646_100%)] px-4 py-2.5 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.24)] sm:px-5">
+          <div className="flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/90">{copy.searchSummary}</p>
@@ -1334,16 +1347,16 @@ export default function FlightCatalogInteractiveClient({
                   {filteredItems.length} {copy.flightsFound}
                 </span>
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {topDetailChips.map((chip) => (
-                  <div key={chip.label} className="rounded-full border border-white/20 bg-white/12 px-3 py-1.5 text-[12px] shadow-sm backdrop-blur-sm">
+                  <div key={chip.label} className="rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[12px] shadow-sm backdrop-blur-sm">
                     <span className="font-semibold text-white">{chip.label}:</span>{" "}
                     <span className="font-medium text-white/90">{chip.value}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/24 bg-white/16 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.18)] backdrop-blur-sm">
+            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/24 bg-white/14 px-3 py-2.5 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.14)] backdrop-blur-sm">
               <div className="relative">
                 {canScrollSummaryPriceLeft ? (
                   <>
@@ -1545,21 +1558,21 @@ export default function FlightCatalogInteractiveClient({
         </aside>
 
         <div className="space-y-3">
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.14)]">
-            <div className="flex flex-col gap-4">
+          <div className="rounded-[20px] border border-[#dce8f6] bg-white px-4 py-2.5 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.14)]">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-slate-900">{filteredItems.length} {copy.flightsFound}</p>
                 <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
                   {copy.sortLabel}: {currentSortLabel}
                 </span>
               </div>
-              <div className="relative overflow-visible rounded-[22px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.18)]">
+              <div className="relative overflow-visible rounded-[20px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.14)]">
                 <div className="rounded-[22px]">
                   <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px] xl:items-stretch">
                 <button
                   type="button"
                   onClick={() => updateState({ sort: "price" })}
-                  className={`px-5 py-5 text-left transition xl:min-h-[132px] ${
+                  className={`px-4 py-4 text-left transition xl:min-h-[118px] ${
                     state.sort === "price"
                       ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
                       : "bg-white hover:bg-sky-50/40"
@@ -1572,14 +1585,14 @@ export default function FlightCatalogInteractiveClient({
                       <path d="M3 10.5h5" />
                     </svg>
                   </span>
-                  <p className={`mt-4 text-[15px] font-semibold ${state.sort === "price" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortPrice}</p>
-                  <p className={`mt-3 text-[18px] font-semibold ${state.sort === "price" ? "text-[#0b62b4]" : "text-slate-600"}`}>{cheapestHighlightedItem?.meta.price || "-"}</p>
+                  <p className={`mt-3 text-[15px] font-semibold ${state.sort === "price" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortPrice}</p>
+                  <p className={`mt-2 text-[18px] font-semibold ${state.sort === "price" ? "text-[#0b62b4]" : "text-slate-600"}`}>{cheapestHighlightedItem?.meta.price || "-"}</p>
                   <p className={`mt-1 text-sm font-medium ${state.sort === "price" ? "text-sky-700/80" : "text-slate-500"}`}>{cheapestHighlightedItem?.meta.duration || "-"}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => updateState({ sort: "best" })}
-                  className={`border-t border-[#e4edf8] px-5 py-5 text-left transition xl:min-h-[132px] xl:border-l xl:border-t-0 ${
+                  className={`border-t border-[#e4edf8] px-4 py-4 text-left transition xl:min-h-[118px] xl:border-l xl:border-t-0 ${
                     state.sort === "best"
                       ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
                       : "bg-white hover:bg-sky-50/40"
@@ -1590,15 +1603,15 @@ export default function FlightCatalogInteractiveClient({
                       <path d="m8 2.5 1.6 3.24 3.58.52-2.59 2.52.61 3.56L8 10.66 4.8 12.34l.61-3.56L2.82 6.26l3.58-.52L8 2.5Z" />
                     </svg>
                   </span>
-                  <p className={`mt-4 text-[15px] font-semibold ${state.sort === "best" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortBest}</p>
-                  <p className={`mt-3 text-[18px] font-semibold ${state.sort === "best" ? "text-[#0b62b4]" : "text-slate-600"}`}>{bestHighlightedItem?.meta.price || "-"}</p>
+                  <p className={`mt-3 text-[15px] font-semibold ${state.sort === "best" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortBest}</p>
+                  <p className={`mt-2 text-[18px] font-semibold ${state.sort === "best" ? "text-[#0b62b4]" : "text-slate-600"}`}>{bestHighlightedItem?.meta.price || "-"}</p>
                   <p className={`mt-1 text-sm font-medium ${state.sort === "best" ? "text-sky-700/80" : "text-slate-500"}`}>{bestHighlightedItem?.meta.duration || "-"}</p>
                 </button>
                 <div ref={resultSortMenuRef} className="relative border-t border-[#e4edf8] bg-white xl:border-l xl:border-t-0">
                   <button
                     type="button"
                     onClick={() => setIsResultSortMenuOpen((current) => !current)}
-                    className="flex h-full w-full items-center justify-between px-5 py-5 text-left transition hover:bg-sky-50/40 xl:min-h-[132px]"
+                    className="flex h-full w-full items-center justify-between px-4 py-4 text-left transition hover:bg-sky-50/40 xl:min-h-[118px]"
                     aria-expanded={isResultSortMenuOpen}
                     aria-haspopup="menu"
                   >
@@ -1610,8 +1623,8 @@ export default function FlightCatalogInteractiveClient({
                           <path d="M2.5 11.5h4.5" />
                         </svg>
                       </span>
-                      <p className="mt-3 text-[15px] font-semibold text-slate-500">{sortMenuLabel}</p>
-                      <p className="mt-3 text-[16px] font-semibold text-slate-900">{additionalSortLabel}</p>
+                      <p className="mt-2.5 text-[15px] font-semibold text-slate-500">{sortMenuLabel}</p>
+                      <p className="mt-2 text-[16px] font-semibold text-slate-900">{additionalSortLabel}</p>
                       <p className="mt-1 text-sm font-medium text-slate-500">{additionalSortValue}</p>
                     </div>
                     <div className="flex items-center gap-3 text-slate-500">
