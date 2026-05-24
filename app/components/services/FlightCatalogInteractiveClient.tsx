@@ -917,7 +917,7 @@ export default function FlightCatalogInteractiveClient({
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
   const recommendationItems = sortFlightResults(items.filter((item) => matchesFlightItem(item, state, { skipFrom: true, skipTo: true })))
-  const recommendationCards = recommendationItems.slice(0, 4)
+  const recommendationCards = recommendationItems.slice(0, 8)
   const cheapestRecommendationPrice =
     recommendationCards.length > 0 ? Math.min(...recommendationCards.map((item) => parseFlightPrice(item.meta.price))) : null
 
