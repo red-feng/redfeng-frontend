@@ -668,6 +668,15 @@ function buildPriceCalendarCells(monthDate: Date, pricesByDate: Map<string, numb
   return cells
 }
 
+function getMonthLowestPrice(cells: PriceCalendarCell[]) {
+  const prices = cells
+    .filter((cell) => cell.isCurrentMonth && cell.price !== null)
+    .map((cell) => cell.price as number)
+
+  if (prices.length === 0) return null
+  return Math.min(...prices)
+}
+
 function buildStickyRouteSummary(state: FlightFilterState, copy: Pick<FlightCopy, "fromLabel" | "viaLabel" | "toLabel">) {
   const from = state.from.trim() || copy.fromLabel
   const to = state.to.trim() || copy.toLabel
@@ -941,10 +950,12 @@ export default function FlightCatalogInteractiveClient({
   const recommendationCalendarMonths = useMemo(() => {
     return [0, 1].map((offset) => {
       const monthDate = new Date(recommendationCalendarMonth.getFullYear(), recommendationCalendarMonth.getMonth() + offset, 1)
+      const cells = buildPriceCalendarCells(monthDate, quickDatePriceMap)
       return {
         key: `${monthDate.getFullYear()}-${monthDate.getMonth()}`,
         label: formatCalendarMonthLabel(monthDate, locale),
-        cells: buildPriceCalendarCells(monthDate, quickDatePriceMap),
+        cells,
+        lowestPrice: getMonthLowestPrice(cells),
       }
     })
   }, [locale, quickDatePriceMap, recommendationCalendarMonth])
@@ -1616,19 +1627,19 @@ export default function FlightCatalogInteractiveClient({
           onClick={() => setIsRecommendationCalendarOpen(false)}
         >
           <div
-            className="w-full max-w-[980px] overflow-hidden rounded-[26px] border border-[#e7edf5] bg-white shadow-[0_36px_90px_-42px_rgba(15,23,42,0.45)]"
+            className="w-full max-w-[1040px] overflow-hidden rounded-[28px] border border-[#dfe7f2] bg-white shadow-[0_42px_100px_-46px_rgba(15,23,42,0.48)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4 sm:px-6">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] px-5 py-5 sm:px-6">
               <div className="min-w-0">
-                <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-slate-500">Price calendar</p>
-                <p className="mt-2 text-[18px] font-semibold tracking-[-0.02em] text-slate-950">{buildStickyRouteSummary(state, copy)}</p>
-                <p className="mt-1 text-sm text-slate-500">{buildStickyMetaSummary(state, locale, copy)}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Price calendar</p>
+                <p className="mt-2 text-[22px] font-semibold tracking-[-0.03em] text-slate-950">{buildStickyRouteSummary(state, copy)}</p>
+                <p className="mt-1 text-[13px] text-slate-500">{buildStickyMetaSummary(state, locale, copy)}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRecommendationCalendarOpen(false)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-[0_10px_20px_-18px_rgba(15,23,42,0.28)] transition hover:bg-slate-50 hover:text-slate-900"
                 aria-label="Close calendar"
               >
                 <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
@@ -1637,29 +1648,29 @@ export default function FlightCatalogInteractiveClient({
               </button>
             </div>
 
-            <div className="px-5 py-4 sm:px-6">
+            <div className="px-5 py-5 sm:px-6">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className={`grid gap-3 ${state.tripMode === "round_trip" ? "sm:grid-cols-2" : ""}`}>
                   <button
                     type="button"
                     onClick={() => setRecommendationCalendarTarget("depart")}
-                    className={`rounded-[16px] border px-4 py-3 text-left shadow-[0_12px_24px_-20px_rgba(15,23,42,0.16)] transition ${
+                    className={`min-w-[210px] rounded-[18px] border px-4 py-3.5 text-left shadow-[0_14px_30px_-24px_rgba(15,23,42,0.18)] transition ${
                       recommendationCalendarTarget === "depart" ? "border-[#1795f1] bg-[#edf7ff]" : "border-slate-200 bg-white hover:border-sky-200"
                     }`}
                   >
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{copy.departLabel}</p>
-                    <p className="mt-1 text-[18px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</p>
+                    <p className="mt-1.5 text-[19px] font-semibold tracking-[-0.02em] text-slate-950">{formatCalendarInputValue(state.depart, locale)}</p>
                   </button>
                   {state.tripMode === "round_trip" ? (
                     <button
                       type="button"
                       onClick={() => setRecommendationCalendarTarget("return")}
-                      className={`rounded-[16px] border px-4 py-3 text-left shadow-[0_12px_24px_-20px_rgba(15,23,42,0.16)] transition ${
+                      className={`min-w-[210px] rounded-[18px] border px-4 py-3.5 text-left shadow-[0_14px_30px_-24px_rgba(15,23,42,0.18)] transition ${
                         recommendationCalendarTarget === "return" ? "border-[#1795f1] bg-[#edf7ff]" : "border-slate-200 bg-white hover:border-sky-200"
                       }`}
                     >
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{copy.returnLabel}</p>
-                      <p className="mt-1 text-[18px] font-semibold text-slate-950">{formatCalendarInputValue(state.returnDate, locale)}</p>
+                      <p className="mt-1.5 text-[19px] font-semibold tracking-[-0.02em] text-slate-950">{formatCalendarInputValue(state.returnDate, locale)}</p>
                     </button>
                   ) : null}
                 </div>
@@ -1687,15 +1698,24 @@ export default function FlightCatalogInteractiveClient({
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-4 xl:grid-cols-2">
+              <div className="mt-6 grid gap-4 xl:grid-cols-2">
                 {recommendationCalendarMonths.map((month) => (
-                  <section key={month.key} className="rounded-[22px] border border-slate-100 bg-slate-50/55 p-4">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <h3 className="text-[28px] font-semibold tracking-[-0.04em] text-slate-950">{month.label}</h3>
+                  <section key={month.key} className="rounded-[24px] border border-slate-100 bg-white p-4 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.18)]">
+                    <div className="mb-4 flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                      <h3 className="text-[30px] font-semibold tracking-[-0.05em] text-slate-950">{month.label}</h3>
+                      {month.lowestPrice ? (
+                        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-right">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">Lowest this month</p>
+                          <p className="mt-0.5 text-[12px] font-semibold text-emerald-800">{formatCompactPrice(month.lowestPrice, locale)}</p>
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="grid grid-cols-7 gap-2">
-                      {calendarDayHeaders.map((label) => (
-                        <div key={`${month.key}-${label}`} className="pb-1 text-center text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
+                    <div className="grid grid-cols-7 gap-x-2 gap-y-3">
+                      {calendarDayHeaders.map((label, index) => (
+                        <div
+                          key={`${month.key}-${label}`}
+                          className={`pb-1 text-center text-[11px] font-semibold uppercase tracking-[0.08em] ${index === 0 ? "text-rose-500" : index === 6 ? "text-sky-600" : "text-slate-400"}`}
+                        >
                           {label}
                         </div>
                       ))}
@@ -1704,6 +1724,8 @@ export default function FlightCatalogInteractiveClient({
                         const isCheapest = cheapestQuickDatePrice !== null && cell.price === cheapestQuickDatePrice && cell.price !== null
                         const blockedByReturnRule = recommendationCalendarTarget === "return" && Boolean(state.depart) && cell.date < state.depart
                         const disabled = cell.price === null || blockedByReturnRule
+                        const weekdayIndex = parseIsoDateValue(cell.date)?.getDay() ?? 0
+                        const weekendTone = weekdayIndex === 0 ? "text-rose-500" : weekdayIndex === 6 ? "text-sky-600" : ""
 
                         return (
                           <button
@@ -1714,7 +1736,7 @@ export default function FlightCatalogInteractiveClient({
                               handleRecommendationCalendarDateSelect(cell.date)
                             }}
                             disabled={disabled}
-                            className={`min-h-[88px] rounded-[18px] border px-2 py-3 text-center transition ${
+                            className={`min-h-[94px] rounded-[18px] border px-2 py-3.5 text-center transition ${
                               active
                                 ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.8)]"
                                 : disabled
@@ -1724,8 +1746,8 @@ export default function FlightCatalogInteractiveClient({
                                     : "border-slate-200 bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
                             }`}
                           >
-                            <p className={`text-[22px] font-semibold leading-none ${cell.isCurrentMonth ? "" : "opacity-45"}`}>{cell.day}</p>
-                            <p className={`mt-2 text-[11px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-500"}`}>
+                            <p className={`text-[24px] font-semibold leading-none tracking-[-0.03em] ${cell.isCurrentMonth ? weekendTone : `opacity-45 ${weekendTone}`}`.trim()}>{cell.day}</p>
+                            <p className={`mt-2.5 text-[11px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-500"}`}>
                               {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale)}
                             </p>
                             {active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : !active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
