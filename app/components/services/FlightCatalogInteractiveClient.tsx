@@ -304,10 +304,10 @@ function matchesFlightItem(item: FlightItem, state: FlightFilterState, options: 
 }
 
 function filterLinkClass(active: boolean) {
-  return `flex items-center gap-3 rounded-[12px] border border-transparent px-3 py-2 text-sm transition ${
+  return `flex items-center gap-3 rounded-[12px] border px-3 py-2.5 text-[13px] transition ${
     active
-      ? "bg-[#fff3ec] text-[#ef4423]"
-      : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+      ? "border-[#ffd8c6] bg-[#fff4ed] text-[#ef4423] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.5)]"
+      : "border-[#edf1f5] bg-white text-slate-600 hover:border-[#e3e8ef] hover:bg-slate-50 hover:text-slate-900"
   }`
 }
 
@@ -315,7 +315,7 @@ function FilterCheck({ active }: { active: boolean }) {
   return (
     <span
       className={`inline-flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-        active ? "border-sky-500 bg-sky-500 text-white" : "border-slate-300 bg-white text-transparent"
+        active ? "border-[#ef5b2a] bg-[#ef5b2a] text-white" : "border-slate-300 bg-white text-transparent"
       }`}
       aria-hidden="true"
     >
@@ -345,7 +345,7 @@ function FilterSection({
         className="flex w-full items-center justify-between gap-3 text-left"
         aria-expanded={open}
       >
-        <p className="text-[13px] font-semibold text-slate-900">{title}</p>
+        <p className="text-[13px] font-semibold tracking-[-0.01em] text-slate-900">{title}</p>
         <span
           className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition ${
             open ? "bg-[#fff4ec] text-[#ef4423]" : "bg-white"
@@ -1563,13 +1563,13 @@ export default function FlightCatalogInteractiveClient({
           <div className="rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.18)]">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-sm font-medium text-slate-500">{resultsCountLabel}</p>
+                <p className="text-[13px] font-medium text-slate-500">{resultsCountLabel}</p>
                 <div ref={resultSortMenuRef} className="relative flex items-center gap-3">
-                  <span className="text-sm text-slate-500">{copy.sortLabel}:</span>
+                  <span className="text-[13px] text-slate-500">{copy.sortLabel}:</span>
                   <button
                     type="button"
                     onClick={() => setIsResultSortMenuOpen((current) => !current)}
-                    className="inline-flex min-w-[170px] items-center justify-between rounded-[12px] border border-[#eceff4] bg-[#fcfdff] px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    className="inline-flex min-w-[180px] items-center justify-between rounded-[12px] border border-[#eceff4] bg-[#fcfdff] px-4 py-2.5 text-[13px] font-medium text-slate-700 transition hover:bg-slate-50"
                     aria-expanded={isResultSortMenuOpen}
                     aria-haspopup="menu"
                   >
@@ -1650,15 +1650,15 @@ export default function FlightCatalogInteractiveClient({
                   onClick={() => updateState({ sort: "best" })}
                   className={`px-6 py-4 text-left transition ${state.sort === "best" ? "bg-[#fffaf7] text-[#ef5b2a] shadow-[inset_0_0_0_1px_rgba(239,91,42,0.4)]" : "bg-white hover:bg-slate-50"}`}
                 >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.03em]">{copy.sortBest}</p>
-                  <p className="mt-1 text-sm font-medium opacity-80">{recommendedLabel}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">{copy.sortBest}</p>
+                    <p className="mt-1 text-[13px] font-medium opacity-80">{recommendedLabel}</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => updateState({ sort: "price" })}
                   className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
                 >
-                  <p className="text-sm text-slate-500">{copy.sortPrice}</p>
+                  <p className="text-[13px] text-slate-500">{copy.sortPrice}</p>
                   <p className="mt-1 text-[15px] font-semibold text-slate-900">{cheapestHighlightedItem?.meta.price || "-"}</p>
                 </button>
                 <button
@@ -1666,7 +1666,7 @@ export default function FlightCatalogInteractiveClient({
                   onClick={() => updateState({ sort: "early" })}
                   className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
                 >
-                  <p className="text-sm text-slate-500">{bestTimeLabel}</p>
+                  <p className="text-[13px] text-slate-500">{bestTimeLabel}</p>
                   <p className="mt-1 text-[15px] font-semibold text-slate-900">{earliestHighlightedItem?.meta.departure || "-"}</p>
                 </button>
                 <button
@@ -1674,7 +1674,7 @@ export default function FlightCatalogInteractiveClient({
                   onClick={() => updateState({ sort: "duration" })}
                   className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
                 >
-                  <p className="text-sm text-slate-500">{shortestDurationLabel}</p>
+                  <p className="text-[13px] text-slate-500">{shortestDurationLabel}</p>
                   <p className="mt-1 text-[15px] font-semibold text-slate-900">{fastestHighlightedItem?.meta.duration || "-"}</p>
                 </button>
               </div>
@@ -1703,7 +1703,7 @@ export default function FlightCatalogInteractiveClient({
                         </div>
                         <div className="min-w-0">
                           <p className="truncate text-[18px] font-semibold tracking-[-0.02em] text-slate-950">{meta.airline}</p>
-                          <p className="mt-0.5 truncate text-[11px] text-slate-500">{meta.cabin} • {meta.tripLabel}</p>
+                          <p className="mt-1 truncate text-[12px] text-slate-500">{meta.routeCode} | {meta.cabin}</p>
                         </div>
                       </div>
 
@@ -1731,12 +1731,12 @@ export default function FlightCatalogInteractiveClient({
 
                     <div className="mt-4 flex flex-wrap gap-2">
                       {item.facts.map((fact) => (
-                        <span key={`${item.id}-${fact.label}`} className="rounded-[10px] bg-[#f6f8fb] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
+                        <span key={`${item.id}-${fact.label}`} className="rounded-[10px] border border-[#eef2f6] bg-[#f8fafc] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
                           {fact.label} {fact.value}
                         </span>
                       ))}
                       {meta.highlightBadges.slice(1).map((badge) => (
-                        <span key={badge} className="rounded-[10px] bg-[#f6f8fb] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
+                        <span key={badge} className="rounded-[10px] border border-[#eef2f6] bg-[#f8fafc] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
                           {badge}
                         </span>
                       ))}
@@ -1753,12 +1753,12 @@ export default function FlightCatalogInteractiveClient({
                         <path d="M8 13.2 3.3 8.6A2.9 2.9 0 0 1 7.4 4.5L8 5l.6-.5a2.9 2.9 0 0 1 4.1 4.1Z" />
                       </svg>
                     </button>
-                    <p className="text-xs text-slate-500">{copy.priceLabel}</p>
-                    <p className="mt-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-[#ef5b2a]">{meta.price}</p>
+                    <p className="text-[12px] text-slate-500">{copy.priceLabel}</p>
+                    <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{meta.price}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
                     <p className="mt-2 text-[11px] leading-5 text-slate-500">{meta.seatNote}</p>
                     <div className="mt-5 space-y-2">
-                      <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-sm font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
+                      <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
                       <p className="text-[11px] leading-5 text-slate-500">{copy.supportHint}</p>
