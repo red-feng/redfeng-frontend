@@ -1427,7 +1427,7 @@ export default function FlightCatalogInteractiveClient({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:grid-cols-[260px_minmax(0,1fr)]`}>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:min-h-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start`}>
         <aside className="space-y-3 lg:sticky lg:top-[8.2rem] lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden">
           <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
             <div className="flex items-center justify-between gap-3">
@@ -1559,7 +1559,7 @@ export default function FlightCatalogInteractiveClient({
           </FilterSection>
         </aside>
 
-        <div className="space-y-4">
+        <div className="space-y-4 lg:max-h-[calc(100vh-9rem)] lg:min-h-0 lg:overflow-y-auto lg:pr-2 lg:[scrollbar-gutter:stable]">
           <div className="rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.18)]">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
