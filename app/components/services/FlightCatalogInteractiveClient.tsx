@@ -696,6 +696,7 @@ export default function FlightCatalogInteractiveClient({
   const [canScrollPriceRight, setCanScrollPriceRight] = useState(false)
   const [canScrollSummaryPriceLeft, setCanScrollSummaryPriceLeft] = useState(false)
   const [canScrollSummaryPriceRight, setCanScrollSummaryPriceRight] = useState(false)
+  const [recommendationCardLimit, setRecommendationCardLimit] = useState(8)
   const isScrolledRef = useRef(false)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const summaryPriceTableScrollRef = useRef<HTMLDivElement | null>(null)
@@ -735,6 +736,29 @@ export default function FlightCatalogInteractiveClient({
     syncScrollState()
     window.addEventListener("scroll", syncScrollState, { passive: true })
     return () => window.removeEventListener("scroll", syncScrollState)
+  }, [])
+
+  useEffect(() => {
+    const syncRecommendationCardLimit = () => {
+      const width = window.innerWidth
+      if (width < 640) {
+        setRecommendationCardLimit(4)
+        return
+      }
+      if (width < 1024) {
+        setRecommendationCardLimit(5)
+        return
+      }
+      if (width < 1280) {
+        setRecommendationCardLimit(6)
+        return
+      }
+      setRecommendationCardLimit(8)
+    }
+
+    syncRecommendationCardLimit()
+    window.addEventListener("resize", syncRecommendationCardLimit)
+    return () => window.removeEventListener("resize", syncRecommendationCardLimit)
   }, [])
 
   const availableRegions = [...new Set(items.map((item) => item.region))]
@@ -917,7 +941,7 @@ export default function FlightCatalogInteractiveClient({
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
   const recommendationItems = sortFlightResults(items.filter((item) => matchesFlightItem(item, state, { skipFrom: true, skipTo: true })))
-  const recommendationCards = recommendationItems.slice(0, 8)
+  const recommendationCards = recommendationItems.slice(0, recommendationCardLimit)
   const cheapestRecommendationPrice =
     recommendationCards.length > 0 ? Math.min(...recommendationCards.map((item) => parseFlightPrice(item.meta.price))) : null
 
@@ -1021,7 +1045,9 @@ export default function FlightCatalogInteractiveClient({
   const scrollSummaryPriceTable = (direction: "left" | "right") => {
     const container = summaryPriceTableScrollRef.current
     if (!container) return
-    const step = 280
+    const visibleCardCount =
+      recommendationCardLimit >= 8 ? 4 : recommendationCardLimit >= 6 ? 3 : recommendationCardLimit >= 5 ? 2.5 : 2
+    const step = Math.max(220, Math.round(container.clientWidth / visibleCardCount))
     container.scrollBy({
       left: direction === "right" ? step : -step,
       behavior: "smooth",
