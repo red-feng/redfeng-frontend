@@ -1368,7 +1368,8 @@ export default function FlightCatalogInteractiveClient({
                 ))}
               </div>
             </div>
-            <div className="relative min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-3">
+              <div className="relative min-w-0 flex-1">
               {canScrollSummaryPriceLeft ? (
                 <>
                   <button
@@ -1417,12 +1418,6 @@ export default function FlightCatalogInteractiveClient({
                       </button>
                     )
                   })}
-                  <Link
-                    href={serviceCatalogHref}
-                    className="flex min-w-[124px] snap-start items-center justify-center rounded-[14px] border border-white/45 bg-white/14 px-3 py-2 text-center text-[12px] font-semibold text-white transition hover:bg-white/22"
-                  >
-                    {moreRoutesLabel}
-                  </Link>
                 </div>
               </div>
               {canScrollSummaryPriceRight ? (
@@ -1437,6 +1432,13 @@ export default function FlightCatalogInteractiveClient({
                   </svg>
                 </button>
               ) : null}
+              </div>
+              <Link
+                href={serviceCatalogHref}
+                className="hidden shrink-0 rounded-[14px] border border-white/45 bg-white/14 px-4 py-3 text-center text-[12px] font-semibold text-white transition hover:bg-white/22 xl:inline-flex xl:min-w-[136px] xl:items-center xl:justify-center"
+              >
+                {moreRoutesLabel}
+              </Link>
             </div>
           </div>
         </div>
