@@ -684,8 +684,11 @@ export default function FlightCatalogInteractiveClient({
   const [isResultSortMenuOpen, setIsResultSortMenuOpen] = useState(false)
   const [canScrollPriceLeft, setCanScrollPriceLeft] = useState(false)
   const [canScrollPriceRight, setCanScrollPriceRight] = useState(false)
+  const [canScrollSummaryPriceLeft, setCanScrollSummaryPriceLeft] = useState(false)
+  const [canScrollSummaryPriceRight, setCanScrollSummaryPriceRight] = useState(false)
   const isScrolledRef = useRef(false)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
+  const summaryPriceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const resultSortMenuRef = useRef<HTMLDivElement | null>(null)
   const [openSections, setOpenSections] = useState<Record<FilterSectionKey, boolean>>({
     region: true,
@@ -998,6 +1001,16 @@ export default function FlightCatalogInteractiveClient({
     })
   }
 
+  const scrollSummaryPriceTable = (direction: "left" | "right") => {
+    const container = summaryPriceTableScrollRef.current
+    if (!container) return
+    const step = 280
+    container.scrollBy({
+      left: direction === "right" ? step : -step,
+      behavior: "smooth",
+    })
+  }
+
   useEffect(() => {
     if (!shouldShowCompactStickyBar) {
       setCanScrollPriceLeft(false)
@@ -1023,6 +1036,26 @@ export default function FlightCatalogInteractiveClient({
       window.removeEventListener("resize", syncPriceTableScrollState)
     }
   }, [quickDateOptions, shouldShowCompactStickyBar])
+
+  useEffect(() => {
+    const container = summaryPriceTableScrollRef.current
+    if (!container) return
+
+    const syncSummaryPriceTableScrollState = () => {
+      const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+      setCanScrollSummaryPriceLeft(container.scrollLeft > 8)
+      setCanScrollSummaryPriceRight(container.scrollLeft < maxScrollLeft - 8)
+    }
+
+    syncSummaryPriceTableScrollState()
+    container.addEventListener("scroll", syncSummaryPriceTableScrollState, { passive: true })
+    window.addEventListener("resize", syncSummaryPriceTableScrollState)
+
+    return () => {
+      container.removeEventListener("scroll", syncSummaryPriceTableScrollState)
+      window.removeEventListener("resize", syncSummaryPriceTableScrollState)
+    }
+  }, [quickDateOptions])
 
   useEffect(() => {
     if (!isResultSortMenuOpen) return
@@ -1311,8 +1344,30 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
             <div className="min-w-0 max-w-[520px] rounded-[18px] border border-sky-100/80 bg-white/95 px-3 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.16)]">
-              <div className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden">
-                <div className="flex min-w-max gap-2 pr-1">
+              <div className="relative">
+                {canScrollSummaryPriceLeft ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => scrollSummaryPriceTable("left")}
+                      className="absolute left-1 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                      aria-label="Scroll summary price table left"
+                    >
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                        <path d="M9.5 3.5 5 8l4.5 4.5" />
+                      </svg>
+                    </button>
+                    <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-8 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
+                  </>
+                ) : null}
+                {canScrollSummaryPriceRight ? (
+                  <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-8 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
+                ) : null}
+                <div
+                  ref={summaryPriceTableScrollRef}
+                  className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+                >
+                  <div className="flex min-w-max gap-2 pr-1">
                   {quickDateOptions.map((entry) => {
                     const active = entry.date === state.depart
                     const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
@@ -1339,7 +1394,20 @@ export default function FlightCatalogInteractiveClient({
                       </button>
                     )
                   })}
+                  </div>
                 </div>
+                {canScrollSummaryPriceRight ? (
+                  <button
+                    type="button"
+                    onClick={() => scrollSummaryPriceTable("right")}
+                    className="absolute right-1 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                    aria-label="Scroll summary price table right"
+                  >
+                    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>
