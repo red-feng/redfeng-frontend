@@ -1704,7 +1704,6 @@ export default function FlightCatalogInteractiveClient({
                 </button>
               </div>
             </div>
-            </div>
           </div>
 
           {filteredItems.length === 0 ? (
@@ -1719,68 +1718,72 @@ export default function FlightCatalogInteractiveClient({
             filteredItems.map((item) => {
               const { meta } = item
               return (
-              <article key={item.id} className="overflow-hidden rounded-[20px] border border-[#dce8f6] bg-white shadow-[0_14px_32px_-26px_rgba(15,23,42,0.16)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(15,23,42,0.2)]">
-                <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_220px]">
-                  <div className="p-4">
-                    <div className="grid gap-4 xl:grid-cols-[180px_minmax(0,1fr)] xl:items-center">
+              <article key={item.id} className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
+                <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_250px]">
+                  <div className="p-5">
+                    <div className="grid gap-5 xl:grid-cols-[190px_minmax(0,1fr)] xl:items-start">
                       <div className="flex min-w-0 items-center gap-3">
-                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[14px] border border-sky-100 bg-sky-50">
+                        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-[#eef1f6] bg-white shadow-sm">
                           <Image src={item.image} alt={item.title} fill sizes="48px" className="object-cover" />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-950">{meta.airline}</p>
+                          <p className="truncate text-[18px] font-semibold tracking-[-0.02em] text-slate-950">{meta.airline}</p>
                           <p className="mt-0.5 truncate text-[11px] text-slate-500">{meta.cabin} • {meta.tripLabel}</p>
                         </div>
                       </div>
 
-                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)_auto] md:items-center">
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_110px_minmax(0,1fr)_auto] md:items-start">
                         <div>
-                          <p className="text-xl font-semibold tracking-[-0.03em] text-slate-950">{meta.departure}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">{meta.origin}</p>
+                          <p className="text-[33px] font-semibold leading-none tracking-[-0.05em] text-slate-950">{meta.departure}</p>
+                          <p className="mt-1 text-[13px] font-semibold text-slate-700">{meta.origin}</p>
+                          <p className="mt-1 text-[11px] text-slate-400">{item.location}</p>
                         </div>
-                        <div className="text-center">
+                        <div className="pt-2 text-center">
                           <p className="text-xs font-medium text-slate-500">{meta.duration}</p>
-                          <div className="mt-1.5 h-px bg-slate-200" />
-                          <p className="mt-1.5 text-[11px] text-sky-700">{meta.transit}</p>
+                          <div className="mt-2 h-px bg-slate-200" />
+                          <p className="mt-2 text-[12px] font-medium text-[#ef5b2a]">{meta.transit}</p>
                         </div>
                         <div>
-                          <p className="text-xl font-semibold tracking-[-0.03em] text-slate-950">{meta.arrival}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">{meta.destination}</p>
+                          <p className="text-[33px] font-semibold leading-none tracking-[-0.05em] text-slate-950">{meta.arrival}</p>
+                          <p className="mt-1 text-[13px] font-semibold text-slate-700">{meta.destination}</p>
+                          <p className="mt-1 text-[11px] text-slate-400">{state.to || copy.toLabel}</p>
                         </div>
                         <div className="flex flex-wrap gap-1.5 md:justify-end">
-                          <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-600">{meta.routeCode}</span>
-                          <span className="rounded-full bg-orange-50 px-2 py-1 text-[10px] font-medium text-orange-700">{copy.baggageTag}</span>
-                          <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-medium text-emerald-700">{copy.refundTag}</span>
+                          <span className="rounded-full bg-[#fff4dd] px-2.5 py-1 text-[10px] font-semibold text-[#c98a18]">{meta.highlightBadges[0] || copy.sortBest}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
                       {item.facts.map((fact) => (
-                        <span key={`${item.id}-${fact.label}`} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                          {fact.label}: {fact.value}
+                        <span key={`${item.id}-${fact.label}`} className="rounded-[10px] bg-[#f6f8fb] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
+                          {fact.label} {fact.value}
                         </span>
                       ))}
-                      {meta.highlightBadges.map((badge) => (
-                        <span key={badge} className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
+                      {meta.highlightBadges.slice(1).map((badge) => (
+                        <span key={badge} className="rounded-[10px] bg-[#f6f8fb] px-2.5 py-1.5 text-[11px] font-medium text-slate-600">
                           {badge}
                         </span>
                       ))}
                     </div>
 
-                    <div className="mt-3 flex flex-col gap-1.5 text-xs leading-6 text-slate-500">
+                    <div className="mt-4 text-[12px] leading-6 text-slate-500">
                       <p>{item.availabilityNote}</p>
-                      <p>{item.statusNote}</p>
                     </div>
                   </div>
 
-                  <div className="flex flex-col justify-center border-t border-[#dce8f6] bg-[linear-gradient(180deg,#f8fbff_0%,#fffaf6_100%)] p-4 xl:border-l xl:border-t-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{copy.fareLabel}</p>
-                    <p className="mt-1 text-xs text-slate-500">{copy.priceLabel}</p>
-                    <p className="mt-1 text-[24px] font-semibold leading-none tracking-[-0.04em] text-[#ef4423]">{meta.price}</p>
+                  <div className="relative flex flex-col justify-center border-t border-[#eef1f6] bg-white p-5 xl:border-l xl:border-t-0">
+                    <button type="button" aria-label="Save fare" className="absolute right-4 top-4 text-slate-300 transition hover:text-slate-500">
+                      <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+                        <path d="M8 13.2 3.3 8.6A2.9 2.9 0 0 1 7.4 4.5L8 5l.6-.5a2.9 2.9 0 0 1 4.1 4.1Z" />
+                      </svg>
+                    </button>
+                    <p className="text-xs text-slate-500">{copy.priceLabel}</p>
+                    <p className="mt-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-[#ef5b2a]">{meta.price}</p>
+                    <p className="mt-1 text-[11px] text-slate-400">/pax</p>
                     <p className="mt-2 text-[11px] leading-5 text-slate-500">{meta.seatNote}</p>
-                    <div className="mt-4 space-y-2">
-                      <Link href={supportHref} className="block rounded-[14px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-sm font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
+                    <div className="mt-5 space-y-2">
+                      <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-sm font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
                       <p className="text-[11px] leading-5 text-slate-500">{copy.supportHint}</p>
