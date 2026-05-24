@@ -820,7 +820,6 @@ export default function FlightCatalogInteractiveClient({
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
-  const sortMenuLabel = locale === "en" ? "More" : locale === "zh" ? "更多" : "Lainnya"
   const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
   const currentSortLabel =
     state.sort === "price"
@@ -888,14 +887,6 @@ export default function FlightCatalogInteractiveClient({
         : `${state.priceBands.length} ${copy.priceBlock.toLowerCase()}`,
   ]
 
-  const topDetailChips = [
-    { label: copy.fromLabel, value: state.from },
-    ...(state.tripMode === "multi_city" ? [{ label: copy.viaLabel, value: state.via }] : []),
-    { label: copy.toLabel, value: state.to },
-    { label: copy.departLabel, value: state.depart },
-    ...(state.tripMode === "round_trip" ? [{ label: copy.returnLabel, value: state.returnDate }] : []),
-    { label: copy.passengerClassLabel, value: `${state.passengers}, ${state.cabin}` },
-  ]
   const latestDepartureItem = filteredItems.reduce<FlightItem | null>((latest, item) => {
     if (!latest) return item
     return parseFlightTime(item.meta.departure) > parseFlightTime(latest.meta.departure) ? item : latest
@@ -912,7 +903,6 @@ export default function FlightCatalogInteractiveClient({
     if (!fastest) return item
     return parseFlightDuration(item.meta.duration) < parseFlightDuration(fastest.meta.duration) ? item : fastest
   }, null)
-  const bestHighlightedItem = filteredItems[0] || null
   const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
     if (!lowest) return item
     return parseFlightPrice(item.meta.price) < parseFlightPrice(lowest.meta.price) ? item : lowest
@@ -921,22 +911,6 @@ export default function FlightCatalogInteractiveClient({
     if (!earliest) return item
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
-  const additionalSortLabel =
-    state.sort === "depart_late"
-      ? copy.sortDepartLate
-      : state.sort === "arrive_early"
-        ? copy.sortArriveEarly
-        : state.sort === "arrive_late"
-          ? copy.sortArriveLate
-          : copy.sortEarly
-  const additionalSortValue =
-    state.sort === "depart_late"
-      ? latestDepartureItem?.meta.departure || "-"
-      : state.sort === "arrive_early"
-        ? earliestArrivalItem?.meta.arrival || "-"
-        : state.sort === "arrive_late"
-          ? latestArrivalItem?.meta.arrival || "-"
-          : earliestHighlightedItem?.meta.departure || "-"
   const recommendationCards = filteredItems.slice(0, 4)
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
