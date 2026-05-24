@@ -172,6 +172,14 @@ function parseFlightTime(value: string) {
   return hour * 60 + minute
 }
 
+function parseFlightDuration(value: string) {
+  const hourMatch = value.match(/(\d+)\s*j/i)
+  const minuteMatch = value.match(/(\d+)\s*m/i)
+  const hours = hourMatch ? Number(hourMatch[1] || "0") : 0
+  const minutes = minuteMatch ? Number(minuteMatch[1] || "0") : 0
+  return hours * 60 + minutes
+}
+
 function matchesWindow(minutes: number, window: string) {
   if (window === "morning") return minutes < 720
   if (window === "afternoon") return minutes >= 720 && minutes < 1080
@@ -296,10 +304,10 @@ function matchesFlightItem(item: FlightItem, state: FlightFilterState, options: 
 }
 
 function filterLinkClass(active: boolean) {
-  return `flex items-center gap-3 rounded-[14px] border px-3 py-2.5 text-sm transition ${
+  return `flex items-center gap-3 rounded-[12px] border border-transparent px-3 py-2 text-sm transition ${
     active
-      ? "border-sky-200 bg-sky-50 text-sky-700"
-      : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:text-sky-700"
+      ? "bg-[#fff3ec] text-[#ef4423]"
+      : "bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900"
   }`
 }
 
@@ -330,17 +338,17 @@ function FilterSection({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+    <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
       <button
         type="button"
         onClick={onToggle}
         className="flex w-full items-center justify-between gap-3 text-left"
         aria-expanded={open}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{title}</p>
+        <p className="text-[13px] font-semibold text-slate-900">{title}</p>
         <span
           className={`inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition ${
-            open ? "bg-sky-50 text-sky-700" : "bg-white"
+            open ? "bg-[#fff4ec] text-[#ef4423]" : "bg-white"
           }`}
           aria-hidden="true"
         >
@@ -776,6 +784,7 @@ export default function FlightCatalogInteractiveClient({
     .sort((left, right) => {
       if (state.sort === "price") return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
       if (state.sort === "early") return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
+      if (state.sort === "duration") return parseFlightDuration(left.meta.duration) - parseFlightDuration(right.meta.duration)
       if (state.sort === "depart_late") return parseFlightTime(right.meta.departure) - parseFlightTime(left.meta.departure)
       if (state.sort === "arrive_early") return parseFlightTime(left.meta.arrival) - parseFlightTime(right.meta.arrival)
       if (state.sort === "arrive_late") return parseFlightTime(right.meta.arrival) - parseFlightTime(left.meta.arrival)
@@ -818,6 +827,8 @@ export default function FlightCatalogInteractiveClient({
       ? copy.sortPrice
       : state.sort === "early"
         ? copy.sortEarly
+        : state.sort === "duration"
+          ? shortestDurationLabel
         : state.sort === "depart_late"
           ? copy.sortDepartLate
           : state.sort === "arrive_early"
@@ -825,6 +836,25 @@ export default function FlightCatalogInteractiveClient({
             : state.sort === "arrive_late"
               ? copy.sortArriveLate
               : copy.sortBest
+
+  const recommendedLabel = locale === "en" ? "Recommended searches" : locale === "zh" ? "推荐搜索" : "Rekomendasi pencarian"
+  const recommendationLead = locale === "en" ? "Affordable flights on your favorite routes" : locale === "zh" ? "为你喜爱的航线提供更经济的选择" : "Terbang ekonomis dengan rute favoritmu"
+  const shortestDurationLabel = locale === "en" ? "Shortest duration" : locale === "zh" ? "最短时长" : "Durasi tersingkat"
+  const bestTimeLabel = locale === "en" ? "Best time" : locale === "zh" ? "最佳时间" : "Waktu terbaik"
+  const resultsCountLabel =
+    locale === "en"
+      ? `Showing ${filteredItems.length} of ${items.length} flights`
+      : locale === "zh"
+        ? `显示 ${filteredItems.length}/${items.length} 个航班`
+        : `Menampilkan ${filteredItems.length} dari ${items.length} penerbangan`
+  const moreRoutesLabel = locale === "en" ? "See more" : locale === "zh" ? "查看更多" : "Lihat lebih banyak"
+  const resetInlineLabel = locale === "en" ? "Reset" : locale === "zh" ? "重置" : "Reset"
+  const benefitItems =
+    locale === "en"
+      ? ["Best fares", "Trusted booking", "24/7 support"]
+      : locale === "zh"
+        ? ["优惠价格", "安心预订", "24/7 客服"]
+        : ["Harga terbaik", "Aman & terpercaya", "Layanan pelanggan 24/7"]
 
   const topSummaryChips = [
     state.q || emptyKeyword,
@@ -878,6 +908,10 @@ export default function FlightCatalogInteractiveClient({
     if (!latest) return item
     return parseFlightTime(item.meta.arrival) > parseFlightTime(latest.meta.arrival) ? item : latest
   }, null)
+  const fastestHighlightedItem = filteredItems.reduce<FlightItem | null>((fastest, item) => {
+    if (!fastest) return item
+    return parseFlightDuration(item.meta.duration) < parseFlightDuration(fastest.meta.duration) ? item : fastest
+  }, null)
   const bestHighlightedItem = filteredItems[0] || null
   const cheapestHighlightedItem = filteredItems.reduce<FlightItem | null>((lowest, item) => {
     if (!lowest) return item
@@ -903,6 +937,7 @@ export default function FlightCatalogInteractiveClient({
         : state.sort === "arrive_late"
           ? latestArrivalItem?.meta.arrival || "-"
           : earliestHighlightedItem?.meta.departure || "-"
+  const recommendationCards = filteredItems.slice(0, 4)
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
     tripMode,
@@ -1085,7 +1120,7 @@ export default function FlightCatalogInteractiveClient({
   }, [isResultSortMenuOpen])
 
   return (
-    <main className={`${homeLayoutLock.pageXClass} pb-10 pt-5 md:pb-14`}>
+    <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.38),transparent_28%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.32),transparent_22%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
         <div className="fixed inset-x-0 top-0 z-30 border-b border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
@@ -1227,18 +1262,18 @@ export default function FlightCatalogInteractiveClient({
         </div>
       ) : null}
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`}>
         {!shouldShowCompactStickyBar ? (
           <form
             onSubmit={(event) => {
               event.preventDefault()
               applyDraft()
             }}
-            className={`rounded-[28px] border border-[#f2d6c8] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] shadow-[0_24px_52px_-30px_rgba(15,23,42,0.18)] transition-all duration-200 ${
-              isScrolled ? "p-2.5 shadow-[0_22px_48px_-24px_rgba(15,23,42,0.22)]" : "p-3"
+            className={`rounded-[30px] border border-[#f4ebe4] bg-white shadow-[0_22px_56px_-36px_rgba(15,23,42,0.22)] transition-all duration-200 ${
+              isScrolled ? "p-3 shadow-[0_24px_56px_-28px_rgba(15,23,42,0.22)]" : "p-4"
             }`}
           >
-            <div className="mb-3 flex gap-4 overflow-x-auto border-b border-[#f3dfd3] px-2 pb-2.5 text-sm font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mb-4 flex gap-6 overflow-x-auto border-b border-[#f5ede7] px-2 pb-3 text-[15px] font-semibold text-[#17324d] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {tripTabs.map((tab) => {
                 const active = draft.tripMode === tab.key
                 return (
@@ -1255,7 +1290,7 @@ export default function FlightCatalogInteractiveClient({
                       }))
                     }}
                     className={`inline-flex shrink-0 items-center border-b-[2px] pb-[0.72rem] transition ${
-                      active ? "border-[#ef3b2d] text-[#ef3b2d]" : "border-transparent text-slate-600 hover:text-[#ef4423]"
+                      active ? "border-[#ef5b2a] text-[#ef5b2a]" : "border-transparent text-slate-600 hover:text-[#ef4423]"
                     }`}
                   >
                     {tab.label}
@@ -1263,7 +1298,7 @@ export default function FlightCatalogInteractiveClient({
                 )
               })}
             </div>
-            <div className={`rounded-[24px] border border-[#f2ddd1] bg-[#fff6ef] p-2 transition-all duration-200 ${isScrolled ? "p-1.5" : "p-2.5"}`}>
+            <div className={`rounded-[24px] border border-[#f1ebe5] bg-[#fffdfa] p-2.5 transition-all duration-200 ${isScrolled ? "p-2" : "p-3"}`}>
               <div
                 className={`grid gap-3 transition-all duration-200 ${getCatalogGridClass(draft.tripMode)} ${isScrolled ? "xl:gap-2" : ""}`}
               >
@@ -1289,7 +1324,7 @@ export default function FlightCatalogInteractiveClient({
                         calendarReferenceValue={getCalendarReferenceValue(heroFields, field)}
                         onValueChange={(value) => handleHeroFieldChange(index, value)}
                         locale={locale}
-                        className="rounded-[999px] px-5 py-3"
+                        className="rounded-[16px] border-[#eceff4] px-4 py-3"
                       />
                     </CatalogDesktopFieldShell>
                     {draft.tripMode !== "multi_city" && index === 0 ? (
@@ -1298,7 +1333,7 @@ export default function FlightCatalogInteractiveClient({
                         type="button"
                         onClick={handleHeroSwap}
                         aria-label="Swap route"
-                        className="relative mx-auto hidden h-[58px] w-[40px] items-center justify-center self-end text-[#ff5a43] xl:flex"
+                        className="relative mx-auto hidden h-[56px] w-[40px] items-center justify-center self-end text-[#ff5a43] xl:flex"
                       >
                         <span className="absolute left-[6px] top-1/2 h-7 w-px -translate-y-1/2 bg-[#f3d7c8]" />
                         <SwapIcon className="h-[15px] w-[15px]" />
@@ -1307,11 +1342,11 @@ export default function FlightCatalogInteractiveClient({
                     ) : null}
                   </Fragment>
                 ))}
-                <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[18px] bg-[linear-gradient(135deg,#ff6541_0%,#ef4423_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.82)] transition hover:brightness-105 xl:mt-[26px] xl:h-[52px] xl:w-[52px] xl:self-start">
+                <button type="submit" aria-label={copy.refineSearch} className="inline-flex items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#ff7b3f_0%,#ff5a28_100%)] text-white shadow-[0_18px_34px_-18px_rgba(239,68,35,0.72)] transition hover:brightness-105 xl:mt-[25px] xl:h-[52px] xl:w-[60px] xl:self-start">
                   <SearchIcon />
                 </button>
               </div>
-              <div className="mt-2.5 grid gap-2 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
+              <div className="mt-2.5 grid gap-2 xl:hidden xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-center">
                 <label className="block rounded-[16px] border border-[#f1dbce] bg-white px-3.5 py-2 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.12)]">
                   <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6a819b]">{filterKeywordLabel}</span>
                   <input value={draft.q} onChange={(event) => syncDraftAndState((current) => ({ ...current, q: event.target.value }))} placeholder={searchPlaceholder} className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400" />
@@ -1337,104 +1372,96 @@ export default function FlightCatalogInteractiveClient({
         ) : null}
       </section>
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-4`}>
-        <div className="rounded-[20px] border border-[#f3ccb4] bg-[linear-gradient(180deg,#ffba90_0%,#f99a68_48%,#ef7646_100%)] px-4 py-2.5 shadow-[0_18px_34px_-28px_rgba(239,98,44,0.24)] sm:px-5">
-          <div className="flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-white/90">{copy.searchSummary}</p>
-                <span className="rounded-full bg-white/16 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/20">
-                  {filteredItems.length} {copy.flightsFound}
-                </span>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
+        <div className="rounded-[20px] border border-[#ffc49b] bg-[linear-gradient(135deg,#ff8e62_0%,#ffb67d_100%)] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-[430px]">
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.02em] text-white">{recommendedLabel}</p>
+                <p className="text-sm font-medium text-white/88">{recommendationLead}</p>
               </div>
-              <div className="mt-1.5 flex flex-wrap gap-1.5">
-                {topDetailChips.map((chip) => (
-                  <div key={chip.label} className="rounded-full border border-white/18 bg-white/10 px-3 py-1.5 text-[12px] shadow-sm backdrop-blur-sm">
-                    <span className="font-semibold text-white">{chip.label}:</span>{" "}
-                    <span className="font-medium text-white/90">{chip.value}</span>
+              <div className="mt-4 flex flex-wrap gap-4">
+                {benefitItems.map((benefit, index) => (
+                  <div key={benefit} className="inline-flex items-center gap-2 text-sm font-medium text-white">
+                    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/35 bg-white/10 text-[11px]">
+                      {index === 0 ? "◎" : index === 1 ? "♡" : "↗"}
+                    </span>
+                    <span>{benefit}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="min-w-0 max-w-[520px] rounded-[18px] border border-white/24 bg-white/14 px-3 py-2.5 shadow-[0_14px_28px_-24px_rgba(103,33,10,0.14)] backdrop-blur-sm">
-              <div className="relative">
-                {canScrollSummaryPriceLeft ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => scrollSummaryPriceTable("left")}
-                      className="absolute left-1 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
-                      aria-label="Scroll summary price table left"
-                    >
-                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
-                        <path d="M9.5 3.5 5 8l4.5 4.5" />
-                      </svg>
-                    </button>
-                    <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-8 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
-                  </>
-                ) : null}
-                {canScrollSummaryPriceRight ? (
-                  <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-8 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
-                ) : null}
-                <div
-                  ref={summaryPriceTableScrollRef}
-                  className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
-                >
-                  <div className="flex min-w-max gap-2 pr-1">
-                  {quickDateOptions.map((entry) => {
-                    const active = entry.date === state.depart
-                    const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
-                    return (
-                      <button
-                        key={`summary-price-${entry.date}`}
-                        type="button"
-                        onClick={() => handleQuickDateSelect(entry.date)}
-                        className={`min-w-[132px] snap-start rounded-[16px] border px-3 py-2.5 text-left transition ${
-                          active
-                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_12px_24px_-20px_rgba(23,149,241,0.55)]"
-                            : isCheapest
-                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
-                              : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
-                        }`}
-                      >
-                        <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                        <p className={`mt-1 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-800"}`}>{formatCompactPrice(entry.price, locale)}</p>
-                        {active ? (
-                          <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p>
-                        ) : isCheapest ? (
-                          <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p>
-                        ) : null}
-                      </button>
-                    )
-                  })}
-                  </div>
-                </div>
-                {canScrollSummaryPriceRight ? (
+            <div className="relative min-w-0 flex-1">
+              {canScrollSummaryPriceLeft ? (
+                <>
                   <button
                     type="button"
-                    onClick={() => scrollSummaryPriceTable("right")}
-                    className="absolute right-1 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
-                    aria-label="Scroll summary price table right"
+                    onClick={() => scrollSummaryPriceTable("left")}
+                    className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#ef6a38] shadow-sm transition hover:bg-white xl:inline-flex"
+                    aria-label="Scroll recommendation cards left"
                   >
                     <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
-                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                      <path d="M9.5 3.5 5 8l4.5 4.5" />
                     </svg>
                   </button>
-                ) : null}
+                  <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-[#ff9467] via-[#ff9b6d]/90 to-transparent xl:block" />
+                </>
+              ) : null}
+              {canScrollSummaryPriceRight ? (
+                <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-[#ffb67d] via-[#ffb67d]/90 to-transparent xl:block" />
+              ) : null}
+              <div
+                ref={summaryPriceTableScrollRef}
+                className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+              >
+                <div className="flex min-w-max items-stretch gap-3 pr-1">
+                  {recommendationCards.map((item) => (
+                    <button
+                      key={`recommendation-${item.id}`}
+                      type="button"
+                      onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
+                      className="min-w-[150px] snap-start rounded-[14px] bg-white px-4 py-3 text-left text-slate-900 shadow-[0_18px_26px_-22px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5"
+                    >
+                      <p className="text-[13px] font-semibold text-emerald-700">{item.meta.origin} → {item.meta.destination}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">{copy.priceLabel}</p>
+                      <p className="mt-1 text-[13px] font-semibold text-slate-900">{item.meta.price}</p>
+                    </button>
+                  ))}
+                  <Link
+                    href={serviceCatalogHref}
+                    className="flex min-w-[120px] snap-start items-center justify-center rounded-[14px] bg-white/16 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/22"
+                  >
+                    {moreRoutesLabel}
+                  </Link>
+                </div>
               </div>
+              {canScrollSummaryPriceRight ? (
+                <button
+                  type="button"
+                  onClick={() => scrollSummaryPriceTable("right")}
+                  className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#ef6a38] shadow-sm transition hover:bg-white xl:inline-flex"
+                  aria-label="Scroll recommendation cards right"
+                >
+                  <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                    <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                  </svg>
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid gap-4 lg:grid-cols-[272px_minmax(0,1fr)]`}>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:grid-cols-[260px_minmax(0,1fr)]`}>
         <aside className="space-y-3 lg:sticky lg:top-[8.2rem] lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden">
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white p-4 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.16)]">
+          <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-900">{copy.leftTitle}</p>
-              <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">{filteredItems.length}</span>
+              <p className="text-[15px] font-semibold text-slate-900">Filter Pencarian</p>
+              <button type="button" onClick={resetAll} className="text-sm font-semibold text-[#ef5b2a] transition hover:opacity-80">
+                {resetInlineLabel}
+              </button>
             </div>
-            <p className="mt-2 text-xs leading-6 text-slate-500">{copy.leftBody}</p>
+            <p className="mt-3 text-xs leading-6 text-slate-500">{copy.leftBody}</p>
           </div>
 
           <FilterSection title={copy.regionBlock} open={openSections.region} onToggle={() => toggleSection("region")}>
@@ -1557,81 +1584,24 @@ export default function FlightCatalogInteractiveClient({
           </FilterSection>
         </aside>
 
-        <div className="space-y-3">
-          <div className="rounded-[20px] border border-[#dce8f6] bg-white px-4 py-2.5 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.14)]">
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-slate-900">{filteredItems.length} {copy.flightsFound}</p>
-                <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
-                  {copy.sortLabel}: {currentSortLabel}
-                </span>
-              </div>
-              <div className="relative overflow-visible rounded-[20px] border border-[#e4edf8] bg-[#fbfdff] shadow-[0_18px_36px_-30px_rgba(15,23,42,0.14)]">
-                <div className="rounded-[22px]">
-                  <div className="grid gap-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_240px] xl:items-stretch">
-                <button
-                  type="button"
-                  onClick={() => updateState({ sort: "price" })}
-                  className={`px-4 py-4 text-left transition xl:min-h-[118px] ${
-                    state.sort === "price"
-                      ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
-                      : "bg-white hover:bg-sky-50/40"
-                  }`}
-                >
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] ${state.sort === "price" ? "bg-white text-[#0f6fcb] shadow-[0_10px_18px_-14px_rgba(23,149,241,0.65)]" : "bg-slate-100 text-slate-500"}`}>
-                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                      <path d="M3 5.5h10" />
-                      <path d="M3 8h7" />
-                      <path d="M3 10.5h5" />
-                    </svg>
-                  </span>
-                  <p className={`mt-3 text-[15px] font-semibold ${state.sort === "price" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortPrice}</p>
-                  <p className={`mt-2 text-[18px] font-semibold ${state.sort === "price" ? "text-[#0b62b4]" : "text-slate-600"}`}>{cheapestHighlightedItem?.meta.price || "-"}</p>
-                  <p className={`mt-1 text-sm font-medium ${state.sort === "price" ? "text-sky-700/80" : "text-slate-500"}`}>{cheapestHighlightedItem?.meta.duration || "-"}</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => updateState({ sort: "best" })}
-                  className={`border-t border-[#e4edf8] px-4 py-4 text-left transition xl:min-h-[118px] xl:border-l xl:border-t-0 ${
-                    state.sort === "best"
-                      ? "border-b-2 border-[#1795f1] bg-[linear-gradient(180deg,#dff0ff_0%,#eef7ff_46%,#f8fbff_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_18px_30px_-24px_rgba(23,149,241,0.38)]"
-                      : "bg-white hover:bg-sky-50/40"
-                  }`}
-                >
-                  <span className={`inline-flex h-10 w-10 items-center justify-center rounded-[14px] ${state.sort === "best" ? "bg-white text-[#0f6fcb] shadow-[0_10px_18px_-14px_rgba(23,149,241,0.65)]" : "bg-slate-100 text-slate-500"}`}>
-                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                      <path d="m8 2.5 1.6 3.24 3.58.52-2.59 2.52.61 3.56L8 10.66 4.8 12.34l.61-3.56L2.82 6.26l3.58-.52L8 2.5Z" />
-                    </svg>
-                  </span>
-                  <p className={`mt-3 text-[15px] font-semibold ${state.sort === "best" ? "text-[#0f6fcb]" : "text-slate-900"}`}>{copy.sortBest}</p>
-                  <p className={`mt-2 text-[18px] font-semibold ${state.sort === "best" ? "text-[#0b62b4]" : "text-slate-600"}`}>{bestHighlightedItem?.meta.price || "-"}</p>
-                  <p className={`mt-1 text-sm font-medium ${state.sort === "best" ? "text-sky-700/80" : "text-slate-500"}`}>{bestHighlightedItem?.meta.duration || "-"}</p>
-                </button>
-                <div ref={resultSortMenuRef} className="relative border-t border-[#e4edf8] bg-white xl:border-l xl:border-t-0">
+        <div className="space-y-4">
+          <div className="rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.18)]">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-medium text-slate-500">{resultsCountLabel}</p>
+                <div ref={resultSortMenuRef} className="relative flex items-center gap-3">
+                  <span className="text-sm text-slate-500">{copy.sortLabel}:</span>
                   <button
                     type="button"
                     onClick={() => setIsResultSortMenuOpen((current) => !current)}
-                    className="flex h-full w-full items-center justify-between px-4 py-4 text-left transition hover:bg-sky-50/40 xl:min-h-[118px]"
+                    className="inline-flex min-w-[170px] items-center justify-between rounded-[12px] border border-[#eceff4] bg-[#fcfdff] px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     aria-expanded={isResultSortMenuOpen}
                     aria-haspopup="menu"
                   >
-                    <div>
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-[14px] bg-slate-100 text-slate-500">
-                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                          <path d="M2.5 4.5h11" />
-                          <path d="M2.5 8h7.5" />
-                          <path d="M2.5 11.5h4.5" />
-                        </svg>
-                      </span>
-                      <p className="mt-2.5 text-[15px] font-semibold text-slate-500">{sortMenuLabel}</p>
-                      <p className="mt-2 text-[16px] font-semibold text-slate-900">{additionalSortLabel}</p>
-                      <p className="mt-1 text-sm font-medium text-slate-500">{additionalSortValue}</p>
-                    </div>
-                    <div className="flex items-center gap-3 text-slate-500">
-                      <svg viewBox="0 0 16 16" className={`h-4 w-4 fill-none stroke-current stroke-[2] transition ${isResultSortMenuOpen ? "rotate-180" : ""}`}>
-                        <path d="M3.5 6.5 8 11l4.5-4.5" />
-                      </svg>
-                    </div>
+                    <span>{currentSortLabel}</span>
+                    <svg viewBox="0 0 16 16" className={`h-4 w-4 fill-none stroke-current stroke-[2] transition ${isResultSortMenuOpen ? "rotate-180" : ""}`}>
+                      <path d="M3.5 6.5 8 11l4.5-4.5" />
+                    </svg>
                   </button>
                   {isResultSortMenuOpen ? (
                     <div className="absolute right-0 top-[calc(100%+0.6rem)] z-20 w-full min-w-[260px] overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.24)]" role="menu">
@@ -1698,9 +1668,42 @@ export default function FlightCatalogInteractiveClient({
                     </div>
                   ) : null}
                 </div>
-                  </div>
-                </div>
               </div>
+              <div className="grid overflow-hidden rounded-[18px] border border-[#f0f1f5] xl:grid-cols-4">
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "best" })}
+                  className={`px-6 py-4 text-left transition ${state.sort === "best" ? "bg-[#fffaf7] text-[#ef5b2a] shadow-[inset_0_0_0_1px_rgba(239,91,42,0.4)]" : "bg-white hover:bg-slate-50"}`}
+                >
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.03em]">{copy.sortBest}</p>
+                  <p className="mt-1 text-sm font-medium opacity-80">{recommendedLabel}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "price" })}
+                  className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
+                >
+                  <p className="text-sm text-slate-500">{copy.sortPrice}</p>
+                  <p className="mt-1 text-[15px] font-semibold text-slate-900">{cheapestHighlightedItem?.meta.price || "-"}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "early" })}
+                  className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
+                >
+                  <p className="text-sm text-slate-500">{bestTimeLabel}</p>
+                  <p className="mt-1 text-[15px] font-semibold text-slate-900">{earliestHighlightedItem?.meta.departure || "-"}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateState({ sort: "duration" })}
+                  className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
+                >
+                  <p className="text-sm text-slate-500">{shortestDurationLabel}</p>
+                  <p className="mt-1 text-[15px] font-semibold text-slate-900">{fastestHighlightedItem?.meta.duration || "-"}</p>
+                </button>
+              </div>
+            </div>
             </div>
           </div>
 
