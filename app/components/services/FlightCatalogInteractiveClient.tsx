@@ -1387,24 +1387,24 @@ export default function FlightCatalogInteractiveClient({
               ) : null}
               <div
                 ref={summaryPriceTableScrollRef}
-                className="overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+                className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
               >
-                <div className="flex min-w-max items-stretch gap-3 pr-1">
+                <div className="flex min-w-max items-stretch gap-2 pr-1">
                   {recommendationCards.map((item) => (
                     <button
                       key={`recommendation-${item.id}`}
                       type="button"
                       onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
-                      className="min-w-[150px] snap-start rounded-[14px] bg-white px-4 py-3 text-left text-slate-900 shadow-[0_18px_26px_-22px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5"
+                      className="min-w-[124px] snap-start rounded-[14px] border border-emerald-200 bg-emerald-50/70 px-3 py-2 text-left text-emerald-700 transition hover:border-emerald-300"
                     >
                       <p className="text-[13px] font-semibold text-emerald-700">{item.meta.origin} → {item.meta.destination}</p>
-                      <p className="mt-1 text-[11px] text-slate-500">{copy.priceLabel}</p>
-                      <p className="mt-1 text-[13px] font-semibold text-slate-900">{item.meta.price}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">{copy.priceLabel}</p>
+                      <p className="mt-0.5 text-[12px] font-semibold text-emerald-700">{item.meta.price}</p>
                     </button>
                   ))}
                   <Link
                     href={serviceCatalogHref}
-                    className="flex min-w-[120px] snap-start items-center justify-center rounded-[14px] bg-white/16 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/22"
+                    className="flex min-w-[124px] snap-start items-center justify-center rounded-[14px] border border-white/45 bg-white/14 px-3 py-2 text-center text-[12px] font-semibold text-white transition hover:bg-white/22"
                   >
                     {moreRoutesLabel}
                   </Link>
