@@ -1623,86 +1623,58 @@ export default function FlightCatalogInteractiveClient({
 
       {isRecommendationCalendarOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/40 px-4 pb-6 pt-16 backdrop-blur-[2px] xl:pt-[176px]"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/40 px-4 pb-6 pt-16 backdrop-blur-[2px] xl:pt-[168px]"
           onClick={() => setIsRecommendationCalendarOpen(false)}
         >
           <div
-            className="relative w-full max-w-[760px] overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
+            className="relative w-full max-w-[792px] overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
-              onClick={() => setIsRecommendationCalendarOpen(false)}
-              className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-50 hover:text-slate-700"
-              aria-label="Close calendar"
-            >
-              <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-                <path d="M4 4 12 12M12 4 4 12" />
-              </svg>
-            </button>
-
             <div className="px-[18px] py-[18px]">
               <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className={`grid gap-3 ${state.tripMode === "round_trip" ? "md:grid-cols-[372px_auto]" : "md:grid-cols-[372px]"}`}>
-                    <div>
-                      <p className="text-[13px] font-medium text-slate-500">Departure date</p>
-                      <button
-                        type="button"
-                        onClick={() => setRecommendationCalendarTarget("depart")}
-                        className={`mt-2 flex h-[44px] w-full max-w-[372px] items-center gap-3 rounded-[10px] border px-4 text-left transition ${
-                          recommendationCalendarTarget === "depart" ? "border-[#1a73e8] bg-white" : "border-slate-200 bg-white hover:border-sky-200"
-                        }`}
-                      >
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] bg-slate-100 text-slate-500">
-                          <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                            <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
-                            <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
-                          </svg>
-                        </span>
-                        <span className="text-[16px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
-                      </button>
-                    </div>
-                    {state.tripMode === "round_trip" ? (
-                      <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-slate-900 md:mt-8">
-                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${recommendationCalendarTarget === "return" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-slate-300 bg-white text-transparent"}`}>
-                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
-                            <path d="m3.5 8 2.5 2.5L12.5 4.5" />
-                          </svg>
-                        </span>
-                        <button type="button" onClick={() => setRecommendationCalendarTarget("return")}>
-                          Return Date
-                        </button>
-                      </label>
-                    ) : null}
+                <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
+                  <div>
+                    <p className="text-[13px] font-medium text-slate-500">Departure date</p>
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationCalendarTarget("depart")}
+                      className={`mt-2 flex h-[44px] w-full max-w-[372px] items-center gap-3 rounded-[10px] border px-4 text-left transition ${
+                        recommendationCalendarTarget === "depart" ? "border-[#1a73e8] bg-white" : "border-slate-200 bg-white hover:border-sky-200"
+                      }`}
+                    >
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] bg-slate-100 text-slate-500">
+                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                          <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                          <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                        </svg>
+                      </span>
+                      <span className="text-[16px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
+                    </button>
                   </div>
+                  <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-slate-900 md:mt-8">
+                    <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${state.tripMode === "round_trip" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-slate-300 bg-white text-transparent"}`}>
+                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                        <path d="m3.5 8 2.5 2.5L12.5 4.5" />
+                      </svg>
+                    </span>
+                    <button type="button" onClick={() => setRecommendationCalendarTarget("return")}>
+                      Return Date
+                    </button>
+                  </label>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 pt-1">
+                <div className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_28px] md:items-start">
                   <button
                     type="button"
                     onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                    className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
                     aria-label="Previous month"
                   >
                     <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
                       <path d="M9.5 3.5 5 8l4.5 4.5" />
                     </svg>
                   </button>
-                  <div className="hidden md:block" />
-                  <button
-                    type="button"
-                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 md:order-3"
-                    aria-label="Next month"
-                  >
-                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
-                    </svg>
-                  </button>
-                </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
                   {recommendationCalendarMonths.map((month) => (
                     <section key={month.key} className="rounded-none border-none bg-white p-0 shadow-none">
                       <div className="mb-2.5 flex items-center justify-center gap-3">
@@ -1752,6 +1724,17 @@ export default function FlightCatalogInteractiveClient({
                       </div>
                     </section>
                   ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                    className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                    aria-label="Next month"
+                  >
+                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                    </svg>
+                  </button>
                 </div>
 
                 <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
