@@ -1628,7 +1628,7 @@ export default function FlightCatalogInteractiveClient({
               <div className={`${homeLayoutLock.contentWidthClass} mx-auto max-w-[1240px]`}>
                 <div className="w-full lg:ml-[276px] lg:w-[calc(100%-276px)]">
                   <div
-                    className="relative flex w-full flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
+                    className="relative flex w-full origin-top flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)] lg:scale-[0.65]"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="px-[18px] py-[18px]">
@@ -1751,7 +1751,7 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
           </div>
-          <div aria-hidden="true" className="h-[34rem] md:h-[38rem] xl:h-[42rem]" />
+          <div aria-hidden="true" className="h-[20rem] md:h-[22rem] xl:h-[24rem]" />
         </>
       ) : null}
 
