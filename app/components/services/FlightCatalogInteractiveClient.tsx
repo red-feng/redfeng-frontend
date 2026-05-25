@@ -1627,10 +1627,10 @@ export default function FlightCatalogInteractiveClient({
           onClick={() => setIsRecommendationCalendarOpen(false)}
         >
           <div
-            className="relative w-full max-w-[792px] overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
+            className="relative flex max-h-[calc(100vh-5rem)] w-full max-w-[792px] flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)] xl:max-h-[calc(100vh-12rem)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="px-[18px] py-[18px]">
+            <div className="overflow-y-auto px-[18px] py-[18px]">
               <div className="flex flex-col gap-4">
                 <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
                   <div>
