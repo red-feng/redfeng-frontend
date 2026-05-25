@@ -14,6 +14,7 @@ import { buildFormFields, updateFieldState } from "@/app/components/home/web/Web
 import HeroSearchField from "@/app/components/home/web/hero/HeroSearchField"
 import type { HeroPassengerState, HeroSearchFieldData } from "@/app/components/home/web/hero/heroSearchContent"
 import type { Locale } from "@/lib/i18n"
+import { formatPackageMoney, localeCurrencyMap, roundConvertedPrice } from "@/lib/package-pricing"
 
 type FilterSectionKey = "region" | "group" | "airline" | "departWindow" | "transit" | "price"
 
@@ -162,6 +163,12 @@ type PriceCalendarCell = {
   day: number
   price: number | null
   isCurrentMonth: boolean
+}
+
+const FLIGHT_IDR_FALLBACK_RATES: Record<string, number> = {
+  IDR: 1,
+  USD: 1 / 16000,
+  CNY: 1 / 2200,
 }
 
 const FLIGHT_HERO_STATE_KEY = "catalog-flight"
@@ -596,32 +603,33 @@ function formatCompactDateLabel(value: string, locale: Locale) {
   return formatter.format(date)
 }
 
-function formatCompactPrice(value: number, locale: Locale) {
+function convertFlightIdrAmount(value: number, locale: Locale, rates?: Record<string, number>) {
   if (!Number.isFinite(value) || value <= 0) return "-"
 
-  const currency = locale === "en" ? "USD" : locale === "zh" ? "CNY" : "IDR"
-  const formatterLocale = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
+  const currency = localeCurrencyMap[locale]
+  const rate = Number(rates?.[currency] || FLIGHT_IDR_FALLBACK_RATES[currency] || 1)
+  const converted = currency === "IDR" ? roundConvertedPrice(value) : roundConvertedPrice(value * rate)
 
-  return new Intl.NumberFormat(formatterLocale, {
-    style: "currency",
+  return {
+    amount: converted,
     currency,
-    currencyDisplay: "code",
-    maximumFractionDigits: 0,
-  }).format(value)
+  }
 }
 
-function formatCompactPriceAmountOnly(value: number, locale: Locale) {
-  if (!Number.isFinite(value) || value <= 0) return "-"
+function formatCompactPrice(value: number, locale: Locale, rates?: Record<string, number>) {
+  const converted = convertFlightIdrAmount(value, locale, rates)
+  if (converted === "-") return converted
 
-  if (locale === "en") {
-    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)
-  }
+  return formatPackageMoney(converted.amount, converted.currency, locale)
+}
 
-  if (locale === "zh") {
-    return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(value)
-  }
+function formatCompactPriceAmountOnly(value: number, locale: Locale, rates?: Record<string, number>) {
+  const converted = convertFlightIdrAmount(value, locale, rates)
+  if (converted === "-") return converted
 
-  return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)
+  return new Intl.NumberFormat(locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID", {
+    maximumFractionDigits: 0,
+  }).format(converted.amount)
 }
 
 function getLocaleTag(locale: Locale) {
@@ -787,6 +795,7 @@ export default function FlightCatalogInteractiveClient({
   const [canScrollSummaryPriceLeft, setCanScrollSummaryPriceLeft] = useState(false)
   const [canScrollSummaryPriceRight, setCanScrollSummaryPriceRight] = useState(false)
   const [recommendationCardLimit, setRecommendationCardLimit] = useState(8)
+  const [liveFlightRates, setLiveFlightRates] = useState<Record<string, number>>(FLIGHT_IDR_FALLBACK_RATES)
   const [recommendationCalendarMonth, setRecommendationCalendarMonth] = useState(() => {
     const current = parseIsoDateValue(initialState.depart)
     return current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date()
@@ -853,6 +862,47 @@ export default function FlightCatalogInteractiveClient({
     syncRecommendationCardLimit()
     window.addEventListener("resize", syncRecommendationCardLimit)
     return () => window.removeEventListener("resize", syncRecommendationCardLimit)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadFlightRates = async () => {
+      try {
+        const params = new URLSearchParams({
+          baseLanguage: "id",
+          baseCurrency: "IDR",
+          adultPrice: "1",
+          childPrice: "1",
+        })
+        const response = await fetch(`/api/currency-rates?${params.toString()}`, {
+          cache: "no-store",
+          headers: {
+            Accept: "application/json",
+          },
+        })
+
+        if (!response.ok) return
+        const payload = (await response.json()) as { rates?: Record<string, number> }
+        if (cancelled || !payload.rates) return
+
+        setLiveFlightRates({
+          IDR: 1,
+          USD: Number(payload.rates.USD || FLIGHT_IDR_FALLBACK_RATES.USD),
+          CNY: Number(payload.rates.CNY || FLIGHT_IDR_FALLBACK_RATES.CNY),
+        })
+      } catch {
+        if (!cancelled) {
+          setLiveFlightRates(FLIGHT_IDR_FALLBACK_RATES)
+        }
+      }
+    }
+
+    void loadFlightRates()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
@@ -1384,7 +1434,7 @@ export default function FlightCatalogInteractiveClient({
                           }`}
                         >
                           <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                          <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                          <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                           {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
                           {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
                         </button>
@@ -1445,7 +1495,7 @@ export default function FlightCatalogInteractiveClient({
                             <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
                             {isCheapest ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{stickyCompactCopy.best}</span> : null}
                           </div>
-                          <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale)}</p>
+                          <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                         </button>
                       )
                     })}
@@ -1633,7 +1683,7 @@ export default function FlightCatalogInteractiveClient({
                       >
                         <p className="truncate text-[12px] font-semibold">{item.meta.origin} → {item.meta.destination}</p>
                         <p className="mt-0.5 text-[11px] text-slate-500">{copy.priceLabel}</p>
-                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{item.meta.price}</p>
+                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(parseFlightPrice(item.meta.price), locale, liveFlightRates)}</p>
                         {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
                         {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
                       </button>
@@ -1839,7 +1889,7 @@ export default function FlightCatalogInteractiveClient({
                                     >
                                       <p className={`h-[18px] text-[15px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
                                       <p className={`mt-1 min-h-[14px] text-[10px] font-medium leading-[1.1] ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
-                                        {cell.price === null || blockedByReturnRule ? " " : formatCompactPriceAmountOnly(cell.price, locale)}
+                                        {cell.price === null || blockedByReturnRule ? " " : formatCompactPriceAmountOnly(cell.price, locale, liveFlightRates)}
                                       </p>
                                     </button>
                                   )
@@ -2107,7 +2157,9 @@ export default function FlightCatalogInteractiveClient({
                   className="border-t border-[#f0f1f5] px-6 py-4 text-left transition hover:bg-slate-50 xl:border-l xl:border-t-0"
                 >
                   <p className="text-[13px] text-slate-500">{copy.sortPrice}</p>
-                  <p className="mt-1 text-[15px] font-semibold text-slate-900">{cheapestHighlightedItem?.meta.price || "-"}</p>
+                  <p className="mt-1 text-[15px] font-semibold text-slate-900">
+                    {cheapestHighlightedItem ? formatCompactPrice(parseFlightPrice(cheapestHighlightedItem.meta.price), locale, liveFlightRates) : "-"}
+                  </p>
                 </button>
                 <button
                   type="button"
@@ -2202,7 +2254,7 @@ export default function FlightCatalogInteractiveClient({
                       </svg>
                     </button>
                     <p className="text-[12px] text-slate-500">{copy.priceLabel}</p>
-                    <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{meta.price}</p>
+                    <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
                     <p className="mt-2 text-[11px] leading-5 text-slate-500">{meta.seatNote}</p>
                     <div className="mt-5 space-y-2">
