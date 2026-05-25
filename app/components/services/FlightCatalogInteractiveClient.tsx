@@ -844,18 +844,15 @@ export default function FlightCatalogInteractiveClient({
   useEffect(() => {
     if (!isRecommendationCalendarOpen) return
 
-    const previousOverflow = document.body.style.overflow
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsRecommendationCalendarOpen(false)
       }
     }
 
-    document.body.style.overflow = "hidden"
     window.addEventListener("keydown", handleKeyDown)
 
     return () => {
-      document.body.style.overflow = previousOverflow
       window.removeEventListener("keydown", handleKeyDown)
     }
   }, [isRecommendationCalendarOpen])
@@ -1623,16 +1620,16 @@ export default function FlightCatalogInteractiveClient({
 
       {isRecommendationCalendarOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-slate-950/40 px-4 pb-6 pt-16 backdrop-blur-[2px] xl:pt-[168px]"
+          className="absolute inset-0 z-40 flex items-start justify-center bg-slate-950/40 px-4 pb-12 pt-[18.5rem] backdrop-blur-[2px] md:pt-[19.5rem] xl:pt-[20.5rem]"
           onClick={() => setIsRecommendationCalendarOpen(false)}
         >
           <div
-            className="relative flex max-h-[calc(100vh-5rem)] w-full max-w-[792px] flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)] xl:max-h-[calc(100vh-12rem)]"
+            className="relative flex w-full max-w-[792px] flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="overflow-y-auto px-[18px] py-[18px]">
+            <div className="px-[18px] py-[18px]">
               <div className="flex flex-col gap-4">
-                <div className="sticky top-0 z-10 -mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
+                <div className="-mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
                   <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
                   <div>
                     <p className="text-[13px] font-medium text-slate-500">Departure date</p>
