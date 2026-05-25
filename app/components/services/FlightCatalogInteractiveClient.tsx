@@ -987,6 +987,8 @@ export default function FlightCatalogInteractiveClient({
         ? `显示 ${filteredItems.length}/${items.length} 个航班`
         : `Menampilkan ${filteredItems.length} dari ${items.length} penerbangan`
   const moreRoutesLabel = locale === "en" ? "See more" : locale === "zh" ? "查看更多" : "Lihat lebih banyak"
+  const calendarTabLabel = locale === "en" ? "Calendar" : locale === "zh" ? "日历" : "Kalender"
+  const priceTableTabLabel = locale === "en" ? "Price Table" : locale === "zh" ? "价格表" : "Tabel harga"
   const resetInlineLabel = locale === "en" ? "Reset" : locale === "zh" ? "重置" : "Reset"
   const benefitItems =
     locale === "en"
@@ -1132,8 +1134,36 @@ export default function FlightCatalogInteractiveClient({
     setIsRecommendationCalendarOpen(true)
   }
 
+  const switchRecommendationCalendarToPriceTable = () => {
+    setIsRecommendationCalendarOpen(false)
+    setIsPriceTableOpen(true)
+  }
+
+  const toggleRecommendationReturnDate = () => {
+    const isRoundTrip = state.tripMode === "round_trip"
+    setHeroFieldStates({})
+    syncDraftAndState((current) => {
+      if (current.tripMode === "round_trip") {
+        return {
+          ...current,
+          tripMode: "one_way",
+          returnDate: "",
+        }
+      }
+
+      return {
+        ...current,
+        tripMode: "round_trip",
+        returnDate: current.returnDate && current.returnDate >= current.depart ? current.returnDate : "",
+      }
+    })
+
+    setRecommendationCalendarTarget(isRoundTrip ? "depart" : "return")
+  }
+
   const handleRecommendationCalendarDateSelect = (nextDate: string) => {
     setHeroFieldStates({})
+    const shouldStayOpenForReturn = recommendationCalendarTarget === "depart" && state.tripMode === "round_trip"
     syncDraftAndState((current) => {
       if (recommendationCalendarTarget === "return" && current.tripMode === "round_trip") {
         return {
@@ -1149,6 +1179,12 @@ export default function FlightCatalogInteractiveClient({
           current.tripMode === "round_trip" && current.returnDate && current.returnDate < nextDate ? nextDate : current.returnDate,
       }
     })
+
+    if (shouldStayOpenForReturn) {
+      setRecommendationCalendarTarget("return")
+      return
+    }
+
     setIsRecommendationCalendarOpen(false)
   }
 
@@ -1628,13 +1664,36 @@ export default function FlightCatalogInteractiveClient({
               <div className={`${homeLayoutLock.contentWidthClass} mx-auto max-w-[1240px]`}>
                 <div className="w-full lg:ml-[276px] lg:w-[calc(100%-276px)]">
                   <div
-                    className="relative flex w-full max-w-[848px] flex-col overflow-hidden rounded-[8px] border border-[#dbe4f0] bg-white shadow-[0_20px_40px_-26px_rgba(15,23,42,0.28)]"
+                    className="relative flex w-full flex-col overflow-hidden rounded-[8px] border border-[#dbe4f0] bg-white shadow-[0_20px_40px_-26px_rgba(15,23,42,0.28)]"
                     onClick={(event) => event.stopPropagation()}
                   >
+                    <div className="-mx-px flex items-center gap-6 border-b border-[#edf2f7] bg-white px-[18px] pt-3">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-2 border-b-2 border-[#1a73e8] px-0.5 pb-3 text-[14px] font-semibold text-[#1a73e8]"
+                        aria-current="page"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                          <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                          <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                        </svg>
+                        <span>{calendarTabLabel}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={switchRecommendationCalendarToPriceTable}
+                        className="inline-flex items-center gap-2 border-b-2 border-transparent px-0.5 pb-3 text-[14px] font-semibold text-[#6b7c93] transition hover:text-[#1f2d3d]"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-current">
+                          <path d="M2.5 2.5h4.5v4.5H2.5Zm6.5 0h4.5v4.5H9Zm-6.5 6.5h4.5v4.5H2.5Zm6.5 0h4.5v4.5H9Z" />
+                        </svg>
+                        <span>{priceTableTabLabel}</span>
+                      </button>
+                    </div>
                     <div className="px-[18px] py-[14px]">
                       <div className="flex flex-col gap-3">
                         <div className="-mx-[18px] border-b border-[#edf2f7] bg-white px-[18px] pb-3">
-                          <div className="grid gap-2 md:grid-cols-[minmax(0,372px)_auto] md:items-start md:justify-between">
+                          <div className="grid gap-3 md:grid-cols-[minmax(0,372px)_minmax(220px,280px)] md:items-start md:justify-between">
                           <div>
                             <p className="text-[13px] font-medium text-[#6b7c93]">Departure date</p>
                             <button
@@ -1653,16 +1712,51 @@ export default function FlightCatalogInteractiveClient({
                               <span className="text-[16px] font-semibold text-[#1f2d3d]">{formatCalendarInputValue(state.depart, locale)}</span>
                             </button>
                           </div>
-                          <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-[#1f2d3d] md:mt-7">
-                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${state.tripMode === "round_trip" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-[#c9d4e5] bg-white text-transparent"}`}>
-                              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
-                                <path d="m3.5 8 2.5 2.5L12.5 4.5" />
-                              </svg>
-                            </span>
-                            <button type="button" onClick={() => setRecommendationCalendarTarget("return")}>
-                              Return Date
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={toggleRecommendationReturnDate}
+                                className={`inline-flex h-6 w-6 items-center justify-center rounded-[7px] border transition ${
+                                  state.tripMode === "round_trip"
+                                    ? "border-[#1a73e8] bg-[#1a73e8] text-white"
+                                    : "border-[#c9d4e5] bg-white text-transparent hover:border-sky-200"
+                                }`}
+                                aria-pressed={state.tripMode === "round_trip"}
+                                aria-label="Toggle return date"
+                              >
+                                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.2]">
+                                  <path d="m3.5 8 2.5 2.5L12.5 4.5" />
+                                </svg>
+                              </button>
+                              <p className="text-[13px] font-semibold text-[#1f2d3d]">Return Date</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (state.tripMode !== "round_trip") {
+                                  toggleRecommendationReturnDate()
+                                  return
+                                }
+                                setRecommendationCalendarTarget("return")
+                              }}
+                              className={`mt-1.5 flex h-[44px] w-full items-center gap-3 rounded-[12px] border px-4 text-left transition ${
+                                recommendationCalendarTarget === "return" && state.tripMode === "round_trip"
+                                  ? "border-[#1a73e8] bg-white shadow-[0_0_0_1px_rgba(26,115,232,0.12)]"
+                                  : "border-[#dbe4f0] bg-white hover:border-sky-200"
+                              }`}
+                            >
+                              <span className="inline-flex h-6 w-6 items-center justify-center rounded-[7px] bg-[#eef3f8] text-[#6f8096]">
+                                <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                                  <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                                  <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                                </svg>
+                              </span>
+                              <span className={`text-[15px] font-semibold ${state.tripMode === "round_trip" ? "text-[#1f2d3d]" : "text-[#8ea0b6]"}`}>
+                                {state.tripMode === "round_trip" ? formatCalendarInputValue(state.returnDate, locale) : "Select return date"}
+                              </span>
                             </button>
-                          </label>
+                          </div>
                           </div>
                         </div>
 
@@ -1683,7 +1777,7 @@ export default function FlightCatalogInteractiveClient({
                               <div className="mb-1.5 flex items-center justify-center gap-3">
                                 <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#0a458a]">{month.label}</h3>
                               </div>
-                              <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-[#edf2f7] pt-2">
+                              <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-[#edf2f7] pt-2 [font-variant-numeric:tabular-nums]">
                                 {calendarDayHeaders.map((label, index) => (
                                   <div
                                     key={`${month.key}-${label}`}
@@ -1697,6 +1791,14 @@ export default function FlightCatalogInteractiveClient({
                                   const isCheapest = cheapestQuickDatePrice !== null && cell.price === cheapestQuickDatePrice && cell.price !== null
                                   const blockedByReturnRule = recommendationCalendarTarget === "return" && Boolean(state.depart) && cell.date < state.depart
                                   const disabled = cell.price === null || blockedByReturnRule
+                                  const isRangeStart = state.tripMode === "round_trip" && Boolean(state.depart) && cell.date === state.depart
+                                  const isRangeEnd = state.tripMode === "round_trip" && Boolean(state.returnDate) && cell.date === state.returnDate
+                                  const isInSelectedRange =
+                                    state.tripMode === "round_trip" &&
+                                    Boolean(state.depart) &&
+                                    Boolean(state.returnDate) &&
+                                    cell.date > state.depart &&
+                                    cell.date < state.returnDate
                                   const weekdayIndex = parseIsoDateValue(cell.date)?.getDay() ?? 0
                                   const weekendTone = weekdayIndex === 0 ? "text-rose-500" : weekdayIndex === 6 ? "text-[#0b82d8]" : "text-[#003b7a]"
 
@@ -1709,16 +1811,20 @@ export default function FlightCatalogInteractiveClient({
                                         handleRecommendationCalendarDateSelect(cell.date)
                                       }}
                                       disabled={disabled}
-                                      className={`min-h-[52px] rounded-[10px] border px-1 py-1 text-center transition ${
+                                      className={`flex min-h-[56px] flex-col items-center rounded-[10px] border px-1 py-1 text-center transition ${
                                         active
                                           ? "border-[#8fd400] bg-white shadow-[inset_0_0_0_1px_rgba(143,212,0,0.95)]"
+                                          : isRangeStart || isRangeEnd
+                                            ? "border-[#8fd400] bg-[#f7ffe8] shadow-[inset_0_0_0_1px_rgba(143,212,0,0.8)]"
+                                            : isInSelectedRange
+                                              ? "border-[#b8ef65] bg-[#b8ef65]/75"
                                           : disabled
                                             ? "border-transparent bg-transparent text-slate-300"
                                             : "border-transparent bg-white hover:border-[#dbe4f0] hover:bg-slate-50"
                                       }`}
                                     >
-                                      <p className={`text-[15px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
-                                      <p className={`mt-1 text-[10px] font-medium ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
+                                      <p className={`h-[18px] text-[15px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
+                                      <p className={`mt-1 min-h-[14px] text-[10px] font-medium leading-[1.1] ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
                                         {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale).replace(/^Rp\s?/, "")}
                                       </p>
                                     </button>
