@@ -599,15 +599,29 @@ function formatCompactDateLabel(value: string, locale: Locale) {
 function formatCompactPrice(value: number, locale: Locale) {
   if (!Number.isFinite(value) || value <= 0) return "-"
 
+  const currency = locale === "en" ? "USD" : locale === "zh" ? "CNY" : "IDR"
+  const formatterLocale = locale === "en" ? "en-US" : locale === "zh" ? "zh-CN" : "id-ID"
+
+  return new Intl.NumberFormat(formatterLocale, {
+    style: "currency",
+    currency,
+    currencyDisplay: "code",
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+function formatCompactPriceAmountOnly(value: number, locale: Locale) {
+  if (!Number.isFinite(value) || value <= 0) return "-"
+
   if (locale === "en") {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(value)
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value)
   }
 
   if (locale === "zh") {
-    return `Rp ${new Intl.NumberFormat("zh-CN").format(value)}`
+    return new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(value)
   }
 
-  return `Rp ${new Intl.NumberFormat("id-ID").format(value)}`
+  return new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)
 }
 
 function getLocaleTag(locale: Locale) {
@@ -1825,7 +1839,7 @@ export default function FlightCatalogInteractiveClient({
                                     >
                                       <p className={`h-[18px] text-[15px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
                                       <p className={`mt-1 min-h-[14px] text-[10px] font-medium leading-[1.1] ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
-                                        {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale).replace(/^Rp\s?/, "")}
+                                        {cell.price === null || blockedByReturnRule ? " " : formatCompactPriceAmountOnly(cell.price, locale)}
                                       </p>
                                     </button>
                                   )
