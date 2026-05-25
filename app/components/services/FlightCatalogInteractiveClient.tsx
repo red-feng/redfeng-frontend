@@ -1636,7 +1636,7 @@ export default function FlightCatalogInteractiveClient({
                         <div className="-mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
                           <div className="grid gap-3 md:grid-cols-[minmax(0,372px)_auto] md:items-start md:justify-between">
                           <div>
-                            <p className="text-[13px] font-medium text-slate-500">Departure date</p>
+                            <p className="text-[14px] font-medium text-slate-500">Departure date</p>
                             <button
                               type="button"
                               onClick={() => setRecommendationCalendarTarget("depart")}
@@ -1650,10 +1650,10 @@ export default function FlightCatalogInteractiveClient({
                                   <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
                                 </svg>
                               </span>
-                              <span className="text-[16px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
+                              <span className="text-[18px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
                             </button>
                           </div>
-                          <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-slate-900 md:mt-8">
+                          <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[14px] font-semibold text-slate-900 md:mt-8">
                             <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${state.tripMode === "round_trip" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-slate-300 bg-white text-transparent"}`}>
                               <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
                                 <path d="m3.5 8 2.5 2.5L12.5 4.5" />
@@ -1681,13 +1681,13 @@ export default function FlightCatalogInteractiveClient({
                           {recommendationCalendarMonths.map((month) => (
                             <section key={month.key} className="rounded-none border-none bg-white p-0 shadow-none">
                               <div className="mb-2.5 flex items-center justify-center gap-3">
-                                <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#003b7a]">{month.label}</h3>
+                                <h3 className="text-[22px] font-semibold tracking-[-0.03em] text-[#003b7a]">{month.label}</h3>
                               </div>
                               <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-slate-100 pt-2.5">
                                 {calendarDayHeaders.map((label, index) => (
                                   <div
                                     key={`${month.key}-${label}`}
-                                    className={`pb-2 text-center text-[11px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-slate-500"}`}
+                                    className={`pb-2 text-center text-[12px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-slate-500"}`}
                                   >
                                     {label}
                                   </div>
@@ -1717,8 +1717,8 @@ export default function FlightCatalogInteractiveClient({
                                             : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
                                       }`}
                                     >
-                                      <p className={`text-[14px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-slate-300"}`}>{cell.day}</p>
-                                      <p className={`mt-1.5 text-[10px] font-medium ${active ? "text-[#003b7a]" : isCheapest ? "text-emerald-600" : "text-slate-500"}`}>
+                                      <p className={`text-[17px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-slate-300"}`}>{cell.day}</p>
+                                      <p className={`mt-1.5 text-[11px] font-medium ${active ? "text-[#003b7a]" : isCheapest ? "text-emerald-600" : "text-slate-500"}`}>
                                         {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale).replace(/^Rp\s?/, "")}
                                       </p>
                                     </button>
@@ -1740,7 +1740,7 @@ export default function FlightCatalogInteractiveClient({
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
+                        <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[13px] text-slate-500">
                           <span className="h-3 w-3 rounded-[4px] bg-emerald-500" />
                           <span>Lowest flight price</span>
                         </div>
