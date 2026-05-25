@@ -1632,7 +1632,8 @@ export default function FlightCatalogInteractiveClient({
           >
             <div className="overflow-y-auto px-[18px] py-[18px]">
               <div className="flex flex-col gap-4">
-                <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
+                <div className="sticky top-0 z-10 -mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
+                  <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
                   <div>
                     <p className="text-[13px] font-medium text-slate-500">Departure date</p>
                     <button
@@ -1661,9 +1662,10 @@ export default function FlightCatalogInteractiveClient({
                       Return Date
                     </button>
                   </label>
+                  </div>
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_28px] md:items-start">
+                <div className="grid gap-3 pt-1 md:grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_28px] md:items-start">
                   <button
                     type="button"
                     onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
