@@ -1619,131 +1619,134 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       {isRecommendationCalendarOpen ? (
-        <div
-          className="absolute inset-0 z-40 flex items-start justify-center bg-slate-950/40 px-4 pb-12 pt-[18.5rem] backdrop-blur-[2px] md:pt-[19.5rem] xl:pt-[20.5rem]"
-          onClick={() => setIsRecommendationCalendarOpen(false)}
-        >
+        <>
           <div
-            className="relative flex w-full max-w-[792px] flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
-            onClick={(event) => event.stopPropagation()}
+            className="absolute inset-0 z-40 flex items-start justify-center bg-slate-950/40 px-4 pb-12 pt-[18.5rem] backdrop-blur-[2px] md:pt-[19.5rem] xl:pt-[20.5rem]"
+            onClick={() => setIsRecommendationCalendarOpen(false)}
           >
-            <div className="px-[18px] py-[18px]">
-              <div className="flex flex-col gap-4">
-                <div className="-mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
-                  <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
-                  <div>
-                    <p className="text-[13px] font-medium text-slate-500">Departure date</p>
-                    <button
-                      type="button"
-                      onClick={() => setRecommendationCalendarTarget("depart")}
-                      className={`mt-2 flex h-[44px] w-full max-w-[372px] items-center gap-3 rounded-[10px] border px-4 text-left transition ${
-                        recommendationCalendarTarget === "depart" ? "border-[#1a73e8] bg-white" : "border-slate-200 bg-white hover:border-sky-200"
-                      }`}
-                    >
-                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] bg-slate-100 text-slate-500">
-                        <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                          <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
-                          <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+            <div
+              className="relative flex w-full max-w-[792px] flex-col overflow-hidden rounded-[8px] border border-[#e5e7eb] bg-white shadow-[0_24px_48px_-24px_rgba(15,23,42,0.35)]"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="px-[18px] py-[18px]">
+                <div className="flex flex-col gap-4">
+                  <div className="-mx-[18px] border-b border-slate-100 bg-white px-[18px] pb-4">
+                    <div className="grid gap-3 md:grid-cols-[372px_auto] md:items-start md:justify-between">
+                    <div>
+                      <p className="text-[13px] font-medium text-slate-500">Departure date</p>
+                      <button
+                        type="button"
+                        onClick={() => setRecommendationCalendarTarget("depart")}
+                        className={`mt-2 flex h-[44px] w-full max-w-[372px] items-center gap-3 rounded-[10px] border px-4 text-left transition ${
+                          recommendationCalendarTarget === "depart" ? "border-[#1a73e8] bg-white" : "border-slate-200 bg-white hover:border-sky-200"
+                        }`}
+                      >
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-[6px] bg-slate-100 text-slate-500">
+                          <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
+                            <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                            <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                          </svg>
+                        </span>
+                        <span className="text-[16px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
+                      </button>
+                    </div>
+                    <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-slate-900 md:mt-8">
+                      <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${state.tripMode === "round_trip" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-slate-300 bg-white text-transparent"}`}>
+                        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                          <path d="m3.5 8 2.5 2.5L12.5 4.5" />
                         </svg>
                       </span>
-                      <span className="text-[16px] font-semibold text-slate-950">{formatCalendarInputValue(state.depart, locale)}</span>
-                    </button>
+                      <button type="button" onClick={() => setRecommendationCalendarTarget("return")}>
+                        Return Date
+                      </button>
+                    </label>
+                    </div>
                   </div>
-                  <label className="mt-0.5 inline-flex items-center gap-2 self-start text-[13px] font-semibold text-slate-900 md:mt-8">
-                    <span className={`inline-flex h-5 w-5 items-center justify-center rounded-[6px] border ${state.tripMode === "round_trip" ? "border-[#1a73e8] bg-[#eff6ff] text-[#1a73e8]" : "border-slate-300 bg-white text-transparent"}`}>
-                      <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
-                        <path d="m3.5 8 2.5 2.5L12.5 4.5" />
+
+                  <div className="grid gap-3 pt-1 md:grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_28px] md:items-start">
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+                      className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Previous month"
+                    >
+                      <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                        <path d="M9.5 3.5 5 8l4.5 4.5" />
                       </svg>
-                    </span>
-                    <button type="button" onClick={() => setRecommendationCalendarTarget("return")}>
-                      Return Date
                     </button>
-                  </label>
-                  </div>
-                </div>
 
-                <div className="grid gap-3 pt-1 md:grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_28px] md:items-start">
-                  <button
-                    type="button"
-                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-                    className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                    aria-label="Previous month"
-                  >
-                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-                      <path d="M9.5 3.5 5 8l4.5 4.5" />
-                    </svg>
-                  </button>
-
-                  {recommendationCalendarMonths.map((month) => (
-                    <section key={month.key} className="rounded-none border-none bg-white p-0 shadow-none">
-                      <div className="mb-2.5 flex items-center justify-center gap-3">
-                        <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#003b7a]">{month.label}</h3>
-                      </div>
-                      <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-slate-100 pt-2.5">
-                        {calendarDayHeaders.map((label, index) => (
-                          <div
-                            key={`${month.key}-${label}`}
-                            className={`pb-2 text-center text-[11px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-slate-500"}`}
-                          >
-                            {label}
-                          </div>
-                        ))}
-                        {month.cells.map((cell) => {
-                          const active = cell.date === selectedCalendarDate
-                          const isCheapest = cheapestQuickDatePrice !== null && cell.price === cheapestQuickDatePrice && cell.price !== null
-                          const blockedByReturnRule = recommendationCalendarTarget === "return" && Boolean(state.depart) && cell.date < state.depart
-                          const disabled = cell.price === null || blockedByReturnRule
-                          const weekdayIndex = parseIsoDateValue(cell.date)?.getDay() ?? 0
-                          const weekendTone = weekdayIndex === 0 ? "text-rose-500" : weekdayIndex === 6 ? "text-[#0b82d8]" : "text-[#003b7a]"
-
-                          return (
-                            <button
-                              key={`${month.key}-${cell.date}`}
-                              type="button"
-                              onClick={() => {
-                                if (disabled) return
-                                handleRecommendationCalendarDateSelect(cell.date)
-                              }}
-                              disabled={disabled}
-                              className={`min-h-[64px] rounded-[10px] border px-1 py-1.5 text-center transition ${
-                                active
-                                  ? "border-[#8fd400] bg-white shadow-[inset_0_0_0_1px_rgba(143,212,0,0.9)]"
-                                  : disabled
-                                    ? "border-transparent bg-transparent text-slate-300"
-                                    : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
-                              }`}
+                    {recommendationCalendarMonths.map((month) => (
+                      <section key={month.key} className="rounded-none border-none bg-white p-0 shadow-none">
+                        <div className="mb-2.5 flex items-center justify-center gap-3">
+                          <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#003b7a]">{month.label}</h3>
+                        </div>
+                        <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-slate-100 pt-2.5">
+                          {calendarDayHeaders.map((label, index) => (
+                            <div
+                              key={`${month.key}-${label}`}
+                              className={`pb-2 text-center text-[11px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-slate-500"}`}
                             >
-                              <p className={`text-[14px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-slate-300"}`}>{cell.day}</p>
-                              <p className={`mt-1.5 text-[10px] font-medium ${active ? "text-[#003b7a]" : isCheapest ? "text-emerald-600" : "text-slate-500"}`}>
-                                {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale).replace(/^Rp\s?/, "")}
-                              </p>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </section>
-                  ))}
+                              {label}
+                            </div>
+                          ))}
+                          {month.cells.map((cell) => {
+                            const active = cell.date === selectedCalendarDate
+                            const isCheapest = cheapestQuickDatePrice !== null && cell.price === cheapestQuickDatePrice && cell.price !== null
+                            const blockedByReturnRule = recommendationCalendarTarget === "return" && Boolean(state.depart) && cell.date < state.depart
+                            const disabled = cell.price === null || blockedByReturnRule
+                            const weekdayIndex = parseIsoDateValue(cell.date)?.getDay() ?? 0
+                            const weekendTone = weekdayIndex === 0 ? "text-rose-500" : weekdayIndex === 6 ? "text-[#0b82d8]" : "text-[#003b7a]"
 
-                  <button
-                    type="button"
-                    onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-                    className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
-                    aria-label="Next month"
-                  >
-                    <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-                      <path d="M6.5 3.5 11 8l-4.5 4.5" />
-                    </svg>
-                  </button>
-                </div>
+                            return (
+                              <button
+                                key={`${month.key}-${cell.date}`}
+                                type="button"
+                                onClick={() => {
+                                  if (disabled) return
+                                  handleRecommendationCalendarDateSelect(cell.date)
+                                }}
+                                disabled={disabled}
+                                className={`min-h-[64px] rounded-[10px] border px-1 py-1.5 text-center transition ${
+                                  active
+                                    ? "border-[#8fd400] bg-white shadow-[inset_0_0_0_1px_rgba(143,212,0,0.9)]"
+                                    : disabled
+                                      ? "border-transparent bg-transparent text-slate-300"
+                                      : "border-transparent bg-white hover:border-slate-200 hover:bg-slate-50"
+                                }`}
+                              >
+                                <p className={`text-[14px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-slate-300"}`}>{cell.day}</p>
+                                <p className={`mt-1.5 text-[10px] font-medium ${active ? "text-[#003b7a]" : isCheapest ? "text-emerald-600" : "text-slate-500"}`}>
+                                  {cell.price === null || blockedByReturnRule ? " " : formatCompactPrice(cell.price, locale).replace(/^Rp\s?/, "")}
+                                </p>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </section>
+                    ))}
 
-                <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
-                  <span className="h-3 w-3 rounded-[4px] bg-emerald-500" />
-                  <span>Lowest flight price</span>
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+                      className="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-50 hover:text-slate-900"
+                      aria-label="Next month"
+                    >
+                      <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[2]">
+                        <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 border-t border-slate-100 pt-3 text-[12px] text-slate-500">
+                    <span className="h-3 w-3 rounded-[4px] bg-emerald-500" />
+                    <span>Lowest flight price</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+          <div aria-hidden="true" className="h-[34rem] md:h-[38rem] xl:h-[42rem]" />
+        </>
       ) : null}
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:min-h-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start`}>
