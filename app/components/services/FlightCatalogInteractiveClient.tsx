@@ -1767,9 +1767,9 @@ export default function FlightCatalogInteractiveClient({
                         onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
                         className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                           active
-                            ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                            ? "border-[#1795f1] bg-white text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
                             : isCheapest
-                              ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
+                              ? "border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300"
                               : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
                         }`}
                       >
