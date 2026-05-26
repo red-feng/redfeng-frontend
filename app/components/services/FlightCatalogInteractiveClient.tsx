@@ -1721,14 +1721,14 @@ export default function FlightCatalogInteractiveClient({
       {isRecommendationCalendarOpen ? (
         <>
           <div
-            className="fixed inset-0 z-40 overflow-y-auto bg-slate-950/30 px-4 pb-8 pt-[7.75rem] md:px-6 md:pb-10 md:pt-[9rem] xl:pt-[9.75rem]"
+            className="fixed inset-0 z-40 overflow-y-auto bg-slate-950/34 px-4 pb-8 pt-[5.9rem] md:px-6 md:pb-10 md:pt-[6.75rem] xl:pt-[7.35rem]"
             onClick={() => setIsRecommendationCalendarOpen(false)}
           >
             <div className={`${homeLayoutLock.pageXClass} w-full`}>
               <div className={`${homeLayoutLock.contentWidthClass} mx-auto flex w-full max-w-[1240px] items-start`}>
                 <div className="w-full lg:ml-[276px] lg:flex lg:w-[calc(100%-276px)] lg:justify-center">
                   <div
-                    className="relative flex max-h-[calc(100vh-9rem)] w-full max-w-[1040px] flex-col overflow-auto rounded-[10px] border border-[#dbe4f0] bg-white shadow-[0_32px_70px_-34px_rgba(15,23,42,0.42)] md:max-h-[calc(100vh-10.5rem)] xl:max-h-[calc(100vh-11rem)] xl:max-w-[860px]"
+                    className="relative flex w-full max-w-[1020px] flex-col overflow-hidden rounded-[10px] border border-[#dbe4f0] bg-white shadow-[0_32px_70px_-34px_rgba(15,23,42,0.42)] xl:max-w-[880px]"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="-mx-px flex items-center gap-6 border-b border-[#edf2f7] bg-white px-[18px] pt-3">
@@ -1824,11 +1824,11 @@ export default function FlightCatalogInteractiveClient({
                           </div>
                         </div>
 
-                        <div className="grid gap-2 pt-0.5 md:grid-cols-[24px_minmax(0,1fr)_minmax(0,1fr)_24px] md:items-start">
+                        <div className="grid gap-1 pt-0.5 md:grid-cols-[20px_minmax(0,1fr)_minmax(0,1fr)_20px] md:items-start">
                           <button
                             type="button"
                             onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-                            className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-[#6f8096] transition hover:bg-[#f3f7fb] hover:text-[#1f2d3d]"
+                            className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-[#6f8096] transition hover:bg-[#f3f7fb] hover:text-[#1f2d3d]"
                             aria-label="Previous month"
                           >
                             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.1]">
@@ -1839,13 +1839,13 @@ export default function FlightCatalogInteractiveClient({
                           {recommendationCalendarMonths.map((month) => (
                             <section key={month.key} className="rounded-none border-none bg-white p-0 shadow-none">
                               <div className="mb-1.5 flex items-center justify-center gap-3">
-                                <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#0a458a]">{month.label}</h3>
+                                <h3 className="text-[16px] font-semibold tracking-[-0.03em] text-[#0a458a]">{month.label}</h3>
                               </div>
                               <div className="grid grid-cols-7 gap-x-1 gap-y-0 border-t border-[#edf2f7] pt-2 [font-variant-numeric:tabular-nums]">
                                 {calendarDayHeaders.map((label, index) => (
                                   <div
                                     key={`${month.key}-${label}`}
-                                    className={`pb-1.5 text-center text-[11px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-[#6b7c93]"}`}
+                                    className={`pb-1.5 text-center text-[10px] font-semibold ${index === 0 ? "text-rose-500" : index === 6 ? "text-rose-500" : "text-[#6b7c93]"}`}
                                   >
                                     {label}
                                   </div>
@@ -1875,7 +1875,7 @@ export default function FlightCatalogInteractiveClient({
                                         handleRecommendationCalendarDateSelect(cell.date)
                                       }}
                                       disabled={disabled}
-                                      className={`flex min-h-[56px] flex-col items-center rounded-[10px] border px-1 py-1 text-center transition ${
+                                      className={`flex min-h-[48px] flex-col items-center rounded-[10px] border px-1 py-1 text-center transition ${
                                         active
                                           ? "border-[#8fd400] bg-white shadow-[inset_0_0_0_1px_rgba(143,212,0,0.95)]"
                                           : isRangeStart || isRangeEnd
@@ -1887,8 +1887,8 @@ export default function FlightCatalogInteractiveClient({
                                             : "border-transparent bg-white hover:border-[#dbe4f0] hover:bg-slate-50"
                                       }`}
                                     >
-                                      <p className={`h-[18px] text-[15px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
-                                      <p className={`mt-1 min-h-[14px] text-[10px] font-medium leading-[1.1] ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
+                                      <p className={`h-[16px] text-[13px] font-semibold leading-none ${cell.isCurrentMonth ? weekendTone : "text-[#cfd8e3]"}`}>{cell.day}</p>
+                                      <p className={`mt-1 min-h-[12px] text-[9px] font-medium leading-[1.05] ${active ? "text-[#0a458a]" : isCheapest ? "text-emerald-600" : "text-[#6b7c93]"}`}>
                                         {cell.price === null || blockedByReturnRule ? " " : formatCompactPriceAmountOnly(cell.price, locale, liveFlightRates)}
                                       </p>
                                     </button>
@@ -1901,7 +1901,7 @@ export default function FlightCatalogInteractiveClient({
                           <button
                             type="button"
                             onClick={() => setRecommendationCalendarMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-                            className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-[#6f8096] transition hover:bg-[#f3f7fb] hover:text-[#1f2d3d]"
+                            className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full text-[#6f8096] transition hover:bg-[#f3f7fb] hover:text-[#1f2d3d]"
                             aria-label="Next month"
                           >
                             <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2.1]">
