@@ -664,7 +664,12 @@ function formatCalendarDayHeader(locale: Locale) {
 
 function formatPriceTableAxisLabel(value: string, locale: Locale) {
   const date = parseIsoDateValue(value)
-  if (!date) return value
+  if (!date) {
+    return {
+      weekday: value,
+      dayMonth: value,
+    }
+  }
 
   return {
     weekday: new Intl.DateTimeFormat(getLocaleTag(locale), { weekday: "short" }).format(date),
