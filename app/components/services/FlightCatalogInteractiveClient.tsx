@@ -823,11 +823,11 @@ export default function FlightCatalogInteractiveClient({
     const syncRecommendationCardLimit = () => {
       const width = window.innerWidth
       if (width < 640) {
-        setRecommendationCardLimit(6)
+        setRecommendationCardLimit(5)
         return
       }
       if (width < 1024) {
-        setRecommendationCardLimit(8)
+        setRecommendationCardLimit(7)
         return
       }
       if (width < 1280) {
@@ -1075,6 +1075,12 @@ export default function FlightCatalogInteractiveClient({
   const priceTableMetaLabel = locale === "en" ? "Showing round-trip prices" : locale === "zh" ? "Showing round-trip prices" : "Menampilkan harga pulang-pergi"
   const noDateSelectedLabel = locale === "en" ? "No date selected" : locale === "zh" ? "No date selected" : "Belum ada tanggal dipilih"
   const selectLabel = locale === "en" ? "Select" : locale === "zh" ? "Select" : "Pilih"
+  const limitedDatesLabel =
+    locale === "en"
+      ? "Only a few dates match the current filters."
+      : locale === "zh"
+        ? "Only a few dates match the current filters."
+        : "Hanya sedikit tanggal yang cocok dengan filter aktif."
   const benefitItems =
     locale === "en"
       ? ["Best fares", "Trusted booking", "24/7 support"]
@@ -1712,7 +1718,12 @@ export default function FlightCatalogInteractiveClient({
                 ref={summaryPriceTableScrollRef}
                 className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
               >
-                <div className="flex min-w-max items-stretch gap-2 pr-1">
+                {recommendationDateCards.length === 0 ? (
+                  <div className="flex min-h-[92px] items-center rounded-[14px] border border-white/35 bg-white/12 px-4 py-3 text-[12px] font-medium text-white/90">
+                    {limitedDatesLabel}
+                  </div>
+                ) : (
+                  <div className="flex min-w-max items-stretch gap-2 pr-1">
                   {recommendationDateCards.map((entry) => {
                     const active = entry.date === state.depart
                     const isCheapest = cheapestRecommendationPrice !== null && entry.price === cheapestRecommendationPrice
@@ -1724,7 +1735,7 @@ export default function FlightCatalogInteractiveClient({
                         onClick={() => handleQuickDateSelect(entry.date)}
                         className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                           active
-                            ? "border-[#7ed321] bg-white text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.95),0_0_18px_rgba(126,211,33,0.45),0_12px_24px_-18px_rgba(56,161,105,0.8)]"
+                            ? "border-[#7ed321] bg-white text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.8),0_0_10px_rgba(126,211,33,0.28),0_10px_22px_-18px_rgba(56,161,105,0.55)]"
                             : isCheapest
                               ? "border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300"
                               : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
@@ -1738,8 +1749,12 @@ export default function FlightCatalogInteractiveClient({
                       </button>
                     )
                   })}
-                </div>
+                  </div>
+                )}
               </div>
+              {recommendationDateCards.length > 0 && recommendationDateCards.length < Math.min(5, recommendationCardLimit) ? (
+                <p className="mt-2 px-2 text-[11px] font-medium text-white/88">{limitedDatesLabel}</p>
+              ) : null}
               {canScrollSummaryPriceRight ? (
                 <button
                   type="button"
