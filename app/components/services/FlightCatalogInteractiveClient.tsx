@@ -1767,7 +1767,7 @@ export default function FlightCatalogInteractiveClient({
                         onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
                         className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                           active
-                            ? "border-[#1795f1] bg-white text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                            ? "border-[#7ed321] bg-white text-[#0f6fcb] shadow-[0_0_0_1px_rgba(126,211,33,0.95),0_0_18px_rgba(126,211,33,0.45),0_12px_24px_-18px_rgba(56,161,105,0.8)]"
                             : isCheapest
                               ? "border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300"
                               : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
@@ -1777,7 +1777,7 @@ export default function FlightCatalogInteractiveClient({
                         <p className="mt-0.5 text-[11px] text-slate-500">{copy.priceLabel}</p>
                         <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(parseFlightPrice(item.meta.price), locale, liveFlightRates)}</p>
                         {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
-                        {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
+                        {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selected}</p> : null}
                       </button>
                     )
                   })}
