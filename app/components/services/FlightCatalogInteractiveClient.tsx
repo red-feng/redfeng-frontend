@@ -134,13 +134,6 @@ type FlightCopy = {
   emptyBody: string
 }
 
-type FlightMatchOptions = {
-  skipDepartDate?: boolean
-  skipReturnDate?: boolean
-  skipFrom?: boolean
-  skipTo?: boolean
-}
-
 type HeroFieldInputType = "text" | "date" | "select" | "autocomplete" | "passenger"
 
 type CatalogHeroRenderedField = HeroSearchFieldData & {
@@ -285,39 +278,6 @@ function matchesFlightVia(via: string, tripMode: FlightTripMode, item: FlightIte
   if (tripMode !== "multi_city") return true
   if (!via.trim()) return true
   return matchesFlightField(via, item.title, item.location, item.meta.transit, item.statusNote, item.availabilityNote, item.highlights.join(" "))
-}
-
-function matchesFlightItem(item: FlightItem, state: FlightFilterState, options: FlightMatchOptions = {}) {
-  const keyword = state.q.trim().toLowerCase()
-  const matchesKeyword =
-    keyword.length === 0 ||
-    item.title.toLowerCase().includes(keyword) ||
-    item.location.toLowerCase().includes(keyword) ||
-    item.highlights.some((highlight) => highlight.toLowerCase().includes(keyword))
-  const matchesRegion = !state.region || item.region === state.region
-  const matchesGroup = !state.group || item.group === state.group
-  const matchesAirline = state.airlines.length === 0 || state.airlines.includes(item.meta.airline)
-  const matchesDepartWindow =
-    state.departWindows.length === 0 || state.departWindows.some((window) => matchesWindow(parseFlightTime(item.meta.departure), window))
-  const isDirect =
-    item.meta.transit.toLowerCase().includes("direct") ||
-    item.meta.transit.toLowerCase().includes("langsung") ||
-    item.meta.transit.includes("ç›´é£ž")
-  const matchesTransit =
-    state.transitTypes.length === 0 ||
-    state.transitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
-  const matchesPrice = state.priceBands.length === 0 || state.priceBands.some((band) => matchesPriceBand(parseFlightPrice(item.meta.price), band))
-  const matchesFrom = options.skipFrom ? true : matchesFlightField(state.from, item.title, item.location, item.meta.origin, item.meta.routeCode)
-  const matchesTo = options.skipTo ? true : matchesFlightField(state.to, item.title, item.location, item.meta.destination, item.meta.routeCode)
-  const matchesVia = matchesFlightVia(state.via, state.tripMode, item)
-  const matchesTripMode = matchesFlightTripMode(state.tripMode, item)
-  const matchesDepartDate = options.skipDepartDate ? true : matchesFlightDate(state.depart, item)
-  const matchesReturnDate = options.skipReturnDate || state.tripMode !== "round_trip" ? true : matchesFlightReturnDate(state.depart, state.returnDate, item)
-  const matchesCabin = matchesFlightCabin(state.cabin, item)
-  const requestedPassengers = parsePassengerCount(state.passengers)
-  const matchesPassengers = requestedPassengers <= item.meta.maxPassengers
-
-  return matchesKeyword && matchesRegion && matchesGroup && matchesAirline && matchesDepartWindow && matchesTransit && matchesPrice && matchesFrom && matchesTo && matchesVia && matchesTripMode && matchesDepartDate && matchesReturnDate && matchesCabin && matchesPassengers
 }
 
 function filterLinkClass(active: boolean) {
@@ -1000,9 +960,7 @@ export default function FlightCatalogInteractiveClient({
   const quickDateOptions = useMemo(() => {
     const lowestPriceByDate = new Map<string, number>()
 
-    items
-      .filter((item) => matchesFlightItem(item, state, { skipDepartDate: true, skipReturnDate: true }))
-      .forEach((item) => {
+    filteredItems.forEach((item) => {
         item.meta.availableDates.forEach((date) => {
           const price = parseFlightPrice(item.meta.price)
           const currentLowest = lowestPriceByDate.get(date)
@@ -1017,7 +975,7 @@ export default function FlightCatalogInteractiveClient({
       .map(([date, price]) => ({ date, price }))
 
     return sortedDates
-  }, [items, state])
+  }, [filteredItems])
 
   const cheapestQuickDatePrice = useMemo(() => {
     if (quickDateOptions.length === 0) return null
