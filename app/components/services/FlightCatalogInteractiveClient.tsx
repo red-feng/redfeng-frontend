@@ -863,18 +863,18 @@ export default function FlightCatalogInteractiveClient({
     const syncRecommendationCardLimit = () => {
       const width = window.innerWidth
       if (width < 640) {
-        setRecommendationCardLimit(4)
-        return
-      }
-      if (width < 1024) {
-        setRecommendationCardLimit(5)
-        return
-      }
-      if (width < 1280) {
         setRecommendationCardLimit(6)
         return
       }
-      setRecommendationCardLimit(8)
+      if (width < 1024) {
+        setRecommendationCardLimit(8)
+        return
+      }
+      if (width < 1280) {
+        setRecommendationCardLimit(10)
+        return
+      }
+      setRecommendationCardLimit(15)
     }
 
     syncRecommendationCardLimit()
@@ -1180,10 +1180,9 @@ export default function FlightCatalogInteractiveClient({
     if (!earliest) return item
     return parseFlightTime(item.meta.departure) < parseFlightTime(earliest.meta.departure) ? item : earliest
   }, null)
-  const recommendationItems = sortFlightResults(items.filter((item) => matchesFlightItem(item, state, { skipFrom: true, skipTo: true })))
-  const recommendationCards = recommendationItems.slice(0, recommendationCardLimit)
+  const recommendationDateCards = quickDateOptions.slice(0, recommendationCardLimit)
   const cheapestRecommendationPrice =
-    recommendationCards.length > 0 ? Math.min(...recommendationCards.map((item) => parseFlightPrice(item.meta.price))) : null
+    recommendationDateCards.length > 0 ? Math.min(...recommendationDateCards.map((entry) => entry.price)) : null
 
   const buildResetState = (tripMode: FlightTripMode): FlightFilterState => ({
     tripMode,
@@ -1441,7 +1440,7 @@ export default function FlightCatalogInteractiveClient({
       container.removeEventListener("scroll", syncSummaryPriceTableScrollState)
       window.removeEventListener("resize", syncSummaryPriceTableScrollState)
     }
-  }, [recommendationCards])
+  }, [recommendationDateCards])
 
   useEffect(() => {
     if (!isResultSortMenuOpen) return
@@ -1756,15 +1755,15 @@ export default function FlightCatalogInteractiveClient({
                 className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
               >
                 <div className="flex min-w-max items-stretch gap-2 pr-1">
-                  {recommendationCards.map((item) => {
-                    const active = item.meta.origin === state.from && item.meta.destination === state.to
-                    const isCheapest = cheapestRecommendationPrice !== null && parseFlightPrice(item.meta.price) === cheapestRecommendationPrice
+                  {recommendationDateCards.map((entry) => {
+                    const active = entry.date === state.depart
+                    const isCheapest = cheapestRecommendationPrice !== null && entry.price === cheapestRecommendationPrice
 
                     return (
                       <button
-                        key={`recommendation-${item.id}`}
+                        key={`recommendation-${entry.date}`}
                         type="button"
-                        onClick={() => updateState({ from: item.meta.origin, to: item.meta.destination })}
+                        onClick={() => handleQuickDateSelect(entry.date)}
                         className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                           active
                             ? "border-[#7ed321] bg-white text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.95),0_0_18px_rgba(126,211,33,0.45),0_12px_24px_-18px_rgba(56,161,105,0.8)]"
@@ -1773,9 +1772,9 @@ export default function FlightCatalogInteractiveClient({
                               : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
                         }`}
                       >
-                        <p className="truncate text-[12px] font-semibold">{item.meta.origin} → {item.meta.destination}</p>
+                        <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
                         <p className={`mt-0.5 text-[11px] ${active ? "text-[#11a36a]" : "text-slate-500"}`}>{copy.priceLabel}</p>
-                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(parseFlightPrice(item.meta.price), locale, liveFlightRates)}</p>
+                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                         {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
                         {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selected}</p> : null}
                       </button>
