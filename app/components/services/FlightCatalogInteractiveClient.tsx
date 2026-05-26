@@ -1039,6 +1039,8 @@ export default function FlightCatalogInteractiveClient({
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
+  const activeRouteSummary = buildStickyRouteSummary(state, copy)
+  const activeMetaSummary = buildStickyMetaSummary(state, locale, copy)
   const durationSortLabel = locale === "en" ? "Shortest duration" : locale === "id" ? "Durasi tersingkat" : "最短时长"
   const activeLabel = locale === "en" ? "Active" : locale === "zh" ? "已启用" : "Aktif"
   const currentSortLabel =
@@ -1677,11 +1679,12 @@ export default function FlightCatalogInteractiveClient({
         <div className="rounded-[20px] border border-[#ffc49b] bg-[linear-gradient(135deg,#ff8e62_0%,#ffb67d_100%)] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-[430px]">
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-[13px] font-semibold uppercase tracking-[0.02em] text-white">{recommendedLabel}</p>
-                <p className="text-sm font-medium text-white/88">{recommendationLead}</p>
+              <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]" title={recommendationLead}>
+                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6a819b]">{recommendedLabel}</p>
+                <p className="mt-3 text-[16px] font-semibold tracking-[-0.03em] text-[#1167c4]">{activeRouteSummary}</p>
+                <p className="mt-2 text-[14px] text-slate-500">{activeMetaSummary}</p>
               </div>
-              <div className="mt-4 flex flex-wrap gap-4">
+              <div className="mt-4 hidden flex-wrap gap-4">
                 {benefitItems.map((benefit, index) => (
                   <div key={benefit} className="inline-flex items-center gap-2 text-sm font-medium text-white">
                     <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-white/35 bg-white/10 text-[11px]">
