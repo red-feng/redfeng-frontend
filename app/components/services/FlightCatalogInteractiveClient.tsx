@@ -2044,13 +2044,9 @@ export default function FlightCatalogInteractiveClient({
                           <p className="text-right text-[12px] font-medium text-[#6b7c93]">{priceTableMetaLabel} in {localeCurrencyMap[locale]}</p>
                         </div>
                         <div className="overflow-auto px-[18px] py-3">
-                          <div className="mb-2 flex items-center justify-between gap-4">
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6b7c93]">{returnAxisLabel}</p>
-                            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6b7c93]">{departureAxisLabel}</p>
-                          </div>
                           <div className="grid min-w-[760px] border border-[#edf2f7] bg-white [grid-template-columns:106px_repeat(7,minmax(88px,1fr))]">
                             <div className="border-b border-r border-[#edf2f7] bg-[#f8fafc] px-3 py-3 text-left">
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6b7c93]">{returnAxisLabel}</p>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a9ab0]">{returnAxisLabel}</p>
                             </div>
                             {recommendationPriceTableColumns.map((columnDate) => {
                               const axis = formatPriceTableAxisLabel(columnDate, locale)
@@ -2103,7 +2099,7 @@ export default function FlightCatalogInteractiveClient({
                                             : disabled
                                               ? "bg-slate-50/90"
                                               : isBest
-                                                ? "bg-emerald-50/55 hover:bg-emerald-50"
+                                                ? "bg-emerald-50/45 hover:bg-emerald-50/70"
                                                 : "bg-white hover:bg-sky-50"
                                         }`}
                                       >
@@ -2113,14 +2109,13 @@ export default function FlightCatalogInteractiveClient({
                                               ? "text-[#1565d8]"
                                               : disabled
                                                 ? "text-slate-300"
-                                                : isBest
+                                              : isBest
                                                   ? "text-emerald-600"
                                                   : "text-[#1f2d3d]"
                                           }`}
                                         >
                                           {value === null ? " " : formatCompactPriceAmountOnly(value, locale, liveFlightRates)}
                                         </span>
-                                        {!selected && !disabled && isBest ? <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.08em] text-emerald-600">Best</p> : null}
                                       </button>
                                     )
                                   })}
