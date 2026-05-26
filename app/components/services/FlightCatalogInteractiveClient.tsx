@@ -1745,9 +1745,7 @@ export default function FlightCatalogInteractiveClient({
                         }`}
                       >
                         <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                        <p className={`mt-0.5 text-[11px] ${active ? "text-[#11a36a]" : "text-slate-500"}`}>{copy.priceLabel}</p>
-                        <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
-                        {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
+                        <p className={`mt-1 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                         {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selected}</p> : null}
                       </button>
                     )
@@ -1774,9 +1772,14 @@ export default function FlightCatalogInteractiveClient({
                   <button
                     type="button"
                     onClick={openRecommendationCalendar}
-                    className="inline-flex shrink-0 items-center justify-center rounded-[14px] border border-white/45 bg-white/14 px-4 py-3 text-center text-[12px] font-semibold text-white transition hover:bg-white/22 xl:min-w-[136px]"
+                    title={moreRoutesLabel}
+                    className="inline-flex shrink-0 flex-col items-center justify-center gap-2 rounded-[16px] border border-[#4da8ff] bg-[linear-gradient(180deg,#2492ee_0%,#1d7fe0_100%)] px-4 py-3 text-center text-[12px] font-semibold text-white shadow-[0_16px_28px_-22px_rgba(29,127,224,0.9)] transition hover:brightness-105 xl:min-w-[92px]"
                   >
-                    {moreRoutesLabel}
+                    <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+                      <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                      <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                    </svg>
+                    <span>{calendarTabLabel}</span>
                   </button>
                 </div>
               </div>
