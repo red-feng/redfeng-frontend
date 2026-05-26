@@ -1721,14 +1721,14 @@ export default function FlightCatalogInteractiveClient({
       {isRecommendationCalendarOpen ? (
         <>
           <div
-            className="fixed inset-0 z-40 overflow-y-auto bg-slate-950/28 px-4 pb-8 pt-[8.75rem] md:px-6 md:pb-10 md:pt-[10rem] xl:pt-[10.75rem]"
+            className="fixed inset-0 z-40 overflow-y-auto bg-slate-950/30 px-4 pb-8 pt-[7.75rem] md:px-6 md:pb-10 md:pt-[9rem] xl:pt-[9.75rem]"
             onClick={() => setIsRecommendationCalendarOpen(false)}
           >
             <div className={`${homeLayoutLock.pageXClass} w-full`}>
               <div className={`${homeLayoutLock.contentWidthClass} mx-auto flex w-full max-w-[1240px] items-start`}>
-                <div className="w-full lg:ml-[276px] lg:w-[calc(100%-276px)]">
+                <div className="w-full lg:ml-[276px] lg:flex lg:w-[calc(100%-276px)] lg:justify-center">
                   <div
-                    className="relative flex max-h-[calc(100vh-10rem)] w-full flex-col overflow-auto rounded-[12px] border border-[#dbe4f0] bg-white shadow-[0_32px_70px_-34px_rgba(15,23,42,0.42)] md:max-h-[calc(100vh-11.5rem)] xl:max-h-[calc(100vh-12rem)]"
+                    className="relative flex max-h-[calc(100vh-9rem)] w-full max-w-[1040px] flex-col overflow-auto rounded-[10px] border border-[#dbe4f0] bg-white shadow-[0_32px_70px_-34px_rgba(15,23,42,0.42)] md:max-h-[calc(100vh-10.5rem)] xl:max-h-[calc(100vh-11rem)] xl:max-w-[860px]"
                     onClick={(event) => event.stopPropagation()}
                   >
                     <div className="-mx-px flex items-center gap-6 border-b border-[#edf2f7] bg-white px-[18px] pt-3">
