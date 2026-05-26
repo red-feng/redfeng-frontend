@@ -1730,7 +1730,7 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
             <div className="min-w-0 flex-1 xl:max-w-[760px]">
-              <div className="rounded-[18px] border border-white/45 bg-white/12 p-3 shadow-[0_20px_32px_-24px_rgba(255,255,255,0.4)] backdrop-blur-[2px]">
+              <div className="rounded-[18px] border border-[#ffbe95] bg-[linear-gradient(135deg,rgba(236,104,42,0.88)_0%,rgba(221,92,34,0.82)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(124,45,18,0.4)] backdrop-blur-[2px]">
                 <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
                   <div className="relative min-w-0 flex-1">
               {canScrollSummaryPriceLeft ? (
