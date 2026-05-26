@@ -1057,6 +1057,27 @@ export default function FlightCatalogInteractiveClient({
   }, [quickDateOptions, recommendationCalendarMonth])
   const recommendationPriceTableColumns = useMemo(() => recommendationPriceTableDates.slice(0, 7), [recommendationPriceTableDates])
   const recommendationPriceTableRows = useMemo(() => recommendationPriceTableDates.slice(0, 8), [recommendationPriceTableDates])
+  const recommendationPriceTableLowestValue = useMemo(() => {
+    let lowest: number | null = null
+
+    recommendationPriceTableRows.forEach((rowDate) => {
+      const returnPrice = quickDatePriceMap.get(rowDate) ?? null
+      recommendationPriceTableColumns.forEach((columnDate) => {
+        const departPrice = quickDatePriceMap.get(columnDate) ?? null
+        if (departPrice === null) return
+        if (state.tripMode === "round_trip") {
+          if (returnPrice === null || rowDate < columnDate) return
+          const value = departPrice + returnPrice
+          if (lowest === null || value < lowest) lowest = value
+          return
+        }
+
+        if (lowest === null || departPrice < lowest) lowest = departPrice
+      })
+    })
+
+    return lowest
+  }, [quickDatePriceMap, recommendationPriceTableColumns, recommendationPriceTableRows, state.tripMode])
 
   const shouldShowCompactStickyBar = isScrolled && !isStickySearchExpanded
   const stickyCompactCopy = getStickyCompactCopy(locale)
@@ -2023,24 +2044,25 @@ export default function FlightCatalogInteractiveClient({
                           <p className="text-right text-[12px] font-medium text-[#6b7c93]">{priceTableMetaLabel} in {localeCurrencyMap[locale]}</p>
                         </div>
                         <div className="overflow-auto px-[18px] py-3">
-                          <div
-                            className="grid min-w-[780px] border border-[#edf2f7] bg-white [grid-template-columns:92px_repeat(7,minmax(88px,1fr))_92px]"
-                          >
-                            <div className="border-b border-r border-[#edf2f7] bg-white" />
+                          <div className="mb-2 flex items-center justify-between gap-4">
+                            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6b7c93]">{returnAxisLabel}</p>
+                            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#6b7c93]">{departureAxisLabel}</p>
+                          </div>
+                          <div className="grid min-w-[760px] border border-[#edf2f7] bg-white [grid-template-columns:106px_repeat(7,minmax(88px,1fr))]">
+                            <div className="border-b border-r border-[#edf2f7] bg-[#f8fafc] px-3 py-3 text-left">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#6b7c93]">{returnAxisLabel}</p>
+                            </div>
                             {recommendationPriceTableColumns.map((columnDate) => {
                               const axis = formatPriceTableAxisLabel(columnDate, locale)
                               const weekdayIndex = parseIsoDateValue(columnDate)?.getDay() ?? 0
                               const weekendTone = weekdayIndex === 0 || weekdayIndex === 6 ? "text-rose-500" : "text-[#1f2d3d]"
                               return (
-                                <div key={`col-${columnDate}`} className="border-b border-r border-[#edf2f7] bg-white px-2 py-2 text-center">
+                                <div key={`col-${columnDate}`} className="border-b border-r border-[#edf2f7] bg-white px-2 py-3 text-center last:border-r-0">
                                   <p className={`text-[11px] font-semibold ${weekendTone}`}>{axis.weekday}</p>
-                                  <p className={`mt-0.5 text-[11px] ${weekendTone}`}>{axis.dayMonth}</p>
+                                  <p className={`mt-1 text-[12px] ${weekendTone}`}>{axis.dayMonth}</p>
                                 </div>
                               )
                             })}
-                            <div className="border-b border-[#edf2f7] bg-[#f8fafc] px-2 py-2 text-center text-[12px] font-semibold text-[#1f2d3d]">
-                              {returnAxisLabel}
-                            </div>
 
                             {recommendationPriceTableRows.map((rowDate) => {
                               const rowAxis = formatPriceTableAxisLabel(rowDate, locale)
@@ -2049,26 +2071,25 @@ export default function FlightCatalogInteractiveClient({
 
                               return (
                                 <Fragment key={`row-${rowDate}`}>
-                                  <div className="border-b border-r border-[#edf2f7] bg-white px-2 py-2 text-center">
+                                  <div className="border-b border-r border-[#edf2f7] bg-white px-3 py-3 text-left">
                                     <p className={`text-[11px] font-semibold ${rowWeekendTone}`}>{rowAxis.weekday}</p>
-                                    <p className={`mt-0.5 text-[11px] ${rowWeekendTone}`}>{rowAxis.dayMonth}</p>
+                                    <p className={`mt-1 text-[12px] ${rowWeekendTone}`}>{rowAxis.dayMonth}</p>
                                   </div>
                                   {recommendationPriceTableColumns.map((columnDate) => {
                                     const departPrice = quickDatePriceMap.get(columnDate) ?? null
                                     const returnPrice = quickDatePriceMap.get(rowDate) ?? null
-                                    const disabled =
-                                      departPrice === null ||
-                                      returnPrice === null ||
-                                      (state.tripMode === "round_trip" && rowDate < columnDate)
+                                    const invalidRange = state.tripMode === "round_trip" && rowDate < columnDate
+                                    const disabled = departPrice === null || (state.tripMode === "round_trip" && returnPrice === null) || invalidRange
                                     const value =
                                       disabled
                                         ? null
                                         : state.tripMode === "round_trip"
-                                          ? departPrice + returnPrice
+                                          ? (departPrice ?? 0) + (returnPrice ?? 0)
                                           : departPrice
                                     const selected =
                                       recommendationPriceTableDraft.depart === columnDate &&
                                       (state.tripMode !== "round_trip" || recommendationPriceTableDraft.returnDate === rowDate)
+                                    const isBest = value !== null && recommendationPriceTableLowestValue !== null && value === recommendationPriceTableLowestValue
 
                                     return (
                                       <button
@@ -2076,24 +2097,33 @@ export default function FlightCatalogInteractiveClient({
                                         type="button"
                                         disabled={disabled}
                                         onClick={() => handleRecommendationPriceTableCellSelect(columnDate, rowDate)}
-                                        className={`min-h-[54px] border-b border-r border-[#edf2f7] px-2 py-2 text-center transition ${
+                                        className={`min-h-[58px] border-b border-r border-[#edf2f7] px-2 py-2 text-center transition last:border-r-0 ${
                                           selected
-                                            ? "bg-[#e9f4ff] shadow-[inset_0_0_0_1px_rgba(26,115,232,0.34)]"
+                                            ? "bg-[#e8f1ff] shadow-[inset_0_0_0_1px_rgba(26,115,232,0.42)]"
                                             : disabled
-                                              ? "bg-slate-50 text-slate-300"
-                                              : "bg-white hover:bg-sky-50"
+                                              ? "bg-slate-50/90"
+                                              : isBest
+                                                ? "bg-emerald-50/55 hover:bg-emerald-50"
+                                                : "bg-white hover:bg-sky-50"
                                         }`}
                                       >
-                                        <span className={`text-[12px] font-semibold ${selected ? "text-[#0f6fcb]" : value !== null && cheapestQuickDatePrice !== null && (departPrice === cheapestQuickDatePrice || returnPrice === cheapestQuickDatePrice) ? "text-emerald-600" : "text-[#1f2d3d]"}`}>
+                                        <span
+                                          className={`text-[12px] font-semibold ${
+                                            selected
+                                              ? "text-[#1565d8]"
+                                              : disabled
+                                                ? "text-slate-300"
+                                                : isBest
+                                                  ? "text-emerald-600"
+                                                  : "text-[#1f2d3d]"
+                                          }`}
+                                        >
                                           {value === null ? " " : formatCompactPriceAmountOnly(value, locale, liveFlightRates)}
                                         </span>
+                                        {!selected && !disabled && isBest ? <p className="mt-1 text-[9px] font-medium uppercase tracking-[0.08em] text-emerald-600">Best</p> : null}
                                       </button>
                                     )
                                   })}
-                                  <div className="border-b border-[#edf2f7] bg-[#f8fafc] px-2 py-2 text-center">
-                                    <p className={`text-[11px] font-semibold ${rowWeekendTone}`}>{rowAxis.weekday}</p>
-                                    <p className={`mt-0.5 text-[11px] ${rowWeekendTone}`}>{rowAxis.dayMonth}</p>
-                                  </div>
                                 </Fragment>
                               )
                             })}
