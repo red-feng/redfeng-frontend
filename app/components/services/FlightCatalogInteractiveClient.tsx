@@ -1695,7 +1695,28 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
             <div className="min-w-0 flex-1 xl:max-w-[760px]">
-              <div className="rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,#ff7b3f_0%,#ff5a28_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
+              <div className="relative overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,#ff7b3f_0%,#ff5a28_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
+                <div className="pointer-events-none absolute inset-0">
+                  <div className="absolute -left-10 top-1/2 h-28 w-28 -translate-y-1/2 rounded-full bg-white/10 blur-sm" />
+                  <div className="absolute left-[18%] top-2 h-20 w-40 rounded-full border border-white/14" />
+                  <div className="absolute left-[24%] top-6 h-16 w-28 rounded-full border border-white/10" />
+                  <div className="absolute right-20 top-1 h-24 w-24 rounded-full bg-white/10 blur-md" />
+                  <div className="absolute right-8 top-3 h-20 w-32 rounded-[999px] border border-white/12 bg-white/5" />
+                  <svg
+                    viewBox="0 0 180 72"
+                    className="absolute right-6 top-3 h-[58px] w-[150px] text-white/24"
+                    aria-hidden="true"
+                  >
+                    <g fill="currentColor">
+                      <path d="M12 41c7-6 22-11 40-15l65-12c8-1 15 0 21 3l22 11c3 2 4 5 3 8l-1 2c-1 3-4 5-8 5h-28l-4 15c0 2-2 4-5 4h-13c-2 0-3-1-4-3l-2-15H70L58 57c-1 2-3 3-5 3H40c-3 0-4-2-4-4l3-13H21c-7 0-11-1-13-2-2-1-1-3 4-6Z" />
+                      <circle cx="54" cy="26" r="4" fill="rgba(255,255,255,0.18)" />
+                      <circle cx="72" cy="23" r="4" fill="rgba(255,255,255,0.18)" />
+                      <circle cx="90" cy="20" r="4" fill="rgba(255,255,255,0.18)" />
+                      <circle cx="108" cy="18" r="4" fill="rgba(255,255,255,0.18)" />
+                      <circle cx="126" cy="16" r="4" fill="rgba(255,255,255,0.18)" />
+                    </g>
+                  </svg>
+                </div>
                 <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
                   <div className="relative min-w-0 flex-1">
               {canScrollSummaryPriceLeft ? (
