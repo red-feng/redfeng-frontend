@@ -2144,7 +2144,6 @@ export default function FlightCatalogInteractiveClient({
                 {resetInlineLabel}
               </button>
             </div>
-            <p className="mt-3 text-xs leading-6 text-slate-500">{copy.leftBody}</p>
           </div>
 
           <FilterSection title={copy.regionBlock} open={openSections.region} onToggle={() => toggleSection("region")}>
@@ -2452,9 +2451,6 @@ export default function FlightCatalogInteractiveClient({
                       ))}
                     </div>
 
-                    <div className="mt-4 text-[12px] leading-6 text-slate-500">
-                      <p>{item.availabilityNote}</p>
-                    </div>
                   </div>
 
                   <div className="relative flex flex-col justify-center border-t border-[#eef1f6] bg-white p-5 xl:border-l xl:border-t-0">
@@ -2466,12 +2462,10 @@ export default function FlightCatalogInteractiveClient({
                     <p className="text-[12px] text-slate-500">{copy.priceLabel}</p>
                     <p className="mt-2 text-[16px] font-semibold tracking-[-0.02em] text-[#ef5b2a]">{formatCompactPrice(parseFlightPrice(meta.price), locale, liveFlightRates)}</p>
                     <p className="mt-1 text-[11px] text-slate-400">/pax</p>
-                    <p className="mt-2 text-[11px] leading-5 text-slate-500">{meta.seatNote}</p>
                     <div className="mt-5 space-y-2">
                       <Link href={supportHref} className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105">
                         {copy.chooseLabel}
                       </Link>
-                      <p className="text-[11px] leading-5 text-slate-500">{copy.supportHint}</p>
                     </div>
                   </div>
                 </div>
