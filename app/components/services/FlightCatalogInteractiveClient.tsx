@@ -1695,7 +1695,15 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
             <div className="min-w-0 flex-1 xl:max-w-[760px]">
-              <div className="rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,#ff7b3f_0%,#ff5a28_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
+              <div
+                className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[#ff7b3f] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)]"
+                style={{
+                  backgroundImage: "url('/flight-strip-bg.png')",
+                  backgroundPosition: "center",
+                  backgroundRepeat: "no-repeat",
+                  backgroundSize: "cover",
+                }}
+              >
                 <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
                   <div className="relative min-w-0 flex-1">
               {canScrollSummaryPriceLeft ? (
