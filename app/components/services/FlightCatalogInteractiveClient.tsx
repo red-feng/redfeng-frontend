@@ -1737,7 +1737,7 @@ export default function FlightCatalogInteractiveClient({
                         onClick={() => handleQuickDateSelect(entry.date)}
                         className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                           active
-                            ? "border-[#7ed321] bg-white text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.8),0_0_10px_rgba(126,211,33,0.28),0_10px_22px_-18px_rgba(56,161,105,0.55)]"
+                            ? "border-[#7ed321] bg-[linear-gradient(180deg,#f7fff1_0%,#ecffe0_100%)] text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.8),0_0_10px_rgba(126,211,33,0.28),0_10px_22px_-18px_rgba(56,161,105,0.55)]"
                             : isCheapest
                               ? "border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300"
                               : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
@@ -1745,7 +1745,6 @@ export default function FlightCatalogInteractiveClient({
                       >
                         <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
                         <p className={`mt-1 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
-                        {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#11a36a]">{stickyCompactCopy.selected}</p> : null}
                       </button>
                     )
                   })}
