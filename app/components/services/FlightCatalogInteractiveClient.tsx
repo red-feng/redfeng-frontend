@@ -1682,7 +1682,7 @@ export default function FlightCatalogInteractiveClient({
             backgroundImage: "url('/flight-strip-bg-replacement.png')",
             backgroundPosition: "71% 37%",
             backgroundRepeat: "no-repeat",
-            backgroundSize: "cover",
+            backgroundSize: "82% auto",
           }}
         >
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
