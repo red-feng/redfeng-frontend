@@ -1679,10 +1679,10 @@ export default function FlightCatalogInteractiveClient({
         <div
           className="overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]"
           style={{
-            backgroundImage: "url('/flight-strip-bg.png')",
-            backgroundPosition: "44% 8%",
+            backgroundImage: "url('/flight-strip-bg-replacement.png')",
+            backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            backgroundSize: "88% auto",
+            backgroundSize: "cover",
           }}
         >
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
