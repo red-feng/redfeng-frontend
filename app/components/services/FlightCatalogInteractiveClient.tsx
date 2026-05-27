@@ -1680,8 +1680,7 @@ export default function FlightCatalogInteractiveClient({
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-[430px]">
               <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]" title={recommendationLead}>
-                <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#6a819b]">{recommendedLabel}</p>
-                <p className="mt-3 text-[16px] font-semibold tracking-[-0.03em] text-[#1167c4]">{activeRouteSummary}</p>
+                <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">{activeRouteSummary}</p>
                 <p className="mt-2 text-[14px] text-slate-500">{activeMetaSummary}</p>
               </div>
               <div className="mt-4 hidden flex-wrap gap-4">
@@ -1753,9 +1752,6 @@ export default function FlightCatalogInteractiveClient({
                   </div>
                 )}
               </div>
-              {recommendationDateCards.length > 0 && recommendationDateCards.length < Math.min(5, recommendationCardLimit) ? (
-                <p className="mt-2 px-2 text-[11px] font-medium text-white/88">{limitedDatesLabel}</p>
-              ) : null}
               {canScrollSummaryPriceRight ? (
                 <button
                   type="button"
@@ -1773,9 +1769,9 @@ export default function FlightCatalogInteractiveClient({
                     type="button"
                     onClick={openRecommendationCalendar}
                     title={moreRoutesLabel}
-                    className="inline-flex shrink-0 flex-col items-center justify-center gap-2 rounded-[16px] border border-[#4da8ff] bg-[linear-gradient(180deg,#2492ee_0%,#1d7fe0_100%)] px-4 py-3 text-center text-[12px] font-semibold text-white shadow-[0_16px_28px_-22px_rgba(29,127,224,0.9)] transition hover:brightness-105 xl:min-w-[92px]"
+                    className="inline-flex shrink-0 flex-col items-center justify-center gap-2 rounded-[16px] border border-white/40 bg-transparent px-4 py-3 text-center text-[12px] font-semibold text-white shadow-none transition hover:bg-white/10 xl:min-w-[92px]"
                   >
-                    <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+                    <svg viewBox="0 0 16 16" className="h-7 w-7 fill-none stroke-current stroke-[1.8]">
                       <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
                       <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
                     </svg>
