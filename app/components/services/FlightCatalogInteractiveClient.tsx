@@ -1676,7 +1676,15 @@ export default function FlightCatalogInteractiveClient({
       </section>
 
       <section className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
-        <div className="rounded-[20px] border border-[#ffc49b] bg-[linear-gradient(135deg,#ff8e62_0%,#ffb67d_100%)] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]">
+        <div
+          className="overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]"
+          style={{
+            backgroundImage: "url('/flight-strip-bg.png')",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "cover",
+          }}
+        >
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-[430px]">
               <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]" title={recommendationLead}>
@@ -1695,15 +1703,7 @@ export default function FlightCatalogInteractiveClient({
               </div>
             </div>
             <div className="min-w-0 flex-1 xl:max-w-[760px]">
-              <div
-                className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[#ff7b3f] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)]"
-                style={{
-                  backgroundImage: "url('/flight-strip-bg.png')",
-                  backgroundPosition: "center",
-                  backgroundRepeat: "no-repeat",
-                  backgroundSize: "cover",
-                }}
-              >
+              <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
                 <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
                   <div className="relative min-w-0 flex-1">
               {canScrollSummaryPriceLeft ? (
