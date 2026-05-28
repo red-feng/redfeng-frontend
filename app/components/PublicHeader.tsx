@@ -133,7 +133,7 @@ export default async function PublicHeader({
                   ))}
               </nav>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3.5">
                 {renderPublicHeaderLink({
                   href: "/bantuan",
                   className: navLinkClass,
