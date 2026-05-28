@@ -38,6 +38,7 @@ export default function PublicHeaderAccountControls({
   const accountHref = accountRole === "guest" ? "/login" : getPublicAccountHomePath(accountRole)
   const accountLabel = isAuthenticated ? t.account : guestLoginLabel
   const isOverlay = variant === "overlay"
+  const controlsClassName = !isAuthenticated && !isOverlay ? "flex flex-wrap items-center gap-0" : "flex flex-wrap items-center gap-2.5 sm:gap-4"
 
   useEffect(() => {
     let isMounted = true
@@ -85,7 +86,7 @@ export default function PublicHeaderAccountControls({
   }, [initialRole, pathname, redirectSuperadminFromHome, router, supabase])
 
   return (
-    <div className="flex flex-wrap items-center gap-2.5 sm:gap-4">
+    <div className={controlsClassName}>
       {!isAuthenticated && isOverlay ? (
         <Link
           href="/login"
