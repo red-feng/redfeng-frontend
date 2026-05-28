@@ -1487,7 +1487,7 @@ export default function FlightCatalogInteractiveClient({
                               ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)]"
                               : isCheapest
                                 ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
-                                : "border-[#f1ddd0] bg-white text-slate-600 hover:border-[#efc4ad] hover:bg-[#fff8f2]"
+                                : "border-[#f1ddd0] bg-[#fffdfa] text-slate-600 hover:border-[#efc4ad] hover:bg-[#fff6ee]"
                           }`}
                         >
                           <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
@@ -1545,7 +1545,7 @@ export default function FlightCatalogInteractiveClient({
                               ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c]"
                               : isCheapest
                                 ? "border-emerald-200 bg-emerald-50/70 text-emerald-700"
-                                : "border-[#f1ddd0] bg-white text-slate-700 hover:bg-[#fff8f2]"
+                                : "border-[#f1ddd0] bg-[#fffdfa] text-slate-700 hover:bg-[#fff6ee]"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
