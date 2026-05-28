@@ -89,7 +89,7 @@ export default async function PublicHeader({
   )
 
   const productNav = (
-    <nav className={`flex min-w-max items-center gap-1 text-sm font-medium text-slate-700 sm:text-[15px]`}>
+    <nav className={`flex min-w-max items-center gap-1 text-sm font-semibold text-slate-700 sm:text-[15px]`}>
       {publicHeaderProductNavItems.map((item) => (
         <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
           {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
@@ -102,7 +102,7 @@ export default async function PublicHeader({
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
-          <div className="relative z-10 hidden flex-col items-center lg:flex">
+          <div className="relative z-10 hidden min-h-[158px] flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a
                 href="https://redfeng.co/"
@@ -200,8 +200,8 @@ export default async function PublicHeader({
   return (
     <header className="public-header border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fffaf4_100%)]">
       <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopDefaultPaddingClass}`}>
-        <div className="flex flex-col gap-4 lg:gap-5">
-          <div className="relative z-10 hidden flex-col items-center lg:flex">
+        <div className="flex flex-col gap-4 lg:gap-0">
+          <div className="relative z-10 hidden min-h-[158px] flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopDefaultLogoLiftClass}`}>
                 <Image
