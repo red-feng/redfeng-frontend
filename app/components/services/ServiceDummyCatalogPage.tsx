@@ -6,7 +6,7 @@ import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import FlightCatalogInteractiveClient from "@/app/components/services/FlightCatalogInteractiveClient"
-import { isFlightTripMode, normalizeFlightLocationLabel, type FlightTripMode } from "@/app/components/flights/flightSearchParams"
+import { isFlightTripMode, normalizeFlightLocationLabel } from "@/app/components/flights/flightSearchParams"
 import {
   getServiceAvailabilityLabel,
   getServiceAvailabilityTone,
@@ -14,9 +14,7 @@ import {
 } from "@/app/components/services/serviceCatalog"
 import { getCurrentLocale } from "@/lib/locale"
 import { getDummyServiceCatalog, type DummyCatalogItem, type DummyServiceSlug } from "@/lib/service-dummy-catalog"
-import { dummyAffiliateFlightProvider } from "@/lib/flights/dummyAffiliateFlightProvider"
-import { getFlightCardMeta as getProviderReadyFlightCardMeta, type FlightCatalogCardMeta as ProviderReadyFlightCatalogCardMeta } from "@/lib/flights/dummyFlightCatalog"
-import type { AffiliateFlightOffer } from "@/lib/flights/affiliateTypes"
+import { buildFlightCatalogItems } from "@/lib/flights/flightCatalogService"
 
 function firstQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] || "" : value || ""
@@ -171,283 +169,6 @@ function FilterCheck({ active }: { active: boolean }) {
   )
 }
 
-type FlightCatalogCardMeta = {
-  airline: string
-  departure: string
-  arrival: string
-  duration: string
-  transit: string
-  price: string
-  seatNote: string
-  origin: string
-  destination: string
-  routeCode: string
-  cabin: string
-  tripLabel: string
-  highlightBadges: string[]
-  maxPassengers: number
-  tripSupport: FlightTripMode[]
-  availableDates: string[]
-}
-
-type FlightCatalogPresetMeta = Omit<FlightCatalogCardMeta, "origin" | "destination" | "routeCode" | "cabin" | "tripLabel" | "highlightBadges">
-
-function inferFlightTripSupport(item: DummyCatalogItem, routeCode: string, factMap: Map<string, string>) {
-  const normalizedGroup = item.group.toLowerCase()
-  const transitFact = (factMap.get("transit") || "").trim()
-  const routeSegments = routeCode
-    .split("-")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-
-  const isMultiCityRoute =
-    normalizedGroup.includes("multi kota") ||
-    routeSegments.length > 2 ||
-    transitFact.length > 0
-
-  return isMultiCityRoute ? (["one_way", "multi_city"] as FlightTripMode[]) : (["one_way", "round_trip"] as FlightTripMode[])
-}
-
-function inferFlightTransitLabel(routeCode: string, factMap: Map<string, string>, locale: string) {
-  const transitFact = (factMap.get("transit") || "").trim()
-  const routeSegments = routeCode
-    .split("-")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-
-  if (transitFact) {
-    return locale === "en" ? `Transit via ${transitFact}` : locale === "zh" ? `经${transitFact}中转` : `Transit via ${transitFact}`
-  }
-
-  if (routeSegments.length > 2) {
-    const transitStop = routeSegments[1]
-    return locale === "en" ? `Transit via ${transitStop}` : locale === "zh" ? `经${transitStop}中转` : `Transit via ${transitStop}`
-  }
-
-  return locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung"
-}
-
-function inferFlightAvailableDates(routeCode: string, factMap: Map<string, string>) {
-  const transitFact = (factMap.get("transit") || "").trim()
-  const routeSegments = routeCode
-    .split("-")
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-
-  if (transitFact || routeSegments.length > 2) {
-    return ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"]
-  }
-
-  return ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"]
-}
-
-function getFlightCardMeta(item: DummyCatalogItem, index: number, locale: string): FlightCatalogCardMeta {
-  const presetList: FlightCatalogPresetMeta[] = [
-    {
-      airline: "Garuda Indonesia",
-      departure: "05:45",
-      arrival: "08:40",
-      duration: "1j 55m",
-      transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
-      price: "IDR 1.248.000",
-      seatNote: locale === "en" ? "Last 6 seats at this fare" : locale === "zh" ? "该票价仅剩 6 个座位" : "Sisa 6 kursi di harga ini",
-      maxPassengers: 1,
-        tripSupport: ["one_way", "round_trip"],
-      availableDates: ["2026-05-25", "2026-05-26", "2026-05-27"],
-    },
-    {
-      airline: "Singapore Airlines",
-      departure: "08:20",
-      arrival: "11:05",
-      duration: "1j 45m",
-      transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
-      price: "IDR 4.860.000",
-      seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "灵活商务舱位" : "Kabin business lebih fleksibel",
-      maxPassengers: 2,
-      tripSupport: ["one_way", "round_trip"],
-      availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
-    },
-    {
-      airline: "Batik Air",
-      departure: "09:10",
-      arrival: "10:25",
-      duration: "1j 15m",
-      transit: locale === "en" ? "Round-trip ready" : locale === "zh" ? "适合往返" : "Siap untuk pulang-pergi",
-      price: "IDR 1.032.000",
-      seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
-      maxPassengers: 3,
-      tripSupport: ["round_trip"],
-      availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
-    },
-    {
-      airline: "AirAsia",
-      departure: "13:35",
-      arrival: "16:20",
-      duration: "2j 45m",
-      transit: locale === "en" ? "Promo route" : locale === "zh" ? "促销航线" : "Rute promo",
-      price: "IDR 1.786.000",
-      seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
-      maxPassengers: 4,
-      tripSupport: ["one_way", "multi_city"],
-      availableDates: ["2026-05-25", "2026-05-31", "2026-06-04", "2026-06-10"],
-    },
-  ]
-  const preset = presetList[index % 4] as FlightCatalogPresetMeta
-
-  const routeParts = item.location.split("-").map((part) => part.trim())
-  const origin = routeParts[0] || item.location
-  const destination = routeParts[1] || item.location
-  const highlightBadges = item.highlights.slice(0, 3)
-  const factMap = new Map(item.facts.map((fact) => [fact.label.toLowerCase(), fact.value]))
-  const routeCode = factMap.get("route code") || item.location.replace(/\s+/g, "")
-  const inferredTransit = inferFlightTransitLabel(routeCode, factMap, locale)
-  const inferredAvailableDates = inferFlightAvailableDates(routeCode, factMap)
-  const routeOverrides: Partial<FlightCatalogCardMeta> = (() => {
-    if (item.id === "flight-cgk-dps") {
-      return {
-        airline: "Garuda Indonesia",
-        departure: "05:45",
-        arrival: "08:40",
-        duration: "1j 55m",
-        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
-        price: "IDR 1.248.000",
-        seatNote: locale === "en" ? "Strong for one-way and round-trip Bali traffic" : locale === "zh" ? "适合巴厘岛单程与往返需求" : "Kuat untuk trafik Bali sekali jalan maupun pulang-pergi",
-        maxPassengers: 4,
-        tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
-      }
-    }
-
-    if (item.id === "flight-cgk-sin") {
-      return {
-        airline: "Singapore Airlines",
-        departure: "08:20",
-        arrival: "11:05",
-        duration: "1j 45m",
-        transit: locale === "en" ? "Direct" : locale === "zh" ? "直飞" : "Langsung",
-        price: "IDR 4.860.000",
-        seatNote: locale === "en" ? "Flexible business cabin" : locale === "zh" ? "灵活商务舱位" : "Kabin business lebih fleksibel",
-        maxPassengers: 2,
-        tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
-      }
-    }
-
-    if (item.id === "flight-cgk-nrt-via-sin") {
-      return {
-        airline: "Singapore Airlines",
-        departure: "00:40",
-        arrival: "15:10",
-        duration: "11j 30m",
-        transit: locale === "en" ? "Transit via Singapore" : locale === "zh" ? "经新加坡中转" : "Transit via Singapore",
-        price: "IDR 6.420.000",
-        seatNote: locale === "en" ? "Best dummy route for CGK - SIN - NRT flow" : locale === "zh" ? "最适合 CGK - SIN - NRT 流程的示例航线" : "Rute dummy terbaik untuk flow CGK - SIN - NRT",
-        maxPassengers: 2,
-        tripSupport: ["multi_city", "one_way"],
-        availableDates: ["2026-06-04", "2026-06-07", "2026-06-10"],
-      }
-    }
-
-    if (item.id === "flight-sub-bpn") {
-      return {
-        airline: "Batik Air",
-        departure: "09:10",
-        arrival: "10:25",
-        duration: "1j 15m",
-        transit: locale === "en" ? "Round-trip ready" : locale === "zh" ? "适合往返" : "Siap untuk pulang-pergi",
-        price: "IDR 1.032.000",
-        seatNote: locale === "en" ? "Popular for corporate travel" : locale === "zh" ? "适合差旅需求" : "Sering dipilih untuk corporate travel",
-        maxPassengers: 3,
-        tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-06-04", "2026-06-07"],
-      }
-    }
-
-    if (item.id === "flight-dps-kul") {
-      return {
-        airline: "AirAsia",
-        departure: "13:35",
-        arrival: "16:20",
-        duration: "2j 45m",
-        transit: locale === "en" ? "Promo route" : locale === "zh" ? "促销航线" : "Rute promo",
-        price: "IDR 1.786.000",
-        seatNote: locale === "en" ? "Best price for weekend traffic" : locale === "zh" ? "周末需求的好价位" : "Harga terbaik untuk trafik akhir pekan",
-        maxPassengers: 4,
-        tripSupport: ["one_way", "round_trip"],
-        availableDates: ["2026-05-25", "2026-05-28", "2026-05-29", "2026-06-04"],
-      }
-    }
-
-    return {}
-  })()
-
-  return {
-    ...preset,
-    ...routeOverrides,
-    origin,
-    destination,
-    routeCode,
-    transit: item.id === "flight-dps-kul" ? inferredTransit : routeOverrides.transit ?? inferredTransit,
-    cabin: factMap.get("cabin") || (item.group.toLowerCase().includes("business") ? "Business" : "Economy"),
-    tripLabel: item.group,
-    highlightBadges,
-    tripSupport: routeOverrides.tripSupport ?? inferFlightTripSupport(item, routeCode, factMap),
-    availableDates: routeOverrides.availableDates ?? inferredAvailableDates,
-  }
-}
-
-function parseFlightPrice(value: string) {
-  const digits = value.replace(/[^\d]/g, "")
-  return Number(digits || "0")
-}
-
-function parseFlightTime(value: string) {
-  const [hour, minute] = value.split(":").map((part) => Number(part || "0"))
-  return hour * 60 + minute
-}
-
-function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): ProviderReadyFlightCatalogCardMeta {
-  return {
-    airline: offer.airlineName,
-    departure: offer.departureTime,
-    arrival: offer.arrivalTime,
-    duration: offer.durationLabel,
-    transit: offer.transitLabel,
-    price: offer.price.display,
-    seatNote: item.statusNote,
-    origin: offer.originCode,
-    destination: offer.destinationCode,
-    routeCode: offer.routeCode,
-    cabin: offer.cabinClass,
-    tripLabel: item.group,
-    highlightBadges: offer.highlights,
-    maxPassengers: offer.maxPassengers,
-    tripSupport:
-      offer.tripType === "round_trip"
-        ? ["one_way", "round_trip"]
-        : offer.tripType === "multi_city"
-          ? ["one_way", "multi_city"]
-          : ["one_way"],
-    availableDates: offer.availableDates,
-  }
-}
-
-function matchFlightWindow(minutes: number, window: string) {
-  if (!window) return true
-  if (window === "morning") return minutes >= 0 && minutes < 720
-  if (window === "afternoon") return minutes >= 720 && minutes < 1080
-  if (window === "evening") return minutes >= 1080
-  return true
-}
-
-function matchFlightPriceBand(price: number, band: string) {
-  if (!band) return true
-  if (band === "budget") return price < 1500000
-  if (band === "mid") return price >= 1500000 && price < 3000000
-  if (band === "premium") return price >= 3000000
-  return true
-}
-
 export default async function ServiceDummyCatalogPage({
   slug,
   searchParams,
@@ -511,51 +232,25 @@ export default async function ServiceDummyCatalogPage({
       : []
   const affiliateFlightSearchResult =
     slug === "pesawat"
-      ? await dummyAffiliateFlightProvider.searchFlights({
-          tripType: isFlightTripMode(flightTrip) ? flightTrip : "round_trip",
-          originCode: rawFlightFrom.trim().split(/\s+/)[0] || "",
-          destinationCode: rawFlightTo.trim().split(/\s+/)[0] || "",
-          departDate: flightDepart,
-          returnDate: flightTrip === "round_trip" ? flightReturn : undefined,
-          cabinClass: flightCabin as "Economy" | "Premium Economy" | "Business" | "First Class",
-          passengers: { adults: 1, children: 0, infants: 0 },
+      ? await buildFlightCatalogItems({
+          items: filteredItems,
           locale,
+          trip: flightTrip,
+          rawFrom: rawFlightFrom,
+          rawTo: rawFlightTo,
+          depart: flightDepart,
+          returnDate: flightReturn,
+          cabin: flightCabin,
+          sort: flightSort,
+          airlines: flightAirlines,
+          departWindows: flightDepartWindows,
+          transitTypes: flightTransitTypes,
+          priceBands: flightPriceBands,
+          isFlightTripMode,
         })
-      : null
-  const affiliateOfferBySourceItemId = new Map(
-    (affiliateFlightSearchResult?.offers || []).map((offer) => [offer.sourceItemId, offer] as const),
-  )
-  const flightItems =
-    slug === "pesawat"
-      ? filteredItems
-          .map((item, index) => ({
-            item,
-            meta: affiliateOfferBySourceItemId.has(item.id)
-              ? mapAffiliateOfferToFlightCardMeta(affiliateOfferBySourceItemId.get(item.id) as AffiliateFlightOffer, item)
-              : getProviderReadyFlightCardMeta(item, index, locale),
-          }))
-          .filter(({ meta }) => {
-            const departureMinutes = parseFlightTime(meta.departure)
-            const priceValue = parseFlightPrice(meta.price)
-            const isDirect = String(meta.transit).toLowerCase().includes("direct") || String(meta.transit).toLowerCase().includes("langsung") || String(meta.transit).includes("直飞")
-            const matchesAirline = flightAirlines.length === 0 || flightAirlines.includes(meta.airline)
-            const matchesDepartWindow = flightDepartWindows.length === 0 || flightDepartWindows.some((window) => matchFlightWindow(departureMinutes, window))
-            const matchesTransit =
-              flightTransitTypes.length === 0 ||
-              flightTransitTypes.some((type) => (type === "direct" ? isDirect : !isDirect))
-            const matchesPriceBand = flightPriceBands.length === 0 || flightPriceBands.some((band) => matchFlightPriceBand(priceValue, band))
-            return matchesAirline && matchesDepartWindow && matchesTransit && matchesPriceBand
-          })
-          .sort((left, right) => {
-            if (flightSort === "price") {
-              return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price)
-            }
-            if (flightSort === "early") {
-              return parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
-            }
-            return parseFlightPrice(left.meta.price) - parseFlightPrice(right.meta.price) || parseFlightTime(left.meta.departure) - parseFlightTime(right.meta.departure)
-          })
       : []
+  const flightItems = slug === "pesawat" ? affiliateFlightSearchResult : []
+
 
   const copy = {
     id: {
