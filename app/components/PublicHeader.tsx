@@ -68,13 +68,13 @@ export default async function PublicHeader({
   const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
     ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
-    : "whitespace-nowrap rounded-full border border-orange-100 bg-white/85 px-3 py-2 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:shadow-none"
+    : "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
   const activePackageLinkClass = isOverlay
     ? "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-slate-950 transition hover:bg-black/5 hover:text-[#ef4423]"
-    : "whitespace-nowrap rounded-full border border-orange-100 bg-[#fff6ec] px-3 py-2 text-orange-700 shadow-sm transition hover:text-orange-600 sm:border-transparent sm:bg-transparent sm:px-1 sm:py-1 sm:text-inherit sm:shadow-none"
+    : "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-slate-950 transition hover:bg-black/5 hover:text-[#ef4423]"
 
   const topNav = (
-    <nav className={`flex min-w-max items-center ${isOverlay ? "gap-1" : "gap-2 sm:gap-5"} text-[14px] font-medium text-slate-700 sm:text-[15px]`}>
+    <nav className={`flex min-w-max items-center gap-1 text-[14px] font-medium text-slate-700 sm:text-[15px]`}>
       {publicHeaderTopNavItems.map((item) => (
         <div key={item.key}>
           {renderPublicHeaderLink({
@@ -89,7 +89,7 @@ export default async function PublicHeader({
   )
 
   const productNav = (
-    <nav className={`flex min-w-max items-center ${isOverlay ? "gap-1" : "gap-2 sm:gap-5"} text-sm font-medium text-slate-700 sm:text-[15px]`}>
+    <nav className={`flex min-w-max items-center gap-1 text-sm font-medium text-slate-700 sm:text-[15px]`}>
       {publicHeaderProductNavItems.map((item) => (
         <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
           {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
@@ -203,7 +203,7 @@ export default async function PublicHeader({
         <div className="flex flex-col gap-4 lg:gap-5">
           <div className="relative z-10 hidden flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass}`}>
+              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopDefaultLogoLiftClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
