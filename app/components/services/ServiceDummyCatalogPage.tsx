@@ -14,6 +14,9 @@ import {
 } from "@/app/components/services/serviceCatalog"
 import { getCurrentLocale } from "@/lib/locale"
 import { getDummyServiceCatalog, type DummyCatalogItem, type DummyServiceSlug } from "@/lib/service-dummy-catalog"
+import { dummyAffiliateFlightProvider } from "@/lib/flights/dummyAffiliateFlightProvider"
+import { getFlightCardMeta as getProviderReadyFlightCardMeta, type FlightCatalogCardMeta as ProviderReadyFlightCatalogCardMeta } from "@/lib/flights/dummyFlightCatalog"
+import type { AffiliateFlightOffer } from "@/lib/flights/affiliateTypes"
 
 function firstQueryValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] || "" : value || ""
@@ -403,6 +406,32 @@ function parseFlightTime(value: string) {
   return hour * 60 + minute
 }
 
+function mapAffiliateOfferToFlightCardMeta(offer: AffiliateFlightOffer, item: DummyCatalogItem): ProviderReadyFlightCatalogCardMeta {
+  return {
+    airline: offer.airlineName,
+    departure: offer.departureTime,
+    arrival: offer.arrivalTime,
+    duration: offer.durationLabel,
+    transit: offer.transitLabel,
+    price: offer.price.display,
+    seatNote: item.statusNote,
+    origin: offer.originCode,
+    destination: offer.destinationCode,
+    routeCode: offer.routeCode,
+    cabin: offer.cabinClass,
+    tripLabel: item.group,
+    highlightBadges: offer.highlights,
+    maxPassengers: offer.maxPassengers,
+    tripSupport:
+      offer.tripType === "round_trip"
+        ? ["one_way", "round_trip"]
+        : offer.tripType === "multi_city"
+          ? ["one_way", "multi_city"]
+          : ["one_way"],
+    availableDates: offer.availableDates,
+  }
+}
+
 function matchFlightWindow(minutes: number, window: string) {
   if (!window) return true
   if (window === "morning") return minutes >= 0 && minutes < 720
@@ -435,9 +464,11 @@ export default async function ServiceDummyCatalogPage({
   const selectedRegion = firstQueryValue(resolvedSearchParams.region)
   const selectedGroup = firstQueryValue(resolvedSearchParams.group)
   const flightTrip = firstQueryValue(resolvedSearchParams.trip) || "round_trip"
-  const flightFrom = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.from) || "CGK Jakarta")
+  const rawFlightFrom = firstQueryValue(resolvedSearchParams.from)
+  const rawFlightTo = firstQueryValue(resolvedSearchParams.to)
+  const flightFrom = normalizeFlightLocationLabel(rawFlightFrom || "CGK Jakarta")
   const flightVia = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.via) || "Singapore")
-  const flightTo = normalizeFlightLocationLabel(firstQueryValue(resolvedSearchParams.to) || "DPS Denpasar")
+  const flightTo = normalizeFlightLocationLabel(rawFlightTo || "DPS Denpasar")
   const flightDepart = firstQueryValue(resolvedSearchParams.depart) || "2026-05-21"
   const flightReturn = firstQueryValue(resolvedSearchParams.return) || "2026-05-23"
   const flightPassengers = firstQueryValue(resolvedSearchParams.passengers) || "1 Dewasa"
@@ -478,12 +509,30 @@ export default async function ServiceDummyCatalogPage({
           rooms: hotelRooms,
         })
       : []
+  const affiliateFlightSearchResult =
+    slug === "pesawat"
+      ? await dummyAffiliateFlightProvider.searchFlights({
+          tripType: isFlightTripMode(flightTrip) ? flightTrip : "round_trip",
+          originCode: rawFlightFrom.trim().split(/\s+/)[0] || "",
+          destinationCode: rawFlightTo.trim().split(/\s+/)[0] || "",
+          departDate: flightDepart,
+          returnDate: flightTrip === "round_trip" ? flightReturn : undefined,
+          cabinClass: flightCabin as "Economy" | "Premium Economy" | "Business" | "First Class",
+          passengers: { adults: 1, children: 0, infants: 0 },
+          locale,
+        })
+      : null
+  const affiliateOfferBySourceItemId = new Map(
+    (affiliateFlightSearchResult?.offers || []).map((offer) => [offer.sourceItemId, offer] as const),
+  )
   const flightItems =
     slug === "pesawat"
       ? filteredItems
           .map((item, index) => ({
             item,
-            meta: getFlightCardMeta(item, index, locale),
+            meta: affiliateOfferBySourceItemId.has(item.id)
+              ? mapAffiliateOfferToFlightCardMeta(affiliateOfferBySourceItemId.get(item.id) as AffiliateFlightOffer, item)
+              : getProviderReadyFlightCardMeta(item, index, locale),
           }))
           .filter(({ meta }) => {
             const departureMinutes = parseFlightTime(meta.departure)
