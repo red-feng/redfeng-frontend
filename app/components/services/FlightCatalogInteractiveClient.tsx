@@ -1425,17 +1425,17 @@ export default function FlightCatalogInteractiveClient({
   return (
     <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.38),transparent_28%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.32),transparent_22%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#dce7f5] bg-white shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
             <div className={homeLayoutLock.contentWidthClass}>
-              <div className="scale-[0.994] rounded-[22px] border border-[#dce7f5] bg-white transition-all duration-200 lg:border-transparent lg:bg-transparent">
+              <div className="scale-[0.994] rounded-[22px] border border-[#f1ddd0] bg-white/92 transition-all duration-200 lg:border-transparent lg:bg-transparent">
                 <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
                 <button
                   type="button"
                   onClick={() => setIsStickySearchExpanded(true)}
                   className="min-w-0 text-left"
                 >
-                  <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#1167c4]">
+                  <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">
                     {buildStickyRouteSummary(state, copy)}
                   </p>
                   <p className="mt-1 truncate text-[13px] text-slate-500">
@@ -1445,7 +1445,7 @@ export default function FlightCatalogInteractiveClient({
                 <button
                   type="button"
                   onClick={() => setIsStickySearchExpanded(true)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-slate-200 bg-slate-50 text-[#1390ee] transition hover:bg-sky-50"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
                   aria-label={copy.refineSearch}
                 >
                   <SearchIcon />
@@ -1456,7 +1456,7 @@ export default function FlightCatalogInteractiveClient({
                       <button
                         type="button"
                         onClick={() => scrollPriceTable("left")}
-                        className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                        className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#f1ddd0] bg-white/95 text-[#b85a2c] shadow-sm transition hover:border-[#efc4ad] hover:text-[#ef5b2a] xl:inline-flex"
                         aria-label="Scroll price table left"
                       >
                         <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
@@ -1484,16 +1484,16 @@ export default function FlightCatalogInteractiveClient({
                           onClick={() => handleQuickDateSelect(entry.date)}
                           className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
                             active
-                              ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb] shadow-[0_10px_20px_-18px_rgba(23,149,241,0.75)]"
+                              ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)]"
                               : isCheapest
                                 ? "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300"
-                                : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                                : "border-[#f1ddd0] bg-white text-slate-600 hover:border-[#efc4ad] hover:bg-[#fff8f2]"
                           }`}
                         >
                           <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                          <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
+                          <p className={`mt-0.5 text-[12px] font-semibold ${active ? "text-[#ef5b2a]" : isCheapest ? "text-emerald-700" : "text-slate-700"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                           {!active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-emerald-700">{stickyCompactCopy.cheapest}</p> : null}
-                          {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#0f6fcb]">{stickyCompactCopy.selected}</p> : null}
+                          {active && isCheapest ? <p className="mt-1 text-[10px] font-medium text-[#ef5b2a]">{stickyCompactCopy.selectedCheapest}</p> : active ? <p className="mt-1 text-[10px] font-medium text-[#ef5b2a]">{stickyCompactCopy.selected}</p> : null}
                         </button>
                       )
                     })}
@@ -1503,7 +1503,7 @@ export default function FlightCatalogInteractiveClient({
                     <button
                       type="button"
                       onClick={() => scrollPriceTable("right")}
-                      className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                      className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#f1ddd0] bg-white/95 text-[#b85a2c] shadow-sm transition hover:border-[#efc4ad] hover:text-[#ef5b2a] xl:inline-flex"
                       aria-label="Scroll price table right"
                     >
                       <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
@@ -1516,7 +1516,7 @@ export default function FlightCatalogInteractiveClient({
                   type="button"
                   onClick={() => setIsPriceTableOpen((current) => !current)}
                   className={`inline-flex h-[52px] items-center justify-center rounded-[16px] border px-4 text-sm font-semibold transition ${
-                    isPriceTableOpen ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb]" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    isPriceTableOpen ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c]" : "border-[#f1ddd0] bg-white text-slate-700 hover:bg-[#fff8f2]"
                   }`}
                 >
                   {stickyCompactCopy.priceTable}
@@ -1524,7 +1524,7 @@ export default function FlightCatalogInteractiveClient({
                 <button
                   type="button"
                   onClick={() => setIsStickySearchExpanded(true)}
-                  className="inline-flex h-[52px] items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#1e88e5_0%,#156fd1_100%)] px-4 text-sm font-semibold text-white shadow-[0_14px_26px_-20px_rgba(21,111,209,0.72)] transition hover:brightness-105"
+                  className="inline-flex h-[52px] items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#ff7b3f_0%,#ef5b2a_100%)] px-4 text-sm font-semibold text-white shadow-[0_14px_26px_-20px_rgba(239,91,42,0.58)] transition hover:brightness-105"
                 >
                   {copy.refineSearch}
                 </button>
@@ -1542,17 +1542,17 @@ export default function FlightCatalogInteractiveClient({
                           onClick={() => handleQuickDateSelect(entry.date)}
                           className={`rounded-[14px] border px-3 py-2.5 text-left transition ${
                             active
-                              ? "border-[#1795f1] bg-[#edf7ff] text-[#0f6fcb]"
+                              ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c]"
                               : isCheapest
                                 ? "border-emerald-200 bg-emerald-50/70 text-emerald-700"
-                                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                                : "border-[#f1ddd0] bg-white text-slate-700 hover:bg-[#fff8f2]"
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
                             <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
                             {isCheapest ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{stickyCompactCopy.best}</span> : null}
                           </div>
-                          <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#11a36a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
+                          <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#ef5b2a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
                         </button>
                       )
                     })}
