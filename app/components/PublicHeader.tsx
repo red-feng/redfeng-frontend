@@ -118,7 +118,7 @@ export default async function PublicHeader({
                 />
               </a>
 
-              <nav className={homeHeaderLock.desktopTopNavClass}>
+              <nav className={`${homeHeaderLock.desktopTopNavClass} -ml-6`}>
                 {publicHeaderTopNavItems
                   .filter((item) => item.key !== "help")
                   .map((item) => (
@@ -168,7 +168,7 @@ export default async function PublicHeader({
               </div>
             </div>
 
-            <div className={homeHeaderLock.desktopProductRowClass}>
+            <div className={`${homeHeaderLock.desktopProductRowClass} -ml-6 w-[calc(100%-17.5rem)]`}>
               {productNav}
             </div>
           </div>
