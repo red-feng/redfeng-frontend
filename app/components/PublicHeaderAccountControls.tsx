@@ -96,13 +96,13 @@ export default function PublicHeaderAccountControls({
       ) : null}
       {!isAuthenticated && !isOverlay ? (
         <Link
-          href="/register"
-          className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-orange-300 hover:text-orange-600"
+          href="/login"
+          className="whitespace-nowrap rounded-[16px] bg-[#ff5a43] px-5 py-3 text-[14px] font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:bg-[#ef5b2a]"
         >
-          {registerLabel}
+          {guestLoginRegisterLabel}
         </Link>
       ) : null}
-      {(!isOverlay || isAuthenticated) && (
+      {(isOverlay || isAuthenticated) && (
         <Link
           href={accountHref}
           className="rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(249,115,22,0.9)] transition hover:bg-orange-600"
