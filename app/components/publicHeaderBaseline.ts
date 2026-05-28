@@ -5,8 +5,8 @@ export const publicHeaderBaseline = {
   desktopShellClass: "relative mx-auto max-w-7xl px-4 md:px-6",
   desktopOverlayPaddingClass: "pt-5 md:pt-6",
   desktopDefaultPaddingClass: "py-3 md:py-4 lg:py-0",
-  desktopLogoAnchorClass: "absolute left-8 top-2 inline-flex h-[5.75rem] w-[15.5rem] items-start gap-2 overflow-visible",
-  desktopDefaultLogoLiftClass: "translate-y-[10%]",
+  desktopLogoAnchorClass: "absolute left-8 top-0 inline-flex h-[5.75rem] w-[15.5rem] items-start gap-2 overflow-visible",
+  desktopDefaultLogoLiftClass: "translate-y-[4%]",
   desktopOverlayLogoLiftClass: "-translate-y-[15%]",
   desktopLocaleTone: "glass-dark",
 } as const
