@@ -67,7 +67,7 @@ export default async function PublicHeader({
   const isOverlay = variant === "overlay"
   const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]"
+    ? "whitespace-nowrap rounded-full px-3 py-2 text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
     : "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
   const activePackageLinkClass = isOverlay
     ? navLinkClass
@@ -103,7 +103,7 @@ export default async function PublicHeader({
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
           <div className="relative z-10 hidden min-h-[148px] flex-col items-center lg:flex">
-            <div className={`${homeHeaderLock.desktopTopRowClass} text-white`}>
+            <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a
                 href="https://redfeng.co/"
                 className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopOverlayLogoLiftClass}`}
@@ -155,7 +155,7 @@ export default async function PublicHeader({
                 </div>
                 <NotificationBellLink
                   items={defaultNotificationItems}
-                  className="text-white transition hover:text-[#ffd2c4]"
+                  className="text-slate-900 transition hover:text-[#ef4423]"
                   iconClassName="h-5 w-5"
                   badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
                 />
@@ -169,7 +169,7 @@ export default async function PublicHeader({
             </div>
 
             <div className={homeHeaderLock.desktopProductRowClass}>
-              <nav className={`flex items-center gap-1 font-semibold text-white`}>
+              <nav className="flex items-center gap-1 font-semibold text-slate-900">
                 {publicHeaderProductNavItems.map((item) => (
                   <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
                     {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
