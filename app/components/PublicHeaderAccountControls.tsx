@@ -110,7 +110,7 @@ export default function PublicHeaderAccountControls({
           {guestLoginRegisterLabel}
         </Link>
       ) : null}
-      {(isOverlay || isAuthenticated) && (
+      {isAuthenticated && (
         <Link
           href={accountHref}
           className={`px-4 py-2.5 text-sm font-semibold transition ${

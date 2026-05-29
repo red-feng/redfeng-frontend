@@ -102,11 +102,11 @@ export default async function PublicHeader({
     return (
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
-          <div className="hidden lg:block">
-            <div className="relative z-10 overflow-hidden rounded-[32px] border border-white/45 bg-white/58 px-6 py-5 shadow-[0_26px_70px_-42px_rgba(15,23,42,0.24)] backdrop-blur-2xl">
+          <div className="relative z-10 hidden min-h-[148px] flex-col items-center lg:flex">
+            <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a
                 href="https://redfeng.co/"
-                className="public-header-logo-link absolute left-6 top-1/2 z-10 inline-flex h-[4.5rem] w-[12rem] -translate-y-1/2 items-center"
+                className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopOverlayLogoLiftClass}`}
               >
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
@@ -114,77 +114,73 @@ export default async function PublicHeader({
                   width={1536}
                   height={1024}
                   priority
-                  className="public-header-logo h-auto w-[11.25rem] object-contain object-left"
+                  className="public-header-logo h-[6.35rem] w-[15.25rem] shrink-0 object-contain object-left"
                 />
               </a>
 
-              <div className="pl-[12.75rem]">
-                <div className="flex items-center justify-between gap-6">
-                  <nav className="flex items-center gap-1.5">
-                    {publicHeaderTopNavItems
-                      .filter((item) => item.key !== "help")
-                      .map((item) => (
-                        <div key={item.key}>
-                          {renderPublicHeaderLink({
-                            href: item.href,
-                            className: navLinkClass,
-                            label: t[item.key as keyof typeof t],
-                            external: item.external,
-                          })}
-                        </div>
-                      ))}
-                  </nav>
-
-                  <div className="flex items-center gap-3">
-                    {renderPublicHeaderLink({
-                      href: "/bantuan",
-                      className: navLinkClass,
-                      label: t.help,
-                    })}
-                    <div className="hidden lg:block">
-                      <PublicHeaderLocaleSelect
-                        locale={locale}
-                        availableLocales={availableLocales}
-                        mode="currency"
-                        tone={publicHeaderBaseline.desktopLocaleTone}
-                        labels={{
-                          language: t.language,
-                          langId: t.langId,
-                          langEn: t.langEn,
-                          langZh: t.langZh,
-                        }}
-                      />
+              <nav className="ml-[16.5rem] flex items-center gap-1">
+                {publicHeaderTopNavItems
+                  .filter((item) => item.key !== "help")
+                  .map((item) => (
+                    <div key={item.key}>
+                      {renderPublicHeaderLink({
+                        href: item.href,
+                        className: navLinkClass,
+                        label: t[item.key as keyof typeof t],
+                        external: item.external,
+                      })}
                     </div>
-                    <NotificationBellLink
-                      items={defaultNotificationItems}
-                      className="text-slate-700 transition hover:text-[#ef4423]"
-                      iconClassName="h-5 w-5"
-                      badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
-                    />
-                    <PublicHeaderAccountControls
-                      locale={locale}
-                      redirectSuperadminFromHome={redirectSuperadminFromHome}
-                      initialRole={initialRole}
-                      variant={variant}
-                    />
-                  </div>
-                </div>
+                  ))}
+              </nav>
 
-                <div className="mt-4 border-t border-white/55 pt-3">
-                  <nav className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                    {publicHeaderProductNavItems.map((item) => (
-                      <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
-                        {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
-                      </Link>
-                    ))}
-                  </nav>
+              <div className="flex items-center gap-3">
+                {renderPublicHeaderLink({
+                  href: "/bantuan",
+                  className: navLinkClass,
+                  label: t.help,
+                })}
+                <div className="hidden lg:block">
+                  <PublicHeaderLocaleSelect
+                    locale={locale}
+                    availableLocales={availableLocales}
+                    mode="currency"
+                    tone={publicHeaderBaseline.desktopLocaleTone}
+                    labels={{
+                      language: t.language,
+                      langId: t.langId,
+                      langEn: t.langEn,
+                      langZh: t.langZh,
+                    }}
+                  />
                 </div>
+                <NotificationBellLink
+                  items={defaultNotificationItems}
+                  className="text-slate-700 transition hover:text-[#ef4423]"
+                  iconClassName="h-5 w-5"
+                  badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
+                />
+                <PublicHeaderAccountControls
+                  locale={locale}
+                  redirectSuperadminFromHome={redirectSuperadminFromHome}
+                  initialRole={initialRole}
+                  variant={variant}
+                />
               </div>
+            </div>
+
+            <div className="mt-2 ml-[16.5rem] flex w-[calc(100%-16.5rem)] items-center justify-start border-t border-white/35 pt-3">
+              <nav className="flex items-center gap-1 text-sm font-semibold text-slate-700">
+                {publicHeaderProductNavItems.map((item) => (
+                  <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
+                    {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
+                  </Link>
+                ))}
+              </nav>
             </div>
           </div>
 
           <div className="space-y-3 lg:hidden">
-            <div className="flex items-center justify-between gap-3 rounded-[24px] border border-white/40 bg-white/42 px-4 py-3 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.22)] backdrop-blur-xl">
+            <div className="flex items-center justify-between gap-3 px-1 py-2">
               <a href="https://redfeng.co/" className="public-header-logo-link flex items-center">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
@@ -221,7 +217,7 @@ export default async function PublicHeader({
             </div>
 
             <div className="overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <div className="flex min-w-max items-center gap-2 rounded-[22px] border border-white/35 bg-white/30 px-3 py-2.5 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+              <div className="flex min-w-max items-center gap-2 rounded-[20px] border border-white/35 bg-white/20 px-3 py-2 backdrop-blur-lg">
                 {publicHeaderTopNavItems.map((item) => (
                   <div key={item.key}>
                     {renderPublicHeaderLink({
