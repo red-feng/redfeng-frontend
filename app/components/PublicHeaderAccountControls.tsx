@@ -87,20 +87,12 @@ export default function PublicHeaderAccountControls({
   return (
     <div className={controlsClassName}>
       {!isAuthenticated && isOverlay ? (
-        <>
-          <Link
-            href="/login"
-            className="whitespace-nowrap rounded-full border border-white/70 bg-white/82 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.28)] backdrop-blur transition hover:border-[#ffd3c4] hover:text-[#ef5b2a]"
-          >
-            {guestLoginLabel}
-          </Link>
-          <Link
-            href="/login"
-            className="whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:brightness-105"
-          >
-            {guestLoginRegisterLabel}
-          </Link>
-        </>
+        <Link
+          href="/login"
+          className="whitespace-nowrap rounded-full bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(239,90,67,0.72)] transition hover:brightness-105"
+        >
+          {guestLoginRegisterLabel}
+        </Link>
       ) : null}
       {!isAuthenticated && !isOverlay ? (
         <Link

@@ -168,7 +168,7 @@ export default async function PublicHeader({
               </div>
             </div>
 
-            <div className="mt-2 ml-[16.5rem] flex w-[calc(100%-16.5rem)] items-center justify-start border-t border-white/35 pt-3">
+            <div className="mt-2 ml-[16.5rem] flex w-[calc(100%-16.5rem)] items-center justify-start pt-3">
               <nav className="flex items-center gap-1 text-sm font-semibold text-slate-700">
                 {publicHeaderProductNavItems.map((item) => (
                   <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
