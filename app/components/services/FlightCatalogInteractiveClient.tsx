@@ -2107,7 +2107,7 @@ export default function FlightCatalogInteractiveClient({
         </>
       ) : null}
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:min-h-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start`}>
+      <section className={`${homeLayoutLock.contentWidthClass} mt-5 grid max-w-[1240px] gap-4 lg:min-h-0 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start`}>
         <aside className="space-y-3 lg:sticky lg:top-[8.2rem] lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden">
           <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
             <div className="flex items-center justify-between gap-3">
