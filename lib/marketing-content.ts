@@ -3,6 +3,7 @@ import { inspirationArticleCatalog } from "@/app/components/home/shared/homeDeta
 import { promoCatalog } from "@/app/components/promo/promoCatalog"
 import type { MarketingPromoPlacementKey } from "@/lib/marketing-promo-placements"
 import { getMarketingPromoEffectiveState, type MarketingPromoStatus } from "@/lib/marketing-promo-status"
+import { normalizeBookingProductType, type BookingProductType } from "@/lib/booking-products"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 type PromoRow = {
@@ -88,6 +89,17 @@ type MarketingPromosOptions = {
   placement?: MarketingPromoPlacementKey
   fallbackPlacement?: MarketingPromoPlacementKey
   limit?: number
+  requiredProductType?: BookingProductType
+}
+
+type PromoRuleLinkRow = {
+  marketing_promo_id: string | null
+  transaction_promo_rule_id: string | null
+}
+
+type TransactionPromoRuleRow = {
+  id: string | null
+  transaction_promo_rule_targets?: Array<{ product_type?: string | null }> | null
 }
 
 export type MarketingPromosResolved = {
@@ -225,6 +237,86 @@ function isPromoCurrentlyVisible(row: PromoRow, nowIso: string) {
   return getMarketingPromoEffectiveState(row, nowIso) === "live"
 }
 
+function inferPromoProductTypesFromHref(targetHref: string | null | undefined): BookingProductType[] {
+  const href = String(targetHref || "").trim().toLowerCase()
+  if (!href) return []
+  if (href.startsWith("/pesawat")) return ["flight"]
+  if (href.startsWith("/hotel")) return ["hotel"]
+  if (href.startsWith("/kereta")) return ["train"]
+  if (href.startsWith("/bus")) return ["bus"]
+  if (href.startsWith("/kapal-pesiar")) return ["cruise"]
+  if (href.startsWith("/kapal")) return ["sea"]
+  if (href.startsWith("/packages")) return ["package_tour"]
+  return []
+}
+
+async function filterPromoRowsByProductType(rows: PromoRow[], requiredProductType: BookingProductType) {
+  if (!rows.length) return rows
+
+  const adminSupabase = createAdminClient()
+  const promoIds = rows.map((row) => row.id).filter(Boolean)
+  if (!promoIds.length) return []
+
+  const { data: linkRows, error: linkError } = await adminSupabase
+    .from("marketing_promo_transaction_rules")
+    .select("marketing_promo_id, transaction_promo_rule_id")
+    .in("marketing_promo_id", promoIds)
+
+  if (linkError) {
+    return rows.filter((row) => inferPromoProductTypesFromHref(row.target_href).includes(requiredProductType))
+  }
+
+  const ruleIds = Array.from(
+    new Set(
+      (((linkRows as PromoRuleLinkRow[] | null) || [])
+        .map((row) => String(row.transaction_promo_rule_id || "").trim())
+        .filter(Boolean)),
+    ),
+  )
+
+  const rulesById = new Map<string, BookingProductType[]>()
+  if (ruleIds.length) {
+    const { data: ruleRows, error: ruleError } = await adminSupabase
+      .from("transaction_promo_rules")
+      .select("id, transaction_promo_rule_targets(product_type)")
+      .in("id", ruleIds)
+
+    if (!ruleError) {
+      for (const row of ((ruleRows as TransactionPromoRuleRow[] | null) || [])) {
+        const ruleId = String(row.id || "").trim()
+        if (!ruleId) continue
+        rulesById.set(
+          ruleId,
+          Array.from(
+            new Set(
+              (row.transaction_promo_rule_targets || [])
+                .map((target) => normalizeBookingProductType(target.product_type))
+                .filter((value): value is BookingProductType => Boolean(value)),
+            ),
+          ),
+        )
+      }
+    }
+  }
+
+  const productTypesByPromoId = new Map<string, BookingProductType[]>()
+  for (const row of ((linkRows as PromoRuleLinkRow[] | null) || [])) {
+    const promoId = String(row.marketing_promo_id || "").trim()
+    const ruleId = String(row.transaction_promo_rule_id || "").trim()
+    if (!promoId || !ruleId) continue
+    const linkedTypes = rulesById.get(ruleId) || []
+    if (!linkedTypes.length) continue
+    const current = productTypesByPromoId.get(promoId) || []
+    productTypesByPromoId.set(promoId, Array.from(new Set([...current, ...linkedTypes])))
+  }
+
+  return rows.filter((row) => {
+    const linkedTypes = productTypesByPromoId.get(row.id) || []
+    if (linkedTypes.length) return linkedTypes.includes(requiredProductType)
+    return inferPromoProductTypesFromHref(row.target_href).includes(requiredProductType)
+  })
+}
+
 async function fetchAllActivePromoRows() {
   const adminSupabase = createAdminClient()
   const { data, error } = await adminSupabase
@@ -240,7 +332,7 @@ async function fetchAllActivePromoRows() {
   return (data as PromoRow[]).filter((row) => isPromoCurrentlyVisible(row, nowIso))
 }
 
-async function fetchPromoRowsByPlacement(placement: MarketingPromoPlacementKey) {
+async function fetchPromoRowsByPlacement(placement: MarketingPromoPlacementKey, requiredProductType?: BookingProductType) {
   const adminSupabase = createAdminClient()
   const { data: placementRows, error: placementError } = await adminSupabase
     .from("marketing_promo_placements")
@@ -276,7 +368,8 @@ async function fetchPromoRowsByPlacement(placement: MarketingPromoPlacementKey) 
 
   const nowIso = new Date().toISOString()
   const promoMap = new Map((promoRows as PromoRow[]).map((row) => [row.id, row]))
-  return promoIds.map((promoId) => promoMap.get(promoId)).filter((row) => Boolean(row) && isPromoCurrentlyVisible(row as PromoRow, nowIso)) as PromoRow[]
+  const visibleRows = promoIds.map((promoId) => promoMap.get(promoId)).filter((row) => Boolean(row) && isPromoCurrentlyVisible(row as PromoRow, nowIso)) as PromoRow[]
+  return requiredProductType ? filterPromoRowsByProductType(visibleRows, requiredProductType) : visibleRows
 }
 
 export async function getMarketingPromosResolved(locale: Locale, options: MarketingPromosOptions = {}): Promise<MarketingPromosResolved> {
@@ -284,12 +377,12 @@ export async function getMarketingPromosResolved(locale: Locale, options: Market
   let placementUsed: MarketingPromoPlacementKey | undefined
 
   if (options.placement) {
-    const primaryRows = await fetchPromoRowsByPlacement(options.placement)
+    const primaryRows = await fetchPromoRowsByPlacement(options.placement, options.requiredProductType)
     if (primaryRows?.length) {
       rows = primaryRows
       placementUsed = options.placement
     } else if (options.fallbackPlacement) {
-      const fallbackRows = await fetchPromoRowsByPlacement(options.fallbackPlacement)
+      const fallbackRows = await fetchPromoRowsByPlacement(options.fallbackPlacement, options.requiredProductType)
       if (fallbackRows?.length) {
         rows = fallbackRows
         placementUsed = options.fallbackPlacement
@@ -306,6 +399,9 @@ export async function getMarketingPromosResolved(locale: Locale, options: Market
   }
 
   rows = rows ?? buildFallbackPromos()
+  if (options.requiredProductType) {
+    rows = rows.filter((row) => inferPromoProductTypesFromHref(row.target_href).includes(options.requiredProductType as BookingProductType))
+  }
   const localizedRows = rows.map((row) => mapPromoRow(row, locale))
   const promos = typeof options.limit === "number" && options.limit >= 0 ? localizedRows.slice(0, options.limit) : localizedRows
   return { promos, placementUsed }

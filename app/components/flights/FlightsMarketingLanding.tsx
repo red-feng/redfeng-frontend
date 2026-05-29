@@ -19,8 +19,8 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
   const locale = await getCurrentLocale()
   const { promos, placementUsed } = await getMarketingPromosResolved(locale, {
     placement: "flights_featured",
-    fallbackPlacement: "homepage_feed",
     limit: 4,
+    requiredProductType: "flight",
   })
 
   const baseCopy = {

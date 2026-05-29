@@ -389,6 +389,24 @@ export default async function MarketingPromosPage({
           </form>
         </section>
 
+        <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Slot rules</p>
+          <h2 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-2xl">Featured slot per halaman harus mengikuti produk halaman itu</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            Gunakan <span className="font-semibold text-slate-900">Homepage Feed</span> untuk campaign umum lintas produk. Untuk landing produk seperti
+            <span className="font-semibold text-slate-900"> Flights Featured</span>, <span className="font-semibold text-slate-900">Hotels Featured</span>,
+            dan slot featured lain, isi hanya dengan promo yang relevan dengan produk halaman tersebut agar landing publik tetap konsisten.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {marketingPromoPlacements.map((placement) => (
+              <article key={`${placement.key}-rule`} className="rounded-[20px] border border-[#efe1cf] bg-[#fffaf3] px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">{placement.label}</p>
+                <p className="mt-2 text-xs leading-6 text-slate-500">{placement.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
         {promos.length ? (
           <section className="rounded-[24px] border border-[#f3dbc3] bg-white/85 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:rounded-[32px] sm:p-6 lg:p-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">

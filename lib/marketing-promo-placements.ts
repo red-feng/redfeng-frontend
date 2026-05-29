@@ -2,47 +2,47 @@ export const marketingPromoPlacements = [
   {
     key: "homepage_feed",
     label: "Homepage Feed",
-    description: "Carousel promo di homepage web dan mobile.",
+    description: "Carousel promo umum di homepage web dan mobile. Cocok untuk campaign lintas produk atau awareness utama.",
   },
   {
     key: "packages_featured",
     label: "Packages Featured",
-    description: "Blok promo utama di landing /packages.",
+    description: "Blok promo utama di landing /packages. Isi dengan promo Paket Wisata, bukan campaign produk lain.",
   },
   {
     key: "flights_featured",
     label: "Flights Featured",
-    description: "Blok promo utama di landing /pesawat.",
+    description: "Blok promo utama di landing /pesawat. Isi hanya dengan promo pesawat atau campaign flight-ready.",
   },
   {
     key: "hotels_featured",
     label: "Hotels Featured",
-    description: "Blok promo utama di landing /hotel.",
+    description: "Blok promo utama di landing /hotel. Isi hanya dengan promo hotel atau stay campaign.",
   },
   {
     key: "trains_featured",
     label: "Trains Featured",
-    description: "Blok promo utama di landing /kereta.",
+    description: "Blok promo utama di landing /kereta. Isi hanya dengan promo kereta.",
   },
   {
     key: "buses_featured",
     label: "Buses Featured",
-    description: "Blok promo utama di landing /bus.",
+    description: "Blok promo utama di landing /bus. Isi hanya dengan promo bus dan travel darat.",
   },
   {
     key: "ships_featured",
     label: "Ships Featured",
-    description: "Blok promo utama di landing /kapal.",
+    description: "Blok promo utama di landing /kapal. Isi hanya dengan promo kapal laut dan ferry.",
   },
   {
     key: "cruises_featured",
     label: "Cruises Featured",
-    description: "Blok promo utama di landing /kapal-pesiar.",
+    description: "Blok promo utama di landing /kapal-pesiar. Isi hanya dengan promo cruise.",
   },
   {
     key: "activities_featured",
     label: "Activities Featured",
-    description: "Blok promo utama di landing /aktivitas.",
+    description: "Blok promo utama di landing /aktivitas. Isi hanya dengan promo aktivitas, atraksi, tur, atau event.",
   },
   {
     key: "promo_listing",
