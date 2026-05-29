@@ -67,10 +67,10 @@ export default async function PublicHeader({
   const isOverlay = variant === "overlay"
   const activityLabel = getPublicHeaderActivityLabel(locale)
   const navLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-medium text-slate-700 transition hover:bg-white/75 hover:text-[#ef4423]"
+    ? "whitespace-nowrap rounded-full px-3 py-2 transition hover:bg-white/12 hover:text-[#ffd2c4]"
     : "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-medium text-slate-900 transition hover:bg-black/5 hover:text-[#ef4423]"
   const activePackageLinkClass = isOverlay
-    ? "whitespace-nowrap rounded-full border border-[#ffd8c9] bg-white/78 px-3.5 py-2 text-[13px] font-semibold text-[#ef4423] shadow-[0_10px_20px_-18px_rgba(239,68,35,0.55)] transition hover:bg-white"
+    ? navLinkClass
     : "whitespace-nowrap rounded-full px-3 py-2 text-[14px] font-semibold text-slate-950 transition hover:bg-black/5 hover:text-[#ef4423]"
 
   const topNav = (
@@ -103,7 +103,7 @@ export default async function PublicHeader({
       <header className="public-header absolute inset-x-0 top-0 z-40">
         <div className={`public-header-shell ${publicHeaderBaseline.desktopShellClass} ${publicHeaderBaseline.desktopOverlayPaddingClass}`}>
           <div className="relative z-10 hidden min-h-[148px] flex-col items-center lg:flex">
-            <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
+            <div className={`${homeHeaderLock.desktopTopRowClass} text-white`}>
               <a
                 href="https://redfeng.co/"
                 className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopOverlayLogoLiftClass}`}
@@ -114,11 +114,11 @@ export default async function PublicHeader({
                   width={1536}
                   height={1024}
                   priority
-                  className="public-header-logo h-[6.35rem] w-[15.25rem] shrink-0 object-contain object-left"
+                  className={`public-header-logo ${homeHeaderLock.desktopLogoClass}`}
                 />
               </a>
 
-              <nav className="ml-[16.5rem] flex items-center gap-1">
+              <nav className={homeHeaderLock.desktopTopNavClass}>
                 {publicHeaderTopNavItems
                   .filter((item) => item.key !== "help")
                   .map((item) => (
@@ -155,7 +155,7 @@ export default async function PublicHeader({
                 </div>
                 <NotificationBellLink
                   items={defaultNotificationItems}
-                  className="text-slate-700 transition hover:text-[#ef4423]"
+                  className="text-white transition hover:text-[#ffd2c4]"
                   iconClassName="h-5 w-5"
                   badgeClassName="absolute -right-2 -top-2 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#ef5b2a] px-1 text-[10px] font-bold text-white"
                 />
@@ -168,8 +168,8 @@ export default async function PublicHeader({
               </div>
             </div>
 
-            <div className="mt-2 ml-[16.5rem] flex w-[calc(100%-16.5rem)] items-center justify-start pt-3">
-              <nav className="flex items-center gap-1 text-sm font-semibold text-slate-700">
+            <div className={homeHeaderLock.desktopProductRowClass}>
+              <nav className={`flex items-center gap-1 font-semibold text-white`}>
                 {publicHeaderProductNavItems.map((item) => (
                   <Link key={item.key} href={item.href} className={item.key === "packageTour" ? activePackageLinkClass : navLinkClass}>
                     {item.key === "activity" ? activityLabel : t[item.key as keyof typeof t]}
