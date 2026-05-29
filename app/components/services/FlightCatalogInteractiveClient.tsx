@@ -778,6 +778,7 @@ export default function FlightCatalogInteractiveClient({
     return current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date()
   })
   const isScrolledRef = useRef(false)
+  const heroSearchSectionRef = useRef<HTMLElement | null>(null)
   const priceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const summaryPriceTableScrollRef = useRef<HTMLDivElement | null>(null)
   const resultSortMenuRef = useRef<HTMLDivElement | null>(null)
@@ -1229,6 +1230,15 @@ export default function FlightCatalogInteractiveClient({
     setIsRecommendationCalendarOpen(true)
   }
 
+  const scrollToHeroSearch = () => {
+    setIsStickySearchExpanded(false)
+    const section = heroSearchSectionRef.current
+    if (!section) return
+
+    const top = section.getBoundingClientRect().top + window.scrollY - 92
+    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+  }
+
   const switchRecommendationCalendarToPriceTable = () => {
     setRecommendationPanelMode("price_table")
   }
@@ -1426,7 +1436,7 @@ export default function FlightCatalogInteractiveClient({
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
             <div className={homeLayoutLock.contentWidthClass}>
               <div className="scale-[0.994] rounded-[22px] border border-[#f1ddd0] bg-white/92 transition-all duration-200 lg:border-transparent lg:bg-transparent">
-                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px_108px] xl:items-center">
+                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px] xl:items-center">
                 <button
                   type="button"
                   onClick={() => setIsStickySearchExpanded(true)}
@@ -1441,7 +1451,7 @@ export default function FlightCatalogInteractiveClient({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setIsStickySearchExpanded(true)}
+                  onClick={scrollToHeroSearch}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
                   aria-label={copy.refineSearch}
                 >
@@ -1520,13 +1530,6 @@ export default function FlightCatalogInteractiveClient({
                   </svg>
                   <span>{calendarTabLabel}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setIsStickySearchExpanded(true)}
-                  className="inline-flex h-[52px] items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#ff7b3f_0%,#ef5b2a_100%)] px-4 text-sm font-semibold text-white shadow-[0_14px_26px_-20px_rgba(239,91,42,0.58)] transition hover:brightness-105"
-                >
-                  {copy.refineSearch}
-                </button>
               </div>
             </div>
             </div>
@@ -1534,7 +1537,7 @@ export default function FlightCatalogInteractiveClient({
         </div>
       ) : null}
 
-      <section className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`}>
+      <section ref={heroSearchSectionRef} className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`}>
         {!shouldShowCompactStickyBar ? (
           <form
             onSubmit={(event) => {
