@@ -174,7 +174,7 @@ export default async function FlightsMarketingLanding({ searchParams }: FlightsM
           </div>
         </section>
 
-          <section className={`relative z-[220] ${homeLayoutLock.floatingSearchShellClass}`}>
+          <section className={`relative z-[220] ${homeLayoutLock.floatingSearchShellClass} lg:-mt-[14.375rem]`}>
           <div className={homeLayoutLock.contentWidthClass}>
             <FlightsLandingHeroSearchCard locale={locale} />
           </div>
