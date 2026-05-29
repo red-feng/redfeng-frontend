@@ -157,7 +157,7 @@ export function HeroSearchPanel({
           className="relative z-[240] hidden items-center gap-x-6 lg:grid"
           style={{ gridTemplateColumns: homeLayoutLock.flightOneWayDesktopOptionColumns }}
         >
-          <div className="flex flex-wrap items-center gap-11 text-[13px] font-semibold text-slate-700">
+          <div className="flex flex-nowrap items-center gap-11 text-[13px] font-semibold text-slate-700">
             {config.options.map((option) => (
               <button
                 key={option.key}
@@ -209,7 +209,7 @@ export function HeroSearchPanel({
           className="relative z-[240] hidden items-center gap-x-6 lg:grid"
           style={{ gridTemplateColumns: homeLayoutLock.flightSharedDesktopOptionColumns }}
         >
-          <div className="flex flex-wrap gap-11 text-[13px] font-semibold text-slate-700">
+          <div className="flex flex-nowrap gap-11 text-[13px] font-semibold text-slate-700">
             {config.options.map((option) => (
               <button
                 key={option.key}
