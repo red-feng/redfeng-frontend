@@ -762,7 +762,6 @@ export default function FlightCatalogInteractiveClient({
   const [heroFieldStates, setHeroFieldStates] = useState<Record<string, HeroSearchFieldData>>({})
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
-  const [isPriceTableOpen, setIsPriceTableOpen] = useState(false)
   const [isResultSortMenuOpen, setIsResultSortMenuOpen] = useState(false)
   const [isRecommendationCalendarOpen, setIsRecommendationCalendarOpen] = useState(false)
   const [recommendationPanelMode, setRecommendationPanelMode] = useState<RecommendationPanelMode>("calendar")
@@ -1171,7 +1170,6 @@ export default function FlightCatalogInteractiveClient({
 
   const applyDraft = () => {
     setIsStickySearchExpanded(false)
-    setIsPriceTableOpen(false)
     setState(draft)
   }
 
@@ -1313,7 +1311,6 @@ export default function FlightCatalogInteractiveClient({
     const clearedState = buildResetState(state.tripMode)
     setHeroFieldStates({})
     setIsStickySearchExpanded(false)
-    setIsPriceTableOpen(false)
     setDraft(clearedState)
     setState(clearedState)
   }
@@ -1514,12 +1511,14 @@ export default function FlightCatalogInteractiveClient({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setIsPriceTableOpen((current) => !current)}
-                  className={`inline-flex h-[52px] items-center justify-center rounded-[16px] border px-4 text-sm font-semibold transition ${
-                    isPriceTableOpen ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c]" : "border-[#f1ddd0] bg-white text-slate-700 hover:bg-[#fff8f2]"
-                  }`}
+                  onClick={openRecommendationCalendar}
+                  className="inline-flex h-[52px] flex-col items-center justify-center gap-1 rounded-[16px] border border-[#efc4ad] bg-[#fff1e7] px-4 text-center text-[12px] font-semibold text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)] transition hover:bg-[#ffe7d8]"
                 >
-                  {stickyCompactCopy.priceTable}
+                  <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+                    <rect x="2.5" y="3.5" width="11" height="10" rx="2" />
+                    <path d="M5 2.5v2M11 2.5v2M2.5 6.5h11" />
+                  </svg>
+                  <span>{calendarTabLabel}</span>
                 </button>
                 <button
                   type="button"
@@ -1529,36 +1528,6 @@ export default function FlightCatalogInteractiveClient({
                   {copy.refineSearch}
                 </button>
               </div>
-              {isPriceTableOpen ? (
-                <div className="border-t border-slate-100 px-4 py-3">
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-                    {quickDateOptions.map((entry) => {
-                      const active = entry.date === state.depart
-                      const isCheapest = cheapestQuickDatePrice !== null && entry.price === cheapestQuickDatePrice
-                      return (
-                        <button
-                          key={`table-${entry.date}`}
-                          type="button"
-                          onClick={() => handleQuickDateSelect(entry.date)}
-                          className={`rounded-[14px] border px-3 py-2.5 text-left transition ${
-                            active
-                              ? "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c]"
-                              : isCheapest
-                                ? "border-emerald-200 bg-emerald-50/70 text-emerald-700"
-                                : "border-[#f1ddd0] bg-[#fffdfa] text-slate-700 hover:bg-[#fff6ee]"
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="truncate text-[12px] font-semibold">{formatCompactDateLabel(entry.date, locale)}</p>
-                            {isCheapest ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">{stickyCompactCopy.best}</span> : null}
-                          </div>
-                          <p className={`mt-1.5 text-sm font-semibold ${active ? "text-[#ef5b2a]" : isCheapest ? "text-emerald-700" : "text-slate-900"}`}>{formatCompactPrice(entry.price, locale, liveFlightRates)}</p>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
             </div>
             </div>
           </div>
