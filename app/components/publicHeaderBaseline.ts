@@ -7,6 +7,6 @@ export const publicHeaderBaseline = {
   desktopDefaultPaddingClass: "py-3 md:py-4 lg:py-0",
   desktopLogoAnchorClass: "absolute left-8 top-2 inline-flex h-[5.75rem] w-[15.5rem] items-start gap-2 overflow-visible",
   desktopDefaultLogoLiftClass: "translate-y-[13%]",
-  desktopOverlayLogoLiftClass: "translate-y-[22%]",
+  desktopOverlayLogoLiftClass: "translate-y-[19%]",
   desktopLocaleTone: "glass-dark",
 } as const
