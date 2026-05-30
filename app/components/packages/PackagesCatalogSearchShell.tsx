@@ -20,7 +20,6 @@ export default function PackagesCatalogSearchShell({
   const searchParams = useSearchParams()
   const [isPinned, setIsPinned] = useState(false)
   const [stickyTop, setStickyTop] = useState(0)
-  const [shellHeight, setShellHeight] = useState(0)
   const activationScrollYRef = useRef(0)
   const shellRef = useRef<HTMLDivElement | null>(null)
 
@@ -72,8 +71,6 @@ export default function PackagesCatalogSearchShell({
       const shell = shellRef.current
       if (!shell) return
 
-      const nextShellHeight = shell.offsetHeight
-      setShellHeight((current) => (current === nextShellHeight ? current : nextShellHeight))
       activationScrollYRef.current = Math.max(0, shell.getBoundingClientRect().top + window.scrollY - nextStickyTop - STICKY_GAP)
     }
 
@@ -81,9 +78,6 @@ export default function PackagesCatalogSearchShell({
       resolveStickyTop()
       const shell = shellRef.current
       if (!shell) return
-
-      const nextShellHeight = shell.offsetHeight
-      setShellHeight((current) => (current === nextShellHeight ? current : nextShellHeight))
 
       const nextPinned = window.scrollY >= activationScrollYRef.current
       setIsPinned((current) => (current === nextPinned ? current : nextPinned))
@@ -107,7 +101,6 @@ export default function PackagesCatalogSearchShell({
       ref={shellRef}
       id="package-search"
       className="relative"
-      style={isPinned && shellHeight > 0 ? { minHeight: `${shellHeight}px` } : undefined}
     >
       <div
         className={`${isPinned ? "fixed inset-x-0 z-[120]" : "relative"} transition-all duration-200`}
