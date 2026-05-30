@@ -77,6 +77,7 @@ export default async function PackagesCatalogPage({
       .filter(Boolean)
       .join(" • "),
   }))
+  const compactSummaryCards = quickSummaryCards.slice(0, 3)
 
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
@@ -91,7 +92,7 @@ export default async function PackagesCatalogPage({
 
       <section className={`${homeLayoutLock.pageXClass} pb-2`}>
         <div
-          className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[20px] border border-[#ffc49b] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]`}
+          className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[20px] border border-[#ffc49b] px-4 py-4 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)] sm:px-5 sm:py-5`}
           style={{
             backgroundImage: "url('/flight-strip-bg-replacement.png')",
             backgroundPosition: "40% 37%",
@@ -100,25 +101,26 @@ export default async function PackagesCatalogPage({
             backgroundColor: "#ff9a61",
           }}
         >
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="max-w-[430px]">
-              <div className="rounded-[24px] border border-white/70 bg-white px-6 py-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
-                <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{pageCopy.ribbonTitle}</p>
-                <p className="mt-2 text-[14px] font-semibold text-slate-900">{leadRoute}</p>
-                <p className="mt-1 text-[13px] text-slate-500">{leadMeta || pageCopy.ribbonBody}</p>
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="max-w-[390px]">
+              <div className="rounded-[22px] border border-white/70 bg-white px-5 py-4 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+                <p className="text-[14px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{pageCopy.ribbonTitle}</p>
+                <p className="mt-2 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">{leadRoute}</p>
+                <p className="mt-1 text-[12px] text-slate-500">{leadMeta || pageCopy.ribbonBody}</p>
               </div>
             </div>
 
-            <div className="min-w-0 flex-1 xl:max-w-[680px]">
+            <div className="min-w-0 flex-1 xl:max-w-[720px]">
               <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)]">
-                <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-                  {quickSummaryCards.map((entry) => (
+                <div className="grid gap-2 md:grid-cols-3">
+                  {compactSummaryCards.map((entry) => (
                     <div key={entry.key} className="rounded-[14px] border border-white/65 bg-white px-4 py-3 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.2)]">
                       <p className="text-[13px] font-semibold text-slate-900">{entry.title}</p>
                       <p className="mt-1 text-[12px] text-slate-500">{entry.meta || pageCopy.ribbonBody}</p>
                     </div>
                   ))}
                 </div>
+                <p className="mt-3 px-1 text-[12px] text-white/88">{pageCopy.body}</p>
               </div>
             </div>
           </div>
@@ -132,6 +134,7 @@ export default async function PackagesCatalogPage({
         locale={locale}
         maxAvailablePrice={localeMaxPrice}
         packages={packagesResult.items}
+        showSummaryCard={false}
         totalPackages={packagesResult.total}
       />
       <PublicStickyAction locale={locale} href="#package-search" label={pageCopy.stickyCta} summary={pageCopy.sticky} />

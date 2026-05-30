@@ -88,6 +88,7 @@ export default function HomeResultsClient({
   locale,
   maxAvailablePrice,
   packages,
+  showSummaryCard = true,
   totalPackages,
 }: {
   facilities: Facility[]
@@ -95,6 +96,7 @@ export default function HomeResultsClient({
   locale: Locale
   maxAvailablePrice: number
   packages: PackageItem[]
+  showSummaryCard?: boolean
   totalPackages: number
 }) {
   const router = useRouter()
@@ -318,7 +320,7 @@ export default function HomeResultsClient({
       </aside>
 
       <main className="min-w-0 space-y-4">
-        <SortBar total={totalPackages} locale={locale} summary={packageSummary} />
+        <SortBar total={totalPackages} locale={locale} summary={showSummaryCard ? packageSummary : null} />
 
         <div className="relative">
           {isPending ? (
