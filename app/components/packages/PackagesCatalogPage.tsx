@@ -4,8 +4,8 @@ import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
-import SearchBar from "@/app/components/SearchBar"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import PackagesCatalogSearchShell from "@/app/components/packages/PackagesCatalogSearchShell"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
@@ -84,9 +84,9 @@ export default async function PackagesCatalogPage({
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <section className={`${homeLayoutLock.pageXClass} pb-4 pt-2 md:pb-5 md:pt-3`}>
+      <section className={`${homeLayoutLock.pageXClass} pb-3 pt-2 md:pb-4 md:pt-3`}>
         <div className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.heroBackdropRadiusClass} overflow-hidden border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
-          <div className="relative min-h-[340px] px-5 pb-3 pt-[104px] sm:min-h-[390px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[420px] lg:px-8 lg:pb-5 lg:pt-[130px]">
+          <div className="relative min-h-[220px] px-5 pb-3 pt-[104px] sm:min-h-[245px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[270px] lg:px-8 lg:pb-5 lg:pt-[130px]">
             <Image
               src="/home-assets/background-package-mobile.png"
               alt="RedFeng package catalog hero"
@@ -109,10 +109,10 @@ export default async function PackagesCatalogPage({
             <div className="relative flex h-full flex-col">
               <div className="max-w-[680px]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ef4423]">{pageCopy.eyebrow}</p>
-                <h1 className="mt-4 text-[34px] font-semibold leading-[1.02] tracking-[-0.05em] text-slate-950 sm:text-[46px] lg:text-[58px]">
+                <h1 className="mt-3 max-w-[520px] text-[24px] font-semibold leading-[1.04] tracking-[-0.05em] text-slate-950 sm:text-[30px] lg:text-[36px]">
                   {pageCopy.title}
                 </h1>
-                <p className="mt-4 max-w-[580px] text-[15px] leading-8 text-slate-700 sm:text-base">
+                <p className="mt-3 max-w-[540px] text-[14px] leading-6 text-slate-700 sm:text-[15px] sm:leading-7">
                   {pageCopy.body}
                 </p>
               </div>
@@ -121,14 +121,9 @@ export default async function PackagesCatalogPage({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.pageXClass} -mt-10 pb-2 lg:-mt-14`}>
-        <div id="package-search" className={homeLayoutLock.contentWidthClass}>
-          <SearchBar
-            key={`search:${locale}:${searchParamsKey}`}
-            locale={locale}
-            countries={searchBarCountries}
-            variant="catalog"
-          />
+      <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-2 lg:-mt-10`}>
+        <div className={homeLayoutLock.contentWidthClass}>
+          <PackagesCatalogSearchShell locale={locale} countries={searchBarCountries} searchKey={searchParamsKey} />
         </div>
       </section>
 
