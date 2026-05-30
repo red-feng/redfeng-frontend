@@ -6,7 +6,23 @@ import { dictionaries, type Locale } from "@/lib/i18n"
 
 type SortOption = "popular" | "price-low"
 
-export default function SortBar({ total, locale }: { total: number; locale: Locale }) {
+type SortBarSummary = {
+  leadLabel: string
+  leadValue: string
+  metricA: { label: string; value: string }
+  metricB: { label: string; value: string }
+  metricC: { label: string; value: string }
+}
+
+export default function SortBar({
+  total,
+  locale,
+  summary,
+}: {
+  total: number
+  locale: Locale
+  summary?: SortBarSummary | null
+}) {
   const t = dictionaries[locale].sortBar
   const router = useRouter()
   const pathname = usePathname()
@@ -70,6 +86,27 @@ export default function SortBar({ total, locale }: { total: number; locale: Loca
           </div>
         </div>
       </div>
+
+      {summary ? (
+        <div className="mt-4 grid overflow-hidden rounded-[18px] border border-[#f0f1f5] xl:grid-cols-4">
+          <div className="bg-[#fffaf7] px-6 py-4 text-left text-[#ef5b2a] shadow-[inset_0_0_0_1px_rgba(239,91,42,0.18)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">{summary.leadLabel}</p>
+            <p className="mt-1 text-[13px] font-medium opacity-90">{summary.leadValue}</p>
+          </div>
+          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+            <p className="text-[13px] text-slate-500">{summary.metricA.label}</p>
+            <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricA.value}</p>
+          </div>
+          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+            <p className="text-[13px] text-slate-500">{summary.metricB.label}</p>
+            <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricB.value}</p>
+          </div>
+          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+            <p className="text-[13px] text-slate-500">{summary.metricC.label}</p>
+            <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricC.value}</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

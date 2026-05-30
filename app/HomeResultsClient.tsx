@@ -6,6 +6,7 @@ import PackageCard from "@/app/components/PackageCard"
 import SortBar from "@/app/components/SortBar"
 import FilterClient, { type PackageFilterState } from "@/app/packages/FilterClient"
 import { dictionaries, type Locale } from "@/lib/i18n"
+import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 type Facility = {
   id: string
@@ -191,6 +192,36 @@ export default function HomeResultsClient({
         ? { title: "正在为你寻找最合适的旅游套餐....", subtitle: "请耐心等一下哦..." }
         : { title: "Lagi cari paket terbaik untukmu....", subtitle: "sabar ya..." }
 
+  const featuredPackage = displayedPackages[0]
+  const packageSummary = featuredPackage
+    ? {
+        leadLabel: locale === "en" ? "Top recommendation" : locale === "zh" ? "优先推荐" : "Pilihan terbaik",
+        leadValue:
+          [featuredPackage.city, featuredPackage.country].filter(Boolean).join(", ") ||
+          (locale === "en" ? "Featured destination" : locale === "zh" ? "精选目的地" : "Destinasi unggulan"),
+        metricA: {
+          label: locale === "en" ? "Travel style" : locale === "zh" ? "出行风格" : "Travel style",
+          value: featuredPackage.travel_style
+            ? formatTravelStyleLabel(featuredPackage.travel_style, locale)
+            : locale === "en"
+              ? "Flexible"
+              : locale === "zh"
+                ? "灵活安排"
+                : "Fleksibel",
+        },
+        metricB: {
+          label: locale === "en" ? "Departure" : locale === "zh" ? "出发日期" : "Keberangkatan",
+          value:
+            featuredPackage.departure_date ||
+            (locale === "en" ? "Available anytime" : locale === "zh" ? "随时可出发" : "Tersedia kapan saja"),
+        },
+        metricC: {
+          label: locale === "en" ? "Group size" : locale === "zh" ? "人数" : "Jumlah peserta",
+          value: `${featuredPackage.minimal_peserta || 0} ${locale === "en" ? "people" : locale === "zh" ? "人" : "orang"}`,
+        },
+      }
+    : null
+
   const goToPage = async (page: number) => {
     if (page <= visiblePage || isLoadingMore) return
 
@@ -281,7 +312,7 @@ export default function HomeResultsClient({
       </aside>
 
       <main className="min-w-0 space-y-4">
-        <SortBar total={totalPackages} locale={locale} />
+        <SortBar total={totalPackages} locale={locale} summary={packageSummary} />
 
         <div className="relative">
           {isPending ? (
