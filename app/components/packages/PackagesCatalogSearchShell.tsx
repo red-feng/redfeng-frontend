@@ -21,7 +21,7 @@ export default function PackagesCatalogSearchShell({
   const [isScrolled, setIsScrolled] = useState(false)
   const isScrolledRef = useRef(false)
   const [stickyTop, setStickyTop] = useState(0)
-  const searchSurfaceRef = useRef<HTMLDivElement | null>(null)
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
     const chips: string[] = []
@@ -61,18 +61,23 @@ export default function PackagesCatalogSearchShell({
   }, [searchParams, stickyFallback])
 
   useEffect(() => {
-    const updateStickyState = () => {
-      const searchSurface = searchSurfaceRef.current
-      if (!searchSurface) return
-
+    const resolveStickyTop = () => {
       const publicHeader = document.querySelector<HTMLElement>(".public-header")
       const isStandalone = document.documentElement.dataset.displayMode === "standalone"
       const headerBottom = publicHeader ? Math.max(publicHeader.getBoundingClientRect().bottom, 0) : 0
       const nextStickyTop = isStandalone ? headerBottom : 0
-      const searchRect = searchSurface.getBoundingClientRect()
-      const nextScrolled = searchRect.top <= nextStickyTop + STICKY_GAP
 
       setStickyTop((current) => (current === nextStickyTop ? current : nextStickyTop))
+      return nextStickyTop
+    }
+
+    const updateFromScrollFallback = () => {
+      const sentinel = sentinelRef.current
+      if (!sentinel) return
+
+      const nextStickyTop = resolveStickyTop()
+      const sentinelTop = sentinel.getBoundingClientRect().top
+      const nextScrolled = sentinelTop <= nextStickyTop + STICKY_GAP
 
       if (nextScrolled === isScrolledRef.current) return
 
@@ -80,13 +85,38 @@ export default function PackagesCatalogSearchShell({
       setIsScrolled(nextScrolled)
     }
 
-    updateStickyState()
-    window.addEventListener("scroll", updateStickyState, { passive: true })
-    window.addEventListener("resize", updateStickyState)
+    const sentinel = sentinelRef.current
+    resolveStickyTop()
+
+    let observer: IntersectionObserver | null = null
+
+    if (sentinel && typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          const nextStickyTop = resolveStickyTop()
+          const nextScrolled = entry.boundingClientRect.top <= nextStickyTop + STICKY_GAP && !entry.isIntersecting
+
+          if (nextScrolled === isScrolledRef.current) return
+
+          isScrolledRef.current = nextScrolled
+          setIsScrolled(nextScrolled)
+        },
+        {
+          threshold: 0,
+        },
+      )
+
+      observer.observe(sentinel)
+    }
+
+    updateFromScrollFallback()
+    window.addEventListener("scroll", updateFromScrollFallback, { passive: true })
+    window.addEventListener("resize", updateFromScrollFallback)
 
     return () => {
-      window.removeEventListener("scroll", updateStickyState)
-      window.removeEventListener("resize", updateStickyState)
+      observer?.disconnect()
+      window.removeEventListener("scroll", updateFromScrollFallback)
+      window.removeEventListener("resize", updateFromScrollFallback)
     }
   }, [])
 
@@ -97,14 +127,18 @@ export default function PackagesCatalogSearchShell({
   return (
     <div id="package-search">
       <div
-        className={`fixed inset-x-0 top-0 z-[60] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ${
+        className={`fixed inset-x-0 top-0 z-[120] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ${
           isScrolled ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
         }`}
         style={{ top: `${stickyTop}px` }}
       >
         <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3`}>
           <div className={homeLayoutLock.contentWidthClass}>
-            <div className="rounded-[22px] border border-[#f1ddd0] bg-white/92">
+            <div className="rounded-[22px] border-2 border-red-500 bg-white/95 shadow-[0_0_0_3px_rgba(239,68,68,0.18)]">
+              <div className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-red-600">Sticky Debug Active</p>
+                <p className="text-[11px] font-semibold text-red-500">top: {stickyTop}px | active: {isScrolled ? "yes" : "no"}</p>
+              </div>
               <div className="grid gap-3 px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,0.92fr)] lg:items-center">
                 <button type="button" onClick={scrollToSearch} className="min-w-0 text-left">
                   <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{stickyPrimarySummary}</p>
@@ -152,7 +186,9 @@ export default function PackagesCatalogSearchShell({
         </div>
       </div>
 
-      <div ref={searchSurfaceRef} className="relative z-10">
+      <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
+
+      <div className="relative z-10">
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
