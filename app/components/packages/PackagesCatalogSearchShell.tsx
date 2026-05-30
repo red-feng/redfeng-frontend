@@ -21,7 +21,7 @@ export default function PackagesCatalogSearchShell({
   const [isScrolled, setIsScrolled] = useState(false)
   const isScrolledRef = useRef(false)
   const [stickyTop, setStickyTop] = useState(0)
-  const sentinelRef = useRef<HTMLDivElement | null>(null)
+  const searchSurfaceRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
     const chips: string[] = []
@@ -72,12 +72,12 @@ export default function PackagesCatalogSearchShell({
     }
 
     const updateFromScrollFallback = () => {
-      const sentinel = sentinelRef.current
-      if (!sentinel) return
+      const searchSurface = searchSurfaceRef.current
+      if (!searchSurface) return
 
       const nextStickyTop = resolveStickyTop()
-      const sentinelTop = sentinel.getBoundingClientRect().top
-      const nextScrolled = sentinelTop <= nextStickyTop + STICKY_GAP
+      const searchBottom = searchSurface.getBoundingClientRect().bottom
+      const nextScrolled = searchBottom <= nextStickyTop + STICKY_GAP
 
       if (nextScrolled === isScrolledRef.current) return
 
@@ -85,16 +85,16 @@ export default function PackagesCatalogSearchShell({
       setIsScrolled(nextScrolled)
     }
 
-    const sentinel = sentinelRef.current
+    const searchSurface = searchSurfaceRef.current
     resolveStickyTop()
 
     let observer: IntersectionObserver | null = null
 
-    if (sentinel && typeof IntersectionObserver !== "undefined") {
+    if (searchSurface && typeof IntersectionObserver !== "undefined") {
       observer = new IntersectionObserver(
         ([entry]) => {
           const nextStickyTop = resolveStickyTop()
-          const nextScrolled = entry.boundingClientRect.top <= nextStickyTop + STICKY_GAP && !entry.isIntersecting
+          const nextScrolled = entry.boundingClientRect.bottom <= nextStickyTop + STICKY_GAP
 
           if (nextScrolled === isScrolledRef.current) return
 
@@ -106,7 +106,7 @@ export default function PackagesCatalogSearchShell({
         },
       )
 
-      observer.observe(sentinel)
+      observer.observe(searchSurface)
     }
 
     updateFromScrollFallback()
@@ -186,9 +186,7 @@ export default function PackagesCatalogSearchShell({
         </div>
       </div>
 
-      <div ref={sentinelRef} aria-hidden="true" className="h-px w-full" />
-
-      <div className="relative z-10">
+      <div ref={searchSurfaceRef} className="relative z-10">
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
