@@ -224,10 +224,13 @@ export default function PackagesCatalogInteractiveClient({
   return (
     <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.38),transparent_28%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.32),transparent_22%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-5 md:pb-14`}>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+        <div className="fixed inset-x-0 top-0 z-[200] border-b-2 border-red-500 bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
             <div className={homeLayoutLock.contentWidthClass}>
-              <div className="scale-[0.994] rounded-[22px] border border-[#f1ddd0] bg-white/92 transition-all duration-200 lg:border-transparent lg:bg-transparent">
+              <div className="scale-[0.994] rounded-[22px] border-2 border-red-500 bg-white/95 transition-all duration-200 lg:border-red-500 lg:bg-white/95">
+                <div className="border-b border-red-200 bg-red-50 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-red-600">
+                  Package Sticky Active
+                </div>
                 <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px] xl:items-center">
                   <button type="button" onClick={() => setIsStickySearchExpanded(true)} className="min-w-0 text-left">
                     <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{stickyTitle}</p>
