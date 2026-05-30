@@ -20,6 +20,7 @@ export default function PackagesCatalogSearchShell({
   const searchParams = useSearchParams()
   const [isPinned, setIsPinned] = useState(false)
   const [stickyTop, setStickyTop] = useState(0)
+  const [shellHeight, setShellHeight] = useState(0)
   const shellRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
@@ -65,6 +66,9 @@ export default function PackagesCatalogSearchShell({
       const shell = shellRef.current
       if (!shell) return
 
+      const nextShellHeight = shell.offsetHeight
+      setShellHeight((current) => (current === nextShellHeight ? current : nextShellHeight))
+
       const nextPinned = shell.getBoundingClientRect().top <= nextStickyTop + STICKY_GAP
       setIsPinned((current) => (current === nextPinned ? current : nextPinned))
     }
@@ -83,9 +87,13 @@ export default function PackagesCatalogSearchShell({
     <div
       ref={shellRef}
       id="package-search"
-      className={`sticky z-[120] transition-all duration-200 ${isPinned ? "pt-2" : ""}`}
-      style={{ top: `${stickyTop}px` }}
+      className="relative"
+      style={isPinned && shellHeight > 0 ? { minHeight: `${shellHeight}px` } : undefined}
     >
+      <div
+        className={`${isPinned ? "fixed inset-x-0 z-[120]" : "relative"} transition-all duration-200`}
+        style={isPinned ? { top: `${stickyTop}px` } : undefined}
+      >
       <div className={isPinned ? "rounded-[28px] border border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_18px_36px_-24px_rgba(15,23,42,0.2)]" : ""}>
         <div className={`${homeLayoutLock.pageXClass} ${isPinned ? "py-2 sm:py-3" : ""}`}>
           <div className={homeLayoutLock.contentWidthClass}>
@@ -121,6 +129,7 @@ export default function PackagesCatalogSearchShell({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
