@@ -55,7 +55,7 @@ type Props = {
   facilities: Facility[]
   initialFilters: Partial<PackageFilterState>
   locale: Locale
-  localeMaxPrice: number
+  maxAvailablePrice: number
   packages: PackageItem[]
   searchBarCountries: string[]
   searchParamsKey: string
@@ -103,7 +103,7 @@ export default function PackageCatalogInteractiveShell({
   facilities,
   initialFilters,
   locale,
-  localeMaxPrice,
+  maxAvailablePrice,
   packages,
   searchBarCountries,
   searchParamsKey,
@@ -277,7 +277,7 @@ export default function PackageCatalogInteractiveShell({
         initialFilters={initialFilters}
         layoutVariant="flightCatalog"
         locale={locale}
-        maxAvailablePrice={localeMaxPrice}
+        maxAvailablePrice={maxAvailablePrice}
         packages={packages}
         totalPackages={totalPackages}
       />
