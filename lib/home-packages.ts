@@ -28,6 +28,7 @@ export type HomePackageListItem = {
   destination_province?: string | null
   currency: string | null
   departure_date: string | null
+  duration?: number | null
   minimal_peserta: number | null
   travel_style: string | null
   price_adult: number | null
