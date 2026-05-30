@@ -81,7 +81,7 @@ export default async function PackagesCatalogPage({
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
       <PublicInstallPrompt locale={locale} />
-      <PublicHeader locale={locale} variant="overlay" />
+      <PublicHeader locale={locale} />
 
       <section className={`${homeLayoutLock.pageXClass} pb-2 pt-2 md:pb-3 md:pt-3`}>
         <div className={homeLayoutLock.contentWidthClass}>
