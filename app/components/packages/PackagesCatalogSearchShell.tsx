@@ -21,6 +21,7 @@ export default function PackagesCatalogSearchShell({
   const [isPinned, setIsPinned] = useState(false)
   const [stickyTop, setStickyTop] = useState(0)
   const [shellHeight, setShellHeight] = useState(0)
+  const activationScrollYRef = useRef(0)
   const shellRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
@@ -56,29 +57,47 @@ export default function PackagesCatalogSearchShell({
   }, [searchParams, stickyFallback])
 
   useEffect(() => {
-    const updateStickyState = () => {
+    const resolveStickyTop = () => {
       const publicHeader = document.querySelector<HTMLElement>(".public-header")
       const isStandalone = document.documentElement.dataset.displayMode === "standalone"
       const headerBottom = publicHeader ? Math.max(publicHeader.getBoundingClientRect().bottom, 0) : 0
       const nextStickyTop = isStandalone ? headerBottom : 0
       setStickyTop((current) => (current === nextStickyTop ? current : nextStickyTop))
+      return nextStickyTop
+    }
+
+    const measureShell = () => {
+      const nextStickyTop = resolveStickyTop()
 
       const shell = shellRef.current
       if (!shell) return
 
       const nextShellHeight = shell.offsetHeight
       setShellHeight((current) => (current === nextShellHeight ? current : nextShellHeight))
+      activationScrollYRef.current = Math.max(0, shell.getBoundingClientRect().top + window.scrollY - nextStickyTop - STICKY_GAP)
+    }
 
-      const nextPinned = shell.getBoundingClientRect().top <= nextStickyTop + STICKY_GAP
+    const updateStickyState = () => {
+      resolveStickyTop()
+      const shell = shellRef.current
+      if (!shell) return
+
+      const nextShellHeight = shell.offsetHeight
+      setShellHeight((current) => (current === nextShellHeight ? current : nextShellHeight))
+
+      const nextPinned = window.scrollY >= activationScrollYRef.current
       setIsPinned((current) => (current === nextPinned ? current : nextPinned))
     }
 
+    measureShell()
     updateStickyState()
     window.addEventListener("scroll", updateStickyState, { passive: true })
+    window.addEventListener("resize", measureShell)
     window.addEventListener("resize", updateStickyState)
 
     return () => {
       window.removeEventListener("scroll", updateStickyState)
+      window.removeEventListener("resize", measureShell)
       window.removeEventListener("resize", updateStickyState)
     }
   }, [])
