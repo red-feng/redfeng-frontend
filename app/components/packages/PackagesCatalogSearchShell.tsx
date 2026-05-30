@@ -22,38 +22,14 @@ export default function PackagesCatalogSearchShell({
   const [isScrolled, setIsScrolled] = useState(false)
   const isScrolledRef = useRef(false)
   const searchShellRef = useRef<HTMLDivElement | null>(null)
-  const stickySentinelRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    const stickySentinel = stickySentinelRef.current
-
-    if (typeof window !== "undefined" && "IntersectionObserver" in window && stickySentinel) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          const nextScrolled = !entry.isIntersecting
-          if (nextScrolled === isScrolledRef.current) return
-          isScrolledRef.current = nextScrolled
-          setIsScrolled(nextScrolled)
-        },
-        {
-          root: null,
-          threshold: 0,
-          rootMargin: "-12px 0px 0px 0px",
-        },
-      )
-
-      observer.observe(stickySentinel)
-      return () => observer.disconnect()
-    }
-
     const handleScroll = () => {
-      const searchShell = searchShellRef.current
-      const searchTop = searchShell?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY
       let nextScrolled = isScrolledRef.current
 
-      if (!nextScrolled && (searchTop <= 28 || window.scrollY >= STICKY_SCROLL_ENTER_Y)) {
+      if (!nextScrolled && window.scrollY > STICKY_SCROLL_ENTER_Y) {
         nextScrolled = true
-      } else if (nextScrolled && searchTop > 72 && window.scrollY <= STICKY_SCROLL_EXIT_Y) {
+      } else if (nextScrolled && window.scrollY < STICKY_SCROLL_EXIT_Y) {
         nextScrolled = false
       }
 
@@ -132,7 +108,6 @@ export default function PackagesCatalogSearchShell({
       ) : null}
 
       <div id="package-search" ref={searchShellRef}>
-        <div ref={stickySentinelRef} className="h-px w-full" aria-hidden="true" />
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
