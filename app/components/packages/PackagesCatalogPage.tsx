@@ -1,4 +1,3 @@
-import Image from "next/image"
 import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
@@ -84,44 +83,7 @@ export default async function PackagesCatalogPage({
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <section className={`${homeLayoutLock.pageXClass} pb-3 pt-2 md:pb-4 md:pt-3`}>
-        <div className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.heroBackdropRadiusClass} overflow-hidden border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
-          <div className="relative min-h-[220px] px-5 pb-3 pt-[104px] sm:min-h-[245px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[270px] lg:px-8 lg:pb-5 lg:pt-[130px]">
-            <Image
-              src="/home-assets/background-package-mobile.png"
-              alt="RedFeng package catalog hero"
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-center sm:hidden"
-            />
-            <Image
-              src="/home-assets/background-package-web.png"
-              alt="RedFeng package catalog hero"
-              fill
-              priority
-              sizes="(max-width: 1440px) 100vw, 1280px"
-              className="hidden object-cover object-center sm:block"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,248,239,0.97)_0%,rgba(255,248,241,0.88)_30%,rgba(255,244,235,0.54)_58%,rgba(255,243,236,0.14)_100%)]" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/20 to-transparent" />
-
-            <div className="relative flex h-full flex-col">
-              <div className="max-w-[680px]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#ef4423]">{pageCopy.eyebrow}</p>
-                <h1 className="mt-3 max-w-[520px] text-[24px] font-semibold leading-[1.04] tracking-[-0.05em] text-slate-950 sm:text-[30px] lg:text-[36px]">
-                  {pageCopy.title}
-                </h1>
-                <p className="mt-3 max-w-[540px] text-[14px] leading-6 text-slate-700 sm:text-[15px] sm:leading-7">
-                  {pageCopy.body}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-2 lg:-mt-10`}>
+      <section className={`${homeLayoutLock.pageXClass} pb-2 pt-2 md:pb-3 md:pt-3`}>
         <div className={homeLayoutLock.contentWidthClass}>
           <PackagesCatalogSearchShell locale={locale} countries={searchBarCountries} searchKey={searchParamsKey} />
         </div>
