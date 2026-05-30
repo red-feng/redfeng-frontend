@@ -6,7 +6,7 @@ import SearchBar from "@/app/components/SearchBar"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { Locale } from "@/lib/i18n"
 
-const STICKY_GAP = 12
+const STICKY_GAP = 8
 
 export default function PackagesCatalogSearchShell({
   countries,
@@ -70,7 +70,7 @@ export default function PackagesCatalogSearchShell({
       const headerBottom = publicHeader ? Math.max(publicHeader.getBoundingClientRect().bottom, 0) : 0
       const nextStickyTop = isStandalone ? headerBottom : 0
       const searchRect = searchSurface.getBoundingClientRect()
-      const nextScrolled = searchRect.bottom <= nextStickyTop + STICKY_GAP
+      const nextScrolled = searchRect.top <= nextStickyTop + STICKY_GAP
 
       setStickyTop((current) => (current === nextStickyTop ? current : nextStickyTop))
 
@@ -97,7 +97,7 @@ export default function PackagesCatalogSearchShell({
   return (
     <div id="package-search">
       <div
-        className={`fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ${
+        className={`fixed inset-x-0 top-0 z-[60] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] transition-all duration-200 ${
           isScrolled ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
         }`}
         style={{ top: `${stickyTop}px` }}

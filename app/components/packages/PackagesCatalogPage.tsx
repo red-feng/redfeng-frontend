@@ -78,6 +78,17 @@ export default async function PackagesCatalogPage({
       .join(" • "),
   }))
   const compactSummaryCards = quickSummaryCards.slice(0, 3)
+  const heroStats = [
+    leadPackage?.travel_style ? formatTravelStyleLabel(leadPackage.travel_style, locale) : null,
+    leadPackage?.duration ? `${leadPackage.duration} ${locale === "en" ? "days" : locale === "zh" ? "å¤©" : "hari"}` : null,
+    packagesResult.total > 0
+      ? locale === "en"
+        ? `${packagesResult.total} packages`
+        : locale === "zh"
+          ? `${packagesResult.total} ä¸ªå¥—è£…`
+          : `${packagesResult.total} paket`
+      : null,
+  ].filter(Boolean)
 
   return (
     <div id="top" className="min-h-screen bg-[linear-gradient(180deg,#fff8f2_0%,#fffdfb_24%,#f5f7fb_100%)] pb-36 md:pb-0">
@@ -107,6 +118,13 @@ export default async function PackagesCatalogPage({
                 <p className="text-[14px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{pageCopy.ribbonTitle}</p>
                 <p className="mt-2 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">{leadRoute}</p>
                 <p className="mt-1 text-[12px] text-slate-500">{leadMeta || pageCopy.ribbonBody}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {heroStats.map((stat) => (
+                    <span key={stat} className="rounded-full border border-[#f5dccd] bg-[#fff7f1] px-3 py-1.5 text-[11px] font-medium text-[#b85a2c]">
+                      {stat}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -120,23 +138,33 @@ export default async function PackagesCatalogPage({
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 px-1 text-[12px] text-white/88">{pageCopy.body}</p>
+                <div className="mt-3 flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="max-w-[520px] text-[12px] text-white/88">{pageCopy.body}</p>
+                  <a
+                    href="#results-start"
+                    className="inline-flex shrink-0 items-center justify-center rounded-full border border-white/35 bg-white/14 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-white/22"
+                  >
+                    {pageCopy.stickyCta}
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <HomeResultsClient
-        key={`results:${locale}:${searchParamsKey}`}
-        facilities={facilities}
-        initialFilters={initialFilters}
-        locale={locale}
-        maxAvailablePrice={localeMaxPrice}
-        packages={packagesResult.items}
-        showSummaryCard={false}
-        totalPackages={packagesResult.total}
-      />
+      <div id="results-start">
+        <HomeResultsClient
+          key={`results:${locale}:${searchParamsKey}`}
+          facilities={facilities}
+          initialFilters={initialFilters}
+          locale={locale}
+          maxAvailablePrice={localeMaxPrice}
+          packages={packagesResult.items}
+          showSummaryCard={false}
+          totalPackages={packagesResult.total}
+        />
+      </div>
       <PublicStickyAction locale={locale} href="#package-search" label={pageCopy.stickyCta} summary={pageCopy.sticky} />
       <PublicMobileNav locale={locale} />
     </div>
