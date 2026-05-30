@@ -21,13 +21,17 @@ export default function PackagesCatalogSearchShell({
   const searchParams = useSearchParams()
   const [isScrolled, setIsScrolled] = useState(false)
   const isScrolledRef = useRef(false)
+  const searchShellRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
+      const searchShell = searchShellRef.current
+      const searchTop = searchShell?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY
       let nextScrolled = isScrolledRef.current
-      if (!nextScrolled && window.scrollY >= STICKY_SCROLL_ENTER_Y) {
+
+      if (!nextScrolled && (searchTop <= 28 || window.scrollY >= STICKY_SCROLL_ENTER_Y)) {
         nextScrolled = true
-      } else if (nextScrolled && window.scrollY <= STICKY_SCROLL_EXIT_Y) {
+      } else if (nextScrolled && searchTop > 72 && window.scrollY <= STICKY_SCROLL_EXIT_Y) {
         nextScrolled = false
       }
 
@@ -105,7 +109,7 @@ export default function PackagesCatalogSearchShell({
         </div>
       ) : null}
 
-      <div id="package-search">
+      <div id="package-search" ref={searchShellRef}>
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
