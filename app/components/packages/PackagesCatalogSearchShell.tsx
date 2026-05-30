@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import SearchBar from "@/app/components/SearchBar"
 import type { Locale } from "@/lib/i18n"
 
-const STICKY_SCROLL_ENTER_Y = 220
-const STICKY_SCROLL_EXIT_Y = 140
+const STICKY_SEARCH_TRIGGER_OFFSET = 16
 
 export default function PackagesCatalogSearchShell({
   countries,
@@ -19,14 +18,15 @@ export default function PackagesCatalogSearchShell({
 }) {
   const searchParams = useSearchParams()
   const [isScrolled, setIsScrolled] = useState(false)
+  const searchShellRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled((current) => {
-        if (!current && window.scrollY >= STICKY_SCROLL_ENTER_Y) return true
-        if (current && window.scrollY <= STICKY_SCROLL_EXIT_Y) return false
-        return current
-      })
+      const searchShell = searchShellRef.current
+      if (!searchShell) return
+
+      const nextScrolled = searchShell.getBoundingClientRect().top <= STICKY_SEARCH_TRIGGER_OFFSET
+      setIsScrolled((current) => (current === nextScrolled ? current : nextScrolled))
     }
 
     handleScroll()
@@ -61,7 +61,7 @@ export default function PackagesCatalogSearchShell({
   return (
     <>
       {isScrolled ? (
-        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+        <div className="fixed inset-x-0 top-0 z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
           <div className="mx-auto flex max-w-[1360px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-8">
             <div className="min-w-0">
               <p className="text-[12px] font-semibold text-slate-900">{stickyTitle}</p>
@@ -91,7 +91,7 @@ export default function PackagesCatalogSearchShell({
         </div>
       ) : null}
 
-      <div id="package-search">
+      <div id="package-search" ref={searchShellRef}>
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
