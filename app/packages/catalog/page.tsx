@@ -1,10 +1,7 @@
 import Image from "next/image"
-import HomeResultsClient from "@/app/HomeResultsClient"
+import PackageCatalogInteractiveShell from "@/app/packages/catalog/PackageCatalogInteractiveShell"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicInstallPrompt from "@/app/components/PublicInstallPrompt"
-import PublicMobileNav from "@/app/components/PublicMobileNav"
-import PublicStickyAction from "@/app/components/PublicStickyAction"
-import SearchBar from "@/app/components/SearchBar"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { getCurrentLocale } from "@/lib/locale"
 import { getPublicCatalogData } from "@/lib/public-package-catalog"
@@ -20,6 +17,9 @@ export default async function PackagesCatalogRoute({
   const locale = await getCurrentLocale()
   const { facilities, initialFilters, localeMaxPrice, packagesResult, searchBarCountries, searchParamsKey } =
     await getPublicCatalogData(resolvedSearchParams, locale)
+  const selectedCountry = Array.isArray(resolvedSearchParams.country) ? resolvedSearchParams.country[0] || "" : resolvedSearchParams.country || ""
+  const selectedStyle = Array.isArray(resolvedSearchParams.style) ? resolvedSearchParams.style[0] || "" : resolvedSearchParams.style || ""
+  const selectedDuration = Array.isArray(resolvedSearchParams.duration) ? resolvedSearchParams.duration[0] || "" : resolvedSearchParams.duration || ""
 
   const copy = {
     id: {
@@ -96,32 +96,21 @@ export default async function PackagesCatalogRoute({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.pageXClass} -mt-8 pb-1 lg:-mt-12`}>
-        <div id="package-search" className={homeLayoutLock.contentWidthClass}>
-          <SearchBar
-            key={`package-catalog-search:${locale}:${searchParamsKey}`}
-            locale={locale}
-            countries={searchBarCountries}
-            destinationPath="/packages/catalog"
-            variant="catalog"
-          />
-        </div>
-      </section>
-
-      <HomeResultsClient
-        key={`package-catalog-results:${locale}:${searchParamsKey}`}
+      <PackageCatalogInteractiveShell
         facilities={facilities}
-        filterDesktopStickyTopClass="lg:top-5"
         initialFilters={initialFilters}
-        layoutVariant="flightCatalog"
         locale={locale}
         maxAvailablePrice={localeMaxPrice}
         packages={packagesResult.items}
+        searchBarCountries={searchBarCountries}
+        searchParamsKey={searchParamsKey}
+        stickyLabel={copy.stickyLabel}
+        stickySummary={copy.stickySummary}
         totalPackages={packagesResult.total}
+        selectedCountry={selectedCountry}
+        selectedStyle={selectedStyle}
+        selectedDuration={selectedDuration}
       />
-
-      <PublicStickyAction locale={locale} href="#package-search" label={copy.stickyLabel} summary={copy.stickySummary} />
-      <PublicMobileNav locale={locale} />
     </div>
   )
 }
