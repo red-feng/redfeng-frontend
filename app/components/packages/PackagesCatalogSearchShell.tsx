@@ -20,8 +20,10 @@ export default function PackagesCatalogSearchShell({
   const searchParams = useSearchParams()
   const [isPinned, setIsPinned] = useState(false)
   const [stickyTop, setStickyTop] = useState(0)
+  const [contentHeight, setContentHeight] = useState(0)
   const activationScrollYRef = useRef(0)
   const shellRef = useRef<HTMLDivElement | null>(null)
+  const contentRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
     const chips: string[] = []
@@ -74,6 +76,14 @@ export default function PackagesCatalogSearchShell({
       activationScrollYRef.current = Math.max(0, shell.getBoundingClientRect().top + window.scrollY - nextStickyTop - STICKY_GAP)
     }
 
+    const measureContentHeight = () => {
+      const content = contentRef.current
+      if (!content) return
+
+      const nextHeight = content.offsetHeight
+      setContentHeight((current) => (current === nextHeight ? current : nextHeight))
+    }
+
     const updateStickyState = () => {
       resolveStickyTop()
       const shell = shellRef.current
@@ -84,15 +94,27 @@ export default function PackagesCatalogSearchShell({
     }
 
     measureShell()
+    measureContentHeight()
     updateStickyState()
     window.addEventListener("scroll", updateStickyState, { passive: true })
     window.addEventListener("resize", measureShell)
+    window.addEventListener("resize", measureContentHeight)
     window.addEventListener("resize", updateStickyState)
+
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined" && contentRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        measureContentHeight()
+      })
+      resizeObserver.observe(contentRef.current)
+    }
 
     return () => {
       window.removeEventListener("scroll", updateStickyState)
       window.removeEventListener("resize", measureShell)
+      window.removeEventListener("resize", measureContentHeight)
       window.removeEventListener("resize", updateStickyState)
+      resizeObserver?.disconnect()
     }
   }, [])
 
@@ -101,30 +123,31 @@ export default function PackagesCatalogSearchShell({
       ref={shellRef}
       id="package-search"
       className="relative"
+      style={isPinned && contentHeight > 0 ? { minHeight: `${contentHeight}px` } : undefined}
     >
       <div
         className={`${isPinned ? "fixed inset-x-0 z-[120]" : "relative"} transition-all duration-200`}
         style={isPinned ? { top: `${stickyTop}px` } : undefined}
       >
-      <div className={isPinned ? "rounded-[28px] border border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_18px_36px_-24px_rgba(15,23,42,0.2)]" : ""}>
-        <div className={`${homeLayoutLock.pageXClass} ${isPinned ? "py-2 sm:py-3" : ""}`}>
+      <div ref={contentRef} className={isPinned ? "rounded-[24px] border border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_18px_36px_-24px_rgba(15,23,42,0.2)]" : ""}>
+        <div className={`${homeLayoutLock.pageXClass} ${isPinned ? "py-2" : ""}`}>
           <div className={homeLayoutLock.contentWidthClass}>
             {isPinned ? (
-              <div className="mb-3 rounded-[18px] border border-[#f1ddd0] bg-white/92 px-4 py-3">
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div className="mb-2 rounded-[16px] border border-[#f1ddd0] bg-white/92 px-4 py-2.5">
+                <div className="flex flex-col gap-1.5 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
-                    <p className="truncate text-[16px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{stickyPrimarySummary}</p>
-                    <p className="mt-1 truncate text-[13px] text-slate-500">{stickySecondarySummary}</p>
+                    <p className="truncate text-[15px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{stickyPrimarySummary}</p>
+                    <p className="mt-0.5 truncate text-[12px] text-slate-500">{stickySecondarySummary}</p>
                   </div>
                   <div className="flex min-w-0 flex-wrap gap-1.5">
                     {summaryChips.length > 0 ? (
                       summaryChips.map((chip) => (
-                        <span key={chip} className="rounded-full border border-[#f0d4c4] bg-[#fff3ea] px-2.5 py-1 text-[11px] font-medium text-[#b85a2c]">
+                        <span key={chip} className="rounded-full border border-[#f0d4c4] bg-[#fff3ea] px-2 py-0.5 text-[10px] font-medium text-[#b85a2c]">
                           {chip}
                         </span>
                       ))
                     ) : (
-                      <span className="text-[11px] text-slate-500">{stickyTitle}</span>
+                      <span className="text-[10px] text-slate-500">{stickyTitle}</span>
                     )}
                   </div>
                 </div>
