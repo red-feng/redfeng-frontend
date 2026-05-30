@@ -164,6 +164,27 @@ export default function PackageCatalogInteractiveShell({
         ? "全部风格"
         : "Semua style"
 
+  const durationSummary = formatDurationSummary(selectedDuration, locale)
+  const chips = [
+    {
+      key: "style",
+      label: compactCopy.style,
+      value: styleSummary,
+      tone: "border-[#f0d4c4] bg-[#fff3ea] text-[#b85a2c]",
+    },
+    {
+      key: "duration",
+      label: compactCopy.duration,
+      value: durationSummary,
+      tone: "border-[#e7edf4] bg-[#f8fafc] text-slate-600",
+    },
+    {
+      key: "results",
+      label: locale === "en" ? "Results" : locale === "zh" ? "ç»“æžœ" : "Hasil",
+      value: `${totalPackages}`,
+      tone: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
+    },
+  ]
   const shouldShowCompactStickyBar = isScrolled
 
   const scrollToSearch = () => {
@@ -180,16 +201,16 @@ export default function PackageCatalogInteractiveShell({
       {shouldShowCompactStickyBar ? (
         <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
           <div className="mx-auto max-w-[1240px] px-4 py-2 sm:px-6 sm:py-3 md:px-8">
-            <div className="scale-[0.994] rounded-[22px] border border-[#f1ddd0] bg-white/92 transition-all duration-200">
+            <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] backdrop-blur transition-all duration-300">
               {isStickySearchExpanded ? (
-                <div className="p-3 sm:p-4">
+                <div className="animate-[packageStickyExpand_260ms_ease-out] p-3 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3 px-1">
                     <div className="min-w-0">
                       <p className="truncate text-[16px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">
                         {formatCountrySummary(selectedCountry, locale)}
                       </p>
                       <p className="mt-1 truncate text-[12px] text-slate-500">
-                        {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {formatDurationSummary(selectedDuration, locale)}
+                        {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {durationSummary}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -213,6 +234,17 @@ export default function PackageCatalogInteractiveShell({
                       </button>
                     </div>
                   </div>
+                  <div className="mb-3 flex flex-wrap gap-2 px-1">
+                    {chips.map((chip) => (
+                      <span
+                        key={chip.key}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium ${chip.tone}`}
+                      >
+                        <span className="text-[10px] uppercase tracking-[0.18em] opacity-75">{chip.label}</span>
+                        <span className="font-semibold">{chip.value}</span>
+                      </span>
+                    ))}
+                  </div>
                   <SearchBar
                     key={`package-catalog-sticky-search:${locale}:${searchParamsKey}`}
                     locale={locale}
@@ -222,23 +254,20 @@ export default function PackageCatalogInteractiveShell({
                   />
                 </div>
               ) : (
-                <div className="flex items-center gap-3 px-4 py-3">
+                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.05fr)_52px_minmax(0,1fr)] xl:items-center">
                   <button
                     type="button"
                     onClick={() => setIsStickySearchExpanded(true)}
-                    className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-[18px] border border-[#f0d4c4] bg-white px-4 py-3 text-left shadow-[0_14px_28px_-24px_rgba(15,23,42,0.18)] transition hover:border-[#ebb89f] hover:bg-[#fffdfb]"
+                    className="min-w-0 rounded-[18px] border border-[#f0d4c4] bg-white px-4 py-3 text-left shadow-[0_14px_28px_-24px_rgba(15,23,42,0.18)] transition hover:border-[#ebb89f] hover:bg-[#fffdfb]"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-[14px] font-semibold tracking-[-0.02em] text-slate-950">
+                      <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">
                         {formatCountrySummary(selectedCountry, locale)}
                       </p>
-                      <p className="mt-1 truncate text-[12px] text-slate-500">
-                        {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {formatDurationSummary(selectedDuration, locale)}
+                      <p className="mt-1 truncate text-[13px] text-slate-500">
+                        {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {durationSummary}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[#fff3ea] px-3 py-1.5 text-[11px] font-semibold text-[#ef5b2a]">
-                      {compactCopy.action}
-                    </span>
                   </button>
                   <button
                     type="button"
@@ -251,6 +280,21 @@ export default function PackageCatalogInteractiveShell({
                       <path d="M4.5 6.5 8 3l3.5 3.5" />
                     </svg>
                   </button>
+                  <div className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex min-w-max gap-2 pr-1 xl:justify-end">
+                      {chips.map((chip) => (
+                        <button
+                          key={chip.key}
+                          type="button"
+                          onClick={() => setIsStickySearchExpanded(true)}
+                          className={`rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
+                        >
+                          <p className="text-[10px] uppercase tracking-[0.16em] opacity-70">{chip.label}</p>
+                          <p className="mt-1 text-[12px] font-semibold">{chip.value}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -284,6 +328,18 @@ export default function PackageCatalogInteractiveShell({
 
       <PublicStickyAction locale={locale} href="#package-search" label={stickyLabel} summary={stickySummary} />
       <PublicMobileNav locale={locale} />
+      <style jsx>{`
+        @keyframes packageStickyExpand {
+          from {
+            opacity: 0;
+            transform: translateY(-8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </>
   )
 }
