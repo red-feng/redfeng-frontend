@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import SearchBar from "@/app/components/SearchBar"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import type { Locale } from "@/lib/i18n"
 
-const STICKY_SEARCH_TRIGGER_OFFSET = 16
+const STICKY_SCROLL_ENTER_Y = 220
+const STICKY_SCROLL_EXIT_Y = 140
 
 export default function PackagesCatalogSearchShell({
   countries,
@@ -18,15 +20,21 @@ export default function PackagesCatalogSearchShell({
 }) {
   const searchParams = useSearchParams()
   const [isScrolled, setIsScrolled] = useState(false)
-  const searchShellRef = useRef<HTMLDivElement | null>(null)
+  const isScrolledRef = useRef(false)
 
   useEffect(() => {
     const handleScroll = () => {
-      const searchShell = searchShellRef.current
-      if (!searchShell) return
+      let nextScrolled = isScrolledRef.current
+      if (!nextScrolled && window.scrollY >= STICKY_SCROLL_ENTER_Y) {
+        nextScrolled = true
+      } else if (nextScrolled && window.scrollY <= STICKY_SCROLL_EXIT_Y) {
+        nextScrolled = false
+      }
 
-      const nextScrolled = searchShell.getBoundingClientRect().top <= STICKY_SEARCH_TRIGGER_OFFSET
-      setIsScrolled((current) => (current === nextScrolled ? current : nextScrolled))
+      if (nextScrolled === isScrolledRef.current) return
+
+      isScrolledRef.current = nextScrolled
+      setIsScrolled(nextScrolled)
     }
 
     handleScroll()
@@ -61,37 +69,43 @@ export default function PackagesCatalogSearchShell({
   return (
     <>
       {isScrolled ? (
-        <div className="fixed inset-x-0 top-0 z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
-          <div className="mx-auto flex max-w-[1360px] items-center justify-between gap-4 px-4 py-3 sm:px-6 md:px-8">
-            <div className="min-w-0">
-              <p className="text-[12px] font-semibold text-slate-900">{stickyTitle}</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {summaryChips.length > 0 ? (
-                  summaryChips.map((chip) => (
-                    <span
-                      key={chip}
-                      className="rounded-full border border-[#f0d4c4] bg-[#fff3ea] px-2.5 py-1 text-[11px] font-medium text-[#b85a2c]"
-                    >
-                      {chip}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-[11px] text-slate-500">{stickyFallback}</span>
-                )}
+        <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+          <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3`}>
+            <div className={homeLayoutLock.contentWidthClass}>
+              <div className="rounded-[22px] border border-[#f1ddd0] bg-white/92">
+                <div className="flex items-center justify-between gap-4 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold text-slate-900">{stickyTitle}</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {summaryChips.length > 0 ? (
+                        summaryChips.map((chip) => (
+                          <span
+                            key={chip}
+                            className="rounded-full border border-[#f0d4c4] bg-[#fff3ea] px-2.5 py-1 text-[11px] font-medium text-[#b85a2c]"
+                          >
+                            {chip}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[11px] text-slate-500">{stickyFallback}</span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={scrollToSearch}
+                    className="inline-flex shrink-0 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] px-4 py-2.5 text-sm font-semibold text-[#ef5b2a] transition hover:bg-[#fff1e7]"
+                  >
+                    {stickyButton}
+                  </button>
+                </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={scrollToSearch}
-              className="inline-flex shrink-0 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] px-4 py-2.5 text-sm font-semibold text-[#ef5b2a] transition hover:bg-[#fff1e7]"
-            >
-              {stickyButton}
-            </button>
           </div>
         </div>
       ) : null}
 
-      <div id="package-search" ref={searchShellRef}>
+      <div id="package-search">
         <SearchBar
           key={`search:${locale}:${searchKey}`}
           locale={locale}
