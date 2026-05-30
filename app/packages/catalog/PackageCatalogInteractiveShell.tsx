@@ -5,6 +5,7 @@ import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import PublicStickyAction from "@/app/components/PublicStickyAction"
 import SearchBar from "@/app/components/SearchBar"
+import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 import type { Locale } from "@/lib/i18n"
 import type { PackageFilterState } from "@/app/packages/FilterClient"
@@ -115,8 +116,11 @@ export default function PackageCatalogInteractiveShell({
   selectedDuration,
 }: Props) {
   const searchSectionRef = useRef<HTMLDivElement | null>(null)
+  const quickChipScrollRef = useRef<HTMLDivElement | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
+  const [canScrollChipLeft, setCanScrollChipLeft] = useState(false)
+  const [canScrollChipRight, setCanScrollChipRight] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -133,6 +137,27 @@ export default function PackageCatalogInteractiveShell({
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  useEffect(() => {
+    const container = quickChipScrollRef.current
+    if (!container || isStickySearchExpanded) return
+
+    const updateChipScrollState = () => {
+      const nextCanLeft = container.scrollLeft > 8
+      const nextCanRight = container.scrollLeft + container.clientWidth < container.scrollWidth - 8
+      setCanScrollChipLeft(nextCanLeft)
+      setCanScrollChipRight(nextCanRight)
+    }
+
+    updateChipScrollState()
+    container.addEventListener("scroll", updateChipScrollState, { passive: true })
+    window.addEventListener("resize", updateChipScrollState)
+
+    return () => {
+      container.removeEventListener("scroll", updateChipScrollState)
+      window.removeEventListener("resize", updateChipScrollState)
+    }
+  }, [isStickySearchExpanded, totalPackages, selectedStyle, selectedDuration])
 
   const compactCopy = useMemo(
     () =>
@@ -189,6 +214,8 @@ export default function PackageCatalogInteractiveShell({
       tone: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
     },
   ]
+  const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
+  const showChipScrollRight = !isStickySearchExpanded && canScrollChipRight
   const shouldShowCompactStickyBar = isScrolled
 
   const scrollToSearch = () => {
@@ -200,12 +227,24 @@ export default function PackageCatalogInteractiveShell({
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
   }
 
+  const scrollQuickChips = (direction: "left" | "right") => {
+    const container = quickChipScrollRef.current
+    if (!container) return
+
+    const amount = Math.max(220, Math.floor(container.clientWidth * 0.72))
+    container.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    })
+  }
+
   return (
     <>
       {shouldShowCompactStickyBar ? (
         <div className="fixed inset-x-0 top-0 z-30 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
-          <div className="mx-auto max-w-[1240px] px-4 py-2 sm:px-6 sm:py-3 md:px-8">
-            <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] backdrop-blur transition-all duration-300">
+          <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
+            <div className={homeLayoutLock.contentWidthClass}>
+            <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] backdrop-blur transition-all duration-300 lg:border-transparent lg:bg-transparent lg:shadow-none">
               {isStickySearchExpanded ? (
                 <div className="animate-[packageStickyExpand_260ms_ease-out] p-3 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3 px-1">
@@ -285,20 +324,55 @@ export default function PackageCatalogInteractiveShell({
                       <path d="M10.5 10.5 14 14" />
                     </svg>
                   </button>
-                  <div className="relative overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="relative">
+                    {showChipScrollLeft ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => scrollQuickChips("left")}
+                          className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#f1ddd0] bg-white/95 text-[#b85a2c] shadow-sm transition hover:border-[#efc4ad] hover:text-[#ef5b2a] xl:inline-flex"
+                          aria-label="Scroll quick filters left"
+                        >
+                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                            <path d="M9.5 3.5 5 8l4.5 4.5" />
+                          </svg>
+                        </button>
+                        <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
+                      </>
+                    ) : null}
+                    {showChipScrollRight ? (
+                      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
+                    ) : null}
+                    <div
+                      ref={quickChipScrollRef}
+                      className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
+                    >
                     <div className="flex min-w-max gap-2 pr-1">
                       {chips.map((chip) => (
                         <button
                           key={chip.key}
                           type="button"
                           onClick={() => setIsStickySearchExpanded(true)}
-                          className={`min-w-[118px] rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
+                          className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
                         >
                           <p className="text-[10px] uppercase tracking-[0.16em] opacity-70">{chip.label}</p>
                           <p className="mt-1 text-[12px] font-semibold">{chip.value}</p>
                         </button>
                       ))}
                     </div>
+                    </div>
+                    {showChipScrollRight ? (
+                      <button
+                        type="button"
+                        onClick={() => scrollQuickChips("right")}
+                        className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-[#f1ddd0] bg-white/95 text-[#b85a2c] shadow-sm transition hover:border-[#efc4ad] hover:text-[#ef5b2a] xl:inline-flex"
+                        aria-label="Scroll quick filters right"
+                      >
+                        <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                          <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                        </svg>
+                      </button>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -315,6 +389,7 @@ export default function PackageCatalogInteractiveShell({
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </div>
         </div>
