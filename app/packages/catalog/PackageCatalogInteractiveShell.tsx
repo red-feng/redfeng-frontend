@@ -155,6 +155,10 @@ export default function PackageCatalogInteractiveShell({
             },
     [locale],
   )
+  const compactSecondaryAction =
+    locale === "en" ? "Filters" : locale === "zh" ? "筛选" : "Filter"
+  const compactSummaryMeta =
+    locale === "en" ? "Packages ready to compare" : locale === "zh" ? "可直接比较的套餐" : "Paket siap dibandingkan"
 
   const styleSummary = selectedStyle
     ? formatTravelStyleLabel(selectedStyle, locale)
@@ -254,11 +258,11 @@ export default function PackageCatalogInteractiveShell({
                   />
                 </div>
               ) : (
-                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.05fr)_52px_minmax(0,1fr)] xl:items-center">
+                <div className="grid gap-3 px-4 py-3 xl:grid-cols-[minmax(0,1.08fr)_44px_minmax(0,1fr)_108px] xl:items-center">
                   <button
                     type="button"
                     onClick={() => setIsStickySearchExpanded(true)}
-                    className="min-w-0 rounded-[18px] border border-[#f0d4c4] bg-white px-4 py-3 text-left shadow-[0_14px_28px_-24px_rgba(15,23,42,0.18)] transition hover:border-[#ebb89f] hover:bg-[#fffdfb]"
+                    className="min-w-0 text-left"
                   >
                     <div className="min-w-0">
                       <p className="truncate text-[17px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">
@@ -267,27 +271,28 @@ export default function PackageCatalogInteractiveShell({
                       <p className="mt-1 truncate text-[13px] text-slate-500">
                         {compactCopy.style}: {styleSummary} | {compactCopy.duration}: {durationSummary}
                       </p>
+                      <p className="mt-1 truncate text-[11px] font-medium text-slate-400">{compactSummaryMeta}</p>
                     </div>
                   </button>
                   <button
                     type="button"
-                    onClick={scrollToSearch}
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
+                    onClick={() => setIsStickySearchExpanded(true)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#f1ddd0] bg-[#fff7f1] text-[#ef5b2a] transition hover:bg-[#fff1e7]"
                     aria-label={compactCopy.action}
                   >
                     <svg viewBox="0 0 16 16" className="h-4 w-4 fill-none stroke-current stroke-[1.8]">
-                      <path d="M8 12.5v-9" />
-                      <path d="M4.5 6.5 8 3l3.5 3.5" />
+                      <circle cx="7" cy="7" r="4.5" />
+                      <path d="M10.5 10.5 14 14" />
                     </svg>
                   </button>
-                  <div className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <div className="flex min-w-max gap-2 pr-1 xl:justify-end">
+                  <div className="relative overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex min-w-max gap-2 pr-1">
                       {chips.map((chip) => (
                         <button
                           key={chip.key}
                           type="button"
                           onClick={() => setIsStickySearchExpanded(true)}
-                          className={`rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
+                          className={`min-w-[118px] rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
                         >
                           <p className="text-[10px] uppercase tracking-[0.16em] opacity-70">{chip.label}</p>
                           <p className="mt-1 text-[12px] font-semibold">{chip.value}</p>
@@ -295,6 +300,19 @@ export default function PackageCatalogInteractiveShell({
                       ))}
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={scrollToSearch}
+                    className="inline-flex h-[52px] flex-col items-center justify-center gap-1 rounded-[16px] border border-[#efc4ad] bg-[#fff1e7] px-4 text-center text-[12px] font-semibold text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)] transition hover:bg-[#ffe7d8]"
+                  >
+                    <svg viewBox="0 0 16 16" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
+                      <path d="M3.5 4.5h9" />
+                      <path d="M5.5 8h5" />
+                      <path d="M7 11.5h2" />
+                      <rect x="2.5" y="2.5" width="11" height="11" rx="2.5" />
+                    </svg>
+                    <span>{compactSecondaryAction}</span>
+                  </button>
                 </div>
               )}
             </div>
