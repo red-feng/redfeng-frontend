@@ -268,8 +268,8 @@ export default function HomeResultsClient({
   }
 
   return (
-    <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:flex-row lg:items-start lg:gap-8">
-      <aside className="w-full shrink-0 lg:w-[290px] xl:w-[310px]">
+    <div className="mx-auto grid max-w-[1360px] gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-6">
+      <aside className="w-full min-w-0">
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
           facilities={facilities}
@@ -280,7 +280,7 @@ export default function HomeResultsClient({
         />
       </aside>
 
-      <main className="min-w-0 flex-1">
+      <main className="min-w-0 space-y-4">
         <SortBar total={totalPackages} locale={locale} />
 
         <div className="relative">
@@ -311,7 +311,7 @@ export default function HomeResultsClient({
           ) : totalPackages === 0 ? (
             <p>{t.home.noPackages}</p>
           ) : (
-            <div className="grid grid-cols-1 gap-5">
+            <div className="grid grid-cols-1 gap-4">
               {displayedPackages.map((pkg, index) => {
                 const isFresh = freshPackageIds.includes(pkg.id)
 
@@ -329,7 +329,7 @@ export default function HomeResultsClient({
           )}
 
           {!isPending && isLoadingMore && (
-            <div className="mt-4 grid grid-cols-1 gap-5">
+            <div className="mt-4 grid grid-cols-1 gap-4">
               {Array.from({ length: Math.min(packagesPerPage, Math.max(totalPackages - displayedPackages.length, 1)) }).map((_, index) => (
                 <div
                   key={`skeleton-${index}`}
@@ -370,7 +370,7 @@ export default function HomeResultsClient({
         `}</style>
 
         {totalPackages > packagesPerPage && (
-          <div className="mt-8 flex flex-col gap-4 rounded-[24px] border border-[#f0dfd2] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-4 rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.18)] sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-600">
               {paginationCopy.page} {visiblePage} / {totalPages}
             </p>

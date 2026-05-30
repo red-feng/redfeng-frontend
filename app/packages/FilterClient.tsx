@@ -188,8 +188,8 @@ export default function FilterClient({
         : "Transaksi lebih aman, data customer terlindungi, dan dukungan saat Anda membutuhkannya."
 
   const filterBody = (
-    <div className="space-y-4 lg:space-y-5">
-      <div className="rounded-[24px] border border-[#f3dfd3] bg-[linear-gradient(180deg,#ffffff_0%,#fffaf5_100%)] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.16)]">
+    <div className="space-y-4">
+      <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
         <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-orange-500">Filter Paket</p>
@@ -210,7 +210,7 @@ export default function FilterClient({
 
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[15px] font-semibold text-slate-950">{t.priceRange}</p>
+            <p className="text-[13px] font-semibold tracking-[-0.01em] text-slate-900">{t.priceRange}</p>
             <p className="mt-1 text-sm text-slate-500">{t.perPackage}</p>
           </div>
           <button
@@ -224,7 +224,7 @@ export default function FilterClient({
         </div>
 
         <div className="relative mt-6 px-2">
-          <div className="h-1 rounded-full bg-[#f3ddd0]" />
+          <div className="h-1 rounded-full bg-[#edf1f5]" />
           <div
             className="pointer-events-none absolute top-0 h-1 rounded-full bg-[#ff6131]"
             style={{
@@ -262,10 +262,10 @@ export default function FilterClient({
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-2 sm:mt-8">
-          <div className="min-w-0 rounded-2xl border border-slate-300 bg-white px-3 py-3 text-[12px] font-medium text-slate-700 shadow-sm sm:rounded-full sm:text-[13px]">
+          <div className="min-w-0 rounded-2xl border border-[#e6ebf2] bg-[#fcfdff] px-3 py-3 text-[12px] font-medium text-slate-700 sm:rounded-full sm:text-[13px]">
             {formatPackageMoney(effectiveMinPrice, priceCurrency, locale)}
           </div>
-          <div className="min-w-0 rounded-2xl border border-slate-300 bg-white px-3 py-3 text-[12px] font-medium text-slate-700 shadow-sm sm:rounded-full sm:text-[13px]">
+          <div className="min-w-0 rounded-2xl border border-[#e6ebf2] bg-[#fcfdff] px-3 py-3 text-[12px] font-medium text-slate-700 sm:rounded-full sm:text-[13px]">
             {formatPackageMoney(effectiveMaxPrice, priceCurrency, locale)}
           </div>
         </div>
@@ -279,15 +279,15 @@ export default function FilterClient({
           return (
             <div
               key={category}
-              className="overflow-hidden rounded-[20px] border border-[#efe3d9] bg-white shadow-[0_16px_36px_-30px_rgba(15,23,42,0.18)] sm:rounded-[22px]"
+              className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]"
             >
               <button
                 type="button"
                 onClick={() => toggleCategory(category)}
-                className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left sm:py-4"
+                className="flex w-full items-center justify-between gap-3 px-4 py-4 text-left"
               >
                 <div className="min-w-0">
-                  <span className="block text-sm font-semibold text-slate-900">
+                  <span className="block text-[13px] font-semibold tracking-[-0.01em] text-slate-900">
                     {getFacilityCategoryLabel(category, locale)}
                   </span>
                   {selectedCount > 0 ? (
@@ -333,9 +333,9 @@ export default function FilterClient({
         })}
       </div>
 
-      <div className="rounded-[24px] border border-[#f3dfd3] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4 shadow-[0_18px_40px_-32px_rgba(15,23,42,0.16)]">
+      <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff1ea] text-orange-500">
+          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fff4ec] text-orange-500">
             <svg viewBox="0 0 24 24" className="h-5 w-5 fill-none stroke-current stroke-[1.8]">
               <path d="M12 3.8 5.5 6.5v5c0 4.2 2.5 7.5 6.5 8.7 4-1.2 6.5-4.5 6.5-8.7v-5L12 3.8Z" />
               <path d="m9.5 12 1.6 1.6 3.4-3.7" />
