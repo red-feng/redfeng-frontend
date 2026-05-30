@@ -199,6 +199,12 @@ export default function HomeResultsClient({
         leadValue:
           [featuredPackage.city, featuredPackage.country].filter(Boolean).join(", ") ||
           (locale === "en" ? "Featured destination" : locale === "zh" ? "精选目的地" : "Destinasi unggulan"),
+        leadNote:
+          locale === "en"
+            ? "Recommended package match"
+            : locale === "zh"
+              ? "推荐套装匹配"
+              : "Rekomendasi pencarian",
         metricA: {
           label: locale === "en" ? "Travel style" : locale === "zh" ? "出行风格" : "Travel style",
           value: featuredPackage.travel_style

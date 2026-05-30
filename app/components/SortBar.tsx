@@ -9,6 +9,7 @@ type SortOption = "popular" | "price-low"
 type SortBarSummary = {
   leadLabel: string
   leadValue: string
+  leadNote?: string
   metricA: { label: string; value: string }
   metricB: { label: string; value: string }
   metricC: { label: string; value: string }
@@ -89,19 +90,20 @@ export default function SortBar({
 
       {summary ? (
         <div className="mt-4 grid overflow-hidden rounded-[18px] border border-[#f0f1f5] xl:grid-cols-4">
-          <div className="bg-[#fffaf7] px-6 py-4 text-left text-[#ef5b2a] shadow-[inset_0_0_0_1px_rgba(239,91,42,0.18)]">
+          <div className="bg-[#fffaf7] px-6 py-4 text-left text-[#ef5b2a] shadow-[inset_0_0_0_1px_rgba(239,91,42,0.4)]">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em]">{summary.leadLabel}</p>
-            <p className="mt-1 text-[13px] font-medium opacity-90">{summary.leadValue}</p>
+            <p className="mt-1 text-[13px] font-medium opacity-80">{summary.leadValue}</p>
+            {summary.leadNote ? <p className="mt-2 text-[13px] font-semibold">{summary.leadNote}</p> : null}
           </div>
-          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+          <div className="border-t border-[#f0f1f5] bg-white px-6 py-4 text-left xl:border-l xl:border-t-0">
             <p className="text-[13px] text-slate-500">{summary.metricA.label}</p>
             <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricA.value}</p>
           </div>
-          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+          <div className="border-t border-[#f0f1f5] bg-white px-6 py-4 text-left xl:border-l xl:border-t-0">
             <p className="text-[13px] text-slate-500">{summary.metricB.label}</p>
             <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricB.value}</p>
           </div>
-          <div className="border-t border-[#f0f1f5] px-6 py-4 text-left xl:border-l xl:border-t-0">
+          <div className="border-t border-[#f0f1f5] bg-white px-6 py-4 text-left xl:border-l xl:border-t-0">
             <p className="text-[13px] text-slate-500">{summary.metricC.label}</p>
             <p className="mt-1 text-[15px] font-semibold text-slate-900">{summary.metricC.value}</p>
           </div>
