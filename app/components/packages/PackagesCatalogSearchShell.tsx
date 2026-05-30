@@ -30,7 +30,9 @@ export default function PackagesCatalogSearchShell({
   const searchParams = useSearchParams()
   const [isScrolled, setIsScrolled] = useState(false)
   const [stickyTop, setStickyTop] = useState(0)
+  const [compactBarHeight, setCompactBarHeight] = useState(0)
   const isScrolledRef = useRef(false)
+  const compactBarRef = useRef<HTMLDivElement | null>(null)
 
   const summaryChips = useMemo(() => {
     const chips: string[] = []
@@ -98,6 +100,29 @@ export default function PackagesCatalogSearchShell({
     }
   }, [])
 
+  useEffect(() => {
+    const measureCompactBar = () => {
+      const nextHeight = compactBarRef.current?.offsetHeight ?? 0
+      setCompactBarHeight((current) => (current === nextHeight ? current : nextHeight))
+    }
+
+    measureCompactBar()
+    window.addEventListener("resize", measureCompactBar)
+
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined" && compactBarRef.current) {
+      resizeObserver = new ResizeObserver(() => {
+        measureCompactBar()
+      })
+      resizeObserver.observe(compactBarRef.current)
+    }
+
+    return () => {
+      window.removeEventListener("resize", measureCompactBar)
+      resizeObserver?.disconnect()
+    }
+  }, [isScrolled, summaryChips, stickySubtitle])
+
   const scrollToSearch = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
@@ -105,7 +130,13 @@ export default function PackagesCatalogSearchShell({
   return (
     <div id="package-search">
       {isScrolled ? (
-        <div className="fixed inset-x-0 z-[120] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]" style={{ top: `${stickyTop}px` }}>
+        <>
+          <div style={{ height: compactBarHeight > 0 ? `${compactBarHeight}px` : "96px" }} aria-hidden="true" />
+          <div
+            ref={compactBarRef}
+            className="fixed inset-x-0 z-[120] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]"
+            style={{ top: `${stickyTop}px` }}
+          >
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3`}>
             <div className={homeLayoutLock.contentWidthClass}>
               <div className="rounded-[22px] border border-[#f1ddd0] bg-white/92">
@@ -148,7 +179,8 @@ export default function PackagesCatalogSearchShell({
               </div>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       ) : null}
 
       {!isScrolled ? (
