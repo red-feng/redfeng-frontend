@@ -1,9 +1,9 @@
 import Image from "next/image"
 import Link from "next/link"
-import { dictionaries, type Locale } from "@/lib/i18n"
-import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
-import { resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
 import PriceLiveClient from "@/app/components/PriceLiveClient"
+import { dictionaries, type Locale } from "@/lib/i18n"
+import { resolveLocalizedPackagePricing, resolvePackageTranslation } from "@/lib/package-pricing"
+import { formatTravelStyleLabel, getScheduleQuotaLabel, isQuotaTravelStyle } from "@/lib/travelStyles"
 
 type PackageCardTranslation = {
   language_code?: string | null
@@ -60,144 +60,109 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const displayPricing = pkg.livePricing || pricing
   const participantLabel = getScheduleQuotaLabel(pkg.travel_style, locale)
   const hasFixedDeparture = isQuotaTravelStyle(pkg.travel_style)
-  const departureLabel = locale === "zh" ? "\u51fa\u53d1\u65e5\u671f" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
-  const durationLabel = locale === "zh" ? "\u65f6\u957f" : locale === "en" ? "Duration" : "Durasi"
-  const childPriceLabel = locale === "zh" ? "\u513f\u7ae5\u4ef7\u683c" : locale === "en" ? "Child price" : "Harga anak"
-  const taxNotice = locale === "zh" ? "\u672a\u542b\u7a0e\u8d39" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
+  const departureLabel = locale === "zh" ? "出发日期" : locale === "en" ? "Departure date" : "Tanggal keberangkatan"
+  const durationLabel = locale === "zh" ? "时长" : locale === "en" ? "Duration" : "Durasi"
+  const childPriceLabel = locale === "zh" ? "儿童价格" : locale === "en" ? "Child price" : "Harga anak"
+  const taxNotice = locale === "zh" ? "未含税费" : locale === "en" ? "Taxes excluded" : "Belum termasuk pajak"
   const locationText = [pkg.city, pkg.country].filter(Boolean).join(", ")
   const hasDescription = Boolean(translation?.description?.trim())
-  const dayLabel = locale === "zh" ? "\u5929" : locale === "en" ? "days" : "hari"
-  const availableLabel = locale === "zh" ? "\u53ef\u9884\u8ba2" : locale === "en" ? "Available now" : "Tersedia sekarang"
-  const viewDetailLabel = locale === "zh" ? "\u67e5\u770b\u8be6\u60c5" : locale === "en" ? "View details" : "Lihat detail"
-  const fromLabel = locale === "zh" ? "\u8d77\u4ef7" : locale === "en" ? "Starting from" : "Mulai dari"
+  const dayLabel = locale === "zh" ? "天" : locale === "en" ? "days" : "hari"
+  const availableLabel = locale === "zh" ? "Bisa dipesan" : locale === "en" ? "Available now" : "Tersedia sekarang"
+  const viewDetailLabel = locale === "zh" ? "Lihat detail" : locale === "en" ? "View details" : "Lihat detail"
+  const fromLabel = locale === "zh" ? "Mulai dari" : locale === "en" ? "Starting from" : "Mulai dari"
 
   const infoChips = [
     pkg.travel_style
       ? {
           key: "style",
-          className: "bg-orange-50 text-orange-700",
+          tone: "bg-[#fff4ec] text-[#ef5b2a]",
           label: formatTravelStyleLabel(pkg.travel_style, locale),
         }
       : null,
     {
       key: "participants",
-      className: "bg-slate-100 text-slate-700",
+      tone: "bg-[#f8fafc] text-slate-600",
       label: `${participantLabel}: ${pkg.minimal_peserta || 0}`,
     },
     pkg.duration
       ? {
           key: "duration",
-          className: "bg-amber-50 text-amber-700",
+          tone: "bg-[#f8fafc] text-slate-600",
           label: `${durationLabel}: ${pkg.duration} ${dayLabel}`,
         }
       : null,
     hasFixedDeparture && pkg.departure_date
       ? {
           key: "departure",
-          className: "bg-blue-50 text-blue-700",
+          tone: "bg-[#f8fafc] text-slate-600",
           label: `${departureLabel}: ${pkg.departure_date}`,
         }
       : null,
-  ].filter(Boolean) as Array<{ key: string; className: string; label: string }>
+  ].filter(Boolean) as Array<{ key: string; tone: string; label: string }>
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-[28px] border border-[#efe3d8] bg-white shadow-[0_22px_46px_-34px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_28px_60px_-36px_rgba(15,23,42,0.24)] md:flex-row">
-      <div className="relative h-[168px] w-full shrink-0 sm:h-[190px] md:h-[220px] md:w-[280px]">
-        <Image
-          src={imageSrc}
-          alt={imageAlt}
-          fill
-          sizes="(max-width: 767px) 100vw, 280px"
-          className="object-cover"
-        />
-        <div className="absolute left-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-700 shadow-sm backdrop-blur sm:left-4 sm:top-4 sm:px-3 sm:text-[11px] sm:tracking-[0.24em]">
-          {availableLabel}
+    <article className="overflow-hidden rounded-[22px] border border-[#eef1f6] bg-white shadow-[0_20px_44px_-36px_rgba(15,23,42,0.18)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_50px_-34px_rgba(15,23,42,0.22)]">
+      <div className="grid gap-0 xl:grid-cols-[240px_minmax(0,1fr)_250px]">
+        <div className="relative h-[190px] w-full overflow-hidden border-b border-[#eef1f6] xl:h-full xl:min-h-[220px] xl:border-b-0 xl:border-r">
+          <Image src={imageSrc} alt={imageAlt} fill sizes="(max-width: 1279px) 100vw, 240px" className="object-cover" />
+          <div className="absolute left-4 top-4 rounded-full bg-white/92 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700 shadow-sm backdrop-blur">
+            {availableLabel}
+          </div>
         </div>
-        <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-950/45 via-slate-950/10 to-transparent md:hidden" />
-        <div className="absolute bottom-3 left-3 right-3 md:hidden">
-          <div className="rounded-[18px] border border-white/20 bg-white/92 px-3 py-2.5 shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] backdrop-blur">
-            <div className="flex items-end justify-between gap-3">
-              <div className="min-w-0">
-                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{viewDetailLabel}</p>
-                <p className="mt-1 truncate text-base font-bold text-orange-600">
-                  <PriceLiveClient
-                    packageId={pkg.id}
-                    locale={locale}
-                    baseCurrency={pkg.currency}
-                    baseAdultPrice={pkg.price_adult}
-                    baseChildPrice={pkg.price_child ?? null}
-                    initialCurrency={displayPricing.currency}
-                    initialAdultPrice={displayPricing.priceAdult}
-                    initialChildPrice={displayPricing.priceChild}
-                    variant="mobile"
-                    childPriceLabel={childPriceLabel}
-                  />
-                </p>
-              </div>
-              <Link
-                href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                className="shrink-0 rounded-full bg-orange-500 px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-orange-600"
-              >
-                {t.choosePackage}
-              </Link>
-            </div>
+
+        <div className="p-5 xl:p-6">
+          <h2 className="line-clamp-2 text-[24px] font-semibold leading-[1.08] tracking-[-0.04em] text-slate-950">{displayTitle}</h2>
+          {locationText ? <p className="mt-2 text-[13px] text-slate-500">{t.location}: {locationText}</p> : null}
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {infoChips.map((chip) => (
+              <span key={chip.key} className={`rounded-[10px] border border-[#eef2f6] px-2.5 py-1.5 text-[11px] font-medium ${chip.tone}`}>
+                {chip.label}
+              </span>
+            ))}
+          </div>
+
+          {hasDescription ? (
+            <p className="mt-4 line-clamp-3 text-[13px] leading-6 text-slate-600">
+              {translation?.description}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="relative flex flex-col justify-center border-t border-[#eef1f6] bg-white p-5 xl:border-l xl:border-t-0">
+          <p className="text-[12px] text-slate-500">{fromLabel}</p>
+          <p className="mt-2">
+            <PriceLiveClient
+              packageId={pkg.id}
+              locale={locale}
+              baseCurrency={pkg.currency}
+              baseAdultPrice={pkg.price_adult}
+              baseChildPrice={pkg.price_child ?? null}
+              initialCurrency={displayPricing.currency}
+              initialAdultPrice={displayPricing.priceAdult}
+              initialChildPrice={displayPricing.priceChild}
+              variant="desktop"
+              childPriceLabel={childPriceLabel}
+              taxNotice={taxNotice}
+            />
+          </p>
+
+          <div className="mt-5 space-y-2">
+            <Link
+              href={`/packages/${encodeURIComponent(pkg.slug)}`}
+              className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105"
+            >
+              {t.choosePackage}
+            </Link>
+            <Link
+              href={`/packages/${encodeURIComponent(pkg.slug)}`}
+              className="block text-center text-[13px] font-semibold text-slate-700 transition hover:text-[#ef5b2a]"
+            >
+              {viewDetailLabel}
+            </Link>
           </div>
         </div>
       </div>
-
-      <div className="flex-1 p-4 sm:p-5 md:p-6">
-        <h2 className="mb-2 line-clamp-2 text-[20px] font-semibold leading-tight tracking-[-0.03em] text-slate-950 md:text-[28px]">{displayTitle}</h2>
-
-        {locationText && <p className="mb-3 text-[12px] text-slate-500 sm:mb-4 sm:text-sm">{t.location}: {locationText}</p>}
-
-        <div className="mb-4 flex flex-wrap gap-2 text-[10px] sm:text-xs">
-          {infoChips.slice(0, 3).map((chip) => (
-            <span key={chip.key} className={`rounded-full px-2.5 py-1.5 font-medium sm:px-3 ${chip.className}`}>
-              {chip.label}
-            </span>
-          ))}
-        </div>
-
-        {hasDescription ? (
-          <p className="line-clamp-2 text-[12px] leading-6 text-slate-600 sm:line-clamp-3 sm:text-sm sm:leading-7">
-            {translation?.description}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="hidden flex-col justify-between border-t border-[#efe3d8] bg-[linear-gradient(180deg,#fffdfb_0%,#fff8f2_100%)] p-4 sm:p-5 md:flex md:w-[268px] md:border-l md:border-t-0 md:p-6">
-        <div className="text-left md:text-right">
-          <p className="text-sm text-slate-500">{fromLabel}</p>
-          <PriceLiveClient
-            packageId={pkg.id}
-            locale={locale}
-            baseCurrency={pkg.currency}
-            baseAdultPrice={pkg.price_adult}
-            baseChildPrice={pkg.price_child ?? null}
-            initialCurrency={displayPricing.currency}
-            initialAdultPrice={displayPricing.priceAdult}
-            initialChildPrice={displayPricing.priceChild}
-            variant="desktop"
-            childPriceLabel={childPriceLabel}
-            taxNotice={taxNotice}
-          />
-        </div>
-
-        <div className="mt-4 space-y-3 md:mt-6">
-          <Link
-            href={`/packages/${encodeURIComponent(pkg.slug)}`}
-            className="block w-full rounded-2xl bg-orange-500 py-3 text-center text-sm font-semibold text-white transition hover:bg-orange-600 md:text-base"
-          >
-            {t.choosePackage}
-          </Link>
-          <Link
-            href={`/packages/${encodeURIComponent(pkg.slug)}`}
-            className="block text-center text-sm font-semibold text-slate-700 transition hover:text-orange-600"
-          >
-            {viewDetailLabel} →
-          </Link>
-        </div>
-      </div>
-    </div>
+    </article>
   )
 }

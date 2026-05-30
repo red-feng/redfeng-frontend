@@ -129,9 +129,9 @@ export default function SearchBar({
           </div>
         ) : null}
 
-        <div className="rounded-[28px] border border-white/70 bg-white/24 p-3 shadow-[0_26px_50px_-34px_rgba(15,23,42,0.32)] backdrop-blur-md sm:rounded-[30px] sm:p-4">
+        <div className="rounded-[24px] border border-[#eef1f6] bg-white p-4 shadow-[0_22px_52px_-38px_rgba(15,23,42,0.18)]">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
-            <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <CountryIcon />
               </span>
@@ -158,7 +158,7 @@ export default function SearchBar({
               </span>
             </label>
 
-            <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <StyleIcon />
               </span>
@@ -185,7 +185,7 @@ export default function SearchBar({
               </span>
             </label>
 
-            <label className="group flex min-w-0 items-center gap-3 rounded-[22px] border border-white/80 bg-white px-4 py-4 shadow-[0_18px_30px_-24px_rgba(15,23,42,0.22)] transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
+            <label className="group flex min-w-0 items-center gap-3 rounded-[18px] border border-[#eceff4] bg-[#fcfdff] px-4 py-4 transition focus-within:border-orange-300 focus-within:ring-4 focus-within:ring-orange-100">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff4ef] text-orange-500">
                 <DurationIcon />
               </span>
@@ -214,7 +214,7 @@ export default function SearchBar({
               type="button"
               onClick={applyFilter}
               disabled={isPending}
-              className="rounded-[22px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_22px_34px_-24px_rgba(239,68,35,0.9)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-[18px] bg-gradient-to-r from-[#ff6934] via-[#ff5d2d] to-[#ef4423] px-6 py-4 text-[15px] font-semibold text-white shadow-[0_18px_34px_-22px_rgba(239,68,35,0.72)] transition hover:-translate-y-0.5 hover:from-[#ff5d2d] hover:to-[#ea3b1c] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isPending
                 ? loadingLabel
