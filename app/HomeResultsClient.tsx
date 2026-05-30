@@ -84,7 +84,9 @@ const packagesPerPage = 12
 
 export default function HomeResultsClient({
   facilities,
+  filterDesktopStickyTopClass,
   initialFilters,
+  layoutVariant = "default",
   locale,
   maxAvailablePrice,
   packages,
@@ -92,7 +94,9 @@ export default function HomeResultsClient({
   totalPackages,
 }: {
   facilities: Facility[]
+  filterDesktopStickyTopClass?: string
   initialFilters?: Partial<PackageFilterState>
+  layoutVariant?: "default" | "flightCatalog"
   locale: Locale
   maxAvailablePrice: number
   packages: PackageItem[]
@@ -306,8 +310,13 @@ export default function HomeResultsClient({
     }
   }
 
+  const layoutClass =
+    layoutVariant === "flightCatalog"
+      ? "mx-auto grid max-w-[1240px] gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-7 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start"
+      : "mx-auto grid max-w-[1360px] gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-6"
+
   return (
-    <div className="mx-auto grid max-w-[1360px] gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-6">
+    <div className={layoutClass}>
       <aside className="w-full min-w-0">
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
@@ -316,6 +325,7 @@ export default function HomeResultsClient({
           locale={locale}
           maxAvailablePrice={maxAvailablePrice}
           onChange={handleFilterChange}
+          desktopStickyTopClass={filterDesktopStickyTopClass}
         />
       </aside>
 
