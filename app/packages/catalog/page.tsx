@@ -1,4 +1,4 @@
-import PackagesCatalogPage from "@/app/components/packages/PackagesCatalogPage"
+import { notFound } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
@@ -7,5 +7,6 @@ export default async function PackagesCatalogRoute({
 }: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  return <PackagesCatalogPage searchParams={searchParams} />
+  await searchParams
+  notFound()
 }
