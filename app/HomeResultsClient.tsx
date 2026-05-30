@@ -305,7 +305,7 @@ export default function HomeResultsClient({
   }
 
   return (
-    <div className="mx-auto grid max-w-[1360px] gap-5 px-4 py-5 sm:px-6 md:px-8 md:py-6 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-5">
+    <div className="mx-auto grid max-w-[1360px] gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-6">
       <aside className="w-full min-w-0">
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
@@ -317,7 +317,7 @@ export default function HomeResultsClient({
         />
       </aside>
 
-      <main className="min-w-0 space-y-3">
+      <main className="min-w-0 space-y-4">
         <SortBar total={totalPackages} locale={locale} summary={packageSummary} />
 
         <div className="relative">

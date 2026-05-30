@@ -84,7 +84,7 @@ export default async function PackagesCatalogPage({
       <PublicInstallPrompt locale={locale} />
       <PublicHeader locale={locale} variant="overlay" />
 
-      <section className={`${homeLayoutLock.pageXClass} pb-3 pt-2 md:pb-4 md:pt-3`}>
+      <section className={`${homeLayoutLock.pageXClass} pb-4 pt-2 md:pb-5 md:pt-3`}>
         <div className={`${homeLayoutLock.contentWidthClass} ${homeLayoutLock.heroBackdropRadiusClass} overflow-hidden border border-[#f5d5c5] shadow-[0_34px_90px_-52px_rgba(249,115,22,0.42)]`}>
           <div className="relative min-h-[340px] px-5 pb-3 pt-[104px] sm:min-h-[390px] sm:px-6 sm:pb-4 sm:pt-[118px] lg:min-h-[420px] lg:px-8 lg:pb-5 lg:pt-[130px]">
             <Image
@@ -121,7 +121,7 @@ export default async function PackagesCatalogPage({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.pageXClass} -mt-12 pb-1 lg:-mt-16`}>
+      <section className={`${homeLayoutLock.pageXClass} -mt-10 pb-2 lg:-mt-14`}>
         <div id="package-search" className={homeLayoutLock.contentWidthClass}>
           <SearchBar
             key={`search:${locale}:${searchParamsKey}`}
@@ -132,9 +132,9 @@ export default async function PackagesCatalogPage({
         </div>
       </section>
 
-      <section className={`${homeLayoutLock.pageXClass} pb-1`}>
+      <section className={`${homeLayoutLock.pageXClass} pb-2`}>
         <div
-          className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[20px] border border-[#ffc49b] px-5 py-4 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]`}
+          className={`${homeLayoutLock.contentWidthClass} overflow-hidden rounded-[20px] border border-[#ffc49b] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]`}
           style={{
             backgroundImage: "url('/flight-strip-bg-replacement.png')",
             backgroundPosition: "40% 37%",
@@ -143,9 +143,9 @@ export default async function PackagesCatalogPage({
             backgroundColor: "#ff9a61",
           }}
         >
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="max-w-[430px]">
-              <div className="rounded-[24px] border border-white/70 bg-white px-6 py-4 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+              <div className="rounded-[24px] border border-white/70 bg-white px-6 py-5 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
                 <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#ef5b2a]">{pageCopy.ribbonTitle}</p>
                 <p className="mt-2 text-[14px] font-semibold text-slate-900">{leadRoute}</p>
                 <p className="mt-1 text-[13px] text-slate-500">{leadMeta || pageCopy.ribbonBody}</p>
@@ -153,7 +153,7 @@ export default async function PackagesCatalogPage({
             </div>
 
             <div className="min-w-0 flex-1 xl:max-w-[680px]">
-              <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-2.5 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)]">
+              <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)]">
                 <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
                   {quickSummaryCards.map((entry) => (
                     <div key={entry.key} className="rounded-[14px] border border-white/65 bg-white px-4 py-3 shadow-[0_12px_24px_-18px_rgba(15,23,42,0.2)]">
