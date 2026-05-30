@@ -100,6 +100,7 @@ export default function PackagesCatalogInteractiveClient({
   const searchParams = useSearchParams()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
+  const [heroSectionHeight, setHeroSectionHeight] = useState(0)
   const isScrolledRef = useRef(false)
   const heroSearchSectionRef = useRef<HTMLElement | null>(null)
 
@@ -190,6 +191,27 @@ export default function PackagesCatalogInteractiveClient({
     return () => window.removeEventListener("scroll", syncScrollState)
   }, [])
 
+  useEffect(() => {
+    const measureHeroSection = () => {
+      const nextHeight = heroSearchSectionRef.current?.offsetHeight ?? 0
+      setHeroSectionHeight((current) => (current === nextHeight ? current : nextHeight))
+    }
+
+    measureHeroSection()
+    window.addEventListener("resize", measureHeroSection)
+
+    let resizeObserver: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined" && heroSearchSectionRef.current) {
+      resizeObserver = new ResizeObserver(measureHeroSection)
+      resizeObserver.observe(heroSearchSectionRef.current)
+    }
+
+    return () => {
+      window.removeEventListener("resize", measureHeroSection)
+      resizeObserver?.disconnect()
+    }
+  }, [packages, summaryCards, summaryChips, stickySubtitle, shouldShowCompactStickyBar])
+
   const scrollToHeroSearch = () => {
     setIsStickySearchExpanded(false)
     const section = heroSearchSectionRef.current
@@ -243,6 +265,10 @@ export default function PackagesCatalogInteractiveClient({
             </div>
           </div>
         </div>
+      ) : null}
+
+      {shouldShowCompactStickyBar && heroSectionHeight > 0 ? (
+        <div className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`} style={{ height: `${heroSectionHeight}px` }} aria-hidden="true" />
       ) : null}
 
       <section ref={heroSearchSectionRef} className={`${homeLayoutLock.contentWidthClass} mt-6 max-w-[1240px]`}>
