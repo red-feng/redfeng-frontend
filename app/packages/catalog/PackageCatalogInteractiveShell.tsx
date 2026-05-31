@@ -211,7 +211,7 @@ export default function PackageCatalogInteractiveShell({
     const target = searchSectionRef.current
     if (!target) return
 
-    const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 156 : 92
+    const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 132 : 80
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
   }
@@ -228,7 +228,7 @@ export default function PackageCatalogInteractiveShell({
   }
 
   const stickyBar = shouldShowCompactStickyBar ? (
-    <div className="fixed inset-x-0 top-[68px] z-[90] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_22px_42px_-28px_rgba(15,23,42,0.24)] backdrop-blur-sm animate-[packageStickyDock_220ms_ease-out] lg:top-[112px]">
+    <div className="fixed inset-x-0 top-[56px] z-[90] border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_22px_42px_-28px_rgba(15,23,42,0.24)] backdrop-blur-sm animate-[packageStickyDock_220ms_ease-out] lg:top-[88px]">
       <div className={`${homeLayoutLock.pageXClass} py-1.5 sm:py-2.5 lg:py-0`}>
         <div className={homeLayoutLock.contentWidthClass}>
           <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/94 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.22)] backdrop-blur transition-all duration-300 lg:border-transparent lg:bg-transparent lg:shadow-none">
