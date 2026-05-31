@@ -20,14 +20,12 @@ export type PackageFilterState = {
 const openCategoriesStorageKey = "rf_home_filter_open_categories"
 
 export default function FilterClient({
-  desktopStickyTopClass = "lg:top-6",
   facilities,
   initialState,
   locale,
   maxAvailablePrice,
   onChange,
 }: {
-  desktopStickyTopClass?: string
   facilities: Facility[]
   initialState?: Partial<PackageFilterState>
   locale: Locale
@@ -377,7 +375,7 @@ export default function FilterClient({
         </button>
       </div>
 
-      <div className={`hidden lg:sticky lg:block ${desktopStickyTopClass}`}>{filterBody}</div>
+      <div className="hidden lg:block">{filterBody}</div>
 
       {isMobilePanelOpen ? (
         <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/45 backdrop-blur-[2px] lg:hidden">

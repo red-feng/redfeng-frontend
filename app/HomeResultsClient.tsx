@@ -317,7 +317,13 @@ export default function HomeResultsClient({
 
   return (
     <div className={layoutClass}>
-      <aside className="w-full min-w-0">
+      <aside
+        className={
+          layoutVariant === "flightCatalog"
+            ? "w-full min-w-0 space-y-3 lg:sticky lg:top-[8.2rem] lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden"
+            : "w-full min-w-0"
+        }
+      >
         <FilterClient
           key={`${locale}:${maxAvailablePrice}:${initialFilters?.minPrice ?? 0}:${initialFilters?.maxPrice ?? maxAvailablePrice}:${(initialFilters?.selectedFacilities ?? []).join(",")}`}
           facilities={facilities}
