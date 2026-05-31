@@ -241,10 +241,10 @@ export default function PackageCatalogInteractiveShell({
   return (
     <>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-[72px] z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] lg:top-[118px]">
-          <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
+        <div className="fixed inset-x-0 top-[68px] z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_22px_42px_-28px_rgba(15,23,42,0.24)] backdrop-blur-sm animate-[packageStickyDock_220ms_ease-out] lg:top-[112px]">
+          <div className={`${homeLayoutLock.pageXClass} py-1.5 sm:py-2.5 lg:py-0`}>
             <div className={homeLayoutLock.contentWidthClass}>
-            <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] backdrop-blur transition-all duration-300 lg:border-transparent lg:bg-transparent lg:shadow-none">
+            <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/94 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.22)] backdrop-blur transition-all duration-300 lg:border-transparent lg:bg-transparent lg:shadow-none">
               {isStickySearchExpanded ? (
                 <div className="animate-[packageStickyExpand_260ms_ease-out] p-3 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3 px-1">
@@ -422,6 +422,17 @@ export default function PackageCatalogInteractiveShell({
       <PublicStickyAction locale={locale} href="#package-search" label={stickyLabel} summary={stickySummary} />
       <PublicMobileNav locale={locale} />
       <style jsx>{`
+        @keyframes packageStickyDock {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
         @keyframes packageStickyExpand {
           from {
             opacity: 0;
