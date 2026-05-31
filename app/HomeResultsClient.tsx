@@ -332,7 +332,6 @@ export default function HomeResultsClient({
           locale={locale}
           maxAvailablePrice={maxAvailablePrice}
           onChange={handleFilterChange}
-          desktopStickyTopClass={filterDesktopStickyTopClass}
         />
       </aside>
 
