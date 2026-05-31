@@ -118,6 +118,7 @@ export default function PackageCatalogInteractiveShell({
   selectedDuration,
 }: Props) {
   const searchSectionRef = useRef<HTMLDivElement | null>(null)
+  const resultsSectionRef = useRef<HTMLDivElement | null>(null)
   const quickChipScrollRef = useRef<HTMLDivElement | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
@@ -187,21 +188,77 @@ export default function PackageCatalogInteractiveShell({
       key: "style",
       label: compactCopy.style,
       value: styleSummary,
-      tone: "border-[#f0d4c4] bg-[#fff3ea] text-[#b85a2c]",
+      badgeTone: "border-[#f0d4c4] bg-[#fff3ea] text-[#b85a2c]",
+      cardTone: "border-[#efc4ad] bg-[#fff1e7] text-[#b85a2c] shadow-[0_10px_20px_-18px_rgba(239,91,42,0.35)]",
+      valueTone: "text-[#ef5b2a]",
+      note: locale === "en" ? "Selected" : locale === "zh" ? "已选" : "Dipilih",
     },
     {
       key: "duration",
       label: compactCopy.duration,
       value: durationSummary,
-      tone: "border-[#e7edf4] bg-[#f8fafc] text-slate-600",
+      badgeTone: "border-[#e7edf4] bg-[#f8fafc] text-slate-600",
+      cardTone: "border-[#f1ddd0] bg-[#fffdfa] text-slate-600 hover:border-[#efc4ad] hover:bg-[#fff6ee]",
+      valueTone: "text-slate-700",
+      note: locale === "en" ? "Flexible" : locale === "zh" ? "灵活" : "Fleksibel",
     },
     {
       key: "results",
       label: locale === "en" ? "Results" : locale === "zh" ? "Ã§Â»â€œÃ¦Å¾Å“" : "Hasil",
       value: `${totalPackages}`,
-      tone: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
+      badgeTone: "border-emerald-200 bg-emerald-50/80 text-emerald-700",
+      cardTone: "border-emerald-200 bg-emerald-50/70 text-emerald-700 hover:border-emerald-300",
+      valueTone: "text-emerald-700",
+      note: locale === "en" ? "Ready now" : locale === "zh" ? "可用" : "Ready",
     },
   ]
+  const stickyChips = chips.map((chip) => {
+    if (chip.key === "style") {
+      return {
+        ...chip,
+        note: selectedStyle ? (locale === "en" ? "Selected" : locale === "zh" ? "已选" : "Dipilih") : compactCopy.action,
+      }
+    }
+
+    if (chip.key === "duration") {
+      return {
+        ...chip,
+        note:
+          selectedDuration
+            ? locale === "en"
+              ? "Selected"
+              : locale === "zh"
+                ? "已选"
+                : "Dipilih"
+            : locale === "en"
+              ? "Flexible"
+              : locale === "zh"
+                ? "灵活"
+                : "Fleksibel",
+      }
+    }
+
+    if (chip.key === "results") {
+      return {
+        ...chip,
+        label: locale === "en" ? "Results" : locale === "zh" ? "结果" : "Hasil",
+        note:
+          totalPackages > 0
+            ? locale === "en"
+              ? "Ready now"
+              : locale === "zh"
+                ? "可用"
+                : "Ready"
+            : locale === "en"
+              ? "No results"
+              : locale === "zh"
+                ? "无结果"
+                : "Belum ada",
+      }
+    }
+
+    return chip
+  })
 
   const shouldShowCompactStickyBar = isScrolled
   const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
@@ -214,6 +271,25 @@ export default function PackageCatalogInteractiveShell({
     const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 72 : 52
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+  }
+
+  const scrollToResults = () => {
+    const target = resultsSectionRef.current
+    if (!target) return
+
+    const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 110 : 80
+    const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
+    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+  }
+
+  const handleStickyChipClick = (chipKey: string) => {
+    if (chipKey === "results") {
+      setIsStickySearchExpanded(false)
+      scrollToResults()
+      return
+    }
+
+    setIsStickySearchExpanded(true)
   }
 
   const scrollQuickChips = (direction: "left" | "right") => {
@@ -265,8 +341,8 @@ export default function PackageCatalogInteractiveShell({
                   </div>
                 </div>
                 <div className="mb-3 flex flex-wrap gap-2 px-1">
-                  {chips.map((chip) => (
-                    <span key={chip.key} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium ${chip.tone}`}>
+                  {stickyChips.map((chip) => (
+                    <span key={chip.key} className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-medium ${chip.badgeTone}`}>
                       <span className="text-[10px] uppercase tracking-[0.18em] opacity-75">{chip.label}</span>
                       <span className="font-semibold">{chip.value}</span>
                     </span>
@@ -328,15 +404,16 @@ export default function PackageCatalogInteractiveShell({
                     className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden"
                   >
                     <div className="flex min-w-max gap-2 pr-1">
-                      {chips.map((chip) => (
+                      {stickyChips.map((chip) => (
                         <button
                           key={chip.key}
                           type="button"
-                          onClick={() => setIsStickySearchExpanded(true)}
-                          className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition hover:brightness-[0.98] ${chip.tone}`}
+                          onClick={() => handleStickyChipClick(chip.key)}
+                          className={`min-w-[124px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${chip.cardTone}`}
                         >
                           <p className="text-[10px] uppercase tracking-[0.16em] opacity-70">{chip.label}</p>
-                          <p className="mt-1 text-[12px] font-semibold">{chip.value}</p>
+                          <p className={`mt-1 text-[12px] font-semibold ${chip.valueTone}`}>{chip.value}</p>
+                          <p className={`mt-1 text-[10px] font-medium ${chip.valueTone}`}>{chip.note}</p>
                         </button>
                       ))}
                     </div>
@@ -390,17 +467,19 @@ export default function PackageCatalogInteractiveShell({
         </div>
       </section>
 
-      <HomeResultsClient
-        key={`package-catalog-results:${locale}:${searchParamsKey}`}
-        facilities={facilities}
-        filterDesktopStickyTopClass="lg:top-[12.25rem]"
-        initialFilters={initialFilters}
-        layoutVariant="flightCatalog"
-        locale={locale}
-        maxAvailablePrice={maxAvailablePrice}
-        packages={packages}
-        totalPackages={totalPackages}
-      />
+      <div ref={resultsSectionRef}>
+        <HomeResultsClient
+          key={`package-catalog-results:${locale}:${searchParamsKey}`}
+          facilities={facilities}
+          filterDesktopStickyTopClass="lg:top-[12.25rem]"
+          initialFilters={initialFilters}
+          layoutVariant="flightCatalog"
+          locale={locale}
+          maxAvailablePrice={maxAvailablePrice}
+          packages={packages}
+          totalPackages={totalPackages}
+        />
+      </div>
 
       <PublicStickyAction locale={locale} href="#package-search" label={stickyLabel} summary={stickySummary} />
       <PublicMobileNav locale={locale} />
