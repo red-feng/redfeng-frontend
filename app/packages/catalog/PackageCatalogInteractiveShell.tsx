@@ -378,7 +378,7 @@ export default function PackageCatalogInteractiveShell({
   return (
     <>
       {stickyBar && typeof document !== "undefined" ? createPortal(stickyBar, document.body) : stickyBar}
-      <section className="-mt-8 pb-1 lg:-mt-12">
+      <section className="pb-1 pt-4 md:pt-5">
         <div id="package-search" ref={searchSectionRef} className="mx-auto max-w-[1240px] px-4 sm:px-6 md:px-8">
           <SearchBar
             key={`package-catalog-search:${locale}:${searchParamsKey}`}
