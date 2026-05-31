@@ -393,7 +393,7 @@ export default function PackageCatalogInteractiveShell({
       <HomeResultsClient
         key={`package-catalog-results:${locale}:${searchParamsKey}`}
         facilities={facilities}
-        filterDesktopStickyTopClass="lg:top-[8.2rem]"
+        filterDesktopStickyTopClass="lg:top-[12.25rem]"
         initialFilters={initialFilters}
         layoutVariant="flightCatalog"
         locale={locale}
