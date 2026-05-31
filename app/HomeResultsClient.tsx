@@ -312,9 +312,13 @@ export default function HomeResultsClient({
 
   const layoutClass =
     layoutVariant === "flightCatalog"
-      ? "mx-auto grid max-w-[1240px] gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-7 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start"
+      ? "mx-auto grid max-w-[1240px] gap-5 px-4 py-6 sm:px-6 md:px-8 md:py-7 lg:min-h-0 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start"
       : "mx-auto grid max-w-[1360px] gap-6 px-4 py-6 sm:px-6 md:px-8 md:py-8 lg:grid-cols-[310px_minmax(0,1fr)] lg:items-start lg:gap-6"
   const flightCatalogAsideClass = `w-full min-w-0 space-y-3 lg:sticky ${filterDesktopStickyTopClass || "lg:top-[8.2rem]"} lg:max-h-[calc(100vh-9rem)] lg:self-start lg:overflow-y-auto lg:pr-1 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden`
+  const mainClass =
+    layoutVariant === "flightCatalog"
+      ? "min-w-0 space-y-4 lg:max-h-[calc(100vh-9rem)] lg:min-h-0 lg:overflow-y-auto lg:pr-2 lg:[scrollbar-width:none] lg:[-ms-overflow-style:none] lg:[&::-webkit-scrollbar]:hidden"
+      : "min-w-0 space-y-4"
 
   return (
     <div className={layoutClass}>
@@ -335,7 +339,7 @@ export default function HomeResultsClient({
         />
       </aside>
 
-      <main className="min-w-0 space-y-4">
+      <main className={mainClass}>
         <SortBar total={totalPackages} locale={locale} summary={showSummaryCard ? packageSummary : null} />
 
         <div className="relative">
