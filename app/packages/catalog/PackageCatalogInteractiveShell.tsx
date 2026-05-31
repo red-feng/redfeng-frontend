@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
 import { createPortal } from "react-dom"
 import HomeResultsClient from "@/app/HomeResultsClient"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
@@ -9,6 +10,7 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import SearchBar from "@/app/components/SearchBar"
 import type { PackageFilterState } from "@/app/packages/FilterClient"
 import type { Locale } from "@/lib/i18n"
+import { resolvePackageTranslation } from "@/lib/package-pricing"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
 
 const STICKY_SCROLL_ENTER_Y = 80
@@ -102,6 +104,52 @@ function formatDurationSummary(value: string, locale: Locale) {
   return value
 }
 
+function getPackageDisplayTitle(pkg: PackageItem, locale: Locale) {
+  const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
+  const fallbackTitleFromSlug = decodeURIComponent(pkg.slug || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return translation?.title?.trim() || fallbackTitleFromSlug || "Untitled package"
+}
+
+function formatPackageMeta(pkg: PackageItem, locale: Locale) {
+  const parts = [
+    [pkg.city, pkg.country].filter(Boolean).join(", "),
+    pkg.travel_style ? formatTravelStyleLabel(pkg.travel_style, locale) : "",
+    pkg.duration
+      ? locale === "en"
+        ? `${pkg.duration} days`
+        : locale === "zh"
+          ? `${pkg.duration} 天`
+          : `${pkg.duration} hari`
+      : "",
+  ].filter(Boolean)
+
+  return parts.join(" • ")
+}
+
+function formatPackagePrice(value: number | null | undefined, currency: string | null | undefined, locale: Locale) {
+  if (typeof value !== "number" || Number.isNaN(value)) return "-"
+
+  const localeMap: Record<Locale, string> = {
+    id: "id-ID",
+    en: "en-US",
+    zh: "zh-CN",
+  }
+
+  try {
+    return new Intl.NumberFormat(localeMap[locale], {
+      style: "currency",
+      currency: currency || "IDR",
+      maximumFractionDigits: 0,
+    }).format(value)
+  } catch {
+    return `${currency || "IDR"} ${value.toLocaleString(localeMap[locale])}`
+  }
+}
+
 export default function PackageCatalogInteractiveShell({
   facilities,
   initialFilters,
@@ -120,10 +168,13 @@ export default function PackageCatalogInteractiveShell({
   const searchSectionRef = useRef<HTMLDivElement | null>(null)
   const resultsSectionRef = useRef<HTMLDivElement | null>(null)
   const quickChipScrollRef = useRef<HTMLDivElement | null>(null)
+  const recommendationScrollRef = useRef<HTMLDivElement | null>(null)
   const [isScrolled, setIsScrolled] = useState(false)
   const [isStickySearchExpanded, setIsStickySearchExpanded] = useState(false)
   const [canScrollChipLeft, setCanScrollChipLeft] = useState(false)
   const [canScrollChipRight, setCanScrollChipRight] = useState(false)
+  const [canScrollRecommendationLeft, setCanScrollRecommendationLeft] = useState(false)
+  const [canScrollRecommendationRight, setCanScrollRecommendationRight] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -159,6 +210,25 @@ export default function PackageCatalogInteractiveShell({
       window.removeEventListener("resize", updateChipScrollState)
     }
   }, [isStickySearchExpanded, totalPackages, selectedStyle, selectedDuration])
+
+  useEffect(() => {
+    const container = recommendationScrollRef.current
+    if (!container) return
+
+    const updateRecommendationScrollState = () => {
+      setCanScrollRecommendationLeft(container.scrollLeft > 8)
+      setCanScrollRecommendationRight(container.scrollLeft + container.clientWidth < container.scrollWidth - 8)
+    }
+
+    updateRecommendationScrollState()
+    container.addEventListener("scroll", updateRecommendationScrollState, { passive: true })
+    window.addEventListener("resize", updateRecommendationScrollState)
+
+    return () => {
+      container.removeEventListener("scroll", updateRecommendationScrollState)
+      window.removeEventListener("resize", updateRecommendationScrollState)
+    }
+  }, [packages, locale, totalPackages])
 
   const compactCopy = useMemo(
     () =>
@@ -259,6 +329,28 @@ export default function PackageCatalogInteractiveShell({
 
     return chip
   })
+  const recommendationPackages = packages.slice(0, 5)
+  const featuredPackage = recommendationPackages[0] || null
+  const featuredPackageTitle = featuredPackage ? getPackageDisplayTitle(featuredPackage, locale) : ""
+  const featuredPackageMeta = featuredPackage ? formatPackageMeta(featuredPackage, locale) : ""
+  const recommendationTitle =
+    locale === "en"
+      ? "Live package picks"
+      : locale === "zh"
+        ? "实时套餐推荐"
+        : "Rekomendasi paket live"
+  const recommendationFallback =
+    locale === "en"
+      ? "Only a few packages match the current filters."
+      : locale === "zh"
+        ? "当前筛选条件下可匹配的套餐较少。"
+        : "Hanya sedikit paket yang cocok dengan filter aktif."
+  const recommendationActionLabel =
+    locale === "en"
+      ? "View list"
+      : locale === "zh"
+        ? "查看列表"
+        : "Lihat list"
 
   const shouldShowCompactStickyBar = isScrolled
   const showChipScrollLeft = !isStickySearchExpanded && canScrollChipLeft
@@ -297,6 +389,17 @@ export default function PackageCatalogInteractiveShell({
     if (!container) return
 
     const amount = Math.max(220, Math.floor(container.clientWidth * 0.72))
+    container.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    })
+  }
+
+  const scrollRecommendationCards = (direction: "left" | "right") => {
+    const container = recommendationScrollRef.current
+    if (!container) return
+
+    const amount = Math.max(240, Math.floor(container.clientWidth * 0.72))
     container.scrollBy({
       left: direction === "left" ? -amount : amount,
       behavior: "smooth",
@@ -465,6 +568,119 @@ export default function PackageCatalogInteractiveShell({
               destinationPath="/packages/catalog"
               variant="catalog"
             />
+          </div>
+        </section>
+
+        <section className={`${homeLayoutLock.contentWidthClass} mt-5 max-w-[1240px]`}>
+          <div
+            className="relative overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 18% 76%, rgba(255,233,213,0.3) 0, rgba(255,233,213,0.3) 2px, transparent 2px), linear-gradient(135deg, rgba(255,131,63,0.96) 0%, rgba(255,90,40,0.96) 100%)",
+              backgroundSize: "14px 14px, cover",
+              backgroundPosition: "0 0, center",
+            }}
+          >
+            <div className="pointer-events-none absolute left-[32%] top-1/2 hidden h-24 w-24 -translate-y-1/2 rounded-full bg-white/12 blur-2xl xl:block" />
+            <div className="pointer-events-none absolute bottom-4 left-10 hidden h-4 w-20 bg-[radial-gradient(circle,#ffd3b6_1.2px,transparent_1.2px)] bg-[length:10px_10px] opacity-70 xl:block" />
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="max-w-[430px]">
+                <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
+                  <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">
+                    {featuredPackageTitle || formatCountrySummary(selectedCountry, locale)}
+                  </p>
+                  <p className="mt-2 text-[14px] text-slate-500">
+                    {featuredPackageMeta || compactSummaryMeta}
+                  </p>
+                </div>
+              </div>
+
+              <div className="min-w-0 flex-1 xl:max-w-[680px]">
+                <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
+                  <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
+                    <div className="relative min-w-0 flex-1">
+                      {canScrollRecommendationLeft ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => scrollRecommendationCards("left")}
+                            className="absolute left-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                            aria-label="Scroll package recommendations left"
+                          >
+                            <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                              <path d="M9.5 3.5 5 8l4.5 4.5" />
+                            </svg>
+                          </button>
+                          <div className="pointer-events-none absolute inset-y-0 left-0 hidden w-10 bg-gradient-to-r from-white via-white/92 to-transparent xl:block" />
+                        </>
+                      ) : null}
+                      {canScrollRecommendationRight ? (
+                        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-10 bg-gradient-to-l from-white via-white/92 to-transparent xl:block" />
+                      ) : null}
+                      <div ref={recommendationScrollRef} className="overflow-x-auto px-1 [-ms-overflow-style:none] [scrollbar-width:none] [scroll-snap-type:x_mandatory] [&::-webkit-scrollbar]:hidden">
+                        {recommendationPackages.length === 0 ? (
+                          <div className="flex min-h-[92px] items-center rounded-[14px] border border-white/35 bg-white/12 px-4 py-3 text-[12px] font-medium text-white/90">
+                            {recommendationFallback}
+                          </div>
+                        ) : (
+                          <div className="flex min-w-max items-stretch gap-2 pr-1">
+                            {recommendationPackages.map((pkg, index) => {
+                              const isActive = index === 0
+                              const isBudgetPick = !isActive && index === 1
+                              return (
+                                <Link
+                                  key={pkg.id}
+                                  href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                                  className={`min-w-[152px] snap-start rounded-[14px] border px-3 py-2 text-left transition ${
+                                    isActive
+                                      ? "border-[#7ed321] bg-[linear-gradient(180deg,#f7fff1_0%,#ecffe0_100%)] text-[#11a36a] shadow-[0_0_0_1px_rgba(126,211,33,0.8),0_0_10px_rgba(126,211,33,0.28),0_10px_22px_-18px_rgba(56,161,105,0.55)]"
+                                      : isBudgetPick
+                                        ? "border-emerald-200 bg-white text-emerald-700 hover:border-emerald-300"
+                                        : "border-slate-200 bg-white text-slate-600 hover:border-sky-200 hover:bg-sky-50"
+                                  }`}
+                                >
+                                  <p className="truncate text-[12px] font-semibold">{getPackageDisplayTitle(pkg, locale)}</p>
+                                  <p className={`mt-1 text-[12px] font-semibold ${isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-700"}`}>
+                                    {formatPackagePrice(pkg.livePricing?.priceAdult ?? pkg.price_adult, pkg.livePricing?.currency ?? pkg.currency, locale)}
+                                  </p>
+                                  <p className={`mt-1 truncate text-[10px] font-medium ${isActive ? "text-[#11a36a]" : isBudgetPick ? "text-emerald-700" : "text-slate-500"}`}>
+                                    {isActive ? recommendationTitle : isBudgetPick ? (locale === "en" ? "Value pick" : locale === "zh" ? "超值推荐" : "Pilihan hemat") : formatPackageMeta(pkg, locale) || recommendationTitle}
+                                  </p>
+                                </Link>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      {canScrollRecommendationRight ? (
+                        <button
+                          type="button"
+                          onClick={() => scrollRecommendationCards("right")}
+                          className="absolute right-1 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white/95 text-slate-500 shadow-sm transition hover:border-sky-200 hover:text-sky-700 xl:inline-flex"
+                          aria-label="Scroll package recommendations right"
+                        >
+                          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 fill-none stroke-current stroke-[2]">
+                            <path d="M6.5 3.5 11 8l-4.5 4.5" />
+                          </svg>
+                        </button>
+                      ) : null}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={scrollToResults}
+                      title={recommendationActionLabel}
+                      className="inline-flex shrink-0 flex-col items-center justify-center gap-2 rounded-[16px] border border-white/40 bg-transparent px-4 py-3 text-center text-[12px] font-semibold text-white shadow-none transition hover:bg-white/10 xl:min-w-[92px]"
+                    >
+                      <svg viewBox="0 0 16 16" className="h-7 w-7 fill-none stroke-current stroke-[1.8]">
+                        <rect x="2.5" y="3" width="11" height="10" rx="2" />
+                        <path d="M5 6h6M5 8.5h6M5 11h4" />
+                      </svg>
+                      <span>{recommendationActionLabel}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
