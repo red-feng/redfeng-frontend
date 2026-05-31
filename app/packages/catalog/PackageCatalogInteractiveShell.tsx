@@ -455,31 +455,33 @@ export default function PackageCatalogInteractiveShell({
   return (
     <>
       {stickyBar && typeof document !== "undefined" ? createPortal(stickyBar, document.body) : stickyBar}
-      <section className="pb-1 pt-4 md:pt-5">
-        <div id="package-search" ref={searchSectionRef} className="mx-auto max-w-[1240px] px-4 sm:px-6 md:px-8">
-          <SearchBar
-            key={`package-catalog-search:${locale}:${searchParamsKey}`}
+      <main className={`${homeLayoutLock.pageXClass} relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,215,196,0.22),transparent_24%),radial-gradient(circle_at_right_18%,rgba(255,224,205,0.18),transparent_20%),linear-gradient(180deg,#fffdfb_0%,#f8fbff_52%,#ffffff_100%)] pb-10 pt-4 md:pb-14 md:pt-5`}>
+        <section className="pb-1">
+          <div id="package-search" ref={searchSectionRef} className="mx-auto max-w-[1240px] px-4 sm:px-6 md:px-8">
+            <SearchBar
+              key={`package-catalog-search:${locale}:${searchParamsKey}`}
+              locale={locale}
+              countries={searchBarCountries}
+              destinationPath="/packages/catalog"
+              variant="catalog"
+            />
+          </div>
+        </section>
+
+        <div ref={resultsSectionRef}>
+          <HomeResultsClient
+            key={`package-catalog-results:${locale}:${searchParamsKey}`}
+            facilities={facilities}
+            filterDesktopStickyTopClass="lg:top-[8.2rem]"
+            initialFilters={initialFilters}
+            layoutVariant="flightCatalog"
             locale={locale}
-            countries={searchBarCountries}
-            destinationPath="/packages/catalog"
-            variant="catalog"
+            maxAvailablePrice={maxAvailablePrice}
+            packages={packages}
+            totalPackages={totalPackages}
           />
         </div>
-      </section>
-
-      <div ref={resultsSectionRef}>
-        <HomeResultsClient
-          key={`package-catalog-results:${locale}:${searchParamsKey}`}
-          facilities={facilities}
-          filterDesktopStickyTopClass="lg:top-[8.2rem]"
-          initialFilters={initialFilters}
-          layoutVariant="flightCatalog"
-          locale={locale}
-          maxAvailablePrice={maxAvailablePrice}
-          packages={packages}
-          totalPackages={totalPackages}
-        />
-      </div>
+      </main>
 
       <PublicStickyAction locale={locale} href="#package-search" label={stickyLabel} summary={stickySummary} />
       <PublicMobileNav locale={locale} />
