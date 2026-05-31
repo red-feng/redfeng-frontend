@@ -222,7 +222,7 @@ export default function PackageCatalogInteractiveShell({
     const target = searchSectionRef.current
     if (!target) return
 
-    const headerOffset = 92
+    const headerOffset = typeof window !== "undefined" && window.innerWidth >= 1024 ? 156 : 92
     const top = target.getBoundingClientRect().top + window.scrollY - headerOffset
     window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
   }
@@ -241,7 +241,7 @@ export default function PackageCatalogInteractiveShell({
   return (
     <>
       {shouldShowCompactStickyBar ? (
-        <div className="fixed inset-x-0 top-0 z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)]">
+        <div className="fixed inset-x-0 top-[72px] z-50 border-b border-[#f1ddd0] bg-[linear-gradient(180deg,#fffdfa_0%,#fff8f2_100%)] shadow-[0_16px_34px_-24px_rgba(15,23,42,0.18)] lg:top-[118px]">
           <div className={`${homeLayoutLock.pageXClass} py-2 sm:py-3 lg:py-0`}>
             <div className={homeLayoutLock.contentWidthClass}>
             <div className="scale-[0.994] overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-white/92 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] backdrop-blur transition-all duration-300 lg:border-transparent lg:bg-transparent lg:shadow-none">
