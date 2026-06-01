@@ -715,7 +715,7 @@ export default function PackageCatalogInteractiveShell({
           </div>
         </section>
 
-        <div ref={resultsSectionRef}>
+        <div id="package-search-results" ref={resultsSectionRef}>
           <HomeResultsClient
             key={`package-catalog-results:${locale}:${searchParamsKey}`}
             facilities={facilities}
@@ -725,6 +725,9 @@ export default function PackageCatalogInteractiveShell({
             locale={locale}
             maxAvailablePrice={maxAvailablePrice}
             packages={packages}
+            selectedCountry={selectedCountry}
+            selectedStyle={selectedStyle}
+            selectedDuration={selectedDuration}
             totalPackages={totalPackages}
           />
         </div>

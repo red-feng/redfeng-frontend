@@ -25,12 +25,18 @@ export default function FilterClient({
   locale,
   maxAvailablePrice,
   onChange,
+  selectedCountry,
+  selectedStyle,
+  selectedDuration,
 }: {
   facilities: Facility[]
   initialState?: Partial<PackageFilterState>
   locale: Locale
   maxAvailablePrice: number
   onChange: (state: PackageFilterState) => void
+  selectedCountry?: string
+  selectedStyle?: string
+  selectedDuration?: string
 }) {
   const t = dictionaries[locale].filter
   const priceCurrency = localeCurrencyMap[locale]
@@ -186,9 +192,47 @@ export default function FilterClient({
       : locale === "zh"
         ? "å®‰å…¨äº¤æ˜“ã€�å®¢æˆ·æ•°æ®å—ä¿æŠ¤ï¼Œå¹¶åœ¨éœ€è¦æ—¶æä¾›æ”¯æŒã€‚"
         : "Transaksi lebih aman, data customer terlindungi, dan dukungan saat Anda membutuhkannya."
+  const exploreTitle =
+    locale === "en"
+      ? `Explore ${selectedCountry || "tour destinations"}`
+      : locale === "zh"
+        ? `探索${selectedCountry || "热门目的地"}`
+        : `Jelajahi ${selectedCountry || "destinasi tour"}`
+  const exploreMeta = [selectedStyle || (locale === "en" ? "All styles" : locale === "zh" ? "全部风格" : "Semua style"), selectedDuration || (locale === "en" ? "Any duration" : locale === "zh" ? "任意时长" : "Semua durasi")]
+    .filter(Boolean)
+    .join(" • ")
+  const exploreAction =
+    locale === "en" ? "View tour area" : locale === "zh" ? "查看目的地" : "Lihat area tour"
+  const handleExploreClick = () => {
+    if (typeof document === "undefined") return
+    const target = document.getElementById("package-search-results")
+    if (!target) return
+    const top = target.getBoundingClientRect().top + window.scrollY - 120
+    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+  }
 
   const filterBody = (
     <div className="space-y-4">
+      <div className="overflow-hidden rounded-[22px] border border-[#d8ebfb] bg-[linear-gradient(135deg,#eef8ff_0%,#dff1ff_100%)] shadow-[0_18px_40px_-34px_rgba(37,99,235,0.28)]">
+        <div className="relative min-h-[160px] px-4 py-4">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.78)_0,rgba(255,255,255,0.78)_3px,transparent_3px)] bg-[length:16px_16px] opacity-30" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[radial-gradient(circle_at_20%_30%,rgba(129,212,250,0.34)_0,rgba(129,212,250,0.34)_18%,transparent_18%),radial-gradient(circle_at_68%_56%,rgba(96,165,250,0.24)_0,rgba(96,165,250,0.24)_16%,transparent_16%),linear-gradient(135deg,rgba(191,219,254,0.82)_0%,rgba(219,234,254,0.52)_100%)]" />
+          <div className="pointer-events-none absolute right-6 top-5 h-10 w-10 rounded-full border-8 border-[#1f6fbd] bg-white shadow-[0_10px_20px_-12px_rgba(37,99,235,0.45)]" />
+          <div className="pointer-events-none absolute right-[92px] top-0 h-full w-px bg-white/70" />
+          <div className="relative flex h-full flex-col justify-end">
+            <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{exploreTitle}</p>
+            <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{exploreMeta}</p>
+            <button
+              type="button"
+              onClick={handleExploreClick}
+              className="mt-5 inline-flex w-fit items-center rounded-full bg-[#1464b4] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
+            >
+              {exploreAction}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-[22px] border border-[#eef1f6] bg-white p-4 shadow-[0_18px_40px_-34px_rgba(15,23,42,0.18)]">
         <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
           <div>

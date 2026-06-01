@@ -90,6 +90,9 @@ export default function HomeResultsClient({
   locale,
   maxAvailablePrice,
   packages,
+  selectedCountry,
+  selectedDuration,
+  selectedStyle,
   showSummaryCard = true,
   totalPackages,
 }: {
@@ -100,6 +103,9 @@ export default function HomeResultsClient({
   locale: Locale
   maxAvailablePrice: number
   packages: PackageItem[]
+  selectedCountry?: string
+  selectedDuration?: string
+  selectedStyle?: string
   showSummaryCard?: boolean
   totalPackages: number
 }) {
@@ -336,6 +342,9 @@ export default function HomeResultsClient({
           locale={locale}
           maxAvailablePrice={maxAvailablePrice}
           onChange={handleFilterChange}
+          selectedCountry={selectedCountry}
+          selectedStyle={selectedStyle}
+          selectedDuration={selectedDuration}
         />
       </aside>
 
