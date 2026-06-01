@@ -150,6 +150,13 @@ function formatPackagePrice(value: number | null | undefined, currency: string |
   }
 }
 
+function getPackageSortPrice(pkg: PackageItem) {
+  const livePrice = pkg.livePricing?.priceAdult
+  if (typeof livePrice === "number" && Number.isFinite(livePrice)) return livePrice
+  if (typeof pkg.price_adult === "number" && Number.isFinite(pkg.price_adult)) return pkg.price_adult
+  return Number.MAX_SAFE_INTEGER
+}
+
 export default function PackageCatalogInteractiveShell({
   facilities,
   initialFilters,
@@ -329,16 +336,22 @@ export default function PackageCatalogInteractiveShell({
 
     return chip
   })
-  const recommendationPackages = packages.slice(0, 5)
-  const featuredPackage = recommendationPackages[0] || null
-  const featuredPackageTitle = featuredPackage ? getPackageDisplayTitle(featuredPackage, locale) : ""
-  const featuredPackageMeta = featuredPackage ? formatPackageMeta(featuredPackage, locale) : ""
+  const recommendationPackages = [...packages].sort((a, b) => getPackageSortPrice(a) - getPackageSortPrice(b)).slice(0, 15)
+  const filterSummaryTitle = [formatCountrySummary(selectedCountry, locale), selectedStyle ? formatTravelStyleLabel(selectedStyle, locale) : styleSummary, durationSummary]
+    .filter(Boolean)
+    .join(" • ")
+  const filterSummaryMeta =
+    locale === "en"
+      ? `Showing ${recommendationPackages.length} cheapest matching packages`
+      : locale === "zh"
+        ? `显示 ${recommendationPackages.length} 个最便宜的匹配套餐`
+        : `Menampilkan ${recommendationPackages.length} paket termurah yang cocok`
   const recommendationTitle =
     locale === "en"
-      ? "Live package picks"
+      ? "Top cheapest package picks"
       : locale === "zh"
         ? "实时套餐推荐"
-        : "Rekomendasi paket live"
+        : "Rekomendasi paket termurah"
   const recommendationFallback =
     locale === "en"
       ? "Only a few packages match the current filters."
@@ -586,10 +599,10 @@ export default function PackageCatalogInteractiveShell({
               <div className="max-w-[430px]">
                 <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
                   <p className="text-[16px] font-semibold tracking-[-0.03em] text-[#11a36a]">
-                    {featuredPackageTitle || formatCountrySummary(selectedCountry, locale)}
+                    {filterSummaryTitle}
                   </p>
                   <p className="mt-2 text-[14px] text-slate-500">
-                    {featuredPackageMeta || compactSummaryMeta}
+                    {filterSummaryMeta}
                   </p>
                 </div>
               </div>
