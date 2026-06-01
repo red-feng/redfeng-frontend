@@ -3,12 +3,39 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { dictionaries, type Locale } from "@/lib/i18n"
-import { formatPackageMoney, localeCurrencyMap } from "@/lib/package-pricing"
+import { formatPackageMoney, localeCurrencyMap, resolvePackageTranslation } from "@/lib/package-pricing"
 
 type Facility = {
   id: string
   name: string
   category: string
+}
+
+type PackagePreview = {
+  id: string
+  slug: string
+  title?: string | null
+  city?: string | null
+  country?: string | null
+  currency: string | null
+  travel_style: string | null
+  duration?: number | null
+  price_adult: number | null
+  default_language?: string | null
+  published_languages?: string[] | null
+  package_translations?: {
+    language_code?: string | null
+    title: string | null
+    description: string | null
+    currency?: string | null
+    price_adult?: number | null
+    price_child?: number | null
+  }[] | null
+  livePricing?: {
+    currency: string
+    priceAdult: number
+    priceChild: number
+  } | null
 }
 
 export type PackageFilterState = {
@@ -19,12 +46,35 @@ export type PackageFilterState = {
 
 const openCategoriesStorageKey = "rf_home_filter_open_categories"
 
+function getPreviewTitle(pkg: PackagePreview, locale: Locale) {
+  const translation = resolvePackageTranslation(pkg.package_translations, locale, pkg.default_language, pkg.published_languages)
+  const fallbackTitle = decodeURIComponent(pkg.slug || "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return translation?.title?.trim() || pkg.title?.trim() || fallbackTitle || "Untitled package"
+}
+
+function getPreviewPrice(pkg: PackagePreview) {
+  return pkg.livePricing?.priceAdult ?? pkg.price_adult ?? 0
+}
+
+function hashSeed(value: string) {
+  let hash = 0
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) % 1000003
+  }
+  return hash
+}
+
 export default function FilterClient({
   facilities,
   initialState,
   locale,
   maxAvailablePrice,
   onChange,
+  packages,
   selectedCountry,
   selectedStyle,
   selectedDuration,
@@ -34,6 +84,7 @@ export default function FilterClient({
   locale: Locale
   maxAvailablePrice: number
   onChange: (state: PackageFilterState) => void
+  packages?: PackagePreview[]
   selectedCountry?: string
   selectedStyle?: string
   selectedDuration?: string
@@ -48,6 +99,7 @@ export default function FilterClient({
   const [maxPrice, setMaxPrice] = useState(initialState?.maxPrice ?? sliderMax)
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(initialState?.selectedFacilities ?? [])
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false)
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false)
 
   const sliderStep = useMemo(() => {
     if (priceCurrency === "USD") return 10
@@ -144,7 +196,7 @@ export default function FilterClient({
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    if (!isMobilePanelOpen) return
+    if (!isMobilePanelOpen && !isMapModalOpen) return
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = "hidden"
@@ -152,7 +204,7 @@ export default function FilterClient({
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [isMobilePanelOpen])
+  }, [isMapModalOpen, isMobilePanelOpen])
 
   const resetFilters = () => {
     setMinPrice(sliderMin)
@@ -204,12 +256,33 @@ export default function FilterClient({
   const exploreAction =
     locale === "en" ? "View tour area" : locale === "zh" ? "查看目的地" : "Lihat area tour"
   const handleExploreClick = () => {
-    if (typeof document === "undefined") return
-    const target = document.getElementById("package-search-results")
-    if (!target) return
-    const top = target.getBoundingClientRect().top + window.scrollY - 120
-    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+    setIsMapModalOpen(true)
   }
+  const mapModalBackLabel =
+    locale === "en" ? "Back to List View" : locale === "zh" ? "返回列表" : "Kembali ke daftar"
+  const mapModalTitle =
+    locale === "en" ? "Tour map explorer" : locale === "zh" ? "套餐地图探索" : "Eksplor peta tour"
+  const mapModalHint =
+    locale === "en"
+      ? "Stage 1 map mode: compare packages by area and price."
+      : locale === "zh"
+        ? "阶段 1 地图模式：按区域和价格比较套餐。"
+        : "Mode peta tahap 1: bandingkan paket berdasarkan area dan harga."
+  const mapModalEmpty =
+    locale === "en"
+      ? "No package points are ready for this filter yet."
+      : locale === "zh"
+        ? "当前筛选下还没有可显示的套餐点位。"
+        : "Belum ada titik paket yang siap ditampilkan untuk filter ini."
+  const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 8)
+  const mapMarkers = mapModalPackages.map((pkg, index) => {
+    const seed = hashSeed(pkg.slug || pkg.id || String(index))
+    return {
+      pkg,
+      left: 12 + (seed % 70),
+      top: 16 + (Math.floor(seed / 97) % 62),
+    }
+  })
 
   const filterBody = (
     <div className="space-y-4">
@@ -420,6 +493,102 @@ export default function FilterClient({
       </div>
 
       <div className="hidden lg:block">{filterBody}</div>
+
+      {isMapModalOpen ? (
+        <div className="fixed inset-0 z-[80] bg-white">
+          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+            <button
+              type="button"
+              onClick={() => setIsMapModalOpen(false)}
+              className="inline-flex items-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <span aria-hidden="true">‹</span>
+              <span>{mapModalBackLabel}</span>
+            </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-slate-900">{mapModalTitle}</p>
+              <p className="truncate text-xs text-slate-500">{exploreTitle} • {exploreMeta}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsMapModalOpen(false)}
+              className="rounded-full border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              {mobileCloseLabel}
+            </button>
+          </div>
+
+          <div className="relative h-[calc(100vh-73px)] overflow-hidden bg-[#dff1fa]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.75)_0,rgba(255,255,255,0.75)_2px,transparent_2px),linear-gradient(180deg,#bde4ef_0%,#d8f0d9_42%,#e7f3dc_100%)] bg-[length:24px_24px,cover]" />
+            <div className="absolute inset-x-0 top-[28%] h-16 bg-[#7bc2e6]/55 blur-[2px]" />
+            <div className="absolute left-[12%] top-[14%] h-[72%] w-[2px] rotate-[36deg] bg-white/60" />
+            <div className="absolute left-[38%] top-[8%] h-[78%] w-[2px] -rotate-[24deg] bg-white/50" />
+            <div className="absolute left-[61%] top-[12%] h-[74%] w-[2px] rotate-[18deg] bg-white/45" />
+
+            <div className="absolute left-5 top-5 rounded-[18px] bg-white/92 px-4 py-3 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.22)] backdrop-blur">
+              <p className="text-sm font-semibold text-slate-900">{exploreTitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{mapModalHint}</p>
+            </div>
+
+            {mapMarkers.length === 0 ? (
+              <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
+                <p className="text-sm font-semibold text-slate-900">{mapModalEmpty}</p>
+              </div>
+            ) : (
+              mapMarkers.map(({ pkg, left, top }, index) => (
+                <div key={pkg.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
+                  <div className="rounded-[14px] bg-[#145da8] px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
+                    {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+                  </div>
+                  <div className="mx-auto h-3 w-3 rounded-full border-2 border-white bg-[#ff6a3d]" />
+                  <div className="mx-auto h-3 w-[2px] bg-[#145da8]" />
+                  {index === 0 ? (
+                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">#1</div>
+                  ) : null}
+                </div>
+              ))
+            )}
+
+            <div className="absolute inset-x-0 bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{locale === "en" ? "Cheapest package points" : locale === "zh" ? "最低价套餐点位" : "Titik paket termurah"}</p>
+                  <p className="text-xs text-slate-500">{exploreMeta}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMapModalOpen(false)
+                    const target = document.getElementById("package-search-results")
+                    if (!target) return
+                    const top = target.getBoundingClientRect().top + window.scrollY - 120
+                    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
+                  }}
+                  className="rounded-full bg-[#1464b4] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
+                >
+                  {recommendationAction}
+                </button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {mapModalPackages.map((pkg, index) => (
+                  <a
+                    key={pkg.id}
+                    href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                    className="min-w-[220px] rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)]"
+                  >
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1464b4]">#{index + 1}</p>
+                    <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-900">{getPreviewTitle(pkg, locale)}</p>
+                    <p className="mt-1 text-sm font-semibold text-[#ff5a28]">
+                      {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+                    </p>
+                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[pkg.city, pkg.country].filter(Boolean).join(", ") || exploreTitle}</p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isMobilePanelOpen ? (
         <div className="fixed inset-0 z-[70] flex items-end bg-slate-950/45 backdrop-blur-[2px] lg:hidden">

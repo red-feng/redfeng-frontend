@@ -342,6 +342,7 @@ export default function HomeResultsClient({
           locale={locale}
           maxAvailablePrice={maxAvailablePrice}
           onChange={handleFilterChange}
+          packages={packages}
           selectedCountry={selectedCountry}
           selectedStyle={selectedStyle}
           selectedDuration={selectedDuration}
