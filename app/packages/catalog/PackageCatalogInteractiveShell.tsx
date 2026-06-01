@@ -575,14 +575,13 @@ export default function PackageCatalogInteractiveShell({
           <div
             className="relative overflow-hidden rounded-[20px] border border-[#ffc49b] bg-[#ff9a61] px-5 py-5 shadow-[0_24px_46px_-34px_rgba(239,98,44,0.44)]"
             style={{
-              backgroundImage:
-                "radial-gradient(circle at 18% 76%, rgba(255,233,213,0.3) 0, rgba(255,233,213,0.3) 2px, transparent 2px), linear-gradient(135deg, rgba(255,131,63,0.96) 0%, rgba(255,90,40,0.96) 100%)",
-              backgroundSize: "14px 14px, cover",
-              backgroundPosition: "0 0, center",
+              backgroundImage: "url('/package-strip-bg.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
             }}
           >
-            <div className="pointer-events-none absolute left-[32%] top-1/2 hidden h-24 w-24 -translate-y-1/2 rounded-full bg-white/12 blur-2xl xl:block" />
-            <div className="pointer-events-none absolute bottom-4 left-10 hidden h-4 w-20 bg-[radial-gradient(circle,#ffd3b6_1.2px,transparent_1.2px)] bg-[length:10px_10px] opacity-70 xl:block" />
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,109,33,0.28)_0%,rgba(255,109,33,0.1)_35%,rgba(255,255,255,0.04)_100%)]" />
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="max-w-[430px]">
                 <div className="rounded-[28px] border border-white/70 bg-white px-7 py-6 shadow-[0_20px_48px_-32px_rgba(15,23,42,0.22)]">
