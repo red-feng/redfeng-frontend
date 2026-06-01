@@ -566,7 +566,7 @@ export default function FilterClient({
                   }}
                   className="rounded-full bg-[#1464b4] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
                 >
-                  {recommendationAction}
+                  {exploreAction}
                 </button>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
