@@ -68,6 +68,43 @@ function hashSeed(value: string) {
   return hash
 }
 
+function getCountryMapWindow(country?: string) {
+  const normalized = (country || "").trim().toLowerCase()
+
+  const presets: Record<string, { centerLabel: string; left: number; top: number; width: number; height: number }> = {
+    china: { centerLabel: "China", left: 60, top: 43, width: 34, height: 26 },
+    indonesia: { centerLabel: "Indonesia", left: 53, top: 58, width: 42, height: 18 },
+    japan: { centerLabel: "Japan", left: 73, top: 35, width: 18, height: 24 },
+    singapore: { centerLabel: "Singapore", left: 58, top: 60, width: 10, height: 12 },
+    malaysia: { centerLabel: "Malaysia", left: 57, top: 55, width: 16, height: 18 },
+    thailand: { centerLabel: "Thailand", left: 56, top: 48, width: 18, height: 22 },
+    vietnam: { centerLabel: "Vietnam", left: 63, top: 46, width: 14, height: 26 },
+    korea: { centerLabel: "Korea", left: 69, top: 34, width: 12, height: 18 },
+    "south korea": { centerLabel: "South Korea", left: 69, top: 34, width: 12, height: 18 },
+    "hong kong": { centerLabel: "Hong Kong", left: 66, top: 45, width: 9, height: 10 },
+    "arab saudi": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20 },
+    "saudi arabia": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20 },
+  }
+
+  return presets[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22 }
+}
+
+function buildMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
+  const windowBox = getCountryMapWindow(selectedCountry)
+
+  return packages.map((pkg, index) => {
+    const seed = hashSeed(`${pkg.slug || pkg.id}-${pkg.city || ""}-${pkg.country || ""}-${index}`)
+    const normalizedX = ((seed % 1000) / 1000) * 0.78 + 0.11
+    const normalizedY = ((Math.floor(seed / 31) % 1000) / 1000) * 0.72 + 0.14
+
+    return {
+      pkg,
+      left: windowBox.left - windowBox.width / 2 + windowBox.width * normalizedX,
+      top: windowBox.top - windowBox.height / 2 + windowBox.height * normalizedY,
+    }
+  })
+}
+
 export default function FilterClient({
   facilities,
   initialState,
@@ -275,14 +312,8 @@ export default function FilterClient({
         ? "当前筛选下还没有可显示的套餐点位。"
         : "Belum ada titik paket yang siap ditampilkan untuk filter ini."
   const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 8)
-  const mapMarkers = mapModalPackages.map((pkg, index) => {
-    const seed = hashSeed(pkg.slug || pkg.id || String(index))
-    return {
-      pkg,
-      left: 12 + (seed % 70),
-      top: 16 + (Math.floor(seed / 97) % 62),
-    }
-  })
+  const mapWindow = getCountryMapWindow(selectedCountry)
+  const mapMarkers = buildMarkerLayout(mapModalPackages, selectedCountry)
 
   const filterBody = (
     <div className="space-y-4">
@@ -519,15 +550,40 @@ export default function FilterClient({
           </div>
 
           <div className="relative h-[calc(100vh-73px)] overflow-hidden bg-[#dff1fa]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(255,255,255,0.75)_0,rgba(255,255,255,0.75)_2px,transparent_2px),linear-gradient(180deg,#bde4ef_0%,#d8f0d9_42%,#e7f3dc_100%)] bg-[length:24px_24px,cover]" />
-            <div className="absolute inset-x-0 top-[28%] h-16 bg-[#7bc2e6]/55 blur-[2px]" />
-            <div className="absolute left-[12%] top-[14%] h-[72%] w-[2px] rotate-[36deg] bg-white/60" />
-            <div className="absolute left-[38%] top-[8%] h-[78%] w-[2px] -rotate-[24deg] bg-white/50" />
-            <div className="absolute left-[61%] top-[12%] h-[74%] w-[2px] rotate-[18deg] bg-white/45" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,#c7eefb_0%,#d8f1ff_28%,#eaf6e5_62%,#e7f2dd_100%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(255,255,255,0.8)_0,rgba(255,255,255,0.8)_2px,transparent_2px)] bg-[length:24px_24px] opacity-25" />
+            <div className="absolute inset-x-0 top-[29%] h-20 bg-[#80d1ef]/58 blur-[1px]" />
+            <div className="absolute left-[8%] top-[12%] h-[76%] w-[2px] rotate-[34deg] bg-white/60" />
+            <div className="absolute left-[22%] top-[6%] h-[84%] w-[2px] rotate-[12deg] bg-white/45" />
+            <div className="absolute left-[39%] top-[8%] h-[78%] w-[2px] -rotate-[23deg] bg-white/48" />
+            <div className="absolute left-[58%] top-[10%] h-[76%] w-[2px] rotate-[16deg] bg-white/42" />
+            <div className="absolute left-[74%] top-[14%] h-[68%] w-[2px] -rotate-[28deg] bg-white/45" />
+            <div
+              className="absolute rounded-[44px] border border-[#60a5fa]/45 bg-white/18 shadow-[0_20px_50px_-30px_rgba(37,99,235,0.28)] backdrop-blur-[1px]"
+              style={{
+                left: `${mapWindow.left - mapWindow.width / 2}%`,
+                top: `${mapWindow.top - mapWindow.height / 2}%`,
+                width: `${mapWindow.width}%`,
+                height: `${mapWindow.height}%`,
+              }}
+            />
+            <div
+              className="pointer-events-none absolute rounded-[999px] border border-white/75 bg-white/88 px-3 py-1.5 text-[11px] font-semibold text-[#145da8] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.24)]"
+              style={{ left: `${mapWindow.left}%`, top: `${Math.max(mapWindow.top - mapWindow.height / 2 - 5, 8)}%`, transform: "translateX(-50%)" }}
+            >
+              {mapWindow.centerLabel}
+            </div>
 
             <div className="absolute left-5 top-5 rounded-[18px] bg-white/92 px-4 py-3 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.22)] backdrop-blur">
               <p className="text-sm font-semibold text-slate-900">{exploreTitle}</p>
               <p className="mt-1 text-xs text-slate-500">{mapModalHint}</p>
+              <p className="mt-1 text-[11px] font-medium text-[#145da8]">
+                {locale === "en"
+                  ? `Focus area: ${mapWindow.centerLabel}`
+                  : locale === "zh"
+                    ? `聚焦区域：${mapWindow.centerLabel}`
+                    : `Fokus area: ${mapWindow.centerLabel}`}
+              </p>
             </div>
 
             {mapMarkers.length === 0 ? (
