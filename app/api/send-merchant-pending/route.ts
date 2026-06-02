@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getOptionalEnv } from '@/lib/env'
+import { getAdminResendFromEmail } from '@/lib/contact-config'
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     const { email, brandName } = await req.json()
 
     await resend.emails.send({
-      from: 'RedFeng Admin <admin@redfeng.co>',
+      from: getAdminResendFromEmail(),
       to: email,
       subject: 'RedFeng Merchant: Pengajuan Sedang Diverifikasi',
       html: `

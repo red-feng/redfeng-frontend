@@ -2,6 +2,7 @@
 import { getOptionalEnv } from "@/lib/env"
 import { createInvoicePdf } from "./invoicePdf"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { getCustomerResendFromEmail } from "@/lib/contact-config"
 import { buildAppUrl } from "@/lib/site-config"
 
 type PaymentEmailPayload = {
@@ -43,7 +44,7 @@ function formatMoney(value: number, locale: Locale, currency?: string | null) {
 
 export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
   const apiKey = getOptionalEnv("RESEND_API_KEY")
-  const fromEmail = getOptionalEnv("RESEND_FROM_EMAIL", "Red Feng <hello@redfeng.co>")
+  const fromEmail = getCustomerResendFromEmail()
   const fallbackVerificationUrl = buildAppUrl("/verifikasi-invoice/")
 
   if (!apiKey || !payload.customerEmail) {

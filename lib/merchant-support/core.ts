@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { getOptionalEnv } from "@/lib/env"
+import { getAdminResendFromEmail, getAdminSupportEmail } from "@/lib/contact-config"
 import { isAdminPortalRole } from "@/lib/internal-roles"
 
 type AdminSupabase = ReturnType<typeof import("@/lib/supabase/admin").createAdminClient>
@@ -229,8 +230,8 @@ export async function notifyAdminAboutMerchantSupportMessage(input: {
   const safePreview = preview.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
 
   await resend.emails.send({
-    from: "RedFeng Admin <admin@redfeng.co>",
-    to: "admin@redfeng.co",
+    from: getAdminResendFromEmail(),
+    to: getAdminSupportEmail(),
     subject: `Merchant Support Baru - ${input.merchantLabel} (${input.merchantCode})`,
     html: `
       <div style="font-family:'Segoe UI',sans-serif;line-height:1.7;color:#0f172a;">

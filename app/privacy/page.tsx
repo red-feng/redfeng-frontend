@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import { buildMailtoLink, getPrivacyContactEmail } from "@/lib/contact-config"
 import { getAppHost, getSiteBaseUrl, getSiteHost } from "@/lib/site-config"
 
 export const metadata: Metadata = {
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 }
 
 const appHost = getAppHost()
+const privacyContactEmail = getPrivacyContactEmail()
 const siteBaseUrl = getSiteBaseUrl()
 const siteHost = getSiteHost()
 
@@ -42,11 +44,11 @@ const sections = [
   },
   {
     title: "Data Deletion Requests",
-    body: "To request account deletion or personal data removal, email hello@redfeng.co with the subject Data Deletion Request. We may verify account ownership before processing the request.",
+    body: `To request account deletion or personal data removal, email ${privacyContactEmail} with the subject Data Deletion Request. We may verify account ownership before processing the request.`,
   },
   {
     title: "Contact",
-    body: "For privacy questions or account data requests, contact hello@redfeng.co.",
+    body: `For privacy questions or account data requests, contact ${privacyContactEmail}.`,
   },
 ]
 
@@ -105,8 +107,8 @@ export default function PrivacyPage() {
                 <p>
                   Data controller contact:
                   <br />
-                  <a className="font-semibold text-orange-700 hover:text-orange-800" href="mailto:hello@redfeng.co">
-                    hello@redfeng.co
+                  <a className="font-semibold text-orange-700 hover:text-orange-800" href={buildMailtoLink(privacyContactEmail)}>
+                    {privacyContactEmail}
                   </a>
                 </p>
                 <p>

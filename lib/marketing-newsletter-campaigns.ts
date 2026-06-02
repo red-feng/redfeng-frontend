@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { getOptionalEnv } from "@/lib/env"
+import { getCustomerResendFromEmail } from "@/lib/contact-config"
 import {
   buildNewsletterUnsubscribeUrl,
   getNewsletterUnsubscribeLabel,
@@ -74,7 +75,7 @@ function buildNewsletterText(bodyText: string | null | undefined, bodyHtml: stri
 
 export async function sendNewsletterCampaign(input: SendNewsletterCampaignInput) {
   const apiKey = getOptionalEnv("RESEND_API_KEY")
-  const fromEmail = getOptionalEnv("RESEND_FROM_EMAIL", "Red Feng <hello@redfeng.co>")
+  const fromEmail = getCustomerResendFromEmail()
 
   if (!apiKey) {
     throw new Error("RESEND_API_KEY belum diatur.")

@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { MERCHANT_SUPPORT_ENGINE } from "@/lib/chat-engines"
+import { buildMailtoLink, getAdminSupportEmail } from "@/lib/contact-config"
 import { createClient } from "@/lib/supabase/client"
 
 type MerchantAdminHelpWidgetProps = {
@@ -167,7 +168,7 @@ function buildMailtoHref(input: { merchantLabel: string; merchantCode: string })
     "- ",
   ].join("\n")
 
-  return `mailto:admin@redfeng.co?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  return buildMailtoLink(getAdminSupportEmail(), { subject, body })
 }
 
 export default function MerchantAdminHelpWidget({

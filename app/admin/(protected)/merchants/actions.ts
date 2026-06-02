@@ -1,6 +1,7 @@
 ﻿"use server"
 
 import { getOptionalEnv } from "@/lib/env"
+import { getAdminResendFromEmail } from "@/lib/contact-config"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { Resend } from "resend"
@@ -178,7 +179,7 @@ async function sendAdminDeletionReviewEmail({
 
   const resend = new Resend(resendApiKey)
   await resend.emails.send({
-    from: "RedFeng Admin <admin@redfeng.co>",
+    from: getAdminResendFromEmail(),
     to: email,
     subject: "RedFeng Internal: Pengajuan hapus merchant ditolak operations manager",
     html: `
@@ -220,7 +221,7 @@ async function sendAdminMerchantReviewRejectionEmail({
 
   const resend = new Resend(resendApiKey)
   await resend.emails.send({
-    from: "RedFeng Admin <admin@redfeng.co>",
+    from: getAdminResendFromEmail(),
     to: email,
     subject: "RedFeng Internal: Merchant ditolak operations manager",
     html: `
@@ -429,7 +430,7 @@ async function sendMerchantDecisionEmail({
 
   if (type === "approved") {
     await resend.emails.send({
-      from: "RedFeng Admin <admin@redfeng.co>",
+      from: getAdminResendFromEmail(),
       to: email,
       subject: copy.approvedSubject,
       html: `
@@ -453,7 +454,7 @@ async function sendMerchantDecisionEmail({
 
   if (type === "inactive") {
     await resend.emails.send({
-      from: "RedFeng Admin <admin@redfeng.co>",
+      from: getAdminResendFromEmail(),
       to: email,
       subject: copy.inactiveSubject,
       html: `
@@ -479,7 +480,7 @@ async function sendMerchantDecisionEmail({
 
   if (type === "deleted") {
     await resend.emails.send({
-      from: "RedFeng Admin <admin@redfeng.co>",
+      from: getAdminResendFromEmail(),
       to: email,
       subject: copy.deletedSubject,
       html: `
@@ -502,7 +503,7 @@ async function sendMerchantDecisionEmail({
   }
 
   await resend.emails.send({
-    from: "RedFeng Admin <admin@redfeng.co>",
+    from: getAdminResendFromEmail(),
     to: email,
     subject: copy.rejectedSubject,
     html: `

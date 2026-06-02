@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import { buildMailtoLink, getPublicContactEmail } from "@/lib/contact-config"
 import { getSiteBaseUrl, getSiteHost } from "@/lib/site-config"
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
   },
 }
 
+const publicContactEmail = getPublicContactEmail()
 const siteBaseUrl = getSiteBaseUrl()
 const siteHost = getSiteHost()
 
@@ -45,7 +47,7 @@ const sections = [
   },
   {
     title: "Contact",
-    body: "Questions about these terms can be sent to hello@redfeng.co.",
+    body: `Questions about these terms can be sent to ${publicContactEmail}.`,
   },
 ]
 
@@ -104,8 +106,8 @@ export default function TermsPage() {
                 <p>
                   Service contact:
                   <br />
-                  <a className="font-semibold text-orange-700 hover:text-orange-800" href="mailto:hello@redfeng.co">
-                    hello@redfeng.co
+                  <a className="font-semibold text-orange-700 hover:text-orange-800" href={buildMailtoLink(publicContactEmail)}>
+                    {publicContactEmail}
                   </a>
                 </p>
                 <p>

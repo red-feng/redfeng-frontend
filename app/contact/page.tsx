@@ -4,6 +4,7 @@ import Link from "next/link"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
+import { buildMailtoLink, getPrivacyContactEmail, getPublicContactEmail } from "@/lib/contact-config"
 import { getCurrentLocale } from "@/lib/locale"
 import { getSiteBaseUrl, getSiteHost } from "@/lib/site-config"
 
@@ -15,17 +16,20 @@ export const metadata: Metadata = {
   },
 }
 
+const publicContactEmail = getPublicContactEmail()
+const privacyContactEmail = getPrivacyContactEmail()
+
 const contactCards = [
   {
     label: "Email utama",
-    value: "hello@redfeng.co",
-    href: "mailto:hello@redfeng.co",
+    value: publicContactEmail,
+    href: buildMailtoLink(publicContactEmail),
     note: "Untuk pertanyaan umum, promo, dan kebutuhan akun customer.",
   },
   {
     label: "Privacy & data request",
-    value: "hello@redfeng.co",
-    href: "mailto:hello@redfeng.co?subject=Data%20Request%20RedFeng",
+    value: privacyContactEmail,
+    href: buildMailtoLink(privacyContactEmail, { subject: "Data Request RedFeng" }),
     note: "Gunakan subjek Data Request untuk akses, koreksi, atau penghapusan data.",
   },
   {
