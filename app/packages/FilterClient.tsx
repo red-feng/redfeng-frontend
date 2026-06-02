@@ -89,50 +89,30 @@ function getCountryMapWindow(country?: string) {
   return presets[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22 }
 }
 
-function buildMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
-  const windowBox = getCountryMapWindow(selectedCountry)
-  const groupedByCity = new Map<string, PackagePreview[]>()
+function buildCountryMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
+  const groupedByCountry = new Map<string, PackagePreview[]>()
 
   packages.forEach((pkg) => {
-    const cityKey = (pkg.city || pkg.country || "other").trim().toLowerCase()
-    const current = groupedByCity.get(cityKey) || []
+    const countryKey = (pkg.country || selectedCountry || "other").trim()
+    const current = groupedByCountry.get(countryKey) || []
     current.push(pkg)
-    groupedByCity.set(cityKey, current)
+    groupedByCountry.set(countryKey, current)
   })
 
-  const cityEntries = Array.from(groupedByCity.entries())
-  const cityAnchors = new Map<string, { left: number; top: number }>()
-  const totalCities = Math.max(cityEntries.length, 1)
-  const columns = Math.min(3, totalCities)
-
-  cityEntries.forEach(([cityKey], cityIndex) => {
-    const row = Math.floor(cityIndex / columns)
-    const column = cityIndex % columns
-    const rows = Math.ceil(totalCities / columns)
-    const baseX = columns === 1 ? 0.5 : column / (columns - 1)
-    const baseY = rows === 1 ? 0.5 : row / Math.max(rows - 1, 1)
-    const citySeed = hashSeed(cityKey)
-    const jitterX = ((citySeed % 100) / 100 - 0.5) * 0.12
-    const jitterY = ((Math.floor(citySeed / 13) % 100) / 100 - 0.5) * 0.1
-
-    cityAnchors.set(cityKey, {
-      left: windowBox.left - windowBox.width / 2 + windowBox.width * (0.18 + baseX * 0.64 + jitterX),
-      top: windowBox.top - windowBox.height / 2 + windowBox.height * (0.2 + baseY * 0.56 + jitterY),
-    })
-  })
-
-  return packages.map((pkg, index) => {
-    const cityKey = (pkg.city || pkg.country || "other").trim().toLowerCase()
-    const anchor = cityAnchors.get(cityKey) || { left: windowBox.left, top: windowBox.top }
-    const localSeed = hashSeed(`${pkg.slug || pkg.id}-${cityKey}-${index}`)
-    const orbit = index % 4
-    const offsetX = [0, 2.6, -2.4, 1.4][orbit] + (((localSeed % 100) / 100) - 0.5) * 1.4
-    const offsetY = [0, -2.1, 2.4, 3.1][orbit] + (((Math.floor(localSeed / 17) % 100) / 100) - 0.5) * 1.2
+  return Array.from(groupedByCountry.entries()).map(([country, countryPackages], index) => {
+    const windowBox = getCountryMapWindow(country || selectedCountry)
+    const seed = hashSeed(`${country}-${index}-${countryPackages.length}`)
+    const jitterX = ((seed % 100) / 100 - 0.5) * Math.min(windowBox.width * 0.08, 2.4)
+    const jitterY = ((Math.floor(seed / 19) % 100) / 100 - 0.5) * Math.min(windowBox.height * 0.08, 2)
+    const cheapestPackage = [...countryPackages].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b))[0]
 
     return {
-      pkg,
-      left: anchor.left + offsetX,
-      top: anchor.top + offsetY,
+      country,
+      packages: countryPackages,
+      cheapestPackage,
+      left: windowBox.left + jitterX,
+      top: windowBox.top + jitterY,
+      windowBox,
     }
   })
 }
@@ -343,16 +323,10 @@ export default function FilterClient({
       : locale === "zh"
         ? "当前筛选下还没有可显示的套餐点位。"
         : "Belum ada titik paket yang siap ditampilkan untuk filter ini."
-  const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 8)
+  const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 15)
   const mapWindow = getCountryMapWindow(selectedCountry)
-  const mapMarkers = buildMarkerLayout(mapModalPackages, selectedCountry)
-  const mapCities = Array.from(new Map(mapMarkers.map((marker) => [marker.pkg.city || marker.pkg.country || mapWindow.centerLabel, marker])).entries()).map(
-    ([label, marker]) => ({
-      label,
-      left: marker.left,
-      top: marker.top,
-    }),
-  )
+  const mapCountries = buildCountryMarkerLayout(mapModalPackages, selectedCountry)
+  const activeCountryLabel = selectedCountry || mapWindow.centerLabel
 
   const filterBody = (
     <div className="space-y-4">
@@ -618,38 +592,36 @@ export default function FilterClient({
               <p className="mt-1 text-xs text-slate-500">{mapModalHint}</p>
               <p className="mt-1 text-[11px] font-medium text-[#145da8]">
                 {locale === "en"
-                  ? `Focus area: ${mapWindow.centerLabel}`
+                  ? `Focused country: ${activeCountryLabel}`
                   : locale === "zh"
-                    ? `聚焦区域：${mapWindow.centerLabel}`
-                    : `Fokus area: ${mapWindow.centerLabel}`}
+                    ? `聚焦国家：${activeCountryLabel}`
+                    : `Fokus negara: ${activeCountryLabel}`}
               </p>
             </div>
 
-            {mapMarkers.length === 0 ? (
+            {mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
                 <p className="text-sm font-semibold text-slate-900">{mapModalEmpty}</p>
               </div>
             ) : (
               <>
-                {mapCities.map((city) => (
-                  <div
-                    key={`city-${city.label}-${city.left}-${city.top}`}
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-[115%] rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-semibold text-[#145da8] shadow-[0_12px_24px_-16px_rgba(15,23,42,0.24)]"
-                    style={{ left: `${city.left}%`, top: `${city.top}%` }}
-                  >
-                    {city.label}
-                  </div>
-                ))}
-                {mapMarkers.map(({ pkg, left, top }, index) => (
-                  <div key={pkg.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
+                {mapCountries.map(({ country, packages: countryPackages, cheapestPackage, left, top }) => (
+                  <div key={`country-${country}-${left}-${top}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
+                    <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
+                      {country}
+                    </div>
                     <div className="rounded-[14px] bg-[#145da8] px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
-                      {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+                      {formatPackageMoney(getPreviewPrice(cheapestPackage), cheapestPackage.livePricing?.currency || cheapestPackage.currency || priceCurrency, locale)}
                     </div>
                     <div className="mx-auto h-3 w-3 rounded-full border-2 border-white bg-[#ff6a3d]" />
                     <div className="mx-auto h-3 w-[2px] bg-[#145da8]" />
-                    {index === 0 ? (
-                      <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">#1</div>
-                    ) : null}
+                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
+                      {locale === "en"
+                        ? `${countryPackages.length} packages`
+                        : locale === "zh"
+                          ? `${countryPackages.length} 个套餐`
+                          : `${countryPackages.length} paket`}
+                    </div>
                   </div>
                 ))}
               </>
