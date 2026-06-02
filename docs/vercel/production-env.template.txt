@@ -1,0 +1,48 @@
+# Copy these values into Vercel Production environment variables.
+# Replace the placeholder values when your new domain is ready.
+
+# Core app URLs
+NEXT_PUBLIC_APP_URL=https://app.your-new-domain.com
+APP_URL=https://app.your-new-domain.com
+NEXT_PUBLIC_SITE_URL=https://your-new-domain.com
+SITE_URL=https://your-new-domain.com
+
+# Shared cookie domain
+# Keep this aligned with the root domain if app + website should share cookies.
+NEXT_PUBLIC_COOKIE_DOMAIN=.your-new-domain.com
+COOKIE_DOMAIN=.your-new-domain.com
+
+# Public contact + legal contact
+NEXT_PUBLIC_CONTACT_EMAIL=hello@your-new-domain.com
+CONTACT_EMAIL=hello@your-new-domain.com
+NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL=privacy@your-new-domain.com
+PRIVACY_CONTACT_EMAIL=privacy@your-new-domain.com
+
+# Admin / merchant support contact
+NEXT_PUBLIC_ADMIN_SUPPORT_EMAIL=admin@your-new-domain.com
+ADMIN_SUPPORT_EMAIL=admin@your-new-domain.com
+
+# Resend sender identities
+RESEND_FROM_EMAIL=Red Feng <hello@your-new-domain.com>
+RESEND_ADMIN_FROM_EMAIL=RedFeng Admin <admin@your-new-domain.com>
+
+# Existing required production variables
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=your-midtrans-client-key
+MIDTRANS_SERVER_KEY=your-midtrans-server-key
+MIDTRANS_IS_PRODUCTION=true
+RESEND_API_KEY=your-resend-api-key
+CRON_SECRET=your-cron-secret
+
+# Optional integrations
+WORDPRESS_SITE_URL=https://www.your-new-domain.com
+WORDPRESS_SSO_SHARED_SECRET=your-wordpress-sso-shared-secret
+WORDPRESS_SSO_LOGIN_PATH=/rf-sso-login
+NEXT_PUBLIC_AUTH_ENABLE_GOOGLE=true
+NEXT_PUBLIC_AUTH_ENABLE_FACEBOOK=false
+KOPRA_REFUND_API_URL=
+KOPRA_STATUS_API_URL=
+KOPRA_API_TOKEN=
+KOPRA_API_KEY=

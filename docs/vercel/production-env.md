@@ -2,6 +2,10 @@
 
 Set these variables in the Vercel project that serves `app.redfeng.co`.
 
+Template reference:
+
+- [production-env.template.txt](/c:/Users/UsEr/redfeng-frontend/docs/vercel/production-env.template.txt)
+
 ## Required
 
 - `NEXT_PUBLIC_SUPABASE_URL`
@@ -19,12 +23,38 @@ Set these variables in the Vercel project that serves `app.redfeng.co`.
 
 ## Optional but expected in production
 
+- `NEXT_PUBLIC_APP_URL`
+  - Public app base URL, for example `https://app.your-new-domain.com`.
+- `APP_URL`
+  - Server-side app base URL. Keep aligned with `NEXT_PUBLIC_APP_URL`.
+- `NEXT_PUBLIC_SITE_URL`
+  - Public marketing/site base URL, for example `https://your-new-domain.com`.
+- `SITE_URL`
+  - Server-side site base URL. Keep aligned with `NEXT_PUBLIC_SITE_URL`.
+- `NEXT_PUBLIC_COOKIE_DOMAIN`
+  - Optional public cookie domain override, for example `.your-new-domain.com`.
+- `COOKIE_DOMAIN`
+  - Server-side cookie domain override, used when app and website should share cookies across subdomains.
+- `NEXT_PUBLIC_CONTACT_EMAIL`
+  - Public contact email shown on customer-facing pages.
+- `CONTACT_EMAIL`
+  - Server-side fallback public contact email.
+- `NEXT_PUBLIC_PRIVACY_CONTACT_EMAIL`
+  - Public privacy/data-request email shown on legal pages.
+- `PRIVACY_CONTACT_EMAIL`
+  - Server-side fallback privacy/data-request email.
+- `NEXT_PUBLIC_ADMIN_SUPPORT_EMAIL`
+  - Public admin support email used by merchant help widgets.
+- `ADMIN_SUPPORT_EMAIL`
+  - Server-side admin support email used by internal notifications.
 - `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY`
   - Required if Snap payment script is used on customer-facing checkout/payment pages.
 - `RESEND_API_KEY`
   - Required if merchant verification email sending is enabled.
 - `RESEND_FROM_EMAIL`
-  - Expected sender for customer payment confirmation and invoice email, for example `Red Feng <hello@redfeng.co>`.
+  - Expected sender for customer payment confirmation, invoice email, and newsletter email, for example `Red Feng <hello@your-new-domain.com>`.
+- `RESEND_ADMIN_FROM_EMAIL`
+  - Expected sender for admin or merchant-review emails, for example `RedFeng Admin <admin@your-new-domain.com>`.
 - `CRON_SECRET`
   - Recommended to protect scheduled cleanup endpoints such as abandoned draft booking cleanup.
 - `WORDPRESS_SITE_URL`
