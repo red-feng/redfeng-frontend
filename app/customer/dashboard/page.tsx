@@ -8,6 +8,7 @@ import { getCurrentLocale } from "@/lib/locale"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { formatPackageMoney } from "@/lib/package-pricing"
 import { getEscrowStatusTone, getPaymentStatusTone, normalizeStatus, toneClass } from "@/lib/status-tones"
+import { buildSiteUrl, getSiteBaseUrl } from "@/lib/site-config"
 import {
   formatFinalPaymentDueLabel,
   isFinalPaymentOverdue,
@@ -768,13 +769,13 @@ export default async function CustomerDashboardPage() {
                     {t.openBookings}
                   </Link>
                   <Link
-                    href="https://redfeng.co/paket-tour/"
+                    href={buildSiteUrl("/paket-tour/")}
                     className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     {t.explorePackages}
                   </Link>
                   <Link
-                    href="https://redfeng.co/"
+                    href={getSiteBaseUrl()}
                     className="rounded-[18px] border border-white/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-white/10"
                   >
                     {t.backHome}

@@ -14,6 +14,7 @@ import {
 } from "@/app/components/publicHeaderNav"
 import { createClient } from "@/lib/supabase/server"
 import { resolvePublicAccountRole, type PublicAccountRole } from "@/lib/login-role-lock"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 type PublicHeaderProps = {
   locale: Locale
@@ -51,6 +52,7 @@ export default async function PublicHeader({
   variant = "default",
 }: PublicHeaderProps) {
   const supabase = await createClient("customer")
+  const siteBaseUrl = getSiteBaseUrl()
   const {
     data: { user },
   } = await supabase.auth.getUser()
@@ -105,7 +107,7 @@ export default async function PublicHeader({
           <div className="relative z-10 hidden min-h-[148px] flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
               <a
-                href="https://redfeng.co/"
+                href={siteBaseUrl}
                 className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopOverlayLogoLiftClass}`}
               >
                 <Image
@@ -181,7 +183,7 @@ export default async function PublicHeader({
 
           <div className="space-y-3 lg:hidden">
             <div className="flex items-center justify-between gap-3 px-1 py-2">
-              <a href="https://redfeng.co/" className="public-header-logo-link flex items-center">
+              <a href={siteBaseUrl} className="public-header-logo-link flex items-center">
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -248,7 +250,7 @@ export default async function PublicHeader({
         <div className="flex flex-col gap-4 lg:gap-0">
           <div className="relative z-10 hidden min-h-[158px] flex-col items-center lg:flex">
             <div className={`${homeHeaderLock.desktopTopRowClass} text-slate-900`}>
-              <a href="https://redfeng.co/" className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopDefaultLogoLiftClass}`}>
+              <a href={siteBaseUrl} className={`public-header-logo-link z-0 ${publicHeaderBaseline.desktopLogoAnchorClass} ${publicHeaderBaseline.desktopDefaultLogoLiftClass}`}>
                 <Image
                   src="/home-assets/logo-redfeng-header.png"
                   alt="Red Feng"
@@ -315,7 +317,7 @@ export default async function PublicHeader({
           </div>
 
           <div className="flex items-center justify-between gap-3 lg:hidden">
-            <a href="https://redfeng.co/" className="public-header-logo-link flex items-center gap-3">
+            <a href={siteBaseUrl} className="public-header-logo-link flex items-center gap-3">
               <Image
                 src="/home-assets/logo-redfeng-header.png"
                 alt="Red Feng"

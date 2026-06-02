@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { resubmitMerchant } from "./actions"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 export default async function RejectedPage() {
   const supabase = await createClient("merchant")
@@ -112,7 +113,7 @@ export default async function RejectedPage() {
               </ul>
             )}
             <Link
-              href="https://redfeng.co/"
+              href={getSiteBaseUrl()}
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
             >
               Kembali ke beranda

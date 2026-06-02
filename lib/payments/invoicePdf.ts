@@ -4,6 +4,7 @@ import chromium from "@sparticuz/chromium"
 import puppeteer from "puppeteer-core"
 import QRCode from "qrcode"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { buildAppUrl, getSiteHost } from "@/lib/site-config"
 
 type InvoicePdfPayload = {
   invoiceNumber: string
@@ -394,10 +395,11 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
   const quantity = Math.max(1, Number(payload.quantity || 1))
   const nominalAmount = quantity > 0 ? Math.round(payload.subtotalAmount / quantity) : payload.subtotalAmount
   const verificationUrl =
-    payload.verificationUrl || `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(payload.bookingCode)}`
+    payload.verificationUrl || buildAppUrl(`/verifikasi-invoice/?booking_id=${encodeURIComponent(payload.bookingCode)}`)
   const barcodeUrl = buildCode39SvgDataUrl(payload.bookingCode)
   const qrUrl = await QRCode.toDataURL(verificationUrl, { width: 280, margin: 0, color: { dark: "#111827", light: "#ffffff" } })
   const logoUrl = getLogoDataUrl()
+  const websiteHost = getSiteHost()
   const packageLines = wrapText(payload.packageTitle || "-", 28).slice(0, 2)
   const styles = `
     @page { size: A4; margin: 0; }
@@ -534,7 +536,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
           <footer class="footer">
             <strong>${escapeHtml(t.support)} :</strong>
             <div>${escapeHtml(t.email)} : hello@redfeng.co</div>
-            <div>${escapeHtml(t.website)} : www.redfeng.co</div>
+            <div>${escapeHtml(t.website)} : ${escapeHtml(websiteHost)}</div>
           </footer>
         </section>
 
@@ -545,7 +547,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
           <div class="legal-footer">
             <strong>${escapeHtml(t.support)} :</strong>
             <div>${escapeHtml(t.email)} : hello@redfeng.co</div>
-            <div>${escapeHtml(t.website)} : www.redfeng.co</div>
+            <div>${escapeHtml(t.website)} : ${escapeHtml(websiteHost)}</div>
           </div>
         </section>
 
@@ -556,7 +558,7 @@ async function renderInvoiceHtml(payload: InvoicePdfPayload) {
           <div class="legal-footer">
             <strong>${escapeHtml(t.support)} :</strong>
             <div>${escapeHtml(t.email)} : hello@redfeng.co</div>
-            <div>${escapeHtml(t.website)} : www.redfeng.co</div>
+            <div>${escapeHtml(t.website)} : ${escapeHtml(websiteHost)}</div>
           </div>
         </section>
       </body>

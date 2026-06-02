@@ -2,10 +2,11 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { getRequiredEnv } from "@/lib/env"
+import { getAppHost } from "@/lib/site-config"
 import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, type ActivePortal, getPortalSessionCookieName } from "@/lib/portal-context"
 import { buildPortalSessionError } from "@/lib/portal-session"
 
-const CANONICAL_HOST = "app.redfeng.co"
+const CANONICAL_HOST = getAppHost()
 
 function buildBaseCookieOptions(options: CookieOptions) {
   return {
@@ -51,7 +52,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(redirectUrl, 301)
   }
 
-  let res = NextResponse.next({
+  const res = NextResponse.next({
     request: req,
   })
 

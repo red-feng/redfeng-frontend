@@ -10,6 +10,7 @@ import { formatFinalPaymentDueLabel } from "@/lib/booking/final-payment-deadline
 import { queueBookingToFinance } from "@/lib/payouts/finance-handoff"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { resolvePackageTranslation } from "@/lib/package-pricing"
+import { buildAppUrl } from "@/lib/site-config"
 import { markTransactionPromoRedemptionsApplied } from "@/lib/transaction-promo-redemptions"
 
 function resolveOrder(orderId: string) {
@@ -317,7 +318,7 @@ export async function POST(req: Request) {
               ? localizedPaidAmount
               : localizedDisplay.totalAmount
         const bookingCode = formatBookingCode(booking.booking_code, booking.id)
-        const verificationUrl = `https://app.redfeng.co/verifikasi-invoice/?booking_id=${encodeURIComponent(bookingCode)}`
+        const verificationUrl = buildAppUrl(`/verifikasi-invoice/?booking_id=${encodeURIComponent(bookingCode)}`)
         const { data: packageRow } = booking.package_id
           ? await supabase.from("packages").select("title, merchant_id").eq("id", booking.package_id).maybeSingle()
           : { data: null as { title?: string | null; merchant_id?: string | null } | null }

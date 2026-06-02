@@ -5,6 +5,7 @@ import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
 import PublicHeader from "@/app/components/PublicHeader"
 import PublicMobileNav from "@/app/components/PublicMobileNav"
 import { getCurrentLocale } from "@/lib/locale"
+import { getSiteBaseUrl, getSiteHost } from "@/lib/site-config"
 
 export const metadata: Metadata = {
   title: "Bantuan & Kontak | Red Feng",
@@ -29,8 +30,8 @@ const contactCards = [
   },
   {
     label: "Website utama",
-    value: "redfeng.co",
-    href: "https://redfeng.co/",
+    value: getSiteHost(),
+    href: getSiteBaseUrl(),
     note: "Akses informasi perusahaan, produk travel, dan kanal publik RedFeng.",
   },
 ]

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import AdminNavLinks, { type AdminNavItem } from "@/app/components/AdminNavLinks"
 import SignOutButton from "@/app/components/SignOutButton"
 import type { ActivePortal } from "@/lib/portal-context"
+import { buildAppUrl } from "@/lib/site-config"
 
 type AdminSidebarShellProps = {
   adminCode: string
@@ -154,12 +155,12 @@ function SidebarContent({
           portal={portal}
           redirectTo={
             portal === "superadmin"
-              ? "https://app.redfeng.co/superadmin/login"
+              ? buildAppUrl("/superadmin/login")
               : portal === "finance"
-                ? "https://app.redfeng.co/finance/login"
+                ? buildAppUrl("/finance/login")
                 : portal === "marketing"
-                  ? "https://app.redfeng.co/marketing/login"
-                  : "https://app.redfeng.co/admin/login"
+                  ? buildAppUrl("/marketing/login")
+                  : buildAppUrl("/admin/login")
           }
           className={`inline-flex w-full items-center justify-center rounded-[16px] px-4 py-3 text-sm font-semibold transition ${
             isOperationsManager ? "border border-[#f4d7d7] bg-white text-rose-500 hover:bg-rose-50" : "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"

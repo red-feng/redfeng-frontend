@@ -10,6 +10,7 @@ import { buildInternalMarketingEmail, normalizeInternalUsername } from "@/lib/in
 import { canAccessInternalPortal, getInternalPortalHomePath, normalizeRole } from "@/lib/internal-roles"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 import type { Locale } from "@/lib/i18n"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 function getMarketingLoginCopy(locale: Locale) {
   if (locale === "en") {
@@ -219,7 +220,7 @@ export default function MarketingLoginClient({ initialLocale }: { initialLocale:
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   <AuthLocaleDropdown locale={initialLocale} />
-                  <Link href="https://redfeng.co/" className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 transition hover:text-orange-800">
+                  <Link href={getSiteBaseUrl()} className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 transition hover:text-orange-800">
                     {t.backHome}
                     <span aria-hidden="true">-&gt;</span>
                   </Link>

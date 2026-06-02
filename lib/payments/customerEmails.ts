@@ -2,6 +2,7 @@
 import { getOptionalEnv } from "@/lib/env"
 import { createInvoicePdf } from "./invoicePdf"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
+import { buildAppUrl } from "@/lib/site-config"
 
 type PaymentEmailPayload = {
   bookingCode: string
@@ -43,6 +44,7 @@ function formatMoney(value: number, locale: Locale, currency?: string | null) {
 export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
   const apiKey = getOptionalEnv("RESEND_API_KEY")
   const fromEmail = getOptionalEnv("RESEND_FROM_EMAIL", "Red Feng <hello@redfeng.co>")
+  const fallbackVerificationUrl = buildAppUrl("/verifikasi-invoice/")
 
   if (!apiKey || !payload.customerEmail) {
     return { skipped: true }
@@ -183,7 +185,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
             pickupDateLabel: payload.pickupDateLabel || null,
             merchantName: payload.merchantName || null,
             merchantCode: payload.merchantCode || null,
-            verificationUrl: payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/",
+            verificationUrl: payload.verificationUrl || fallbackVerificationUrl,
             paymentStatusLabel: localizedPaymentStatusLabel,
             paymentTypeLabel: localizedPaymentTypeLabel,
             subtotalAmount: Number(payload.subtotalAmount || 0),
@@ -225,7 +227,7 @@ export async function sendCustomerPaymentEmail(payload: PaymentEmailPayload) {
         <p style="margin:0 0 14px;">${copy.pricingSnapshot}</p>
         <p style="margin:0 0 14px;">${copy.operationalFlow}</p>
         ${payload.settlementDueLabel ? `<p style="margin:0 0 14px;"><strong>${copy.settlementDeadline}:</strong> ${payload.settlementDueLabel}</p>` : ""}
-        <p style="margin:0 0 14px;">${copy.verificationLabel}: <a href="${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}">${payload.verificationUrl || "https://app.redfeng.co/verifikasi-invoice/"}</a></p>
+        <p style="margin:0 0 14px;">${copy.verificationLabel}: <a href="${payload.verificationUrl || fallbackVerificationUrl}">${payload.verificationUrl || fallbackVerificationUrl}</a></p>
         <p style="margin:0 0 18px;">${payload.sendInvoicePdf ? copy.pdfAttached : copy.pdfLater}</p>
         <p style="margin:0;">${copy.closing}</p>
       </div>

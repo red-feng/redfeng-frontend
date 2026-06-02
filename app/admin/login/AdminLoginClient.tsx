@@ -10,6 +10,7 @@ import { buildInternalAdminEmail, normalizeInternalUsername } from "@/lib/intern
 import { canAccessInternalPortal, getInternalPortalHomePath, normalizeRole } from "@/lib/internal-roles"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 import type { Locale } from "@/lib/i18n"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 function getAdminLoginCopy(locale: Locale) {
   if (locale === "en") {
@@ -229,7 +230,7 @@ export default function AdminLoginClient({ initialLocale }: { initialLocale: Loc
                 <div className="flex flex-col items-end gap-3">
                   <AuthLocaleDropdown locale={initialLocale} />
                   <Link
-                    href="https://redfeng.co/"
+                    href={getSiteBaseUrl()}
                     className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 transition hover:text-orange-800"
                   >
                     {t.backHome}

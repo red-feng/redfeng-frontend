@@ -1,5 +1,6 @@
 import type { Locale } from "@/lib/i18n"
 import { servicePageConfigByLabel } from "@/app/components/services/serviceCatalog"
+import { buildSiteUrl } from "@/lib/site-config"
 
 type HeaderNavItem = {
   key: string
@@ -10,7 +11,7 @@ type HeaderNavItem = {
 export const publicHeaderTopNavItems: HeaderNavItem[] = [
   { key: "promo", href: "/promo" },
   { key: "orders", href: "/customer/bookings" },
-  { key: "partnerTour", href: "https://redfeng.co/kemitraan_tour/", external: true },
+  { key: "partnerTour", href: buildSiteUrl("/kemitraan_tour/"), external: true },
   { key: "verifyInvoice", href: "/verifikasi-invoice" },
   { key: "help", href: "/bantuan" },
 ]

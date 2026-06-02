@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/server"
 import SignOutButton from "@/app/components/SignOutButton"
 import CustomerHeaderNav from "@/app/components/CustomerHeaderNav"
 import { ensureCustomerBaselineRole, hasActiveAccountRole } from "@/lib/account-roles"
+import { buildAppUrl, getSiteBaseUrl } from "@/lib/site-config"
 
 export default async function CustomerLayout({
   children,
@@ -138,15 +139,15 @@ export default async function CustomerLayout({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <MerchantLanguageSwitcher locale={locale} label={languageLabel} options={languageOptions} />
-              <Link
-                href="https://redfeng.co/"
+                <Link
+                  href={getSiteBaseUrl()}
                 className="hidden rounded-full border border-[#ecd9c2] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-orange-200 hover:bg-[#fff7ef] hover:text-orange-600 lg:inline-flex"
               >
                 {backToSiteLabel}
               </Link>
-              <SignOutButton
-                portal="customer"
-                redirectTo="https://app.redfeng.co/login"
+                <SignOutButton
+                  portal="customer"
+                  redirectTo={buildAppUrl("/login")}
                 className="rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 sm:px-4"
               />
             </div>

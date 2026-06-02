@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server"
 import { defaultLocale, localeCookieName, normalizeLocale } from "@/lib/i18n"
+import { resolveCookieDomainForHostname } from "@/lib/site-config"
 
 function resolveCookieDomain(req: Request) {
-  const host = new URL(req.url).hostname.toLowerCase()
-  if (host === "redfeng.co" || host.endsWith(".redfeng.co")) {
-    return ".redfeng.co"
-  }
-  return undefined
+  return resolveCookieDomainForHostname(new URL(req.url).hostname)
 }
 
 export async function POST(req: Request) {

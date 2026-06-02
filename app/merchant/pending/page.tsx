@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 export default function PendingPage() {
   return (
@@ -43,7 +44,7 @@ export default function PendingPage() {
               <li>Jika disetujui, akses merchant dashboard akan dibuka.</li>
             </ul>
             <Link
-              href="https://redfeng.co/"
+              href={getSiteBaseUrl()}
               className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-orange-700 transition hover:text-orange-800"
             >
               Kembali ke beranda

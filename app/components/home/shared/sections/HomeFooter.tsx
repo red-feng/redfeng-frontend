@@ -2,6 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { ChevronDownIcon, payments } from "@/app/components/home/shared/homeContent"
 import type { Locale } from "@/lib/i18n"
+import { buildSiteUrl } from "@/lib/site-config"
 
 type FooterLinkItem = {
   label: string
@@ -22,6 +23,7 @@ type FooterCopy = {
 }
 
 export default function HomeFooter({ locale }: { locale: Locale }) {
+  const partnerTourUrl = buildSiteUrl("/kemitraan_tour/")
   const copy: FooterCopy = {
     id: {
       company: "Perusahaan",
@@ -40,9 +42,9 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
         { label: "Kebijakan & Privasi", href: "/privacy" },
       ],
       partnerItems: [
-        { label: "Jadi Partner", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "Affiliate", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "Kerja Sama Korporat", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Jadi Partner", href: partnerTourUrl },
+        { label: "Affiliate", href: partnerTourUrl },
+        { label: "Kerja Sama Korporat", href: partnerTourUrl },
       ],
       rights: "(c) 2026 RedFeng. All rights reserved.",
       terms: "Syarat & Ketentuan",
@@ -65,9 +67,9 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
         { label: "Privacy Policy", href: "/privacy" },
       ],
       partnerItems: [
-        { label: "Become a Partner", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "Affiliate", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "Corporate Partnership", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "Become a Partner", href: partnerTourUrl },
+        { label: "Affiliate", href: partnerTourUrl },
+        { label: "Corporate Partnership", href: partnerTourUrl },
       ],
       rights: "(c) 2026 RedFeng. All rights reserved.",
       terms: "Terms & Conditions",
@@ -90,9 +92,9 @@ export default function HomeFooter({ locale }: { locale: Locale }) {
         { label: "隐私政策", href: "/privacy" },
       ],
       partnerItems: [
-        { label: "加入合作", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "联盟合作", href: "https://redfeng.co/kemitraan_tour/" },
-        { label: "企业合作", href: "https://redfeng.co/kemitraan_tour/" },
+        { label: "加入合作", href: partnerTourUrl },
+        { label: "联盟合作", href: partnerTourUrl },
+        { label: "企业合作", href: partnerTourUrl },
       ],
       rights: "(c) 2026 RedFeng. 版权所有。",
       terms: "条款与条件",

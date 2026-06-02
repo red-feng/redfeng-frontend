@@ -23,6 +23,7 @@ import { getMerchantShellText } from "@/lib/merchant-shell-i18n"
 import { getCommerceChatUnreadBadgeCount } from "@/lib/commerce-chat"
 import { createClient } from "@/lib/supabase/server"
 import { ensureAccountRole, hasActiveAccountRole } from "@/lib/account-roles"
+import { buildAppUrl } from "@/lib/site-config"
 
 export default async function MerchantLayout({
   children,
@@ -290,7 +291,7 @@ export default async function MerchantLayout({
                   <SignOutButton
                     portal="merchant"
                     label={t.logout}
-                    redirectTo="https://app.redfeng.co/merchant/login"
+                    redirectTo={buildAppUrl("/merchant/login")}
                     className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100"
                   />
                 </div>

@@ -4,10 +4,11 @@ import Script from "next/script";
 import AppDisplayModeBridge from "@/app/components/AppDisplayModeBridge";
 import ServiceWorkerRegistrar from "@/app/components/ServiceWorkerRegistrar";
 import { getOptionalEnv } from "@/lib/env";
+import { getAppBaseUrl } from "@/lib/site-config";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://app.redfeng.co"),
+  metadataBase: new URL(getAppBaseUrl()),
   title: "Red Feng",
   description: "The Digital Travel Ecosystem",
   alternates: {

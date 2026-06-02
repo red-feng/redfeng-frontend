@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { ACTIVE_PORTAL_COOKIE, ACTIVE_PORTAL_MAX_AGE, MERCHANT_PORTAL_DEFAULT_REDIRECT } from "@/lib/portal-context"
 import { readPortalSessionErrorMessage } from "@/lib/portal-session"
 import type { Locale } from "@/lib/i18n"
+import { getSiteBaseUrl } from "@/lib/site-config"
 
 function getMerchantLoginCopy(locale: Locale) {
   if (locale === "en") {
@@ -337,7 +338,7 @@ export default function MerchantLoginClient({ initialLocale }: { initialLocale: 
                 <div className="flex flex-col items-end gap-3">
                   <AuthLocaleDropdown locale={initialLocale} />
                   <Link
-                    href="https://redfeng.co/"
+                    href={getSiteBaseUrl()}
                     className="inline-flex items-center gap-2 text-sm font-medium text-orange-700 transition hover:text-orange-800"
                   >
                     {t.backHome}

@@ -91,16 +91,48 @@ function getCountryMapWindow(country?: string) {
 
 function buildMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
   const windowBox = getCountryMapWindow(selectedCountry)
+  const groupedByCity = new Map<string, PackagePreview[]>()
+
+  packages.forEach((pkg) => {
+    const cityKey = (pkg.city || pkg.country || "other").trim().toLowerCase()
+    const current = groupedByCity.get(cityKey) || []
+    current.push(pkg)
+    groupedByCity.set(cityKey, current)
+  })
+
+  const cityEntries = Array.from(groupedByCity.entries())
+  const cityAnchors = new Map<string, { left: number; top: number }>()
+  const totalCities = Math.max(cityEntries.length, 1)
+  const columns = Math.min(3, totalCities)
+
+  cityEntries.forEach(([cityKey], cityIndex) => {
+    const row = Math.floor(cityIndex / columns)
+    const column = cityIndex % columns
+    const rows = Math.ceil(totalCities / columns)
+    const baseX = columns === 1 ? 0.5 : column / (columns - 1)
+    const baseY = rows === 1 ? 0.5 : row / Math.max(rows - 1, 1)
+    const citySeed = hashSeed(cityKey)
+    const jitterX = ((citySeed % 100) / 100 - 0.5) * 0.12
+    const jitterY = ((Math.floor(citySeed / 13) % 100) / 100 - 0.5) * 0.1
+
+    cityAnchors.set(cityKey, {
+      left: windowBox.left - windowBox.width / 2 + windowBox.width * (0.18 + baseX * 0.64 + jitterX),
+      top: windowBox.top - windowBox.height / 2 + windowBox.height * (0.2 + baseY * 0.56 + jitterY),
+    })
+  })
 
   return packages.map((pkg, index) => {
-    const seed = hashSeed(`${pkg.slug || pkg.id}-${pkg.city || ""}-${pkg.country || ""}-${index}`)
-    const normalizedX = ((seed % 1000) / 1000) * 0.78 + 0.11
-    const normalizedY = ((Math.floor(seed / 31) % 1000) / 1000) * 0.72 + 0.14
+    const cityKey = (pkg.city || pkg.country || "other").trim().toLowerCase()
+    const anchor = cityAnchors.get(cityKey) || { left: windowBox.left, top: windowBox.top }
+    const localSeed = hashSeed(`${pkg.slug || pkg.id}-${cityKey}-${index}`)
+    const orbit = index % 4
+    const offsetX = [0, 2.6, -2.4, 1.4][orbit] + (((localSeed % 100) / 100) - 0.5) * 1.4
+    const offsetY = [0, -2.1, 2.4, 3.1][orbit] + (((Math.floor(localSeed / 17) % 100) / 100) - 0.5) * 1.2
 
     return {
       pkg,
-      left: windowBox.left - windowBox.width / 2 + windowBox.width * normalizedX,
-      top: windowBox.top - windowBox.height / 2 + windowBox.height * normalizedY,
+      left: anchor.left + offsetX,
+      top: anchor.top + offsetY,
     }
   })
 }
@@ -314,6 +346,13 @@ export default function FilterClient({
   const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 8)
   const mapWindow = getCountryMapWindow(selectedCountry)
   const mapMarkers = buildMarkerLayout(mapModalPackages, selectedCountry)
+  const mapCities = Array.from(new Map(mapMarkers.map((marker) => [marker.pkg.city || marker.pkg.country || mapWindow.centerLabel, marker])).entries()).map(
+    ([label, marker]) => ({
+      label,
+      left: marker.left,
+      top: marker.top,
+    }),
+  )
 
   const filterBody = (
     <div className="space-y-4">
@@ -591,18 +630,29 @@ export default function FilterClient({
                 <p className="text-sm font-semibold text-slate-900">{mapModalEmpty}</p>
               </div>
             ) : (
-              mapMarkers.map(({ pkg, left, top }, index) => (
-                <div key={pkg.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
-                  <div className="rounded-[14px] bg-[#145da8] px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
-                    {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+              <>
+                {mapCities.map((city) => (
+                  <div
+                    key={`city-${city.label}-${city.left}-${city.top}`}
+                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-[115%] rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-semibold text-[#145da8] shadow-[0_12px_24px_-16px_rgba(15,23,42,0.24)]"
+                    style={{ left: `${city.left}%`, top: `${city.top}%` }}
+                  >
+                    {city.label}
                   </div>
-                  <div className="mx-auto h-3 w-3 rounded-full border-2 border-white bg-[#ff6a3d]" />
-                  <div className="mx-auto h-3 w-[2px] bg-[#145da8]" />
-                  {index === 0 ? (
-                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">#1</div>
-                  ) : null}
-                </div>
-              ))
+                ))}
+                {mapMarkers.map(({ pkg, left, top }, index) => (
+                  <div key={pkg.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
+                    <div className="rounded-[14px] bg-[#145da8] px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
+                      {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+                    </div>
+                    <div className="mx-auto h-3 w-3 rounded-full border-2 border-white bg-[#ff6a3d]" />
+                    <div className="mx-auto h-3 w-[2px] bg-[#145da8]" />
+                    {index === 0 ? (
+                      <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">#1</div>
+                    ) : null}
+                  </div>
+                ))}
+              </>
             )}
 
             <div className="absolute inset-x-0 bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur">

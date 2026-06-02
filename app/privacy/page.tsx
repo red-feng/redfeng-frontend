@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { homeLayoutLock } from "@/app/components/home/shared/homeLayoutLock"
+import { getAppHost, getSiteBaseUrl, getSiteHost } from "@/lib/site-config"
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Red Feng",
@@ -10,10 +11,14 @@ export const metadata: Metadata = {
   },
 }
 
+const appHost = getAppHost()
+const siteBaseUrl = getSiteBaseUrl()
+const siteHost = getSiteHost()
+
 const sections = [
   {
     title: "Overview",
-    body: "Red Feng collects and processes personal information to provide account access, booking services, customer support, fraud prevention, and service improvements across app.redfeng.co and connected customer journeys.",
+    body: `Red Feng collects and processes personal information to provide account access, booking services, customer support, fraud prevention, and service improvements across ${appHost} and connected customer journeys.`,
   },
   {
     title: "Information We Collect",
@@ -106,7 +111,7 @@ export default function PrivacyPage() {
                 </p>
                 <p>
                   This policy applies to customer-facing activity on{" "}
-                  <span className="font-semibold text-slate-950">redfeng.co</span>.
+                  <span className="font-semibold text-slate-950">{siteHost}</span>.
                 </p>
               </div>
             </div>
@@ -116,7 +121,7 @@ export default function PrivacyPage() {
                 Quick Links
               </p>
               <div className="mt-4 grid gap-3 text-sm">
-                <Link href="https://redfeng.co/" className="font-semibold text-slate-800 hover:text-orange-700">
+                <Link href={siteBaseUrl} className="font-semibold text-slate-800 hover:text-orange-700">
                   Back to home
                 </Link>
                 <Link href="/terms" className="font-semibold text-slate-800 hover:text-orange-700">
@@ -134,7 +139,7 @@ export default function PrivacyPage() {
                 </div>
                 <h2 className="mt-4 text-3xl font-semibold text-slate-950">How Red Feng handles personal data</h2>
               </div>
-              <Link href="https://redfeng.co/" className="text-sm font-semibold text-orange-700 hover:text-orange-800">
+              <Link href={siteBaseUrl} className="text-sm font-semibold text-orange-700 hover:text-orange-800">
                 Back to home
               </Link>
             </div>

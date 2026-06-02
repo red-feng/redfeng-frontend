@@ -1,5 +1,6 @@
 import { createHmac } from "crypto"
 import { getOptionalEnv } from "@/lib/env"
+import { getAppBaseUrl } from "@/lib/site-config"
 
 const unsubscribeCopy = {
   id: {
@@ -28,15 +29,8 @@ export function isValidNewsletterEmail(email: string | null | undefined) {
 }
 
 function getNewsletterBaseUrl() {
-  const explicit =
-    getOptionalEnv("NEXT_PUBLIC_APP_URL") ||
-    getOptionalEnv("NEXT_PUBLIC_SITE_URL") ||
-    getOptionalEnv("APP_URL") ||
-    getOptionalEnv("SITE_URL")
-
-  if (explicit) {
-    return explicit.replace(/\/+$/, "")
-  }
+  const explicit = getAppBaseUrl()
+  if (explicit) return explicit
 
   const vercelUrl = getOptionalEnv("VERCEL_URL")
   if (vercelUrl) {
