@@ -158,7 +158,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
       .eq("package_id", packageInternalId),
     adminSupabase
       .from("package_details")
-      .select("meeting_point, map_embed")
+      .select("meeting_point, map_embed, location_label, location_type, primary_lat, primary_lng, viewport_radius_km")
       .eq("package_id", packageInternalId)
       .maybeSingle(),
     adminSupabase
@@ -214,7 +214,15 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     ]),
   )
 
-  const details = detailsResult.data || { meeting_point: "", map_embed: "" }
+  const details = detailsResult.data || {
+    meeting_point: "",
+    map_embed: "",
+    location_label: "",
+    location_type: "",
+    primary_lat: null,
+    primary_lng: null,
+    viewport_radius_km: null,
+  }
   const tags = ((tagsResult.data || []) as Array<{ tag: string | null }>).map((item) => item.tag).filter(Boolean).join(", ")
   for (const lang of ["id", "en", "zh"]) {
     if (!translations[lang]) {

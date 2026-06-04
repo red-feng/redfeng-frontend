@@ -104,6 +104,16 @@ type PackageTranslationRow = {
   price_child: number | null
 }
 
+type PackageDetailRow = {
+  meeting_point: string | null
+  map_embed: string | null
+  location_label: string | null
+  location_type: string | null
+  primary_lat: number | null
+  primary_lng: number | null
+  viewport_radius_km: number | null
+}
+
 function safeDecode(value: string): string {
   try {
     return decodeURIComponent(value)
@@ -368,9 +378,9 @@ export default async function PaketPage({
     }),
     supabase
       .from("package_details")
-      .select("meeting_point, map_embed")
+      .select("meeting_point, map_embed, location_label, location_type, primary_lat, primary_lng, viewport_radius_km")
       .eq("package_id", pkg.id)
-      .maybeSingle(),
+      .maybeSingle<PackageDetailRow>(),
     supabase
       .from("package_images")
       .select("id, image_url")

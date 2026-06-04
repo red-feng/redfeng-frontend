@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap, resolvePackageTranslation } from "@/lib/package-pricing"
@@ -127,6 +128,7 @@ export default function FilterClient({
   selectedCountry,
   selectedStyle,
   selectedDuration,
+  totalPackages,
 }: {
   facilities: Facility[]
   initialState?: Partial<PackageFilterState>
@@ -137,7 +139,11 @@ export default function FilterClient({
   selectedCountry?: string
   selectedStyle?: string
   selectedDuration?: string
+  totalPackages: number
 }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const t = dictionaries[locale].filter
   const priceCurrency = localeCurrencyMap[locale]
   const sliderMin = 0
@@ -149,6 +155,7 @@ export default function FilterClient({
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>(initialState?.selectedFacilities ?? [])
   const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false)
   const [isMapModalOpen, setIsMapModalOpen] = useState(false)
+  const [manualActiveMapCountry, setManualActiveMapCountry] = useState("")
 
   const sliderStep = useMemo(() => {
     if (priceCurrency === "USD") return 10
@@ -303,7 +310,7 @@ export default function FilterClient({
     .filter(Boolean)
     .join(" • ")
   const exploreAction =
-    locale === "en" ? "View tour area" : locale === "zh" ? "查看目的地" : "Lihat area tour"
+    locale === "en" ? "Open map area" : locale === "zh" ? "打开地图区域" : "Buka area peta"
   const handleExploreClick = () => {
     setIsMapModalOpen(true)
   }
@@ -326,17 +333,27 @@ export default function FilterClient({
   const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 15)
   const mapWindow = getCountryMapWindow(selectedCountry)
   const mapCountries = buildCountryMarkerLayout(mapModalPackages, selectedCountry)
-  const activeCountryLabel = selectedCountry || mapWindow.centerLabel
+  const activeCountryLabel = selectedCountry || manualActiveMapCountry || mapCountries[0]?.country || mapWindow.centerLabel
   const mapEmbedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(mapWindow.bbox)}&layer=mapnik`
   const mapModalSurfaceTitle = mapModalTitle
   const mapModalSurfaceHint = mapModalHint
   const mapModalSurfaceEmpty = mapModalEmpty
+  const activeMapCountryGroup = mapCountries.find((entry) => entry.country === activeCountryLabel) || mapCountries[0] || null
+  const activeMapPackages = activeMapCountryGroup?.packages || mapModalPackages
+  const activeMapPackageCount = activeMapCountryGroup?.packages.length || mapModalPackages.length
+  const activeMapPriceLabel = activeMapCountryGroup?.cheapestPackage
+    ? formatPackageMoney(
+        getPreviewPrice(activeMapCountryGroup.cheapestPackage),
+        activeMapCountryGroup.cheapestPackage.livePricing?.currency || activeMapCountryGroup.cheapestPackage.currency || priceCurrency,
+        locale,
+      )
+    : null
   const mapDrawerTitle =
     locale === "en"
-      ? `Cheapest packages in ${activeCountryLabel}`
+      ? `Packages in ${activeCountryLabel}`
       : locale === "zh"
-        ? `${activeCountryLabel}最便宜的套餐`
-        : `Paket termurah di ${activeCountryLabel}`
+        ? `${activeCountryLabel}的套餐`
+        : `Paket di ${activeCountryLabel}`
   const mapSearchPlaceholder =
     locale === "en" ? "Country, tour package, place to go" : locale === "zh" ? "国家、套餐、目的地" : "Negara, paket tour, tempat tujuan"
   const mapZoomHint =
@@ -345,6 +362,43 @@ export default function FilterClient({
       : locale === "zh"
         ? "国家级地图模式。可缩放和拖动以查看更近的旅游视图。"
         : "Mode peta berbasis negara. Zoom dan geser untuk melihat area tour lebih dekat."
+  const mapInteractionHint =
+    locale === "en"
+      ? "Tap a price point to focus the area and update the package strip below."
+      : locale === "zh"
+        ? "点击价格点位以聚焦区域，并更新下方套餐列表。"
+        : "Klik titik harga untuk fokus ke area dan memperbarui list paket di bawah."
+  const activeAreaSummary =
+    locale === "en"
+      ? `${totalPackages} packages match the current catalog filters`
+      : locale === "zh"
+        ? `${totalPackages} 个套餐符合当前筛选`
+        : `${totalPackages} paket cocok dengan filter katalog saat ini`
+  const applyAreaLabel =
+    locale === "en"
+      ? `View ${activeMapPackageCount} packages`
+      : locale === "zh"
+        ? `查看 ${activeMapPackageCount} 个套餐`
+        : `Lihat ${activeMapPackageCount} paket`
+
+  const applyCountrySelection = (country: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    const normalizedCountry = country.trim()
+
+    if (normalizedCountry) {
+      params.set("country", normalizedCountry)
+    } else {
+      params.delete("country")
+    }
+
+    params.delete("page")
+    const nextQuery = params.toString()
+    const currentQuery = searchParams.toString()
+    if (nextQuery === currentQuery) return
+
+    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
+    router.replace(nextUrl, { scroll: false })
+  }
 
   const filterBody = (
     <div className="space-y-4">
@@ -355,11 +409,12 @@ export default function FilterClient({
           <div className="pointer-events-none absolute right-6 top-5 h-10 w-10 rounded-full border-8 border-[#1f6fbd] bg-white shadow-[0_10px_20px_-12px_rgba(37,99,235,0.45)]" />
           <div className="pointer-events-none absolute right-[92px] top-0 h-full w-px bg-white/70" />
           <div className="relative flex h-full flex-col justify-end">
-            <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{exploreTitle}</p>
-            <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{exploreMeta}</p>
-            <button
-              type="button"
-              onClick={handleExploreClick}
+             <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{exploreTitle}</p>
+             <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{exploreMeta}</p>
+             <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#145da8]">{activeAreaSummary}</p>
+             <button
+               type="button"
+               onClick={handleExploreClick}
               className="mt-5 inline-flex w-fit items-center rounded-full bg-[#1464b4] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
             >
               {exploreAction}
@@ -614,8 +669,9 @@ export default function FilterClient({
                   ? `Focused country: ${activeCountryLabel}`
                   : locale === "zh"
                     ? `聚焦国家：${activeCountryLabel}`
-                    : `Fokus negara: ${activeCountryLabel}`}
+                  : `Fokus negara: ${activeCountryLabel}`}
               </p>
+              <p className="mt-2 text-[11px] text-slate-500">{mapInteractionHint}</p>
             </div>
 
             <div className="absolute right-4 top-4 z-10 w-[min(420px,calc(100%-2rem))]">
@@ -647,24 +703,34 @@ export default function FilterClient({
               </div>
             ) : (
               <>
-                {mapCountries.map(({ country, packages: countryPackages, cheapestPackage, left, top }) => (
-                  <div key={`country-${country}-${left}-${top}`} className="absolute z-[5] -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
-                    <div className="rounded-[14px] bg-[#145da8] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
+                {mapCountries.map(({ country, packages: countryPackages, cheapestPackage, left, top }) => {
+                  const isActiveCountry = country === activeCountryLabel
+
+                  return (
+                    <button
+                      key={`country-${country}-${left}-${top}`}
+                      type="button"
+                      onClick={() => setManualActiveMapCountry(country)}
+                      className="absolute z-[5] -translate-x-1/2 -translate-y-1/2 text-center"
+                      style={{ left: `${left}%`, top: `${top}%` }}
+                    >
+                    <div className={`rounded-[14px] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)] transition ${isActiveCountry ? "bg-[#0f4f87] ring-4 ring-white/80" : "bg-[#145da8] hover:bg-[#0f4f87]"}`}>
                       {formatPackageMoney(getPreviewPrice(cheapestPackage), cheapestPackage.livePricing?.currency || cheapestPackage.currency || priceCurrency, locale)}
                     </div>
-                    <div className="mx-auto mt-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#ff6a3d]" />
-                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-[#124d8c]">
+                    <div className={`mx-auto mt-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isActiveCountry ? "bg-[#0f4f87]" : "bg-[#ff6a3d]"}`} />
+                    <div className={`mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.16em] ${isActiveCountry ? "text-[#0f4f87]" : "text-[#124d8c]"}`}>
                       {country}
                     </div>
-                    <div className="mt-1 text-center text-[10px] font-semibold text-[#124d8c]">
+                    <div className={`mt-1 text-center text-[10px] font-semibold ${isActiveCountry ? "text-[#0f4f87]" : "text-[#124d8c]"}`}>
                       {locale === "en"
                         ? `${countryPackages.length} packages`
                         : locale === "zh"
                           ? `${countryPackages.length} 个套餐`
                           : `${countryPackages.length} paket`}
                     </div>
-                  </div>
-                ))}
+                    </button>
+                  )
+                })}
               </>
             )}
 
@@ -673,11 +739,21 @@ export default function FilterClient({
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{locale === "en" ? "Cheapest package points" : locale === "zh" ? "最低价套餐点位" : "Titik paket termurah"}</p>
                   <p className="text-xs text-slate-500">{exploreMeta}</p>
+                  <p className="mt-1 text-xs font-medium text-[#145da8]">
+                    {activeMapPriceLabel
+                      ? locale === "en"
+                        ? `${activeCountryLabel} starts from ${activeMapPriceLabel}`
+                        : locale === "zh"
+                          ? `${activeCountryLabel} 最低 ${activeMapPriceLabel}`
+                          : `${activeCountryLabel} mulai dari ${activeMapPriceLabel}`
+                      : activeAreaSummary}
+                  </p>
                 </div>
                 <button
                   type="button"
                   title={mapDrawerTitle}
                   onClick={() => {
+                    applyCountrySelection(activeCountryLabel)
                     setIsMapModalOpen(false)
                     const target = document.getElementById("package-search-results")
                     if (!target) return
@@ -686,11 +762,11 @@ export default function FilterClient({
                   }}
                   className="rounded-full bg-[#1464b4] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
                 >
-                  {exploreAction}
+                  {applyAreaLabel}
                 </button>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {mapModalPackages.map((pkg, index) => (
+                {activeMapPackages.map((pkg, index) => (
                   <a
                     key={pkg.id}
                     href={`/packages/${encodeURIComponent(pkg.slug)}`}
@@ -701,9 +777,9 @@ export default function FilterClient({
                     <p className="mt-1 text-sm font-semibold text-[#ff5a28]">
                       {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
                     </p>
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[pkg.city, pkg.country].filter(Boolean).join(", ") || exploreTitle}</p>
-                  </a>
-                ))}
+                     <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[pkg.country, pkg.travel_style, pkg.duration ? `${pkg.duration} hari` : null].filter(Boolean).join(" • ") || exploreTitle}</p>
+                   </a>
+                 ))}
               </div>
             </div>
           </div>

@@ -63,6 +63,11 @@ type PackageTranslationRow = {
 type PackageDetailRow = {
   meeting_point: string | null
   map_embed: string | null
+  location_label: string | null
+  location_type: string | null
+  primary_lat: number | null
+  primary_lng: number | null
+  viewport_radius_km: number | null
 }
 
 type PackageImageRow = {
@@ -273,7 +278,11 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       baseAdultPrice: pkg.price_adult,
       baseChildPrice: pkg.price_child,
     }),
-    adminSupabase.from("package_details").select("meeting_point, map_embed").eq("package_id", pkg.id).maybeSingle<PackageDetailRow>(),
+    adminSupabase
+      .from("package_details")
+      .select("meeting_point, map_embed, location_label, location_type, primary_lat, primary_lng, viewport_radius_km")
+      .eq("package_id", pkg.id)
+      .maybeSingle<PackageDetailRow>(),
     adminSupabase.from("package_images").select("id, image_url").eq("package_id", pkg.id),
     adminSupabase
       .from("package_facilities")

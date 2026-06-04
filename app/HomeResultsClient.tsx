@@ -346,6 +346,7 @@ export default function HomeResultsClient({
           selectedCountry={selectedCountry}
           selectedStyle={selectedStyle}
           selectedDuration={selectedDuration}
+          totalPackages={totalPackages}
         />
       </aside>
 
