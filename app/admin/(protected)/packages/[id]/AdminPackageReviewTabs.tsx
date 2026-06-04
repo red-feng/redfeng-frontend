@@ -50,6 +50,11 @@ type DetailContent = {
   title: string
   about_tour: string | null
   meeting_point: string | null
+  location_label: string | null
+  location_type: string | null
+  primary_lat: number | null
+  primary_lng: number | null
+  viewport_radius_km: number | null
   service_standard: string | null
   include: string | null
   exclude: string | null
@@ -57,6 +62,14 @@ type DetailContent = {
   preparation: string | null
   terms_conditions: string | null
   map_embed: string | null
+}
+
+function formatLocationType(value: string | null | undefined) {
+  if (value === "country") return "Negara"
+  if (value === "city") return "Kota / destinasi"
+  if (value === "meeting_point") return "Meeting point"
+  if (value === "tour_area") return "Area tour"
+  return value || "-"
 }
 
 type ReviewTabKey = "detail" | "facilities" | "tags" | "itinerary"
@@ -248,6 +261,20 @@ export default function AdminPackageReviewTabs({
             <DetailBlock title="Judul Paket" value={activeTranslation?.title || fallbackTitle || detailContent.title} />
             <DetailBlock title="Info Tentang Tour" value={activeTranslation?.about_tour || detailContent.about_tour} />
             <DetailBlock title="Meeting Point" value={activeTranslation?.meeting_point || detailContent.meeting_point} />
+            <DetailBlock title="Label Lokasi Peta" value={detailContent.location_label} />
+            <DetailBlock title="Tipe Lokasi Peta" value={formatLocationType(detailContent.location_type)} />
+            <DetailBlock
+              title="Koordinat Utama"
+              value={
+                detailContent.primary_lat !== null && detailContent.primary_lng !== null
+                  ? `${detailContent.primary_lat}, ${detailContent.primary_lng}`
+                  : "-"
+              }
+            />
+            <DetailBlock
+              title="Radius Area Peta"
+              value={detailContent.viewport_radius_km !== null ? `${detailContent.viewport_radius_km} km` : "-"}
+            />
             <DetailBlock
               title="Standar Layanan Merchant"
               value={activeTranslation?.service_standard || detailContent.service_standard}

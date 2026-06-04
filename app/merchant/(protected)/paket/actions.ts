@@ -167,6 +167,20 @@ function normalizeDepartureDate(travelStyle: FormDataEntryValue | null, departur
   return null
 }
 
+function normalizeOptionalDecimal(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim().replace(",", ".")
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeOptionalInteger(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
+}
+
 async function getOwnedMerchantPackage(packageId: string) {
   const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
@@ -449,6 +463,12 @@ export async function updatePackageStep2(formData: FormData) {
           package_id: packageId,
           meeting_point: String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim(),
           map_embed: String(formData.get("map_embed") || "").trim(),
+          location_label: String(formData.get("location_label") || "").trim() || null,
+          location_type: String(formData.get("location_type") || "").trim() || null,
+          primary_lat: normalizeOptionalDecimal(formData.get("primary_lat")),
+          primary_lng: normalizeOptionalDecimal(formData.get("primary_lng")),
+          viewport_radius_km: normalizeOptionalInteger(formData.get("viewport_radius_km")),
+          geo_updated_at: new Date().toISOString(),
         },
         { onConflict: "package_id" },
       )

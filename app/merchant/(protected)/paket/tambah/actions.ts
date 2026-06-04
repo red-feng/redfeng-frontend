@@ -179,6 +179,20 @@ function normalizePublishedLanguages(input: FormDataEntryValue[], defaultLanguag
   return [...new Set(merged)]
 }
 
+function normalizeOptionalDecimal(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim().replace(",", ".")
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeOptionalInteger(value: FormDataEntryValue | null) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? Math.trunc(parsed) : null
+}
+
 // step 1
 export async function createPackage(formData: FormData) {
   const supabase = await createClient("merchant")
@@ -347,6 +361,11 @@ export async function savePackageDetails(formData: FormData) {
 
     const languageCodes = SUPPORTED_LANGUAGES
     const mapEmbed = formData.get("map_embed") as string
+    const locationLabel = String(formData.get("location_label") || "").trim()
+    const locationType = String(formData.get("location_type") || "").trim()
+    const primaryLat = normalizeOptionalDecimal(formData.get("primary_lat"))
+    const primaryLng = normalizeOptionalDecimal(formData.get("primary_lng"))
+    const viewportRadiusKm = normalizeOptionalInteger(formData.get("viewport_radius_km"))
     const galleryFiles = formData.getAll("gallery_images") as File[]
     const validGalleryFiles = galleryFiles.filter((file) => file && file.size > 0)
     const totalGalleryBytes = validGalleryFiles.reduce((sum, file) => sum + file.size, 0)
@@ -510,6 +529,15 @@ export async function savePackageDetails(formData: FormData) {
           package_id: packageId,
           meeting_point: String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim(),
           map_embed: mapEmbed,
+          location_label: locationLabel || null,
+          location_type: locationType || null,
+          primary_lat: primaryLat,
+          primary_lng: primaryLng,
+          viewport_radius_km: viewportRadiusKm,
+          geo_updated_at:
+            locationLabel || locationType || primaryLat !== null || primaryLng !== null || viewportRadiusKm !== null
+              ? new Date().toISOString()
+              : null,
         },
         { onConflict: "package_id" }
       )

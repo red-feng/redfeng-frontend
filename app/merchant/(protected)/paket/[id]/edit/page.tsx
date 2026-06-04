@@ -440,6 +440,13 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
             uiLocale={uiLocale}
             initialTranslations={translations}
             mapEmbed={details.map_embed || ""}
+            initialGeo={{
+              locationLabel: details.location_label || "",
+              locationType: details.location_type || "",
+              primaryLat: details.primary_lat,
+              primaryLng: details.primary_lng,
+              viewportRadiusKm: details.viewport_radius_km,
+            }}
           />
         )}
 

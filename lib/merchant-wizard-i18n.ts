@@ -59,6 +59,19 @@ type MerchantWizardDictionary = {
   highlights: string
   termsConditions: string
   pickupMapEmbed: string
+  geoSectionTitle?: string
+  locationLabel?: string
+  locationLabelPlaceholder?: string
+  locationType?: string
+  locationTypeHint?: string
+  locationTypeCountry?: string
+  locationTypeCity?: string
+  locationTypeMeetingPoint?: string
+  locationTypeTourArea?: string
+  latitude?: string
+  longitude?: string
+  viewportRadiusKm?: string
+  viewportRadiusHint?: string
   galleryImages: string
   galleryLimitHint: string
   uploadTooLarge: string
@@ -156,6 +169,19 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     highlights: "Tag / Highlight",
     termsConditions: "Syarat & Ketentuan saat di lokasi",
     pickupMapEmbed: "Embedding titik penjemputan wisatawan di Google Maps",
+    geoSectionTitle: "Lokasi peta paket",
+    locationLabel: "Label lokasi",
+    locationLabelPlaceholder: "Contoh: Central Hong Kong, Ubud, Meeting Point Bandara",
+    locationType: "Tipe lokasi",
+    locationTypeHint: "Pilih level lokasi yang paling mewakili paket ini di peta.",
+    locationTypeCountry: "Negara",
+    locationTypeCity: "Kota / destinasi",
+    locationTypeMeetingPoint: "Meeting point",
+    locationTypeTourArea: "Area tour",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    viewportRadiusKm: "Radius area (km)",
+    viewportRadiusHint: "Opsional. Cocok untuk paket yang mewakili area lebih luas daripada satu titik.",
     galleryImages: "Galeri Gambar",
     galleryLimitHint: "Maksimal total ukuran upload 18MB per submit.",
     uploadTooLarge: "Ukuran total file gambar terlalu besar.",
@@ -245,6 +271,19 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     highlights: "Tags / Highlights",
     termsConditions: "Terms & Conditions on Site",
     pickupMapEmbed: "Google Maps embed for tourist pickup point",
+    geoSectionTitle: "Package map location",
+    locationLabel: "Location label",
+    locationLabelPlaceholder: "Example: Central Hong Kong, Ubud, Airport meeting point",
+    locationType: "Location type",
+    locationTypeHint: "Choose the map level that best represents this package.",
+    locationTypeCountry: "Country",
+    locationTypeCity: "City / destination",
+    locationTypeMeetingPoint: "Meeting point",
+    locationTypeTourArea: "Tour area",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    viewportRadiusKm: "Area radius (km)",
+    viewportRadiusHint: "Optional. Useful when the package represents a broader area than a single point.",
     galleryImages: "Gallery Images",
     galleryLimitHint: "Maximum total upload size is 18MB per submit.",
     uploadTooLarge: "Total image file size is too large.",
@@ -328,6 +367,19 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     highlights: "标签 / 亮点",
     termsConditions: "现场条款与条件",
     pickupMapEmbed: "游客接送点 Google 地图嵌入代码",
+    geoSectionTitle: "套餐地图位置",
+    locationLabel: "位置标签",
+    locationLabelPlaceholder: "例如：香港中环、乌布、机场集合点",
+    locationType: "位置类型",
+    locationTypeHint: "选择最能代表该套餐地图展示层级的位置类型。",
+    locationTypeCountry: "国家",
+    locationTypeCity: "城市 / 目的地",
+    locationTypeMeetingPoint: "集合点",
+    locationTypeTourArea: "旅游区域",
+    latitude: "纬度",
+    longitude: "经度",
+    viewportRadiusKm: "区域半径（公里）",
+    viewportRadiusHint: "可选。适用于覆盖范围比单一点位更广的套餐。",
     galleryImages: "图片库",
     galleryLimitHint: "每次提交的上传总大小最多 18MB。",
     uploadTooLarge: "图片文件总大小过大。",

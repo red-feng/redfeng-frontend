@@ -57,6 +57,7 @@ export default function EditStep2Details({
   publishedLanguages,
   initialTranslations,
   mapEmbed,
+  initialGeo,
   uiLocale = "id",
 }: {
   packageId: string
@@ -64,6 +65,13 @@ export default function EditStep2Details({
   publishedLanguages: string[]
   initialTranslations: Record<string, Partial<TranslationValues>>
   mapEmbed: string
+  initialGeo: {
+    locationLabel?: string | null
+    locationType?: string | null
+    primaryLat?: number | null
+    primaryLng?: number | null
+    viewportRadiusKm?: number | null
+  }
   uiLocale?: string
 }) {
   const locale = normalizeLocale(uiLocale)
@@ -71,6 +79,17 @@ export default function EditStep2Details({
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === normalizedDefaultLanguage)?.code || "id") as LangCode,
+  )
+  const [locationLabel, setLocationLabel] = useState(String(initialGeo.locationLabel || ""))
+  const [locationType, setLocationType] = useState(String(initialGeo.locationType || ""))
+  const [primaryLat, setPrimaryLat] = useState(
+    typeof initialGeo.primaryLat === "number" ? String(initialGeo.primaryLat) : "",
+  )
+  const [primaryLng, setPrimaryLng] = useState(
+    typeof initialGeo.primaryLng === "number" ? String(initialGeo.primaryLng) : "",
+  )
+  const [viewportRadiusKm, setViewportRadiusKm] = useState(
+    typeof initialGeo.viewportRadiusKm === "number" ? String(initialGeo.viewportRadiusKm) : "",
   )
   const [translationValues, setTranslationValues] = useState<Record<LangCode, TranslationValues>>(() => ({
     id: normalizeTranslationValues(initialTranslations.id),
@@ -409,6 +428,74 @@ export default function EditStep2Details({
           defaultValue={mapEmbed}
           className="h-24 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
         />
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+        <p className="text-sm font-semibold text-slate-900">{t.geoSectionTitle || "Lokasi peta paket"}</p>
+        <p className="mt-1 text-xs leading-6 text-slate-500">{t.locationTypeHint}</p>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <label className="mb-2 block font-medium text-slate-800">{t.locationLabel}</label>
+            <input
+              name="location_label"
+              value={locationLabel}
+              onChange={(event) => setLocationLabel(event.target.value)}
+              placeholder={t.locationLabelPlaceholder}
+              className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium text-slate-800">{t.locationType}</label>
+            <select
+              name="location_type"
+              value={locationType}
+              onChange={(event) => setLocationType(event.target.value)}
+              className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+            >
+              <option value="">-</option>
+              <option value="country">{t.locationTypeCountry}</option>
+              <option value="city">{t.locationTypeCity}</option>
+              <option value="meeting_point">{t.locationTypeMeetingPoint}</option>
+              <option value="tour_area">{t.locationTypeTourArea}</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium text-slate-800">{t.viewportRadiusKm}</label>
+            <input
+              name="viewport_radius_km"
+              inputMode="numeric"
+              value={viewportRadiusKm}
+              onChange={(event) => setViewportRadiusKm(event.target.value)}
+              className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+            />
+            <p className="mt-1 text-xs text-slate-500">{t.viewportRadiusHint}</p>
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium text-slate-800">{t.latitude}</label>
+            <input
+              name="primary_lat"
+              inputMode="decimal"
+              value={primaryLat}
+              onChange={(event) => setPrimaryLat(event.target.value)}
+              className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium text-slate-800">{t.longitude}</label>
+            <input
+              name="primary_lng"
+              inputMode="decimal"
+              value={primaryLng}
+              onChange={(event) => setPrimaryLng(event.target.value)}
+              className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between pt-4">

@@ -61,6 +61,21 @@ type TranslationRow = {
   highlights: string | null
 }
 
+type PackageDetailRow = {
+  meeting_point: string | null
+  map_embed: string | null
+  location_label: string | null
+  location_type: string | null
+  primary_lat: number | null
+  primary_lng: number | null
+  viewport_radius_km: number | null
+}
+
+type GeoReviewIssue = {
+  tone: "warning" | "blocking"
+  message: string
+}
+
 function formatMoney(value: number | null, currency: string | null): string {
   const safeValue = value ?? 0
   const safeCurrency = currency || "IDR"
@@ -102,6 +117,69 @@ function statusSummary(status: string | null): string {
   if (status === "draft") return "Paket masih disusun merchant dan belum siap direview."
   if (status === "inactive") return "Paket tersimpan tetapi belum aktif untuk customer."
   return "Status paket belum memiliki ringkasan."
+}
+
+function formatLocationType(value: string | null | undefined): string {
+  if (value === "country") return "Negara"
+  if (value === "city") return "Kota / destinasi"
+  if (value === "meeting_point") return "Meeting point"
+  if (value === "tour_area") return "Area tour"
+  return value || "-"
+}
+
+function getGeoReviewIssues(detail: PackageDetailRow | null | undefined): GeoReviewIssue[] {
+  if (!detail) return []
+
+  const issues: GeoReviewIssue[] = []
+  const locationType = String(detail.location_type || "").trim()
+  const hasLabel = Boolean(String(detail.location_label || "").trim())
+  const hasLat = typeof detail.primary_lat === "number"
+  const hasLng = typeof detail.primary_lng === "number"
+  const hasRadius = typeof detail.viewport_radius_km === "number"
+
+  if (locationType && !hasLabel) {
+    issues.push({
+      tone: "warning",
+      message: "Tipe lokasi peta sudah dipilih, tetapi label lokasi belum diisi.",
+    })
+  }
+
+  if ((hasLat && !hasLng) || (!hasLat && hasLng)) {
+    issues.push({
+      tone: "blocking",
+      message: "Koordinat peta belum lengkap. Latitude dan longitude harus diisi berpasangan.",
+    })
+  }
+
+  if ((locationType === "meeting_point" || locationType === "city") && (!hasLat || !hasLng)) {
+    issues.push({
+      tone: "blocking",
+      message: `Tipe lokasi "${formatLocationType(locationType)}" memerlukan koordinat utama agar bisa dipakai di map katalog.`,
+    })
+  }
+
+  if (locationType === "tour_area" && !hasRadius) {
+    issues.push({
+      tone: "warning",
+      message: "Area tour belum memiliki radius area. Marker masih bisa tampil sebagai titik, tetapi cakupan area belum jelas.",
+    })
+  }
+
+  if (locationType === "country" && (!hasLat || !hasLng)) {
+    issues.push({
+      tone: "warning",
+      message: "Lokasi bertipe negara belum punya koordinat utama. Sistem masih bisa fallback ke mode negara, tetapi belum siap untuk map titik nyata.",
+    })
+  }
+
+  if (hasRadius && !locationType) {
+    issues.push({
+      tone: "warning",
+      message: "Radius area sudah diisi, tetapi tipe lokasi peta belum dipilih.",
+    })
+  }
+
+  return issues
 }
 
 export default async function Page({
@@ -185,7 +263,7 @@ export default async function Page({
     .from("package_details")
     .select("*")
     .eq("package_id", packageInternalId)
-    .maybeSingle()
+    .maybeSingle<PackageDetailRow>()
 
   const { data: galleryData } = await supabase
     .from("package_images")
@@ -265,6 +343,8 @@ export default async function Page({
     Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
       ? pkg.published_languages.map((code: string) => getLanguageLabel(code)).join(", ")
       : getLanguageLabel(pkg.default_language)
+  const geoReviewIssues = getGeoReviewIssues(detail)
+  const hasBlockingGeoIssue = geoReviewIssues.some((issue) => issue.tone === "blocking")
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -381,6 +461,11 @@ export default async function Page({
                 title: primaryTranslation?.title || pkg.title || "-",
                 about_tour: primaryTranslation?.about_tour || null,
                 meeting_point: primaryTranslation?.meeting_point || detail?.meeting_point || null,
+                location_label: detail?.location_label || null,
+                location_type: detail?.location_type || null,
+                primary_lat: detail?.primary_lat ?? null,
+                primary_lng: detail?.primary_lng ?? null,
+                viewport_radius_km: detail?.viewport_radius_km ?? null,
                 service_standard: primaryTranslation?.service_standard || null,
                 include: primaryTranslation?.include || null,
                 exclude: primaryTranslation?.exclude || null,
@@ -455,6 +540,36 @@ export default async function Page({
                   </p>
                 </div>
 
+                {geoReviewIssues.length > 0 ? (
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">Validasi Geo</p>
+                      <p className="mt-1 text-sm text-amber-900">
+                        Cek kesiapan data peta sebelum paket disetujui untuk katalog berbasis map.
+                      </p>
+                    </div>
+                    {geoReviewIssues.map((issue, index) => (
+                      <div
+                        key={`${issue.tone}-${index}`}
+                        className={`rounded-2xl border px-4 py-3 text-sm leading-6 ${
+                          issue.tone === "blocking"
+                            ? "border-rose-200 bg-rose-50 text-rose-700"
+                            : "border-amber-200 bg-amber-50 text-amber-800"
+                        }`}
+                      >
+                        <p className="font-semibold">
+                          {issue.tone === "blocking" ? "Perlu diperbaiki sebelum approve" : "Perlu diperhatikan"}
+                        </p>
+                        <p className="mt-1">{issue.message}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                    Data geo paket sudah cukup rapi untuk tahap map discovery saat ini.
+                  </div>
+                )}
+
                 {canExecuteAdminOps ? (
                   <>
                     <form
@@ -464,7 +579,10 @@ export default async function Page({
                         await approvePackage(packageInternalId)
                       }}
                     >
-                      <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
+                      <button
+                        disabled={hasBlockingGeoIssue}
+                        className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
                         Setujui
                       </button>
                     </form>
@@ -551,6 +669,28 @@ export default async function Page({
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tujuan</dt>
                   <dd className="mt-1 font-medium text-slate-900">
                     {countryMap.get(pkg.destination_country_id) || "-"} - {pkg.destination_province || "-"}
+                  </dd>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Label Lokasi Peta</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{detail?.location_label || "-"}</dd>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tipe Lokasi Peta</dt>
+                  <dd className="mt-1 font-medium text-slate-900">{formatLocationType(detail?.location_type)}</dd>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Koordinat</dt>
+                  <dd className="mt-1 font-medium text-slate-900">
+                    {detail?.primary_lat !== null && detail?.primary_lng !== null
+                      ? `${detail.primary_lat}, ${detail.primary_lng}`
+                      : "-"}
+                  </dd>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Radius Area</dt>
+                  <dd className="mt-1 font-medium text-slate-900">
+                    {detail?.viewport_radius_km !== null ? `${detail.viewport_radius_km} km` : "-"}
                   </dd>
                 </div>
               </dl>
