@@ -682,7 +682,7 @@ export default async function Page({
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Koordinat</dt>
                   <dd className="mt-1 font-medium text-slate-900">
-                    {detail?.primary_lat !== null && detail?.primary_lng !== null
+                    {detail && detail.primary_lat !== null && detail.primary_lng !== null
                       ? `${detail.primary_lat}, ${detail.primary_lng}`
                       : "-"}
                   </dd>
