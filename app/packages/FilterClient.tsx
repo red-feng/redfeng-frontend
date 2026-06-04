@@ -71,22 +71,22 @@ function hashSeed(value: string) {
 function getCountryMapWindow(country?: string) {
   const normalized = (country || "").trim().toLowerCase()
 
-  const presets: Record<string, { centerLabel: string; left: number; top: number; width: number; height: number }> = {
-    china: { centerLabel: "China", left: 60, top: 43, width: 34, height: 26 },
-    indonesia: { centerLabel: "Indonesia", left: 53, top: 58, width: 42, height: 18 },
-    japan: { centerLabel: "Japan", left: 73, top: 35, width: 18, height: 24 },
-    singapore: { centerLabel: "Singapore", left: 58, top: 60, width: 10, height: 12 },
-    malaysia: { centerLabel: "Malaysia", left: 57, top: 55, width: 16, height: 18 },
-    thailand: { centerLabel: "Thailand", left: 56, top: 48, width: 18, height: 22 },
-    vietnam: { centerLabel: "Vietnam", left: 63, top: 46, width: 14, height: 26 },
-    korea: { centerLabel: "Korea", left: 69, top: 34, width: 12, height: 18 },
-    "south korea": { centerLabel: "South Korea", left: 69, top: 34, width: 12, height: 18 },
-    "hong kong": { centerLabel: "Hong Kong", left: 66, top: 45, width: 9, height: 10 },
-    "arab saudi": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20 },
-    "saudi arabia": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20 },
+  const presets: Record<string, { centerLabel: string; left: number; top: number; width: number; height: number; bbox: string }> = {
+    china: { centerLabel: "China", left: 60, top: 43, width: 34, height: 26, bbox: "73.0,18.0,135.0,54.0" },
+    indonesia: { centerLabel: "Indonesia", left: 53, top: 58, width: 42, height: 18, bbox: "94.0,-12.0,142.0,8.0" },
+    japan: { centerLabel: "Japan", left: 73, top: 35, width: 18, height: 24, bbox: "128.0,30.0,147.0,46.0" },
+    singapore: { centerLabel: "Singapore", left: 58, top: 60, width: 10, height: 12, bbox: "103.55,1.14,104.08,1.50" },
+    malaysia: { centerLabel: "Malaysia", left: 57, top: 55, width: 16, height: 18, bbox: "99.0,0.8,120.0,8.5" },
+    thailand: { centerLabel: "Thailand", left: 56, top: 48, width: 18, height: 22, bbox: "97.0,5.0,106.0,21.0" },
+    vietnam: { centerLabel: "Vietnam", left: 63, top: 46, width: 14, height: 26, bbox: "102.0,8.0,110.0,24.0" },
+    korea: { centerLabel: "Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
+    "south korea": { centerLabel: "South Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
+    "hong kong": { centerLabel: "Hong Kong", left: 66, top: 45, width: 9, height: 10, bbox: "113.80,22.10,114.50,22.60" },
+    "arab saudi": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
+    "saudi arabia": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
   }
 
-  return presets[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22 }
+  return presets[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22, bbox: "60.0,-12.0,150.0,55.0" }
 }
 
 function buildCountryMarkerLayout(packages: PackagePreview[], selectedCountry: string | undefined) {
@@ -327,6 +327,24 @@ export default function FilterClient({
   const mapWindow = getCountryMapWindow(selectedCountry)
   const mapCountries = buildCountryMarkerLayout(mapModalPackages, selectedCountry)
   const activeCountryLabel = selectedCountry || mapWindow.centerLabel
+  const mapEmbedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(mapWindow.bbox)}&layer=mapnik`
+  const mapModalSurfaceTitle = mapModalTitle
+  const mapModalSurfaceHint = mapModalHint
+  const mapModalSurfaceEmpty = mapModalEmpty
+  const mapDrawerTitle =
+    locale === "en"
+      ? `Cheapest packages in ${activeCountryLabel}`
+      : locale === "zh"
+        ? `${activeCountryLabel}最便宜的套餐`
+        : `Paket termurah di ${activeCountryLabel}`
+  const mapSearchPlaceholder =
+    locale === "en" ? "Country, tour package, place to go" : locale === "zh" ? "国家、套餐、目的地" : "Negara, paket tour, tempat tujuan"
+  const mapZoomHint =
+    locale === "en"
+      ? "Country-based map mode. Zoom and pan for a closer tour view."
+      : locale === "zh"
+        ? "国家级地图模式。可缩放和拖动以查看更近的旅游视图。"
+        : "Mode peta berbasis negara. Zoom dan geser untuk melihat area tour lebih dekat."
 
   const filterBody = (
     <div className="space-y-4">
@@ -540,17 +558,17 @@ export default function FilterClient({
 
       {isMapModalOpen ? (
         <div className="fixed inset-0 z-[80] bg-white">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
             <button
               type="button"
               onClick={() => setIsMapModalOpen(false)}
-              className="inline-flex items-center gap-2 rounded-[14px] border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-[14px] border border-[#c8d7ee] bg-white px-4 py-2.5 text-sm font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
             >
               <span aria-hidden="true">‹</span>
               <span>{mapModalBackLabel}</span>
             </button>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900">{mapModalTitle}</p>
+            <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">
+              <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{activeCountryLabel}</span>
               <p className="truncate text-xs text-slate-500">{exploreTitle} • {exploreMeta}</p>
             </div>
             <button
@@ -562,17 +580,18 @@ export default function FilterClient({
             </button>
           </div>
 
-          <div className="relative h-[calc(100vh-73px)] overflow-hidden bg-[#dff1fa]">
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,#c7eefb_0%,#d8f1ff_28%,#eaf6e5_62%,#e7f2dd_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_18%,rgba(255,255,255,0.8)_0,rgba(255,255,255,0.8)_2px,transparent_2px)] bg-[length:24px_24px] opacity-25" />
-            <div className="absolute inset-x-0 top-[29%] h-20 bg-[#80d1ef]/58 blur-[1px]" />
-            <div className="absolute left-[8%] top-[12%] h-[76%] w-[2px] rotate-[34deg] bg-white/60" />
-            <div className="absolute left-[22%] top-[6%] h-[84%] w-[2px] rotate-[12deg] bg-white/45" />
-            <div className="absolute left-[39%] top-[8%] h-[78%] w-[2px] -rotate-[23deg] bg-white/48" />
-            <div className="absolute left-[58%] top-[10%] h-[76%] w-[2px] rotate-[16deg] bg-white/42" />
-            <div className="absolute left-[74%] top-[14%] h-[68%] w-[2px] -rotate-[28deg] bg-white/45" />
+          <div className="relative h-[calc(100vh-69px)] overflow-hidden bg-[#dcebf8]">
+            <iframe
+              title={mapModalSurfaceTitle}
+              src={mapEmbedSrc}
+              className="absolute inset-0 h-full w-full border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.72)_44%,rgba(255,255,255,0.96)_100%)]" />
             <div
-              className="absolute rounded-[44px] border border-[#60a5fa]/45 bg-white/18 shadow-[0_20px_50px_-30px_rgba(37,99,235,0.28)] backdrop-blur-[1px]"
+              className="pointer-events-none absolute rounded-[44px] border border-[#60a5fa]/30 bg-[#2b6cb0]/8 shadow-[0_20px_50px_-30px_rgba(37,99,235,0.28)]"
               style={{
                 left: `${mapWindow.left - mapWindow.width / 2}%`,
                 top: `${mapWindow.top - mapWindow.height / 2}%`,
@@ -581,16 +600,16 @@ export default function FilterClient({
               }}
             />
             <div
-              className="pointer-events-none absolute rounded-[999px] border border-white/75 bg-white/88 px-3 py-1.5 text-[11px] font-semibold text-[#145da8] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.24)]"
+              className="pointer-events-none absolute rounded-[999px] border border-white/75 bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-[#145da8] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.24)]"
               style={{ left: `${mapWindow.left}%`, top: `${Math.max(mapWindow.top - mapWindow.height / 2 - 5, 8)}%`, transform: "translateX(-50%)" }}
             >
               {mapWindow.centerLabel}
             </div>
 
-            <div className="absolute left-5 top-5 rounded-[18px] bg-white/92 px-4 py-3 shadow-[0_20px_40px_-24px_rgba(15,23,42,0.22)] backdrop-blur">
-              <p className="text-sm font-semibold text-slate-900">{exploreTitle}</p>
-              <p className="mt-1 text-xs text-slate-500">{mapModalHint}</p>
-              <p className="mt-1 text-[11px] font-medium text-[#145da8]">
+            <div className="absolute left-4 top-4 z-10 max-w-[360px] rounded-[18px] bg-white/96 px-4 py-3 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.26)] backdrop-blur">
+              <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceTitle}</p>
+              <p className="mt-1 text-xs text-slate-500">{mapModalSurfaceHint}</p>
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
                 {locale === "en"
                   ? `Focused country: ${activeCountryLabel}`
                   : locale === "zh"
@@ -599,23 +618,45 @@ export default function FilterClient({
               </p>
             </div>
 
+            <div className="absolute right-4 top-4 z-10 w-[min(420px,calc(100%-2rem))]">
+              <div className="rounded-[16px] bg-white/96 px-4 py-3 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.26)] backdrop-blur">
+                <div className="flex items-center gap-3">
+                  <span className="text-lg text-[#1464b4]" aria-hidden="true">
+                    ⌖
+                  </span>
+                  <span className="line-clamp-1 text-sm text-slate-400">{mapSearchPlaceholder}</span>
+                </div>
+              </div>
+              <div className="mt-3 rounded-[16px] bg-white/94 px-4 py-3 text-sm text-slate-700 shadow-[0_22px_42px_-28px_rgba(15,23,42,0.24)] backdrop-blur">
+                {mapZoomHint}
+              </div>
+            </div>
+
+            <div className="absolute right-4 top-[108px] z-10 overflow-hidden rounded-[16px] border border-slate-200 bg-white/96 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.28)]">
+              <button type="button" className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
+                +
+              </button>
+              <button type="button" className="block w-12 py-2 text-xl font-medium text-slate-600">
+                −
+              </button>
+            </div>
+
             {mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
-                <p className="text-sm font-semibold text-slate-900">{mapModalEmpty}</p>
+                <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceEmpty}</p>
               </div>
             ) : (
               <>
                 {mapCountries.map(({ country, packages: countryPackages, cheapestPackage, left, top }) => (
-                  <div key={`country-${country}-${left}-${top}`} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
-                    <div className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
-                      {country}
-                    </div>
-                    <div className="rounded-[14px] bg-[#145da8] px-4 py-3 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
+                  <div key={`country-${country}-${left}-${top}`} className="absolute z-[5] -translate-x-1/2 -translate-y-1/2" style={{ left: `${left}%`, top: `${top}%` }}>
+                    <div className="rounded-[14px] bg-[#145da8] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)]">
                       {formatPackageMoney(getPreviewPrice(cheapestPackage), cheapestPackage.livePricing?.currency || cheapestPackage.currency || priceCurrency, locale)}
                     </div>
-                    <div className="mx-auto h-3 w-3 rounded-full border-2 border-white bg-[#ff6a3d]" />
-                    <div className="mx-auto h-3 w-[2px] bg-[#145da8]" />
-                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
+                    <div className="mx-auto mt-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-[#ff6a3d]" />
+                    <div className="mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.16em] text-[#124d8c]">
+                      {country}
+                    </div>
+                    <div className="mt-1 text-center text-[10px] font-semibold text-[#124d8c]">
                       {locale === "en"
                         ? `${countryPackages.length} packages`
                         : locale === "zh"
@@ -627,7 +668,7 @@ export default function FilterClient({
               </>
             )}
 
-            <div className="absolute inset-x-0 bottom-0 border-t border-slate-200 bg-white/96 p-4 backdrop-blur">
+            <div className="absolute inset-x-4 bottom-4 z-10 rounded-[24px] border border-slate-200 bg-white/96 p-4 shadow-[0_26px_60px_-32px_rgba(15,23,42,0.32)] backdrop-blur">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">{locale === "en" ? "Cheapest package points" : locale === "zh" ? "最低价套餐点位" : "Titik paket termurah"}</p>
@@ -635,6 +676,7 @@ export default function FilterClient({
                 </div>
                 <button
                   type="button"
+                  title={mapDrawerTitle}
                   onClick={() => {
                     setIsMapModalOpen(false)
                     const target = document.getElementById("package-search-results")
@@ -652,7 +694,7 @@ export default function FilterClient({
                   <a
                     key={pkg.id}
                     href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                    className="min-w-[220px] rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)]"
+                    className="min-w-[240px] rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)]"
                   >
                     <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1464b4]">#{index + 1}</p>
                     <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-900">{getPreviewTitle(pkg, locale)}</p>
