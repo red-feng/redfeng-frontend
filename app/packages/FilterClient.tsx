@@ -637,6 +637,9 @@ export default function FilterClient({
         }
       })
     : []
+  const resolvedActiveCountryGroup = !useActiveResultMap
+    ? mapCountries.find((entry) => entry.country === activeCountryLabel) || mapCountries[0] || null
+    : null
   const resolvedActiveMapPackageId = useActiveResultMap
     ? (resolvedGeoMarkers.some((entry) => entry.pkg.id === manualActiveMapPackageId)
         ? manualActiveMapPackageId
@@ -644,10 +647,14 @@ export default function FilterClient({
     : ""
   const resolvedActiveMapPackage = useActiveResultMap
     ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId)?.pkg || resolvedGeoMarkers[0]?.pkg || null
-    : null
+    : resolvedActiveCountryGroup?.cheapestPackage || null
   const resolvedActiveMapMarker = useActiveResultMap
     ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId) || null
-    : null
+    : resolvedActiveCountryGroup
+      ? {
+          point: getBBoxCenter(resolvedActiveCountryGroup.windowBox.bbox),
+        }
+      : null
   const resolvedMapModalSurfaceTitle = useActiveResultMap
     ? locale === "en"
       ? "Active package results"
@@ -1083,7 +1090,7 @@ export default function FilterClient({
                   : resolvedCountryMarkers
               }
               activeMarker={
-                useActiveResultMap && resolvedActiveMapPackage && resolvedActiveMapMarker
+                resolvedActiveMapPackage && resolvedActiveMapMarker
                   ? {
                       id: resolvedActiveMapPackage.id,
                       lat: resolvedActiveMapMarker.point.lat,
