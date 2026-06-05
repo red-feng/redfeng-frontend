@@ -3,13 +3,13 @@
 import { approvePackageById, deletePackageById, rejectPackageById } from "../actions"
 import { redirect } from "next/navigation"
 
-export async function approvePackage(packageId: string) {
-  await approvePackageById(packageId)
+export async function approvePackage(packageId: string, revisionId?: string | null) {
+  await approvePackageById(packageId, revisionId)
   redirect("/admin/packages?success=Paket%20berhasil%20disetujui")
 }
 
-export async function rejectPackage(packageId: string, reason: string) {
-  await rejectPackageById(packageId, reason)
+export async function rejectPackage(packageId: string, reason: string, revisionId?: string | null) {
+  await rejectPackageById(packageId, reason, revisionId)
   redirect("/admin/packages?success=Paket%20berhasil%20ditolak")
 }
 

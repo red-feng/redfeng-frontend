@@ -4,13 +4,20 @@ import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { buildAutoLocalizedPricing } from "@/lib/currency-rates"
 import { purgePackageRecords } from "@/lib/package-delete"
+import {
+  getRevisionById,
+  loadPackageLivePayload,
+  saveRevisionPayload,
+  submitRevisionForReview as submitPackageRevisionForReview,
+  type PackageRevisionPayload,
+  type SupportedLanguage,
+} from "@/lib/package-revisions"
 import { normalizePackageCurrency } from "@/lib/package-pricing"
 import { normalizePickupTimeForStorage } from "@/lib/time/pickupTime"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 const SUPPORTED_LANGUAGES = ["id", "en", "zh"] as const
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 function getTranslatedTitles(formData: FormData, defaultLanguage: string) {
   const normalizedDefaultLanguage = normalizePublishedLanguages([], defaultLanguage)[0]
@@ -181,6 +188,16 @@ function normalizeOptionalInteger(value: FormDataEntryValue | null) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : null
 }
 
+async function getRevisionPayloadOrLive(adminSupabase: ReturnType<typeof createAdminClient>, packageId: string, revisionId: string) {
+  const revision = await getRevisionById(adminSupabase, revisionId)
+  if (revision.package_id !== packageId) {
+    throw new Error("Revision paket tidak cocok dengan paket yang sedang diedit.")
+  }
+
+  const payload = revision.payload || (await loadPackageLivePayload(adminSupabase, packageId))
+  return { revision, payload }
+}
+
 async function getOwnedMerchantPackage(packageId: string) {
   const supabase = await createClient("merchant")
   const adminSupabase = createAdminClient()
@@ -248,6 +265,7 @@ async function markPackageDraft(adminSupabase: ReturnType<typeof createAdminClie
 
 export async function updatePackageStep1(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const revisionId = String(formData.get("revision_id") || "").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
@@ -286,6 +304,61 @@ export async function updatePackageStep1(formData: FormData) {
       published_languages: undefined,
     }
     delete legacyPayload.published_languages
+
+    if (revisionId) {
+      const { payload: basePayload } = await getRevisionPayloadOrLive(adminSupabase, packageId, revisionId)
+      const nextPayload: PackageRevisionPayload = {
+        ...basePayload,
+        package: {
+          ...basePayload.package,
+          id: packageId,
+          title: defaultTitle,
+          travel_style: payload.travel_style,
+          departure_date: payload.departure_date || "",
+          origin_country_id: payload.origin_country_id,
+          origin_province: payload.origin_province,
+          destination_country_id: payload.destination_country_id,
+          destination_province: payload.destination_province,
+          currency: payload.currency,
+          minimal_peserta: payload.minimal_peserta,
+          duration: payload.duration,
+          price_adult: payload.price_adult,
+          price_child: payload.price_child,
+          default_language: defaultLanguage as SupportedLanguage,
+          published_languages: publishedLanguages,
+          updated_at: payload.updated_at,
+        },
+        translations: {
+          ...basePayload.translations,
+          id: {
+            ...basePayload.translations.id,
+            title: titles.id || defaultTitle,
+            currency: pricing.id.currency,
+            price_adult: pricing.id.price_adult,
+            price_child: pricing.id.price_child,
+          },
+          en: {
+            ...basePayload.translations.en,
+            title: titles.en || basePayload.translations.en.title,
+            currency: pricing.en.currency,
+            price_adult: pricing.en.price_adult,
+            price_child: pricing.en.price_child,
+          },
+          zh: {
+            ...basePayload.translations.zh,
+            title: titles.zh || basePayload.translations.zh.title,
+            currency: pricing.zh.currency,
+            price_adult: pricing.zh.price_adult,
+            price_child: pricing.zh.price_child,
+          },
+        },
+      }
+
+      await saveRevisionPayload(adminSupabase, revisionId, nextPayload, "Merchant memperbarui basic info revisi paket")
+      revalidatePath("/merchant/paket")
+      revalidatePath(`/merchant/paket/${packageId}/edit`)
+      redirect(`/merchant/paket/${packageId}/edit?step=2&revision=${encodeURIComponent(revisionId)}`)
+    }
 
     let updateResult = await adminSupabase
       .from("packages")
@@ -331,6 +404,7 @@ export async function updatePackageStep1(formData: FormData) {
 
 export async function updatePackageStep2(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const revisionId = String(formData.get("revision_id") || "").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
@@ -448,6 +522,60 @@ export async function updatePackageStep2(formData: FormData) {
       })
       .filter(Boolean)
 
+    if (revisionId) {
+      const { payload: basePayload } = await getRevisionPayloadOrLive(adminSupabase, packageId, revisionId)
+      const nextTranslations = { ...basePayload.translations }
+      for (const code of SUPPORTED_LANGUAGES) {
+        const row = translationRows.find((item) => item?.language_code === code)
+        if (!row) continue
+        nextTranslations[code] = {
+          ...nextTranslations[code],
+          title: String(row.title || nextTranslations[code].title || ""),
+          about_tour: String(row.about_tour || ""),
+          service_standard: String(row.service_standard || ""),
+          include: String(row.include || ""),
+          exclude: String(row.exclude || ""),
+          preparation: String(row.preparation || ""),
+          terms_conditions: String(row.terms_conditions || ""),
+          meeting_point: String(row.meeting_point || ""),
+          highlights: String(row.highlights || ""),
+          currency: String(row.currency || nextTranslations[code].currency || basePayload.package.currency),
+          price_adult: Number(row.price_adult ?? nextTranslations[code].price_adult ?? basePayload.package.price_adult),
+          price_child: Number(row.price_child ?? nextTranslations[code].price_child ?? basePayload.package.price_child),
+        }
+      }
+
+      const tagsRaw = String(formData.get(`highlights_${defaultLanguage}`) || "")
+      const tagList = tagsRaw
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0)
+
+      const nextPayload: PackageRevisionPayload = {
+        ...basePayload,
+        package: {
+          ...basePayload.package,
+          updated_at: new Date().toISOString(),
+        },
+        translations: nextTranslations,
+        details: {
+          meeting_point: String(formData.get(`meeting_point_${defaultLanguage}`) || "").trim(),
+          map_embed: String(formData.get("map_embed") || "").trim(),
+          location_label: String(formData.get("location_label") || "").trim(),
+          location_type: String(formData.get("location_type") || "").trim(),
+          primary_lat: normalizeOptionalDecimal(formData.get("primary_lat")),
+          primary_lng: normalizeOptionalDecimal(formData.get("primary_lng")),
+          viewport_radius_km: normalizeOptionalInteger(formData.get("viewport_radius_km")),
+        },
+        tags: tagList,
+      }
+
+      await saveRevisionPayload(adminSupabase, revisionId, nextPayload, "Merchant memperbarui detail konten revisi paket")
+      revalidatePath("/merchant/paket")
+      revalidatePath(`/merchant/paket/${packageId}/edit`)
+      redirect(`/merchant/paket/${packageId}/edit?step=3&revision=${encodeURIComponent(revisionId)}`)
+    }
+
     const { error: translationError } = await adminSupabase
       .from("package_translations")
       .upsert(translationRows, { onConflict: "package_id,language_code" })
@@ -514,6 +642,7 @@ export async function updatePackageStep2(formData: FormData) {
 
 export async function updatePackageStep3(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const revisionId = String(formData.get("revision_id") || "").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
@@ -521,6 +650,23 @@ export async function updatePackageStep3(formData: FormData) {
     const { adminSupabase } = await getOwnedMerchantPackage(packageId)
 
     const facilityIds = formData.getAll("facility_ids[]") as string[]
+
+    if (revisionId) {
+      const { payload: basePayload } = await getRevisionPayloadOrLive(adminSupabase, packageId, revisionId)
+      const nextPayload: PackageRevisionPayload = {
+        ...basePayload,
+        package: {
+          ...basePayload.package,
+          updated_at: new Date().toISOString(),
+        },
+        facility_ids: facilityIds.map((value) => String(value || "").trim()).filter(Boolean),
+      }
+
+      await saveRevisionPayload(adminSupabase, revisionId, nextPayload, "Merchant memperbarui fasilitas revisi paket")
+      revalidatePath("/merchant/paket")
+      revalidatePath(`/merchant/paket/${packageId}/edit`)
+      redirect(`/merchant/paket/${packageId}/edit?step=4&revision=${encodeURIComponent(revisionId)}`)
+    }
 
     const { error: deleteError } = await adminSupabase
       .from("package_facilities")
@@ -553,6 +699,7 @@ export async function updatePackageStep3(formData: FormData) {
 
 export async function updatePackageStep4(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const revisionId = String(formData.get("revision_id") || "").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
@@ -572,7 +719,7 @@ export async function updatePackageStep4(formData: FormData) {
 
     const itineraryDayIds = (itineraryDays || []).map((item) => item.id)
 
-    if (itineraryDayIds.length > 0) {
+    if (!revisionId && itineraryDayIds.length > 0) {
       const { error: deleteRoutesError } = await adminSupabase
         .from("package_itinerary_routes")
         .delete()
@@ -583,10 +730,12 @@ export async function updatePackageStep4(formData: FormData) {
       }
     }
 
-    const { error: deleteDaysError } = await adminSupabase
+    const { error: deleteDaysError } = !revisionId
+      ? await adminSupabase
       .from("package_itinerary_days")
       .delete()
       .eq("package_id", packageId)
+      : { error: null as { message?: string } | null }
 
     if (deleteDaysError) {
       throw new Error(`Gagal menghapus itinerary hari lama: ${deleteDaysError.message}`)
@@ -625,7 +774,43 @@ export async function updatePackageStep4(formData: FormData) {
       }))
     })
 
+    const nextItinerary: PackageRevisionPayload["itinerary"] = []
+
     for (const [dayIndex, day] of orderedDays.entries()) {
+      if (revisionId) {
+        const dayRouteIndexes = dayNumbers.reduce((acc, value, idx) => {
+          if (value === day) acc.push(idx)
+          return acc
+        }, [] as number[])
+
+        nextItinerary.push({
+          day: Number(day),
+          translations: {
+            id: {
+              title: String(dayTitles.id[dayIndex] || "").trim(),
+              description: String(descriptions.id[dayIndex] || "").trim(),
+            },
+            en: {
+              title: String(dayTitles.en[dayIndex] || "").trim(),
+              description: String(descriptions.en[dayIndex] || "").trim(),
+            },
+            zh: {
+              title: String(dayTitles.zh[dayIndex] || "").trim(),
+              description: String(descriptions.zh[dayIndex] || "").trim(),
+            },
+          },
+          routes: dayRouteIndexes.map((absoluteIndex) => ({
+            pickup_time: normalizePickupTimeForStorage(pickupTimes[absoluteIndex] || "", pickupPeriods[absoluteIndex] || "AM"),
+            translations: {
+              id: String(translatedRoutes.id[absoluteIndex] || "").trim(),
+              en: String(translatedRoutes.en[absoluteIndex] || "").trim(),
+              zh: String(translatedRoutes.zh[absoluteIndex] || "").trim(),
+            },
+          })),
+        })
+        continue
+      }
+
       const { data: dayInsert, error: dayError } = await adminSupabase
         .from("package_itinerary_days")
         .insert({
@@ -697,6 +882,23 @@ export async function updatePackageStep4(formData: FormData) {
       }
     }
 
+    if (revisionId) {
+      const { payload: basePayload } = await getRevisionPayloadOrLive(adminSupabase, packageId, revisionId)
+      const nextPayload: PackageRevisionPayload = {
+        ...basePayload,
+        package: {
+          ...basePayload.package,
+          updated_at: new Date().toISOString(),
+        },
+        itinerary: nextItinerary,
+      }
+
+      await saveRevisionPayload(adminSupabase, revisionId, nextPayload, "Merchant memperbarui itinerary revisi paket")
+      revalidatePath("/merchant/paket")
+      revalidatePath(`/merchant/paket/${packageId}/edit`)
+      redirect(`/merchant/paket/${packageId}/edit?step=5&revision=${encodeURIComponent(revisionId)}`)
+    }
+
     revalidatePath("/merchant/paket")
     revalidatePath(`/merchant/paket/${packageId}/edit`)
   } catch (error) {
@@ -708,11 +910,19 @@ export async function updatePackageStep4(formData: FormData) {
 
 export async function submitEditedPackageForReview(formData: FormData) {
   const packageId = String(formData.get("package_id") || "")
+  const revisionId = String(formData.get("revision_id") || "").trim()
 
   try {
     if (!packageId) throw new Error("Package ID tidak ditemukan.")
 
-    const { adminSupabase } = await getOwnedMerchantPackage(packageId)
+    const { adminSupabase, user } = await getOwnedMerchantPackage(packageId)
+
+    if (revisionId) {
+      await submitPackageRevisionForReview(adminSupabase, revisionId, user.id)
+      revalidatePath("/merchant/paket")
+      revalidatePath(`/merchant/paket/${packageId}/edit`)
+      redirect("/merchant/paket?status=approved&success=Revisi paket berhasil dikirim untuk review admin")
+    }
 
     await markPackagePending(adminSupabase, packageId)
     revalidatePath("/merchant/paket")

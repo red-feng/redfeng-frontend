@@ -7,6 +7,7 @@ import { purgePackageRecords } from "@/lib/package-delete"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminAuditLog } from "@/lib/admin-audit"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
+import { approveRevisionById, rejectRevisionById } from "@/lib/package-revisions"
 
 function backToPackages(type: "success" | "error", message: string) {
   redirect(`/admin/packages?${type}=${encodeURIComponent(message)}`)
@@ -46,13 +47,33 @@ function assertSuperadmin(role: string) {
   }
 }
 
-export async function approvePackageById(packageId: string) {
+export async function approvePackageById(packageId: string, revisionId?: string | null) {
   if (!packageId) {
     throw new Error("Package ID tidak ditemukan.")
   }
 
   const supabase = createAdminClient()
   const actor = await getAdminActor()
+
+  if (revisionId) {
+    await approveRevisionById(supabase, revisionId, actor.id)
+    revalidatePath("/admin/dashboard")
+    revalidatePath("/admin/packages")
+
+    await createAdminAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      targetType: "package",
+      targetId: packageId,
+      action: "approve_revision",
+      summary: `Revisi package ${packageId} disetujui admin`,
+      metadata: {
+        revisionId,
+        status: "approved",
+      },
+    })
+    return
+  }
 
   const { error } = await supabase
     .from("packages")
@@ -83,13 +104,34 @@ export async function approvePackageById(packageId: string) {
   })
 }
 
-export async function rejectPackageById(packageId: string, reason: string) {
+export async function rejectPackageById(packageId: string, reason: string, revisionId?: string | null) {
   if (!packageId || !reason.trim()) {
     throw new Error("Data penolakan paket tidak lengkap.")
   }
 
   const supabase = createAdminClient()
   const actor = await getAdminActor()
+
+  if (revisionId) {
+    await rejectRevisionById(supabase, revisionId, reason, actor.id)
+    revalidatePath("/admin/dashboard")
+    revalidatePath("/admin/packages")
+
+    await createAdminAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      targetType: "package",
+      targetId: packageId,
+      action: "reject_revision",
+      summary: `Revisi package ${packageId} ditolak admin`,
+      metadata: {
+        revisionId,
+        status: "rejected",
+        reason: reason.trim(),
+      },
+    })
+    return
+  }
 
   const { error } = await supabase
     .from("packages")
@@ -142,7 +184,8 @@ export async function deletePackageById(packageId: string) {
 export async function approvePackage(formData: FormData) {
   try {
     const packageId = String(formData.get("packageId") || "")
-    await approvePackageById(packageId)
+    const revisionId = String(formData.get("revisionId") || "").trim()
+    await approvePackageById(packageId, revisionId || null)
   } catch (error) {
     backToPackages("error", error instanceof Error ? error.message : "Gagal menyetujui paket")
   }
@@ -154,7 +197,8 @@ export async function rejectPackage(formData: FormData) {
   try {
     const packageId = String(formData.get("packageId") || "")
     const reason = String(formData.get("reason") || "")
-    await rejectPackageById(packageId, reason)
+    const revisionId = String(formData.get("revisionId") || "").trim()
+    await rejectPackageById(packageId, reason, revisionId || null)
   } catch (error) {
     backToPackages("error", error instanceof Error ? error.message : "Gagal menolak paket")
   }

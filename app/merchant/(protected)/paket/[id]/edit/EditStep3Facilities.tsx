@@ -15,6 +15,7 @@ type Facility = {
 
 export default function EditStep3Facilities({
   packageId,
+  revisionId,
   facilities,
   selectedFacilityIds,
   defaultLanguage = "id",
@@ -22,6 +23,7 @@ export default function EditStep3Facilities({
   uiLocale = "id",
 }: {
   packageId: string
+  revisionId?: string | null
   facilities: Facility[]
   selectedFacilityIds: string[]
   defaultLanguage?: string
@@ -60,6 +62,7 @@ export default function EditStep3Facilities({
   return (
     <form action={updatePackageStep3} className="space-y-10">
       <input type="hidden" name="package_id" value={packageId} />
+      {revisionId ? <input type="hidden" name="revision_id" value={revisionId} /> : null}
 
       <div className="space-y-8">
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -113,7 +116,7 @@ export default function EditStep3Facilities({
 
       <div className="flex justify-between pt-4">
         <a
-          href={`?step=2`}
+          href={`?step=2${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
           {t.back}

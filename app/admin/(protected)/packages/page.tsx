@@ -20,6 +20,18 @@ type PackageRow = {
   rejection_reason: string | null
 }
 
+type PackageRevisionRow = {
+  id: string
+  package_id: string
+  merchant_id: string
+  status: string
+  payload: Record<string, unknown> | null
+  submitted_at: string | null
+  created_at: string | null
+  reviewed_at: string | null
+  rejection_reason: string | null
+}
+
 type MerchantRow = {
   id: string
   company_name: string | null
@@ -79,7 +91,22 @@ export default async function AdminPackagesPage({
     .order("created_at", { ascending: false })
 
   const packages = (packagesData as PackageRow[] | null) || []
-  const merchantIds = [...new Set(packages.map((pkg) => pkg.merchant_id).filter(Boolean))] as string[]
+  const { data: revisionsData } = await supabase
+    .from("package_revisions")
+    .select("id, package_id, merchant_id, status, payload, submitted_at, created_at, reviewed_at, rejection_reason")
+    .eq("status", "pending")
+    .order("submitted_at", { ascending: false })
+
+  const revisions = (revisionsData as PackageRevisionRow[] | null) || []
+  const revisionPackageIds = [...new Set(revisions.map((revision) => revision.package_id).filter(Boolean))] as string[]
+  const merchantIds = [
+    ...new Set([...packages.map((pkg) => pkg.merchant_id), ...revisions.map((revision) => revision.merchant_id)].filter(Boolean)),
+  ] as string[]
+
+  const { data: revisionPackagesData } = revisionPackageIds.length
+    ? await supabase.from("packages").select("id, package_code, title, status, merchant_id, price_adult, currency, created_at, reviewed_at, rejection_reason").in("id", revisionPackageIds)
+    : { data: [] as PackageRow[] }
+  const revisionPackageMap = new Map((((revisionPackagesData as PackageRow[] | null) || []) as PackageRow[]).map((pkg) => [pkg.id, pkg]))
 
   const { data: merchantsData } = merchantIds.length
     ? await supabase.from("merchants").select("id, company_name, brand_name").in("id", merchantIds)
@@ -92,7 +119,50 @@ export default async function AdminPackagesPage({
     ]),
   )
 
-  const pendingCount = packages.length
+  const queueEntries = [
+    ...packages.map((pkg) => ({
+      kind: "package" as const,
+      key: `package:${pkg.id}`,
+      packageId: pkg.id,
+      revisionId: null as string | null,
+      packageCode: pkg.package_code,
+      merchantId: pkg.merchant_id,
+      title: pkg.title || "Tanpa judul",
+      priceAdult: pkg.price_adult,
+      currency: pkg.currency,
+      createdAt: pkg.created_at,
+      reviewedAt: pkg.reviewed_at,
+      rejectionReason: pkg.rejection_reason,
+      status: pkg.status,
+      submittedAt: pkg.created_at,
+    })),
+    ...revisions.map((revision) => {
+      const payload = (revision.payload || {}) as Record<string, unknown>
+      const payloadPackage = (payload.package || {}) as Record<string, unknown>
+      const basePackage = revisionPackageMap.get(revision.package_id)
+      return {
+        kind: "revision" as const,
+        key: `revision:${revision.id}`,
+        packageId: revision.package_id,
+        revisionId: revision.id,
+        packageCode: basePackage?.package_code || null,
+        merchantId: revision.merchant_id || basePackage?.merchant_id || null,
+        title: String(payloadPackage.title || basePackage?.title || "Tanpa judul"),
+        priceAdult:
+          typeof payloadPackage.price_adult === "number"
+            ? payloadPackage.price_adult
+            : basePackage?.price_adult ?? null,
+        currency: String(payloadPackage.currency || basePackage?.currency || "IDR"),
+        createdAt: revision.created_at || basePackage?.created_at || null,
+        reviewedAt: revision.reviewed_at || null,
+        rejectionReason: revision.rejection_reason,
+        status: revision.status,
+        submittedAt: revision.submitted_at || revision.created_at || null,
+      }
+    }),
+  ].sort((a, b) => new Date(b.submittedAt || 0).getTime() - new Date(a.submittedAt || 0).getTime())
+
+  const pendingCount = queueEntries.length
   const merchantCount = merchantIds.length
 
   return (
@@ -166,30 +236,35 @@ export default async function AdminPackagesPage({
         ) : null}
 
         <div className="mt-5 space-y-4 sm:mt-6">
-          {!packages.length ? (
+          {!queueEntries.length ? (
             <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-slate-500 shadow-sm">
               Belum ada paket yang menunggu review.
             </div>
           ) : null}
 
-          {packages.map((pkg) => (
+          {queueEntries.map((entry) => (
             <div
-              key={pkg.id}
+              key={entry.key}
               className="grid gap-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:rounded-[26px] sm:p-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.9fr)]"
             >
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="max-w-3xl">
                     <div className="flex flex-wrap items-center gap-3">
-                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(pkg.status)}`}>
-                        {formatStatus(pkg.status)}
+                      <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(entry.status)}`}>
+                        {entry.kind === "revision" ? "Pending Revision" : formatStatus(entry.status)}
                       </span>
+                      {entry.kind === "revision" ? (
+                        <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                          Revisi merchant
+                        </span>
+                      ) : null}
                       <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                        Merchant: {pkg.merchant_id ? merchantMap.get(pkg.merchant_id) || formatMerchantCode(pkg.merchant_id) : "-"}
+                        Merchant: {entry.merchantId ? merchantMap.get(entry.merchantId) || formatMerchantCode(entry.merchantId) : "-"}
                       </span>
-                      {pkg.merchant_id ? (
+                      {entry.merchantId ? (
                         <Link
-                          href={`/admin/merchants/${pkg.merchant_id}`}
+                          href={`/admin/merchants/${entry.merchantId}`}
                           className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100"
                         >
                           Buka workspace merchant
@@ -197,35 +272,35 @@ export default async function AdminPackagesPage({
                       ) : null}
                     </div>
 
-                    <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pkg.title || "Tanpa judul"}</h2>
-                    <p className="mt-2 text-sm text-slate-500">Package ID: {formatPackageCode(pkg.package_code, pkg.id)}</p>
+                    <h2 className="mt-4 text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{entry.title}</h2>
+                    <p className="mt-2 text-sm text-slate-500">Package ID: {formatPackageCode(entry.packageCode, entry.packageId)}</p>
                   </div>
 
                   <div className="w-full rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 sm:w-auto">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Harga Dewasa</p>
-                    <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(pkg.price_adult, pkg.currency)}</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-950">{formatMoney(entry.priceAdult, entry.currency)}</p>
                   </div>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Dibuat</p>
-                    <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(pkg.created_at)}</p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(entry.createdAt)}</p>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Direview</p>
-                    <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(pkg.reviewed_at)}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{entry.kind === "revision" ? "Diajukan" : "Direview"}</p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(entry.kind === "revision" ? entry.submittedAt : entry.reviewedAt)}</p>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Catatan Revisi</p>
-                    <p className="mt-2 line-clamp-2 text-sm text-slate-700">{pkg.rejection_reason || "Belum ada catatan."}</p>
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-700">{entry.rejectionReason || "Belum ada catatan."}</p>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
                 <Link
-                  href={`/admin/packages/${encodeURIComponent(pkg.package_code || pkg.id)}`}
+                  href={`/admin/packages/${encodeURIComponent(entry.packageCode || entry.packageId)}${entry.revisionId ? `?revision=${encodeURIComponent(entry.revisionId)}` : ""}`}
                   className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-orange-300 hover:text-orange-600"
                 >
                   Detail
@@ -234,14 +309,16 @@ export default async function AdminPackagesPage({
                 {canExecuteAdminOps ? (
                   <>
                     <form action={approvePackage}>
-                      <input type="hidden" name="packageId" value={pkg.id} />
+                      <input type="hidden" name="packageId" value={entry.packageId} />
+                      {entry.revisionId ? <input type="hidden" name="revisionId" value={entry.revisionId} /> : null}
                       <button className="w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700">
                         Setujui
                       </button>
                     </form>
 
                     <form action={rejectPackage} className="space-y-3">
-                      <input type="hidden" name="packageId" value={pkg.id} />
+                      <input type="hidden" name="packageId" value={entry.packageId} />
+                      {entry.revisionId ? <input type="hidden" name="revisionId" value={entry.revisionId} /> : null}
                       <textarea
                         name="reason"
                         placeholder="Alasan penolakan atau revisi paket"
@@ -261,7 +338,7 @@ export default async function AdminPackagesPage({
 
                 {isSuperadmin ? (
                   <form action={deletePackage}>
-                    <input type="hidden" name="packageId" value={pkg.id} />
+                    <input type="hidden" name="packageId" value={entry.packageId} />
                     <ConfirmSubmitButton
                       confirmMessage="Yakin ingin menghapus permanen paket ini dari database? Tindakan ini tidak bisa dibatalkan."
                       className="w-full rounded-xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"

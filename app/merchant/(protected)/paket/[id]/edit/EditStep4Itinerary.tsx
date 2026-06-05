@@ -30,12 +30,14 @@ type DayType = {
 
 export default function EditStep4Itinerary({
   packageId,
+  revisionId,
   initialDays,
   defaultLanguage = "id",
   publishedLanguages,
   uiLocale = "id",
 }: {
   packageId: string
+  revisionId?: string | null
   initialDays: Array<{
     day: number
     translations: DayTranslation
@@ -512,6 +514,7 @@ export default function EditStep4Itinerary({
   return (
     <form action={updatePackageStep4} className="space-y-12">
       <input type="hidden" name="package_id" value={packageId} />
+      {revisionId ? <input type="hidden" name="revision_id" value={revisionId} /> : null}
       <input type="hidden" name="default_language" value={defaultLanguage} />
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -701,7 +704,7 @@ export default function EditStep4Itinerary({
           {t.addDay}
         </button>
         <a
-          href="?step=3"
+          href={`?step=3${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
           {t.back}

@@ -53,6 +53,7 @@ function normalizeTranslationValues(input?: Partial<TranslationValues> | null): 
 
 export default function EditStep2Details({
   packageId,
+  revisionId,
   defaultLanguage,
   publishedLanguages,
   initialTranslations,
@@ -61,6 +62,7 @@ export default function EditStep2Details({
   uiLocale = "id",
 }: {
   packageId: string
+  revisionId?: string | null
   defaultLanguage: string
   publishedLanguages: string[]
   initialTranslations: Record<string, Partial<TranslationValues>>
@@ -288,6 +290,7 @@ export default function EditStep2Details({
   return (
     <form action={updatePackageStep2} className="space-y-8">
       <input type="hidden" name="package_id" value={packageId} />
+      {revisionId ? <input type="hidden" name="revision_id" value={revisionId} /> : null}
 
       <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm text-orange-700">
         {t.defaultLanguageNotice}: <strong>{defaultLanguage}</strong>. Minimal isi konten bahasa default.
@@ -506,7 +509,7 @@ export default function EditStep2Details({
 
       <div className="flex justify-between pt-4">
         <a
-          href={`?step=1`}
+          href={`?step=1${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
           {t.back}

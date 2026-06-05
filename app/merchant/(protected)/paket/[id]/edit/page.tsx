@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server"
 import { getCurrentLocale } from "@/lib/locale"
 import { getMerchantWizardText } from "@/lib/merchant-wizard-i18n"
 import { normalizeLocale } from "@/lib/i18n"
+import { ensureEditableRevision, getRevisionById } from "@/lib/package-revisions"
 import EditStep1Basic from "./EditStep1Basic"
 import EditStep2Details from "./EditStep2Details"
 import EditStep3Facilities from "./EditStep3Facilities"
@@ -13,7 +14,7 @@ import EditStep5Review from "./EditStep5Review"
 
 type EditPackagePageProps = {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ step?: string; error?: string }>
+  searchParams: Promise<{ step?: string; error?: string; revision?: string }>
 }
 
 type EditablePackage = {
@@ -50,6 +51,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const { id: routeId } = await params
   const resolvedSearchParams = await searchParams
   const uiLocale = await getCurrentLocale()
+  const requestedRevisionId = String(resolvedSearchParams.revision || "").trim()
   const activeStep = ["1", "2", "3", "4", "5"].includes(resolvedSearchParams.step || "")
     ? String(resolvedSearchParams.step)
     : "1"
@@ -150,37 +152,78 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
 
   const wizardLocale = normalizeLocale(uiLocale)
   const wizardText = getMerchantWizardText(wizardLocale)
+  const isRevisionBackedEdit = pkg.status === "approved" || pkg.status === "inactive"
+  let activeRevisionId: string | null = null
+  let revisionPayload: Awaited<ReturnType<typeof ensureEditableRevision>>["livePayload"] | null = null
+
+  if (isRevisionBackedEdit) {
+    const revisionContext = requestedRevisionId
+      ? { revision: await getRevisionById(adminSupabase, requestedRevisionId) }
+      : await ensureEditableRevision(adminSupabase, packageInternalId, merchant.id)
+
+    const activeRevision = revisionContext.revision
+    if (activeRevision.package_id !== packageInternalId) {
+      return <div className="p-10">Revision paket tidak cocok dengan paket yang sedang dibuka.</div>
+    }
+
+    if (activeRevision.status === "pending") {
+      return (
+        <div className="p-10">
+          Revisi paket ini sedang direview admin dan belum bisa diedit lagi sampai keputusan review keluar.
+        </div>
+      )
+    }
+
+    activeRevisionId = activeRevision.id
+    revisionPayload = activeRevision.payload
+  }
 
   const [translationsResult, detailsResult, tagsResult, facilitiesResult, selectedFacilitiesResult, itineraryResult] = await Promise.all([
-    adminSupabase
-      .from("package_translations")
-      .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
-      .eq("package_id", packageInternalId),
-    adminSupabase
-      .from("package_details")
-      .select("meeting_point, map_embed, location_label, location_type, primary_lat, primary_lng, viewport_radius_km")
-      .eq("package_id", packageInternalId)
-      .maybeSingle(),
-    adminSupabase
-      .from("package_tags")
-      .select("tag")
-      .eq("package_id", packageInternalId),
+    !revisionPayload
+      ? adminSupabase
+          .from("package_translations")
+          .select("language_code, title, about_tour, service_standard, include, exclude, preparation, terms_conditions, meeting_point, highlights, currency, price_adult, price_child")
+          .eq("package_id", packageInternalId)
+      : Promise.resolve({ data: [], error: null }),
+    !revisionPayload
+      ? adminSupabase
+          .from("package_details")
+          .select("meeting_point, map_embed, location_label, location_type, primary_lat, primary_lng, viewport_radius_km")
+          .eq("package_id", packageInternalId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    !revisionPayload
+      ? adminSupabase
+          .from("package_tags")
+          .select("tag")
+          .eq("package_id", packageInternalId)
+      : Promise.resolve({ data: [], error: null }),
     adminSupabase
       .from("facilities")
       .select("id, name, category")
       .order("category", { ascending: true }),
-    adminSupabase
-      .from("package_facilities")
-      .select("facility_id")
-      .eq("package_id", packageInternalId),
-    adminSupabase
-      .from("package_itinerary_days")
-      .select("id, day_number, day_title, package_itinerary_routes(id, pickup_time, route, description)")
-      .eq("package_id", packageInternalId)
-      .order("day_number", { ascending: true }),
+    !revisionPayload
+      ? adminSupabase
+          .from("package_facilities")
+          .select("facility_id")
+          .eq("package_id", packageInternalId)
+      : Promise.resolve({ data: [], error: null }),
+    !revisionPayload
+      ? adminSupabase
+          .from("package_itinerary_days")
+          .select("id, day_number, day_title, package_itinerary_routes(id, pickup_time, route, description)")
+          .eq("package_id", packageInternalId)
+          .order("day_number", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
   ])
 
-  const translations = Object.fromEntries(
+  const translations = revisionPayload
+    ? {
+        id: revisionPayload.translations.id,
+        en: revisionPayload.translations.en,
+        zh: revisionPayload.translations.zh,
+      }
+    : Object.fromEntries(
       ((translationsResult.data || []) as Array<{
         language_code: string | null
         title: string | null
@@ -214,16 +257,20 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     ]),
   )
 
-  const details = detailsResult.data || {
-    meeting_point: "",
-    map_embed: "",
-    location_label: "",
-    location_type: "",
-    primary_lat: null,
-    primary_lng: null,
-    viewport_radius_km: null,
-  }
-  const tags = ((tagsResult.data || []) as Array<{ tag: string | null }>).map((item) => item.tag).filter(Boolean).join(", ")
+  const details = revisionPayload
+    ? revisionPayload.details
+    : detailsResult.data || {
+        meeting_point: "",
+        map_embed: "",
+        location_label: "",
+        location_type: "",
+        primary_lat: null,
+        primary_lng: null,
+        viewport_radius_km: null,
+      }
+  const tags = revisionPayload
+    ? revisionPayload.tags.join(", ")
+    : ((tagsResult.data || []) as Array<{ tag: string | null }>).map((item) => item.tag).filter(Boolean).join(", ")
   for (const lang of ["id", "en", "zh"]) {
     if (!translations[lang]) {
         translations[lang] = {
@@ -244,8 +291,12 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     if (!translations[lang].meeting_point) translations[lang].meeting_point = details.meeting_point || ""
     if (!translations[lang].highlights) translations[lang].highlights = tags
   }
-  const selectedFacilityIds = ((selectedFacilitiesResult.data || []) as Array<{ facility_id: string }>).map((item) => item.facility_id)
-  const itineraryDays = ((itineraryResult.data || []) as Array<{
+  const selectedFacilityIds = revisionPayload
+    ? revisionPayload.facility_ids
+    : ((selectedFacilitiesResult.data || []) as Array<{ facility_id: string }>).map((item) => item.facility_id)
+  const itineraryDays = revisionPayload
+    ? []
+    : ((itineraryResult.data || []) as Array<{
     id?: string
     day_number: number
     day_title: string | null
@@ -261,13 +312,13 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
   const itineraryRouteIds = itineraryDays.flatMap((day) => (day.package_itinerary_routes || []).map((route) => route.id).filter(Boolean))
 
   const [dayTranslationResult, routeTranslationResult] = await Promise.all([
-    itineraryDayIds.length > 0
+    !revisionPayload && itineraryDayIds.length > 0
       ? adminSupabase
           .from("package_itinerary_day_translations")
           .select("itinerary_day_id, language_code, day_title")
           .in("itinerary_day_id", itineraryDayIds)
       : Promise.resolve({ data: [], error: null }),
-    itineraryRouteIds.length > 0
+    !revisionPayload && itineraryRouteIds.length > 0
       ? adminSupabase
           .from("package_itinerary_route_translations")
           .select("itinerary_route_id, language_code, route, description")
@@ -298,35 +349,37 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
     ]),
   )
 
-  const initialItineraryDays = itineraryDays.map((day) => {
-    const firstRoute = day.package_itinerary_routes?.[0]
+  const initialItineraryDays = revisionPayload
+    ? revisionPayload.itinerary
+    : itineraryDays.map((day) => {
+        const firstRoute = day.package_itinerary_routes?.[0]
 
-    return {
-      day: day.day_number,
-      translations: {
-        id: {
-          title: dayTranslationsMap.get(`${day.id}:id`) || day.day_title || "",
-          description: routeTranslationsMap.get(`${firstRoute?.id}:id`)?.description || firstRoute?.description || "",
-        },
-        en: {
-          title: dayTranslationsMap.get(`${day.id}:en`) || "",
-          description: routeTranslationsMap.get(`${firstRoute?.id}:en`)?.description || "",
-        },
-        zh: {
-          title: dayTranslationsMap.get(`${day.id}:zh`) || "",
-          description: routeTranslationsMap.get(`${firstRoute?.id}:zh`)?.description || "",
-        },
-      },
-      routes: (day.package_itinerary_routes || []).map((route) => ({
-        pickup_time: route.pickup_time || "",
-        translations: {
-          id: routeTranslationsMap.get(`${route.id}:id`)?.route || route.route || "",
-          en: routeTranslationsMap.get(`${route.id}:en`)?.route || "",
-          zh: routeTranslationsMap.get(`${route.id}:zh`)?.route || "",
-        },
-      })),
-    }
-  })
+        return {
+          day: day.day_number,
+          translations: {
+            id: {
+              title: dayTranslationsMap.get(`${day.id}:id`) || day.day_title || "",
+              description: routeTranslationsMap.get(`${firstRoute?.id}:id`)?.description || firstRoute?.description || "",
+            },
+            en: {
+              title: dayTranslationsMap.get(`${day.id}:en`) || "",
+              description: routeTranslationsMap.get(`${firstRoute?.id}:en`)?.description || "",
+            },
+            zh: {
+              title: dayTranslationsMap.get(`${day.id}:zh`) || "",
+              description: routeTranslationsMap.get(`${firstRoute?.id}:zh`)?.description || "",
+            },
+          },
+          routes: (day.package_itinerary_routes || []).map((route) => ({
+            pickup_time: route.pickup_time || "",
+            translations: {
+              id: routeTranslationsMap.get(`${route.id}:id`)?.route || route.route || "",
+              en: routeTranslationsMap.get(`${route.id}:en`)?.route || "",
+              zh: routeTranslationsMap.get(`${route.id}:zh`)?.route || "",
+            },
+          })),
+        }
+      })
 
   const stepItems = [
     { key: "1", label: wizardText.step1Short },
@@ -366,7 +419,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
           {stepItems.map((step) => (
             <Link
               key={step.key}
-              href={`/merchant/paket/${encodeURIComponent(packageRouteRef)}/edit?step=${step.key}`}
+              href={`/merchant/paket/${encodeURIComponent(packageRouteRef)}/edit?step=${step.key}${activeRevisionId ? `&revision=${encodeURIComponent(activeRevisionId)}` : ""}`}
               className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                 activeStep === step.key
                   ? "bg-slate-900 text-white"
@@ -389,43 +442,44 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "1" && (
           <EditStep1Basic
             packageId={packageInternalId}
+            revisionId={activeRevisionId}
             countries={(countries || []) as Array<{ id: string; name: string }>}
             uiLocale={uiLocale}
             initialData={{
-              title: pkg.title || "",
-              travel_style: pkg.travel_style || "",
-              departure_date: pkg.departure_date || "",
-              origin_country_id: pkg.origin_country_id || "",
-              origin_province: pkg.origin_province || "",
-              destination_country_id: pkg.destination_country_id || "",
-              destination_province: pkg.destination_province || "",
-              currency: pkg.currency || "IDR",
-              minimal_peserta: pkg.minimal_peserta ?? 1,
-              duration: pkg.duration ?? 1,
-              price_adult: pkg.price_adult ?? 0,
-              price_child: pkg.price_child ?? 0,
-              default_language: pkg.default_language || "id",
-              published_languages: pkg.published_languages || [pkg.default_language || "id"],
+              title: revisionPayload?.package.title || pkg.title || "",
+              travel_style: revisionPayload?.package.travel_style || pkg.travel_style || "",
+              departure_date: revisionPayload?.package.departure_date || pkg.departure_date || "",
+              origin_country_id: revisionPayload?.package.origin_country_id || pkg.origin_country_id || "",
+              origin_province: revisionPayload?.package.origin_province || pkg.origin_province || "",
+              destination_country_id: revisionPayload?.package.destination_country_id || pkg.destination_country_id || "",
+              destination_province: revisionPayload?.package.destination_province || pkg.destination_province || "",
+              currency: revisionPayload?.package.currency || pkg.currency || "IDR",
+              minimal_peserta: revisionPayload?.package.minimal_peserta ?? pkg.minimal_peserta ?? 1,
+              duration: revisionPayload?.package.duration ?? pkg.duration ?? 1,
+              price_adult: revisionPayload?.package.price_adult ?? pkg.price_adult ?? 0,
+              price_child: revisionPayload?.package.price_child ?? pkg.price_child ?? 0,
+              default_language: revisionPayload?.package.default_language || pkg.default_language || "id",
+              published_languages: revisionPayload?.package.published_languages || pkg.published_languages || [pkg.default_language || "id"],
               titles: {
-                id: translations.id?.title || (pkg.default_language === "id" ? pkg.title || "" : ""),
-                en: translations.en?.title || (pkg.default_language === "en" ? pkg.title || "" : ""),
-                zh: translations.zh?.title || (pkg.default_language === "zh" ? pkg.title || "" : ""),
+                id: translations.id?.title || ((revisionPayload?.package.default_language || pkg.default_language) === "id" ? revisionPayload?.package.title || pkg.title || "" : ""),
+                en: translations.en?.title || ((revisionPayload?.package.default_language || pkg.default_language) === "en" ? revisionPayload?.package.title || pkg.title || "" : ""),
+                zh: translations.zh?.title || ((revisionPayload?.package.default_language || pkg.default_language) === "zh" ? revisionPayload?.package.title || pkg.title || "" : ""),
               },
               pricing: {
                 id: {
-                  currency: translations.id?.currency || pkg.currency || "IDR",
-                  price_adult: translations.id?.price_adult ?? pkg.price_adult ?? 0,
-                  price_child: translations.id?.price_child ?? pkg.price_child ?? 0,
+                  currency: translations.id?.currency || revisionPayload?.package.currency || pkg.currency || "IDR",
+                  price_adult: translations.id?.price_adult ?? revisionPayload?.package.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.id?.price_child ?? revisionPayload?.package.price_child ?? pkg.price_child ?? 0,
                 },
                 en: {
-                  currency: translations.en?.currency || pkg.currency || "USD",
-                  price_adult: translations.en?.price_adult ?? pkg.price_adult ?? 0,
-                  price_child: translations.en?.price_child ?? pkg.price_child ?? 0,
+                  currency: translations.en?.currency || "USD",
+                  price_adult: translations.en?.price_adult ?? revisionPayload?.package.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.en?.price_child ?? revisionPayload?.package.price_child ?? pkg.price_child ?? 0,
                 },
                 zh: {
-                  currency: translations.zh?.currency || pkg.currency || "CNY",
-                  price_adult: translations.zh?.price_adult ?? pkg.price_adult ?? 0,
-                  price_child: translations.zh?.price_child ?? pkg.price_child ?? 0,
+                  currency: translations.zh?.currency || "CNY",
+                  price_adult: translations.zh?.price_adult ?? revisionPayload?.package.price_adult ?? pkg.price_adult ?? 0,
+                  price_child: translations.zh?.price_child ?? revisionPayload?.package.price_child ?? pkg.price_child ?? 0,
                 },
               },
             }}
@@ -435,6 +489,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "2" && (
           <EditStep2Details
             packageId={packageInternalId}
+            revisionId={activeRevisionId}
             defaultLanguage={pkg.default_language || "id"}
             publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
             uiLocale={uiLocale}
@@ -453,6 +508,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "3" && (
             <EditStep3Facilities
               packageId={packageInternalId}
+              revisionId={activeRevisionId}
               facilities={(facilitiesResult.data || []) as Array<{ id: string; name: string; category: string }>}
               selectedFacilityIds={selectedFacilityIds}
               defaultLanguage={pkg.default_language || "id"}
@@ -464,6 +520,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "4" && (
           <EditStep4Itinerary
             packageId={packageInternalId}
+            revisionId={activeRevisionId}
             initialDays={initialItineraryDays}
             defaultLanguage={pkg.default_language || "id"}
             publishedLanguages={pkg.published_languages || [pkg.default_language || "id"]}
@@ -474,6 +531,7 @@ export default async function EditPackagePage({ params, searchParams }: EditPack
         {activeStep === "5" && (
           <EditStep5Review
             packageId={packageInternalId}
+            revisionId={activeRevisionId}
             defaultLanguage={pkg.default_language || "id"}
             uiLocale={uiLocale}
           />

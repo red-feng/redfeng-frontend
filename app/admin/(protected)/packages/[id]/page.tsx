@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
 import { isAdminExecutionRole } from "@/lib/internal-roles"
 import { toneClass } from "@/lib/status-tones"
+import { getRevisionById } from "@/lib/package-revisions"
 import { approvePackage, deletePackage, rejectPackage } from "./actions"
 import Image from "next/image"
 import { formatTravelStyleLabel } from "@/lib/travelStyles"
@@ -184,12 +185,16 @@ function getGeoReviewIssues(detail: PackageDetailRow | null | undefined): GeoRev
 
 export default async function Page({
   params,
+  searchParams,
   portal = "admin",
 }: {
   params: Promise<{ id: string }>
+  searchParams?: Promise<{ revision?: string }>
   portal?: "admin" | "superadmin"
 }) {
   const { id } = await params
+  const resolvedSearchParams = (await searchParams) || {}
+  const requestedRevisionId = String(resolvedSearchParams.revision || "").trim()
   const supabase = createAdminClient()
   const authSupabase = await createClient(portal)
   const {
@@ -222,6 +227,11 @@ export default async function Page({
     redirect(`${portal === "superadmin" ? "/superadmin/packages" : "/admin/packages"}/${encodeURIComponent(pkg.package_code)}`)
   }
   const packageInternalId = pkg.id
+  const revisionRecord = requestedRevisionId ? await getRevisionById(supabase, requestedRevisionId) : null
+  if (revisionRecord && revisionRecord.package_id !== packageInternalId) {
+    return <div className="p-8">Revision paket tidak cocok dengan paket yang sedang dibuka.</div>
+  }
+  const revisionPayload = revisionRecord?.payload || null
 
   const { data: merchant } = await supabase
     .from("merchants")
@@ -279,6 +289,14 @@ export default async function Page({
     `)
     .eq("package_id", packageInternalId)
   const facilities = (facilitiesData as PackageFacilityRow[] | null) || []
+  const revisionFacilityIds = revisionPayload?.facility_ids || []
+  const { data: revisionFacilityLookupData } = revisionFacilityIds.length > 0
+    ? await supabase.from("facilities").select("id, name").in("id", revisionFacilityIds)
+    : { data: [] as Array<{ id: string; name: string | null }> }
+  const revisionFacilityLookup = new Map(
+    (((revisionFacilityLookupData as Array<{ id: string; name: string | null }> | null) || []) as Array<{ id: string; name: string | null }>)
+      .map((facility) => [facility.id, facility.name || "-"]),
+  )
 
   const { data: tagsData } = await supabase
     .from("package_tags")
@@ -340,10 +358,55 @@ export default async function Page({
 
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
   const publishedLanguageLabels =
-    Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
-      ? pkg.published_languages.map((code: string) => getLanguageLabel(code)).join(", ")
-      : getLanguageLabel(pkg.default_language)
-  const geoReviewIssues = getGeoReviewIssues(detail)
+    revisionPayload?.package.published_languages?.length
+      ? revisionPayload.package.published_languages.map((code: string) => getLanguageLabel(code)).join(", ")
+      : Array.isArray(pkg.published_languages) && pkg.published_languages.length > 0
+        ? pkg.published_languages.map((code: string) => getLanguageLabel(code)).join(", ")
+        : getLanguageLabel(pkg.default_language)
+  const effectiveDetail = revisionPayload
+    ? {
+        meeting_point: revisionPayload.details.meeting_point || null,
+        map_embed: revisionPayload.details.map_embed || null,
+        location_label: revisionPayload.details.location_label || null,
+        location_type: revisionPayload.details.location_type || null,
+        primary_lat: revisionPayload.details.primary_lat,
+        primary_lng: revisionPayload.details.primary_lng,
+        viewport_radius_km: revisionPayload.details.viewport_radius_km,
+      }
+    : detail
+  const effectiveTranslations = revisionPayload
+    ? (["id", "en", "zh"] as const).map((code) => ({
+        language_code: code,
+        ...revisionPayload.translations[code],
+      }))
+    : sortedTranslations
+  const effectivePrimaryTranslation = revisionPayload
+    ? {
+        language_code: revisionPayload.package.default_language,
+        ...revisionPayload.translations[revisionPayload.package.default_language],
+      }
+    : primaryTranslation
+  const effectiveTags = revisionPayload ? revisionPayload.tags.map((tag, index) => ({ id: `${index}`, tag })) : tags
+  const effectiveFacilities = revisionPayload
+    ? revisionPayload.facility_ids.map((facilityId) => ({
+        facility_id: facilityId,
+        facilities: { name: revisionFacilityLookup.get(facilityId) || "-" },
+      }))
+    : facilities
+  const effectiveItineraryDays = revisionPayload
+    ? revisionPayload.itinerary.map((day, index) => ({
+        id: `revision-day-${index + 1}`,
+        day_number: day.day,
+        day_title: day.translations[revisionPayload.package.default_language].title || null,
+        package_itinerary_routes: day.routes.map((route, routeIndex) => ({
+          id: `revision-route-${index + 1}-${routeIndex + 1}`,
+          pickup_time: route.pickup_time || null,
+          route: route.translations[revisionPayload.package.default_language] || null,
+          description: day.translations[revisionPayload.package.default_language].description || null,
+        })),
+      }))
+    : itineraryDays
+  const geoReviewIssues = getGeoReviewIssues(effectiveDetail)
   const hasBlockingGeoIssue = geoReviewIssues.some((issue) => issue.tone === "blocking")
 
   return (
@@ -357,11 +420,16 @@ export default async function Page({
                   Tinjauan Paket Admin
                 </p>
                 <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-                  {primaryTranslation?.title || pkg.title}
+                  {effectivePrimaryTranslation?.title || pkg.title}
                 </h1>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   Merchant: {merchant?.company_name || "-"} | ID Paket: {formatPackageCode(pkg.package_code, pkg.id)}
                 </p>
+                {revisionRecord ? (
+                  <p className="mt-2 text-sm leading-6 text-sky-700">
+                    Sedang meninjau revisi merchant yang diajukan pada {revisionRecord.submitted_at ? new Date(revisionRecord.submitted_at).toLocaleString("id-ID") : "-"}.
+                  </p>
+                ) : null}
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">{statusSummary(pkg.status)}</p>
               </div>
 
@@ -416,7 +484,7 @@ export default async function Page({
                   <div className="max-w-2xl">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/75">Hero Preview</p>
                     <h2 className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">
-                      {primaryTranslation?.title || pkg.title}
+                      {effectivePrimaryTranslation?.title || pkg.title}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-white/85">
                       {countryMap.get(pkg.origin_country_id) || "-"} - {pkg.origin_province || "-"} menuju{" "}
@@ -458,45 +526,45 @@ export default async function Page({
 
             <AdminPackageReviewTabs
               detailContent={{
-                title: primaryTranslation?.title || pkg.title || "-",
-                about_tour: primaryTranslation?.about_tour || null,
-                meeting_point: primaryTranslation?.meeting_point || detail?.meeting_point || null,
-                location_label: detail?.location_label || null,
-                location_type: detail?.location_type || null,
-                primary_lat: detail?.primary_lat ?? null,
-                primary_lng: detail?.primary_lng ?? null,
-                viewport_radius_km: detail?.viewport_radius_km ?? null,
-                service_standard: primaryTranslation?.service_standard || null,
-                include: primaryTranslation?.include || null,
-                exclude: primaryTranslation?.exclude || null,
+                title: effectivePrimaryTranslation?.title || pkg.title || "-",
+                about_tour: effectivePrimaryTranslation?.about_tour || null,
+                meeting_point: effectivePrimaryTranslation?.meeting_point || effectiveDetail?.meeting_point || null,
+                location_label: effectiveDetail?.location_label || null,
+                location_type: effectiveDetail?.location_type || null,
+                primary_lat: effectiveDetail?.primary_lat ?? null,
+                primary_lng: effectiveDetail?.primary_lng ?? null,
+                viewport_radius_km: effectiveDetail?.viewport_radius_km ?? null,
+                service_standard: effectivePrimaryTranslation?.service_standard || null,
+                include: effectivePrimaryTranslation?.include || null,
+                exclude: effectivePrimaryTranslation?.exclude || null,
                 highlights:
-                  primaryTranslation?.highlights ||
-                  (tags.length > 0 ? tags.map((tag) => tag.tag).join(", ") : null),
-                preparation: primaryTranslation?.preparation || null,
-                terms_conditions: primaryTranslation?.terms_conditions || null,
-                map_embed: detail?.map_embed || null,
+                  effectivePrimaryTranslation?.highlights ||
+                  (effectiveTags.length > 0 ? effectiveTags.map((tag) => tag.tag).join(", ") : null),
+                preparation: effectivePrimaryTranslation?.preparation || null,
+                terms_conditions: effectivePrimaryTranslation?.terms_conditions || null,
+                map_embed: effectiveDetail?.map_embed || null,
               }}
-              translations={sortedTranslations.map((translation) => ({
+              translations={effectiveTranslations.map((translation) => ({
                 ...translation,
-                meeting_point: translation.meeting_point || detail?.meeting_point || null,
+                meeting_point: translation.meeting_point || effectiveDetail?.meeting_point || null,
                 highlights: translation.highlights || null,
               }))}
               defaultLanguage={pkg.default_language}
-              publishedLanguages={availableLanguageCodes}
+              publishedLanguages={revisionPayload?.package.published_languages || availableLanguageCodes}
               fallbackTitle={pkg.title}
-              facilities={facilities.map((facility) => ({
+              facilities={effectiveFacilities.map((facility) => ({
                 id: facility.facility_id,
                 rawName: getFacilityName(facility.facilities),
               }))}
-              tags={tags.map((tag) => ({
+              tags={effectiveTags.map((tag) => ({
                 id: tag.id,
                 label: tag.tag,
               }))}
-              itineraryDays={itineraryDays.map((day) => ({
+              itineraryDays={effectiveItineraryDays.map((day) => ({
                 id: day.id,
                 day_number: day.day_number,
                 translations: Object.fromEntries(
-                  availableLanguageCodes.map((languageCode) => [
+                  (revisionPayload?.package.published_languages || availableLanguageCodes).map((languageCode) => [
                     languageCode,
                     {
                       title:
@@ -576,7 +644,7 @@ export default async function Page({
                       className="mt-4"
                       action={async () => {
                         "use server"
-                        await approvePackage(packageInternalId)
+                        await approvePackage(packageInternalId, revisionRecord?.id)
                       }}
                     >
                       <button
@@ -592,7 +660,7 @@ export default async function Page({
                       action={async (formData) => {
                         "use server"
                         const reason = formData.get("reason") as string
-                        await rejectPackage(packageInternalId, reason)
+                        await rejectPackage(packageInternalId, reason, revisionRecord?.id)
                       }}
                     >
                       <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -673,24 +741,24 @@ export default async function Page({
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Label Lokasi Peta</dt>
-                  <dd className="mt-1 font-medium text-slate-900">{detail?.location_label || "-"}</dd>
+                  <dd className="mt-1 font-medium text-slate-900">{effectiveDetail?.location_label || "-"}</dd>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Tipe Lokasi Peta</dt>
-                  <dd className="mt-1 font-medium text-slate-900">{formatLocationType(detail?.location_type)}</dd>
+                  <dd className="mt-1 font-medium text-slate-900">{formatLocationType(effectiveDetail?.location_type)}</dd>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Koordinat</dt>
                   <dd className="mt-1 font-medium text-slate-900">
-                    {detail && detail.primary_lat !== null && detail.primary_lng !== null
-                      ? `${detail.primary_lat}, ${detail.primary_lng}`
+                    {effectiveDetail && effectiveDetail.primary_lat !== null && effectiveDetail.primary_lng !== null
+                      ? `${effectiveDetail.primary_lat}, ${effectiveDetail.primary_lng}`
                       : "-"}
                   </dd>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
                   <dt className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Radius Area</dt>
                   <dd className="mt-1 font-medium text-slate-900">
-                    {detail && detail.viewport_radius_km !== null ? `${detail.viewport_radius_km} km` : "-"}
+                    {effectiveDetail && effectiveDetail.viewport_radius_km !== null ? `${effectiveDetail.viewport_radius_km} km` : "-"}
                   </dd>
                 </div>
               </dl>

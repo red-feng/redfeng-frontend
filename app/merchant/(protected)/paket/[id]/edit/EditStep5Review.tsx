@@ -6,10 +6,12 @@ import { normalizeLocale } from "@/lib/i18n"
 
 export default function EditStep5Review({
   packageId,
+  revisionId,
   defaultLanguage: _defaultLanguage = "id",
   uiLocale = "id",
 }: {
   packageId: string
+  revisionId?: string | null
   defaultLanguage?: string
   uiLocale?: string
 }) {
@@ -19,6 +21,7 @@ export default function EditStep5Review({
   return (
     <form action={submitEditedPackageForReview} className="space-y-8">
       <input type="hidden" name="package_id" value={packageId} />
+      {revisionId ? <input type="hidden" name="revision_id" value={revisionId} /> : null}
 
       <div className="rounded-2xl border border-orange-200 bg-orange-50 p-6">
         <p className="font-medium text-slate-900">{t.reviewSubmitInfoTitle}</p>
@@ -31,7 +34,7 @@ export default function EditStep5Review({
 
       <div className="flex flex-wrap gap-4">
         <a
-          href="?step=4"
+          href={`?step=4${revisionId ? `&revision=${encodeURIComponent(revisionId)}` : ""}`}
           className="rounded-2xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
         >
           {t.back}

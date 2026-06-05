@@ -34,11 +34,13 @@ type Step1InitialData = {
 
 export default function EditStep1Basic({
   packageId,
+  revisionId,
   countries,
   initialData,
   uiLocale = "id",
 }: {
   packageId: string
+  revisionId?: string | null
   countries: Country[]
   initialData: Step1InitialData
   uiLocale?: string
@@ -383,6 +385,7 @@ export default function EditStep1Basic({
   return (
     <form action={updatePackageStep1} className="space-y-6">
       <input type="hidden" name="package_id" value={packageId} />
+      {revisionId ? <input type="hidden" name="revision_id" value={revisionId} /> : null}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="md:col-span-2">
