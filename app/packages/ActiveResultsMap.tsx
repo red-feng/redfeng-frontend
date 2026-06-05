@@ -103,17 +103,11 @@ export default function ActiveResultsMap({
       zoomControl={false}
       scrollWheelZoom
       minZoom={2}
-      maxBounds={[
-        [-85, -180],
-        [85, 180],
-      ]}
-      maxBoundsViscosity={1}
-      worldCopyJump={false}
+      worldCopyJump
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        noWrap
       />
       <BoundsSync bbox={bbox} onBoundsChange={onBoundsChange} />
       {markers.map((point) => (
