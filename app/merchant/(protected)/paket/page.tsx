@@ -371,6 +371,10 @@ export default async function MerchantPackagePage({
                     entry.kind === "revision"
                       ? revisionPackagePayload?.travel_style || pkg.travel_style
                       : pkg.travel_style
+                  const queueTypeLabel =
+                    entry.kind === "revision"
+                      ? (t.revisionQueueLabel || t.pendingRevisionStatus)
+                      : (t.newPackageQueueLabel || t.pendingReviewStatus)
                   return (
                     <>
                 <div className="flex items-start justify-between gap-4">
@@ -389,6 +393,27 @@ export default async function MerchantPackagePage({
                     ) : null}
                   </div>
                 </div>
+
+                {activeStatus === "pending" ? (
+                  <div className="mt-4 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                        {t.queueTypeLabel || "Queue Type"}
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-900">{queueTypeLabel}</p>
+                    </div>
+                    {entry.kind === "revision" ? (
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+                          {t.livePackageStatusLabel || "Live Package Status"}
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-slate-900">
+                          {formatStatus(pkg.status, t.pendingReviewStatus, t.rejected, t.active, t.draft, t.inactivePackages)}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 {pkg.status === "rejected" && (
                   <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4">

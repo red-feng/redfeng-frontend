@@ -96,6 +96,10 @@ type MerchantShellDictionary = {
     draftRevisionStatus?: string
     rejectedRevisionStatus?: string
     revisionStatus?: string
+    queueTypeLabel?: string
+    newPackageQueueLabel?: string
+    revisionQueueLabel?: string
+    livePackageStatusLabel?: string
     revisionSubmittedDate?: string
     revisionUnderReview?: string
     revisionPendingHelp?: string
@@ -202,6 +206,10 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       draftRevisionStatus: "Draft Revisi",
       rejectedRevisionStatus: "Revisi Ditolak",
       revisionStatus: "Status Revisi",
+      queueTypeLabel: "Tipe Antrean",
+      newPackageQueueLabel: "Paket Baru",
+      revisionQueueLabel: "Revisi Paket Live",
+      livePackageStatusLabel: "Status Paket Live",
       revisionSubmittedDate: "Tanggal kirim revisi",
       revisionUnderReview: "Revisi sedang direview admin",
       revisionPendingHelp: "Paket live tetap aktif, tetapi perubahan terbaru Anda belum tayang sampai admin menyetujui revisi ini.",
@@ -306,6 +314,10 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       draftRevisionStatus: "Revision Draft",
       rejectedRevisionStatus: "Revision Rejected",
       revisionStatus: "Revision Status",
+      queueTypeLabel: "Queue Type",
+      newPackageQueueLabel: "New Package",
+      revisionQueueLabel: "Live Package Revision",
+      livePackageStatusLabel: "Live Package Status",
       revisionSubmittedDate: "Revision submission date",
       revisionUnderReview: "The revision is currently under admin review",
       revisionPendingHelp: "The live package stays active, but your latest changes will not appear until the admin approves this revision.",
@@ -409,6 +421,10 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       draftRevisionStatus: "修订草稿",
       rejectedRevisionStatus: "修订被拒",
       revisionStatus: "修订状态",
+      queueTypeLabel: "队列类型",
+      newPackageQueueLabel: "新套餐",
+      revisionQueueLabel: "在线套餐修订",
+      livePackageStatusLabel: "在线套餐状态",
       revisionSubmittedDate: "修订提交日期",
       revisionUnderReview: "该修订正在由管理员审核",
       revisionPendingHelp: "当前 live 套餐会继续保持上线，但您的最新修改要等管理员通过后才会显示。",
