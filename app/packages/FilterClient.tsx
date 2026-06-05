@@ -92,6 +92,12 @@ function getPreviewPrice(pkg: PackagePreview) {
   return pkg.livePricing?.priceAdult ?? pkg.price_adult ?? 0
 }
 
+function getPreviewLocationLabel(pkg: PackagePreview) {
+  const point = getPreviewGeoPoint(pkg)
+  if (point?.label) return point.label
+  return [pkg.city, pkg.country].filter(Boolean).join(", ")
+}
+
 function getPreviewGeoPoint(pkg: PackagePreview): GeoPoint | null {
   const detail = Array.isArray(pkg.package_details) ? pkg.package_details[0] : pkg.package_details
   if (!detail) return null
@@ -140,8 +146,27 @@ function parseBBox(bbox: string) {
   return { minLng, minLat, maxLng, maxLat }
 }
 
+function stringifyBBox({ minLng, minLat, maxLng, maxLat }: { minLng: number; minLat: number; maxLng: number; maxLat: number }) {
+  return `${minLng},${minLat},${maxLng},${maxLat}`
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
+}
+
+function buildMapWindowFromBBox(bbox: string, centerLabel: string): MapWindow {
+  const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
+  const centerLng = (minLng + maxLng) / 2
+  const centerLat = (minLat + maxLat) / 2
+
+  return {
+    centerLabel,
+    left: ((centerLng + 180) / 360) * 100,
+    top: ((90 - centerLat) / 180) * 100,
+    width: clamp(((maxLng - minLng) / 360) * 100, 8, 34),
+    height: clamp(((maxLat - minLat) / 180) * 100, 8, 28),
+    bbox,
+  }
 }
 
 function buildGeoMapWindow(packages: PackagePreview[], fallbackCountry?: string): MapWindow {
@@ -171,6 +196,26 @@ function buildGeoMapWindow(packages: PackagePreview[], fallbackCountry?: string)
     height: clamp(((paddedMaxLat - paddedMinLat) / 180) * 100, 8, 28),
     bbox: `${paddedMinLng},${paddedMinLat},${paddedMaxLng},${paddedMaxLat}`,
   }
+}
+
+function zoomBBox(bbox: string, factor: number) {
+  const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
+  const centerLng = (minLng + maxLng) / 2
+  const centerLat = (minLat + maxLat) / 2
+  const nextLngSpan = clamp((maxLng - minLng) * factor, 0.12, 320)
+  const nextLatSpan = clamp((maxLat - minLat) * factor, 0.08, 150)
+
+  return stringifyBBox({
+    minLng: clamp(centerLng - nextLngSpan / 2, -179.5, 179.5),
+    maxLng: clamp(centerLng + nextLngSpan / 2, -179.5, 179.5),
+    minLat: clamp(centerLat - nextLatSpan / 2, -85, 85),
+    maxLat: clamp(centerLat + nextLatSpan / 2, -85, 85),
+  })
+}
+
+function pointIsInsideBBox(point: GeoPoint, bbox: string) {
+  const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
+  return point.lng >= minLng && point.lng <= maxLng && point.lat >= minLat && point.lat <= maxLat
 }
 
 function buildGeoMarkerLayout(packages: PackagePreview[], bbox: string) {
@@ -261,6 +306,7 @@ export default function FilterClient({
   const [isMapModalOpen, setIsMapModalOpen] = useState(false)
   const [manualActiveMapCountry, setManualActiveMapCountry] = useState("")
   const [manualActiveMapPackageId, setManualActiveMapPackageId] = useState("")
+  const [mapViewportState, setMapViewportState] = useState<{ key: string; bbox: string } | null>(null)
 
   const sliderStep = useMemo(() => {
     if (priceCurrency === "USD") return 10
@@ -488,9 +534,21 @@ export default function FilterClient({
   const geoReadyPackages = mapModalPackages.filter((pkg) => getPreviewGeoPoint(pkg) !== null)
   const uniqueCountries = [...new Set(mapModalPackages.map((pkg) => String(pkg.country || "").trim()).filter(Boolean))]
   const useActiveResultMap = geoReadyPackages.length > 0 && (Boolean(selectedCountry) || uniqueCountries.length <= 1)
-  const resolvedMapWindow = useActiveResultMap ? buildGeoMapWindow(geoReadyPackages, selectedCountry) : mapWindow
-  const resolvedMapEmbedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(resolvedMapWindow.bbox)}&layer=mapnik`
-  const resolvedGeoMarkers = useActiveResultMap ? buildGeoMarkerLayout(mapModalPackages, resolvedMapWindow.bbox) : []
+  const activeResultBaseWindow = useActiveResultMap ? buildGeoMapWindow(geoReadyPackages, selectedCountry) : mapWindow
+  const activeResultViewportKey = useActiveResultMap
+    ? `${selectedCountry || "all"}:${geoReadyPackages.map((pkg) => pkg.id).join(",")}`
+    : "country-overview"
+  const activeViewportBBox =
+    useActiveResultMap && mapViewportState?.key === activeResultViewportKey ? mapViewportState.bbox : activeResultBaseWindow.bbox
+  const resolvedMapWindow = useActiveResultMap ? buildMapWindowFromBBox(activeViewportBBox, activeResultBaseWindow.centerLabel) : mapWindow
+  const resolvedMapEmbedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(activeViewportBBox)}&layer=mapnik`
+  const visibleGeoPackages = useActiveResultMap
+    ? geoReadyPackages.filter((pkg) => {
+        const point = getPreviewGeoPoint(pkg)
+        return point ? pointIsInsideBBox(point, activeViewportBBox) : false
+      })
+    : []
+  const resolvedGeoMarkers = useActiveResultMap ? buildGeoMarkerLayout(visibleGeoPackages, activeViewportBBox) : []
   const resolvedActiveMapPackageId = useActiveResultMap
     ? (resolvedGeoMarkers.some((entry) => entry.pkg.id === manualActiveMapPackageId)
         ? manualActiveMapPackageId
@@ -518,10 +576,10 @@ export default function FilterClient({
     : activeCountryLabel
   const resolvedMapZoomHint = useActiveResultMap
     ? locale === "en"
-      ? "Active-search map mode. The viewport follows real package points."
+      ? "Active-search map mode. Zoom controls update the visible results on this map."
       : locale === "zh"
         ? "å½“å‰æœç´¢åœ°å›¾æ¨¡å¼ã€‚è§†å›¾ä¼šè·ŸéšçœŸå®žå¥—é¤ç‚¹ä½ã€‚"
-        : "Mode peta hasil aktif. Viewport mengikuti titik paket yang nyata."
+        : "Mode peta hasil aktif. Tombol zoom memperbarui hasil yang terlihat di peta ini."
     : mapZoomHint
   const resolvedMapInteractionHint = useActiveResultMap
     ? locale === "en"
@@ -542,11 +600,17 @@ export default function FilterClient({
         : null)
     : activeMapPriceLabel
   const resolvedActiveAreaSummary = useActiveResultMap
-    ? locale === "en"
-      ? `${resolvedActiveMapPackageCount} active results are visible on this map`
-      : locale === "zh"
-        ? `è¿™å¼ åœ°å›¾ä¸Šæ˜¾ç¤º ${resolvedActiveMapPackageCount} ä¸ªå½“å‰ç»“æžœ`
-        : `${resolvedActiveMapPackageCount} hasil pencarian aktif terlihat di peta ini`
+    ? resolvedActiveMapPackageCount === 0
+      ? locale === "en"
+        ? "No active results are visible in the current map viewport"
+        : locale === "zh"
+          ? `当前地图视图中没有可见结果`
+          : "Belum ada hasil aktif yang terlihat di viewport peta saat ini"
+      : locale === "en"
+        ? `${resolvedActiveMapPackageCount} active results are visible on this map`
+        : locale === "zh"
+          ? `è¿™å¼ åœ°å›¾ä¸Šæ˜¾ç¤º ${resolvedActiveMapPackageCount} ä¸ªå½“å‰ç»“æžœ`
+          : `${resolvedActiveMapPackageCount} hasil pencarian aktif terlihat di peta ini`
     : activeAreaSummary
   const resolvedApplyAreaLabel = useActiveResultMap
     ? locale === "en"
@@ -562,6 +626,57 @@ export default function FilterClient({
         ? `æ˜¾ç¤º ${resolvedActiveMapPackageCount} ä¸ªå½“å‰ç»“æžœ`
         : `Menampilkan ${resolvedActiveMapPackageCount} hasil aktif`
     : mapDrawerTitle
+  const resolvedExploreTitle = useActiveResultMap
+    ? locale === "en"
+      ? `Active results in ${resolvedFocusLabel}`
+      : locale === "zh"
+        ? `${resolvedFocusLabel} å½“å‰ç»“æžœ`
+        : `Hasil aktif di ${resolvedFocusLabel}`
+    : exploreTitle
+  const resolvedExploreMeta = useActiveResultMap
+    ? locale === "en"
+      ? `Viewport currently shows ${resolvedActiveMapPackageCount} live package points`
+      : locale === "zh"
+        ? `åœ°å›¾è·Ÿéš ${resolvedActiveMapPackageCount} ä¸ªçœŸå®žå¥—é¤ç‚¹ä½`
+        : `Viewport saat ini menampilkan ${resolvedActiveMapPackageCount} titik paket yang nyata`
+    : exploreMeta
+  const resolvedExploreSummary = useActiveResultMap ? resolvedActiveAreaSummary : activeAreaSummary
+  const resolvedExploreAction = useActiveResultMap
+    ? locale === "en"
+      ? "Open active result map"
+      : locale === "zh"
+        ? "æ‰“å¼€å½“å‰ç»“æžœåœ°å›¾"
+        : "Buka peta hasil aktif"
+    : exploreAction
+  const resolvedHeaderChip = useActiveResultMap ? resolvedFocusLabel : activeCountryLabel
+  const resolvedMapResultHeading = useActiveResultMap
+    ? locale === "en"
+      ? "Active search results"
+      : locale === "zh"
+        ? "å½“å‰æœç´¢ç»“æžœ"
+        : "Hasil pencarian aktif"
+    : locale === "en"
+      ? "Cheapest package points"
+      : locale === "zh"
+        ? "æœ€ä½Žä»·å¥—é¤ç‚¹ä½"
+        : "Titik paket termurah"
+  const resetViewportLabel =
+    locale === "en" ? "Reset view" : locale === "zh" ? "重置视图" : "Reset view"
+  const zoomViewport = (factor: number) => {
+    if (!useActiveResultMap) return
+    setMapViewportState({
+      key: activeResultViewportKey,
+      bbox: zoomBBox(activeViewportBBox, factor),
+    })
+  }
+  const resetViewport = () => {
+    if (!useActiveResultMap) return
+    setMapViewportState({
+      key: activeResultViewportKey,
+      bbox: activeResultBaseWindow.bbox,
+    })
+  }
+
 
   const applyCountrySelection = (country: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -591,16 +706,16 @@ export default function FilterClient({
           <div className="pointer-events-none absolute right-6 top-5 h-10 w-10 rounded-full border-8 border-[#1f6fbd] bg-white shadow-[0_10px_20px_-12px_rgba(37,99,235,0.45)]" />
           <div className="pointer-events-none absolute right-[92px] top-0 h-full w-px bg-white/70" />
           <div className="relative flex h-full flex-col justify-end">
-             <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{exploreTitle}</p>
-             <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{exploreMeta}</p>
-             <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#145da8]">{activeAreaSummary}</p>
+             <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{resolvedExploreTitle}</p>
+             <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{resolvedExploreMeta}</p>
+             <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#145da8]">{resolvedExploreSummary}</p>
              <button
                type="button"
-               onClick={handleExploreClick}
-              className="mt-5 inline-flex w-fit items-center rounded-full bg-[#1464b4] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
-            >
-              {exploreAction}
-            </button>
+                onClick={handleExploreClick}
+               className="mt-5 inline-flex w-fit items-center rounded-full bg-[#1464b4] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
+             >
+               {resolvedExploreAction}
+             </button>
           </div>
         </div>
       </div>
@@ -805,8 +920,8 @@ export default function FilterClient({
               <span>{mapModalBackLabel}</span>
             </button>
             <div className="hidden min-w-0 flex-1 items-center justify-center gap-2 md:flex">
-              <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{activeCountryLabel}</span>
-              <p className="truncate text-xs text-slate-500">{exploreTitle} • {exploreMeta}</p>
+              <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
+              <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
             </div>
             <button
               type="button"
@@ -871,11 +986,14 @@ export default function FilterClient({
             </div>
 
             <div className="absolute right-4 top-[108px] z-10 overflow-hidden rounded-[16px] border border-slate-200 bg-white/96 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.28)]">
-              <button type="button" className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
+              <button type="button" onClick={() => zoomViewport(0.6)} className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
                 +
               </button>
-              <button type="button" className="block w-12 py-2 text-xl font-medium text-slate-600">
+              <button type="button" onClick={() => zoomViewport(1.6)} className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
                 −
+              </button>
+              <button type="button" onClick={resetViewport} className="block w-12 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                {useActiveResultMap ? resetViewportLabel : "Fit"}
               </button>
             </div>
 
@@ -943,8 +1061,8 @@ export default function FilterClient({
             <div className="absolute inset-x-4 bottom-4 z-10 rounded-[24px] border border-slate-200 bg-white/96 p-4 shadow-[0_26px_60px_-32px_rgba(15,23,42,0.32)] backdrop-blur">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{useActiveResultMap ? "Active search results" : "Titik paket termurah"}</p>
-                  <p className="text-xs text-slate-500">{exploreMeta}</p>
+                  <p className="text-sm font-semibold text-slate-900">{resolvedMapResultHeading}</p>
+                  <p className="text-xs text-slate-500">{resolvedExploreMeta}</p>
                   <p className="mt-1 text-xs font-medium text-[#145da8]">
                     {resolvedActiveMapPriceLabel
                       ? locale === "en"
@@ -976,20 +1094,26 @@ export default function FilterClient({
                 </button>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {resolvedActiveMapPackages.map((pkg, index) => (
-                  <a
-                    key={pkg.id}
-                    href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                    className={`min-w-[240px] rounded-[18px] border px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)] ${useActiveResultMap && pkg.id === resolvedActiveMapPackageId ? "border-[#145da8] bg-[#f5f9ff]" : "border-slate-200 bg-white"}`}
-                  >
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1464b4]">#{index + 1}</p>
-                    <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-900">{getPreviewTitle(pkg, locale)}</p>
-                    <p className="mt-1 text-sm font-semibold text-[#ff5a28]">
-                      {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
-                    </p>
-                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[pkg.country, pkg.travel_style, pkg.duration ? `${pkg.duration} hari` : null].filter(Boolean).join(" • ") || exploreTitle}</p>
-                  </a>
-                ))}
+                {resolvedActiveMapPackages.length === 0 ? (
+                  <div className="rounded-[18px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                    {resolvedActiveAreaSummary}
+                  </div>
+                ) : (
+                  resolvedActiveMapPackages.map((pkg, index) => (
+                    <a
+                      key={pkg.id}
+                      href={`/packages/${encodeURIComponent(pkg.slug)}`}
+                      className={`min-w-[240px] rounded-[18px] border px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)] ${useActiveResultMap && pkg.id === resolvedActiveMapPackageId ? "border-[#145da8] bg-[#f5f9ff]" : "border-slate-200 bg-white"}`}
+                    >
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1464b4]">#{index + 1}</p>
+                      <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-900">{getPreviewTitle(pkg, locale)}</p>
+                      <p className="mt-1 text-sm font-semibold text-[#ff5a28]">
+                        {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[getPreviewLocationLabel(pkg), pkg.travel_style, pkg.duration ? `${pkg.duration} hari` : null].filter(Boolean).join(" • ") || resolvedExploreTitle}</p>
+                    </a>
+                  ))
+                )}
               </div>
             </div>
           </div>
