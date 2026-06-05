@@ -1061,7 +1061,7 @@ export default function FilterClient({
             />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.72)_44%,rgba(255,255,255,0.96)_100%)]" />
-            <div className="absolute right-4 top-[108px] z-10 overflow-hidden rounded-[16px] border border-slate-200 bg-white/96 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.28)]">
+            <div className="pointer-events-auto absolute right-4 top-[108px] z-[1000] overflow-hidden rounded-[16px] border border-slate-200 bg-white/96 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.28)]">
               <button type="button" onClick={() => zoomViewport(0.6)} className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
                 +
               </button>
