@@ -1,5 +1,7 @@
 "use client"
 
+import Image from "next/image"
+import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import dynamic from "next/dynamic"
@@ -21,6 +23,7 @@ type Facility = {
 type PackagePreview = {
   id: string
   slug: string
+  cover_image?: string | null
   title?: string | null
   city?: string | null
   country?: string | null
@@ -96,6 +99,24 @@ function getPreviewTitle(pkg: PackagePreview, locale: Locale) {
 
 function getPreviewPrice(pkg: PackagePreview) {
   return pkg.livePricing?.priceAdult ?? pkg.price_adult ?? 0
+}
+
+function getPreviewImage(pkg: PackagePreview) {
+  return pkg.cover_image || "/placeholder.png"
+}
+
+function getPreviewMeta(pkg: PackagePreview, locale: Locale) {
+  const location = [pkg.city, pkg.country].filter(Boolean).join(", ")
+  const duration =
+    typeof pkg.duration === "number" && pkg.duration > 0
+      ? locale === "en"
+        ? `${pkg.duration} days`
+        : locale === "zh"
+          ? `${pkg.duration} 天`
+          : `${pkg.duration} hari`
+      : ""
+
+  return [location, duration].filter(Boolean).join(" • ")
 }
 
 function getPreviewGeoPoint(pkg: PackagePreview): GeoPoint | null {
@@ -729,6 +750,8 @@ export default function FilterClient({
         : "Titik paket termurah"
   const resetViewportLabel =
     locale === "en" ? "Reset view" : locale === "zh" ? "重置视图" : "Reset view"
+  const mapPreviewOpenLabel =
+    locale === "en" ? "Open details" : locale === "zh" ? "打开详情" : "Buka detail"
   const zoomViewport = (factor: number) => {
     if (!useActiveResultMap) return
     setMapViewportState({
@@ -1072,6 +1095,52 @@ export default function FilterClient({
                 {useActiveResultMap ? resetViewportLabel : "Fit"}
               </button>
             </div>
+
+            {useActiveResultMap && resolvedActiveMapPackage ? (
+              <div className="pointer-events-none absolute inset-x-4 bottom-5 z-[950] flex justify-center md:inset-x-auto md:bottom-6 md:right-24">
+                <div className="pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-[24px] border border-white/80 bg-white/96 shadow-[0_26px_60px_-28px_rgba(15,23,42,0.38)] backdrop-blur md:w-[360px]">
+                  <div className="relative h-[180px] w-full bg-slate-100">
+                    <Image
+                      src={getPreviewImage(resolvedActiveMapPackage)}
+                      alt={getPreviewTitle(resolvedActiveMapPackage, locale)}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 360px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3 p-4">
+                    <div>
+                      <p className="line-clamp-2 text-[22px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-950">
+                        {getPreviewTitle(resolvedActiveMapPackage, locale)}
+                      </p>
+                      {getPreviewMeta(resolvedActiveMapPackage, locale) ? (
+                        <p className="mt-2 text-sm text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
+                      ) : null}
+                    </div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                          {locale === "en" ? "Starting from" : locale === "zh" ? "起价" : "Mulai dari"}
+                        </p>
+                        <p className="mt-1 truncate text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
+                          {formatPackageMoney(
+                            getPreviewPrice(resolvedActiveMapPackage),
+                            resolvedActiveMapPackage.livePricing?.currency || resolvedActiveMapPackage.currency || priceCurrency,
+                            locale,
+                          )}
+                        </p>
+                      </div>
+                      <Link
+                        href={`/packages/${encodeURIComponent(resolvedActiveMapPackage.slug)}`}
+                        className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
+                      >
+                        {mapPreviewOpenLabel}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             {!useActiveResultMap && mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
