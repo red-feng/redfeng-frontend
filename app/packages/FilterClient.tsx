@@ -97,12 +97,6 @@ function getPreviewPrice(pkg: PackagePreview) {
   return pkg.livePricing?.priceAdult ?? pkg.price_adult ?? 0
 }
 
-function getPreviewLocationLabel(pkg: PackagePreview) {
-  const point = getPreviewGeoPoint(pkg)
-  if (point?.label) return point.label
-  return [pkg.city, pkg.country].filter(Boolean).join(", ")
-}
-
 function getPreviewGeoPoint(pkg: PackagePreview): GeoPoint | null {
   const detail = Array.isArray(pkg.package_details) ? pkg.package_details[0] : pkg.package_details
   if (!detail) return null
@@ -1065,49 +1059,6 @@ export default function FilterClient({
             />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.72)_44%,rgba(255,255,255,0.96)_100%)]" />
-            {!useActiveResultMap ? (
-              <>
-                <div
-                  className="pointer-events-none absolute rounded-[44px] border border-[#60a5fa]/30 bg-[#2b6cb0]/8 shadow-[0_20px_50px_-30px_rgba(37,99,235,0.28)]"
-                  style={{
-                    left: `${resolvedMapWindow.left - resolvedMapWindow.width / 2}%`,
-                    top: `${resolvedMapWindow.top - resolvedMapWindow.height / 2}%`,
-                    width: `${resolvedMapWindow.width}%`,
-                    height: `${resolvedMapWindow.height}%`,
-                  }}
-                />
-                <div
-                  className="pointer-events-none absolute rounded-[999px] border border-white/75 bg-white/92 px-3 py-1.5 text-[11px] font-semibold text-[#145da8] shadow-[0_14px_30px_-20px_rgba(15,23,42,0.24)]"
-                  style={{ left: `${resolvedMapWindow.left}%`, top: `${Math.max(resolvedMapWindow.top - resolvedMapWindow.height / 2 - 5, 8)}%`, transform: "translateX(-50%)" }}
-                >
-                  {resolvedMapWindow.centerLabel}
-                </div>
-              </>
-            ) : null}
-
-            <div className="absolute left-4 top-4 z-10 max-w-[360px] rounded-[18px] bg-white/96 px-4 py-3 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.26)] backdrop-blur">
-              <p className="text-sm font-semibold text-slate-900">{resolvedMapModalSurfaceTitle}</p>
-              <p className="mt-1 text-xs text-slate-500">{resolvedMapModalSurfaceHint}</p>
-              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#145da8]">
-                {useActiveResultMap ? `Area aktif: ${resolvedFocusLabel}` : `Fokus negara: ${activeCountryLabel}`}
-              </p>
-              <p className="mt-2 text-[11px] text-slate-500">{resolvedMapInteractionHint}</p>
-            </div>
-
-            <div className="absolute right-4 top-4 z-10 w-[min(420px,calc(100%-2rem))]">
-              <div className="rounded-[16px] bg-white/96 px-4 py-3 shadow-[0_24px_48px_-28px_rgba(15,23,42,0.26)] backdrop-blur">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg text-[#1464b4]" aria-hidden="true">
-                    ⌖
-                  </span>
-                  <span className="line-clamp-1 text-sm text-slate-400">{mapSearchPlaceholder}</span>
-                </div>
-              </div>
-              <div className="mt-3 rounded-[16px] bg-white/94 px-4 py-3 text-sm text-slate-700 shadow-[0_22px_42px_-28px_rgba(15,23,42,0.24)] backdrop-blur">
-                {resolvedMapZoomHint}
-              </div>
-            </div>
-
             <div className="absolute right-4 top-[108px] z-10 overflow-hidden rounded-[16px] border border-slate-200 bg-white/96 shadow-[0_18px_36px_-26px_rgba(15,23,42,0.28)]">
               <button type="button" onClick={() => zoomViewport(0.6)} className="block w-12 border-b border-slate-200 py-2 text-xl font-medium text-slate-600">
                 +
@@ -1125,64 +1076,6 @@ export default function FilterClient({
                 <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceEmpty}</p>
               </div>
             ) : null}
-            <div className="absolute inset-x-4 bottom-4 z-10 rounded-[24px] border border-slate-200 bg-white/96 p-4 shadow-[0_26px_60px_-32px_rgba(15,23,42,0.32)] backdrop-blur">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">{resolvedMapResultHeading}</p>
-                  <p className="text-xs text-slate-500">{resolvedExploreMeta}</p>
-                  <p className="mt-1 text-xs font-medium text-[#145da8]">
-                    {resolvedActiveMapPriceLabel
-                      ? locale === "en"
-                        ? `${resolvedFocusLabel} starts from ${resolvedActiveMapPriceLabel}`
-                        : locale === "zh"
-                          ? `${resolvedFocusLabel} starts from ${resolvedActiveMapPriceLabel}`
-                          : `${resolvedFocusLabel} mulai dari ${resolvedActiveMapPriceLabel}`
-                      : resolvedActiveAreaSummary}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  title={resolvedMapDrawerTitle}
-                  onClick={() => {
-                    if (!useActiveResultMap) {
-                      applyCountrySelection(activeCountryLabel)
-                    } else if (!selectedCountry && resolvedActiveMapPackage?.country) {
-                      applyCountrySelection(resolvedActiveMapPackage.country)
-                    }
-                    setIsMapModalOpen(false)
-                    const target = document.getElementById("package-search-results")
-                    if (!target) return
-                    const top = target.getBoundingClientRect().top + window.scrollY - 120
-                    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" })
-                  }}
-                  className="rounded-full bg-[#1464b4] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
-                >
-                  {resolvedApplyAreaLabel}
-                </button>
-              </div>
-              <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {resolvedActiveMapPackages.length === 0 ? (
-                  <div className="rounded-[18px] border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-                    {resolvedActiveAreaSummary}
-                  </div>
-                ) : (
-                  resolvedActiveMapPackages.map((pkg, index) => (
-                    <a
-                      key={pkg.id}
-                      href={`/packages/${encodeURIComponent(pkg.slug)}`}
-                      className={`min-w-[240px] rounded-[18px] border px-4 py-3 shadow-[0_14px_28px_-24px_rgba(15,23,42,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_30px_-24px_rgba(15,23,42,0.24)] ${useActiveResultMap && pkg.id === resolvedActiveMapPackageId ? "border-[#145da8] bg-[#f5f9ff]" : "border-slate-200 bg-white"}`}
-                    >
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1464b4]">#{index + 1}</p>
-                      <p className="mt-1 line-clamp-1 text-sm font-semibold text-slate-900">{getPreviewTitle(pkg, locale)}</p>
-                      <p className="mt-1 text-sm font-semibold text-[#ff5a28]">
-                        {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
-                      </p>
-                      <p className="mt-1 line-clamp-1 text-xs text-slate-500">{[getPreviewLocationLabel(pkg), pkg.travel_style, pkg.duration ? `${pkg.duration} hari` : null].filter(Boolean).join(" • ") || resolvedExploreTitle}</p>
-                    </a>
-                  ))
-                )}
-              </div>
-            </div>
           </div>
         </div>
       ) : null}
