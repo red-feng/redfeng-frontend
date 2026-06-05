@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
@@ -1015,8 +1016,9 @@ export default function FilterClient({
         </div>
       ) : null}
 
-      {isMapModalOpen ? (
-        <div className="fixed inset-0 z-[80] bg-white">
+      {isMapModalOpen && typeof document !== "undefined"
+        ? createPortal(
+        <div className="fixed inset-0 z-[200] bg-white">
           <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-3 shadow-[0_14px_32px_-28px_rgba(15,23,42,0.35)]">
             <button
               type="button"
@@ -1077,8 +1079,10 @@ export default function FilterClient({
               </div>
             ) : null}
           </div>
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+        : null}
 
       {isMobilePanelOpen ? (
         <div className="fixed inset-0 z-[90] flex items-end justify-center bg-slate-950/45 p-3 lg:hidden">
