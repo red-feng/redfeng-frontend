@@ -128,6 +128,15 @@ function formatLocationType(value: string | null | undefined): string {
   return value || "-"
 }
 
+function formatCoordinates(lat: number | null | undefined, lng: number | null | undefined): string {
+  if (typeof lat === "number" && typeof lng === "number") return `${lat}, ${lng}`
+  return "-"
+}
+
+function formatRouteSummary(countryMap: Map<string, string>, originCountryId: string | null | undefined, originProvince: string | null | undefined, destinationCountryId: string | null | undefined, destinationProvince: string | null | undefined): string {
+  return `${countryMap.get(originCountryId || "") || "-"} - ${originProvince || "-"} ke ${countryMap.get(destinationCountryId || "") || "-"} - ${destinationProvince || "-"}`
+}
+
 function getGeoReviewIssues(detail: PackageDetailRow | null | undefined): GeoReviewIssue[] {
   if (!detail) return []
 
@@ -408,6 +417,84 @@ export default async function Page({
     : itineraryDays
   const geoReviewIssues = getGeoReviewIssues(effectiveDetail)
   const hasBlockingGeoIssue = geoReviewIssues.some((issue) => issue.tone === "blocking")
+  const liveSnapshot = revisionRecord?.live_snapshot || null
+  const revisionChangedFields = revisionRecord?.changed_fields || []
+  const revisionDiffRows = revisionRecord && revisionPayload && liveSnapshot
+    ? [
+        {
+          label: "Judul paket",
+          before: liveSnapshot.translations[liveSnapshot.package.default_language]?.title || liveSnapshot.package.title || "-",
+          after: revisionPayload.translations[revisionPayload.package.default_language]?.title || revisionPayload.package.title || "-",
+        },
+        {
+          label: "Harga dewasa",
+          before: formatMoney(liveSnapshot.package.price_adult, liveSnapshot.package.currency),
+          after: formatMoney(revisionPayload.package.price_adult, revisionPayload.package.currency),
+        },
+        {
+          label: "Harga anak",
+          before: formatMoney(liveSnapshot.package.price_child, liveSnapshot.package.currency),
+          after: formatMoney(revisionPayload.package.price_child, revisionPayload.package.currency),
+        },
+        {
+          label: "Durasi",
+          before: `${liveSnapshot.package.duration || 0} hari`,
+          after: `${revisionPayload.package.duration || 0} hari`,
+        },
+        {
+          label: "Minimal peserta",
+          before: `${liveSnapshot.package.minimal_peserta || 0} orang`,
+          after: `${revisionPayload.package.minimal_peserta || 0} orang`,
+        },
+        {
+          label: "Gaya perjalanan",
+          before: formatTravelStyleLabel(liveSnapshot.package.travel_style),
+          after: formatTravelStyleLabel(revisionPayload.package.travel_style),
+        },
+        {
+          label: "Rute",
+          before: formatRouteSummary(
+            countryMap,
+            liveSnapshot.package.origin_country_id,
+            liveSnapshot.package.origin_province,
+            liveSnapshot.package.destination_country_id,
+            liveSnapshot.package.destination_province,
+          ),
+          after: formatRouteSummary(
+            countryMap,
+            revisionPayload.package.origin_country_id,
+            revisionPayload.package.origin_province,
+            revisionPayload.package.destination_country_id,
+            revisionPayload.package.destination_province,
+          ),
+        },
+        {
+          label: "Meeting point",
+          before: liveSnapshot.details.meeting_point || liveSnapshot.translations[liveSnapshot.package.default_language]?.meeting_point || "-",
+          after: revisionPayload.details.meeting_point || revisionPayload.translations[revisionPayload.package.default_language]?.meeting_point || "-",
+        },
+        {
+          label: "Label lokasi peta",
+          before: liveSnapshot.details.location_label || "-",
+          after: revisionPayload.details.location_label || "-",
+        },
+        {
+          label: "Tipe lokasi peta",
+          before: formatLocationType(liveSnapshot.details.location_type),
+          after: formatLocationType(revisionPayload.details.location_type),
+        },
+        {
+          label: "Koordinat",
+          before: formatCoordinates(liveSnapshot.details.primary_lat, liveSnapshot.details.primary_lng),
+          after: formatCoordinates(revisionPayload.details.primary_lat, revisionPayload.details.primary_lng),
+        },
+        {
+          label: "Radius area",
+          before: liveSnapshot.details.viewport_radius_km !== null ? `${liveSnapshot.details.viewport_radius_km} km` : "-",
+          after: revisionPayload.details.viewport_radius_km !== null ? `${revisionPayload.details.viewport_radius_km} km` : "-",
+        },
+      ].filter((row) => row.before !== row.after)
+    : []
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -523,6 +610,71 @@ export default async function Page({
                 </div>
               </section>
             )}
+
+            {revisionRecord && revisionPayload && liveSnapshot ? (
+              <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-900">Perubahan Revisi</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Bandingkan versi live saat ini dengan payload revisi merchant sebelum mengambil keputusan.
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">
+                    {revisionDiffRows.length} perubahan inti
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Status revisi</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">{formatStatusLabel(revisionRecord.status)}</p>
+                    <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Diajukan</p>
+                    <p className="mt-2 text-sm text-slate-700">
+                      {revisionRecord.submitted_at ? new Date(revisionRecord.submitted_at).toLocaleString("id-ID") : "-"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Changed fields</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {revisionChangedFields.length > 0 ? (
+                        revisionChangedFields.slice(0, 12).map((field) => (
+                          <span key={field} className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700">
+                            {field}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-slate-500">Belum ada daftar perubahan terdeteksi.</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {revisionDiffRows.length > 0 ? (
+                  <div className="mt-5 space-y-3">
+                    {revisionDiffRows.map((row) => (
+                      <div key={row.label} className="rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4">
+                        <p className="text-sm font-semibold text-slate-900">{row.label}</p>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-600">Sebelum</p>
+                            <p className="mt-2 text-sm leading-6 text-rose-900">{row.before}</p>
+                          </div>
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Sesudah</p>
+                            <p className="mt-2 text-sm leading-6 text-emerald-900">{row.after}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                    Tidak ada perubahan inti yang terdeteksi pada field utama. Admin tetap bisa memeriksa tab detail untuk konten yang lebih panjang.
+                  </div>
+                )}
+              </section>
+            ) : null}
 
             <AdminPackageReviewTabs
               detailContent={{

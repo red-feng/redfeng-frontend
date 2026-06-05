@@ -108,6 +108,19 @@ type CountryRow = {
   name: string
 }
 
+type PackageRevisionHistoryRow = {
+  id: string
+  status: string | null
+  summary: string | null
+  changed_fields: string[] | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  approved_at: string | null
+  rejection_reason: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 function toSupportedLocale(input: string | null | undefined): Locale | null {
   if (input === "id" || input === "en" || input === "zh") return input
   return null
@@ -124,6 +137,44 @@ function formatDate(value: string | null, locale: Locale) {
   if (Number.isNaN(date.getTime())) return value
   const lang = locale === "zh" ? "zh-CN" : locale === "en" ? "en-US" : "id-ID"
   return date.toLocaleDateString(lang, { day: "2-digit", month: "long", year: "numeric" })
+}
+
+function formatRevisionStatus(value: string | null, locale: Locale) {
+  const status = (value || "").toLowerCase()
+  if (locale === "en") {
+    if (status === "draft") return "Revision Draft"
+    if (status === "pending") return "Pending Review"
+    if (status === "approved") return "Approved"
+    if (status === "rejected") return "Rejected"
+    if (status === "superseded") return "Superseded"
+    if (status === "cancelled") return "Cancelled"
+    return value || "-"
+  }
+  if (locale === "zh") {
+    if (status === "draft") return "修订草稿"
+    if (status === "pending") return "待审核"
+    if (status === "approved") return "已通过"
+    if (status === "rejected") return "已拒绝"
+    if (status === "superseded") return "已替换"
+    if (status === "cancelled") return "已取消"
+    return value || "-"
+  }
+  if (status === "draft") return "Draft Revisi"
+  if (status === "pending") return "Pending Review"
+  if (status === "approved") return "Disetujui"
+  if (status === "rejected") return "Ditolak"
+  if (status === "superseded") return "Digantikan"
+  if (status === "cancelled") return "Dibatalkan"
+  return value || "-"
+}
+
+function revisionStatusClasses(value: string | null) {
+  const status = (value || "").toLowerCase()
+  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-700"
+  if (status === "approved") return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (status === "rejected") return "border-rose-200 bg-rose-50 text-rose-700"
+  if (status === "draft") return "border-slate-200 bg-slate-50 text-slate-700"
+  return "border-slate-200 bg-slate-50 text-slate-700"
 }
 
 function getCopy(locale: Locale) {
@@ -144,6 +195,19 @@ function getCopy(locale: Locale) {
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
       quickActions: "Quick actions",
+      revisionHistory: "Revision history",
+      revisionEmpty: "There is no revision history for this package yet.",
+      revisionStatus: "Revision status",
+      revisionSummary: "Revision summary",
+      revisionSubmittedAt: "Submitted",
+      revisionReviewedAt: "Reviewed",
+      revisionChangedFields: "Changed fields",
+      revisionAdminNote: "Admin note",
+      revisionLiveNote: "Live package status",
+      continueRevision: "Continue revision",
+      pendingRevisionHint: "This revision is being reviewed by admin. The live package remains unchanged until approval.",
+      approvedRevisionHint: "This revision has been approved and applied to the live package.",
+      rejectedRevisionHint: "This revision was rejected. Review the admin note, then continue the revision if you want to resubmit.",
     }
   }
   if (locale === "zh") {
@@ -163,6 +227,19 @@ function getCopy(locale: Locale) {
       packageNotFound: "Package not found or no longer belongs to this merchant.",
       gallery: "Gallery",
       quickActions: "Quick actions",
+      revisionHistory: "修订历史",
+      revisionEmpty: "该套餐还没有修订记录。",
+      revisionStatus: "修订状态",
+      revisionSummary: "修订摘要",
+      revisionSubmittedAt: "提交时间",
+      revisionReviewedAt: "审核时间",
+      revisionChangedFields: "变更字段",
+      revisionAdminNote: "管理员备注",
+      revisionLiveNote: "在线套餐状态",
+      continueRevision: "继续修订",
+      pendingRevisionHint: "该修订正在由管理员审核。在通过之前，在线套餐不会被更新。",
+      approvedRevisionHint: "该修订已通过，并已应用到在线套餐。",
+      rejectedRevisionHint: "该修订已被拒绝。请先查看管理员备注，再继续修订后重新提交。",
     }
   }
   return {
@@ -181,6 +258,19 @@ function getCopy(locale: Locale) {
     packageNotFound: "Paket tidak ditemukan atau bukan milik merchant ini.",
     gallery: "Galeri",
     quickActions: "Aksi cepat",
+    revisionHistory: "Histori revisi",
+    revisionEmpty: "Belum ada histori revisi untuk paket ini.",
+    revisionStatus: "Status revisi",
+    revisionSummary: "Ringkasan revisi",
+    revisionSubmittedAt: "Tanggal submit",
+    revisionReviewedAt: "Tanggal review",
+    revisionChangedFields: "Field yang berubah",
+    revisionAdminNote: "Catatan admin",
+    revisionLiveNote: "Status paket live",
+    continueRevision: "Lanjutkan revisi",
+    pendingRevisionHint: "Revisi ini sedang direview admin. Paket live belum berubah sampai revisi disetujui.",
+    approvedRevisionHint: "Revisi ini sudah disetujui dan diterapkan ke paket live.",
+    rejectedRevisionHint: "Revisi ini ditolak. Baca catatan admin lalu lanjutkan revisi jika ingin mengirim ulang.",
   }
 }
 
@@ -262,6 +352,7 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
     tagsResult,
     itineraryDaysResult,
     countriesResult,
+    revisionsResult,
   ] = await Promise.all([
     adminSupabase
       .from("package_translations")
@@ -315,6 +406,13 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
       .from("countries")
       .select("id, name")
       .in("id", [pkg.origin_country_id, pkg.destination_country_id].filter(Boolean)),
+    adminSupabase
+      .from("package_revisions")
+      .select("id, status, summary, changed_fields, submitted_at, reviewed_at, approved_at, rejection_reason, created_at, updated_at")
+      .eq("package_id", pkg.id)
+      .eq("merchant_id", merchant.id)
+      .order("created_at", { ascending: false })
+      .limit(6),
   ])
 
   const translations = (translationResult.data || []) as PackageTranslationRow[]
@@ -325,7 +423,12 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
   const tags = (tagsResult.data as TagRow[] | null) || []
   const itineraryDays = (itineraryDaysResult.data as ItineraryDayRow[] | null) || []
   const countries = (countriesResult.data as CountryRow[] | null) || []
+  const revisions = (revisionsResult.data as PackageRevisionHistoryRow[] | null) || []
   const countryMap = new Map(countries.map((country) => [country.id, country.name]))
+  const editableRevision = revisions.find((revision) => revision.status === "draft" || revision.status === "rejected") || null
+  const editHref = editableRevision
+    ? `/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit?revision=${encodeURIComponent(editableRevision.id)}`
+    : `/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`
 
   const displayTitle = translation?.title || pkg.title || "Detail Paket"
   const coverImage = pkg.cover_image || galleryImages[0]?.image_url || "/placeholder.png"
@@ -350,10 +453,10 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
               {copy.backToList}
             </Link>
             <Link
-              href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`}
+              href={editHref}
               className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20"
             >
-              {copy.editPackage}
+              {editableRevision ? copy.continueRevision : copy.editPackage}
             </Link>
           </div>
         </section>
@@ -411,6 +514,111 @@ export default async function MerchantPackageDetailPage({ params, searchParams }
                   </span>
                 ))}
               </div>
+            </section>
+
+            <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{copy.revisionHistory}</p>
+                {editableRevision ? (
+                  <Link
+                    href={editHref}
+                    className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                  >
+                    {copy.continueRevision}
+                  </Link>
+                ) : null}
+              </div>
+              {revisions.length === 0 ? (
+                <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  {copy.revisionEmpty}
+                </div>
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {revisions.map((revision) => {
+                    const changedFields = (revision.changed_fields || []).filter(Boolean)
+                    const hint =
+                      revision.status === "pending"
+                        ? copy.pendingRevisionHint
+                        : revision.status === "approved"
+                          ? copy.approvedRevisionHint
+                          : revision.status === "rejected"
+                            ? copy.rejectedRevisionHint
+                            : null
+                    const reviewDate = revision.reviewed_at || revision.approved_at
+                    const continueHref = `/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit?revision=${encodeURIComponent(revision.id)}`
+                    return (
+                      <article key={revision.id} className="rounded-[22px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {copy.revisionStatus}: {formatRevisionStatus(revision.status, activeLocale)}
+                            </p>
+                            {revision.summary ? (
+                              <p className="mt-2 text-sm text-slate-600">
+                                {copy.revisionSummary}: {revision.summary}
+                              </p>
+                            ) : null}
+                          </div>
+                          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${revisionStatusClasses(revision.status)}`}>
+                            {formatRevisionStatus(revision.status, activeLocale)}
+                          </span>
+                        </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.revisionSubmittedAt}</p>
+                            <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(revision.submitted_at || revision.created_at, activeLocale)}</p>
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.revisionReviewedAt}</p>
+                            <p className="mt-2 text-sm font-medium text-slate-900">{formatDate(reviewDate, activeLocale)}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.revisionLiveNote}</p>
+                            <p className="mt-2 text-sm font-medium text-slate-900">{pkg.status || "-"}</p>
+                          </div>
+                          <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">{copy.revisionChangedFields}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {changedFields.length > 0 ? (
+                                changedFields.slice(0, 6).map((field) => (
+                                  <span key={field} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-700">
+                                    {field}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-sm text-slate-500">-</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {hint ? (
+                          <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                            {hint}
+                          </p>
+                        ) : null}
+                        {revision.rejection_reason ? (
+                          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-rose-600">{copy.revisionAdminNote}</p>
+                            <p className="mt-2 text-sm leading-6 text-rose-800">{revision.rejection_reason}</p>
+                          </div>
+                        ) : null}
+                        {(revision.status === "draft" || revision.status === "rejected") ? (
+                          <div className="mt-4">
+                            <Link
+                              href={continueHref}
+                              className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
+                            >
+                              {copy.continueRevision}
+                            </Link>
+                          </div>
+                        ) : null}
+                      </article>
+                    )
+                  })}
+                </div>
+              )}
             </section>
 
             <PackageTabs
