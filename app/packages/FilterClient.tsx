@@ -125,25 +125,24 @@ function hashSeed(value: string) {
   return hash
 }
 
+const COUNTRY_MAP_PRESETS: Record<string, { centerLabel: string; left: number; top: number; width: number; height: number; bbox: string }> = {
+  china: { centerLabel: "China", left: 60, top: 43, width: 34, height: 26, bbox: "73.0,18.0,135.0,54.0" },
+  indonesia: { centerLabel: "Indonesia", left: 53, top: 58, width: 42, height: 18, bbox: "94.0,-12.0,142.0,8.0" },
+  japan: { centerLabel: "Japan", left: 73, top: 35, width: 18, height: 24, bbox: "128.0,30.0,147.0,46.0" },
+  singapore: { centerLabel: "Singapore", left: 58, top: 60, width: 10, height: 12, bbox: "103.55,1.14,104.08,1.50" },
+  malaysia: { centerLabel: "Malaysia", left: 57, top: 55, width: 16, height: 18, bbox: "99.0,0.8,120.0,8.5" },
+  thailand: { centerLabel: "Thailand", left: 56, top: 48, width: 18, height: 22, bbox: "97.0,5.0,106.0,21.0" },
+  vietnam: { centerLabel: "Vietnam", left: 63, top: 46, width: 14, height: 26, bbox: "102.0,8.0,110.0,24.0" },
+  korea: { centerLabel: "Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
+  "south korea": { centerLabel: "South Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
+  "hong kong": { centerLabel: "Hong Kong", left: 66, top: 45, width: 9, height: 10, bbox: "113.80,22.10,114.50,22.60" },
+  "arab saudi": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
+  "saudi arabia": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
+}
+
 function getCountryMapWindow(country?: string): MapWindow {
   const normalized = (country || "").trim().toLowerCase()
-
-  const presets: Record<string, { centerLabel: string; left: number; top: number; width: number; height: number; bbox: string }> = {
-    china: { centerLabel: "China", left: 60, top: 43, width: 34, height: 26, bbox: "73.0,18.0,135.0,54.0" },
-    indonesia: { centerLabel: "Indonesia", left: 53, top: 58, width: 42, height: 18, bbox: "94.0,-12.0,142.0,8.0" },
-    japan: { centerLabel: "Japan", left: 73, top: 35, width: 18, height: 24, bbox: "128.0,30.0,147.0,46.0" },
-    singapore: { centerLabel: "Singapore", left: 58, top: 60, width: 10, height: 12, bbox: "103.55,1.14,104.08,1.50" },
-    malaysia: { centerLabel: "Malaysia", left: 57, top: 55, width: 16, height: 18, bbox: "99.0,0.8,120.0,8.5" },
-    thailand: { centerLabel: "Thailand", left: 56, top: 48, width: 18, height: 22, bbox: "97.0,5.0,106.0,21.0" },
-    vietnam: { centerLabel: "Vietnam", left: 63, top: 46, width: 14, height: 26, bbox: "102.0,8.0,110.0,24.0" },
-    korea: { centerLabel: "Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
-    "south korea": { centerLabel: "South Korea", left: 69, top: 34, width: 12, height: 18, bbox: "124.0,33.0,132.0,39.0" },
-    "hong kong": { centerLabel: "Hong Kong", left: 66, top: 45, width: 9, height: 10, bbox: "113.80,22.10,114.50,22.60" },
-    "arab saudi": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
-    "saudi arabia": { centerLabel: "Saudi Arabia", left: 44, top: 46, width: 24, height: 20, bbox: "34.0,16.0,56.0,33.0" },
-  }
-
-  return presets[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22, bbox: "60.0,-12.0,150.0,55.0" }
+  return COUNTRY_MAP_PRESETS[normalized] || { centerLabel: country || "Asia", left: 58, top: 46, width: 24, height: 22, bbox: "60.0,-12.0,150.0,55.0" }
 }
 
 function parseBBox(bbox: string) {
@@ -263,7 +262,8 @@ function buildCountryMarkerLayout(packages: PackagePreview[], selectedCountry: s
   })
 
   return Array.from(groupedByCountry.entries()).map(([country, countryPackages], index) => {
-    const windowBox = getCountryMapWindow(country || selectedCountry)
+    const countryGeoPackages = countryPackages.filter((pkg) => getPreviewGeoPoint(pkg) !== null)
+    const windowBox = countryGeoPackages.length > 0 ? buildGeoMapWindow(countryGeoPackages, country || selectedCountry) : getCountryMapWindow(country || selectedCountry)
     const seed = hashSeed(`${country}-${index}-${countryPackages.length}`)
     const jitterX = ((seed % 100) / 100 - 0.5) * Math.min(windowBox.width * 0.08, 2.4)
     const jitterY = ((Math.floor(seed / 19) % 100) / 100 - 0.5) * Math.min(windowBox.height * 0.08, 2)
@@ -278,6 +278,52 @@ function buildCountryMarkerLayout(packages: PackagePreview[], selectedCountry: s
       windowBox,
     }
   })
+}
+
+function buildCountryOverviewWindow(
+  entries: Array<{
+    country: string
+    windowBox: MapWindow
+  }>,
+  selectedCountry?: string,
+) {
+  if (entries.length === 0) return getCountryMapWindow(selectedCountry)
+
+  const prioritizedEntry =
+    entries.find((entry) => entry.country.trim().toLowerCase() === (selectedCountry || "").trim().toLowerCase()) || entries[0]
+
+  if (selectedCountry) return prioritizedEntry.windowBox
+
+  const unionBBox = entries.reduce(
+    (acc, entry) => {
+      const bounds = parseBBox(entry.windowBox.bbox)
+      return {
+        minLng: Math.min(acc.minLng, bounds.minLng),
+        minLat: Math.min(acc.minLat, bounds.minLat),
+        maxLng: Math.max(acc.maxLng, bounds.maxLng),
+        maxLat: Math.max(acc.maxLat, bounds.maxLat),
+      }
+    },
+    {
+      minLng: Number.POSITIVE_INFINITY,
+      minLat: Number.POSITIVE_INFINITY,
+      maxLng: Number.NEGATIVE_INFINITY,
+      maxLat: Number.NEGATIVE_INFINITY,
+    },
+  )
+
+  const paddedLng = Math.max((unionBBox.maxLng - unionBBox.minLng) * 0.12, 4)
+  const paddedLat = Math.max((unionBBox.maxLat - unionBBox.minLat) * 0.12, 3)
+
+  return buildMapWindowFromBBox(
+    stringifyBBox({
+      minLng: clamp(unionBBox.minLng - paddedLng, -179.5, 179.5),
+      minLat: clamp(unionBBox.minLat - paddedLat, -85, 85),
+      maxLng: clamp(unionBBox.maxLng + paddedLng, -179.5, 179.5),
+      maxLat: clamp(unionBBox.maxLat + paddedLat, -85, 85),
+    }),
+    prioritizedEntry.country || "Asia",
+  )
 }
 
 export default function FilterClient({
@@ -496,8 +542,8 @@ export default function FilterClient({
         ? "当前筛选下还没有可显示的套餐点位。"
         : "Belum ada titik paket yang siap ditampilkan untuk filter ini."
   const mapModalPackages = [...(packages || [])].sort((a, b) => getPreviewPrice(a) - getPreviewPrice(b)).slice(0, 15)
-  const mapWindow = getCountryMapWindow(selectedCountry)
   const mapCountries = buildCountryMarkerLayout(mapModalPackages, selectedCountry)
+  const mapWindow = buildCountryOverviewWindow(mapCountries, selectedCountry)
   const activeCountryLabel = selectedCountry || manualActiveMapCountry || mapCountries[0]?.country || mapWindow.centerLabel
   const mapModalSurfaceTitle = mapModalTitle
   const mapModalSurfaceHint = mapModalHint
