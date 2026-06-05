@@ -1,9 +1,10 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { useEffect } from "react"
 import type { DivIcon } from "leaflet"
 import L from "leaflet"
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet"
+import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 
 type MarkerPoint = {
@@ -87,12 +88,21 @@ function BoundsSync({
 export default function ActiveResultsMap({
   bbox,
   markers,
+  activeMarker,
   onBoundsChange,
+  onClearSelection,
   onSelectMarker,
 }: {
   bbox: string
   markers: MarkerPoint[]
+  activeMarker?: {
+    id: string
+    lat: number
+    lng: number
+    content: ReactNode
+  } | null
   onBoundsChange?: ((bbox: string) => void) | null
+  onClearSelection?: (() => void) | null
   onSelectMarker: (markerId: string) => void
 }) {
   return (
@@ -120,6 +130,22 @@ export default function ActiveResultsMap({
           }}
         />
       ))}
+      {activeMarker ? (
+        <Popup
+          position={[activeMarker.lat, activeMarker.lng]}
+          closeButton={false}
+          autoClose={false}
+          closeOnClick={false}
+          autoPan={false}
+          offset={[0, -44]}
+          className="rf-map-preview-popup"
+          eventHandlers={{
+            remove: () => onClearSelection?.(),
+          }}
+        >
+          {activeMarker.content}
+        </Popup>
+      ) : null}
     </MapContainer>
   )
 }

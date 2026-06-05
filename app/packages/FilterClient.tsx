@@ -645,6 +645,9 @@ export default function FilterClient({
   const resolvedActiveMapPackage = useActiveResultMap
     ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId)?.pkg || resolvedGeoMarkers[0]?.pkg || null
     : null
+  const resolvedActiveMapMarker = useActiveResultMap
+    ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId) || null
+    : null
   const resolvedMapModalSurfaceTitle = useActiveResultMap
     ? locale === "en"
       ? "Active package results"
@@ -1079,7 +1082,60 @@ export default function FilterClient({
                     }))
                   : resolvedCountryMarkers
               }
+              activeMarker={
+                useActiveResultMap && resolvedActiveMapPackage && resolvedActiveMapMarker
+                  ? {
+                      id: resolvedActiveMapPackage.id,
+                      lat: resolvedActiveMapMarker.point.lat,
+                      lng: resolvedActiveMapMarker.point.lng,
+                      content: (
+                        <div className="w-[320px] overflow-hidden rounded-[24px] border border-white/80 bg-white shadow-[0_26px_60px_-28px_rgba(15,23,42,0.38)]">
+                          <div className="relative h-[180px] w-full bg-slate-100">
+                            <Image
+                              src={getPreviewImage(resolvedActiveMapPackage)}
+                              alt={getPreviewTitle(resolvedActiveMapPackage, locale)}
+                              fill
+                              sizes="320px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="space-y-3 p-4">
+                            <div>
+                              <p className="line-clamp-2 text-[22px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-950">
+                                {getPreviewTitle(resolvedActiveMapPackage, locale)}
+                              </p>
+                              {getPreviewMeta(resolvedActiveMapPackage, locale) ? (
+                                <p className="mt-2 text-sm text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
+                              ) : null}
+                            </div>
+                            <div className="flex items-end justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                                  {locale === "en" ? "Starting from" : locale === "zh" ? "起价" : "Mulai dari"}
+                                </p>
+                                <p className="mt-1 truncate text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
+                                  {formatPackageMoney(
+                                    getPreviewPrice(resolvedActiveMapPackage),
+                                    resolvedActiveMapPackage.livePricing?.currency || resolvedActiveMapPackage.currency || priceCurrency,
+                                    locale,
+                                  )}
+                                </p>
+                              </div>
+                              <Link
+                                href={`/packages/${encodeURIComponent(resolvedActiveMapPackage.slug)}`}
+                                className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
+                              >
+                                {mapPreviewOpenLabel}
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    }
+                  : null
+              }
               onBoundsChange={useActiveResultMap ? handleActiveMapBoundsChange : null}
+              onClearSelection={useActiveResultMap ? () => setManualActiveMapPackageId("") : null}
               onSelectMarker={useActiveResultMap ? setManualActiveMapPackageId : setManualActiveMapCountry}
             />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
@@ -1095,52 +1151,6 @@ export default function FilterClient({
                 {useActiveResultMap ? resetViewportLabel : "Fit"}
               </button>
             </div>
-
-            {useActiveResultMap && resolvedActiveMapPackage ? (
-              <div className="pointer-events-none absolute inset-x-4 bottom-5 z-[950] flex justify-center md:inset-x-auto md:bottom-6 md:right-24">
-                <div className="pointer-events-auto w-full max-w-[360px] overflow-hidden rounded-[24px] border border-white/80 bg-white/96 shadow-[0_26px_60px_-28px_rgba(15,23,42,0.38)] backdrop-blur md:w-[360px]">
-                  <div className="relative h-[180px] w-full bg-slate-100">
-                    <Image
-                      src={getPreviewImage(resolvedActiveMapPackage)}
-                      alt={getPreviewTitle(resolvedActiveMapPackage, locale)}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 360px"
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="space-y-3 p-4">
-                    <div>
-                      <p className="line-clamp-2 text-[22px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-950">
-                        {getPreviewTitle(resolvedActiveMapPackage, locale)}
-                      </p>
-                      {getPreviewMeta(resolvedActiveMapPackage, locale) ? (
-                        <p className="mt-2 text-sm text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
-                      ) : null}
-                    </div>
-                    <div className="flex items-end justify-between gap-4">
-                      <div className="min-w-0">
-                        <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
-                          {locale === "en" ? "Starting from" : locale === "zh" ? "起价" : "Mulai dari"}
-                        </p>
-                        <p className="mt-1 truncate text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
-                          {formatPackageMoney(
-                            getPreviewPrice(resolvedActiveMapPackage),
-                            resolvedActiveMapPackage.livePricing?.currency || resolvedActiveMapPackage.currency || priceCurrency,
-                            locale,
-                          )}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/packages/${encodeURIComponent(resolvedActiveMapPackage.slug)}`}
-                        className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
-                      >
-                        {mapPreviewOpenLabel}
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
 
             {!useActiveResultMap && mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
