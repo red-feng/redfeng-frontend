@@ -423,9 +423,11 @@ export default function EditStep2Details({
 
       <div>
         <label className="mb-2 block font-medium text-slate-800">{t.pickupMapEmbed}</label>
+        <p className="mb-2 text-xs leading-6 text-slate-500">{t.pickupMapEmbedHint}</p>
         <textarea
           name="map_embed"
           defaultValue={mapEmbed}
+          placeholder={t.pickupMapEmbedPlaceholder}
           className="h-24 w-full rounded-2xl border p-4 outline-none focus:ring-2 focus:ring-orange-400"
         />
       </div>
@@ -433,6 +435,7 @@ export default function EditStep2Details({
       <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
         <p className="text-sm font-semibold text-slate-900">{t.geoSectionTitle || "Lokasi peta paket"}</p>
         <p className="mt-1 text-xs leading-6 text-slate-500">{t.locationTypeHint}</p>
+        <p className="mt-1 text-xs leading-6 text-slate-500">{t.locationTypeExamples}</p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
@@ -469,6 +472,7 @@ export default function EditStep2Details({
               inputMode="numeric"
               value={viewportRadiusKm}
               onChange={(event) => setViewportRadiusKm(event.target.value)}
+              placeholder={t.viewportRadiusPlaceholder}
               className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
             />
             <p className="mt-1 text-xs text-slate-500">{t.viewportRadiusHint}</p>
@@ -481,6 +485,7 @@ export default function EditStep2Details({
               inputMode="decimal"
               value={primaryLat}
               onChange={(event) => setPrimaryLat(event.target.value)}
+              placeholder={t.latitudePlaceholder}
               className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
             />
           </div>
@@ -492,6 +497,7 @@ export default function EditStep2Details({
               inputMode="decimal"
               value={primaryLng}
               onChange={(event) => setPrimaryLng(event.target.value)}
+              placeholder={t.longitudePlaceholder}
               className="w-full rounded-2xl border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
             />
           </div>

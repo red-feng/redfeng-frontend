@@ -59,18 +59,24 @@ type MerchantWizardDictionary = {
   highlights: string
   termsConditions: string
   pickupMapEmbed: string
+  pickupMapEmbedHint?: string
+  pickupMapEmbedPlaceholder?: string
   geoSectionTitle?: string
   locationLabel?: string
   locationLabelPlaceholder?: string
   locationType?: string
   locationTypeHint?: string
+  locationTypeExamples?: string
   locationTypeCountry?: string
   locationTypeCity?: string
   locationTypeMeetingPoint?: string
   locationTypeTourArea?: string
   latitude?: string
+  latitudePlaceholder?: string
   longitude?: string
+  longitudePlaceholder?: string
   viewportRadiusKm?: string
+  viewportRadiusPlaceholder?: string
   viewportRadiusHint?: string
   galleryImages: string
   galleryLimitHint: string
@@ -168,20 +174,31 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     meetingPoint: "Meeting Point",
     highlights: "Tag / Highlight",
     termsConditions: "Syarat & Ketentuan saat di lokasi",
-    pickupMapEmbed: "Embedding titik penjemputan wisatawan di Google Maps",
+    pickupMapEmbed: "Embed Google Maps meeting point (opsional)",
+    pickupMapEmbedHint:
+      "Dipakai untuk preview peta di halaman paket. Tidak wajib untuk filter map katalog. Untuk katalog map, isi juga label lokasi, tipe lokasi, latitude, dan longitude.",
+    pickupMapEmbedPlaceholder:
+      "Tempel kode embed iframe Google Maps jika ingin menampilkan preview peta di halaman detail paket.",
     geoSectionTitle: "Lokasi peta paket",
     locationLabel: "Label lokasi",
-    locationLabelPlaceholder: "Contoh: Central Hong Kong, Ubud, Meeting Point Bandara",
+    locationLabelPlaceholder: "Contoh: Bandara Internasional Juanda Surabaya, Ubud Center, Central Hong Kong",
     locationType: "Tipe lokasi",
-    locationTypeHint: "Pilih level lokasi yang paling mewakili paket ini di peta.",
+    locationTypeHint:
+      "Pilih jenis titik yang paling mewakili paket ini di peta. Meeting point dan kota/destinasi sebaiknya dilengkapi koordinat.",
+    locationTypeExamples:
+      "Meeting point: titik kumpul. Kota/destinasi: pusat kota atau tujuan utama. Area tour: area wisata yang lebih luas.",
     locationTypeCountry: "Negara",
     locationTypeCity: "Kota / destinasi",
     locationTypeMeetingPoint: "Meeting point",
     locationTypeTourArea: "Area tour",
     latitude: "Latitude",
+    latitudePlaceholder: "Contoh: -7.3797",
     longitude: "Longitude",
+    longitudePlaceholder: "Contoh: 112.7872",
     viewportRadiusKm: "Radius area (km)",
-    viewportRadiusHint: "Opsional. Cocok untuk paket yang mewakili area lebih luas daripada satu titik.",
+    viewportRadiusPlaceholder: "Contoh: 10",
+    viewportRadiusHint:
+      "Opsional. Isi jika tipe lokasi adalah area tour. Kosongkan untuk meeting point atau kota jika cukup 1 titik.",
     galleryImages: "Galeri Gambar",
     galleryLimitHint: "Maksimal total ukuran upload 18MB per submit.",
     uploadTooLarge: "Ukuran total file gambar terlalu besar.",
@@ -270,20 +287,31 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     meetingPoint: "Meeting Point",
     highlights: "Tags / Highlights",
     termsConditions: "Terms & Conditions on Site",
-    pickupMapEmbed: "Google Maps embed for tourist pickup point",
+    pickupMapEmbed: "Google Maps meeting point embed (optional)",
+    pickupMapEmbedHint:
+      "Used for map preview on the package page. It is not required for catalog map filtering. For catalog map features, also fill in the location label, location type, latitude, and longitude.",
+    pickupMapEmbedPlaceholder:
+      "Paste the Google Maps iframe embed code if you want to show a preview map on the package detail page.",
     geoSectionTitle: "Package map location",
     locationLabel: "Location label",
-    locationLabelPlaceholder: "Example: Central Hong Kong, Ubud, Airport meeting point",
+    locationLabelPlaceholder: "Example: Juanda International Airport Surabaya, Ubud Center, Central Hong Kong",
     locationType: "Location type",
-    locationTypeHint: "Choose the map level that best represents this package.",
+    locationTypeHint:
+      "Choose the point type that best represents this package on the map. Meeting points and cities/destinations should usually include coordinates.",
+    locationTypeExamples:
+      "Meeting point: pickup spot. City/destination: city center or main destination. Tour area: a broader travel area.",
     locationTypeCountry: "Country",
     locationTypeCity: "City / destination",
     locationTypeMeetingPoint: "Meeting point",
     locationTypeTourArea: "Tour area",
     latitude: "Latitude",
+    latitudePlaceholder: "Example: -7.3797",
     longitude: "Longitude",
+    longitudePlaceholder: "Example: 112.7872",
     viewportRadiusKm: "Area radius (km)",
-    viewportRadiusHint: "Optional. Useful when the package represents a broader area than a single point.",
+    viewportRadiusPlaceholder: "Example: 10",
+    viewportRadiusHint:
+      "Optional. Fill this in when the location type is a tour area. Leave it blank for a meeting point or city when a single point is enough.",
     galleryImages: "Gallery Images",
     galleryLimitHint: "Maximum total upload size is 18MB per submit.",
     uploadTooLarge: "Total image file size is too large.",
@@ -366,20 +394,28 @@ const dictionaries: Record<Locale, MerchantWizardDictionary> = {
     meetingPoint: "集合地点",
     highlights: "标签 / 亮点",
     termsConditions: "现场条款与条件",
-    pickupMapEmbed: "游客接送点 Google 地图嵌入代码",
+    pickupMapEmbed: "Google 地图集合点嵌入代码（可选）",
+    pickupMapEmbedHint:
+      "此字段仅用于套餐详情页中的地图预览，并非目录地图筛选的必填项。若要用于目录地图，请同时填写位置标签、位置类型、纬度和经度。",
+    pickupMapEmbedPlaceholder:
+      "如果希望在套餐详情页显示地图预览，请粘贴 Google Maps iframe 嵌入代码。",
     geoSectionTitle: "套餐地图位置",
     locationLabel: "位置标签",
-    locationLabelPlaceholder: "例如：香港中环、乌布、机场集合点",
+    locationLabelPlaceholder: "例如：泗水朱安达国际机场、乌布中心、香港中环",
     locationType: "位置类型",
-    locationTypeHint: "选择最能代表该套餐地图展示层级的位置类型。",
+    locationTypeHint: "请选择最能代表该套餐地图位置的类型。集合点和城市/目的地通常应填写坐标。",
+    locationTypeExamples: "集合点：集合或接送地点。城市/目的地：城市中心或主要目的地。旅游区域：较大的游览范围。",
     locationTypeCountry: "国家",
     locationTypeCity: "城市 / 目的地",
     locationTypeMeetingPoint: "集合点",
     locationTypeTourArea: "旅游区域",
     latitude: "纬度",
+    latitudePlaceholder: "例如：-7.3797",
     longitude: "经度",
+    longitudePlaceholder: "例如：112.7872",
     viewportRadiusKm: "区域半径（公里）",
-    viewportRadiusHint: "可选。适用于覆盖范围比单一点位更广的套餐。",
+    viewportRadiusPlaceholder: "例如：10",
+    viewportRadiusHint: "可选。当地点类型为旅游区域时填写。若集合点或城市只需一个点位，可留空。",
     galleryImages: "图片库",
     galleryLimitHint: "每次提交的上传总大小最多 18MB。",
     uploadTooLarge: "图片文件总大小过大。",
