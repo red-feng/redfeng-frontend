@@ -59,9 +59,11 @@ function boundsToBBox(bounds: L.LatLngBounds) {
 function BoundsSync({
   bbox,
   onBoundsChange,
+  onMapBackgroundClick,
 }: {
   bbox: string
   onBoundsChange?: ((bbox: string) => void) | null
+  onMapBackgroundClick?: (() => void) | null
 }) {
   const map = useMap()
 
@@ -74,6 +76,9 @@ function BoundsSync({
   }, [bbox, map])
 
   useMapEvents({
+    click() {
+      onMapBackgroundClick?.()
+    },
     moveend() {
       onBoundsChange?.(boundsToBBox(map.getBounds()))
     },
@@ -148,13 +153,16 @@ function ActiveMarkerOverlay({
 
   return (
     <div
-      className="pointer-events-none absolute z-[950]"
+      className="pointer-events-none absolute z-[950] transition-[left,top] duration-300 ease-out"
       style={{
         left: bubbleLeft,
         top: bubbleTop,
       }}
     >
-      <div ref={cardRef} className="pointer-events-auto relative">
+      <div
+        ref={cardRef}
+        className="pointer-events-auto relative origin-bottom animate-[mapPreviewIn_220ms_ease-out]"
+      >
         {activeMarker.content}
         <div
           className={`absolute h-4 w-4 -translate-x-1/2 rotate-45 bg-white shadow-[0_18px_30px_-24px_rgba(15,23,42,0.28)] ${arrowTopClass}`}
@@ -171,6 +179,7 @@ export default function ActiveResultsMap({
   markers,
   activeMarker,
   onBoundsChange,
+  onMapBackgroundClick,
   onSelectMarker,
 }: {
   bbox: string
@@ -182,6 +191,7 @@ export default function ActiveResultsMap({
     content: ReactNode
   } | null
   onBoundsChange?: ((bbox: string) => void) | null
+  onMapBackgroundClick?: (() => void) | null
   onSelectMarker: (markerId: string) => void
 }) {
   return (
@@ -198,7 +208,7 @@ export default function ActiveResultsMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <BoundsSync bbox={bbox} onBoundsChange={onBoundsChange} />
+      <BoundsSync bbox={bbox} onBoundsChange={onBoundsChange} onMapBackgroundClick={onMapBackgroundClick} />
       {markers.map((point) => (
         <Marker
           key={point.id}
