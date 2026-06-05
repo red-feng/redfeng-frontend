@@ -300,6 +300,7 @@ export default function FilterClient({
   const searchParams = useSearchParams()
   const t = dictionaries[locale].filter
   const priceCurrency = localeCurrencyMap[locale]
+  const showMapDebug = searchParams.get("debug_map") === "1"
   const sliderMin = 0
   const sliderMax = Math.max(maxAvailablePrice, sliderMin)
   const priceChangeTimeoutRef = useRef<number | null>(null)
@@ -689,6 +690,20 @@ export default function FilterClient({
       bbox: nextBBox,
     })
   }
+  const mapDebugRows = showMapDebug
+    ? (packages || []).slice(0, 12).map((pkg) => {
+        const point = getPreviewGeoPoint(pkg)
+        return {
+          id: pkg.id,
+          title: getPreviewTitle(pkg, locale),
+          country: pkg.country || "-",
+          hasGeo: Boolean(point),
+          lat: point?.lat ?? null,
+          lng: point?.lng ?? null,
+          locationLabel: point?.label || "-",
+        }
+      })
+    : []
 
 
   const applyCountrySelection = (country: string) => {
@@ -920,6 +935,25 @@ export default function FilterClient({
       </div>
 
       <div className="hidden lg:block">{filterBody}</div>
+
+      {showMapDebug ? (
+        <div className="mt-4 rounded-[22px] border border-amber-200 bg-amber-50/80 p-4 text-sm text-slate-700 shadow-[0_18px_40px_-34px_rgba(180,83,9,0.18)]">
+          <p className="font-semibold text-amber-900">Debug map geo</p>
+          <p className="mt-1 text-xs text-amber-800">
+            `useActiveResultMap`: {String(useActiveResultMap)} | `selectedCountry`: {selectedCountry || "-"} | `geoReadyPackages`: {geoReadyPackages.length} / {(packages || []).length}
+          </p>
+          <div className="mt-3 space-y-2">
+            {mapDebugRows.map((row) => (
+              <div key={row.id} className="rounded-xl border border-amber-200 bg-white/80 px-3 py-2">
+                <p className="font-medium text-slate-900">{row.title}</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  {row.country} | geo: {row.hasGeo ? "yes" : "no"} | lat: {row.lat ?? "-"} | lng: {row.lng ?? "-"} | label: {row.locationLabel}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {isMapModalOpen ? (
         <div className="fixed inset-0 z-[80] bg-white">
