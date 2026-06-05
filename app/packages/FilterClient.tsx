@@ -640,6 +640,9 @@ export default function FilterClient({
   const resolvedActiveCountryGroup = !useActiveResultMap
     ? mapCountries.find((entry) => entry.country === activeCountryLabel) || mapCountries[0] || null
     : null
+  const selectedCountryGroup = !useActiveResultMap
+    ? mapCountries.find((entry) => entry.country === manualActiveMapCountry) || null
+    : null
   const resolvedActiveMapPackageId = useActiveResultMap
     ? (resolvedGeoMarkers.some((entry) => entry.pkg.id === manualActiveMapPackageId)
         ? manualActiveMapPackageId
@@ -653,6 +656,20 @@ export default function FilterClient({
     : resolvedActiveCountryGroup
       ? {
           point: getBBoxCenter(resolvedActiveCountryGroup.windowBox.bbox),
+        }
+      : null
+  const popupActivePackage = useActiveResultMap
+    ? (manualActiveMapPackageId
+        ? resolvedGeoMarkers.find((entry) => entry.pkg.id === manualActiveMapPackageId)?.pkg || null
+        : null)
+    : selectedCountryGroup?.cheapestPackage || null
+  const popupActiveMarker = useActiveResultMap
+    ? (manualActiveMapPackageId
+        ? resolvedGeoMarkers.find((entry) => entry.pkg.id === manualActiveMapPackageId) || null
+        : null)
+    : selectedCountryGroup
+      ? {
+          point: getBBoxCenter(selectedCountryGroup.windowBox.bbox),
         }
       : null
   const resolvedMapModalSurfaceTitle = useActiveResultMap
@@ -1090,17 +1107,17 @@ export default function FilterClient({
                   : resolvedCountryMarkers
               }
               activeMarker={
-                resolvedActiveMapPackage && resolvedActiveMapMarker
+                popupActivePackage && popupActiveMarker
                   ? {
-                      id: resolvedActiveMapPackage.id,
-                      lat: resolvedActiveMapMarker.point.lat,
-                      lng: resolvedActiveMapMarker.point.lng,
+                      id: popupActivePackage.id,
+                      lat: popupActiveMarker.point.lat,
+                      lng: popupActiveMarker.point.lng,
                       content: (
                         <div className="w-[280px] overflow-hidden rounded-[22px] border border-white/90 bg-white/98 shadow-[0_26px_60px_-28px_rgba(15,23,42,0.34)] backdrop-blur">
                           <div className="relative h-[156px] w-full bg-slate-100">
                             <Image
-                              src={getPreviewImage(resolvedActiveMapPackage)}
-                              alt={getPreviewTitle(resolvedActiveMapPackage, locale)}
+                              src={getPreviewImage(popupActivePackage)}
+                              alt={getPreviewTitle(popupActivePackage, locale)}
                               fill
                               sizes="280px"
                               className="object-cover"
@@ -1109,10 +1126,10 @@ export default function FilterClient({
                           <div className="space-y-3 p-4">
                             <div>
                               <p className="line-clamp-2 text-[18px] font-semibold leading-[1.12] tracking-[-0.03em] text-slate-950">
-                                {getPreviewTitle(resolvedActiveMapPackage, locale)}
+                                {getPreviewTitle(popupActivePackage, locale)}
                               </p>
-                              {getPreviewMeta(resolvedActiveMapPackage, locale) ? (
-                                <p className="mt-1.5 text-[13px] text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
+                              {getPreviewMeta(popupActivePackage, locale) ? (
+                                <p className="mt-1.5 text-[13px] text-slate-500">{getPreviewMeta(popupActivePackage, locale)}</p>
                               ) : null}
                             </div>
                             <div className="flex items-end justify-between gap-3">
@@ -1122,14 +1139,14 @@ export default function FilterClient({
                                 </p>
                                 <p className="mt-1 truncate text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
                                   {formatPackageMoney(
-                                    getPreviewPrice(resolvedActiveMapPackage),
-                                    resolvedActiveMapPackage.livePricing?.currency || resolvedActiveMapPackage.currency || priceCurrency,
+                                    getPreviewPrice(popupActivePackage),
+                                    popupActivePackage.livePricing?.currency || popupActivePackage.currency || priceCurrency,
                                     locale,
                                   )}
                                 </p>
                               </div>
                               <Link
-                                href={`/packages/${encodeURIComponent(resolvedActiveMapPackage.slug)}`}
+                                href={`/packages/${encodeURIComponent(popupActivePackage.slug)}`}
                                 className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
                               >
                                 {mapPreviewOpenLabel}
