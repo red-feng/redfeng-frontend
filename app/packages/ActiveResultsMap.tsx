@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { DivIcon } from "leaflet"
 import L from "leaflet"
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet"
@@ -97,6 +97,8 @@ function ActiveMarkerOverlay({
 }) {
   const map = useMap()
   const [position, setPosition] = useState(() => map.latLngToContainerPoint([activeMarker.lat, activeMarker.lng]))
+  const cardRef = useRef<HTMLDivElement | null>(null)
+  const [cardSize, setCardSize] = useState({ width: 300, height: 280 })
 
   useEffect(() => {
     const updatePosition = () => {
@@ -110,19 +112,53 @@ function ActiveMarkerOverlay({
     }
   }, [activeMarker.lat, activeMarker.lng, map])
 
+  useEffect(() => {
+    const node = cardRef.current
+    if (!node) return
+
+    const updateSize = () => {
+      setCardSize({
+        width: node.offsetWidth || 300,
+        height: node.offsetHeight || 280,
+      })
+    }
+
+    updateSize()
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(updateSize)
+      observer.observe(node)
+      return () => observer.disconnect()
+    }
+  }, [activeMarker.id])
+
+  const mapSize = map.getSize()
+  const margin = 18
+  const bubbleGap = 18
+  const bubbleLeft = Math.min(
+    Math.max(position.x - cardSize.width / 2, margin),
+    Math.max(margin, mapSize.x - cardSize.width - margin),
+  )
+  const placeAbove = position.y - cardSize.height - bubbleGap - 20 >= margin
+  const bubbleTop = placeAbove
+    ? Math.max(margin, position.y - cardSize.height - bubbleGap - 20)
+    : Math.min(Math.max(margin, position.y + bubbleGap), Math.max(margin, mapSize.y - cardSize.height - margin))
+  const arrowLeft = Math.min(Math.max(position.x - bubbleLeft, 28), cardSize.width - 28)
+  const arrowTopClass = placeAbove ? "top-full -translate-y-1/2" : "bottom-full translate-y-1/2"
+
   return (
     <div
       className="pointer-events-none absolute z-[950]"
       style={{
-        left: position.x,
-        top: position.y - 56,
-        transform: "translate(-50%, -100%)",
+        left: bubbleLeft,
+        top: bubbleTop,
       }}
     >
-      <div className="pointer-events-auto relative">
+      <div ref={cardRef} className="pointer-events-auto relative">
         {activeMarker.content}
         <div
-          className="absolute left-1/2 top-full h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-white shadow-[0_18px_30px_-24px_rgba(15,23,42,0.28)]"
+          className={`absolute h-4 w-4 -translate-x-1/2 rotate-45 bg-white shadow-[0_18px_30px_-24px_rgba(15,23,42,0.28)] ${arrowTopClass}`}
+          style={{ left: arrowLeft }}
           aria-hidden="true"
         />
       </div>

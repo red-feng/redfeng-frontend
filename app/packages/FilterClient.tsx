@@ -1096,31 +1096,31 @@ export default function FilterClient({
                       lat: resolvedActiveMapMarker.point.lat,
                       lng: resolvedActiveMapMarker.point.lng,
                       content: (
-                        <div className="w-[320px] overflow-hidden rounded-[24px] border border-white/80 bg-white shadow-[0_26px_60px_-28px_rgba(15,23,42,0.38)]">
-                          <div className="relative h-[180px] w-full bg-slate-100">
+                        <div className="w-[280px] overflow-hidden rounded-[22px] border border-white/90 bg-white/98 shadow-[0_26px_60px_-28px_rgba(15,23,42,0.34)] backdrop-blur">
+                          <div className="relative h-[156px] w-full bg-slate-100">
                             <Image
                               src={getPreviewImage(resolvedActiveMapPackage)}
                               alt={getPreviewTitle(resolvedActiveMapPackage, locale)}
                               fill
-                              sizes="320px"
+                              sizes="280px"
                               className="object-cover"
                             />
                           </div>
                           <div className="space-y-3 p-4">
                             <div>
-                              <p className="line-clamp-2 text-[22px] font-semibold leading-[1.08] tracking-[-0.03em] text-slate-950">
+                              <p className="line-clamp-2 text-[18px] font-semibold leading-[1.12] tracking-[-0.03em] text-slate-950">
                                 {getPreviewTitle(resolvedActiveMapPackage, locale)}
                               </p>
                               {getPreviewMeta(resolvedActiveMapPackage, locale) ? (
-                                <p className="mt-2 text-sm text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
+                                <p className="mt-1.5 text-[13px] text-slate-500">{getPreviewMeta(resolvedActiveMapPackage, locale)}</p>
                               ) : null}
                             </div>
-                            <div className="flex items-end justify-between gap-4">
+                            <div className="flex items-end justify-between gap-3">
                               <div className="min-w-0">
-                                <p className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
                                   {locale === "en" ? "Starting from" : locale === "zh" ? "起价" : "Mulai dari"}
                                 </p>
-                                <p className="mt-1 truncate text-[28px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
+                                <p className="mt-1 truncate text-[22px] font-semibold leading-none tracking-[-0.04em] text-[#ef5b2a]">
                                   {formatPackageMoney(
                                     getPreviewPrice(resolvedActiveMapPackage),
                                     resolvedActiveMapPackage.livePricing?.currency || resolvedActiveMapPackage.currency || priceCurrency,
@@ -1130,7 +1130,7 @@ export default function FilterClient({
                               </div>
                               <Link
                                 href={`/packages/${encodeURIComponent(resolvedActiveMapPackage.slug)}`}
-                                className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
+                                className="inline-flex shrink-0 items-center rounded-full bg-[#ff6a3d] px-4 py-2.5 text-[13px] font-semibold text-white shadow-[0_14px_30px_-18px_rgba(255,106,61,0.85)] transition hover:brightness-105"
                               >
                                 {mapPreviewOpenLabel}
                               </Link>
