@@ -623,7 +623,8 @@ export default function PackageCatalogInteractiveShell({
                 </div>
               </div>
 
-              <div className="min-w-0 flex-1 xl:max-w-[680px]">
+              {false ? (
+                <div className="min-w-0 flex-1 xl:max-w-[680px]">
                 <div className="overflow-hidden rounded-[18px] border border-[#ff9a68] bg-[linear-gradient(135deg,rgba(255,123,63,0.92)_0%,rgba(255,90,40,0.92)_100%)] p-3 shadow-[0_20px_32px_-24px_rgba(239,68,35,0.42)] backdrop-blur-[2px]">
                   <div className="flex min-w-0 flex-col gap-3 xl:min-h-[96px] xl:flex-row xl:items-center">
                     <div className="relative min-w-0 flex-1">
@@ -726,7 +727,8 @@ export default function PackageCatalogInteractiveShell({
                     </button>
                   </div>
                 </div>
-              </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </section>

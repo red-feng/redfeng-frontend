@@ -367,7 +367,7 @@ export default function HomeResultsClient({
       </aside>
 
       <main className={mainClass}>
-        <SortBar total={totalPackages} locale={locale} summary={showSummaryCard ? packageSummary : null} />
+        {layoutVariant === "flightCatalog" ? null : <SortBar total={totalPackages} locale={locale} summary={showSummaryCard ? packageSummary : null} />}
 
         <div className="relative">
           {isPending ? (
