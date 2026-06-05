@@ -151,6 +151,14 @@ function parseBBox(bbox: string) {
   return { minLng, minLat, maxLng, maxLat }
 }
 
+function getBBoxCenter(bbox: string) {
+  const { minLng, minLat, maxLng, maxLat } = parseBBox(bbox)
+  return {
+    lng: (minLng + maxLng) / 2,
+    lat: (minLat + maxLat) / 2,
+  }
+}
+
 function stringifyBBox({ minLng, minLat, maxLng, maxLat }: { minLng: number; minLat: number; maxLng: number; maxLat: number }) {
   return `${minLng},${minLat},${maxLng},${maxLat}`
 }
@@ -547,7 +555,6 @@ export default function FilterClient({
   const activeViewportBBox =
     useActiveResultMap && mapViewportState?.key === activeResultViewportKey ? mapViewportState.bbox : activeResultBaseWindow.bbox
   const resolvedMapWindow = useActiveResultMap ? buildMapWindowFromBBox(activeViewportBBox, activeResultBaseWindow.centerLabel) : mapWindow
-  const resolvedMapEmbedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(activeViewportBBox)}&layer=mapnik`
   const visibleGeoPackages = useActiveResultMap
     ? geoReadyPackages.filter((pkg) => {
         const point = getPreviewGeoPoint(pkg)
@@ -555,6 +562,19 @@ export default function FilterClient({
       })
     : []
   const resolvedGeoMarkers = useActiveResultMap ? buildGeoMarkerLayout(visibleGeoPackages, activeViewportBBox) : []
+  const resolvedCountryMarkers = !useActiveResultMap
+    ? mapCountries.map(({ country, cheapestPackage, windowBox }) => {
+        const center = getBBoxCenter(windowBox.bbox)
+        return {
+          id: country,
+          lat: center.lat,
+          lng: center.lng,
+          label: country,
+          priceLabel: formatPackageMoney(getPreviewPrice(cheapestPackage), cheapestPackage.livePricing?.currency || cheapestPackage.currency || priceCurrency, locale),
+          active: country === activeCountryLabel,
+        }
+      })
+    : []
   const resolvedActiveMapPackageId = useActiveResultMap
     ? (resolvedGeoMarkers.some((entry) => entry.pkg.id === manualActiveMapPackageId)
         ? manualActiveMapPackageId
@@ -980,29 +1000,23 @@ export default function FilterClient({
           </div>
 
           <div className="relative h-[calc(100vh-69px)] overflow-hidden bg-[#dcebf8]">
-            {useActiveResultMap ? (
-              <ActiveResultsMap
-                bbox={activeViewportBBox}
-                markers={resolvedGeoMarkers.map(({ pkg, point }) => ({
-                  id: pkg.id,
-                  lat: point.lat,
-                  lng: point.lng,
-                  label: point.label || getPreviewTitle(pkg, locale),
-                  priceLabel: formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale),
-                  active: pkg.id === resolvedActiveMapPackageId,
-                }))}
-                onBoundsChange={handleActiveMapBoundsChange}
-                onSelectPackage={setManualActiveMapPackageId}
-              />
-            ) : (
-              <iframe
-                title={resolvedMapModalSurfaceTitle}
-                src={resolvedMapEmbedSrc}
-                className="absolute inset-0 h-full w-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            )}
+            <ActiveResultsMap
+              bbox={useActiveResultMap ? activeViewportBBox : resolvedMapWindow.bbox}
+              markers={
+                useActiveResultMap
+                  ? resolvedGeoMarkers.map(({ pkg, point }) => ({
+                      id: pkg.id,
+                      lat: point.lat,
+                      lng: point.lng,
+                      label: point.label || getPreviewTitle(pkg, locale),
+                      priceLabel: formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale),
+                      active: pkg.id === resolvedActiveMapPackageId,
+                    }))
+                  : resolvedCountryMarkers
+              }
+              onBoundsChange={useActiveResultMap ? handleActiveMapBoundsChange : null}
+              onSelectMarker={useActiveResultMap ? setManualActiveMapPackageId : setManualActiveMapCountry}
+            />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.72)_44%,rgba(255,255,255,0.96)_100%)]" />
             {!useActiveResultMap ? (
@@ -1060,44 +1074,11 @@ export default function FilterClient({
               </button>
             </div>
 
-
-            {useActiveResultMap ? null : mapCountries.length === 0 ? (
+            {!useActiveResultMap && mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
                 <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceEmpty}</p>
               </div>
-            ) : (
-              <>
-                {mapCountries.map(({ country, packages: countryPackages, cheapestPackage, left, top }) => {
-                  const isActiveCountry = country === activeCountryLabel
-
-                  return (
-                    <button
-                      key={`country-${country}-${left}-${top}`}
-                      type="button"
-                      onClick={() => setManualActiveMapCountry(country)}
-                      className="absolute z-[5] -translate-x-1/2 -translate-y-1/2 text-center"
-                      style={{ left: `${left}%`, top: `${top}%` }}
-                    >
-                    <div className={`rounded-[14px] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)] transition ${isActiveCountry ? "bg-[#0f4f87] ring-4 ring-white/80" : "bg-[#145da8] hover:bg-[#0f4f87]"}`}>
-                      {formatPackageMoney(getPreviewPrice(cheapestPackage), cheapestPackage.livePricing?.currency || cheapestPackage.currency || priceCurrency, locale)}
-                    </div>
-                    <div className={`mx-auto mt-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isActiveCountry ? "bg-[#0f4f87]" : "bg-[#ff6a3d]"}`} />
-                    <div className={`mt-1 text-center text-[10px] font-semibold uppercase tracking-[0.16em] ${isActiveCountry ? "text-[#0f4f87]" : "text-[#124d8c]"}`}>
-                      {country}
-                    </div>
-                    <div className={`mt-1 text-center text-[10px] font-semibold ${isActiveCountry ? "text-[#0f4f87]" : "text-[#124d8c]"}`}>
-                      {locale === "en"
-                        ? `${countryPackages.length} packages`
-                        : locale === "zh"
-                          ? `${countryPackages.length} 个套餐`
-                          : `${countryPackages.length} paket`}
-                    </div>
-                    </button>
-                  )
-                })}
-              </>
-            )}
-
+            ) : null}
             <div className="absolute inset-x-4 bottom-4 z-10 rounded-[24px] border border-slate-200 bg-white/96 p-4 shadow-[0_26px_60px_-32px_rgba(15,23,42,0.32)] backdrop-blur">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>

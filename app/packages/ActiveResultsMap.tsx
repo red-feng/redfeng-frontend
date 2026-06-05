@@ -60,7 +60,7 @@ function BoundsSync({
   onBoundsChange,
 }: {
   bbox: string
-  onBoundsChange: (bbox: string) => void
+  onBoundsChange?: ((bbox: string) => void) | null
 }) {
   const map = useMap()
 
@@ -74,10 +74,10 @@ function BoundsSync({
 
   useMapEvents({
     moveend() {
-      onBoundsChange(boundsToBBox(map.getBounds()))
+      onBoundsChange?.(boundsToBBox(map.getBounds()))
     },
     zoomend() {
-      onBoundsChange(boundsToBBox(map.getBounds()))
+      onBoundsChange?.(boundsToBBox(map.getBounds()))
     },
   })
 
@@ -88,12 +88,12 @@ export default function ActiveResultsMap({
   bbox,
   markers,
   onBoundsChange,
-  onSelectPackage,
+  onSelectMarker,
 }: {
   bbox: string
   markers: MarkerPoint[]
-  onBoundsChange: (bbox: string) => void
-  onSelectPackage: (packageId: string) => void
+  onBoundsChange?: ((bbox: string) => void) | null
+  onSelectMarker: (markerId: string) => void
 }) {
   return (
     <MapContainer
@@ -114,7 +114,7 @@ export default function ActiveResultsMap({
           position={[point.lat, point.lng]}
           icon={createPriceIcon(point)}
           eventHandlers={{
-            click: () => onSelectPackage(point.id),
+            click: () => onSelectMarker(point.id),
           }}
         />
       ))}
