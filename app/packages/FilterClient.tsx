@@ -1,10 +1,15 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState } from "react"
+import dynamic from "next/dynamic"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { getFacilityCategoryLabel, getFacilityLabel } from "@/lib/facility-labels"
 import { dictionaries, type Locale } from "@/lib/i18n"
 import { formatPackageMoney, localeCurrencyMap, resolvePackageTranslation } from "@/lib/package-pricing"
+
+const ActiveResultsMap = dynamic(() => import("@/app/packages/ActiveResultsMap"), {
+  ssr: false,
+})
 
 type Facility = {
   id: string
@@ -676,6 +681,14 @@ export default function FilterClient({
       bbox: activeResultBaseWindow.bbox,
     })
   }
+  const handleActiveMapBoundsChange = (nextBBox: string) => {
+    if (!useActiveResultMap) return
+    if (nextBBox === activeViewportBBox) return
+    setMapViewportState({
+      key: activeResultViewportKey,
+      bbox: nextBBox,
+    })
+  }
 
 
   const applyCountrySelection = (country: string) => {
@@ -933,13 +946,29 @@ export default function FilterClient({
           </div>
 
           <div className="relative h-[calc(100vh-69px)] overflow-hidden bg-[#dcebf8]">
-            <iframe
-              title={resolvedMapModalSurfaceTitle}
-              src={resolvedMapEmbedSrc}
-              className="absolute inset-0 h-full w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
+            {useActiveResultMap ? (
+              <ActiveResultsMap
+                bbox={activeViewportBBox}
+                markers={resolvedGeoMarkers.map(({ pkg, point }) => ({
+                  id: pkg.id,
+                  lat: point.lat,
+                  lng: point.lng,
+                  label: point.label || getPreviewTitle(pkg, locale),
+                  priceLabel: formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale),
+                  active: pkg.id === resolvedActiveMapPackageId,
+                }))}
+                onBoundsChange={handleActiveMapBoundsChange}
+                onSelectPackage={setManualActiveMapPackageId}
+              />
+            ) : (
+              <iframe
+                title={resolvedMapModalSurfaceTitle}
+                src={resolvedMapEmbedSrc}
+                className="absolute inset-0 h-full w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            )}
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.72)_44%,rgba(255,255,255,0.96)_100%)]" />
             {!useActiveResultMap ? (
@@ -997,29 +1026,6 @@ export default function FilterClient({
               </button>
             </div>
 
-            {useActiveResultMap
-              ? resolvedGeoMarkers.map(({ pkg, point, left, top }) => {
-                  const isActivePackage = pkg.id === resolvedActiveMapPackageId
-
-                  return (
-                    <button
-                      key={`package-${pkg.id}`}
-                      type="button"
-                      onClick={() => setManualActiveMapPackageId(pkg.id)}
-                      className="absolute z-[6] -translate-x-1/2 -translate-y-1/2 text-center"
-                      style={{ left: `${left}%`, top: `${top}%` }}
-                    >
-                      <div className={`rounded-[14px] px-4 py-2.5 text-center text-sm font-semibold text-white shadow-[0_18px_36px_-20px_rgba(20,93,168,0.72)] transition ${isActivePackage ? "bg-[#0f4f87] ring-4 ring-white/80" : "bg-[#145da8] hover:bg-[#0f4f87]"}`}>
-                        {formatPackageMoney(getPreviewPrice(pkg), pkg.livePricing?.currency || pkg.currency || priceCurrency, locale)}
-                      </div>
-                      <div className={`mx-auto mt-0.5 h-2.5 w-2.5 rounded-full border-2 border-white ${isActivePackage ? "bg-[#0f4f87]" : "bg-[#ff6a3d]"}`} />
-                      <div className={`mt-1 max-w-[140px] truncate text-center text-[10px] font-semibold ${isActivePackage ? "text-[#0f4f87]" : "text-[#124d8c]"}`}>
-                        {point.label || getPreviewTitle(pkg, locale)}
-                      </div>
-                    </button>
-                  )
-                })
-              : null}
 
             {useActiveResultMap ? null : mapCountries.length === 0 ? (
               <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
