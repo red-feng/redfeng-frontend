@@ -39,6 +39,22 @@ type PackageItem = {
     price_adult?: number | null
     price_child?: number | null
   }[] | null
+  package_details?:
+    | {
+        location_label?: string | null
+        location_type?: string | null
+        primary_lat?: number | null
+        primary_lng?: number | null
+        viewport_radius_km?: number | null
+      }
+    | {
+        location_label?: string | null
+        location_type?: string | null
+        primary_lat?: number | null
+        primary_lng?: number | null
+        viewport_radius_km?: number | null
+      }[]
+    | null
   livePricing?: {
     currency: string
     priceAdult: number

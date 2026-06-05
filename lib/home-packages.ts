@@ -47,6 +47,22 @@ export type HomePackageListItem = {
     price_adult?: number | null
     price_child?: number | null
   }[] | null
+  package_details?:
+    | {
+        location_label?: string | null
+        location_type?: string | null
+        primary_lat?: number | null
+        primary_lng?: number | null
+        viewport_radius_km?: number | null
+      }
+    | {
+        location_label?: string | null
+        location_type?: string | null
+        primary_lat?: number | null
+        primary_lng?: number | null
+        viewport_radius_km?: number | null
+      }[]
+    | null
   livePricing?: {
     currency: string
     priceAdult: number
@@ -113,7 +129,8 @@ const packageListSelect = `
     facility_id,
     facilities(name)
   ),
-  package_translations(language_code, title, description, currency, price_adult, price_child)
+  package_translations(language_code, title, description, currency, price_adult, price_child),
+  package_details(location_label, location_type, primary_lat, primary_lng, viewport_radius_km)
 `
 
 export const getPublicMerchantIds = cache(async (): Promise<Set<string>> => {
