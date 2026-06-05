@@ -102,7 +102,7 @@ export default function ActiveResultsMap({
       className="absolute inset-0 h-full w-full"
       zoomControl={false}
       scrollWheelZoom
-      minZoom={2}
+      minZoom={3}
       worldCopyJump
     >
       <TileLayer
