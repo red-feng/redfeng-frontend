@@ -92,6 +92,16 @@ type MerchantShellDictionary = {
     deletePackage: string
     viewPackage: string
     pendingReviewStatus: string
+    pendingRevisionStatus?: string
+    draftRevisionStatus?: string
+    rejectedRevisionStatus?: string
+    revisionStatus?: string
+    revisionSubmittedDate?: string
+    revisionUnderReview?: string
+    revisionPendingHelp?: string
+    revisionDraftHelp?: string
+    revisionRejectedHelp?: string
+    continueRevision?: string
   }
 }
 
@@ -188,6 +198,16 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       deletePackage: "Hapus Paket",
       viewPackage: "Lihat Paket",
       pendingReviewStatus: "Pending Review",
+      pendingRevisionStatus: "Revisi Pending Review",
+      draftRevisionStatus: "Draft Revisi",
+      rejectedRevisionStatus: "Revisi Ditolak",
+      revisionStatus: "Status Revisi",
+      revisionSubmittedDate: "Tanggal kirim revisi",
+      revisionUnderReview: "Revisi sedang direview admin",
+      revisionPendingHelp: "Paket live tetap aktif, tetapi perubahan terbaru Anda belum tayang sampai admin menyetujui revisi ini.",
+      revisionDraftHelp: "Paket live tetap aktif. Lanjutkan draft revisi ini untuk menyelesaikan perubahan sebelum dikirim ke admin.",
+      revisionRejectedHelp: "Revisi terakhir ditolak admin. Buka kembali draft revisi untuk memperbaiki catatan admin lalu kirim ulang.",
+      continueRevision: "Lanjutkan Revisi",
     },
   },
   en: {
@@ -282,6 +302,16 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       deletePackage: "Delete Package",
       viewPackage: "View Package",
       pendingReviewStatus: "Pending Review",
+      pendingRevisionStatus: "Revision Pending Review",
+      draftRevisionStatus: "Revision Draft",
+      rejectedRevisionStatus: "Revision Rejected",
+      revisionStatus: "Revision Status",
+      revisionSubmittedDate: "Revision submission date",
+      revisionUnderReview: "The revision is currently under admin review",
+      revisionPendingHelp: "The live package stays active, but your latest changes will not appear until the admin approves this revision.",
+      revisionDraftHelp: "The live package stays active. Continue this revision draft to complete your changes before sending them to admin.",
+      revisionRejectedHelp: "The latest revision was rejected by admin. Reopen the revision draft, fix the admin notes, and resubmit it.",
+      continueRevision: "Continue Revision",
     },
   },
   zh: {
@@ -375,6 +405,16 @@ const dictionaries: Record<Locale, MerchantShellDictionary> = {
       deletePackage: "删除套餐",
       viewPackage: "查看套餐",
       pendingReviewStatus: "待审核",
+      pendingRevisionStatus: "修订待审核",
+      draftRevisionStatus: "修订草稿",
+      rejectedRevisionStatus: "修订被拒",
+      revisionStatus: "修订状态",
+      revisionSubmittedDate: "修订提交日期",
+      revisionUnderReview: "该修订正在由管理员审核",
+      revisionPendingHelp: "当前 live 套餐会继续保持上线，但您的最新修改要等管理员通过后才会显示。",
+      revisionDraftHelp: "当前 live 套餐会继续保持上线。请继续完善这份修订草稿，然后再提交管理员审核。",
+      revisionRejectedHelp: "最新修订已被管理员拒绝。请重新打开修订草稿，按管理员意见修改后再提交。",
+      continueRevision: "继续修订",
     },
   },
 }

@@ -19,6 +19,34 @@ type PackageRow = {
   rejection_reason: string | null
 }
 
+type PackageRevisionRow = {
+  id: string
+  package_id: string
+  status: string | null
+  submitted_at: string | null
+  reviewed_at: string | null
+  rejection_reason: string | null
+  payload?: {
+    package?: {
+      title?: string | null
+      price_adult?: number | null
+      travel_style?: string | null
+    }
+  } | null
+}
+
+type DisplayEntry =
+  | {
+      kind: "package"
+      package: PackageRow
+      revision: PackageRevisionRow | null
+    }
+  | {
+      kind: "revision"
+      package: PackageRow
+      revision: PackageRevisionRow
+    }
+
 function formatMoney(value: number | null) {
   return `Rp ${(value ?? 0).toLocaleString("id-ID")}`
 }
@@ -36,6 +64,25 @@ function formatStatus(value: string | null, pendingReviewStatus: string, rejecte
 function statusClasses(value: string | null) {
   const status = (value || "").toLowerCase()
   if (status === "approved") return toneClass("success")
+  if (status === "pending") return toneClass("pending")
+  if (status === "rejected") return toneClass("danger")
+  if (status === "draft") return toneClass("neutral")
+  return toneClass("neutral")
+}
+
+function revisionStatusLabel(
+  value: string | null,
+  t: ReturnType<typeof getMerchantShellText>["packages"],
+) {
+  const status = (value || "").toLowerCase()
+  if (status === "pending") return t.pendingRevisionStatus || t.pendingReviewStatus
+  if (status === "draft") return t.draftRevisionStatus || t.draft
+  if (status === "rejected") return t.rejectedRevisionStatus || t.rejected
+  return value || "-"
+}
+
+function revisionStatusClasses(value: string | null) {
+  const status = (value || "").toLowerCase()
   if (status === "pending") return toneClass("pending")
   if (status === "rejected") return toneClass("danger")
   if (status === "draft") return toneClass("neutral")
@@ -95,14 +142,81 @@ export default async function MerchantPackagePage({
 
   const { data, error } = await query
   const packages = (data as PackageRow[] | null) || []
+  const packageIds = packages.map((pkg) => pkg.id)
+  const { data: revisionsData } = packageIds.length
+    ? await supabase
+        .from("package_revisions")
+        .select("id, package_id, status, submitted_at, reviewed_at, rejection_reason, payload")
+        .in("package_id", packageIds)
+        .in("status", ["draft", "pending", "rejected"])
+        .order("created_at", { ascending: false })
+    : { data: [] as PackageRevisionRow[] }
+  const latestRevisionByPackageId = new Map<string, PackageRevisionRow>()
+  for (const revision of ((revisionsData as PackageRevisionRow[] | null) || [])) {
+    if (!latestRevisionByPackageId.has(revision.package_id)) {
+      latestRevisionByPackageId.set(revision.package_id, revision)
+    }
+  }
 
+  const { data: pendingRevisionData } = await supabase
+    .from("package_revisions")
+    .select("id, package_id, status, submitted_at, reviewed_at, rejection_reason, payload")
+    .eq("merchant_id", merchant.id)
+    .eq("status", "pending")
+    .order("submitted_at", { ascending: false })
+
+  const pendingRevisions = (pendingRevisionData as PackageRevisionRow[] | null) || []
+  const pendingRevisionPackageIds = Array.from(new Set(pendingRevisions.map((revision) => revision.package_id)))
+  const missingPendingPackageIds = pendingRevisionPackageIds.filter((id) => !packageIds.includes(id))
+  const { data: pendingRevisionPackageData } = missingPendingPackageIds.length
+    ? await supabase
+        .from("packages")
+        .select("id, package_code, title, slug, price_adult, status, travel_style, created_at, updated_at, rejection_reason")
+        .in("id", missingPendingPackageIds)
+    : { data: [] as PackageRow[] }
+  const pendingRevisionPackageMap = new Map<string, PackageRow>()
+  for (const pkg of packages) {
+    pendingRevisionPackageMap.set(pkg.id, pkg)
+  }
+  for (const pkg of ((pendingRevisionPackageData as PackageRow[] | null) || [])) {
+    pendingRevisionPackageMap.set(pkg.id, pkg)
+  }
+
+  const pendingRevisionCount = pendingRevisions.length
   const summary = {
     all: packages.length,
     approved: packages.filter((pkg) => pkg.status === "approved").length,
-    pending: packages.filter((pkg) => pkg.status === "pending").length,
+    pending: packages.filter((pkg) => pkg.status === "pending").length + pendingRevisionCount,
     draft: packages.filter((pkg) => pkg.status === "draft").length,
     rejected: packages.filter((pkg) => pkg.status === "rejected").length,
   }
+
+  const pendingRevisionEntries: DisplayEntry[] = pendingRevisions.reduce<DisplayEntry[]>((entries, revision) => {
+    const pkg = pendingRevisionPackageMap.get(revision.package_id)
+    if (!pkg) return entries
+    entries.push({
+      kind: "revision",
+      package: pkg,
+      revision,
+    })
+    return entries
+  }, [])
+
+  const displayEntries: DisplayEntry[] =
+    activeStatus === "pending"
+      ? [
+          ...packages.map((pkg) => ({
+            kind: "package" as const,
+            package: pkg,
+            revision: latestRevisionByPackageId.get(pkg.id) || null,
+          })),
+          ...pendingRevisionEntries,
+        ]
+      : packages.map((pkg) => ({
+          kind: "package" as const,
+          package: pkg,
+          revision: latestRevisionByPackageId.get(pkg.id) || null,
+        }))
 
   const heroStats = [
     { label: t.activePackageStat, value: summary.approved, note: t.activePackageNote },
@@ -227,25 +341,53 @@ export default async function MerchantPackagePage({
 
         {error ? (
           <div className="mt-6 rounded-[24px] border border-red-200 bg-red-50 p-4 text-red-700">{t.loadError}</div>
-        ) : packages.length === 0 ? (
+        ) : displayEntries.length === 0 ? (
           <div className="mt-6 rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#fffaf5_0%,#f8fafc_100%)] p-5 text-slate-600">
             {t.emptyState}
           </div>
         ) : (
           <div className="mt-6 grid gap-5 xl:grid-cols-2">
-            {packages.map((pkg) => (
+            {displayEntries.map((entry) => (
               <article
-                key={pkg.id}
+                key={entry.kind === "revision" ? `revision-${entry.revision.id}` : entry.package.id}
                 className="rounded-[28px] border border-orange-100/80 bg-white p-6 shadow-[0_24px_60px_-42px_rgba(15,23,42,0.35)]"
               >
+                {(() => {
+                  const pkg = entry.package
+                  const revision = entry.revision
+                  const revisionPackagePayload = entry.kind === "revision" ? entry.revision.payload?.package : null
+                  const revisionEditHref = revision
+                    ? `/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit?revision=${encodeURIComponent(revision.id)}`
+                    : `/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`
+                  const displayTitle =
+                    entry.kind === "revision"
+                      ? revisionPackagePayload?.title || pkg.title
+                      : pkg.title
+                  const displayPrice =
+                    entry.kind === "revision"
+                      ? revisionPackagePayload?.price_adult ?? pkg.price_adult
+                      : pkg.price_adult
+                  const displayTravelStyle =
+                    entry.kind === "revision"
+                      ? revisionPackagePayload?.travel_style || pkg.travel_style
+                      : pkg.travel_style
+                  return (
+                    <>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-slate-950">{pkg.title || t.untitledPackage}</h2>
-                    <p className="mt-1 text-sm text-slate-500">{formatTravelStyleLabel(pkg.travel_style, locale)}</p>
+                    <h2 className="text-lg font-semibold text-slate-950">{displayTitle || t.untitledPackage}</h2>
+                    <p className="mt-1 text-sm text-slate-500">{formatTravelStyleLabel(displayTravelStyle, locale)}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(pkg.status)}`}>
-                    {formatStatus(pkg.status, t.pendingReviewStatus, t.rejected, t.active, t.draft, t.inactivePackages)}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(pkg.status)}`}>
+                      {formatStatus(pkg.status, t.pendingReviewStatus, t.rejected, t.active, t.draft, t.inactivePackages)}
+                    </span>
+                    {revision ? (
+                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${revisionStatusClasses(revision.status)}`}>
+                        {revisionStatusLabel(revision.status, t)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
 
                 {pkg.status === "rejected" && (
@@ -260,7 +402,7 @@ export default async function MerchantPackagePage({
                   </div>
                 )}
 
-                {pkg.status === "pending" && (
+                {entry.kind === "package" && pkg.status === "pending" && (
                   <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                     <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">{t.reviewStatus}</p>
                     <p className="mt-2 text-sm font-medium text-amber-900">{t.underReview}</p>
@@ -271,13 +413,71 @@ export default async function MerchantPackagePage({
                   </div>
                 )}
 
+                {revision && ((pkg.status === "approved" || pkg.status === "inactive") || entry.kind === "revision") && (
+                  <div className={`mt-4 rounded-2xl border p-4 ${
+                    revision.status === "pending"
+                      ? "border-sky-200 bg-sky-50"
+                      : revision.status === "rejected"
+                        ? "border-rose-200 bg-rose-50"
+                        : "border-slate-200 bg-slate-50"
+                  }`}>
+                    <p className={`text-xs font-semibold uppercase tracking-wide ${
+                      revision.status === "pending"
+                        ? "text-sky-700"
+                        : revision.status === "rejected"
+                          ? "text-rose-700"
+                          : "text-slate-600"
+                    }`}>
+                      {t.revisionStatus || "Status Revisi"}
+                    </p>
+                    <p className={`mt-2 text-sm font-medium ${
+                      revision.status === "pending"
+                        ? "text-sky-900"
+                        : revision.status === "rejected"
+                          ? "text-rose-900"
+                          : "text-slate-900"
+                    }`}>
+                      {revision.status === "pending"
+                        ? (t.revisionUnderReview || t.underReview)
+                        : revisionStatusLabel(revision.status, t)}
+                    </p>
+                    <p className={`mt-2 text-sm ${
+                      revision.status === "pending"
+                        ? "text-sky-800"
+                        : revision.status === "rejected"
+                          ? "text-rose-800"
+                          : "text-slate-700"
+                    }`}>
+                      {(t.revisionSubmittedDate || t.submitDate)}: {formatDate(revision.submitted_at || revision.reviewed_at || pkg.updated_at || pkg.created_at)}
+                    </p>
+                    <p className={`mt-2 text-sm leading-6 ${
+                      revision.status === "pending"
+                        ? "text-sky-800"
+                        : revision.status === "rejected"
+                          ? "text-rose-800"
+                          : "text-slate-700"
+                    }`}>
+                      {revision.status === "pending"
+                        ? (t.revisionPendingHelp || t.pendingHelp)
+                        : revision.status === "rejected"
+                          ? (revision.rejection_reason || t.rejectedWithoutNote)
+                          : (t.revisionDraftHelp || t.pendingHelp)}
+                    </p>
+                    {revision.status === "rejected" ? (
+                      <p className="mt-2 text-sm leading-6 text-rose-800">
+                        {t.revisionRejectedHelp || t.rejectedHelp}
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                   <div className="rounded-[22px] bg-[linear-gradient(180deg,#fffaf5_0%,#ffffff_100%)] p-4">
                     <p className="text-xs uppercase tracking-wide text-slate-400">{t.adultPrice}</p>
-                    <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(pkg.price_adult)}</p>
+                    <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(displayPrice)}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {(pkg.status === "pending" || pkg.status === "rejected") && (
+                    {entry.kind === "package" && (pkg.status === "pending" || pkg.status === "rejected") && (
                       <form action={pullPackageToDraft}>
                         <input type="hidden" name="package_id" value={pkg.id} />
                         <input type="hidden" name="return_status" value={activeStatus} />
@@ -289,7 +489,7 @@ export default async function MerchantPackagePage({
                         </button>
                       </form>
                     )}
-                    {pkg.status === "inactive" && (
+                    {entry.kind === "package" && pkg.status === "inactive" && (
                       <form action={togglePackageStatus}>
                         <input type="hidden" name="package_id" value={pkg.id} />
                         <input type="hidden" name="target_status" value="approved" />
@@ -302,7 +502,7 @@ export default async function MerchantPackagePage({
                         </button>
                       </form>
                     )}
-                    {pkg.status === "approved" && (
+                    {entry.kind === "package" && pkg.status === "approved" && (
                       <form action={togglePackageStatus}>
                         <input type="hidden" name="package_id" value={pkg.id} />
                         <input type="hidden" name="target_status" value="inactive" />
@@ -315,14 +515,15 @@ export default async function MerchantPackagePage({
                         </button>
                       </form>
                     )}
-                    {pkg.status !== "pending" && pkg.status !== "rejected" && (
+                    {entry.kind === "package" && pkg.status !== "pending" && pkg.status !== "rejected" && (
                       <Link
-                        href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}/edit`}
+                        href={revisionEditHref}
                         className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-orange-300 hover:text-orange-600"
                       >
-                        {t.editPackage}
+                        {revision ? (t.continueRevision || t.editPackage) : t.editPackage}
                       </Link>
                     )}
+                    {entry.kind === "package" ? (
                     <form action={deletePackage}>
                       <input type="hidden" name="package_id" value={pkg.id} />
                       <input type="hidden" name="return_status" value={activeStatus} />
@@ -333,6 +534,7 @@ export default async function MerchantPackagePage({
                         {t.deletePackage}
                       </button>
                     </form>
+                    ) : null}
                     {pkg.id ? (
                       <Link
                         href={`/merchant/paket/${encodeURIComponent(pkg.package_code || pkg.id)}?portal=merchant`}
@@ -343,6 +545,9 @@ export default async function MerchantPackagePage({
                     ) : null}
                   </div>
                 </div>
+                    </>
+                  )
+                })()}
               </article>
             ))}
           </div>
