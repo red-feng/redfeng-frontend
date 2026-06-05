@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import type { DivIcon } from "leaflet"
 import L from "leaflet"
 import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet"
@@ -105,6 +105,15 @@ export default function ActiveResultsMap({
   onClearSelection?: (() => void) | null
   onSelectMarker: (markerId: string) => void
 }) {
+  const markerRefs = useRef<Record<string, L.Marker | null>>({})
+
+  useEffect(() => {
+    if (!activeMarker) return
+    const markerInstance = markerRefs.current[activeMarker.id]
+    if (!markerInstance) return
+    markerInstance.openPopup()
+  }, [activeMarker])
+
   return (
     <MapContainer
       bounds={bboxToBounds(bbox)}
@@ -123,10 +132,16 @@ export default function ActiveResultsMap({
       {markers.map((point) => (
         <Marker
           key={point.id}
+          ref={(instance) => {
+            markerRefs.current[point.id] = instance
+          }}
           position={[point.lat, point.lng]}
           icon={createPriceIcon(point)}
           eventHandlers={{
-            click: () => onSelectMarker(point.id),
+            click: (event) => {
+              onSelectMarker(point.id)
+              event.target.openPopup()
+            },
           }}
         >
           {activeMarker?.id === point.id ? (
