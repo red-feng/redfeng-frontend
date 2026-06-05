@@ -1,10 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { useEffect, useRef } from "react"
+import { useEffect, useState } from "react"
 import type { DivIcon } from "leaflet"
 import L from "leaflet"
-import { MapContainer, Marker, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet"
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 
 type MarkerPoint = {
@@ -85,12 +85,56 @@ function BoundsSync({
   return null
 }
 
+function ActiveMarkerOverlay({
+  activeMarker,
+}: {
+  activeMarker: {
+    id: string
+    lat: number
+    lng: number
+    content: ReactNode
+  }
+}) {
+  const map = useMap()
+  const [position, setPosition] = useState(() => map.latLngToContainerPoint([activeMarker.lat, activeMarker.lng]))
+
+  useEffect(() => {
+    const updatePosition = () => {
+      setPosition(map.latLngToContainerPoint([activeMarker.lat, activeMarker.lng]))
+    }
+
+    updatePosition()
+    map.on("move zoom resize", updatePosition)
+    return () => {
+      map.off("move zoom resize", updatePosition)
+    }
+  }, [activeMarker.lat, activeMarker.lng, map])
+
+  return (
+    <div
+      className="pointer-events-none absolute z-[950]"
+      style={{
+        left: position.x,
+        top: position.y - 56,
+        transform: "translate(-50%, -100%)",
+      }}
+    >
+      <div className="pointer-events-auto relative">
+        {activeMarker.content}
+        <div
+          className="absolute left-1/2 top-full h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-white shadow-[0_18px_30px_-24px_rgba(15,23,42,0.28)]"
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  )
+}
+
 export default function ActiveResultsMap({
   bbox,
   markers,
   activeMarker,
   onBoundsChange,
-  onClearSelection,
   onSelectMarker,
 }: {
   bbox: string
@@ -102,18 +146,8 @@ export default function ActiveResultsMap({
     content: ReactNode
   } | null
   onBoundsChange?: ((bbox: string) => void) | null
-  onClearSelection?: (() => void) | null
   onSelectMarker: (markerId: string) => void
 }) {
-  const markerRefs = useRef<Record<string, L.Marker | null>>({})
-
-  useEffect(() => {
-    if (!activeMarker) return
-    const markerInstance = markerRefs.current[activeMarker.id]
-    if (!markerInstance) return
-    markerInstance.openPopup()
-  }, [activeMarker])
-
   return (
     <MapContainer
       bounds={bboxToBounds(bbox)}
@@ -132,35 +166,16 @@ export default function ActiveResultsMap({
       {markers.map((point) => (
         <Marker
           key={point.id}
-          ref={(instance) => {
-            markerRefs.current[point.id] = instance
-          }}
           position={[point.lat, point.lng]}
           icon={createPriceIcon(point)}
           eventHandlers={{
-            click: (event) => {
+            click: () => {
               onSelectMarker(point.id)
-              event.target.openPopup()
             },
           }}
-        >
-          {activeMarker?.id === point.id ? (
-            <Popup
-              closeButton={false}
-              autoClose={false}
-              closeOnClick={false}
-              autoPan={false}
-              offset={[0, -44]}
-              className="rf-map-preview-popup"
-              eventHandlers={{
-                remove: () => onClearSelection?.(),
-              }}
-            >
-              {activeMarker.content}
-            </Popup>
-          ) : null}
-        </Marker>
+        />
       ))}
+      {activeMarker ? <ActiveMarkerOverlay key={activeMarker.id} activeMarker={activeMarker} /> : null}
     </MapContainer>
   )
 }

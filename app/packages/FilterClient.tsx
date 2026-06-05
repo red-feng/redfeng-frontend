@@ -1135,7 +1135,6 @@ export default function FilterClient({
                   : null
               }
               onBoundsChange={useActiveResultMap ? handleActiveMapBoundsChange : null}
-              onClearSelection={useActiveResultMap ? () => setManualActiveMapPackageId("") : null}
               onSelectMarker={useActiveResultMap ? setManualActiveMapPackageId : setManualActiveMapCountry}
             />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.72)_42%,rgba(255,255,255,0)_100%)]" />
