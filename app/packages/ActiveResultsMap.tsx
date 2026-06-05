@@ -128,24 +128,24 @@ export default function ActiveResultsMap({
           eventHandlers={{
             click: () => onSelectMarker(point.id),
           }}
-        />
-      ))}
-      {activeMarker ? (
-        <Popup
-          position={[activeMarker.lat, activeMarker.lng]}
-          closeButton={false}
-          autoClose={false}
-          closeOnClick={false}
-          autoPan={false}
-          offset={[0, -44]}
-          className="rf-map-preview-popup"
-          eventHandlers={{
-            remove: () => onClearSelection?.(),
-          }}
         >
-          {activeMarker.content}
-        </Popup>
-      ) : null}
+          {activeMarker?.id === point.id ? (
+            <Popup
+              closeButton={false}
+              autoClose={false}
+              closeOnClick={false}
+              autoPan={false}
+              offset={[0, -44]}
+              className="rf-map-preview-popup"
+              eventHandlers={{
+                remove: () => onClearSelection?.(),
+              }}
+            >
+              {activeMarker.content}
+            </Popup>
+          ) : null}
+        </Marker>
+      ))}
     </MapContainer>
   )
 }
