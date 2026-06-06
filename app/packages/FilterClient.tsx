@@ -833,23 +833,23 @@ export default function FilterClient({
 
   const filterBody = (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-[22px] border border-[#d8ebfb] bg-[linear-gradient(135deg,#eef8ff_0%,#dff1ff_100%)] shadow-[0_18px_40px_-34px_rgba(37,99,235,0.28)]">
+      <div className="overflow-hidden rounded-[22px] border border-[#f1ddd0] bg-[linear-gradient(135deg,#fff8f2_0%,#fff1e7_100%)] shadow-[0_18px_40px_-34px_rgba(239,91,42,0.18)]">
         <div className="relative min-h-[160px] px-4 py-4">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.78)_0,rgba(255,255,255,0.78)_3px,transparent_3px)] bg-[length:16px_16px] opacity-30" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[radial-gradient(circle_at_20%_30%,rgba(129,212,250,0.34)_0,rgba(129,212,250,0.34)_18%,transparent_18%),radial-gradient(circle_at_68%_56%,rgba(96,165,250,0.24)_0,rgba(96,165,250,0.24)_16%,transparent_16%),linear-gradient(135deg,rgba(191,219,254,0.82)_0%,rgba(219,234,254,0.52)_100%)]" />
-          <div className="pointer-events-none absolute right-6 top-5 h-10 w-10 rounded-full border-8 border-[#1f6fbd] bg-white shadow-[0_10px_20px_-12px_rgba(37,99,235,0.45)]" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-[58%] bg-[radial-gradient(circle_at_20%_30%,rgba(254,215,170,0.34)_0,rgba(254,215,170,0.34)_18%,transparent_18%),radial-gradient(circle_at_68%_56%,rgba(251,191,36,0.18)_0,rgba(251,191,36,0.18)_16%,transparent_16%),linear-gradient(135deg,rgba(255,237,213,0.82)_0%,rgba(255,247,237,0.52)_100%)]" />
+          <div className="pointer-events-none absolute right-6 top-5 h-10 w-10 rounded-full border-8 border-[#ef5b2a] bg-white shadow-[0_10px_20px_-12px_rgba(239,91,42,0.3)]" />
           <div className="pointer-events-none absolute right-[92px] top-0 h-full w-px bg-white/70" />
           <div className="relative flex h-full flex-col justify-end">
-             <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#0f4f87]">{resolvedExploreTitle}</p>
-             <p className="mt-2 max-w-[230px] text-[13px] text-[#4e6f8f]">{resolvedExploreMeta}</p>
-             <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#145da8]">{resolvedExploreSummary}</p>
+             <p className="max-w-[220px] text-[18px] font-semibold tracking-[-0.03em] text-[#b85a2c]">{resolvedExploreTitle}</p>
+             <p className="mt-2 max-w-[230px] text-[13px] text-slate-500">{resolvedExploreMeta}</p>
+             <p className="mt-3 max-w-[240px] text-[12px] font-medium text-[#ef5b2a]">{resolvedExploreSummary}</p>
              <button
                type="button"
-                onClick={handleExploreClick}
-               className="mt-5 inline-flex w-fit items-center rounded-full bg-[#1464b4] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(20,100,180,0.85)] transition hover:brightness-105"
-             >
-               {resolvedExploreAction}
-             </button>
+                 onClick={handleExploreClick}
+                className="mt-5 inline-flex w-fit items-center rounded-full bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] px-5 py-3 text-[13px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105"
+              >
+                {resolvedExploreAction}
+              </button>
           </div>
         </div>
       </div>
