@@ -632,11 +632,11 @@ export default function FilterClient({
   const useActiveResultMap = geoReadyPackages.length > 0 && (Boolean(selectedCountry) || uniqueCountries.length <= 1)
   const activeResultBaseWindow = useActiveResultMap ? buildGeoMapWindow(geoReadyPackages, selectedCountry) : mapWindow
   const activeResultViewportKey = useActiveResultMap
-    ? `${selectedCountry || "all"}:${geoReadyPackages.map((pkg) => pkg.id).join(",")}`
-    : "country-overview"
+    ? `geo:${selectedCountry || "all"}:${geoReadyPackages.map((pkg) => pkg.id).join(",")}`
+    : `country:${selectedCountry || "all"}:${mapCountries.map((entry) => `${entry.country}:${entry.packages.length}`).join(",")}`
   const activeViewportBBox =
-    useActiveResultMap && mapViewportState?.key === activeResultViewportKey ? mapViewportState.bbox : activeResultBaseWindow.bbox
-  const resolvedMapWindow = useActiveResultMap ? buildMapWindowFromBBox(activeViewportBBox, activeResultBaseWindow.centerLabel) : mapWindow
+    mapViewportState?.key === activeResultViewportKey ? mapViewportState.bbox : activeResultBaseWindow.bbox
+  const resolvedMapWindow = buildMapWindowFromBBox(activeViewportBBox, activeResultBaseWindow.centerLabel)
   const visibleGeoPackages = useActiveResultMap
     ? geoReadyPackages.filter((pkg) => {
         const point = getPreviewGeoPoint(pkg)
@@ -793,25 +793,22 @@ export default function FilterClient({
     `${resolvedActiveMapPackages.length}`,
   ].join(" | ")
   const resetViewportLabel =
-    locale === "en" ? "Reset view" : locale === "zh" ? "重置视图" : "Reset view"
+    locale === "en" ? "Fit map" : locale === "zh" ? "Fit map" : "Sesuaikan peta"
   const mapPreviewOpenLabel =
     locale === "en" ? "Open details" : locale === "zh" ? "打开详情" : "Buka detail"
   const zoomViewport = (factor: number) => {
-    if (!useActiveResultMap) return
     setMapViewportState({
       key: activeResultViewportKey,
       bbox: zoomBBox(activeViewportBBox, factor),
     })
   }
   const resetViewport = () => {
-    if (!useActiveResultMap) return
     setMapViewportState({
       key: activeResultViewportKey,
       bbox: activeResultBaseWindow.bbox,
     })
   }
   const handleActiveMapBoundsChange = (nextBBox: string) => {
-    if (!useActiveResultMap) return
     if (nextBBox === activeViewportBBox) return
     setMapViewportState({
       key: activeResultViewportKey,
@@ -1104,7 +1101,7 @@ export default function FilterClient({
 
           <div className="relative min-h-0 flex-1 overflow-hidden bg-[#dcebf8]">
             <ActiveResultsMap
-              bbox={useActiveResultMap ? activeViewportBBox : resolvedMapWindow.bbox}
+              bbox={activeViewportBBox}
               markers={
                 useActiveResultMap
                   ? resolvedGeoMarkers.map(({ pkg, point }) => ({
@@ -1169,7 +1166,7 @@ export default function FilterClient({
                     }
                   : null
               }
-              onBoundsChange={useActiveResultMap ? handleActiveMapBoundsChange : null}
+              onBoundsChange={handleActiveMapBoundsChange}
               onMapBackgroundClick={
                 useActiveResultMap
                   ? () => setManualActiveMapPackageId("")
@@ -1187,7 +1184,7 @@ export default function FilterClient({
                 −
               </button>
               <button type="button" onClick={resetViewport} className="block w-12 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                {useActiveResultMap ? resetViewportLabel : "Fit"}
+                {resetViewportLabel}
               </button>
             </div>
 
@@ -1234,4 +1231,6 @@ export default function FilterClient({
     </>
   )
 }
+
+
 
