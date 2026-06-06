@@ -68,7 +68,6 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
   const hasDescription = Boolean(translation?.description?.trim())
   const dayLabel = locale === "zh" ? "天" : locale === "en" ? "days" : "hari"
   const availableLabel = locale === "zh" ? "Bisa dipesan" : locale === "en" ? "Available now" : "Tersedia sekarang"
-  const viewDetailLabel = locale === "zh" ? "Lihat detail" : locale === "en" ? "View details" : "Lihat detail"
   const fromLabel = locale === "zh" ? "Mulai dari" : locale === "en" ? "Starting from" : "Mulai dari"
 
   const infoChips = [
@@ -151,18 +150,12 @@ export default function PackageCard({ pkg, locale }: { pkg: PackageCardData; loc
             />
           </p>
 
-          <div className="mt-5 space-y-2">
+          <div className="mt-5">
             <Link
               href={`/packages/${encodeURIComponent(pkg.slug)}`}
               className="block rounded-[12px] bg-[linear-gradient(135deg,#ff6a3d_0%,#ef4423_100%)] py-2.5 text-center text-[15px] font-semibold text-white shadow-[0_14px_28px_-18px_rgba(239,68,35,0.58)] transition hover:brightness-105"
             >
               {t.choosePackage}
-            </Link>
-            <Link
-              href={`/packages/${encodeURIComponent(pkg.slug)}`}
-              className="block text-center text-[13px] font-semibold text-slate-700 transition hover:text-[#ef5b2a]"
-            >
-              {viewDetailLabel}
             </Link>
           </div>
         </div>
