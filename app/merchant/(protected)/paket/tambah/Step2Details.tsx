@@ -80,6 +80,18 @@ export default function Step2Details({
   const [viewportRadiusKm, setViewportRadiusKm] = useState("")
   const locale = normalizeLocale(uiLocale)
   const t = getMerchantWizardText(locale)
+  const geoRequiredHint =
+    locale === "en"
+      ? "Location label, location type, latitude, and longitude are required so the package can appear accurately on the tour map."
+      : locale === "zh"
+        ? "为了让套餐准确显示在旅游地图上，必须填写位置名称、位置类型、纬度和经度。"
+        : "Label lokasi, tipe lokasi, latitude, dan longitude wajib diisi agar paket tampil akurat di peta tour."
+  const geoRangeHint =
+    locale === "en"
+      ? "Latitude must be between -90 and 90, and longitude between -180 and 180."
+      : locale === "zh"
+        ? "纬度必须在 -90 到 90 之间，经度必须在 -180 到 180 之间。"
+        : "Latitude harus di antara -90 sampai 90, dan longitude di antara -180 sampai 180."
   const normalizedDefaultLanguage = normalizeLocale(defaultLanguage)
   const [activeLang, setActiveLang] = useState<LangCode>(
     (LANGS.find((lang) => lang.code === normalizedDefaultLanguage)?.code || "id") as LangCode
@@ -510,6 +522,7 @@ export default function Step2Details({
                 <p className="text-sm font-semibold text-slate-900">{t.geoSectionTitle || "Lokasi peta paket"}</p>
                 <p className="mt-1 text-xs leading-6 text-slate-500">{t.locationTypeHint}</p>
                 <p className="mt-1 text-xs leading-6 text-slate-500">{t.locationTypeExamples}</p>
+                <p className="mt-1 text-xs font-medium text-orange-600">{geoRequiredHint}</p>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
@@ -520,6 +533,7 @@ export default function Step2Details({
                       onChange={(event) => setLocationLabel(event.target.value)}
                       placeholder={t.locationLabelPlaceholder}
                       className="w-full rounded-lg border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      required
                     />
                   </div>
 
@@ -530,6 +544,7 @@ export default function Step2Details({
                       value={locationType}
                       onChange={(event) => setLocationType(event.target.value)}
                       className="w-full rounded-lg border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      required
                     >
                       <option value="">-</option>
                       <option value="country">{t.locationTypeCountry}</option>
@@ -556,24 +571,36 @@ export default function Step2Details({
                     <label className="mb-2 block font-medium">{t.latitude}</label>
                     <input
                       name="primary_lat"
+                      type="number"
+                      min="-90"
+                      max="90"
+                      step="any"
                       inputMode="decimal"
                       value={primaryLat}
                       onChange={(event) => setPrimaryLat(event.target.value)}
                       placeholder={t.latitudePlaceholder}
                       className="w-full rounded-lg border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      required
                     />
+                    <p className="mt-1 text-xs text-slate-500">{geoRangeHint}</p>
                   </div>
 
                   <div>
                     <label className="mb-2 block font-medium">{t.longitude}</label>
                     <input
                       name="primary_lng"
+                      type="number"
+                      min="-180"
+                      max="180"
+                      step="any"
                       inputMode="decimal"
                       value={primaryLng}
                       onChange={(event) => setPrimaryLng(event.target.value)}
                       placeholder={t.longitudePlaceholder}
                       className="w-full rounded-lg border bg-white p-4 outline-none focus:ring-2 focus:ring-orange-400"
+                      required
                     />
+                    <p className="mt-1 text-xs text-slate-500">{geoRangeHint}</p>
                   </div>
                 </div>
               </div>

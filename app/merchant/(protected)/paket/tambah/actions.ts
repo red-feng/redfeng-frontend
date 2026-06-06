@@ -374,6 +374,26 @@ export async function savePackageDetails(formData: FormData) {
       throw new Error("file gambar terlalu besar")
     }
 
+    if (!locationLabel) {
+      throw new Error("Label lokasi peta wajib diisi.")
+    }
+
+    if (!locationType) {
+      throw new Error("Tipe lokasi peta wajib dipilih.")
+    }
+
+    if (primaryLat === null || primaryLng === null) {
+      throw new Error("Latitude dan longitude wajib diisi agar paket tampil di peta.")
+    }
+
+    if (primaryLat < -90 || primaryLat > 90) {
+      throw new Error("Latitude harus berada di antara -90 dan 90.")
+    }
+
+    if (primaryLng < -180 || primaryLng > 180) {
+      throw new Error("Longitude harus berada di antara -180 dan 180.")
+    }
+
     let pkg: {
       default_language: string | null
       title: string | null

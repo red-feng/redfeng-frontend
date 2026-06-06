@@ -1196,7 +1196,7 @@ export default function FilterClient({
                 title={mapModalEmpty}
                 className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]"
               >
-                <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceEmpty}</p>
+                <p className="text-sm font-semibold text-slate-900">{mapModalEmpty}</p>
               </div>
             ) : null}
           </div>
