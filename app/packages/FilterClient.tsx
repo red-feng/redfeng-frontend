@@ -589,19 +589,9 @@ export default function FilterClient({
   const mapCountries = buildCountryMarkerLayout(mapModalPackages, selectedCountry)
   const mapWindow = buildCountryOverviewWindow(mapCountries, selectedCountry)
   const activeCountryLabel = selectedCountry || manualActiveMapCountry || mapCountries[0]?.country || mapWindow.centerLabel
-  const mapModalSurfaceTitle = mapModalTitle
-  const mapModalSurfaceHint = mapModalHint
-  const mapModalSurfaceEmpty = mapModalEmpty
   const activeMapCountryGroup = mapCountries.find((entry) => entry.country === activeCountryLabel) || mapCountries[0] || null
   const activeMapPackages = activeMapCountryGroup?.packages || mapModalPackages
   const activeMapPackageCount = activeMapCountryGroup?.packages.length || mapModalPackages.length
-  const activeMapPriceLabel = activeMapCountryGroup?.cheapestPackage
-    ? formatPackageMoney(
-        getPreviewPrice(activeMapCountryGroup.cheapestPackage),
-        activeMapCountryGroup.cheapestPackage.livePricing?.currency || activeMapCountryGroup.cheapestPackage.currency || priceCurrency,
-        locale,
-      )
-    : null
   const mapDrawerTitle =
     locale === "en"
       ? `Packages in ${activeCountryLabel}`
@@ -679,13 +669,6 @@ export default function FilterClient({
   const resolvedActiveMapPackage = useActiveResultMap
     ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId)?.pkg || resolvedGeoMarkers[0]?.pkg || null
     : resolvedActiveCountryGroup?.cheapestPackage || null
-  const resolvedActiveMapMarker = useActiveResultMap
-    ? resolvedGeoMarkers.find((entry) => entry.pkg.id === resolvedActiveMapPackageId) || null
-    : resolvedActiveCountryGroup
-      ? {
-          point: getBBoxCenter(resolvedActiveCountryGroup.windowBox.bbox),
-        }
-      : null
   const popupActivePackage = useActiveResultMap
     ? (manualActiveMapPackageId
         ? resolvedGeoMarkers.find((entry) => entry.pkg.id === manualActiveMapPackageId)?.pkg || null
@@ -733,15 +716,6 @@ export default function FilterClient({
     : mapInteractionHint
   const resolvedActiveMapPackages = useActiveResultMap ? resolvedGeoMarkers.map((entry) => entry.pkg) : activeMapPackages
   const resolvedActiveMapPackageCount = useActiveResultMap ? resolvedGeoMarkers.length : activeMapPackageCount
-  const resolvedActiveMapPriceLabel = useActiveResultMap
-    ? (resolvedActiveMapPackages[0]
-        ? formatPackageMoney(
-            getPreviewPrice(resolvedActiveMapPackages[0]),
-            resolvedActiveMapPackages[0].livePricing?.currency || resolvedActiveMapPackages[0].currency || priceCurrency,
-            locale,
-          )
-        : null)
-    : activeMapPriceLabel
   const resolvedActiveAreaSummary = useActiveResultMap
     ? resolvedActiveMapPackageCount === 0
       ? locale === "en"
@@ -803,6 +777,19 @@ export default function FilterClient({
       : locale === "zh"
         ? "æœ€ä½Žä»·å¥—é¤ç‚¹ä½"
         : "Titik paket termurah"
+  const mapAccessibilitySummary = [
+    mapModalTitle,
+    mapModalHint,
+    mapSearchPlaceholder,
+    resolvedMapModalSurfaceTitle,
+    resolvedMapModalSurfaceHint,
+    resolvedMapZoomHint,
+    resolvedMapInteractionHint,
+    resolvedMapDrawerTitle,
+    resolvedMapResultHeading,
+    resolvedApplyAreaLabel,
+    `${resolvedActiveMapPackages.length}`,
+  ].join(" | ")
   const resetViewportLabel =
     locale === "en" ? "Reset view" : locale === "zh" ? "重置视图" : "Reset view"
   const mapPreviewOpenLabel =
@@ -844,25 +831,6 @@ export default function FilterClient({
       })
     : []
 
-
-  const applyCountrySelection = (country: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    const normalizedCountry = country.trim()
-
-    if (normalizedCountry) {
-      params.set("country", normalizedCountry)
-    } else {
-      params.delete("country")
-    }
-
-    params.delete("page")
-    const nextQuery = params.toString()
-    const currentQuery = searchParams.toString()
-    if (nextQuery === currentQuery) return
-
-    const nextUrl = nextQuery ? `${pathname}?${nextQuery}` : pathname
-    router.replace(nextUrl, { scroll: false })
-  }
 
   const filterBody = (
     <div className="space-y-4">
@@ -1102,6 +1070,7 @@ export default function FilterClient({
               <button
                 type="button"
                 onClick={handleCloseMapModal}
+                title={mapModalBackLabel}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-[10px] border border-[#c8d7ee] bg-white px-3 py-2 text-[12px] font-semibold text-[#1b4f87] transition hover:bg-[#f5f9ff]"
               >
                 <span aria-hidden="true">‹</span>
@@ -1124,7 +1093,8 @@ export default function FilterClient({
                 {mobileCloseLabel}
               </button>
             </div>
-            <div className="hidden">
+            <div className="sr-only" aria-live="polite">
+              <p>{mapAccessibilitySummary}</p>
               <span className="truncate rounded-full border border-[#dbe7f5] bg-[#f6fbff] px-3 py-1.5 text-xs font-semibold text-[#1b4f87]">{resolvedHeaderChip}</span>
               <p className="truncate text-xs text-slate-500">{resolvedExploreTitle} • {resolvedExploreMeta}</p>
             </div>
@@ -1220,7 +1190,10 @@ export default function FilterClient({
             </div>
 
             {!useActiveResultMap && mapCountries.length === 0 ? (
-              <div className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]">
+              <div
+                title={mapModalEmpty}
+                className="absolute left-1/2 top-1/2 w-[320px] max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 rounded-[20px] bg-white/92 px-5 py-4 text-center shadow-[0_20px_44px_-24px_rgba(15,23,42,0.24)]"
+              >
                 <p className="text-sm font-semibold text-slate-900">{mapModalSurfaceEmpty}</p>
               </div>
             ) : null}

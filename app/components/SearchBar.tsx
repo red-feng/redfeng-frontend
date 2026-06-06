@@ -64,15 +64,6 @@ function ChevronMark() {
   return <span className="text-lg leading-none text-slate-400">⌄</span>
 }
 
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[2]">
-      <circle cx="11" cy="11" r="6.5" />
-      <path d="M16 16 21 21" />
-    </svg>
-  )
-}
-
 export default function SearchBar({
   locale,
   countries,
