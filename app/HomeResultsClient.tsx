@@ -65,26 +65,30 @@ type PackageItem = {
 
 function PackageCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)] md:flex md:rounded-[28px]">
-      <div className="h-[160px] w-full animate-pulse bg-slate-200 md:h-[220px] md:w-[280px] md:shrink-0" />
-      <div className="p-4 md:flex-1 md:p-6">
-        <div className="h-6 w-4/5 animate-pulse rounded-2xl bg-slate-200 md:h-8 md:w-2/3" />
-        <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-slate-100 md:mt-4 md:w-1/3" />
-        <div className="mt-4 flex flex-wrap gap-2 md:mt-5">
-          <div className="h-7 w-20 animate-pulse rounded-full bg-orange-100 md:h-8 md:w-24" />
-          <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100 md:h-8 md:w-28" />
-        </div>
-        <div className="mt-5 space-y-3 md:mt-6">
-          <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
-          <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
+    <div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_18px_45px_-30px_rgba(15,23,42,0.18)] xl:grid xl:grid-cols-[minmax(0,1fr)_250px]">
+      <div className="p-5 xl:p-6">
+        <div className="grid gap-5 xl:grid-cols-[190px_minmax(0,1fr)] xl:items-start">
+          <div className="h-[170px] w-full animate-pulse rounded-[18px] bg-slate-200 xl:h-[190px]" />
+          <div className="xl:flex xl:min-h-[190px] xl:flex-col">
+            <div className="h-6 w-4/5 animate-pulse rounded-2xl bg-slate-200 xl:h-7 xl:w-2/3" />
+            <div className="mt-3 h-4 w-1/2 animate-pulse rounded-full bg-slate-100 xl:mt-4 xl:w-1/3" />
+            <div className="mt-4 flex flex-wrap gap-2 xl:mt-5">
+              <div className="h-7 w-20 animate-pulse rounded-full bg-orange-100 xl:h-8 xl:w-24" />
+              <div className="h-7 w-24 animate-pulse rounded-full bg-slate-100 xl:h-8 xl:w-28" />
+            </div>
+            <div className="mt-5 space-y-3 xl:mt-auto">
+              <div className="h-4 w-full animate-pulse rounded-full bg-slate-100" />
+              <div className="h-4 w-5/6 animate-pulse rounded-full bg-slate-100" />
+            </div>
+          </div>
         </div>
       </div>
-      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-4 md:w-[260px] md:border-l md:border-t-0 md:p-6">
+      <div className="flex flex-col justify-between border-t border-slate-200 bg-slate-50/70 p-5 xl:border-l xl:border-t-0 xl:p-6">
         <div>
-          <div className="h-8 w-24 animate-pulse rounded-2xl bg-orange-100 md:ml-auto md:h-9 md:w-32" />
-          <div className="mt-3 h-4 w-20 animate-pulse rounded-full bg-slate-100 md:ml-auto md:w-24" />
+          <div className="h-4 w-20 animate-pulse rounded-full bg-slate-100" />
+          <div className="mt-3 h-9 w-32 animate-pulse rounded-2xl bg-orange-100" />
         </div>
-        <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-orange-100 md:mt-6 md:h-12" />
+        <div className="mt-5 h-11 w-full animate-pulse rounded-[12px] bg-orange-100 xl:mt-6" />
       </div>
     </div>
   )
